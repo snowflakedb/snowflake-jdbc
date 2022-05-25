@@ -27,7 +27,7 @@ public class ProcessQueue implements Runnable {
   private final StreamLoader _loader;
 
   public ProcessQueue(StreamLoader loader) {
-    LOGGER.debug("");
+    LOGGER.debug("", false);
 
     _loader = loader;
     _thread = new Thread(this);
@@ -73,7 +73,7 @@ public class ProcessQueue implements Runnable {
           if (_loader.isAborted()) {
             if (!_loader._preserveStageFile) {
               currentCommand = "RM '" + remoteStage + "'";
-              LOGGER.debug(currentCommand);
+              LOGGER.debug(currentCommand, true);
               conn.createStatement().execute(currentCommand);
             } else {
               LOGGER.debug(
@@ -363,7 +363,7 @@ public class ProcessQueue implements Runnable {
         String msg =
             String.format("State: %s, %s, %s", currentState, currentCommand, ex.getMessage());
         _loader.abort(new Loader.ConnectionError(msg, Utils.getCause(ex)));
-        LOGGER.error(msg);
+        LOGGER.error(msg, true);
         if (stage == null || stage.isTerminate()) {
           break;
         }
@@ -406,7 +406,7 @@ public class ProcessQueue implements Runnable {
   }
 
   public void join() {
-    LOGGER.debug("");
+    LOGGER.debug("", false);
     try {
       _thread.join(0);
     } catch (InterruptedException ex) {

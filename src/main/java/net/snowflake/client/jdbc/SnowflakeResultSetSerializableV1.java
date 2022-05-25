@@ -498,7 +498,7 @@ public class SnowflakeResultSetSerializableV1
       ResultStreamProvider resultStreamProvider)
       throws SnowflakeSQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
-    logger.debug("Entering create()");
+    logger.debug("Entering create()", false);
 
     SnowflakeUtil.checkErrorAndThrowException(rootNode);
 

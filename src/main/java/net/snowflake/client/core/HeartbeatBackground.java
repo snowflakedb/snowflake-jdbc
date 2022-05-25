@@ -96,7 +96,7 @@ public class HeartbeatBackground implements Runnable {
      * JVM from exiting.
      */
     if (this.scheduler == null) {
-      LOGGER.debug("create heartbeat thread pool");
+      LOGGER.debug("create heartbeat thread pool", false);
       this.scheduler =
           Executors.newScheduledThreadPool(
               1,
@@ -113,19 +113,19 @@ public class HeartbeatBackground implements Runnable {
 
     // schedule a heartbeat task if none exists
     if (heartbeatFuture == null) {
-      LOGGER.debug("schedule heartbeat task");
+      LOGGER.debug("schedule heartbeat task", false);
       this.scheduleHeartbeat();
     }
     // or reschedule if the master token validity has been reduced (rare event)
     else if (requireReschedule) {
-      LOGGER.debug("Cancel existing heartbeat task");
+      LOGGER.debug("Cancel existing heartbeat task", false);
 
       // Cancel existing task if not started yet and reschedule
       if (heartbeatFuture.cancel(false)) {
-        LOGGER.debug("Canceled existing heartbeat task, reschedule");
+        LOGGER.debug("Canceled existing heartbeat task, reschedule", false);
         this.scheduleHeartbeat();
       } else {
-        LOGGER.debug("Failed to cancel existing heartbeat task");
+        LOGGER.debug("Failed to cancel existing heartbeat task", false);
       }
     }
   }
@@ -203,11 +203,11 @@ public class HeartbeatBackground implements Runnable {
     synchronized (this) {
       // schedule next heartbeat
       if (sessions.size() > 0) {
-        LOGGER.debug("schedule next heartbeat run");
+        LOGGER.debug("schedule next heartbeat run", false);
 
         scheduleHeartbeat();
       } else {
-        LOGGER.debug("no need for heartbeat since no more sessions");
+        LOGGER.debug("no need for heartbeat since no more sessions", false);
 
         // no need to heartbeat if no more session
         this.heartbeatFuture = null;

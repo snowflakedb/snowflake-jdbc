@@ -180,7 +180,7 @@ public class ResultUtil {
       TimeZone sessionTZ,
       SFBaseSession session)
       throws SFException {
-    logger.debug("public Timestamp getTimestamp(int columnIndex)");
+    logger.debug("public Timestamp getTimestamp(int columnIndex)", false);
 
     try {
       TimeUtil.TimestampType tsType = null;

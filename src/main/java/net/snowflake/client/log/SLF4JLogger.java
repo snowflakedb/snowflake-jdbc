@@ -87,8 +87,8 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  public void error(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void error(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, null);
@@ -114,8 +114,8 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  public void info(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void info(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, null);
@@ -141,8 +141,8 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  public void trace(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void trace(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, null);
@@ -168,8 +168,8 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  public void warn(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void warn(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, null);

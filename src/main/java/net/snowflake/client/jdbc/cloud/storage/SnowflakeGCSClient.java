@@ -151,7 +151,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       Page<Blob> blobs = this.gcsClient.list(remoteStorageLocation, BlobListOption.prefix(prefix));
       return new StorageObjectSummaryCollection(blobs);
     } catch (Exception e) {
-      logger.debug("Failed to list objects");
+      logger.debug("Failed to list objects", false);
       throw new StorageProviderException(e);
     }
   }
@@ -216,7 +216,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         String key = null;
         String iv = null;
         if (!Strings.isNullOrEmpty(presignedUrl)) {
-          logger.debug("Starting download with presigned URL");
+          logger.debug("Starting download with presigned URL", false);
           URIBuilder uriBuilder = new URIBuilder(presignedUrl);
 
           HttpGet httpRequest = new HttpGet(uriBuilder.build());
@@ -273,7 +273,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   }
                 }
               }
-              logger.debug("Download successful");
+              logger.debug("Download successful", false);
             } catch (IOException ex) {
               logger.debug("Download unsuccessful {}", ex);
               handleStorageException(ex, ++retryCount, "download", session, command);
@@ -295,9 +295,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                     "Blob" + blobId.getName() + " not found in bucket " + blobId.getBucket()));
           }
 
-          logger.debug("Starting download without presigned URL");
+          logger.debug("Starting download without presigned URL", false);
           blob.downloadTo(localFile.toPath());
-          logger.debug("Download successful");
+          logger.debug("Download successful", false);
 
           // Get the user-defined BLOB metadata
           Map<String, String> userDefinedMetadata = blob.getMetadata();
@@ -381,7 +381,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         String iv = null;
 
         if (!Strings.isNullOrEmpty(presignedUrl)) {
-          logger.debug("Starting download with presigned URL");
+          logger.debug("Starting download with presigned URL", false);
           URIBuilder uriBuilder = new URIBuilder(presignedUrl);
 
           HttpGet httpRequest = new HttpGet(uriBuilder.build());
@@ -430,7 +430,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   }
                 }
               }
-              logger.debug("Download successful");
+              logger.debug("Download successful", false);
             } catch (IOException ex) {
               logger.debug("Download unsuccessful {}", ex);
               handleStorageException(ex, ++retryCount, "download", session, command);
@@ -562,7 +562,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         uploadStreamInfo.left,
         presignedUrl,
         ocspModeAndProxyKey);
-    logger.debug("Upload successful");
+    logger.debug("Upload successful", false);
 
     // close any open streams in the "toClose" list and return
     for (FileInputStream is : toClose) {
@@ -620,7 +620,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     }
 
     if (!Strings.isNullOrEmpty(presignedUrl)) {
-      logger.debug("Starting upload");
+      logger.debug("Starting upload", false);
       uploadWithPresignedUrl(
           session.getNetworkTimeoutInMilli(),
           meta.getContentEncoding(),
@@ -628,7 +628,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           uploadStreamInfo.left,
           presignedUrl,
           session.getHttpClientKey());
-      logger.debug("Upload successful");
+      logger.debug("Upload successful", false);
 
       // close any open streams in the "toClose" list and return
       for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
@@ -640,7 +640,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     int retryCount = 0;
     do {
       try {
-        logger.debug("Starting upload");
+        logger.debug("Starting upload", false);
         InputStream fileInputStream = uploadStreamInfo.left;
 
         BlobId blobId = BlobId.of(remoteStorageLocation, destFileName);
@@ -652,7 +652,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
         gcsClient.create(blobInfo, fileInputStream);
 
-        logger.debug("Upload successful");
+        logger.debug("Upload successful", false);
 
         // close any open streams in the "toClose" list and return
         for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
@@ -1062,7 +1062,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     this.encMat = encMat;
     this.session = session;
 
-    logger.debug("Setting up the GCS client ");
+    logger.debug("Setting up the GCS client ", false);
 
     try {
       String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");

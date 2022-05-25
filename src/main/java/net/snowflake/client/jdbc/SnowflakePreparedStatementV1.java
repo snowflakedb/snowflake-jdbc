@@ -110,7 +110,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public ResultSet executeQuery() throws SQLException {
     if (showStatementParameters) {
-      logger.info("executeQuery()");
+      logger.info("executeQuery()", false);
     } else {
       logger.debug("executeQuery()", false);
     }
@@ -125,7 +125,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    */
   public ResultSet executeAsyncQuery() throws SQLException {
     if (showStatementParameters) {
-      logger.info("executeAsyncQuery()");
+      logger.info("executeAsyncQuery()", false);
     } else {
       logger.debug("executeAsyncQuery()", false);
     }
@@ -686,7 +686,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)
       throws SQLException {
-    logger.debug("setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)", false);
+    logger.debug(
+        "setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)", false);
 
     raiseSQLExceptionIfStatementIsClosed();
     if (x == null) {

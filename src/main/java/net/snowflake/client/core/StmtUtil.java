@@ -20,7 +20,6 @@ import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
@@ -656,8 +655,7 @@ public class StmtUtil {
     try {
       URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
 
-      logger.debug(
-          "Aborting query: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(stmtInput.sql));
+      logger.debug("Aborting query: {}", stmtInput.sql);
 
       uriBuilder.setPath(SF_PATH_ABORT_REQUEST_V1);
 
@@ -674,8 +672,7 @@ public class StmtUtil {
 
       String json = mapper.writeValueAsString(sqlJsonBody);
 
-      logger.debug(
-          "JSON for cancel request: {}", json);
+      logger.debug("JSON for cancel request: {}", json);
 
       StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
       input.setContentType("application/json");
@@ -750,8 +747,7 @@ public class StmtUtil {
       }
 
       if (logger.isDebugEnabled()) {
-        logger.debug(
-            "New sql after skipping // comments: \n{}", trimmedSql);
+        logger.debug("New sql after skipping // comments: \n{}", trimmedSql);
       }
     }
 

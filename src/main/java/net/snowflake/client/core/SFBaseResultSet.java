@@ -110,12 +110,12 @@ public abstract class SFBaseResultSet {
 
   // default implementation
   public boolean next() throws SFException, SnowflakeSQLException {
-    logger.debug("public boolean next()");
+    logger.debug("public boolean next()", false);
     return false;
   }
 
   public void close() throws SnowflakeSQLException {
-    logger.debug("public void close()");
+    logger.debug("public void close()", false);
 
     // no exception even if already closed.
     resultSetMetaData = null;

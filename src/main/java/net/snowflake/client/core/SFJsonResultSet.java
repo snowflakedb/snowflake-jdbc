@@ -258,7 +258,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public byte getByte(int columnIndex) throws SFException {
-    logger.debug("public short getByte(int columnIndex)");
+    logger.debug("public short getByte(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -276,7 +276,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public short getShort(int columnIndex) throws SFException {
-    logger.debug("public short getShort(int columnIndex)");
+    logger.debug("public short getShort(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);

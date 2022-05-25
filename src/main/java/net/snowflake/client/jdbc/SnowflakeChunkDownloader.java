@@ -398,12 +398,13 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         continue;
       } else {
         // cancel the reserved memory
-        logger.debug("cancel the reserved memory.");
+        logger.debug("cancel the reserved memory.", false);
         curMem = currentMemoryUsage.addAndGet(-neededChunkMemory);
         if (getPrefetchMemRetry > prefetchMaxRetry) {
           logger.debug(
               "Retry limit for prefetch has been reached. Cancel reserved memory and prefetch"
-                  + " attempt.");
+                  + " attempt.",
+              false);
           nextChunk.getLock().lock();
           try {
             nextChunk.setDownloadState(DownloadState.FAILURE);
@@ -528,7 +529,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
     // if no more chunks, return null
     if (this.nextChunkToConsume >= this.chunks.size()) {
-      logger.debug("no more chunk");
+      logger.debug("no more chunk", false);
       return null;
     }
 
@@ -558,7 +559,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       currentChunk.getLock().lock();
       try {
         logger.debug("#chunk{} is not ready to consume", nextChunkToConsume);
-        logger.debug("consumer get lock to check chunk state");
+        logger.debug("consumer get lock to check chunk state", false);
 
         waitForChunkReady(currentChunk);
 
@@ -587,7 +588,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         // next chunk to consume is ready for consumption
         return currentChunk;
       } finally {
-        logger.debug("consumer free lock");
+        logger.debug("consumer free lock", false);
 
         boolean terminateDownloader = (currentChunk.getDownloadState() == DownloadState.FAILURE);
         // release the unlock always
@@ -597,7 +598,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           releaseCurrentMemoryUsage(nextChunkToConsume - 1, Optional.empty());
         }
         if (terminateDownloader) {
-          logger.debug("Download result fail. Shut down the chunk downloader");
+          logger.debug("Download result fail. Shut down the chunk downloader", false);
           terminate();
         }
       }
@@ -755,7 +756,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             executor.shutdown();
 
             if (!executor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
-              logger.debug("Executor did not terminate in the specified time.");
+              logger.debug("Executor did not terminate in the specified time.", false);
               List<Runnable> droppedTasks = executor.shutdownNow(); // optional **
               logger.debug(
                   "Executor was abruptly shut down. "
@@ -954,9 +955,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
           resultChunk.getLock().lock();
           try {
-            logger.debug("get lock to change the chunk to be ready to consume");
+            logger.debug("get lock to change the chunk to be ready to consume", false);
 
-            logger.debug("wake up consumer if it is waiting for a chunk to be " + "ready");
+            logger.debug("wake up consumer if it is waiting for a chunk to be " + "ready", false);
 
             resultChunk.setDownloadState(DownloadState.SUCCESS);
             resultChunk.getDownloadCondition().signal();
@@ -968,14 +969,14 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         } catch (Throwable th) {
           resultChunk.getLock().lock();
           try {
-            logger.debug("get lock to set chunk download error");
+            logger.debug("get lock to set chunk download error", false);
             resultChunk.setDownloadState(DownloadState.FAILURE);
             downloader.releaseCurrentMemoryUsage(chunkIndex, Optional.empty());
             StringWriter errors = new StringWriter();
             th.printStackTrace(new PrintWriter(errors));
             resultChunk.setDownloadError(errors.toString());
 
-            logger.debug("wake up consumer if it is waiting for a chunk to be ready");
+            logger.debug("wake up consumer if it is waiting for a chunk to be ready", false);
 
             resultChunk.getDownloadCondition().signal();
           } finally {

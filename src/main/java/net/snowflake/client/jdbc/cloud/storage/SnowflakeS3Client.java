@@ -131,7 +131,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     this.session = session;
     this.isClientSideEncrypted = isClientSideEncrypted;
 
-    logger.debug("Setting up AWS client ");
+    logger.debug("Setting up AWS client ", false);
 
     // Retrieve S3 stage credentials
     String awsID = (String) stageCredentials.get("AWS_KEY_ID");

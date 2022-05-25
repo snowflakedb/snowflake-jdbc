@@ -1349,7 +1349,7 @@ public class SessionUtil {
     for (JsonNode child : paramsNode) {
       // If there isn't a name then the response from GS must be erroneous.
       if (!child.hasNonNull("name")) {
-        logger.error("Common Parameter JsonNode encountered with " + "no parameter name!");
+        logger.error("Common Parameter JsonNode encountered with " + "no parameter name!", false);
         continue;
       }
 

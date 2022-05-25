@@ -641,7 +641,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     return new Callable<Void>() {
       public Void call() throws Exception {
 
-        logger.debug("Entering getDownloadFileCallable...");
+        logger.debug("Entering getDownloadFileCallable...", false);
 
         // make sure initialize context for the telemetry service for this thread
         TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
@@ -721,7 +721,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     this.statement = statement;
 
     // parse the command
-    logger.debug("Start parsing");
+    logger.debug("Start parsing", false);
 
     parseCommand();
 
@@ -851,7 +851,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       if (!(new File(localLocation)).isAbsolute()) {
         String cwd = systemGetProperty("user.dir");
 
-        logger.debug("Adding current working dir to relative file path.");
+        logger.debug("Adding current working dir to relative file path.", false);
 
         localLocation = cwd + localFSFileSep + localLocation;
       }
@@ -1035,7 +1035,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   private static String getLocalFilePathFromCommand(String command, boolean unescape) {
     if (command == null) {
-      logger.error("null command");
+      logger.error("null command", false);
       return null;
     }
 
@@ -1400,7 +1400,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   @Override
   public InputStream downloadStream(String fileName) throws SnowflakeSQLException {
     if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) {
-      logger.error("downloadStream function doesn't support local file system");
+      logger.error("downloadStream function doesn't support local file system", false);
 
       throw new SnowflakeSQLException(
           SqlState.INTERNAL_ERROR,

@@ -27,7 +27,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
 
   public SecureStorageStatus setCredential(String host, String user, String type, String cred) {
     if (Strings.isNullOrEmpty(cred)) {
-      logger.info("No credential provided");
+      logger.info("No credential provided", false);
       return SecureStorageStatus.SUCCESS;
     }
 
@@ -121,7 +121,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
         return null;
       }
       if (dataLength[0] == 0 || data[0] == null) {
-        logger.info("Found empty item or no item is found");
+        logger.info("Found empty item or no item is found", false);
         return null;
       }
 

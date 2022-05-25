@@ -134,7 +134,7 @@ public class SFSession extends SFBaseSession {
           canClose = false;
         }
       } catch (SQLException e) {
-        logger.error(e.getMessage());
+        logger.error(e.getMessage(), true);
       }
     }
     return canClose;
@@ -891,7 +891,7 @@ public class SFSession extends SFBaseSession {
     // properties have been set, else the client won't properly resolve the URL.
     if (telemetryClient == null) {
       if (getUrl() == null) {
-        logger.error("Telemetry client created before session properties set.");
+        logger.error("Telemetry client created before session properties set.", false);
         return null;
       }
       telemetryClient = TelemetryClient.createTelemetry(this);

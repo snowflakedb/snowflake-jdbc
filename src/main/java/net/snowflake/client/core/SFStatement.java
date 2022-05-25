@@ -28,10 +28,8 @@ import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
 
@@ -773,7 +771,7 @@ public class SFStatement extends SFBaseStatement {
 
     resetState();
 
-    logger.debug("Entering executeFileTransfer",false);
+    logger.debug("Entering executeFileTransfer", false);
 
     isFileTransfer = true;
     transferAgent = new SnowflakeFileTransferAgent(sql, session, this);
@@ -827,7 +825,7 @@ public class SFStatement extends SFBaseStatement {
     logger.debug("public void cancel()", false);
 
     if (canceling.get()) {
-      logger.debug("Query is already cancelled");
+      logger.debug("Query is already cancelled", false);
       return;
     }
 
@@ -835,14 +833,14 @@ public class SFStatement extends SFBaseStatement {
 
     if (isFileTransfer) {
       if (transferAgent != null) {
-        logger.debug("Cancel file transferring ... ");
+        logger.debug("Cancel file transferring ... ", false);
         transferAgent.cancel();
       }
     } else {
       synchronized (this) {
         // the query hasn't been sent to GS yet, just mark the stmt closed
         if (requestId == null) {
-          logger.debug("No remote query outstanding");
+          logger.debug("No remote query outstanding", false);
 
           return;
         }
