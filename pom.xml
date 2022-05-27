@@ -37,7 +37,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>7.0.0</arrow.version>
+    <arrow.version>8.0.0</arrow.version>
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.14.2</jsoup.version>
     <tika.version>2.4.0</tika.version>
@@ -73,6 +73,16 @@
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>1.14</version>
+    </dependency>
+    <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+      <version>4.1.77.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <version>4.1.77.Final</version>
     </dependency>
     <dependency>
       <groupId>com.nimbusds</groupId>
@@ -290,17 +300,13 @@
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
+        <exclusion> <!-- Exclude earlier version to avoid whitesource vulnerability. -->
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -313,6 +319,16 @@
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-memory-netty</artifactId>
       <version>${arrow.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId> <!-- Exclude earlier version to avoid whitesource vulnerability. -->
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>
