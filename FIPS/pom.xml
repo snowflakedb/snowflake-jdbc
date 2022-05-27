@@ -748,6 +748,10 @@
                        <shadedPattern>${shadeBase}.google.type</shadedPattern>
                      </relocation>
                      <relocation>
+                       <pattern>google.geo</pattern>
+                       <shadedPattern>${shadeBase}.google.geo</shadedPattern>
+                     </relocation>
+                     <relocation>
                        <pattern>google.rpc</pattern>
                        <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
                      </relocation>
@@ -816,6 +820,7 @@
                             <exclude>.netbeans_automatic_build</exclude>
                             <exclude>git.properties</exclude>
                             <exclude>google-http-client.properties</exclude>
+                            <exclude>dependencies.properties</exclude>
                          </excludes>
                       </filter>
                       <filter>
