@@ -1316,13 +1316,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     } else if (catalog.isEmpty()) {
       return "";
     } else {
+      String catalogEscaped = escapeSqlQuotes(catalog);
       if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
-        showProcedureCommand += " in database \"" + catalog + "\"";
+        showProcedureCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return "";
       } else {
         schemaPattern = unescapeChars(schemaPattern);
-        showProcedureCommand += " in schema \"" + catalog + "\".\"" + schemaPattern + "\"";
+        showProcedureCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaPattern + "\"";
       }
     }
     logger.debug("sql command to get column metadata: {}", showProcedureCommand);
@@ -1428,17 +1429,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     } else {
+      String catalogEscaped = escapeSqlQuotes(catalog);
       // if the schema pattern is a deterministic identifier, specify schema
       // in the show command. This is necessary for us to see any tables in
       // a schema if the current schema a user is connected to is different
       // given that we don't support show tables without a known schema.
       if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
-        showCommand += " in database \"" + catalog + "\"";
+        showCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
       } else {
         String schemaUnescaped = unescapeChars(schemaPattern);
-        showCommand += " in schema \"" + catalog + "\".\"" + schemaUnescaped + "\"";
+        showCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
       }
     }
 
@@ -1606,15 +1608,16 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
           extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
     } else {
+      String catalogEscaped = escapeSqlQuotes(catalog);
       if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
-        showCommand += " in database \"" + catalog + "\"";
+        showCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
             extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
       } else {
         String schemaUnescaped = unescapeChars(schemaPattern);
         if (tableNamePattern == null || Wildcard.isWildcardPatternStr(tableNamePattern)) {
-          showCommand += " in schema \"" + catalog + "\".\"" + schemaUnescaped + "\"";
+          showCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
         } else if (tableNamePattern.isEmpty()) {
           return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
               extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
@@ -1622,7 +1625,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           String tableNameUnescaped = unescapeChars(tableNamePattern);
           showCommand +=
               " in table \""
-                  + catalog
+                  + catalogEscaped
                   + "\".\""
                   + schemaUnescaped
                   + "\".\""
@@ -1849,7 +1852,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !catalog.isEmpty()
         && !catalog.trim().equals("%")
         && !catalog.trim().equals(".*")) {
-      showView += catalog + ".";
+      showView += "\"" + escapeSqlQuotes(catalog) + "\".";
     }
     showView += "information_schema.table_privileges";
 
@@ -1865,9 +1868,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !schemaPattern.trim().equals("%")
         && !schemaPattern.trim().equals(".*")) {
       if (showView.contains("where table_name")) {
-        showView += " and table_schema = '" + schemaPattern + "'";
+        showView += " and table_schema = '" + unescapeChars(schemaPattern) + "'";
       } else {
-        showView += " where table_schema = '" + schemaPattern + "'";
+        showView += " where table_schema = '" + unescapeChars(schemaPattern) + "'";
       }
     }
     showView += " order by table_catalog, table_schema, table_name, privilege_type";
@@ -1960,29 +1963,40 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final String catalog = resPair.left;
     final String schema = resPair.right;
 
+    final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schema, true);
+    final Pattern compiledTablePattern = Wildcard.toRegexPattern(table, true);
+
     if (catalog == null) {
       showPKCommand += "account";
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PRIMARY_KEYS, statement);
     } else {
-      if (schema == null) {
-        showPKCommand += "database \"" + catalog + "\"";
+      String catalogUnescaped = escapeSqlQuotes(catalog);
+      if (schema == null || isSchemaNameWildcardPattern(schema)) {
+        showPKCommand += "database \"" + catalogUnescaped + "\"";
       } else if (schema.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PRIMARY_KEYS, statement);
       } else {
+        String schemaUnescaped = unescapeChars(schema);
         if (table == null) {
-          showPKCommand += "schema \"" + catalog + "\".\"" + schema + "\"";
+          showPKCommand += "schema \"" + catalogUnescaped + "\".\"" + schemaUnescaped + "\"";
         } else if (table.isEmpty()) {
           return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PRIMARY_KEYS, statement);
         } else {
-          showPKCommand += "table \"" + catalog + "\".\"" + schema + "\".\"" + table + "\"";
+          String tableUnescaped = unescapeChars(table);
+          showPKCommand +=
+              "table \""
+                  + catalogUnescaped
+                  + "\".\""
+                  + schemaUnescaped
+                  + "\".\""
+                  + tableUnescaped
+                  + "\"";
         }
       }
     }
 
     final String catalogIn = catalog;
-    final String schemaIn = schema;
-    final String tableIn = table;
 
     logger.debug("sql command to get primary key metadata: {}", showPKCommand);
     ResultSet resultSet =
@@ -2007,8 +2021,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
           // Post filter based on the input
           if ((catalogIn == null || catalogIn.equals(table_cat))
-              && (schemaIn == null || schemaIn.equals(table_schem))
-              && (tableIn == null || tableIn.equals(table_name))) {
+              && (compiledSchemaPattern == null
+                  || compiledSchemaPattern.equals(table_schem)
+                  || compiledSchemaPattern.matcher(table_schem).matches())
+              && (compiledTablePattern == null
+                  || compiledTablePattern.equals(table_name)
+                  || compiledTablePattern.matcher(table_name).matches())) {
             nextRow[0] = table_cat;
             nextRow[1] = table_schem;
             nextRow[2] = table_name;
@@ -2056,6 +2074,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final String parentCatalog = resPair.left;
     final String parentSchema = resPair.right;
 
+    final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(parentSchema, true);
+    final Pattern compiledParentTablePattern = Wildcard.toRegexPattern(parentTable, true);
+    final Pattern compiledForeignSchemaPattern = Wildcard.toRegexPattern(foreignSchema, true);
+    final Pattern compiledForeignTablePattern = Wildcard.toRegexPattern(foreignTable, true);
+
     if (client.equals("export") || client.equals("cross")) {
       commandBuilder.append(
           "show /* JDBC:DatabaseMetaData.getForeignKeys() */ " + "exported keys in ");
@@ -2069,24 +2092,33 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     } else if (parentCatalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FOREIGN_KEYS, statement);
     } else {
-      if (parentSchema == null) {
-        commandBuilder.append("database \"" + parentCatalog + "\"");
+      String unescapedParentCatalog = escapeSqlQuotes(parentCatalog);
+      if (parentSchema == null || isSchemaNameWildcardPattern(parentSchema)) {
+        commandBuilder.append("database \"" + unescapedParentCatalog + "\"");
       } else if (parentSchema.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FOREIGN_KEYS, statement);
       } else {
+        String unescapedParentSchema = unescapeChars(parentSchema);
         if (parentTable == null) {
-          commandBuilder.append("schema \"" + parentCatalog + "\".\"" + parentSchema + "\"");
+          commandBuilder.append(
+              "schema \"" + unescapedParentCatalog + "\".\"" + unescapedParentSchema + "\"");
         } else if (parentTable.isEmpty()) {
           return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FOREIGN_KEYS, statement);
         } else {
+          String unescapedParentTable = unescapeChars(parentTable);
           commandBuilder.append(
-              "table \"" + parentCatalog + "\".\"" + parentSchema + "\".\"" + parentTable + "\"");
+              "table \""
+                  + unescapedParentCatalog
+                  + "\".\""
+                  + unescapedParentSchema
+                  + "\".\""
+                  + unescapedParentTable
+                  + "\"");
         }
       }
     }
 
     final String finalParentCatalog = parentCatalog;
-    final String finalParentSchema = parentSchema;
 
     String command = commandBuilder.toString();
 
@@ -2132,26 +2164,42 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           if (client.equals("import")) {
             // For imported dkeys, filter on the foreign key table
             if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
-                && (finalParentSchema == null || finalParentSchema.equals(fktable_schem))
-                && (parentTable == null || parentTable.equals(fktable_name))) {
+                && (compiledSchemaPattern == null
+                    || compiledSchemaPattern.equals(fktable_schem)
+                    || compiledSchemaPattern.matcher(fktable_schem).matches())
+                && (compiledParentTablePattern == null
+                    || compiledParentTablePattern.equals(fktable_name)
+                    || compiledParentTablePattern.matcher(fktable_name).matches())) {
               passedFilter = true;
             }
           } else if (client.equals("export")) {
             // For exported keys, filter on the primary key table
             if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
-                && (finalParentSchema == null || finalParentSchema.equals(pktable_schem))
-                && (parentTable == null || parentTable.equals(pktable_name))) {
+                && (compiledSchemaPattern == null
+                    || compiledSchemaPattern.equals(pktable_schem)
+                    || compiledSchemaPattern.matcher(pktable_schem).matches())
+                && (compiledParentTablePattern == null
+                    || compiledParentTablePattern.equals(pktable_name)
+                    || compiledParentTablePattern.matcher(pktable_name).matches())) {
               passedFilter = true;
             }
           } else if (client.equals("cross")) {
             // For cross references, filter on both the primary key and foreign
             // key table
             if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
-                && (finalParentSchema == null || finalParentSchema.equals(pktable_schem))
-                && (parentTable == null || parentTable.equals(pktable_name))
+                && (compiledSchemaPattern == null
+                    || compiledSchemaPattern.equals(pktable_schem)
+                    || compiledSchemaPattern.matcher(pktable_schem).matches())
+                && (compiledParentTablePattern == null
+                    || compiledParentTablePattern.equals(pktable_name)
+                    || compiledParentTablePattern.matcher(pktable_name).matches())
                 && (foreignCatalog == null || foreignCatalog.equals(fktable_cat))
-                && (foreignSchema == null || foreignSchema.equals(fktable_schem))
-                && (foreignTable == null || foreignTable.equals(fktable_name))) {
+                && (compiledForeignSchemaPattern == null
+                    || compiledForeignSchemaPattern.equals(fktable_schem)
+                    || compiledForeignSchemaPattern.matcher(fktable_schem).matches())
+                && (compiledForeignTablePattern == null
+                    || compiledForeignTablePattern.equals(fktable_name)
+                    || compiledForeignTablePattern.matcher(fktable_name).matches())) {
               passedFilter = true;
             }
           }

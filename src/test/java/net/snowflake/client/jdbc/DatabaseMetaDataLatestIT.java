@@ -35,6 +35,12 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           + "    $$\n"
           + "    ;";
 
+  /** Create catalog and schema for tests with double quotes */
+  public void createDoubleQuotedSchemaAndCatalog(Statement statement) throws SQLException {
+    statement.execute("create or replace database \"dbwith\"\"quotes\"");
+    statement.execute("create or replace schema \"dbwith\"\"quotes\".\"schemawith\"\"quotes\"");
+  }
+
   /**
    * Tests for getFunctions
    *
@@ -206,6 +212,103 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     }
   }
 
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetTables() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a table with two columns
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\" (col1 string, col2 string)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getTables("dbwith\"quotes", "schemawith\"quotes", null, null);
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetColumns() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database and schema with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a table with two columns
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\"  (col1 string, col2 string)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getColumns("dbwith\"quotes", "schemawith\"quotes", null, null);
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeys() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database and schema with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a table with a primary key constraint
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"test1\"  (col1 integer not null, col2 integer not null, constraint pkey_1 primary key (col1, col2) not enforced)");
+      // Create a table with a foreign key constraint that points to same columns as test1's primary
+      // key constraint
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"test2\" (col_a integer not null, col_b integer not null, constraint fkey_1 foreign key (col_a, col_b) references \"test1\" (col1, col2) not enforced)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getPrimaryKeys("dbwith\"quotes", "schemawith\"quotes", null);
+      // Assert 2 rows are returned for primary key constraint for table and schema with quotes
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs = metaData.getImportedKeys("dbwith\"quotes", "schemawith\"quotes", null);
+      // Assert 2 rows are returned for foreign key constraint
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetProcedures() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database and schema with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a procedure
+      statement.execute(
+          "USE DATABASE \"dbwith\"\"quotes\"; USE SCHEMA \"schemawith\"\"quotes\"; " + TEST_PROC);
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getProcedures("dbwith\"quotes", null, null);
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetTablePrivileges() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database and schema with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a table under the current user and role
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\" (col1 string, col2 string)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getTablePrivileges("dbwith\"quotes", null, "%");
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
   /**
    * This tests that wildcards can be used for the schema name for getProcedureColumns().
    * Previously, only empty resultsets were returned.
@@ -741,5 +844,25 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     resultSet = metaData.getColumns(database, schema, "special" + escapeChar + "%table", null);
     assertTrue(resultSet.next());
     assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
+  }
+
+  @Test
+  public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeys() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      String database = con.getCatalog();
+      statement.execute("create or replace schema TEST_SCHEMA");
+      statement.execute("use schema TEST_SCHEMA");
+      statement.execute("create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
+      statement.execute(
+          "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getPrimaryKeys(database, "TEST\\_SCHEMA", null);
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs = metaData.getImportedKeys(database, "TEST\\_SCHEMA", null);
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
   }
 }

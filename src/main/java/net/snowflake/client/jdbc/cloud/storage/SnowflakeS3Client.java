@@ -51,6 +51,7 @@ import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLInitializationException;
 
@@ -691,7 +692,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
 
     if (ex instanceof AmazonClientException) {
-      if (retryCount > s3Client.getMaxRetries()) {
+      if (retryCount > s3Client.getMaxRetries() || s3Client.isClientException404(ex)) {
         String extendedRequestId = "none";
 
         if (ex instanceof AmazonS3Exception) {
@@ -787,6 +788,17 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }
     }
+  }
+
+  /** Checks the status code of the exception to see if it's a 404 */
+  public boolean isClientException404(Exception ex) {
+    if (ex instanceof AmazonServiceException) {
+      AmazonServiceException asEx = (AmazonServiceException) (ex);
+      if (asEx.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Returns the material descriptor key */
