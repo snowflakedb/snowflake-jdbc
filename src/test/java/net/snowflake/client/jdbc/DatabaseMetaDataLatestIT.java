@@ -282,10 +282,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a procedure
+      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
       statement.execute(
           "USE DATABASE \"dbwith\"\"quotes\"; USE SCHEMA \"schemawith\"\"quotes\"; " + TEST_PROC);
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getProcedures("dbwith\"quotes", null, null);
+      ResultSet rs = metaData.getProcedures("dbwith\"quotes", null, "TESTPROC");
       assertEquals(1, getSizeOfResultSet(rs));
       rs.close();
       statement.close();
