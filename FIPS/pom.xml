@@ -57,16 +57,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
-        <groupId>io.netty</groupId>
-        <artifactId>netty-common</artifactId>
-        <version>4.1.77.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-buffer</artifactId>
-        <version>4.1.77.Final</version>
-      </dependency>
       <dependency>
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-bom</artifactId>
@@ -77,6 +67,16 @@
     </dependencies>
   </dependencyManagement>
   <dependencies>
+    <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+      <version>4.1.77.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <version>4.1.77.Final</version>
+    </dependency>
     <dependency>
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
