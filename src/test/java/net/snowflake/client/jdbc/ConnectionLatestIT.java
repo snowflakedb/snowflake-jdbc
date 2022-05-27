@@ -7,6 +7,7 @@ import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HE
 import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
@@ -952,5 +953,24 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       assertFalse(connection.isReadOnly());
       connection.createStatement().execute("drop table if exists readonly_test");
     }
+  }
+
+  @Test
+  public void testDownloadStreamWithFileNotFoundException() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("CREATE OR REPLACE TEMP STAGE testDownloadStream_stage");
+    long startDownloadTime = System.currentTimeMillis();
+    try {
+      connection
+          .unwrap(SnowflakeConnection.class)
+          .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
+    } catch (SQLException ex) {
+      assertThat(ex.getErrorCode(), is(ErrorCode.S3_OPERATION_ERROR.getMessageCode()));
+    }
+    long endDownloadTime = System.currentTimeMillis();
+    // S3Client retries some exception for a default timeout of 5 minutes
+    // Check that 404 was not retried
+    assertTrue(endDownloadTime - startDownloadTime < 400000);
   }
 }
