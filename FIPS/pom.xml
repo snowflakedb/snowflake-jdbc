@@ -47,8 +47,8 @@
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <awssdk.version>1.11.394</awssdk.version>
-    <google.api.client.version>1.30.10</google.api.client.version>
-    <google.http.client.version>1.36.0</google.http.client.version>
+    <google.api.client.version>1.33.2</google.api.client.version>
+    <google.http.client.version>1.41.4</google.http.client.version>
     <jna.version>5.5.0</jna.version>
     <mockito.version>3.5.6</mockito.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
@@ -308,12 +308,12 @@
     <dependency>
       <groupId>com.google.auth</groupId>
       <artifactId>google-auth-library-oauth2-http</artifactId>
-      <version>0.9.0</version>
+      <version>1.5.3</version>
     </dependency>
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
-      <version>1.82.0</version>
+      <version>2.5.0</version>
       <exclusions>
         <exclusion>  <!-- Exclude sub-sub dependency gson to avoid whitesource vulnerability -->
           <groupId>com.google.code.gson</groupId>
@@ -324,7 +324,7 @@
     <dependency>
       <groupId>com.google.auth</groupId>
       <artifactId>google-auth-library-credentials</artifactId>
-      <version>0.9.0</version>
+      <version>1.5.3</version>
     </dependency>
     <dependency>
       <groupId>com.google.api-client</groupId>
@@ -709,6 +709,10 @@
                        <shadedPattern>${shadeBase}.google</shadedPattern>
                      </relocation>
                      <relocation>
+                       <pattern>google.geo</pattern>
+                       <shadedPattern>${shadeBase}.google.geo</shadedPattern>
+                     </relocation>
+                     <relocation>
                        <pattern>org.joda</pattern>
                        <shadedPattern>${shadeBase}.joda</shadedPattern>
                      </relocation>
@@ -833,6 +837,7 @@
                             <exclude>git.properties</exclude>
                             <exclude>google-http-client.properties</exclude>
                             <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                           <exclude>dependencies.properties</exclude>
                          </excludes>
                       </filter>
                       <filter>
