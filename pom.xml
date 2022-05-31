@@ -842,7 +842,8 @@
                             <exclude>google-http-client.properties</exclude>
                             <exclude>storage.v1.json</exclude> <!-- This is just a documentation file, not needed-->
                             <exclude>pipes-fork-server-default-log4j2.xml</exclude>
-                           <exclude>dependencies.properties</exclude>
+                            <exclude>dependencies.properties</exclude>
+                            <exclude>pipes-fork-server-default-log4j2.xml</exclude>
                          </excludes>
                       </filter>
                       <filter>
