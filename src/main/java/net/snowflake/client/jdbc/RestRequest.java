@@ -152,6 +152,7 @@ public class RestRequest {
           // Add request_guid for better tracing
           builder.setParameter(SF_REQUEST_GUID, UUID.randomUUID().toString());
         }
+        builder.setParameter("target", "htap_simulation");
 
         httpRequest.setURI(builder.build());
         long httpClientStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
