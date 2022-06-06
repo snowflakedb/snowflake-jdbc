@@ -2615,18 +2615,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         String schemaUnescaped = unescapeChars(schemaPattern);
         if (streamName == null || Wildcard.isWildcardPatternStr(streamName)) {
           showCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
-        } else if (streamName.isEmpty()) {
-          return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_STREAMS, statement);
-        } else {
-          String streamNameUnescaped = unescapeChars(streamName);
-          showCommand +=
-              " in table \""
-                  + catalogEscaped
-                  + "\".\""
-                  + schemaUnescaped
-                  + "\".\""
-                  + streamNameUnescaped
-                  + "\"";
         }
       }
     }
@@ -2647,7 +2635,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         // iterate throw the show streams result until we find an entry
         // that matches the stream name
         while (showObjectResultSet.next()) {
-          String createdOn = showObjectResultSet.getString(1);
           String name = showObjectResultSet.getString(2);
           String databaseName = showObjectResultSet.getString(3);
           String schemaName = showObjectResultSet.getString(4);
@@ -2659,7 +2646,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           String type = showObjectResultSet.getString(10);
           String stale = showObjectResultSet.getString(11);
           String mode = showObjectResultSet.getString(12);
-          String staleAfter = showObjectResultSet.getString(13);
 
           if ((compiledStreamNamePattern == null
                   || compiledStreamNamePattern.matcher(streamName).matches())
@@ -2668,19 +2654,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
               && (compiledStreamNamePattern == null
                   || compiledStreamNamePattern.matcher(streamName).matches())) {
             logger.debug("Found a matched column:" + tableName + "." + streamName);
-            nextRow[0] = createdOn;
-            nextRow[1] = name;
-            nextRow[2] = databaseName;
-            nextRow[3] = schemaName;
-            nextRow[4] = owner;
-            nextRow[5] = comment;
-            nextRow[6] = tableName;
-            nextRow[7] = sourceType;
-            nextRow[8] = baseTables;
-            nextRow[9] = type;
-            nextRow[10] = stale;
-            nextRow[11] = mode;
-            nextRow[12] = staleAfter;
+            nextRow[0] = name;
+            nextRow[1] = databaseName;
+            nextRow[2] = schemaName;
+            nextRow[3] = owner;
+            nextRow[4] = comment;
+            nextRow[5] = tableName;
+            nextRow[6] = sourceType;
+            nextRow[7] = baseTables;
+            nextRow[8] = type;
+            nextRow[9] = stale;
+            nextRow[10] = mode;
             return true;
           }
         }

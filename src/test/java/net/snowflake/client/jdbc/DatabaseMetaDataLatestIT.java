@@ -9,8 +9,10 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.*;
 
 import java.sql.*;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -1272,6 +1274,56 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(0, super.getSizeOfResultSet(resultSet));
 
       connection.createStatement().execute("drop table if exists T0");
+    }
+  }
+
+  @Test
+  public void testGetStreams() throws SQLException {
+    try (Connection con = getConnection()) {
+      String database = con.getCatalog();
+      String schema = con.getSchema();
+      String owner = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession().getRole();
+      final String targetStream = "S0";
+      final String targetTable = "T0";
+      String tableName = database + "." + schema + "." + targetTable;
+
+      Statement statement = con.createStatement();
+      statement.execute("create or replace table " + targetTable + "(C1 int)");
+      statement.execute("create or replace stream " + targetStream + " on table " + targetTable);
+
+      DatabaseMetaData metaData = con.getMetaData();
+
+      // match stream
+      ResultSet resultSet =
+          metaData.unwrap(SnowflakeDatabaseMetaData.class).getStreams(database, schema, "%");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_STREAMS);
+      Set<String> streams = new HashSet<>();
+      while (resultSet.next()) {
+        streams.add(resultSet.getString(1));
+      }
+      assertTrue(streams.contains("S0"));
+
+      // match exact stream
+      resultSet =
+          metaData
+              .unwrap(SnowflakeDatabaseMetaData.class)
+              .getStreams(database, schema, targetStream);
+      resultSet.next();
+      assertEquals(targetStream, resultSet.getString(1));
+      assertEquals(database, resultSet.getString(2));
+      assertEquals(schema, resultSet.getString(3));
+      assertEquals(owner, resultSet.getString(4));
+      assertEquals("", resultSet.getString(5));
+      assertEquals(tableName, resultSet.getString(6));
+      assertEquals("Table", resultSet.getString(7));
+      assertEquals(tableName, resultSet.getString(8));
+      assertEquals("DELTA", resultSet.getString(9));
+      assertEquals("false", resultSet.getString(10));
+      assertEquals("DEFAULT", resultSet.getString(11));
+
+      con.createStatement().execute("drop table if exists " + targetTable);
+      con.createStatement().execute("drop stream if exists " + targetStream);
+      statement.close();
     }
   }
 }
