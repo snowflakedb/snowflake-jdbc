@@ -77,6 +77,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getDouble(columnIndex);
 
       case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
         return getTimestamp(columnIndex);
 
       case Types.DATE:
