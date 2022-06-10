@@ -13,7 +13,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.sql.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -854,6 +857,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
+  @Ignore
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetGcsDownscopedCredential() throws Throwable {
     Connection connection = null;
@@ -897,6 +901,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         File original = new File(sourceFilePath);
         File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
+        System.out.println(
+            "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
+        System.out.println(
+            "Unzipped file: " + unzipped.getAbsolutePath() + ", size: " + unzipped.length());
         assert (original.length() == unzipped.length());
       } finally {
         statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
