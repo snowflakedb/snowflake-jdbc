@@ -4,20 +4,10 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.QueryStatus.getStatusFromString;
-import static net.snowflake.client.core.QueryStatus.isAnError;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-import java.security.PrivateKey;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
@@ -30,6 +20,17 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+
+import java.security.PrivateKey;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
+import static net.snowflake.client.core.QueryStatus.getStatusFromString;
+import static net.snowflake.client.core.QueryStatus.isAnError;
 
 /** Snowflake session implementation */
 public class SFSession extends SFBaseSession {
@@ -53,6 +54,8 @@ public class SFSession extends SFBaseSession {
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
   protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
+
+  protected Map<String, QueryStatus> activeAsyncQueriesMap = new ConcurrentHashMap<>();
   private boolean isClosed = true;
   private String sessionToken;
   private String masterToken;
@@ -122,11 +125,11 @@ public class SFSession extends SFBaseSession {
   public boolean isSafeToClose() {
     boolean canClose = true;
     // if the set of asynchronous queries is empty, return true
-    if (this.activeAsyncQueries.isEmpty()) {
+    if (this.activeAsyncQueriesMap.isEmpty()) {
       return canClose;
     }
     // if the set is not empty, iterate through each query and check its status
-    for (String query : this.activeAsyncQueries) {
+    for (String query : this.activeAsyncQueriesMap.keySet()) {
       try {
         QueryStatus qStatus = getQueryStatus(query);
         //  if any query is still running, it is not safe to close.
@@ -138,6 +141,14 @@ public class SFSession extends SFBaseSession {
       }
     }
     return canClose;
+  }
+
+  public void updateAsyncQueryStatus(String queryID, QueryStatus status) {
+    activeAsyncQueriesMap.put(queryID, status);
+  }
+
+  public QueryStatus getAsyncQueryStatus(String queryID) {
+    return activeAsyncQueriesMap.get(queryID);
   }
 
   /**
@@ -248,6 +259,7 @@ public class SFSession extends SFBaseSession {
     if (!Strings.isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
       result.setErrorMessage(errorMessage);
     }
+    activeAsyncQueriesMap.put(queryID, result);
     return result;
   }
 

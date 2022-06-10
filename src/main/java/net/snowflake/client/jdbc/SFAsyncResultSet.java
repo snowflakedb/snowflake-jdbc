@@ -4,16 +4,17 @@
 
 package net.snowflake.client.jdbc;
 
-import java.math.BigDecimal;
-import java.sql.*;
-import java.util.List;
-import java.util.TimeZone;
-import java.util.regex.Pattern;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
+
+import java.math.BigDecimal;
+import java.sql.*;
+import java.util.List;
+import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 /** SFAsyncResultSet implementation */
 class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
@@ -113,7 +114,11 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
    */
   private void getRealResults() throws SQLException {
     if (!resultSetForNextInitialized) {
-      QueryStatus qs = this.getStatus();
+      QueryStatus qs = session.getAsyncQueryStatus(queryID);
+      if (qs == null)
+      {
+        qs = this.getStatus();
+      }
       int noDataRetry = 0;
       final int noDataMaxRetries = 30;
       final int[] retryPattern = {1, 1, 2, 3, 4, 8, 10};
@@ -149,6 +154,8 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
         }
         qs = this.getStatus();
       }
+
+      // add code
       resultSetForNext =
           extraStatement.executeQuery("select * from table(result_scan('" + this.queryID + "'))");
       resultSetForNextInitialized = true;
