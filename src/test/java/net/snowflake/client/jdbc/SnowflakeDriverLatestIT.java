@@ -857,7 +857,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @Ignore
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetGcsDownscopedCredential() throws Throwable {
     Connection connection = null;
@@ -869,7 +868,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
       statement = connection.createStatement();
 
-      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE_2);
 
       File destFolder = tmpFolder.newFolder();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
@@ -891,16 +890,16 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                 "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
 
         // Make sure that the downloaded file exists, it should be gzip compressed
-        File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
         assert (downloaded.exists());
 
         Process p =
             Runtime.getRuntime()
-                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
         p.waitFor();
 
         File original = new File(sourceFilePath);
-        File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2);
         System.out.println(
             "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
         System.out.println(
