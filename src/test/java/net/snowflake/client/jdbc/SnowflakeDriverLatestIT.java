@@ -868,11 +868,18 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
       statement = connection.createStatement();
 
-      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE_2);
-
       File destFolder = tmpFolder.newFolder();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
       String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+      File tempFile = tmpFolder.newFile("testFile.csv");
+      BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile));
+      bw.write("Creating small test file for GCP PUT/GET test");
+      bw.write(System.lineSeparator());
+      bw.write("File has multiple lines");
+      bw.write(System.lineSeparator());
+      bw.close();
+      String sourceFilePath = tempFile.getCanonicalPath();
 
       try {
         statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
@@ -890,16 +897,16 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                 "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
 
         // Make sure that the downloaded file exists, it should be gzip compressed
-        File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + "testFile.csv.gz");
         assert (downloaded.exists());
 
         Process p =
             Runtime.getRuntime()
-                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
+                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "testFile.csv.gz");
         p.waitFor();
 
         File original = new File(sourceFilePath);
-        File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2);
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + "testFile.csv");
         System.out.println(
             "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
         System.out.println(
