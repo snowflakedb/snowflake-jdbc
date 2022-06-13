@@ -907,6 +907,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         File original = new File(sourceFilePath);
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "testFile.csv");
+
         System.out.println(
             "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
         System.out.println(
