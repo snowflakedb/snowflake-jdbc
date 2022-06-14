@@ -862,7 +862,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     Connection connection = null;
     Statement statement = null;
     Properties paramProperties = new Properties();
-    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
     try {
       connection = getConnection("gcpaccount", paramProperties);
 
