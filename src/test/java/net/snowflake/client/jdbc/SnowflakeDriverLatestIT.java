@@ -857,7 +857,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Ignore
   public void testPutGetGcsDownscopedCredential() throws Throwable {
     Connection connection = null;
     Statement statement = null;
