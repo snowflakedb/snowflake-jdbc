@@ -706,6 +706,9 @@
                      <relocation>
                        <pattern>org.apache</pattern>
                        <shadedPattern>${shadeBase}.apache</shadedPattern>
+                       <excludes>
+                         <exclude>org.apache.log4j.*</exclude>
+                       </excludes>
                      </relocation>
                      <relocation>
                        <pattern>com.amazonaws</pattern>
