@@ -73,7 +73,7 @@ public class SLF4JLogger implements SFLogger {
     // use this as format example for JDK14Logger.
     if (isDebugEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.debug(SecretDetector.maskSecrets(ft.getMessage()), true);
+      this.debug(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 
@@ -100,7 +100,7 @@ public class SLF4JLogger implements SFLogger {
   public void error(String msg, Object... arguments) {
     if (isErrorEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.error(SecretDetector.maskSecrets(ft.getMessage()), true);
+      this.error(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 
@@ -127,7 +127,7 @@ public class SLF4JLogger implements SFLogger {
   public void info(String msg, Object... arguments) {
     if (isInfoEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.info(SecretDetector.maskSecrets(ft.getMessage()), true);
+      this.info(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 
@@ -154,7 +154,7 @@ public class SLF4JLogger implements SFLogger {
   public void trace(String msg, Object... arguments) {
     if (isTraceEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.trace(SecretDetector.maskSecrets(ft.getMessage()), true);
+      this.trace(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 
@@ -181,7 +181,7 @@ public class SLF4JLogger implements SFLogger {
   public void warn(String msg, Object... arguments) {
     if (isWarnEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.warn(SecretDetector.maskSecrets(ft.getMessage()), true);
+      this.warn(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 
