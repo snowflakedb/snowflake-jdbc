@@ -30,6 +30,8 @@ public class ExecTimeTelemetryData {
   private Boolean ocspEnabled = false;
   boolean sendData = true;
 
+  private String requestId;
+
   public ExecTimeTelemetryData(long queryStart, String queryFunction, String batchId) {
     this.queryStart = queryStart;
     this.queryFunction = queryFunction;
@@ -104,6 +106,8 @@ public class ExecTimeTelemetryData {
     this.retryCount++;
   }
 
+  public void setRequestId(String requestId) { this.requestId = requestId; }
+
   public void addRetryLocation(String location) {
     if (Strings.isNullOrEmpty(this.retryLocations)) {
       this.retryLocations = location;
@@ -134,6 +138,7 @@ public class ExecTimeTelemetryData {
       value.put("QueryEnd", this.queryEnd);
       value.put("BatchID", this.batchId);
       value.put("QueryID", this.queryId);
+      value.put("RequestID", this.requestId);
       value.put("QueryFunction", this.queryFunction);
       value.put("RetryCount", this.retryCount);
       value.put("RetryLocations", this.retryLocations);
