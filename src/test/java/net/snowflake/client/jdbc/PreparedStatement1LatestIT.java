@@ -262,4 +262,44 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       statement.close();
     }
   }
+
+  /**
+   * Test the CALL stmt type for stored procedures.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testCallStatement() throws SQLException {
+    try (Connection connection = getConnection()) {
+      Statement statement = connection.createStatement();
+      statement.executeQuery(
+          "ALTER SESSION SET USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS=true");
+      statement.executeQuery(
+          "create or replace procedure\n"
+              + "TEST_SP_CALL_STMT_ENABLED(in1 float, in2 variant)\n"
+              + "returns string language javascript as $$\n"
+              + "let res = snowflake.execute({sqlText: 'select ? c1, ? c2', binds:[IN1, JSON.stringify(IN2)]});\n"
+              + "res.next();\n"
+              + "return res.getColumnValueAsString(1) + ' ' + res.getColumnValueAsString(2) + ' ' + IN2;\n"
+              + "$$;");
+
+      PreparedStatement prepStatement =
+          connection.prepareStatement("call TEST_SP_CALL_STMT_ENABLED(?, to_variant(?))");
+      String variantVal = "[2,3]";
+      prepStatement.setDouble(1, 1);
+      prepStatement.setString(2, variantVal);
+
+      ResultSet rs = prepStatement.executeQuery();
+      while (rs.next()) {
+        assertEquals(1, rs.getString(1));
+        assertEquals("[2,3]", rs.getString(2));
+        assertEquals("[2,3]", rs.getString(3));
+      }
+
+      statement.executeQuery("drop procedure if exists TEST_SP_CALL_STMT_ENABLED(float, variant)");
+      rs.close();
+      prepStatement.close();
+      statement.close();
+    }
+  }
 }
