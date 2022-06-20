@@ -1323,6 +1323,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
       con.createStatement().execute("drop table if exists " + targetTable);
       con.createStatement().execute("drop stream if exists " + targetStream);
+      resultSet.close();
       statement.close();
     }
   }
