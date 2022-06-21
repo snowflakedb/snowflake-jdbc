@@ -10,6 +10,7 @@ import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -264,11 +265,13 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   }
 
   /**
-   * Test the CALL stmt type for stored procedures.
+   * Test the CALL stmt type for stored procedures. Run against test server with
+   * USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS enabled.
    *
    * @throws SQLException
    */
   @Test
+  @Ignore
   public void testCallStatement() throws SQLException {
     try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
@@ -285,15 +288,13 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
 
       PreparedStatement prepStatement =
           connection.prepareStatement("call TEST_SP_CALL_STMT_ENABLED(?, to_variant(?))");
-      String variantVal = "[2,3]";
       prepStatement.setDouble(1, 1);
-      prepStatement.setString(2, variantVal);
+      prepStatement.setString(2, "[2,3]");
 
       ResultSet rs = prepStatement.executeQuery();
+      String result = "1 \"[2,3]\" [2,3]";
       while (rs.next()) {
-        assertEquals(1, rs.getString(1));
-        assertEquals("[2,3]", rs.getString(2));
-        assertEquals("[2,3]", rs.getString(3));
+        assertEquals(result, rs.getString(1));
       }
 
       statement.executeQuery("drop procedure if exists TEST_SP_CALL_STMT_ENABLED(float, variant)");
