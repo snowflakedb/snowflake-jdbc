@@ -513,56 +513,56 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public Connection getConnection() throws SQLException {
-    logger.debug("getConnection()");
+    logger.debug("getConnection()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return connection;
   }
 
   @Override
   public int getFetchDirection() throws SQLException {
-    logger.debug("getFetchDirection()");
+    logger.debug("getFetchDirection()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return ResultSet.FETCH_FORWARD;
   }
 
   @Override
   public int getFetchSize() throws SQLException {
-    logger.debug("getFetchSize()");
+    logger.debug("getFetchSize()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return fetchSize;
   }
 
   @Override
   public ResultSet getGeneratedKeys() throws SQLException {
-    logger.debug("getGeneratedKeys()");
+    logger.debug("getGeneratedKeys()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return new SnowflakeResultSetV1.EmptyResultSet();
   }
 
   @Override
   public int getMaxFieldSize() throws SQLException {
-    logger.debug("getMaxFieldSize()");
+    logger.debug("getMaxFieldSize()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return maxFieldSize;
   }
 
   @Override
   public int getMaxRows() throws SQLException {
-    logger.debug("getMaxRows()");
+    logger.debug("getMaxRows()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return maxRows;
   }
 
   @Override
   public boolean getMoreResults() throws SQLException {
-    logger.debug("getMoreResults()");
+    logger.debug("getMoreResults()", false);
 
     return getMoreResults(Statement.CLOSE_CURRENT_RESULT);
   }
 
   @Override
   public boolean getMoreResults(int current) throws SQLException {
-    logger.debug("getMoreResults(int current)");
+    logger.debug("getMoreResults(int current)", false);
     raiseSQLExceptionIfStatementIsClosed();
 
     // clean up the current result set, if it exists
@@ -604,48 +604,48 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public int getQueryTimeout() throws SQLException {
-    logger.debug("getQueryTimeout()");
+    logger.debug("getQueryTimeout()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return this.queryTimeout;
   }
 
   @Override
   public ResultSet getResultSet() throws SQLException {
-    logger.debug("getResultSet()");
+    logger.debug("getResultSet()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return resultSet;
   }
 
   @Override
   public int getResultSetConcurrency() throws SQLException {
-    logger.debug("getResultSetConcurrency()");
+    logger.debug("getResultSetConcurrency()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return resultSetConcurrency;
   }
 
   @Override
   public int getResultSetHoldability() throws SQLException {
-    logger.debug("getResultSetHoldability()");
+    logger.debug("getResultSetHoldability()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return resultSetHoldability;
   }
 
   @Override
   public int getResultSetType() throws SQLException {
-    logger.debug("getResultSetType()");
+    logger.debug("getResultSetType()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return this.resultSetType;
   }
 
   @Override
   public int getUpdateCount() throws SQLException {
-    logger.debug("getUpdateCount()");
+    logger.debug("getUpdateCount()", false);
     return (int) getUpdateCountIfDML();
   }
 
   @Override
   public long getLargeUpdateCount() throws SQLException {
-    logger.debug("getLargeUpdateCount()");
+    logger.debug("getLargeUpdateCount()", false);
     return getUpdateCountIfDML();
   }
 
@@ -659,34 +659,34 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public SQLWarning getWarnings() throws SQLException {
-    logger.debug("getWarnings()");
+    logger.debug("getWarnings()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return sqlWarnings;
   }
 
   @Override
   public boolean isClosed() throws SQLException {
-    logger.debug("isClosed()");
+    logger.debug("isClosed()", false);
     return isClosed; // no exception
   }
 
   @Override
   public boolean isPoolable() throws SQLException {
-    logger.debug("isPoolable()");
+    logger.debug("isPoolable()", false);
     raiseSQLExceptionIfStatementIsClosed();
     return poolable;
   }
 
   @Override
   public void setCursorName(String name) throws SQLException {
-    logger.debug("setCursorName(String name)");
+    logger.debug("setCursorName(String name)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
   }
 
   @Override
   public void setEscapeProcessing(boolean enable) throws SQLException {
-    logger.debug("setEscapeProcessing(boolean enable)");
+    logger.debug("setEscapeProcessing(boolean enable)", false);
     // NOTE: We could raise an exception here, because not implemented
     // but it may break the existing applications. For now returning nothnig.
     // we should revisit.
@@ -695,7 +695,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public void setFetchDirection(int direction) throws SQLException {
-    logger.debug("setFetchDirection(int direction)");
+    logger.debug("setFetchDirection(int direction)", false);
     raiseSQLExceptionIfStatementIsClosed();
     if (direction != ResultSet.FETCH_FORWARD) {
       throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
@@ -711,14 +711,14 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public void setMaxFieldSize(int max) throws SQLException {
-    logger.debug("setMaxFieldSize(int max)");
+    logger.debug("setMaxFieldSize(int max)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
   }
 
   @Override
   public void setMaxRows(int max) throws SQLException {
-    logger.debug("setMaxRows(int max)");
+    logger.debug("setMaxRows(int max)", false);
 
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -735,7 +735,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public void setPoolable(boolean poolable) throws SQLException {
-    logger.debug("setPoolable(boolean poolable)");
+    logger.debug("setPoolable(boolean poolable)", false);
     raiseSQLExceptionIfStatementIsClosed();
 
     if (poolable) {
@@ -752,7 +752,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @throws SQLException if any SQL error occurs.
    */
   public void setParameter(String name, Object value) throws SQLException {
-    logger.debug("setParameter");
+    logger.debug("setParameter", false);
 
     try {
       if (this.sfBaseStatement != null) {
@@ -765,7 +765,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public void setQueryTimeout(int seconds) throws SQLException {
-    logger.debug("setQueryTimeout(int seconds)");
+    logger.debug("setQueryTimeout(int seconds)", false);
     raiseSQLExceptionIfStatementIsClosed();
 
     this.queryTimeout = seconds;
@@ -781,7 +781,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.debug("isWrapperFor(Class<?> iface)");
+    logger.debug("isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }
@@ -789,7 +789,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("unwrap(Class<T> iface)");
+    logger.debug("unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(
@@ -800,13 +800,13 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public void closeOnCompletion() throws SQLException {
-    logger.debug("closeOnCompletion()");
+    logger.debug("closeOnCompletion()", false);
     throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
   }
 
   @Override
   public boolean isCloseOnCompletion() throws SQLException {
-    logger.debug("isCloseOnCompletion()");
+    logger.debug("isCloseOnCompletion()", false);
     throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
   }
 
@@ -816,7 +816,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   }
 
   public void close(boolean removeClosedStatementFromConnection) throws SQLException {
-    logger.debug("close()");
+    logger.debug("close()", false);
 
     // No exception is raised even if the statement is closed.
     if (resultSet != null) {
@@ -845,7 +845,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public void cancel() throws SQLException {
-    logger.debug("cancel()");
+    logger.debug("cancel()", false);
     raiseSQLExceptionIfStatementIsClosed();
 
     try {
@@ -857,14 +857,14 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public void clearWarnings() throws SQLException {
-    logger.debug("clearWarnings()");
+    logger.debug("clearWarnings()", false);
     raiseSQLExceptionIfStatementIsClosed();
     sqlWarnings = null;
   }
 
   @Override
   public void addBatch(String sql) throws SQLException {
-    logger.debug("addBatch(String sql)");
+    logger.debug("addBatch(String sql)", false);
 
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -873,7 +873,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   @Override
   public void clearBatch() throws SQLException {
-    logger.debug("clearBatch()");
+    logger.debug("clearBatch()", false);
 
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -881,7 +881,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   }
 
   private void executeSetProperty(final String sql) {
-    logger.debug("setting property");
+    logger.debug("setting property", false);
 
     // tokenize the sql
     String[] tokens = sql.split("\\s+");
@@ -1196,7 +1196,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
-      logger.debug("isWrapperFor(Class<?> iface)");
+      logger.debug("isWrapperFor(Class<?> iface)", false);
 
       return iface.isInstance(this);
     }
@@ -1204,7 +1204,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-      logger.debug("unwrap(Class<T> iface)");
+      logger.debug("unwrap(Class<T> iface)", false);
 
       if (!iface.isInstance(this)) {
         throw new SQLException(

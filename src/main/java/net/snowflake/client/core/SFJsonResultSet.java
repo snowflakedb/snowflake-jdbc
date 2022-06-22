@@ -304,7 +304,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public int getInt(int columnIndex) throws SFException {
-    logger.debug("public int getInt(int columnIndex)");
+    logger.debug("public int getInt(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -331,7 +331,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public long getLong(int columnIndex) throws SFException {
-    logger.debug("public long getLong(int columnIndex)");
+    logger.debug("public long getLong(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -369,7 +369,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SFException {
-    logger.debug("public BigDecimal getBigDecimal(int columnIndex)");
+    logger.debug("public BigDecimal getBigDecimal(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -395,7 +395,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SFException {
-    logger.debug("public BigDecimal getBigDecimal(int columnIndex)");
+    logger.debug("public BigDecimal getBigDecimal(int columnIndex)", false);
 
     Object obj = getObjectInternal(columnIndex);
 
@@ -425,7 +425,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   }
 
   private SFTimestamp getSFTimestamp(int columnIndex) throws SFException {
-    logger.debug("public Timestamp getTimestamp(int columnIndex)");
+    logger.debug("public Timestamp getTimestamp(int columnIndex)", false);
 
     Object obj = getObjectInternal(columnIndex);
 
@@ -444,7 +444,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public Time getTime(int columnIndex) throws SFException {
-    logger.debug("public Time getTime(int columnIndex)");
+    logger.debug("public Time getTime(int columnIndex)", false);
 
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     if (Types.TIME == columnType) {
@@ -552,7 +552,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public float getFloat(int columnIndex) throws SFException {
-    logger.debug("public float getFloat(int columnIndex)");
+    logger.debug("public float getFloat(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -594,7 +594,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public double getDouble(int columnIndex) throws SFException {
-    logger.debug("public double getDouble(int columnIndex)");
+    logger.debug("public double getDouble(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -636,7 +636,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public byte[] getBytes(int columnIndex) throws SFException {
-    logger.debug("public byte[] getBytes(int columnIndex)");
+    logger.debug("public byte[] getBytes(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -694,7 +694,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public Date getDate(int columnIndex, TimeZone tz) throws SFException {
-    logger.debug("public Date getDate(int columnIndex)");
+    logger.debug("public Date getDate(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
