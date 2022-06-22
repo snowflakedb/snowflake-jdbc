@@ -195,7 +195,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   @Override
   public void close() throws SQLException {
-    logger.debug(" public void close()");
+    logger.debug(" public void close()", false);
 
     if (isClosed) {
       // No exception is raised even if the connection is closed.
@@ -360,7 +360,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     logger.debug("void setReadOnly(boolean readOnly)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     if (readOnly) {
-      logger.debug("setReadOnly not supported.");
+      logger.debug("setReadOnly not supported.", false);
     }
   }
 

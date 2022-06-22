@@ -260,7 +260,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         try {
           currentChunkIterator.getChunk().freeData();
           if (chunkCount > 0) {
-            logger.debug("End of chunks");
+            logger.debug("End of chunks", false);
             DownloaderMetrics metrics = chunkDownloader.terminate();
             logChunkDownloaderMetrics(metrics);
           }
