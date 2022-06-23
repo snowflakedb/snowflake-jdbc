@@ -299,7 +299,7 @@ public enum DBMetadataResultSetMetadata {
 
   GET_STREAMS(
       Arrays.asList(
-          "NAME",
+          "STREAM_NAME",
           "DATABASE_NAME",
           "SCHEMA_NAME",
           "OWNER",
