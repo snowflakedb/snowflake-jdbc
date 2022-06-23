@@ -24,7 +24,6 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SessionUtil;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Assert;
@@ -167,18 +166,21 @@ public class ConnectionIT extends BaseJDBCTest {
   @Test
   public void test() throws Exception {
     try (Connection connection = getConnection()) {
-      for (int i = 0; i < 10; i ++) {
+      for (int i = 0; i < 10; i++) {
         int resultSize = 1000000 + i;
         Statement statement = connection.createStatement();
         statement.execute("ALTER SESSION SET CLIENT_MEMORY_LIMIT=10");
-        ResultSet resultSet = statement.executeQuery("SELECT * FROM \"SNOWFLAKE_SAMPLE_DATA\".\"TPCDS_SF100TCL\".\"CUSTOMER_ADDRESS\" limit " + resultSize);
+        ResultSet resultSet =
+            statement.executeQuery(
+                "SELECT * FROM \"SNOWFLAKE_SAMPLE_DATA\".\"TPCDS_SF100TCL\".\"CUSTOMER_ADDRESS\" limit "
+                    + resultSize);
 
         int size = 0;
         while (resultSet.next()) {
           size++;
         }
         System.out.println("Total records: " + size);
-        assert(size == resultSize);
+        assert (size == resultSize);
       }
     }
   }

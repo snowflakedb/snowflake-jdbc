@@ -378,13 +378,17 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             nextChunk.getScrubbedUrl());
 
         // SNOW-615824 Imagine this scenario to understand the root cause of this issue:
-        // When consuming chunk N, we try to prefetch chunk N+1. The prefetching failed due to hitting
+        // When consuming chunk N, we try to prefetch chunk N+1. The prefetching failed due to
+        // hitting
         // memoryLimit. We will mark the chunk N+1 as FAILED.
         // After we are done with chunk N, we try to consume chunk N+1.
         // In getNextChunkToConsume, we first call startNextDownloaders then call waitForChunkReady.
-        // startNextDownloaders sees that the next chunk to download is N+1. With enough memory at this time,
-        // it will try to download the chunk. waitForChunkReady sees that chunk N+1 is marked as FAILED, it
-        // will also try to download the chunk because it thinks that no prefetching will download the chunk.
+        // startNextDownloaders sees that the next chunk to download is N+1. With enough memory at
+        // this time,
+        // it will try to download the chunk. waitForChunkReady sees that chunk N+1 is marked as
+        // FAILED, it
+        // will also try to download the chunk because it thinks that no prefetching will download
+        // the chunk.
         // Thus we will submit two download jobs, causing chunk N+1 appears to be lost.
         // Therefore the fix is to only prefetch chunks that are marked as NOT_STARTED here.
         nextChunk.getLock().lock();
