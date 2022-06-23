@@ -350,7 +350,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         currentMemoryUsage.addAndGet(-neededChunkMemory);
         nextChunk.getLock().lock();
         try {
-          nextChunk.setDownloadState(DownloadState.FAILURE);
+          if (nextChunk.getDownloadState() == DownloadState.NOT_STARTED) {
+            nextChunk.setDownloadState(DownloadState.FAILURE);
+          }
         } finally {
           nextChunk.getLock().unlock();
         }
@@ -376,6 +378,25 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             "submit chunk #{} for downloading, url={}",
             this.nextChunkToDownload,
             nextChunk.getScrubbedUrl());
+
+        // SNOW-615824 Imagine this scenario to understand the root cause of this issue:
+        // When consuming chunk N, we try to prefetch chunk N+1. The prefetching failed due to hitting
+        // memoryLimit. We will mark the chunk N+1 as FAILED.
+        // After we are done with chunk N, we try to consume chunk N+1.
+        // In getNextChunkToConsume, we first call startNextDownloaders then call waitForChunkReady.
+        // startNextDownloaders sees that the next chunk to download is N+1. With enough memory at this time,
+        // it will try to download the chunk. waitForChunkReady sees that chunk N+1 is marked as FAILED, it
+        // will also try to download the chunk because it thinks that no prefetching will download the chunk.
+        // Thus we will submit two download jobs, causing chunk N+1 appears to be lost.
+        // Therefore the fix is to only prefetch chunks that are marked as NOT_STARTED here.
+        nextChunk.getLock().lock();
+        try {
+          if (nextChunk.getDownloadState() != DownloadState.NOT_STARTED) {
+            break;
+          }
+        } finally {
+          nextChunk.getLock().unlock();
+        }
 
         Future downloaderFuture =
             executor.submit(
@@ -406,7 +427,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                   + " attempt.");
           nextChunk.getLock().lock();
           try {
-            nextChunk.setDownloadState(DownloadState.FAILURE);
+            if (nextChunk.getDownloadState() == DownloadState.NOT_STARTED) {
+              nextChunk.setDownloadState(DownloadState.FAILURE);
+            }
           } finally {
             nextChunk.getLock().unlock();
           }
@@ -685,7 +708,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     authTimeout,
                     socketTimeout,
                     session));
-        downloaderFutures.put(nextChunkToDownload, downloaderFuture);
+        downloaderFutures.put(nextChunkToConsume, downloaderFuture);
         // Only when prefetch fails due to internal memory limitation, nextChunkToDownload
         // equals nextChunkToConsume. In that case we need to increment nextChunkToDownload
         if (nextChunkToDownload == nextChunkToConsume) {
