@@ -164,7 +164,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  public void test() throws Exception {
+  public void testDataCompletenessInLowMemory() throws Exception {
     try (Connection connection = getConnection()) {
       for (int i = 0; i < 10; i++) {
         int resultSize = 1000000 + i;
