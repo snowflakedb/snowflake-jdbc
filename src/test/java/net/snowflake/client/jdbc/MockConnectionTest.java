@@ -721,6 +721,11 @@ public class MockConnectionTest extends BaseJDBCTest {
     public int getHttpClientSocketTimeout() {
       return 0;
     }
+
+    @Override
+    public boolean isAsyncSession() {
+      return false;
+    }
   }
 
   private static class MockSFFileTransferAgent extends SFBaseFileTransferAgent {

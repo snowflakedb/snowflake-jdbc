@@ -1072,4 +1072,9 @@ public class SFSession extends SFBaseSession {
     info.description = description;
     return info;
   }
+
+  /** @return whether this session uses async queries */
+  public boolean isAsyncSession() {
+    return !activeAsyncQueries.isEmpty();
+  }
 }
