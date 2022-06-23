@@ -374,7 +374,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
           "Failed to get environment variable "
               + SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED
               + ". Ignored",
-          true);
+          false);
     }
     return true;
   }
@@ -994,7 +994,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       error = new CertificateException(ex);
       ocspLog =
           telemetryData.generateTelemetry(SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR, error);
-      LOGGER.error(ocspLog, true);
+      LOGGER.error(ocspLog, false);
       throw error;
     }
 
@@ -1004,21 +1004,21 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         error =
             new CertificateException(
                 "Certificate Revocation check failed. Could not retrieve OCSP Response.", cause);
-        LOGGER.debug(cause.getMessage(), true);
+        LOGGER.debug(cause.getMessage(), false);
       } else {
         error =
             new CertificateException(
                 "Certificate Revocation check failed. Could not retrieve OCSP Response.");
-        LOGGER.debug(error.getMessage(), true);
+        LOGGER.debug(error.getMessage(), false);
       }
 
       ocspLog = telemetryData.generateTelemetry(SF_OCSP_EVENT_TYPE_VALIDATION_ERROR, error);
       if (isOCSPFailOpen()) {
         // Log includes fail-open warning.
-        LOGGER.error(generateFailOpenLog(ocspLog), true);
+        LOGGER.error(generateFailOpenLog(ocspLog), false);
       } else {
         // still not success, raise an error.
-        LOGGER.debug(ocspLog, true);
+        LOGGER.debug(ocspLog, false);
         throw error;
       }
     }
@@ -1071,7 +1071,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       for (SFPair<Certificate, Certificate> pairIssuerSubject : pairIssuerSubjectList) {
         OCSPReq req = createRequest(pairIssuerSubject);
         CertificateID certificateId = req.getRequestList()[0].getCertID();
-        LOGGER.debug(CertificateIDToString(certificateId), true);
+        LOGGER.debug(CertificateIDToString(certificateId), false);
         CertID cid = certificateId.toASN1Primitive();
         OcspResponseCacheKey k =
             new OcspResponseCacheKey(
@@ -1851,7 +1851,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             String.format(
                 "Failed to instantiate the algorithm: %s. err=%s",
                 ALGORITHM_SHA1_NAME, ex.getMessage());
-        LOGGER.error(errMsg, true);
+        LOGGER.error(errMsg, false);
         throw new RuntimeException(errMsg);
       }
     }
