@@ -350,9 +350,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         currentMemoryUsage.addAndGet(-neededChunkMemory);
         nextChunk.getLock().lock();
         try {
-          if (nextChunk.getDownloadState() == DownloadState.NOT_STARTED) {
-            nextChunk.setDownloadState(DownloadState.FAILURE);
-          }
+          nextChunk.setDownloadState(DownloadState.FAILURE);
         } finally {
           nextChunk.getLock().unlock();
         }
@@ -427,9 +425,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                   + " attempt.");
           nextChunk.getLock().lock();
           try {
-            if (nextChunk.getDownloadState() == DownloadState.NOT_STARTED) {
-              nextChunk.setDownloadState(DownloadState.FAILURE);
-            }
+            nextChunk.setDownloadState(DownloadState.FAILURE);
           } finally {
             nextChunk.getLock().unlock();
           }
