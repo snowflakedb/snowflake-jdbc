@@ -1,3 +1,9 @@
+**JDBC Driver 3.13.20**
+
+- \|| Implemented fast fail functionality for 404 errors returned from Amazon S3
+- \Upgraded the following dependencies: arrow, tika-core 
+- \Upgraded the following Google library versions: google-auth-library, google-cloud-storage, google api client, google http client
+
 **JDBC Driver 3.13.19**
 
 - \| | Updated the isValid() function to send a heartbeat call instead of a SELECT 1 to validate the session connection.
