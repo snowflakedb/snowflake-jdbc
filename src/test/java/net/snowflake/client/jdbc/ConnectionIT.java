@@ -164,6 +164,28 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
+  public void testDataCompletenessInLowMemory() throws Exception {
+    try (Connection connection = getConnection()) {
+      for (int i = 0; i < 10; i++) {
+        int resultSize = 1000000 + i;
+        Statement statement = connection.createStatement();
+        statement.execute("ALTER SESSION SET CLIENT_MEMORY_LIMIT=10");
+        ResultSet resultSet =
+            statement.executeQuery(
+                "SELECT * FROM \"SNOWFLAKE_SAMPLE_DATA\".\"TPCDS_SF100TCL\".\"CUSTOMER_ADDRESS\" limit "
+                    + resultSize);
+
+        int size = 0;
+        while (resultSet.next()) {
+          size++;
+        }
+        System.out.println("Total records: " + size);
+        assert (size == resultSize);
+      }
+    }
+  }
+
+  @Test
   @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testConnectionGetAndSetDBAndSchema() throws SQLException {
     Connection con = getConnection();
