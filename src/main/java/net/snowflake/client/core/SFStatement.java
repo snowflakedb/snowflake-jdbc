@@ -412,7 +412,8 @@ public class SFStatement extends SFBaseStatement {
           .setQuerySubmissionTime(System.currentTimeMillis())
           .setServiceName(session.getServiceName())
           .setOCSPMode(session.getOCSPMode())
-          .setHttpClientSettingsKey(session.getHttpClientKey());
+          .setHttpClientSettingsKey(session.getHttpClientKey())
+          .setQueryContext(session.isAsyncSession() ? null : session.getQueryContext());
 
       if (bindStagePath != null) {
         stmtInput.setBindValues(null).setBindStage(bindStagePath);

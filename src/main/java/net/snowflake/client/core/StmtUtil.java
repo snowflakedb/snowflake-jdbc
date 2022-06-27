@@ -49,6 +49,8 @@ public class StmtUtil {
 
   private static final String SF_QUERY_COMBINE_DESCRIBE_EXECUTE = "combinedDescribe";
 
+  private static final String SF_QUERY_CONTEXT = "queryContext";
+
   private static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
 
   private static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
@@ -100,6 +102,8 @@ public class StmtUtil {
     OCSPMode ocspMode;
 
     HttpClientSettingsKey httpClientSettingsKey;
+
+    String queryContext;
 
     StmtInput() {}
 
@@ -222,6 +226,11 @@ public class StmtUtil {
       this.asyncExec = async;
       return this;
     }
+
+    public StmtInput setQueryContext(String queryContext) {
+      this.queryContext = queryContext;
+      return this;
+    }
   }
 
   /** Output for running a statement on server */
@@ -282,6 +291,10 @@ public class StmtUtil {
 
         if (stmtInput.combineDescribe) {
           uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
+        }
+
+        if (stmtInput.queryContext != null) {
+          uriBuilder.addParameter(SF_QUERY_CONTEXT, stmtInput.queryContext);
         }
 
         httpRequest = new HttpPost(uriBuilder.build());

@@ -114,6 +114,9 @@ public abstract class SFBaseSession {
   // name of temporary stage to upload array binds to; null if none has been created yet
   private String arrayBindStage = null;
 
+  // Query context for current session
+  private String queryContext;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -788,4 +791,14 @@ public abstract class SFBaseSession {
   public abstract int getHttpClientConnectionTimeout();
 
   public abstract int getHttpClientSocketTimeout();
+
+  public abstract boolean isAsyncSession();
+
+  public String getQueryContext() {
+    return queryContext;
+  }
+
+  public void setQueryContext(String queryContext) {
+    this.queryContext = queryContext;
+  }
 }

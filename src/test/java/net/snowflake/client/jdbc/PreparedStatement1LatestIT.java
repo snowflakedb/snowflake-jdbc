@@ -10,6 +10,7 @@ import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -259,6 +260,46 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       prepSt.executeBatch(); // should not throw a parsing error.
       statement.execute("drop table if exists testStageBindTypes");
       statement.execute("alter session unset TIMESTAMP_INPUT_FORMAT");
+      statement.close();
+    }
+  }
+
+  /**
+   * Test the CALL stmt type for stored procedures. Run against test server with
+   * USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS enabled.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void testCallStatement() throws SQLException {
+    try (Connection connection = getConnection()) {
+      Statement statement = connection.createStatement();
+      statement.executeQuery(
+          "ALTER SESSION SET USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS=true");
+      statement.executeQuery(
+          "create or replace procedure\n"
+              + "TEST_SP_CALL_STMT_ENABLED(in1 float, in2 variant)\n"
+              + "returns string language javascript as $$\n"
+              + "let res = snowflake.execute({sqlText: 'select ? c1, ? c2', binds:[IN1, JSON.stringify(IN2)]});\n"
+              + "res.next();\n"
+              + "return res.getColumnValueAsString(1) + ' ' + res.getColumnValueAsString(2) + ' ' + IN2;\n"
+              + "$$;");
+
+      PreparedStatement prepStatement =
+          connection.prepareStatement("call TEST_SP_CALL_STMT_ENABLED(?, to_variant(?))");
+      prepStatement.setDouble(1, 1);
+      prepStatement.setString(2, "[2,3]");
+
+      ResultSet rs = prepStatement.executeQuery();
+      String result = "1 \"[2,3]\" [2,3]";
+      while (rs.next()) {
+        assertEquals(result, rs.getString(1));
+      }
+
+      statement.executeQuery("drop procedure if exists TEST_SP_CALL_STMT_ENABLED(float, variant)");
+      rs.close();
+      prepStatement.close();
       statement.close();
     }
   }
