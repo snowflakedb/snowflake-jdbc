@@ -127,8 +127,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final int MAX_RETRY_JITTER = 1000; // milliseconds
 
   // Only controls the max retry number when prefetch runs out of memory
-  // Default value is MAX_NUM_OF_RETRY, which is 10
-  private int prefetchMaxRetry = MAX_NUM_OF_RETRY;
+  // Will wait a while then retry to see if we can allocate the required memory
+  // Default value is 1
+  private int prefetchMaxRetry = 1;
 
   private static Throwable injectedDownloaderException = null; // for testing purpose
 
