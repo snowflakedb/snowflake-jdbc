@@ -1369,6 +1369,12 @@ public class SessionUtil {
       } else if (BOOLEAN_PARAMS.contains(paramName.toUpperCase())) {
         parameters.put(paramName, child.path("value").asBoolean());
       } else {
+        try {
+          // Value should only be boolean, int or string so we don't expect exceptions here.
+          parameters.put(paramName, mapper.treeToValue(child.path("value"), Object.class));
+        } catch (Exception e) {
+          logger.debug("Unknown Common Parameter Failed to Parse: {} -> {}. Exception: {}", paramName, child.path("value"), e.getMessage());
+        }
         logger.debug("Unknown Common Parameter: {}", paramName);
       }
 
