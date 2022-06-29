@@ -1373,7 +1373,11 @@ public class SessionUtil {
           // Value should only be boolean, int or string so we don't expect exceptions here.
           parameters.put(paramName, mapper.treeToValue(child.path("value"), Object.class));
         } catch (Exception e) {
-          logger.debug("Unknown Common Parameter Failed to Parse: {} -> {}. Exception: {}", paramName, child.path("value"), e.getMessage());
+          logger.debug(
+              "Unknown Common Parameter Failed to Parse: {} -> {}. Exception: {}",
+              paramName,
+              child.path("value"),
+              e.getMessage());
         }
         logger.debug("Unknown Common Parameter: {}", paramName);
       }
