@@ -115,6 +115,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   @Override
   public void freeData() {
     batchOfVectors.forEach(list -> list.forEach(ValueVector::close));
+    this.batchOfVectors.clear();
     if (firstResultChunkSortedIndices != null) {
       firstResultChunkSortedIndices.close();
     }
