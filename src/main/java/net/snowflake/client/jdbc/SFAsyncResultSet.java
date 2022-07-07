@@ -76,7 +76,8 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     }
   }
 
-  public SFAsyncResultSet(String queryID) throws SQLException {
+  public SFAsyncResultSet(String queryID, Statement statement) throws SQLException {
+    super(statement);
     this.sfBaseResultSet = null;
     queryID.trim();
     if (!Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID)) {
