@@ -14,7 +14,7 @@ import org.junit.experimental.categories.Category;
 
 /** Test AsyncResultSet */
 @Category(TestCategoryResultSet.class)
-public class ResultSetAsyncITLatest extends BaseJDBCTest {
+public class ResultSetAsyncLatestIT extends BaseJDBCTest {
   @Test
   public void testAsyncResultSet() throws SQLException {
     String queryID;
