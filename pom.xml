@@ -43,8 +43,7 @@
     <tika.version>1.25</tika.version>
     <jackson.version>2.13.2</jackson.version>
     <jacksondatabind.version>2.13.2.2</jacksondatabind.version>
-    <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
-    <httpclient.version>4.5.11</httpclient.version>
+    <httpclient.version>5.1.3</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <awssdk.version>1.11.394</awssdk.version>
@@ -135,8 +134,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
+      <groupId>org.apache.httpcomponents.client5</groupId>
+      <artifactId>httpclient5</artifactId>
       <version>${httpclient.version}</version>
       <type>jar</type>
       <exclusions>
