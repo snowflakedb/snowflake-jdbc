@@ -142,6 +142,7 @@ public class RestRequest {
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
         if (builder.getPathSegments().contains("query-request")) {
+        //if (false) {
           builder.setParameter("target", "htap_simulation");
         }
         if (retryCount > 0) {
