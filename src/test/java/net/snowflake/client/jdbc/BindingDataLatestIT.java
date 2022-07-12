@@ -11,6 +11,8 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,8 +53,10 @@ public class BindingDataLatestIT extends AbstractDriverIT {
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithNTZType() throws SQLException {
     try (Connection connection = getConnection()) {
+      TimeZone origTz = TimeZone.getDefault();
       Statement statement = connection.createStatement();
       statement.execute(
           "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
@@ -66,14 +70,14 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       // insert using stage binding
       PreparedStatement prepStatement =
           connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
-      for (int i = 1; i <= 60000; i++) {
-        prepStatement.setInt(1, 1);
-        prepStatement.setTimestamp(2, currT);
-        prepStatement.setTimestamp(3, currT);
-        prepStatement.setTimestamp(4, currT);
-        prepStatement.addBatch();
-      }
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+      prepStatement.setInt(1, 1);
+      prepStatement.setTimestamp(2, currT);
+      prepStatement.setTimestamp(3, currT);
+      prepStatement.setTimestamp(4, currT);
+      prepStatement.addBatch();
       prepStatement.executeBatch();
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
 
       // insert using regular binging
       prepStatement = connection.prepareStatement("insert into regularinsert values (?,?,?,?)");
@@ -92,13 +96,14 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       rs1.next();
       rs2.next();
 
-      assertEquals(rs1.getInt(1), rs1.getInt(1));
+      assertEquals(rs1.getInt(1), rs2.getInt(1));
       assertEquals(rs1.getString(2), rs2.getString(2));
       assertEquals(rs1.getString(3), rs2.getString(3));
       assertEquals(rs1.getString(4), rs2.getString(4));
 
       statement.execute("drop table if exists stageinsert");
       statement.execute("drop table if exists regularinsert");
+      TimeZone.setDefault(origTz);
       statement.close();
       prepStatement.close();
     }
@@ -110,8 +115,10 @@ public class BindingDataLatestIT extends AbstractDriverIT {
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithLTZType() throws SQLException {
     try (Connection connection = getConnection()) {
+      TimeZone origTz = TimeZone.getDefault();
       Statement statement = connection.createStatement();
       statement.execute(
           "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
@@ -125,14 +132,14 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       // insert using stage binding
       PreparedStatement prepStatement =
           connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
-      for (int i = 1; i <= 60000; i++) {
-        prepStatement.setInt(1, 1);
-        prepStatement.setTimestamp(2, currT);
-        prepStatement.setTimestamp(3, currT);
-        prepStatement.setTimestamp(4, currT);
-        prepStatement.addBatch();
-      }
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+      prepStatement.setInt(1, 1);
+      prepStatement.setTimestamp(2, currT);
+      prepStatement.setTimestamp(3, currT);
+      prepStatement.setTimestamp(4, currT);
+      prepStatement.addBatch();
       prepStatement.executeBatch();
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
 
       // insert using regular binging
       prepStatement = connection.prepareStatement("insert into regularinsert values (?,?,?,?)");
@@ -151,13 +158,14 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       rs1.next();
       rs2.next();
 
-      assertEquals(rs1.getInt(1), rs1.getInt(1));
+      assertEquals(rs1.getInt(1), rs2.getInt(1));
       assertEquals(rs1.getString(2), rs2.getString(2));
       assertEquals(rs1.getString(3), rs2.getString(3));
       assertEquals(rs1.getString(4), rs2.getString(4));
 
       statement.execute("drop table if exists stageinsert");
       statement.execute("drop table if exists regularinsert");
+      TimeZone.setDefault(origTz);
       statement.close();
       prepStatement.close();
     }
