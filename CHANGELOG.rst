@@ -6,7 +6,6 @@
 - \| | Update prefetch memory max retry number
 - \| | Supporting parsing otherParameters in JDBC
 - \| | Add query context support
-- \
 
 **JDBC Driver 3.13.20**
 
