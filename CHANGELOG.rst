@@ -1,3 +1,13 @@
+**JDBC Driver 3.13.21**
+
+- \| | Fix memory leak with statement object in SnowflakeConnectionV1::createResultSet
+- \| | Fix memory leak with arrow result sets
+- \| | Fix JDBC chunk downloader missing data issue
+- \| | Update prefetch memory max retry number
+- \| | Supporting parsing otherParameters in JDBC
+- \| | Add query context support
+- \
+
 **JDBC Driver 3.13.20**
 
 - \|| Implemented fast fail functionality for 404 errors returned from Amazon S3
