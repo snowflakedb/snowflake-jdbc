@@ -35,10 +35,6 @@ public class SnowflakeTimestampWithTimezone extends Timestamp {
     this(ts.getTime(), ts.getNanos(), TimeZone.getTimeZone("UTC"));
   }
 
-  public SnowflakeTimestampWithTimezone(int nanoseconds, Timestamp ts, TimeZone timezone) {
-    this(ts.getTime(), nanoseconds, timezone);
-  }
-
   /**
    * Gets the timezone.
    *

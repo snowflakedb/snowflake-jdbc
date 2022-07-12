@@ -51,6 +51,7 @@ public class BindUploader implements Closeable {
   private final DateFormat dateFormat;
   private final SimpleDateFormat timeFormat;
   private final String createStageSQL;
+  private Calendar cal;
 
   static class ColumnTypeDataPair {
     public String type;
@@ -80,15 +81,15 @@ public class BindUploader implements Closeable {
             + " field_optionally_enclosed_by='\"'"
             + ")";
 
-    Calendar calendarUTC = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-    calendarUTC.clear();
+    cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    cal.clear();
 
     this.timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
-    this.timestampFormat.setCalendar(calendarUTC);
+    this.timestampFormat.setCalendar(cal);
     this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    this.dateFormat.setCalendar(calendarUTC);
+    this.dateFormat.setCalendar(cal);
     this.timeFormat = new SimpleDateFormat("HH:mm:ss.");
-    this.timeFormat.setCalendar(calendarUTC);
+    this.timeFormat.setCalendar(cal);
   }
 
   private synchronized String synchronizedDateFormat(String o) {
@@ -151,14 +152,16 @@ public class BindUploader implements Closeable {
     Timestamp v1 = new Timestamp(sec * 1000);
     // For timestamp_ntz, use UTC timezone. For timestamp_ltz, use the local timezone to minimise
     // the gap.
-    SnowflakeTimestampWithTimezone ts =
-        ("TIMESTAMP_NTZ".equals(type))
-            ? new SnowflakeTimestampWithTimezone(nano, v1, TimeZone.getTimeZone("UTC"))
-            : new SnowflakeTimestampWithTimezone(nano, v1, TimeZone.getDefault());
+    if ("TIMESTAMP_LTZ".equals(type)) {
+      TimeZone tz = TimeZone.getDefault();
+      cal.setTimeZone(tz);
+      cal.clear();
+      timestampFormat.setCalendar(cal);
+    }
 
     ZoneOffset offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.now());
 
-    return ts + String.format("%09d", nano) + " " + offsetId;
+    return timestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
   }
 
   /**
