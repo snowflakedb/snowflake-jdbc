@@ -241,12 +241,17 @@ public class SFSession extends SFBaseSession {
     else if (isAnError(result)) {
       result.setErrorCode(ErrorCode.INTERNAL_ERROR.getMessageCode());
       result.setErrorMessage("no_error_code_from_server");
+    } else if (!isAnError(result)) {
+      result.setErrorCode(0);
+      result.setErrorMessage("No error reported");
     }
     // if an error message has been provided, set appropriate error message.
     // This should override the default error message displayed when there is
     // an error with no code.
     if (!Strings.isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
       result.setErrorMessage(errorMessage);
+    } else {
+      result.setErrorMessage("No error reported");
     }
     return result;
   }

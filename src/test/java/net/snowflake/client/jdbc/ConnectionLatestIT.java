@@ -271,6 +271,36 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     con.close();
   }
 
+  /**
+   * Tests that error message and error code are reset after an error
+   *
+   * @throws SQLException
+   * @throws InterruptedException
+   */
+  @Test
+  public void testQueryStatusErrorMessageAndErrorCode() throws SQLException, InterruptedException {
+    // open connection and run asynchronous query
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("create or replace table testTable(colA string, colB boolean)");
+    statement.execute("insert into testTable values ('test', true)");
+    ResultSet rs1 =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from testTable");
+    QueryStatus status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+    // Set the error message and error code so we can confirm they are reset when getStatus() is
+    // called.
+    status.setErrorMessage(QueryStatus.FAILED_WITH_ERROR.toString());
+    status.setErrorCode(2003);
+    status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+    // Assert status of query is a success
+    assertEquals(QueryStatus.SUCCESS, status);
+    assertEquals("No error reported", status.getErrorMessage());
+    assertEquals(0, status.getErrorCode());
+    statement.execute("drop table if exists testTable");
+    statement.close();
+    con.close();
+  }
+
   @Test
   public void testPreparedStatementAsyncQuery() throws SQLException {
     Connection con = getConnection();
