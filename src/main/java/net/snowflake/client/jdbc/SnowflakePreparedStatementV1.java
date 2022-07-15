@@ -14,6 +14,7 @@ import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -785,22 +786,51 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public int[] executeBatch() throws SQLException {
-    logger.debug("executeBatch()");
+    logger.debug("executeBatch()", false);
+    return executeBatchInternal(false).intArr;
+  }
+
+  @Override
+  public long[] executeLargeBatch() throws SQLException {
+    logger.debug("executeLargeBatch()", false);
+    return executeBatchInternal(true).longArr;
+  }
+
+  @Override
+  VariableTypeArray executeBatchInternal(boolean isLong) throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
 
     describeSqlIfNotTried();
+
     if (this.statementMetaData.getStatementType().isGenerateResultSet()) {
       throw new SnowflakeSQLException(
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 
-    int[] updateCounts = null;
+    VariableTypeArray updateCounts;
+    if (isLong) {
+      long[] arr = new long[batch.size()];
+      updateCounts = new VariableTypeArray(null, arr);
+    } else {
+      int size = batch.size();
+      int[] arr = new int[size];
+      updateCounts = new VariableTypeArray(arr, null);
+    }
+
     try {
       if (this.statementMetaData.isArrayBindSupported()) {
         if (batchSize <= 0) {
-          logger.debug(
-              "executeBatch() using array bind with no batch data. Return int[0] directly");
-          return new int[0];
+          if (isLong) {
+            logger.debug(
+                "executeLargeBatch() using array bind with no batch data. Return long[0] directly",
+                false);
+            return new VariableTypeArray(null, new long[0]);
+          } else {
+            logger.debug(
+                "executeBatch() using array bind with no batch data. Return int[0] directly",
+                false);
+            return new VariableTypeArray(new int[0], null);
+          }
         }
 
         int updateCount = (int) executeUpdateInternal(this.sql, batchParameterBindings, false);
@@ -808,13 +838,27 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         // when update count is the same as the number of bindings in the batch,
         // expand the update count into an array (SNOW-14034)
         if (updateCount == batchSize) {
-          updateCounts = new int[updateCount];
-          for (int idx = 0; idx < updateCount; idx++) updateCounts[idx] = 1;
+          if (isLong) {
+            updateCounts = new VariableTypeArray(null, new long[updateCount]);
+            for (int idx = 0; idx < updateCount; idx++) updateCounts.longArr[idx] = 1;
+          } else {
+            updateCounts = new VariableTypeArray(new int[updateCount], null);
+            for (int idx = 0; idx < updateCount; idx++) updateCounts.intArr[idx] = 1;
+          }
         } else {
-          updateCounts = new int[] {updateCount};
+          if (isLong) {
+            updateCounts.longArr = new long[] {updateCount};
+          } else {
+            updateCounts.intArr = new int[] {updateCount};
+          }
         }
       } else {
-        updateCounts = executeBatchInternal(false).intArr;
+        if (isLong) {
+          updateCounts.longArr = executeBatchInternal(false).longArr;
+
+        } else {
+          updateCounts.intArr = executeBatchInternal(false).intArr;
+        }
       }
     } finally {
       this.clearBatch();
