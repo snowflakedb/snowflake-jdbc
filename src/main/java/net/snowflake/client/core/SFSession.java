@@ -47,7 +47,7 @@ public class SFSession extends SFBaseSession {
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final int MAX_SESSION_PARAMETERS = 1000;
-  private static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
+  public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
   private final AtomicInteger sequenceId = new AtomicInteger(0);
   private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
   // list of active asynchronous queries. Used to see if session should be closed when connection
