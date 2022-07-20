@@ -557,6 +557,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     logger.debug("Starting upload");
     uploadWithPresignedUrl(
         networkTimeoutInMilli,
+        0, // auth timeout
+        SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT, // socket timeout
         meta.getContentEncoding(),
         meta.getUserMetadata(),
         uploadStreamInfo.left,
@@ -623,6 +625,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       logger.debug("Starting upload", false);
       uploadWithPresignedUrl(
           session.getNetworkTimeoutInMilli(),
+          session.getAuthTimeout(),
+          session.getHttpClientSocketTimeout(),
           meta.getContentEncoding(),
           meta.getUserMetadata(),
           uploadStreamInfo.left,
@@ -706,6 +710,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    */
   private void uploadWithPresignedUrl(
       int networkTimeoutInMilli,
+      int authTimeout,
+      int httpClientSocketTimeout,
       String contentEncoding,
       Map<String, String> metadata,
       InputStream content,
@@ -743,8 +749,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               httpClient,
               httpRequest,
               networkTimeoutInMilli / 1000, // retry timeout
-              session.getAuthTimeout(),
-              session.getHttpClientSocketTimeout(),
+              authTimeout, // auth timeout
+              httpClientSocketTimeout, // socket timeout in ms
               0,
               0, // no socketime injection
               null, // no canceling
