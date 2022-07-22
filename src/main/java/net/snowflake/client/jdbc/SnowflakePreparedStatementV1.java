@@ -787,17 +787,16 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public int[] executeBatch() throws SQLException {
     logger.debug("executeBatch()", false);
-    return executeBatchInternal(false).intArr;
+    return executeBatchInternalWithArrayBind(false).intArr;
   }
 
   @Override
   public long[] executeLargeBatch() throws SQLException {
     logger.debug("executeLargeBatch()", false);
-    return executeBatchInternal(true).longArr;
+    return executeBatchInternalWithArrayBind(true).longArr;
   }
 
-  @Override
-  VariableTypeArray executeBatchInternal(boolean isLong) throws SQLException {
+  VariableTypeArray executeBatchInternalWithArrayBind(boolean isLong) throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
 
     describeSqlIfNotTried();
@@ -853,6 +852,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           }
         }
       } else {
+        // Array binding is not supported
         if (isLong) {
           updateCounts.longArr = executeBatchInternal(false).longArr;
 
