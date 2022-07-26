@@ -2962,8 +2962,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   @Override
   public int getSQLStateType() throws SQLException {
     logger.debug("public int getSQLStateType()", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    return sqlStateSQL;
   }
 
   @Override
