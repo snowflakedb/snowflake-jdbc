@@ -665,9 +665,6 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void close() {}
 
     @Override
-    public void raiseError(Throwable exc, String jobId, String requestId) {}
-
-    @Override
     public Telemetry getTelemetryClient() {
       return new Telemetry() {
         @Override

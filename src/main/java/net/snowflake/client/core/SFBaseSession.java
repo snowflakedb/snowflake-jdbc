@@ -745,15 +745,6 @@ public abstract class SFBaseSession {
   public abstract void close() throws SFException, SnowflakeSQLException;
 
   /**
-   * Raise an error within the current session. By default, this may log an incident with Snowflake.
-   *
-   * @param exc The throwable exception
-   * @param jobId jobId that failed
-   * @param requestId requestId that failed
-   */
-  public abstract void raiseError(Throwable exc, String jobId, String requestId);
-
-  /**
    * Returns the telemetry client, if supported, by this session. If not, should return a
    * NoOpTelemetryClient.
    */

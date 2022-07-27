@@ -29,7 +29,6 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.zip.GZIPOutputStream;
-import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.joda.time.DateTime;
@@ -82,34 +81,6 @@ public class EventHandler extends Handler {
   // Default values
   private static final int DEFAULT_MAX_DUMP_FILES = 100;
   private static final int DEFAULT_MAX_DUMPDIR_SIZE_MB = 128;
-
-  void triggerIncident(Incident incident) {
-    logger.debug("New incident V2 triggered, flushing event buffer", false);
-
-    if (SnowflakeDriver.isDisableIncidents()) {
-      logger.debug("Incidents disabled by Snowflake, creation failed", false);
-      return;
-    }
-
-    // Do we need to throttle based on the signature to this incident?
-    if (needsToThrottle(incident.signature)) {
-      logger.debug("Incident throttled, not reported", false);
-      return;
-    }
-
-    // Push the incident event and flush the event buffer.
-    pushEvent(incident, true);
-
-    if (systemGetProperty(DISABLE_DUMPS_PROP) == null) {
-      logger.debug("Dumping log buffer to local disk", false);
-
-      // Dump the buffered log contents to disk.
-      this.dumpLogBuffer(incident.uuid);
-
-      // Dump thread state
-      IncidentUtil.dumpVmMetrics(incident.uuid);
-    }
-  }
 
   /** Runnable to handle periodic flushing of the event buffer */
   private class QueueFlusher implements Runnable {

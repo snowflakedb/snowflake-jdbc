@@ -80,11 +80,4 @@ public class EventUtil {
   public static long getmaxDumpFileSizeBytes() {
     return MAX_DUMP_FILE_SIZE_BYTES;
   }
-
-  public static void triggerIncident(Incident incident) {
-    EventHandler eh = eventHandler.get();
-    if (eh != null) {
-      eh.triggerIncident(incident);
-    }
-  }
 }

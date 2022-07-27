@@ -244,13 +244,8 @@ public class SFStatement extends SFBaseStatement {
       // SNOW-22813 log exception
       logger.error("Exception creating result", ex);
 
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(
-                  ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("exception creating result", ex)),
-              null,
-              null);
+      throw new SFException(
+          ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("exception creating result", ex));
     }
     logger.debug("Done creating result set", false);
 
@@ -358,13 +353,6 @@ public class SFStatement extends SFBaseStatement {
               ex);
           TelemetryData errorLog = TelemetryUtil.buildJobData(this.requestId, ex.type.field, 1);
           this.session.getTelemetryClient().addLogToBatch(errorLog);
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(
-                  ErrorCode.NON_FATAL_ERROR,
-                  IncidentUtil.oneLiner("Failed to upload binds " + "to stage:", ex)),
-              null,
-              requestId);
         } catch (SQLException ex) {
           logger.debug(
               "Exception encountered trying to upload binds to stage with input stream. Attaching"
@@ -373,13 +361,6 @@ public class SFStatement extends SFBaseStatement {
           TelemetryData errorLog =
               TelemetryUtil.buildJobData(this.requestId, TelemetryField.FAILED_BIND_UPLOAD, 1);
           this.session.getTelemetryClient().addLogToBatch(errorLog);
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(
-                  ErrorCode.NON_FATAL_ERROR,
-                  IncidentUtil.oneLiner("Failed to upload binds " + "to stage:", ex)),
-              null,
-              requestId);
         }
       }
 
@@ -515,9 +496,7 @@ public class SFStatement extends SFBaseStatement {
       if (Boolean.TRUE
           .toString()
           .equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test1"))) {
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session, new SFException(ErrorCode.STATEMENT_CLOSED), null, this.requestId);
+        throw new SFException(ErrorCode.STATEMENT_CLOSED);
       }
 
       synchronized (this) {

@@ -440,14 +440,7 @@ public class StmtUtil {
          * But we don't want to retry too many times
          */
         if (retries >= MAX_RETRIES) {
-          throw (SFException)
-              IncidentUtil.generateIncidentV2WithException(
-                  stmtInput.serverUrl,
-                  stmtInput.sessionToken,
-                  stmtInput.httpClientSettingsKey,
-                  new SFException(ErrorCode.BAD_RESPONSE, resultAsString),
-                  null,
-                  stmtInput.requestId);
+          throw new SFException(ErrorCode.BAD_RESPONSE, resultAsString);
         } else {
           logger.debug("Will retry get result. Retry count: {}", retries);
 

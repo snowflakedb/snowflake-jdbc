@@ -90,12 +90,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBoolean(columnIndex);
 
       default:
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session,
-                new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type),
-                null,
-                null);
+        throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
     }
   }
 
@@ -163,12 +158,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         Date date = getDate(columnIndex);
 
         if (dateFormatter == null) {
-          throw (SFException)
-              IncidentUtil.generateIncidentV2WithException(
-                  session,
-                  new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter"),
-                  null,
-                  null);
+          throw new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter");
         }
 
         String dateStr = ResultUtil.getDateAsString(date, dateFormatter);
@@ -182,12 +172,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         SFTime sfTime = getSFTime(columnIndex);
 
         if (timeFormatter == null) {
-          throw (SFException)
-              IncidentUtil.generateIncidentV2WithException(
-                  session,
-                  new SFException(ErrorCode.INTERNAL_ERROR, "missing time formatter"),
-                  null,
-                  null);
+          throw new SFException(ErrorCode.INTERNAL_ERROR, "missing time formatter");
         }
 
         int scale = resultSetMetaData.getScale(columnIndex);
@@ -200,12 +185,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
       case Types.BINARY:
         if (binaryFormatter == null) {
-          throw (SFException)
-              IncidentUtil.generateIncidentV2WithException(
-                  session,
-                  new SFException(ErrorCode.INTERNAL_ERROR, "missing binary formatter"),
-                  null,
-                  null);
+          throw new SFException(ErrorCode.INTERNAL_ERROR, "missing binary formatter");
         }
 
         if (binaryFormatter == SFBinaryFormat.HEX) {
@@ -353,13 +333,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     } catch (NumberFormatException nfe) {
 
       if (Types.INTEGER == columnType || Types.SMALLINT == columnType) {
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session,
-                new SFException(
-                    ErrorCode.INTERNAL_ERROR, SnowflakeUtil.LONG_STR + ": " + obj.toString()),
-                null,
-                null);
+        throw new SFException(
+            ErrorCode.INTERNAL_ERROR, SnowflakeUtil.LONG_STR + ": " + obj.toString());
       } else {
         throw new SFException(
             ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.LONG_STR, obj);
