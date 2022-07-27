@@ -66,6 +66,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * @param sfConnectionHandler The SnowflakeConnectionImpl.
    */
   public SnowflakeConnectionV1(SFConnectionHandler sfConnectionHandler) throws SQLException {
+
     initConnectionWithImpl(sfConnectionHandler, null, null);
   }
 
@@ -76,6 +77,10 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   public SnowflakeConnectionV1(SFConnectionHandler sfConnectionHandler, String url, Properties info)
       throws SQLException {
+    Set<String> keys = info.stringPropertyNames();
+    for (String key : keys) {
+      System.out.println(key + " : " + info.getProperty(key));
+    }
     initConnectionWithImpl(sfConnectionHandler, url, info);
   }
 
@@ -96,6 +101,10 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
     initConnectionWithImpl(new DefaultSFConnectionHandler(conStr), url, info);
     appendWarnings(sfSession.getSqlWarnings());
     isClosed = false;
+    Set<String> keys = info.stringPropertyNames();
+    for (String key : keys) {
+      System.out.println(key + " : " + info.getProperty(key));
+    }
   }
 
   public SnowflakeConnectionV1(String url, Properties info, boolean fakeConnection)
@@ -108,6 +117,10 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     initConnectionWithImpl(new DefaultSFConnectionHandler(conStr, true), url, info);
     isClosed = false;
+    Set<String> keys = info.stringPropertyNames();
+    for (String key : keys) {
+      System.out.println(key + " : " + info.getProperty(key));
+    }
   }
 
   private void initConnectionWithImpl(

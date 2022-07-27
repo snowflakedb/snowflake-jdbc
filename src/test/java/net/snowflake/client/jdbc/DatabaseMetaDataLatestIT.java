@@ -135,6 +135,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
       resultSet = databaseMetaData.getImportedKeys(null, null, null);
+      resultSet.next();
+      System.out.println(resultSet.getString(4) + resultSet.getString(8));
+      resultSet = databaseMetaData.getImportedKeys(null, null, null);
       assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
       resultSet = databaseMetaData.getExportedKeys(null, null, null);
