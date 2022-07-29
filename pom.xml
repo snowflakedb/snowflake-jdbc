@@ -44,7 +44,7 @@
     <jackson.version>2.13.2</jackson.version>
     <jacksondatabind.version>2.13.2.2</jacksondatabind.version>
     <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
-    <httpclient.version>4.5.11</httpclient.version>
+    <httpclient.version>4.5.13</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <awssdk.version>1.11.394</awssdk.version>
@@ -224,7 +224,7 @@
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-archiver</artifactId>
-      <version>2.4.4</version>
+      <version>4.3.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -694,7 +694,7 @@
              <timestampFormat>yyyyMMddHHmmss</timestampFormat>
              <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
              <doCheck>false</doCheck>
-             <revisionOnScmFailure />
+             <revisionOnScmFailure/>
              <doUpdate>false</doUpdate>
              <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrememting buildNumber
                 AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrememting build number at the same time -->
@@ -903,7 +903,7 @@
                       </filter>
                    </filters>
                   <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                     </transformer>
                   </transformers>
