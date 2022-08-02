@@ -516,17 +516,17 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.queryId = rootNode.path("data").path("queryId").asText();
 
     JsonNode databaseNode = rootNode.path("data").path("finalDatabaseName");
-    resultSetSerializable.finalDatabaseName = databaseNode.isNull() ? null : databaseNode.asText();
+    resultSetSerializable.finalDatabaseName = databaseNode.isNull() ? sfSession.getDatabase() : databaseNode.asText();
 
     JsonNode schemaNode = rootNode.path("data").path("finalSchemaName");
-    resultSetSerializable.finalSchemaName = schemaNode.isNull() ? null : schemaNode.asText();
+    resultSetSerializable.finalSchemaName = schemaNode.isNull() ? sfSession.getSchema() : schemaNode.asText();
 
     JsonNode roleNode = rootNode.path("data").path("finalRoleName");
-    resultSetSerializable.finalRoleName = roleNode.isNull() ? null : roleNode.asText();
+    resultSetSerializable.finalRoleName = roleNode.isNull() ? sfSession.getRole() : roleNode.asText();
 
     JsonNode warehouseNode = rootNode.path("data").path("finalWarehouseName");
     resultSetSerializable.finalWarehouseName =
-        warehouseNode.isNull() ? null : warehouseNode.asText();
+        warehouseNode.isNull() ? sfSession.getWarehouse() : warehouseNode.asText();
 
     resultSetSerializable.statementType =
         SFStatementType.lookUpTypeById(rootNode.path("data").path("statementTypeId").asLong());
