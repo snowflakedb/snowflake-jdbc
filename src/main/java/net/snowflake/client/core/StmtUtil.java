@@ -311,13 +311,15 @@ public class StmtUtil {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         GZIPOutputStream gzos = new GZIPOutputStream(baos);
         byte[] bytes = json.getBytes("UTF-8");
-        gzos.write(bytes);
+        /*gzos.write(bytes);
         gzos.finish();
-        ByteArrayEntity input = new ByteArrayEntity(baos.toByteArray());
+        ByteArrayEntity input = new ByteArrayEntity(baos.toByteArray());*/
+        ByteArrayEntity input = new ByteArrayEntity(json.getBytes("UTF-8"));
         input.setContentType("application/json");
         httpRequest.setEntity(input);
         execTimeData.setGzipEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
-        httpRequest.addHeader("content-encoding", "gzip");
+        //httpRequest.addHeader("content-encoding", "gzip");
+        //httpRequest.addHeader("content-encoding", "");
         httpRequest.addHeader("accept", stmtInput.mediaType);
 
         httpRequest.setHeader(

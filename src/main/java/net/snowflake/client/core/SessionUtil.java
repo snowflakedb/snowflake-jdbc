@@ -575,6 +575,7 @@ public class SessionUtil {
       postRequest.setEntity(input);
 
       postRequest.addHeader("accept", "application/json");
+      postRequest.addHeader("Accept-Encoding", "");
 
       /*
        * HttpClient should take authorization header from char[] instead of
