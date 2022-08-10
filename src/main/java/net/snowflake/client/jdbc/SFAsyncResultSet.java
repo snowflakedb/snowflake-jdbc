@@ -4,17 +4,16 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.common.core.SqlState;
-
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
+import net.snowflake.client.core.QueryStatus;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation */
 class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
@@ -114,48 +113,46 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
    */
   private void getRealResults() throws SQLException {
     if (!resultSetForNextInitialized) {
-      QueryStatus qs = session.getAsyncQueryStatus(queryID);
-      if (qs == null)
-      {
-        qs = this.getStatus();
-      }
-      int noDataRetry = 0;
-      final int noDataMaxRetries = 30;
-      final int[] retryPattern = {1, 1, 2, 3, 4, 8, 10};
-      final int maxIndex = retryPattern.length - 1;
-      int retry = 0;
-      while (qs != QueryStatus.SUCCESS) {
-        // if query is not running due to a failure (Aborted, failed with error, etc), generate
-        // exception
-        if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue()) {
-          throw new SQLException(
-              "Status of query associated with resultSet is "
-                  + qs.getDescription()
-                  + ". Results not generated.");
-        }
-        // if no data about the query is returned after about 2 minutes, give up
-        if (qs == QueryStatus.NO_DATA) {
-          noDataRetry++;
-          if (noDataRetry >= noDataMaxRetries) {
+      // If query has already succeeded, go straight to result scan to get results
+      if (!session.hasQuerySucceeded(queryID)) {
+        QueryStatus qs = this.getStatus();
+        int noDataRetry = 0;
+        final int noDataMaxRetries = 30;
+        final int[] retryPattern = {1, 1, 2, 3, 4, 8, 10};
+        final int maxIndex = retryPattern.length - 1;
+        int retry = 0;
+        while (qs != QueryStatus.SUCCESS) {
+          // if query is not running due to a failure (Aborted, failed with error, etc), generate
+          // exception
+          if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue()) {
             throw new SQLException(
-                "Cannot retrieve data on the status of this query. No information returned from server for queryID={}.",
-                this.queryID);
+                "Status of query associated with resultSet is "
+                    + qs.getDescription()
+                    + ". Results not generated.");
           }
+          // if no data about the query is returned after about 2 minutes, give up
+          if (qs == QueryStatus.NO_DATA) {
+            noDataRetry++;
+            if (noDataRetry >= noDataMaxRetries) {
+              throw new SQLException(
+                  "Cannot retrieve data on the status of this query. No information returned from server for queryID={}.",
+                  this.queryID);
+            }
+          }
+          try {
+            // Sleep for an amount before trying again. Exponential backoff up to 5 seconds
+            // implemented.
+            Thread.sleep(500 * retryPattern[retry]);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          if (retry < maxIndex) {
+            retry++;
+          }
+          qs = this.getStatus();
         }
-        try {
-          // Sleep for an amount before trying again. Exponential backoff up to 5 seconds
-          // implemented.
-          Thread.sleep(500 * retryPattern[retry]);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-        if (retry < maxIndex) {
-          retry++;
-        }
-        qs = this.getStatus();
       }
 
-      // add code
       resultSetForNext =
           extraStatement.executeQuery("select * from table(result_scan('" + this.queryID + "'))");
       resultSetForNextInitialized = true;

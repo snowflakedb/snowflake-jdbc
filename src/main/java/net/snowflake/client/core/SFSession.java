@@ -4,10 +4,19 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.QueryStatus.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import java.security.PrivateKey;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
@@ -20,17 +29,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-
-import java.security.PrivateKey;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-
-import static net.snowflake.client.core.QueryStatus.getStatusFromString;
-import static net.snowflake.client.core.QueryStatus.isAnError;
 
 /** Snowflake session implementation */
 public class SFSession extends SFBaseSession {
@@ -53,9 +51,9 @@ public class SFSession extends SFBaseSession {
   private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
-  protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
-
-  protected Map<String, QueryStatus> activeAsyncQueriesMap = new ConcurrentHashMap<>();
+  private Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
+  // Map of all asynchronous queries and their status; used to cache status calls
+  private Set<String> successfulAsyncQueries = ConcurrentHashMap.newKeySet();
   private boolean isClosed = true;
   private String sessionToken;
   private String masterToken;
@@ -125,11 +123,11 @@ public class SFSession extends SFBaseSession {
   public boolean isSafeToClose() {
     boolean canClose = true;
     // if the set of asynchronous queries is empty, return true
-    if (this.activeAsyncQueriesMap.isEmpty()) {
+    if (this.activeAsyncQueries.isEmpty()) {
       return canClose;
     }
     // if the set is not empty, iterate through each query and check its status
-    for (String query : this.activeAsyncQueriesMap.keySet()) {
+    for (String query : this.activeAsyncQueries) {
       try {
         QueryStatus qStatus = getQueryStatus(query);
         //  if any query is still running, it is not safe to close.
@@ -143,12 +141,23 @@ public class SFSession extends SFBaseSession {
     return canClose;
   }
 
-  public void updateAsyncQueryStatus(String queryID, QueryStatus status) {
-    activeAsyncQueriesMap.put(queryID, status);
+  /**
+   * Add async query to list of active async queries based on its query ID
+   *
+   * @param queryID query ID
+   */
+  public void addQueryToActiveQueryList(String queryID) {
+    activeAsyncQueries.add(queryID);
   }
 
-  public QueryStatus getAsyncQueryStatus(String queryID) {
-    return activeAsyncQueriesMap.get(queryID);
+  /**
+   * Function to see if an async query has already finished and succeeded.
+   *
+   * @param queryID query ID
+   * @return true if QueryStatus == SUCCESS, false if not
+   */
+  public boolean hasQuerySucceeded(String queryID) {
+    return successfulAsyncQueries.contains(queryID);
   }
 
   /**
@@ -259,7 +268,12 @@ public class SFSession extends SFBaseSession {
     if (!Strings.isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
       result.setErrorMessage(errorMessage);
     }
-    activeAsyncQueriesMap.put(queryID, result);
+    if (!isStillRunning(result)) {
+      activeAsyncQueries.remove(queryID);
+    }
+    if (result == SUCCESS) {
+      successfulAsyncQueries.add(queryID);
+    }
     return result;
   }
 
