@@ -291,6 +291,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // called.
     status.setErrorMessage(QueryStatus.FAILED_WITH_ERROR.toString());
     status.setErrorCode(2003);
+    Thread.sleep(300);
     status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
     // Assert status of query is a success
     assertEquals(QueryStatus.SUCCESS, status);
