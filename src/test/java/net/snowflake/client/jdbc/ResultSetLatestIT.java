@@ -541,6 +541,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
       ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
       // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
       assertEquals(resultSetMetaData.getColumnType(1), 2014);
+      // Assert that TIMESTAMP_TZ column returns Timestamp class name
+      assertEquals(resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
     }
   }
 }
