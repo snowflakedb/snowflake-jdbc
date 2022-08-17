@@ -52,8 +52,6 @@ public class SFSession extends SFBaseSession {
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
   private Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
-  // Map of completed, successful async queries to avoid unneccessary getStatus calls
-  private Set<String> successfulAsyncQueries = ConcurrentHashMap.newKeySet();
   private boolean isClosed = true;
   private String sessionToken;
   private String masterToken;
@@ -148,26 +146,6 @@ public class SFSession extends SFBaseSession {
    */
   public void addQueryToActiveQueryList(String queryID) {
     activeAsyncQueries.add(queryID);
-  }
-
-  /**
-   * Function to see if an async query has already finished and succeeded.
-   *
-   * @param queryID query ID
-   * @return true if QueryStatus == SUCCESS, false if not
-   */
-  public boolean hasQuerySucceeded(String queryID) {
-    return successfulAsyncQueries.contains(queryID);
-  }
-
-  /**
-   * Function to retrieve size of successfulAsyncQueries set. Used for testing only.
-   *
-   * @return
-   */
-  @VisibleForTesting
-  public int getNumberOfSuccessfulAsyncQueriesInSession() {
-    return successfulAsyncQueries.size();
   }
 
   /**
@@ -280,9 +258,6 @@ public class SFSession extends SFBaseSession {
     }
     if (!isStillRunning(result)) {
       activeAsyncQueries.remove(queryID);
-    }
-    if (result == SUCCESS) {
-      successfulAsyncQueries.add(queryID);
     }
     return result;
   }

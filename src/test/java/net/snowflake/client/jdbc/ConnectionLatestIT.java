@@ -983,16 +983,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           statement
               .unwrap(SnowflakeStatement.class)
               .executeAsyncQuery("select count(*) from table(generator(timeLimit => 4))");
-      String queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
       // Assert that activeAsyncQueries is non-empty with running query. Session is async and not
       // safe to close
       assertTrue(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isAsyncSession());
       assertFalse(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isSafeToClose());
-      assertEquals(
-          0,
-          con.unwrap(SnowflakeConnectionV1.class)
-              .getSfSession()
-              .getNumberOfSuccessfulAsyncQueriesInSession());
       // Sleep 6 seconds to ensure query is finished running
       TimeUnit.SECONDS.sleep(6);
       // Assert that there are no longer any queries running.
@@ -1002,14 +996,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // Next, assert session is no longer async (just fetches size of activeQueriesMap with no
       // other action)
       assertFalse(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isAsyncSession());
-      // Assert query was successful and is placed in map of successful async queries.
-      assertTrue(con.unwrap(SnowflakeConnectionV1.class).getSfSession().hasQuerySucceeded(queryID));
-      assertEquals(
-          1,
-          statement
-              .unwrap(SnowflakeConnectionV1.class)
-              .getSfSession()
-              .getNumberOfSuccessfulAsyncQueriesInSession());
       rs.close();
     }
   }

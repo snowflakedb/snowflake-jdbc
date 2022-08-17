@@ -23,6 +23,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private String queryID;
   private SFSession session;
   private Statement extraStatement;
+  private boolean queryHasSucceeded = false;
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -102,7 +103,16 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     if (this.queryID == null) {
       throw new SQLException("QueryID unknown");
     }
-    return session.getQueryStatus(this.queryID);
+    if (this.queryHasSucceeded) {
+      return QueryStatus.SUCCESS;
+    }
+    QueryStatus status = session.getQueryStatus(this.queryID);
+    // if query has completed successfully, cache its success status to avoid unnecessary future
+    // server calls
+    if (status == QueryStatus.SUCCESS) {
+      this.queryHasSucceeded = true;
+    }
+    return status;
   }
 
   /**
@@ -114,7 +124,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private void getRealResults() throws SQLException {
     if (!resultSetForNextInitialized) {
       // If query has already succeeded, go straight to result scan to get results
-      if (!session.hasQuerySucceeded(queryID)) {
+      if (!queryHasSucceeded) {
         QueryStatus qs = this.getStatus();
         int noDataRetry = 0;
         final int noDataMaxRetries = 30;
