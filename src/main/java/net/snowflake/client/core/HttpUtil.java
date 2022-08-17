@@ -359,7 +359,8 @@ public class HttpUtil {
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
               .setUserAgent(buildUserAgent()) // needed for Okta
-              .disableCookieManagement(); // SNOW-39748
+              .disableCookieManagement() // SNOW-39748
+              .disableContentCompression();
 
       if (key != null && key.usesProxy()) {
         // use the custom proxy properties

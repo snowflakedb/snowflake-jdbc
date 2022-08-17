@@ -564,7 +564,7 @@ public class StmtUtil {
 
       uriBuilder.setPath(getResultPath);
 
-      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpGet(uriBuilder.build());
 
@@ -661,7 +661,7 @@ public class StmtUtil {
 
       uriBuilder.setPath(SF_PATH_ABORT_REQUEST_V1);
 
-      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpPost(uriBuilder.build());
 

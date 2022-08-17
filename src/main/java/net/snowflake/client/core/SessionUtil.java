@@ -390,7 +390,7 @@ public class SessionUtil {
         loginInput.setToken(s.issueJwtToken());
       }
 
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       uriBuilder.setPath(SF_PATH_LOGIN_REQUEST);
       loginURI = uriBuilder.build();
@@ -811,7 +811,7 @@ public class SessionUtil {
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
       uriBuilder.setPath(SF_PATH_TOKEN_REQUEST);
 
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       postRequest = new HttpPost(uriBuilder.build());
     } catch (URISyntaxException ex) {
@@ -915,7 +915,7 @@ public class SessionUtil {
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
 
       uriBuilder.addParameter(SF_QUERY_SESSION_DELETE, Boolean.TRUE.toString());
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       uriBuilder.setPath(SF_PATH_SESSION);
 

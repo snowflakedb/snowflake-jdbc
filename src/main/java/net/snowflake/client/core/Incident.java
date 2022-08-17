@@ -42,7 +42,7 @@ public class Incident extends Event {
   final String jobId;
   final String requestId;
   final String timestamp = getUTCNow() + ".000";
-  final String uuid = UUID.randomUUID().toString();
+  final String uuid = UUIDUtils.getUUID().toString();
   HttpClientSettingsKey ocspAndProxyKey = null;
 
   /**

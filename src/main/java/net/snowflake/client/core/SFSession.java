@@ -679,7 +679,7 @@ public class SFSession extends SFBaseSession {
 
     HttpPost postRequest = null;
 
-    String requestId = UUID.randomUUID().toString();
+    String requestId = UUIDUtils.getUUID().toString();
 
     boolean retry = false;
 

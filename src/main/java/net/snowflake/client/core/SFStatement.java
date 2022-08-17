@@ -341,7 +341,7 @@ public class SFStatement extends SFBaseStatement {
               SqlState.FEATURE_NOT_SUPPORTED);
         }
 
-        this.requestId = UUID.randomUUID().toString();
+        this.requestId = UUIDUtils.getUUID().toString();
         this.sequenceId = session.getAndIncrementSequenceId();
 
         this.sqlText = sql;
