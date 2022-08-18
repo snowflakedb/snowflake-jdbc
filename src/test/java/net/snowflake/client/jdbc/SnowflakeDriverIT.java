@@ -46,7 +46,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder2 = new TemporaryFolder();
 
   public String testStageName =
-      String.format("test_stage_%s", UUID.randomUUID().toString()).replaceAll("-", "_");
+      String.format("test_stage_%s", UUIDUtils.getUUID.toString()).replaceAll("-", "_");
 
   @BeforeClass
   public static void setUp() throws Throwable {
@@ -1312,7 +1312,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     Statement statement = null;
 
     String tableName =
-        String.format("snow4394_%s", UUID.randomUUID().toString()).replaceAll("-", "_");
+        String.format("snow4394_%s", UUIDUtils.getUUID.toString()).replaceAll("-", "_");
 
     try {
       connection = getConnection();

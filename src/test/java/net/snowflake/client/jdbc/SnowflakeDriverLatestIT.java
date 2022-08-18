@@ -49,7 +49,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder2 = new TemporaryFolder();
 
   public String testStageName =
-      String.format("test_stage_%s", UUID.randomUUID().toString()).replaceAll("-", "_");
+      String.format("test_stage_%s", UUIDUtils.getUUID.toString()).replaceAll("-", "_");
 
   // Check whether the two file's content are logically identical
   private boolean isFileContentEqual(

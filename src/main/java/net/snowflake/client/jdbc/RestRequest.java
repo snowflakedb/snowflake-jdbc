@@ -166,7 +166,7 @@ public class RestRequest {
 
         if (includeRequestGuid) {
           // Add request_guid for better tracing
-          builder.setParameter(SF_REQUEST_GUID, UUID.randomUUID().toString());
+          builder.setParameter(SF_REQUEST_GUID, UUIDUtils.getUUID().toString());
         }
 
         httpRequest.setURI(builder.build());

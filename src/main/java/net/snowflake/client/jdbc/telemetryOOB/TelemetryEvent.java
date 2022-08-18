@@ -154,7 +154,7 @@ public class TelemetryEvent extends JSONObject {
     }
 
     protected TelemetryEvent build() {
-      body.put("UUID", UUID.randomUUID().toString());
+      body.put("UUID", UUIDUtils.getUUID.toString());
       body.put("Created_On", SFTimestamp.getUTCNow());
       body.put("SchemaVersion", schemaVersion);
       this.putMap("Tags", tags);

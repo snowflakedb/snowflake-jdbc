@@ -36,7 +36,7 @@ import net.snowflake.client.AbstractDriverIT;
 
 public class BaseJDBCTest extends AbstractDriverIT {
   // Test UUID unique per session
-  static final String TEST_UUID = UUID.randomUUID().toString();
+  static final String TEST_UUID = UUIDUtils.getUUID.toString();
 
   protected interface MethodRaisesSQLException {
     void run() throws SQLException;
