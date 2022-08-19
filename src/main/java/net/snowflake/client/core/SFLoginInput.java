@@ -48,7 +48,11 @@ public class SFLoginInput {
   private String privateKeyFile;
   private String privateKeyFilePwd;
 
-  SFLoginInput() {}
+  private boolean newOkta;
+
+  SFLoginInput() {
+    this.newOkta = false;
+  }
 
   public String getServerUrl() {
     return serverUrl;
@@ -359,5 +363,18 @@ public class SFLoginInput {
           e, ErrorCode.INTERNAL_ERROR, "Invalid serverUrl for retrieving host name");
     }
     return url.getHost();
+  }
+
+  /**
+   * Config specifying if the okta being used is the
+   * new Okta OIE. False by default
+   * @param newOkta - is the Okta authenticator the new Okta version?
+   */
+  void setNewOkta(boolean newOkta) {
+    this.newOkta = newOkta;
+  }
+
+  boolean isNewOkta() {
+    return newOkta;
   }
 }

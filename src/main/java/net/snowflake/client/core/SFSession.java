@@ -458,7 +458,9 @@ public class SFSession extends SFBaseSession {
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
         .setServiceName(getServiceName())
         .setOCSPMode(getOCSPMode())
-        .setHttpClientSettingsKey(httpClientSettingsKey);
+        .setHttpClientSettingsKey(httpClientSettingsKey)
+        .setNewOkta((boolean)(connectionPropertiesMap.get(SFSessionProperty.NEW_OKTA) == null ? false :
+                connectionPropertiesMap.get(SFSessionProperty.NEW_OKTA)));
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
