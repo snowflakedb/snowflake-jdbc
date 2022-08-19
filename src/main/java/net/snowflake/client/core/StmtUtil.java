@@ -292,7 +292,7 @@ public class StmtUtil {
           uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
         }
 
-        if (stmtInput.queryContext != null) {
+        if (!Strings.isNullOrEmpty(stmtInput.queryContext)) {
           uriBuilder.addParameter(SF_QUERY_CONTEXT, stmtInput.queryContext);
         }
 

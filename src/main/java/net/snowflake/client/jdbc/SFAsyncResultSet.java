@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.QueryStatus.NO_DATA;
+
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
@@ -23,7 +25,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private String queryID;
   private SFSession session;
   private Statement extraStatement;
-  private boolean queryHasSucceeded = false;
+  private QueryStatus lastQueriedStatus = NO_DATA;
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -103,16 +105,13 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     if (this.queryID == null) {
       throw new SQLException("QueryID unknown");
     }
-    if (this.queryHasSucceeded) {
-      return QueryStatus.SUCCESS;
+    if (this.lastQueriedStatus == QueryStatus.SUCCESS) {
+      return this.lastQueriedStatus;
     }
-    QueryStatus status = session.getQueryStatus(this.queryID);
+    this.lastQueriedStatus = session.getQueryStatus(this.queryID);
     // if query has completed successfully, cache its success status to avoid unnecessary future
     // server calls
-    if (status == QueryStatus.SUCCESS) {
-      this.queryHasSucceeded = true;
-    }
-    return status;
+    return this.lastQueriedStatus;
   }
 
   /**
@@ -124,7 +123,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private void getRealResults() throws SQLException {
     if (!resultSetForNextInitialized) {
       // If query has already succeeded, go straight to result scan to get results
-      if (!queryHasSucceeded) {
+      if (this.lastQueriedStatus != QueryStatus.SUCCESS) {
         QueryStatus qs = this.getStatus();
         int noDataRetry = 0;
         final int noDataMaxRetries = 30;
@@ -141,7 +140,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
                     + ". Results not generated.");
           }
           // if no data about the query is returned after about 2 minutes, give up
-          if (qs == QueryStatus.NO_DATA) {
+          if (qs == NO_DATA) {
             noDataRetry++;
             if (noDataRetry >= noDataMaxRetries) {
               throw new SQLException(
