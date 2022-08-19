@@ -1150,12 +1150,9 @@ public class SessionUtil {
 
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
-      if (loginInput.isNewOkta()) {
-        oneTimeToken = jsonNode.get("sessionToken").asText();
-      } else {
-        oneTimeToken = jsonNode.get("cookieToken").asText();
-      }
-
+      oneTimeToken = jsonNode.get("sessionToken") != null ?
+              jsonNode.get("sessionToken").asText() :
+              jsonNode.get("cookieToken").asText();
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
