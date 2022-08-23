@@ -1,3 +1,10 @@
+**JDBC Driver 3.13.22**
+
+- \| | Updated the tika-core library to version 2.4.1.
+- \| | Fixed an issue where getColumnClassName() threw an exception when the column type is timestamp_tx.
+- \| | Fixed an issue where calling getSQLStateType() throws an exception while retrieving database metadata.
+- \| | Fixed an issue where calling executeLargeBatch() for prepared statements might result in no rows being inserted.
+
 **JDBC Driver 3.13.21**
 
 - \| | Fix memory leak with statement object in SnowflakeConnectionV1::createResultSet
