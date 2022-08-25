@@ -39,7 +39,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <arrow.version>8.0.0</arrow.version>
     <slf4j.version>1.7.25</slf4j.version>
-    <jsoup.version>1.14.2</jsoup.version>
+    <jsoup.version>1.15.3</jsoup.version>
     <tika.version>2.4.1</tika.version>
     <jackson.version>2.13.2</jackson.version>
     <jacksondatabind.version>2.13.2.2</jacksondatabind.version>
@@ -690,7 +690,7 @@
              <timestampFormat>yyyyMMddHHmmss</timestampFormat>
              <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
              <doCheck>false</doCheck>
-             <revisionOnScmFailure />
+             <revisionOnScmFailure/>
              <doUpdate>false</doUpdate>
              <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrememting buildNumber
                 AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrememting build number at the same time -->
@@ -896,7 +896,7 @@
                       </filter>
                    </filters>
                   <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                     </transformer>
                   </transformers>
