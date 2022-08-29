@@ -1004,4 +1004,30 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // Check that 404 was not retried
     assertTrue(endDownloadTime - startDownloadTime < 400000);
   }
+
+  @Test
+  public void testIsAsyncSession() throws SQLException, InterruptedException {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      // Run a query that takes 5 seconds to complete
+      ResultSet rs =
+          statement
+              .unwrap(SnowflakeStatement.class)
+              .executeAsyncQuery("select count(*) from table(generator(timeLimit => 4))");
+      // Assert that activeAsyncQueries is non-empty with running query. Session is async and not
+      // safe to close
+      assertTrue(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isAsyncSession());
+      assertFalse(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isSafeToClose());
+      // Sleep 6 seconds to ensure query is finished running
+      TimeUnit.SECONDS.sleep(6);
+      // Assert that there are no longer any queries running.
+      // First, assert session is safe to close. This iterates through active queries, fetches their
+      // status, and removes them from the activeQueriesMap if they are no longer active.
+      assertTrue(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isSafeToClose());
+      // Next, assert session is no longer async (just fetches size of activeQueriesMap with no
+      // other action)
+      assertFalse(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isAsyncSession());
+      rs.close();
+    }
+  }
 }

@@ -10,11 +10,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -250,7 +246,7 @@ public class SFStatement extends SFBaseStatement {
     logger.debug("Done creating result set", false);
 
     if (asyncExec) {
-      session.activeAsyncQueries.add(resultSet.getQueryId());
+      session.addQueryToActiveQueryList(resultSet.getQueryId());
     }
     return resultSet;
   }
