@@ -116,7 +116,7 @@ public class TelemetryService {
 
   public boolean isEnabled() {
     synchronized (enableLock) {
-      return enabled;
+      return false;
     }
   }
 
@@ -484,6 +484,7 @@ public class TelemetryService {
       int retryCount,
       String sqlState,
       int errorCode) {
+
     if (enabled) {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       JSONObject value = new JSONObject();

@@ -284,6 +284,8 @@ public class TelemetryClient implements Telemetry {
    * @throws IOException if closed or uploading batch fails
    */
   private boolean sendBatch() throws IOException {
+    return true;
+    /*
     if (isClosed) {
       throw new IOException("Telemetry connector is closed");
     }
@@ -338,7 +340,7 @@ public class TelemetryClient implements Telemetry {
         return false;
       }
     }
-    return true;
+    return true;*/
   }
 
   /**
