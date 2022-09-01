@@ -306,20 +306,23 @@ public class StmtUtil {
 
         logger.debug("JSON: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(json));
 
-        execTimeData.setGzipStart(SnowflakeUtil.getEpochTimeInMicroSeconds());
-        // SNOW-18057: compress the post body in gzip
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        GZIPOutputStream gzos = new GZIPOutputStream(baos);
-        byte[] bytes = json.getBytes("UTF-8");
-        /*gzos.write(bytes);
-        gzos.finish();
-        ByteArrayEntity input = new ByteArrayEntity(baos.toByteArray());*/
-        ByteArrayEntity input = new ByteArrayEntity(json.getBytes("UTF-8"));
+        ByteArrayEntity input;
+        if (!stmtInput.httpClientSettingsKey.getGzipDisabled()) {
+          execTimeData.setGzipStart(SnowflakeUtil.getEpochTimeInMicroSeconds());
+          // SNOW-18057: compress the post body in gzip
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          GZIPOutputStream gzos = new GZIPOutputStream(baos);
+          byte[] bytes = json.getBytes("UTF-8");
+          gzos.write(bytes);
+          gzos.finish();
+          input = new ByteArrayEntity(baos.toByteArray());
+          httpRequest.addHeader("content-encoding", "gzip");
+          execTimeData.setGzipEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+        } else {
+          input = new ByteArrayEntity(json.getBytes("UTF-8"));
+        }
         input.setContentType("application/json");
         httpRequest.setEntity(input);
-        execTimeData.setGzipEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
-        //httpRequest.addHeader("content-encoding", "gzip");
-        //httpRequest.addHeader("content-encoding", "");
         httpRequest.addHeader("accept", stmtInput.mediaType);
 
         httpRequest.setHeader(

@@ -14,6 +14,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
+import org.apache.arrow.flatbuf.Bool;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -596,10 +597,11 @@ public class SnowflakeUtil {
         String proxyPassword = info.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
         String nonProxyHosts = info.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
         String proxyProtocol = info.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
-
+        Boolean gzipDisabled = (info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()).isEmpty()?
+                false: Boolean.valueOf(info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey())));
         // create key for proxy properties
         return new HttpClientSettingsKey(
-            mode, proxyHost, proxyPort, nonProxyHosts, proxyUser, proxyPassword, proxyProtocol);
+            mode, proxyHost, proxyPort, nonProxyHosts, proxyUser, proxyPassword, proxyProtocol, gzipDisabled);
       }
     }
     // if no proxy properties, return key with only OCSP mode

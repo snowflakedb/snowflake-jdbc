@@ -9,6 +9,7 @@ import java.net.URL;
 import java.security.PrivateKey;
 import java.util.Map;
 import net.snowflake.client.jdbc.ErrorCode;
+import org.apache.arrow.flatbuf.Bool;
 
 /** A class for holding all information required for login */
 public class SFLoginInput {

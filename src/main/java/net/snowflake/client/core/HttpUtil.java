@@ -445,7 +445,7 @@ public class HttpUtil {
    */
   public static CloseableHttpClient initHttpClient(HttpClientSettingsKey key, File ocspCacheFile) {
     updateRoutePlanner(key);
-    return httpClient.computeIfAbsent(key, k -> buildHttpClient(key, ocspCacheFile, false));
+    return httpClient.computeIfAbsent(key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled()));
   }
 
   /**
@@ -549,7 +549,7 @@ public class HttpUtil {
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeGeneralRequest(
-      HttpRequestBase httpRequest, int retryTimeout, HttpClientSettingsKey ocspAndProxyKey)
+      HttpRequestBase httpRequest, int retryTimeout, HttpClientSettingsKey ocspAndProxyAndGzipKey)
       throws SnowflakeSQLException, IOException {
     return executeRequest(
         httpRequest,
@@ -558,7 +558,7 @@ public class HttpUtil {
         null, // no canceling
         false, // no retry parameter
         false, // no retry on HTTP 403
-        ocspAndProxyKey,
+        ocspAndProxyAndGzipKey,
         new ExecTimeTelemetryData());
   }
 

@@ -369,7 +369,7 @@ public class SFSession extends SFBaseSession {
             + " passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={},"
             + " application={}, app_id={}, app_version={}, login_timeout={}, network_timeout={},"
             + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}."
-            + " session_parameters: client_store_temporary_credential={}",
+            + " session_parameters: client_store_temporary_credential={}, gzip_disabled={}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
@@ -403,7 +403,8 @@ public class SFSession extends SFBaseSession {
                 (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
             ? "***"
             : "(empty)",
-        sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
+        sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
+        connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
 
     HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
     logger.debug(
