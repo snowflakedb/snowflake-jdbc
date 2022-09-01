@@ -14,6 +14,7 @@ import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -115,9 +116,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
             "ResultSet PreparedStatement.executeQuery()",
             this.batchID);
     if (showStatementParameters) {
-      logger.info("executeQuery()");
+      logger.info("executeQuery()", false);
     } else {
-      logger.debug("executeQuery()");
+      logger.debug("executeQuery()", false);
     }
     ResultSet rs = executeQueryInternal(sql, false, parameterBindings, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
@@ -138,9 +139,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
             "ResultSet PreparedStatement.executeAsyncQuery()",
             this.batchID);
     if (showStatementParameters) {
-      logger.info("executeAsyncQuery()");
+      logger.info("executeAsyncQuery()", false);
     } else {
-      logger.debug("executeAsyncQuery()");
+      logger.debug("executeAsyncQuery()", false);
     }
     ResultSet rs = executeQueryInternal(sql, true, parameterBindings, execTimeData);
     execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
@@ -150,21 +151,18 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public long executeLargeUpdate() throws SQLException {
-    ExecTimeTelemetryData execTimeData =
-        new ExecTimeTelemetryData(
-            SnowflakeUtil.getEpochTimeInMicroSeconds(),
-            "long PreparedStatement.executeLargeUpdate()",
-            this.batchID);
-    logger.debug("executeLargeUpdate()");
-    long res = executeUpdateInternal(sql, parameterBindings, true, execTimeData);
-    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
-    execTimeData.generateTelemetry();
-    return res;
+    ExecTimeTelemetryData execTimeTelemetryData =
+            new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(),
+                    "long PreparedStatement.executeLargeUpdate()",
+                    this.batchID);
+    logger.debug("executeLargeUpdate()", false);
+
+    return executeUpdateInternal(sql, parameterBindings, true, execTimeTelemetryData);
   }
 
   @Override
   public int executeUpdate() throws SQLException {
-    logger.debug("executeUpdate()");
+    logger.debug("executeUpdate()", false);
     return (int) executeLargeUpdate();
   }
 
@@ -442,6 +440,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setTimestamp(parameterIndex, (Timestamp) x);
     } else if (x instanceof Boolean) {
       setBoolean(parameterIndex, (Boolean) x);
+    } else if (x instanceof byte[]) {
+      setBytes(parameterIndex, (byte[]) x);
     } else {
       throw new SnowflakeSQLLoggedException(
           connection.getSFBaseSession(),
@@ -467,7 +467,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void addBatch() throws SQLException {
-    logger.debug("addBatch()");
+    logger.debug("addBatch()", false);
 
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -571,7 +571,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public ResultSetMetaData getMetaData() throws SQLException {
-    logger.debug("getMetaData()");
+    logger.debug("getMetaData()", false);
 
     raiseSQLExceptionIfStatementIsClosed();
 
@@ -581,7 +581,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
-    logger.debug("setDate(int parameterIndex, Date x, Calendar cal)");
+    logger.debug("setDate(int parameterIndex, Date x, Calendar cal)", false);
 
     raiseSQLExceptionIfStatementIsClosed();
     if (x == null) {
@@ -604,14 +604,14 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
-    logger.debug("setTime(int parameterIndex, Time x, Calendar cal)");
+    logger.debug("setTime(int parameterIndex, Time x, Calendar cal)", false);
     raiseSQLExceptionIfStatementIsClosed();
     setTime(parameterIndex, x);
   }
 
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
-    logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)");
+    logger.debug("setTimestamp(int parameterIndex, Timestamp x, Calendar cal)", false);
     raiseSQLExceptionIfStatementIsClosed();
 
     // convert the time from being in UTC to be in local time zone
@@ -652,7 +652,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setNull(int parameterIndex, int sqlType, String typeName) throws SQLException {
-    logger.debug("setNull(int parameterIndex, int sqlType, String typeName)");
+    logger.debug("setNull(int parameterIndex, int sqlType, String typeName)", false);
 
     setNull(parameterIndex, sqlType);
   }
@@ -713,7 +713,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)
       throws SQLException {
-    logger.debug("setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)");
+    logger.debug(
+        "setObject(int parameterIndex, Object x, int targetSqlType, int scaleOrLength)", false);
 
     raiseSQLExceptionIfStatementIsClosed();
     if (x == null) {
@@ -780,7 +781,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public int executeUpdate(String sql) throws SQLException {
-    logger.debug("executeUpdate(String sql)");
+    logger.debug("executeUpdate(String sql)", false);
 
     throw new SnowflakeSQLException(
         ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
@@ -788,7 +789,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public boolean execute(String sql) throws SQLException {
-    logger.debug("execute(String sql)");
+    logger.debug("execute(String sql)", false);
 
     throw new SnowflakeSQLException(
         ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
@@ -811,22 +812,50 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public int[] executeBatch() throws SQLException {
-    logger.debug("executeBatch()");
+    logger.debug("executeBatch()", false);
+    return executeBatchInternalWithArrayBind(false).intArr;
+  }
+
+  @Override
+  public long[] executeLargeBatch() throws SQLException {
+    logger.debug("executeLargeBatch()", false);
+    return executeBatchInternalWithArrayBind(true).longArr;
+  }
+
+  VariableTypeArray executeBatchInternalWithArrayBind(boolean isLong) throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
 
     describeSqlIfNotTried();
+
     if (this.statementMetaData.getStatementType().isGenerateResultSet()) {
       throw new SnowflakeSQLException(
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
 
-    int[] updateCounts = null;
+    VariableTypeArray updateCounts;
+    if (isLong) {
+      long[] arr = new long[batch.size()];
+      updateCounts = new VariableTypeArray(null, arr);
+    } else {
+      int size = batch.size();
+      int[] arr = new int[size];
+      updateCounts = new VariableTypeArray(arr, null);
+    }
+
     try {
       if (this.statementMetaData.isArrayBindSupported()) {
         if (batchSize <= 0) {
-          logger.debug(
-              "executeBatch() using array bind with no batch data. Return int[0] directly");
-          return new int[0];
+          if (isLong) {
+            logger.debug(
+                "executeLargeBatch() using array bind with no batch data. Return long[0] directly",
+                false);
+            return new VariableTypeArray(null, new long[0]);
+          } else {
+            logger.debug(
+                "executeBatch() using array bind with no batch data. Return int[0] directly",
+                false);
+            return new VariableTypeArray(new int[0], null);
+          }
         }
 
         int updateCount =
@@ -837,13 +866,28 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         // when update count is the same as the number of bindings in the batch,
         // expand the update count into an array (SNOW-14034)
         if (updateCount == batchSize) {
-          updateCounts = new int[updateCount];
-          for (int idx = 0; idx < updateCount; idx++) updateCounts[idx] = 1;
+          if (isLong) {
+            updateCounts = new VariableTypeArray(null, new long[updateCount]);
+            for (int idx = 0; idx < updateCount; idx++) updateCounts.longArr[idx] = 1;
+          } else {
+            updateCounts = new VariableTypeArray(new int[updateCount], null);
+            for (int idx = 0; idx < updateCount; idx++) updateCounts.intArr[idx] = 1;
+          }
         } else {
-          updateCounts = new int[] {updateCount};
+          if (isLong) {
+            updateCounts.longArr = new long[] {updateCount};
+          } else {
+            updateCounts.intArr = new int[] {updateCount};
+          }
         }
       } else {
-        updateCounts = executeBatchInternal(false).intArr;
+        // Array binding is not supported
+        if (isLong) {
+          updateCounts.longArr = executeBatchInternal(false).longArr;
+
+        } else {
+          updateCounts.intArr = executeBatchInternal(false).intArr;
+        }
       }
     } finally {
       this.clearBatch();

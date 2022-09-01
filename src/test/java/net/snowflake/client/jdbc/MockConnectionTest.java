@@ -671,9 +671,6 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void close() {}
 
     @Override
-    public void raiseError(Throwable exc, String jobId, String requestId) {}
-
-    @Override
     public Telemetry getTelemetryClient() {
       return new Telemetry() {
         @Override
@@ -696,6 +693,9 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
+    public void callHeartBeat(int timeout) throws SFException, SQLException {}
+
+    @Override
     public List<SFException> getSqlWarnings() {
       return null;
     }
@@ -707,8 +707,27 @@ public class MockConnectionTest extends BaseJDBCTest {
       return 0;
     }
 
+    public int getAuthTimeout() {
+      return 0;
+    }
+
     public SnowflakeConnectString getSnowflakeConnectionString() {
       return null;
+    }
+
+    @Override
+    public int getHttpClientConnectionTimeout() {
+      return 0;
+    }
+
+    @Override
+    public int getHttpClientSocketTimeout() {
+      return 0;
+    }
+
+    @Override
+    public boolean isAsyncSession() {
+      return false;
     }
   }
 

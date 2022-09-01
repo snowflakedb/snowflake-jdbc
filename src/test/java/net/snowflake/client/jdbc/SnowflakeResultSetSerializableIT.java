@@ -8,6 +8,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import javax.annotation.Nullable;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -39,7 +40,11 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   public Connection init() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection();
+    return init(null);
+  }
+
+  public Connection init(@Nullable Properties properties) throws SQLException {
+    Connection conn = BaseJDBCTest.getConnection(properties);
     Statement stmt = conn.createStatement();
     stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
 
@@ -625,7 +630,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testNegativeWithChunkFileNotExist() throws Throwable {
-    try (Connection connection = init()) {
+    // This test takes about (download worker retry times * networkTimeout) long to finish
+    Properties properties = new Properties();
+    properties.put("networkTimeout", 10000); // 10000 millisec
+    try (Connection connection = init(properties)) {
       Statement statement = connection.createStatement();
 
       statement.execute(

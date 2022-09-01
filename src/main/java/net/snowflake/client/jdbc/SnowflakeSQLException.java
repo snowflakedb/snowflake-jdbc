@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.jdbc;
@@ -20,6 +20,10 @@ public class SnowflakeSQLException extends SQLException {
       ResourceBundleManager.getSingleton(ErrorCode.errorMessageResource);
 
   private String queryId = "unknown";
+  private int retryCount = 0;
+
+  boolean issocketTimeoutNoBackoff;
+  long elapsedSeconds;
 
   /**
    * This constructor should only be used for error from Global service. Since Global service has
@@ -115,6 +119,17 @@ public class SnowflakeSQLException extends SQLException {
         errorCode.getMessageCode());
   }
 
+  public SnowflakeSQLException(
+      ErrorCode errorCode, int retryCount, boolean issocketTimeoutNoBackoff, long elapsedSeconds) {
+    super(
+        errorResourceBundleManager.getLocalizedMessage(String.valueOf(errorCode.getMessageCode())),
+        errorCode.getSqlState(),
+        errorCode.getMessageCode());
+    this.retryCount = retryCount;
+    this.issocketTimeoutNoBackoff = issocketTimeoutNoBackoff;
+    this.elapsedSeconds = elapsedSeconds;
+  }
+
   public SnowflakeSQLException(SFException e) {
     this(e.getQueryId(), e.getMessage(), e.getSqlState(), e.getVendorCode());
   }
@@ -125,5 +140,17 @@ public class SnowflakeSQLException extends SQLException {
 
   public String getQueryId() {
     return queryId;
+  }
+
+  public int getRetryCount() {
+    return retryCount;
+  }
+
+  public boolean issocketTimeoutNoBackoff() {
+    return issocketTimeoutNoBackoff;
+  }
+
+  public long getElapsedSeconds() {
+    return elapsedSeconds;
   }
 }

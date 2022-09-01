@@ -10,6 +10,7 @@ import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -217,6 +218,89 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         assertEquals(
             "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
       }
+    }
+  }
+
+  /**
+   * Tests that VARBINARY columns can be set in setObject() method using byte[]
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testSetObjectMethodWithVarbinaryColumn() throws SQLException {
+    try (Connection connection = init()) {
+      connection.createStatement().execute("create or replace table test_binary(b VARBINARY)");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into test_binary(b) values (?)")) {
+        prepStatement.setObject(1, "HELLO WORLD".getBytes());
+        prepStatement.execute(); // shouldn't raise an error.
+      }
+    }
+  }
+
+  @Test
+  public void testBatchInsertWithTimestampInputFormatSet() throws SQLException {
+    try (Connection connection = init()) {
+      Statement statement = connection.createStatement();
+      statement.execute("alter session set TIMESTAMP_INPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FFTZH'");
+      statement.execute(
+          "create or replace table testStageBindTypes (c1 date, c2 datetime, c3 timestamp)");
+      java.util.Date today = new java.util.Date();
+      java.sql.Date sqldate = new java.sql.Date(today.getDate());
+      java.sql.Timestamp todaySQL = new java.sql.Timestamp(today.getTime());
+      PreparedStatement prepSt =
+          connection.prepareStatement("insert into testStageBindTypes values (?, ?, ?)");
+      for (int i = 1; i < 30000; i++) {
+        prepSt.setDate(1, sqldate);
+        prepSt.setDate(2, sqldate);
+        prepSt.setTimestamp(3, todaySQL);
+        prepSt.addBatch();
+      }
+      prepSt.executeBatch(); // should not throw a parsing error.
+      statement.execute("drop table if exists testStageBindTypes");
+      statement.execute("alter session unset TIMESTAMP_INPUT_FORMAT");
+      statement.close();
+    }
+  }
+
+  /**
+   * Test the CALL stmt type for stored procedures. Run against test server with
+   * USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS enabled.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @Ignore
+  public void testCallStatement() throws SQLException {
+    try (Connection connection = getConnection()) {
+      Statement statement = connection.createStatement();
+      statement.executeQuery(
+          "ALTER SESSION SET USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS=true");
+      statement.executeQuery(
+          "create or replace procedure\n"
+              + "TEST_SP_CALL_STMT_ENABLED(in1 float, in2 variant)\n"
+              + "returns string language javascript as $$\n"
+              + "let res = snowflake.execute({sqlText: 'select ? c1, ? c2', binds:[IN1, JSON.stringify(IN2)]});\n"
+              + "res.next();\n"
+              + "return res.getColumnValueAsString(1) + ' ' + res.getColumnValueAsString(2) + ' ' + IN2;\n"
+              + "$$;");
+
+      PreparedStatement prepStatement =
+          connection.prepareStatement("call TEST_SP_CALL_STMT_ENABLED(?, to_variant(?))");
+      prepStatement.setDouble(1, 1);
+      prepStatement.setString(2, "[2,3]");
+
+      ResultSet rs = prepStatement.executeQuery();
+      String result = "1 \"[2,3]\" [2,3]";
+      while (rs.next()) {
+        assertEquals(result, rs.getString(1));
+      }
+
+      statement.executeQuery("drop procedure if exists TEST_SP_CALL_STMT_ENABLED(float, variant)");
+      rs.close();
+      prepStatement.close();
+      statement.close();
     }
   }
 }

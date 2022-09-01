@@ -48,8 +48,8 @@ public class SLF4JLogger implements SFLogger {
     return this.slf4jLogger.isWarnEnabled();
   }
 
-  public void debug(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void debug(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.DEBUG_INT, msg, null, null);
@@ -73,7 +73,7 @@ public class SLF4JLogger implements SFLogger {
     // use this as format example for JDK14Logger.
     if (isDebugEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.debug(SecretDetector.maskSecrets(ft.getMessage()));
+      this.debug(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 
@@ -87,8 +87,8 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  public void error(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void error(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.ERROR_INT, msg, null, null);
@@ -100,7 +100,7 @@ public class SLF4JLogger implements SFLogger {
   public void error(String msg, Object... arguments) {
     if (isErrorEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.error(SecretDetector.maskSecrets(ft.getMessage()));
+      this.error(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 
@@ -114,8 +114,8 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  public void info(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void info(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.INFO_INT, msg, null, null);
@@ -127,7 +127,7 @@ public class SLF4JLogger implements SFLogger {
   public void info(String msg, Object... arguments) {
     if (isInfoEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.info(SecretDetector.maskSecrets(ft.getMessage()));
+      this.info(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 
@@ -141,8 +141,8 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  public void trace(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void trace(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.TRACE_INT, msg, null, null);
@@ -154,7 +154,7 @@ public class SLF4JLogger implements SFLogger {
   public void trace(String msg, Object... arguments) {
     if (isTraceEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.trace(SecretDetector.maskSecrets(ft.getMessage()));
+      this.trace(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 
@@ -168,8 +168,8 @@ public class SLF4JLogger implements SFLogger {
     }
   }
 
-  public void warn(String msg) {
-    msg = SecretDetector.maskSecrets(msg);
+  public void warn(String msg, boolean isMasked) {
+    msg = isMasked == true ? SecretDetector.maskSecrets(msg) : msg;
     if (isLocationAwareLogger) {
       ((LocationAwareLogger) slf4jLogger)
           .log(null, FQCN, LocationAwareLogger.WARN_INT, msg, null, null);
@@ -181,7 +181,7 @@ public class SLF4JLogger implements SFLogger {
   public void warn(String msg, Object... arguments) {
     if (isWarnEnabled()) {
       FormattingTuple ft = MessageFormatter.arrayFormat(msg, evaluateLambdaArgs(arguments));
-      this.warn(SecretDetector.maskSecrets(ft.getMessage()));
+      this.warn(SecretDetector.maskSecrets(ft.getMessage()), false);
     }
   }
 

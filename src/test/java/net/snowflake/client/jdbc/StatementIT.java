@@ -17,12 +17,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.net.URL;
-import java.sql.BatchUpdateException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.AbstractDriverIT;

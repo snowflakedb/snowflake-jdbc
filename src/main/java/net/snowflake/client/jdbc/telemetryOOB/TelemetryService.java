@@ -410,19 +410,18 @@ public class TelemetryService {
           int statusCode = response.getStatusLine().getStatusCode();
 
           if (statusCode == 200) {
-            logger.debug("telemetry server request success: " + response);
+            logger.debug("telemetry server request success: " + response, true);
             instance.count();
           } else if (statusCode == 429) {
             logger.debug("telemetry server request hit server cap on response: " + response);
-            System.out.println("telemetry server request hit server cap on response on deployment: " + instance.serverDeployment.getURL());
             instance.serverFailureCnt.incrementAndGet();
           } else {
-            logger.debug("telemetry server request error: " + response);
+            logger.debug("telemetry server request error: " + response, true);
             instance.lastClientError = response.toString();
             instance.clientFailureCnt.incrementAndGet();
             success = false;
           }
-          logger.debug(EntityUtils.toString(response.getEntity(), "UTF-8"));
+          logger.debug(EntityUtils.toString(response.getEntity(), "UTF-8"), true);
           response.close();
         }
       } catch (Exception e) {

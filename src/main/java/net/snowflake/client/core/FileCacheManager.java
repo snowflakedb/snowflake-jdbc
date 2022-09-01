@@ -95,7 +95,8 @@ class FileCacheManager {
                 ? systemGetEnv(this.cacheDirectoryEnvironmentVariable)
                 : null;
       } catch (Throwable ex) {
-        LOGGER.debug("Cannot get environment variable for cache directory, " + "skip using cache");
+        LOGGER.debug(
+            "Cannot get environment variable for cache directory, " + "skip using cache", false);
         // In Boomi cloud, System.getenv is not allowed due to policy,
         // so we catch the exception and skip cache completely
         return this;
@@ -114,7 +115,7 @@ class FileCacheManager {
         // Checking if home directory is writable.
         File homeFile = new File(homeDir);
         if (!homeFile.canWrite()) {
-          LOGGER.debug("Home directory not writeable, using tmpdir");
+          LOGGER.debug("Home directory not writeable, using tmpdir", false);
           homeDir = systemGetProperty("java.io.tmpdir");
         }
       }
@@ -186,7 +187,8 @@ class FileCacheManager {
     LOGGER.debug("Writing cache file. File={}", cacheFile);
     if (cacheFile == null || !tryLockCacheFile()) {
       // no cache file or it failed to lock file
-      LOGGER.debug("No cache file exists or failed to lock the file. Skipping writing the cache");
+      LOGGER.debug(
+          "No cache file exists or failed to lock the file. Skipping writing the cache", false);
       return;
     }
     // NOTE: must unlock cache file
@@ -202,7 +204,7 @@ class FileCacheManager {
       LOGGER.debug("Failed to write the cache file. File: {}", cacheFile);
     } finally {
       if (!unlockCacheFile()) {
-        LOGGER.debug("Failed to unlock cache file");
+        LOGGER.debug("Failed to unlock cache file", false);
       }
     }
   }
@@ -237,7 +239,7 @@ class FileCacheManager {
       ++cnt;
     }
     if (!locked) {
-      LOGGER.debug("Failed to lock the cache file.");
+      LOGGER.debug("Failed to lock the cache file.", false);
     }
     return locked;
   }
@@ -267,7 +269,7 @@ class FileCacheManager {
     if (!cacheLockFile.exists()
         && cacheFileTs > 0
         && currentTime - this.cacheExpirationInMilliseconds <= cacheFileTs) {
-      LOGGER.debug("No cache file lock directory exists and cache file is up to date.");
+      LOGGER.debug("No cache file lock directory exists and cache file is up to date.", false);
       return true;
     }
 
@@ -282,10 +284,10 @@ class FileCacheManager {
         LOGGER.debug("Failed to delete the directory. Dir: {}", cacheLockFile);
         return false;
       }
-      LOGGER.debug("Deleted the cache lock directory, because it was old.");
+      LOGGER.debug("Deleted the cache lock directory, because it was old.", false);
       return currentTime - this.cacheExpirationInMilliseconds <= cacheFileTs;
     }
-    LOGGER.debug("Failed to lock the file. Ignored.");
+    LOGGER.debug("Failed to lock the file. Ignored.", false);
     return false;
   }
 

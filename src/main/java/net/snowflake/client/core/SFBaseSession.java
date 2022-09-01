@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2021 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -113,6 +113,9 @@ public abstract class SFBaseSession {
   private long memoryLimitForTesting = MEMORY_LIMIT_UNSET;
   // name of temporary stage to upload array binds to; null if none has been created yet
   private String arrayBindStage = null;
+
+  // Query context for current session
+  private String queryContext;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
@@ -416,15 +419,28 @@ public abstract class SFBaseSession {
           logger.debug(
               "http.useProxy={} but valid host and port were not provided. No proxy in use.",
               httpUseProxy);
+          unsetInvalidProxyHostAndPort();
           ocspAndProxyAndGzipKey = new HttpClientSettingsKey(getOCSPMode());
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
+        unsetInvalidProxyHostAndPort();
         ocspAndProxyAndGzipKey = new HttpClientSettingsKey(getOCSPMode());
       }
     }
     return ocspAndProxyAndGzipKey;
+  }
+
+  public void unsetInvalidProxyHostAndPort() {
+    // If proxyHost and proxyPort are used without http or https unset them, so they are not used
+    // later by the ProxySelector.
+    if (!Strings.isNullOrEmpty(systemGetProperty("proxyHost"))) {
+      System.clearProperty("proxyHost");
+    }
+    if (!Strings.isNullOrEmpty(systemGetProperty("proxyPort"))) {
+      System.clearProperty("proxyPort");
+    }
   }
 
   public OCSPMode getOCSPMode() {
@@ -739,19 +755,13 @@ public abstract class SFBaseSession {
   public abstract void close() throws SFException, SnowflakeSQLException;
 
   /**
-   * Raise an error within the current session. By default, this may log an incident with Snowflake.
-   *
-   * @param exc The throwable exception
-   * @param jobId jobId that failed
-   * @param requestId requestId that failed
-   */
-  public abstract void raiseError(Throwable exc, String jobId, String requestId);
-
-  /**
    * Returns the telemetry client, if supported, by this session. If not, should return a
    * NoOpTelemetryClient.
    */
   public abstract Telemetry getTelemetryClient();
+
+  /** Makes a heartbeat call to check for session validity. */
+  public abstract void callHeartBeat(int timeout) throws Exception, SFException;
 
   /**
    * JDBC API. Returns a list of warnings generated since starting this session, or the last time it
@@ -775,5 +785,21 @@ public abstract class SFBaseSession {
 
   public abstract int getNetworkTimeoutInMilli();
 
+  public abstract int getAuthTimeout();
+
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
+
+  public abstract int getHttpClientConnectionTimeout();
+
+  public abstract int getHttpClientSocketTimeout();
+
+  public abstract boolean isAsyncSession();
+
+  public String getQueryContext() {
+    return queryContext;
+  }
+
+  public void setQueryContext(String queryContext) {
+    this.queryContext = queryContext;
+  }
 }

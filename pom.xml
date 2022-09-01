@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.13.15</version>
+  <version>3.13.22</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
@@ -37,20 +37,20 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>0.15.1</arrow.version>
+    <arrow.version>8.0.0</arrow.version>
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.14.2</jsoup.version>
-    <tika.version>1.25</tika.version>
-    <jackson.version>2.12.1</jackson.version>
-    <jacksondatabind.version>2.12.1</jacksondatabind.version>
+    <tika.version>2.4.1</tika.version>
+    <jackson.version>2.13.2</jackson.version>
+    <jacksondatabind.version>2.13.2.2</jacksondatabind.version>
     <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
     <httpclient.version>4.5.11</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <awssdk.version>1.11.394</awssdk.version>
-    <google.api.client.version>1.30.10</google.api.client.version>
-    <google.http.client.version>1.36.0</google.http.client.version>
-    <bouncycastle.version>1.64</bouncycastle.version>
+    <google.api.client.version>1.34.0</google.api.client.version>
+    <google.http.client.version>1.41.4</google.http.client.version>
+    <bouncycastle.version>1.70</bouncycastle.version>
     <jna.version>5.5.0</jna.version>
     <mockito.version>3.5.6</mockito.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
@@ -74,10 +74,20 @@
       <artifactId>commons-codec</artifactId>
       <version>1.14</version>
     </dependency>
+    <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+      <version>4.1.77.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <version>4.1.77.Final</version>
+    </dependency>
     <dependency>
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
-      <version>8.0</version>
+      <version>9.21</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
@@ -189,7 +199,7 @@
     <dependency>
       <groupId>net.minidev</groupId>
       <artifactId>json-smart</artifactId>
-      <version>2.4.5</version>
+      <version>2.4.8</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -290,33 +300,76 @@
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
         </exclusion>
+        <exclusion> <!-- Exclude earlier version to avoid whitesource vulnerability. -->
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-unsafe</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-netty</artifactId>
+      <version>${arrow.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId> <!-- Exclude earlier version to avoid whitesource vulnerability. -->
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>
       <artifactId>google-auth-library-oauth2-http</artifactId>
-      <version>0.9.0</version>
+      <version>1.5.3</version>
     </dependency>
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
-      <version>1.82.0</version>
+      <version>2.5.0</version>
       <exclusions>
         <exclusion>  <!-- Exclude sub-sub dependency gson to avoid whitesource vulnerability -->
           <groupId>com.google.code.gson</groupId>
           <artifactId>gson</artifactId>
+        </exclusion>
+        <exclusion> <!-- exclude oauth-client to avoid whitesource vulnerability -->
+          <groupId>com.google.oauth-client</groupId>
+          <artifactId>google-oauth-client</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>
       <artifactId>google-auth-library-credentials</artifactId>
-      <version>0.9.0</version>
+      <version>1.5.3</version>
     </dependency>
     <dependency>
       <groupId>com.google.api-client</groupId>
       <artifactId>google-api-client</artifactId>
       <version>${google.api.client.version}</version>
+      <exclusions> <!-- exclude oauth-client to avoid whitesource vulnerability -->
+        <exclusion>
+          <groupId>com.google.oauth-client</groupId>
+          <artifactId>google-oauth-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency> <!-- oauth-client is not a direct dependency. It is used by google-cloud-storage and api-client. -->
+      <groupId>com.google.oauth-client</groupId>
+      <artifactId>google-oauth-client</artifactId>
+      <version>1.33.3</version>
     </dependency>
     <dependency>
       <groupId>com.google.http-client</groupId>
@@ -352,15 +405,75 @@
         <version>3.0.0-M1</version>
         <executions>
           <execution>
-            <id>install-arrow-memory</id>
+            <id>install-tika-core</id>
             <phase>validate</phase>
             <goals>
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/dependencies/arrow-memory-${arrow.version}.jar</file>
+              <file>${project.basedir}/dependencies/tika-core-${tika.version}.jar</file>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-core</artifactId>
+              <version>${tika.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-pom</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-memory-${arrow.version}.pom</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-memory</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>pom</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-core</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-memory-core-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-core</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-unsafe</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-memory-unsafe-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-unsafe</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-netty</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-memory-netty-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-netty</artifactId>
               <version>${arrow.version}</version>
               <packaging>jar</packaging>
               <generatePom>true</generatePom>
@@ -590,7 +703,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
-            <version>3.2.1</version>
+            <version>3.2.4</version>
             <configuration>
             </configuration>
             <executions>
@@ -628,6 +741,10 @@
                      <relocation>
                        <pattern>com.google</pattern>
                        <shadedPattern>${shadeBase}.google</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>google.geo</pattern>
+                       <shadedPattern>${shadeBase}.google.geo</shadedPattern>
                      </relocation>
                      <relocation>
                        <pattern>org.joda</pattern>
@@ -754,6 +871,9 @@
                             <exclude>git.properties</exclude>
                             <exclude>google-http-client.properties</exclude>
                             <exclude>storage.v1.json</exclude> <!-- This is just a documentation file, not needed-->
+                            <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                            <exclude>dependencies.properties</exclude>
+                            <exclude>pipes-fork-server-default-log4j2.xml</exclude>
                          </excludes>
                       </filter>
                       <filter>

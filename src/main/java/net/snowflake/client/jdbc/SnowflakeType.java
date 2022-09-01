@@ -450,6 +450,7 @@ public enum SnowflakeType {
         return Double.class.getName();
 
       case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
         return Timestamp.class.getName();
 
       case Types.DATE:

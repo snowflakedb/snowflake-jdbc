@@ -121,7 +121,7 @@ public abstract class SFBaseStatement {
    * @param sql the set property sql
    */
   public void executeSetProperty(final String sql) {
-    logger.debug("setting property");
+    logger.debug("setting property", false);
 
     // tokenize the sql
     String[] tokens = sql.split("\\s+");
@@ -132,11 +132,11 @@ public abstract class SFBaseStatement {
 
     if ("sort".equalsIgnoreCase(tokens[1])) {
       if (tokens.length >= 3 && "on".equalsIgnoreCase(tokens[2])) {
-        logger.debug("setting sort on");
+        logger.debug("setting sort on", false);
 
         this.getSFBaseSession().setSessionPropertyByKey("sort", true);
       } else {
-        logger.debug("setting sort off");
+        logger.debug("setting sort off", false);
         this.getSFBaseSession().setSessionPropertyByKey("sort", false);
       }
     }

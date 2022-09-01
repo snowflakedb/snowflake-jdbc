@@ -227,47 +227,4 @@ public class IncidentUtil {
     }
     json.writeEndObject();
   }
-
-  /**
-   * Makes a V2 incident object and triggers ir, effectively reporting the given exception to GS and
-   * possibly to crashmanager
-   *
-   * @param session SFSession object to talk to GS through
-   * @param exc the Throwable we should report
-   * @param jobId jobId that failed
-   * @param requestId requestId that failed
-   * @return the given Throwable object
-   */
-  public static Throwable generateIncidentV2WithException(
-      SFBaseSession session, Throwable exc, String jobId, String requestId) {
-    // Generate an incident only if the session exists.
-    if (session != null) {
-      session.raiseError(exc, jobId, requestId);
-    }
-    return exc;
-  }
-
-  /**
-   * Makes a V2 incident object and triggers it, effectively reporting the given exception to GS and
-   * possibly to crashmanager.
-   *
-   * <p>This function should be proceeded by a throw as it returns the originally given exception.
-   *
-   * @param serverUrl url of GS to report incident to
-   * @param sessionToken session token to be used to report incident
-   * @param exc the Throwable we should report
-   * @param jobId jobId that failed
-   * @param requestId requestId that failed
-   * @return the given Exception object
-   */
-  public static Throwable generateIncidentV2WithException(
-      String serverUrl,
-      String sessionToken,
-      HttpClientSettingsKey key,
-      Throwable exc,
-      String jobId,
-      String requestId) {
-    new Incident(serverUrl, sessionToken, key, exc, jobId, requestId).trigger();
-    return exc;
-  }
 }

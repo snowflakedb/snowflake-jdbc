@@ -5,11 +5,14 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 import java.sql.*;
 import java.util.Calendar;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,5 +45,129 @@ public class BindingDataLatestIT extends AbstractDriverIT {
     resultSet.next();
     assertThat("integer", resultSet.getInt(1), equalTo(123));
     assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
+  }
+
+  /**
+   * Test that stage binding and regular binding insert and return the same value for timestamp_ntz
+   *
+   * @throws SQLException
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testTimestampBindingWithNTZType() throws SQLException {
+    try (Connection connection = getConnection()) {
+      TimeZone origTz = TimeZone.getDefault();
+      Statement statement = connection.createStatement();
+      statement.execute(
+          "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+      statement.execute(
+          "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
+      statement.execute("alter session set TIMEZONE='Asia/Tokyo'");
+      TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
+      Timestamp currT = new Timestamp(System.currentTimeMillis());
+
+      // insert using stage binding
+      PreparedStatement prepStatement =
+          connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+      prepStatement.setInt(1, 1);
+      prepStatement.setTimestamp(2, currT);
+      prepStatement.setTimestamp(3, currT);
+      prepStatement.setTimestamp(4, currT);
+      prepStatement.addBatch();
+      prepStatement.executeBatch();
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
+
+      // insert using regular binging
+      prepStatement = connection.prepareStatement("insert into regularinsert values (?,?,?,?)");
+      for (int i = 1; i <= 6; i++) {
+        prepStatement.setInt(1, 1);
+        prepStatement.setTimestamp(2, currT);
+        prepStatement.setTimestamp(3, currT);
+        prepStatement.setTimestamp(4, currT);
+        prepStatement.addBatch();
+      }
+      prepStatement.executeBatch();
+
+      // Compare the results
+      ResultSet rs1 = statement.executeQuery("select * from stageinsert");
+      ResultSet rs2 = statement.executeQuery("select * from regularinsert");
+      rs1.next();
+      rs2.next();
+
+      assertEquals(rs1.getInt(1), rs2.getInt(1));
+      assertEquals(rs1.getString(2), rs2.getString(2));
+      assertEquals(rs1.getString(3), rs2.getString(3));
+      assertEquals(rs1.getString(4), rs2.getString(4));
+
+      statement.execute("drop table if exists stageinsert");
+      statement.execute("drop table if exists regularinsert");
+      TimeZone.setDefault(origTz);
+      statement.close();
+      prepStatement.close();
+    }
+  }
+
+  /**
+   * Test that stage binding and regular binding insert and return the same value for timestamp_ltz
+   *
+   * @throws SQLException
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testTimestampBindingWithLTZType() throws SQLException {
+    try (Connection connection = getConnection()) {
+      TimeZone origTz = TimeZone.getDefault();
+      Statement statement = connection.createStatement();
+      statement.execute(
+          "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+      statement.execute(
+          "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
+      statement.execute("alter session set TIMEZONE='Asia/Tokyo'");
+      TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
+      Timestamp currT = new Timestamp(System.currentTimeMillis());
+
+      // insert using stage binding
+      PreparedStatement prepStatement =
+          connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+      prepStatement.setInt(1, 1);
+      prepStatement.setTimestamp(2, currT);
+      prepStatement.setTimestamp(3, currT);
+      prepStatement.setTimestamp(4, currT);
+      prepStatement.addBatch();
+      prepStatement.executeBatch();
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
+
+      // insert using regular binging
+      prepStatement = connection.prepareStatement("insert into regularinsert values (?,?,?,?)");
+      for (int i = 1; i <= 6; i++) {
+        prepStatement.setInt(1, 1);
+        prepStatement.setTimestamp(2, currT);
+        prepStatement.setTimestamp(3, currT);
+        prepStatement.setTimestamp(4, currT);
+        prepStatement.addBatch();
+      }
+      prepStatement.executeBatch();
+
+      // Compare the results
+      ResultSet rs1 = statement.executeQuery("select * from stageinsert");
+      ResultSet rs2 = statement.executeQuery("select * from regularinsert");
+      rs1.next();
+      rs2.next();
+
+      assertEquals(rs1.getInt(1), rs2.getInt(1));
+      assertEquals(rs1.getString(2), rs2.getString(2));
+      assertEquals(rs1.getString(3), rs2.getString(3));
+      assertEquals(rs1.getString(4), rs2.getString(4));
+
+      statement.execute("drop table if exists stageinsert");
+      statement.execute("drop table if exists regularinsert");
+      TimeZone.setDefault(origTz);
+      statement.close();
+      prepStatement.close();
+    }
   }
 }

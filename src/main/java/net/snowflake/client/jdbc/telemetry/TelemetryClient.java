@@ -134,7 +134,7 @@ public class TelemetryClient implements Telemetry {
       return createTelemetry(
           (SFSession) conn.unwrap(SnowflakeConnectionV1.class).getSFBaseSession(), flushSize);
     } catch (SQLException ex) {
-      logger.debug("input connection is not a SnowflakeConnection");
+      logger.debug("input connection is not a SnowflakeConnection", false);
       return null;
     }
   }
@@ -203,7 +203,7 @@ public class TelemetryClient implements Telemetry {
   @Override
   public void addLogToBatch(TelemetryData log) {
     if (isClosed) {
-      logger.debug("Telemetry already closed");
+      logger.debug("Telemetry already closed", false);
       return;
     }
 
@@ -234,7 +234,7 @@ public class TelemetryClient implements Telemetry {
   @Override
   public void close() {
     if (isClosed) {
-      logger.debug("Telemetry client already closed");
+      logger.debug("Telemetry client already closed", false);
       return;
     }
 
@@ -329,9 +329,19 @@ public class TelemetryClient implements Telemetry {
         response =
             this.session == null
                 ? HttpUtil.executeGeneralRequest(
-                    post, TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC, this.httpClient)
+                    post,
+                    TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
+                    this.session.getAuthTimeout(),
+                    this.session.getHttpClientSocketTimeout(),
+                    0,
+                    this.httpClient)
                 : HttpUtil.executeGeneralRequest(
-                    post, TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC, this.session.getHttpClientKey());
+                    post,
+                    TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
+                    this.session.getAuthTimeout(),
+                    this.session.getHttpClientSocketTimeout(),
+                    0,
+                    this.session.getHttpClientKey());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance

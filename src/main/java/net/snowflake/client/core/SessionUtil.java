@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -346,8 +346,8 @@ public class SessionUtil {
     Map<String, Object> commonParams;
 
     try {
-      uriBuilder = new URIBuilder(loginInput.getServerUrl());
 
+      uriBuilder = new URIBuilder(loginInput.getServerUrl());
       // add database name and schema name as query parameters
       if (loginInput.getDatabaseName() != null) {
         uriBuilder.addParameter(SF_QUERY_DATABASE, loginInput.getDatabaseName());
@@ -388,6 +388,7 @@ public class SessionUtil {
                 loginInput.getUserName());
 
         loginInput.setToken(s.issueJwtToken());
+        loginInput.setAuthTimeout(SessionUtilKeyPair.getTimeout());
       }
 
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
@@ -585,9 +586,73 @@ public class SessionUtil {
 
       setServiceNameHeader(loginInput, postRequest);
 
-      String theString =
-          HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+      String theString = null;
+      int leftRetryTimeout = loginInput.getLoginTimeout();
+      int leftsocketTimeout = loginInput.getSocketTimeout();
+      int retryCount = 0;
+
+      while (true) {
+        try {
+          theString =
+              HttpUtil.executeGeneralRequest(
+                  postRequest,
+                  leftRetryTimeout,
+                  loginInput.getAuthTimeout(),
+                  leftsocketTimeout,
+                  retryCount,
+                  loginInput.getHttpClientSettingsKey());
+        } catch (SnowflakeSQLException ex) {
+          if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
+            if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+              SessionUtilKeyPair s =
+                  new SessionUtilKeyPair(
+                      loginInput.getPrivateKey(),
+                      loginInput.getPrivateKeyFile(),
+                      loginInput.getPrivateKeyFilePwd(),
+                      loginInput.getAccountName(),
+                      loginInput.getUserName());
+
+              data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
+
+              long elapsedSeconds = ex.getElapsedSeconds();
+
+              if (loginInput.getLoginTimeout() > 0) {
+                if (leftRetryTimeout > elapsedSeconds) {
+                  leftRetryTimeout -= elapsedSeconds;
+                } else {
+                  leftRetryTimeout = 1;
+                }
+              }
+
+              // In RestRequest.execute(), socket timeout is replaced with auth timeout
+              // so we can renew the request within auth timeout.
+              // auth timeout within socket timeout is thrown without backoff,
+              // and we need to update time remained in socket timeout here to control the
+              // the actual socket timeout from customer setting.
+              if (loginInput.getSocketTimeout() > 0) {
+                if (ex.issocketTimeoutNoBackoff()) {
+                  if (leftsocketTimeout > elapsedSeconds) {
+                    leftsocketTimeout -= elapsedSeconds;
+                  } else {
+                    leftsocketTimeout = 1;
+                  }
+                } else {
+                  // reset curl timeout for retry with backoff.
+                  leftsocketTimeout = loginInput.getSocketTimeout();
+                }
+              }
+
+              // JWT renew should not count as a retry, so we pass back the current retry count.
+              retryCount = ex.getRetryCount();
+
+              continue;
+            }
+          } else {
+            throw ex;
+          }
+        }
+        break;
+      }
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -648,7 +713,7 @@ public class SessionUtil {
           databaseVersion = serverVersion;
         }
       } else {
-        logger.debug("server version is null");
+        logger.debug("server version is null", false);
       }
 
       if (databaseVersion != null) {
@@ -665,7 +730,7 @@ public class SessionUtil {
           }
         }
       } else {
-        logger.debug("database version is null");
+        logger.debug("database version is null", false);
       }
 
       if (!jsonNode.path("data").path("newClientForUpgrade").isNull()) {
@@ -850,7 +915,12 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
@@ -934,7 +1004,12 @@ public class SessionUtil {
 
       String theString =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
 
       JsonNode rootNode;
 
@@ -995,7 +1070,12 @@ public class SessionUtil {
 
       responseHtml =
           HttpUtil.executeGeneralRequest(
-              httpGet, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              httpGet,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
 
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
@@ -1060,6 +1140,9 @@ public class SessionUtil {
           HttpUtil.executeRequestWithoutCookies(
               postRequest,
               loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
               0,
               null,
               loginInput.getHttpClientSettingsKey());
@@ -1068,7 +1151,10 @@ public class SessionUtil {
 
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
-      oneTimeToken = jsonNode.get("cookieToken").asText();
+      oneTimeToken =
+          jsonNode.get("sessionToken") != null
+              ? jsonNode.get("sessionToken").asText()
+              : jsonNode.get("cookieToken").asText();
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
@@ -1139,7 +1225,12 @@ public class SessionUtil {
 
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
-              postRequest, loginInput.getLoginTimeout(), loginInput.getHttpClientSettingsKey());
+              postRequest,
+              loginInput.getLoginTimeout(),
+              loginInput.getAuthTimeout(),
+              loginInput.getSocketTimeout(),
+              0,
+              loginInput.getHttpClientSettingsKey());
       logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 
@@ -1262,7 +1353,7 @@ public class SessionUtil {
     for (JsonNode child : paramsNode) {
       // If there isn't a name then the response from GS must be erroneous.
       if (!child.hasNonNull("name")) {
-        logger.error("Common Parameter JsonNode encountered with " + "no parameter name!");
+        logger.error("Common Parameter JsonNode encountered with " + "no parameter name!", false);
         continue;
       }
 
@@ -1282,6 +1373,16 @@ public class SessionUtil {
       } else if (BOOLEAN_PARAMS.contains(paramName.toUpperCase())) {
         parameters.put(paramName, child.path("value").asBoolean());
       } else {
+        try {
+          // Value should only be boolean, int or string so we don't expect exceptions here.
+          parameters.put(paramName, mapper.treeToValue(child.path("value"), Object.class));
+        } catch (Exception e) {
+          logger.debug(
+              "Unknown Common Parameter Failed to Parse: {} -> {}. Exception: {}",
+              paramName,
+              child.path("value"),
+              e.getMessage());
+        }
         logger.debug("Unknown Common Parameter: {}", paramName);
       }
 

@@ -161,7 +161,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     }
 
     // attempts an SSL connection to Google
-    connectToGoogle();
+    //connectToGoogle();
   }
 
   @AfterClass
@@ -207,7 +207,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     }
 
     // attempts an SSL connection to Google
-    connectToGoogle();
+    //connectToGoogle();
   }
 
   @Test

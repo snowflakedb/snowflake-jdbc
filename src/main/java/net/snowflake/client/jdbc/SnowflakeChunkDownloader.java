@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.jdbc;
@@ -84,6 +84,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
   private final int networkTimeoutInMilli;
 
+  private final int authTimeout;
+
+  private final int socketTimeout;
+
   private long memoryLimit;
 
   // the current memory usage across JVM
@@ -123,8 +127,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final int MAX_RETRY_JITTER = 1000; // milliseconds
 
   // Only controls the max retry number when prefetch runs out of memory
-  // Default value is MAX_NUM_OF_RETRY, which is 10
-  private int prefetchMaxRetry = MAX_NUM_OF_RETRY;
+  // Will wait a while then retry to see if we can allocate the required memory
+  // Default value is 1
+  private int prefetchMaxRetry = 1;
 
   private static Throwable injectedDownloaderException = null; // for testing purpose
 
@@ -190,6 +195,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     this.ocspModeAndProxyKey = resultSetSerializable.getHttpClientKey();
     this.qrmk = resultSetSerializable.getQrmk();
     this.networkTimeoutInMilli = resultSetSerializable.getNetworkTimeoutInMilli();
+    this.authTimeout = resultSetSerializable.getAuthTimeout();
+    this.socketTimeout = resultSetSerializable.getSocketTimeout();
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
     logger.debug("qrmk = {}", this.qrmk);
@@ -371,6 +378,26 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             this.nextChunkToDownload,
             nextChunk.getScrubbedUrl());
 
+        // SNOW-615824 Imagine this scenario to understand the root cause of this issue:
+        // When consuming chunk N, we try to prefetch chunk N+1. The prefetching failed due to
+        // hitting memoryLimit. We will mark the chunk N+1 as FAILED.
+        // After we are done with chunk N, we try to consume chunk N+1.
+        // In getNextChunkToConsume, we first call startNextDownloaders then call waitForChunkReady.
+        // startNextDownloaders sees that the next chunk to download is N+1. With enough memory at
+        // this time, it will try to download the chunk. waitForChunkReady sees that chunk N+1 is
+        // marked as FAILED, it will also try to download the chunk because it thinks that no
+        // prefetching will download the chunk.
+        // Thus we will submit two download jobs, causing chunk N+1 appears to be lost.
+        // Therefore the fix is to only prefetch chunks that are marked as NOT_STARTED here.
+        nextChunk.getLock().lock();
+        try {
+          if (nextChunk.getDownloadState() != DownloadState.NOT_STARTED) {
+            break;
+          }
+        } finally {
+          nextChunk.getLock().unlock();
+        }
+
         Future downloaderFuture =
             executor.submit(
                 getDownloadChunkCallable(
@@ -380,6 +407,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     nextChunkToDownload,
                     chunkHeadersMap,
                     networkTimeoutInMilli,
+                    authTimeout,
+                    socketTimeout,
                     this.session));
         downloaderFutures.put(nextChunkToDownload, downloaderFuture);
         // increment next chunk to download
@@ -390,12 +419,13 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         continue;
       } else {
         // cancel the reserved memory
-        logger.debug("cancel the reserved memory.");
+        logger.debug("cancel the reserved memory.", false);
         curMem = currentMemoryUsage.addAndGet(-neededChunkMemory);
         if (getPrefetchMemRetry > prefetchMaxRetry) {
           logger.debug(
               "Retry limit for prefetch has been reached. Cancel reserved memory and prefetch"
-                  + " attempt.");
+                  + " attempt.",
+              false);
           nextChunk.getLock().lock();
           try {
             nextChunk.setDownloadState(DownloadState.FAILURE);
@@ -520,7 +550,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
     // if no more chunks, return null
     if (this.nextChunkToConsume >= this.chunks.size()) {
-      logger.debug("no more chunk");
+      logger.debug("no more chunk", false);
       return null;
     }
 
@@ -550,7 +580,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       currentChunk.getLock().lock();
       try {
         logger.debug("#chunk{} is not ready to consume", nextChunkToConsume);
-        logger.debug("consumer get lock to check chunk state");
+        logger.debug("consumer get lock to check chunk state", false);
 
         waitForChunkReady(currentChunk);
 
@@ -579,7 +609,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         // next chunk to consume is ready for consumption
         return currentChunk;
       } finally {
-        logger.debug("consumer free lock");
+        logger.debug("consumer free lock", false);
 
         boolean terminateDownloader = (currentChunk.getDownloadState() == DownloadState.FAILURE);
         // release the unlock always
@@ -589,7 +619,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           releaseCurrentMemoryUsage(nextChunkToConsume - 1, Optional.empty());
         }
         if (terminateDownloader) {
-          logger.debug("Download result fail. Shut down the chunk downloader");
+          logger.debug("Download result fail. Shut down the chunk downloader", false);
           terminate();
         }
       }
@@ -674,8 +704,10 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     nextChunkToConsume,
                     chunkHeadersMap,
                     networkTimeoutInMilli,
+                    authTimeout,
+                    socketTimeout,
                     session));
-        downloaderFutures.put(nextChunkToDownload, downloaderFuture);
+        downloaderFutures.put(nextChunkToConsume, downloaderFuture);
         // Only when prefetch fails due to internal memory limitation, nextChunkToDownload
         // equals nextChunkToConsume. In that case we need to increment nextChunkToDownload
         if (nextChunkToDownload == nextChunkToConsume) {
@@ -745,7 +777,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             executor.shutdown();
 
             if (!executor.awaitTermination(SHUTDOWN_TIME, TimeUnit.SECONDS)) {
-              logger.debug("Executor did not terminate in the specified time.");
+              logger.debug("Executor did not terminate in the specified time.", false);
               List<Runnable> droppedTasks = executor.shutdownNow(); // optional **
               logger.debug(
                   "Executor was abruptly shut down. "
@@ -827,6 +859,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       final int chunkIndex,
       final Map<String, String> chunkHeadersMap,
       final int networkTimeoutInMilli,
+      final int authTimeout,
+      final int socketTimeout,
       final SFBaseSession session) {
     ChunkDownloadContext downloadContext =
         new ChunkDownloadContext(
@@ -836,6 +870,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             chunkIndex,
             chunkHeadersMap,
             networkTimeoutInMilli,
+            authTimeout,
+            socketTimeout,
             session);
 
     return new Callable<Void>() {
@@ -940,9 +976,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
           resultChunk.getLock().lock();
           try {
-            logger.debug("get lock to change the chunk to be ready to consume");
+            logger.debug("get lock to change the chunk to be ready to consume", false);
 
-            logger.debug("wake up consumer if it is waiting for a chunk to be " + "ready");
+            logger.debug("wake up consumer if it is waiting for a chunk to be " + "ready", false);
 
             resultChunk.setDownloadState(DownloadState.SUCCESS);
             resultChunk.getDownloadCondition().signal();
@@ -954,14 +990,14 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         } catch (Throwable th) {
           resultChunk.getLock().lock();
           try {
-            logger.debug("get lock to set chunk download error");
+            logger.debug("get lock to set chunk download error", false);
             resultChunk.setDownloadState(DownloadState.FAILURE);
             downloader.releaseCurrentMemoryUsage(chunkIndex, Optional.empty());
             StringWriter errors = new StringWriter();
             th.printStackTrace(new PrintWriter(errors));
             resultChunk.setDownloadError(errors.toString());
 
-            logger.debug("wake up consumer if it is waiting for a chunk to be ready");
+            logger.debug("wake up consumer if it is waiting for a chunk to be ready", false);
 
             resultChunk.getDownloadCondition().signal();
           } finally {

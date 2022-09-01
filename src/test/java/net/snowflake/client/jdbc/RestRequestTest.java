@@ -1,8 +1,11 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.jdbc;
 
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
@@ -11,8 +14,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.HttpUtil;
 import org.apache.http.StatusLine;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -23,6 +27,10 @@ import org.mockito.stubbing.Answer;
 
 /** RestRequest unit tests. */
 public class RestRequestTest {
+
+  static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
+  static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
+
   private CloseableHttpResponse retryResponse() {
     StatusLine retryStatusLine = mock(StatusLine.class);
     when(retryStatusLine.getStatusCode()).thenReturn(503);
@@ -43,12 +51,31 @@ public class RestRequestTest {
     return successResponse;
   }
 
-  private void execute(CloseableHttpClient client, String uri, boolean includeRetryParameters)
+  private void execute(
+      CloseableHttpClient client,
+      String uri,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      boolean includeRetryParameters)
       throws IOException, SnowflakeSQLException {
+
+    RequestConfig.Builder builder =
+        RequestConfig.custom()
+            .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
+            .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
+            .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT);
+    RequestConfig defaultRequestConfig = builder.build();
+    HttpUtil util = new HttpUtil();
+    util.setRequestConfig(defaultRequestConfig);
+
     RestRequest.execute(
         client,
         new HttpGet(uri),
-        0, // retry timeout
+        retryTimeout, // retry timeout
+        authTimeout,
+        socketTimeout,
+        0,
         0, // inject socket timeout
         new AtomicBoolean(false), // canceling
         false, // without cookie
@@ -90,7 +117,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234", true);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true);
   }
 
   @Test
@@ -106,9 +133,7 @@ public class RestRequestTest {
                 HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
                 String params = arg.getURI().getQuery();
 
-                if (callCount > 0) {
-                  assertTrue(params.contains("retryCount=" + callCount));
-                }
+                assertFalse(params.contains("retryCount="));
                 assertFalse(params.contains("clientStartTime="));
                 assertTrue(params.contains("request_guid="));
 
@@ -121,7 +146,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234", false);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false);
   }
 
   private CloseableHttpResponse anyStatusCodeResponse(int statusCode) {
@@ -135,12 +160,12 @@ public class RestRequestTest {
   }
 
   @Test
-  public void testIsRetryableHTTPCode() throws Exception {
+  public void testIsNonRetryableHTTPCode() throws Exception {
     class TestCase {
       TestCase(int statusCode, boolean retryHTTP403, boolean result) {
         this.statusCode = statusCode;
         this.retryHTTP403 = retryHTTP403;
-        this.result = result;
+        this.result = result; // expected result of calling isNonRetryableHTTPCode()
       }
 
       public int statusCode;
@@ -149,6 +174,7 @@ public class RestRequestTest {
     }
     List<TestCase> testCases = new ArrayList<>();
     // no retry on HTTP 403 option
+
     testCases.add(new TestCase(100, false, true));
     testCases.add(new TestCase(101, false, true));
     testCases.add(new TestCase(103, false, true));
@@ -168,12 +194,12 @@ public class RestRequestTest {
     testCases.add(new TestCase(308, false, true));
     testCases.add(new TestCase(400, false, true));
     testCases.add(new TestCase(401, false, true));
-    testCases.add(new TestCase(403, false, false)); // no retry on HTTP 403
+    testCases.add(new TestCase(403, false, true)); // no retry on HTTP 403
     testCases.add(new TestCase(404, false, true));
     testCases.add(new TestCase(405, false, true));
     testCases.add(new TestCase(406, false, true));
     testCases.add(new TestCase(407, false, true));
-    testCases.add(new TestCase(408, false, false)); // no retry on HTTP 408
+    testCases.add(new TestCase(408, false, false)); // do retry on HTTP 408
     testCases.add(new TestCase(410, false, true));
     testCases.add(new TestCase(411, false, true));
     testCases.add(new TestCase(412, false, true));
@@ -221,12 +247,12 @@ public class RestRequestTest {
     testCases.add(new TestCase(308, true, true));
     testCases.add(new TestCase(400, true, true));
     testCases.add(new TestCase(401, true, true));
-    testCases.add(new TestCase(403, true, true)); // do retry on HTTP 403
+    testCases.add(new TestCase(403, true, false)); // do retry on HTTP 403
     testCases.add(new TestCase(404, true, true));
     testCases.add(new TestCase(405, true, true));
     testCases.add(new TestCase(406, true, true));
     testCases.add(new TestCase(407, true, true));
-    testCases.add(new TestCase(408, true, false)); // no retry on HTTP 408
+    testCases.add(new TestCase(408, true, false)); // do retry on HTTP 408
     testCases.add(new TestCase(410, true, true));
     testCases.add(new TestCase(411, true, true));
     testCases.add(new TestCase(412, true, true));
@@ -261,16 +287,30 @@ public class RestRequestTest {
             String.format(
                 "Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403),
-            RestRequest.isNonretryableHTTPCode(
+            RestRequest.isNonRetryableHTTPCode(
                 anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       } else {
         assertFalse(
             String.format(
                 "Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403),
-            RestRequest.isNonretryableHTTPCode(
+            RestRequest.isNonRetryableHTTPCode(
                 anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
       }
+    }
+  }
+
+  @Test
+  public void testExceptionAuthBasedTimeout() throws IOException {
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
+
+    try {
+      execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true);
+    } catch (SnowflakeSQLException ex) {
+      assertThat(
+          ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
@@ -7,6 +7,7 @@ import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HE
 import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
@@ -266,6 +267,37 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     assertEquals(rs.getString(1), "row3");
     assertEquals(rs.getInt(2), 3);
     statement.execute("drop table smallTable");
+    statement.close();
+    con.close();
+  }
+
+  /**
+   * Tests that error message and error code are reset after an error
+   *
+   * @throws SQLException
+   * @throws InterruptedException
+   */
+  @Test
+  public void testQueryStatusErrorMessageAndErrorCode() throws SQLException, InterruptedException {
+    // open connection and run asynchronous query
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("create or replace table testTable(colA string, colB boolean)");
+    statement.execute("insert into testTable values ('test', true)");
+    ResultSet rs1 =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from testTable");
+    QueryStatus status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+    // Set the error message and error code so we can confirm they are reset when getStatus() is
+    // called.
+    status.setErrorMessage(QueryStatus.FAILED_WITH_ERROR.toString());
+    status.setErrorCode(2003);
+    Thread.sleep(300);
+    status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+    // Assert status of query is a success
+    assertEquals(QueryStatus.SUCCESS, status);
+    assertEquals("No error reported", status.getErrorMessage());
+    assertEquals(0, status.getErrorCode());
+    statement.execute("drop table if exists testTable");
     statement.close();
     con.close();
   }
@@ -933,10 +965,69 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     postRequest.addHeader("accept", "application/json");
 
     String theString =
-        HttpUtil.executeGeneralRequest(postRequest, 60, new HttpClientSettingsKey(null));
+        HttpUtil.executeGeneralRequest(postRequest, 60, 0, 0, 0, new HttpClientSettingsKey(null));
 
     JsonNode jsonNode = mapper.readTree(theString);
     assertEquals(
         "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}", jsonNode.toString());
+  }
+
+  @Test
+  public void testReadOnly() throws Throwable {
+    try (Connection connection = getConnection()) {
+
+      connection.setReadOnly(true);
+      assertEquals(connection.isReadOnly(), false);
+
+      connection.setReadOnly(false);
+      connection.createStatement().execute("create or replace table readonly_test(c1 int)");
+      assertFalse(connection.isReadOnly());
+      connection.createStatement().execute("drop table if exists readonly_test");
+    }
+  }
+
+  @Test
+  public void testDownloadStreamWithFileNotFoundException() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("CREATE OR REPLACE TEMP STAGE testDownloadStream_stage");
+    long startDownloadTime = System.currentTimeMillis();
+    try {
+      connection
+          .unwrap(SnowflakeConnection.class)
+          .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
+    } catch (SQLException ex) {
+      assertThat(ex.getErrorCode(), is(ErrorCode.S3_OPERATION_ERROR.getMessageCode()));
+    }
+    long endDownloadTime = System.currentTimeMillis();
+    // S3Client retries some exception for a default timeout of 5 minutes
+    // Check that 404 was not retried
+    assertTrue(endDownloadTime - startDownloadTime < 400000);
+  }
+
+  @Test
+  public void testIsAsyncSession() throws SQLException, InterruptedException {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      // Run a query that takes 5 seconds to complete
+      ResultSet rs =
+          statement
+              .unwrap(SnowflakeStatement.class)
+              .executeAsyncQuery("select count(*) from table(generator(timeLimit => 4))");
+      // Assert that activeAsyncQueries is non-empty with running query. Session is async and not
+      // safe to close
+      assertTrue(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isAsyncSession());
+      assertFalse(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isSafeToClose());
+      // Sleep 6 seconds to ensure query is finished running
+      TimeUnit.SECONDS.sleep(6);
+      // Assert that there are no longer any queries running.
+      // First, assert session is safe to close. This iterates through active queries, fetches their
+      // status, and removes them from the activeQueriesMap if they are no longer active.
+      assertTrue(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isSafeToClose());
+      // Next, assert session is no longer async (just fetches size of activeQueriesMap with no
+      // other action)
+      assertFalse(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isAsyncSession());
+      rs.close();
+    }
   }
 }

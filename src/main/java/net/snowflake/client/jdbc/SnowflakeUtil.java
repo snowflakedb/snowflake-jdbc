@@ -409,7 +409,7 @@ public class SnowflakeUtil {
    */
   public static void logResponseDetails(HttpResponse response, SFLogger logger) {
     if (response == null) {
-      logger.error("null response");
+      logger.error("null response", false);
       return;
     }
 

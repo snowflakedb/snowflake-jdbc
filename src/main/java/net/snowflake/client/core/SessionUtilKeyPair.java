@@ -1,7 +1,9 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.core;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
 import com.google.common.base.Strings;
 import com.nimbusds.jose.JOSEException;
@@ -54,6 +56,8 @@ class SessionUtilKeyPair {
   private static final String ISSUER_FMT = "%s.%s.%s";
 
   private static final String SUBJECT_FMT = "%s.%s";
+
+  private static final int JWT_DEFAULT_AUTH_TIMEOUT = 10;
 
   SessionUtilKeyPair(
       PrivateKey privateKey,
@@ -201,5 +205,14 @@ class SessionUtilKeyPair {
     } catch (NoSuchAlgorithmException e) {
       throw new SFException(e, ErrorCode.INTERNAL_ERROR, "Error when calculating fingerprint");
     }
+  }
+
+  public static int getTimeout() {
+    String jwtAuthTimeoutStr = systemGetEnv("JWT_AUTH_TIMEOUT");
+    int jwtAuthTimeout = JWT_DEFAULT_AUTH_TIMEOUT;
+    if (jwtAuthTimeoutStr != null) {
+      jwtAuthTimeout = Integer.parseInt(jwtAuthTimeoutStr);
+    }
+    return jwtAuthTimeout;
   }
 }

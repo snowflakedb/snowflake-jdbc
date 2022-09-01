@@ -9,8 +9,10 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.*;
 
 import java.sql.*;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -34,6 +36,12 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           + "    var sql_command = \"Hello, world!\"\n"
           + "    $$\n"
           + "    ;";
+
+  /** Create catalog and schema for tests with double quotes */
+  public void createDoubleQuotedSchemaAndCatalog(Statement statement) throws SQLException {
+    statement.execute("create or replace database \"dbwith\"\"quotes\"");
+    statement.execute("create or replace schema \"dbwith\"\"quotes\".\"schemawith\"\"quotes\"");
+  }
 
   /**
    * Tests for getFunctions
@@ -176,6 +184,134 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * This tests the ability to have quotes inside a database or schema within getSchemas() function.
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetSchemas() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database with double quotes inside the database name
+      statement.execute("create or replace database \"\"\"quoteddb\"\"\"");
+      // Create a database, lowercase, with no double quotes inside the database name
+      statement.execute("create or replace database \"unquoteddb\"");
+      DatabaseMetaData metaData = con.getMetaData();
+      // Assert 2 rows returned for the PUBLIC and INFORMATION_SCHEMA schemas inside database
+      ResultSet rs = metaData.getSchemas("\"quoteddb\"", null);
+      assertEquals(2, getSizeOfResultSet(rs));
+      // Assert no results are returned when failing to put quotes around quoted database
+      rs = metaData.getSchemas("quoteddb", null);
+      assertEquals(0, getSizeOfResultSet(rs));
+      // Assert 2 rows returned for the PUBLIC and INFORMATION_SCHEMA schemas inside database
+      rs = metaData.getSchemas("unquoteddb", null);
+      assertEquals(2, getSizeOfResultSet(rs));
+      // Assert no rows are returned when erroneously quoting unquoted database
+      rs = metaData.getSchemas("\"unquoteddb\"", null);
+      assertEquals(0, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetTables() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a table with two columns
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\" (col1 string, col2 string)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getTables("dbwith\"quotes", "schemawith\"quotes", null, null);
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetColumns() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database and schema with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a table with two columns
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\"  (col1 string, col2 string)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getColumns("dbwith\"quotes", "schemawith\"quotes", null, null);
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeys() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database and schema with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a table with a primary key constraint
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"test1\"  (col1 integer not null, col2 integer not null, constraint pkey_1 primary key (col1, col2) not enforced)");
+      // Create a table with a foreign key constraint that points to same columns as test1's primary
+      // key constraint
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"test2\" (col_a integer not null, col_b integer not null, constraint fkey_1 foreign key (col_a, col_b) references \"test1\" (col1, col2) not enforced)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getPrimaryKeys("dbwith\"quotes", "schemawith\"quotes", null);
+      // Assert 2 rows are returned for primary key constraint for table and schema with quotes
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs = metaData.getImportedKeys("dbwith\"quotes", "schemawith\"quotes", null);
+      // Assert 2 rows are returned for foreign key constraint
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetProcedures() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database and schema with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a procedure
+      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+      statement.execute(
+          "USE DATABASE \"dbwith\"\"quotes\"; USE SCHEMA \"schemawith\"\"quotes\"; " + TEST_PROC);
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getProcedures("dbwith\"quotes", null, "TESTPROC");
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseInGetTablePrivileges() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database and schema with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a table under the current user and role
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\" (col1 string, col2 string)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getTablePrivileges("dbwith\"quotes", null, "%");
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
   /**
    * This tests that wildcards can be used for the schema name for getProcedureColumns().
    * Previously, only empty resultsets were returned.
@@ -711,5 +847,484 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     resultSet = metaData.getColumns(database, schema, "special" + escapeChar + "%table", null);
     assertTrue(resultSet.next());
     assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
+  }
+
+  @Test
+  public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeys() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      String database = con.getCatalog();
+      statement.execute("create or replace schema TEST_SCHEMA");
+      statement.execute("use schema TEST_SCHEMA");
+      statement.execute("create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
+      statement.execute(
+          "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getPrimaryKeys(database, "TEST\\_SCHEMA", null);
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs = metaData.getImportedKeys(database, "TEST\\_SCHEMA", null);
+      assertEquals(1, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  public void testTimestampWithTimezoneDataType() throws SQLException {
+    try (Connection connection = getConnection()) {
+      Statement statement = connection.createStatement();
+      statement.executeQuery("create or replace table ts_test(ts timestamp_tz)");
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      DatabaseMetaData metaData = connection.getMetaData();
+      ResultSet resultSet = metaData.getColumns(database, schema, "TS_TEST", "TS");
+      resultSet.next();
+      // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
+      assertEquals(resultSet.getObject("DATA_TYPE"), 2014);
+    }
+  }
+
+  @Test
+  public void testGetColumns() throws Throwable {
+    try (Connection connection = getConnection()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      final String targetTable = "T0";
+
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table "
+                  + targetTable
+                  + "(C1 int, C2 varchar(100), C3 string default '', C4 number(18,4), C5 double,"
+                  + " C6 boolean, C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary,C11"
+                  + " variant, C12 timestamp_ltz(8), C13 timestamp_tz(3))");
+
+      DatabaseMetaData metaData = connection.getMetaData();
+
+      ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_COLUMNS);
+
+      // C1 metadata
+
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C1", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.BIGINT, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C2 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C2", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
+      assertEquals(100, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(100, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C3 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C3", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
+      assertEquals(16777216, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertEquals("", resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C4 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C4", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.DECIMAL, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+      assertEquals(18, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(4, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C5 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C5", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.DOUBLE, resultSet.getInt("DATA_TYPE"));
+      assertEquals("DOUBLE", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(5, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C6 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C6", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.BOOLEAN, resultSet.getInt("DATA_TYPE"));
+      assertEquals("BOOLEAN", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(6, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C7 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C7", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.DATE, resultSet.getInt("DATA_TYPE"));
+      assertEquals("DATE", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNoNulls, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(7, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("NO", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C8 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C8", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.TIME, resultSet.getInt("DATA_TYPE"));
+      assertEquals("TIME", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(9, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(8, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C9 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C9", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.TIMESTAMP, resultSet.getInt("DATA_TYPE"));
+      assertEquals("TIMESTAMPNTZ", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(7, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(9, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C10 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C10", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
+      assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
+      assertEquals(8388608, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(10, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C11 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C11", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+      assertEquals("VARIANT", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(11, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C12 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C12", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.TIMESTAMP, resultSet.getInt("DATA_TYPE"));
+      assertEquals("TIMESTAMPLTZ", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(8, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(12, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      // C13 metadata
+      assertTrue(resultSet.next());
+      assertEquals(database, resultSet.getString("TABLE_CAT"));
+      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+      assertEquals(targetTable, resultSet.getString(3)); // table name (using index)
+      assertEquals("C13", resultSet.getString("COLUMN_NAME"));
+      assertEquals(Types.TIMESTAMP_WITH_TIMEZONE, resultSet.getInt("DATA_TYPE"));
+      assertEquals("TIMESTAMPTZ", resultSet.getString("TYPE_NAME"));
+      assertEquals(0, resultSet.getInt("COLUMN_SIZE"));
+      assertEquals(3, resultSet.getInt("DECIMAL_DIGITS"));
+      assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
+      assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+      assertEquals("", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(13, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+      assertNull(resultSet.getString("SCOPE_CATALOG"));
+      assertNull(resultSet.getString("SCOPE_SCHEMA"));
+      assertNull(resultSet.getString("SCOPE_TABLE"));
+      assertEquals((short) 0, resultSet.getShort("SOURCE_DATA_TYPE"));
+      assertEquals("NO", resultSet.getString("IS_AUTOINCREMENT"));
+      assertEquals("NO", resultSet.getString("IS_GENERATEDCOLUMN"));
+
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table "
+                  + targetTable
+                  + "(C1 string, C2 string default '', C3 string default 'apples', C4 string"
+                  + " default '\"apples\"', C5 int, C6 int default 5, C7 string default '''', C8"
+                  + " string default '''apples''''', C9  string default '%')");
+
+      metaData = connection.getMetaData();
+
+      resultSet = metaData.getColumns(database, schema, targetTable, "%");
+      assertTrue(resultSet.next());
+      assertNull(resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("apples", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("\"apples\"", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertNull(resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("5", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("'", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("'apples''", resultSet.getString("COLUMN_DEF"));
+      assertTrue(resultSet.next());
+      assertEquals("%", resultSet.getString("COLUMN_DEF"));
+
+      try {
+        resultSet.getString("INVALID_COLUMN");
+        fail("must fail");
+      } catch (SQLException ex) {
+        // nop
+      }
+
+      // no column privilege is supported.
+      resultSet = metaData.getColumnPrivileges(database, schema, targetTable, "C1");
+      assertEquals(0, super.getSizeOfResultSet(resultSet));
+
+      connection.createStatement().execute("drop table if exists T0");
+    }
+  }
+
+  @Test
+  public void testGetStreams() throws SQLException {
+    try (Connection con = getConnection()) {
+      String database = con.getCatalog();
+      String schema = con.getSchema();
+      String owner = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession().getRole();
+      final String targetStream = "S0";
+      final String targetTable = "T0";
+      String tableName = database + "." + schema + "." + targetTable;
+
+      Statement statement = con.createStatement();
+      statement.execute("create or replace table " + targetTable + "(C1 int)");
+      statement.execute("create or replace stream " + targetStream + " on table " + targetTable);
+
+      DatabaseMetaData metaData = con.getMetaData();
+
+      // match stream
+      ResultSet resultSet =
+          metaData.unwrap(SnowflakeDatabaseMetaData.class).getStreams(database, schema, "%");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_STREAMS);
+      Set<String> streams = new HashSet<>();
+      while (resultSet.next()) {
+        streams.add(resultSet.getString(1));
+      }
+      assertTrue(streams.contains("S0"));
+
+      // match exact stream
+      resultSet =
+          metaData
+              .unwrap(SnowflakeDatabaseMetaData.class)
+              .getStreams(database, schema, targetStream);
+      resultSet.next();
+      assertEquals(targetStream, resultSet.getString(1));
+      assertEquals(database, resultSet.getString(2));
+      assertEquals(schema, resultSet.getString(3));
+      assertEquals(owner, resultSet.getString(4));
+      assertEquals("", resultSet.getString(5));
+      assertEquals(tableName, resultSet.getString(6));
+      assertEquals("Table", resultSet.getString(7));
+      assertEquals(tableName, resultSet.getString(8));
+      assertEquals("DELTA", resultSet.getString(9));
+      assertEquals("false", resultSet.getString(10));
+      assertEquals("DEFAULT", resultSet.getString(11));
+
+      con.createStatement().execute("drop table if exists " + targetTable);
+      con.createStatement().execute("drop stream if exists " + targetStream);
+      resultSet.close();
+      statement.close();
+    }
   }
 }

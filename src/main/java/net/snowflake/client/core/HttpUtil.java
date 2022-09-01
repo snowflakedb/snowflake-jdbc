@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.core;
@@ -306,7 +306,11 @@ public class HttpUtil {
               .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
               .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT);
       // only set the proxy settings if they are not null
-      if (proxy != null) builder.setProxy(proxy);
+      // but no value has been specified for nonProxyHosts
+      // the route planner will determine whether to use a proxy based on nonProxyHosts value.
+      if (proxy != null && Strings.isNullOrEmpty(key.getNonProxyHosts())) {
+        builder.setProxy(proxy);
+      }
       DefaultRequestConfig = builder.build();
     }
 
@@ -324,7 +328,7 @@ public class HttpUtil {
         // dump error stack
         StringWriter errors = new StringWriter();
         err.printStackTrace(new PrintWriter(errors));
-        logger.error(errors.toString());
+        logger.error(errors.toString(), true);
         throw new RuntimeException(err); // rethrow the exception
       }
     }
@@ -369,7 +373,10 @@ public class HttpUtil {
                 key,
                 k ->
                     new SnowflakeMutableProxyRoutePlanner(
-                        key.getProxyHost(), key.getProxyPort(), key.getNonProxyHosts()));
+                        key.getProxyHost(),
+                        key.getProxyPort(),
+                        key.getProxyProtocol(),
+                        key.getNonProxyHosts()));
         httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
         if (!Strings.isNullOrEmpty(key.getProxyUser())
             && !Strings.isNullOrEmpty(key.getProxyPassword())) {
@@ -467,6 +474,24 @@ public class HttpUtil {
 
   /**
    * Return a request configuration inheriting from the default request configuration of the shared
+   * HttpClient with a different socket and connect timeout.
+   *
+   * @param requestSocketAndConnectTimeout - custom socket and connect timeout in milli-seconds
+   * @param withoutCookies - whether this request should ignore cookies or not
+   * @return RequestConfig object
+   */
+  public static RequestConfig getDefaultRequestConfigWithSocketAndConnectTimeout(
+      int requestSocketAndConnectTimeout, boolean withoutCookies) {
+    final String cookieSpec = withoutCookies ? IGNORE_COOKIES : DEFAULT;
+    return RequestConfig.copy(DefaultRequestConfig)
+        .setSocketTimeout(requestSocketAndConnectTimeout)
+        .setConnectTimeout(requestSocketAndConnectTimeout)
+        .setCookieSpec(cookieSpec)
+        .build();
+  }
+
+  /**
+   * Return a request configuration inheriting from the default request configuration of the shared
    * HttpClient with the coopkie spec set to ignore.
    *
    * @return RequestConfig object
@@ -511,6 +536,9 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
@@ -521,6 +549,9 @@ public class HttpUtil {
   static String executeRequestWithoutCookies(
       HttpRequestBase httpRequest,
       int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       HttpClientSettingsKey ocspAndProxyKey)
@@ -528,6 +559,9 @@ public class HttpUtil {
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
         injectSocketTimeout,
         canceling,
         true, // no cookie
@@ -543,17 +577,28 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
-   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param authTimeout authenticator specific timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount retry count for the request
+   * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeGeneralRequest(
-      HttpRequestBase httpRequest, int retryTimeout, HttpClientSettingsKey ocspAndProxyAndGzipKey)
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      HttpClientSettingsKey ocspAndProxyAndGzipKey)
       throws SnowflakeSQLException, IOException {
     return executeRequest(
         httpRequest,
         retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
         0, // no inject socket timeout
         null, // no canceling
         false, // no retry parameter
@@ -567,17 +612,28 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
+   * @param authTimeout authenticator specific timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount retry count for the request
    * @param httpClient client object used to communicate with other machine
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
    */
   public static String executeGeneralRequest(
-      HttpRequestBase httpRequest, int retryTimeout, CloseableHttpClient httpClient)
+      HttpRequestBase httpRequest,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
+      CloseableHttpClient httpClient)
       throws SnowflakeSQLException, IOException {
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
         0, // no inject socket timeout
         null, // no canceling
         false, // with cookie
@@ -593,6 +649,9 @@ public class HttpUtil {
    *
    * @param httpRequest HttpRequestBase
    * @param retryTimeout retry timeout
+   * @param authTimeout authenticator timeout
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param includeRetryParameters whether to include retry parameters in retried requests
@@ -605,6 +664,9 @@ public class HttpUtil {
   public static String executeRequest(
       HttpRequestBase httpRequest,
       int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean includeRetryParameters,
@@ -617,6 +679,9 @@ public class HttpUtil {
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
+        authTimeout,
+        socketTimeout,
+        retryCount,
         injectSocketTimeout,
         canceling,
         false, // with cookie (do we need cookie?)
@@ -636,6 +701,9 @@ public class HttpUtil {
    *
    * @param httpRequest request object contains all the information
    * @param retryTimeout retry timeout (in seconds)
+   * @param authTimeout authenticator specific timeout (in seconds)
+   * @param socketTimeout socket timeout (in ms)
+   * @param retryCount retry count for the request
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether this request should ignore cookies
@@ -650,6 +718,9 @@ public class HttpUtil {
   private static String executeRequestInternal(
       HttpRequestBase httpRequest,
       int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
@@ -669,12 +740,16 @@ public class HttpUtil {
     String theString;
     StringWriter writer = null;
     CloseableHttpResponse response = null;
+
     try {
       response =
           RestRequest.execute(
               httpClient,
               httpRequest,
               retryTimeout,
+              authTimeout,
+              socketTimeout,
+              retryCount,
               injectSocketTimeout,
               canceling,
               withoutCookies,

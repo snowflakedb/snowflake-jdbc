@@ -129,6 +129,34 @@ public class CustomProxyLatestIT {
     assertEquals(1, rs.getInt(1));
   }
 
+  /**
+   * Test nonProxyHosts is honored with JVM proxy parameters. Recommended test: 1. Test that proxy
+   * is not used with current settings since nonProxyHosts = * 2. Change nonProxyHosts value to
+   * nonsense value to ensure it can be set and proxy still works 3. Run same 2 above tests but with
+   * http instead of https proxy parameters for non-TLS proxy
+   */
+  @Test
+  @Ignore
+  public void testJVMParamsWithNonProxyHostsHonored() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("tracing", "ALL");
+    // Set JVM properties. Test once with TLS proxy, and edit to test with non-TLS proxy
+    System.setProperty("http.useProxy", "true");
+    System.setProperty("https.proxyHost", "localhost");
+    System.setProperty("https.proxyPort", "3128");
+    System.setProperty("http.nonProxyHosts", "*");
+    Connection con =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccoutn.us-east-1.snowflakecomputing.com", props);
+    Statement stmt = con.createStatement();
+    ResultSet rs = stmt.executeQuery("select 1");
+    rs.next();
+    assertEquals(1, rs.getInt(1));
+    con.close();
+  }
+
   /** Test TLS issue against S3 client to ensure proxy works with PUT/GET statements */
   @Test
   @Ignore
@@ -335,6 +363,24 @@ public class CustomProxyLatestIT {
     // should fail to connect
 
     runProxyConnection(connectionUrl);
+  }
+
+  @Test
+  @Ignore
+  public void testUnsetJvmPropertiesForInvalidSettings() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("tracing", "ALL");
+    // Set JVM properties.
+    System.setProperty("proxyHost", "localhost");
+    System.setProperty("proxyPort", "3128");
+    Connection con =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccoutn.us-east-1.snowflakecomputing.com", props);
+    assertEquals(System.getProperty("proxyHost"), null);
+    assertEquals(System.getProperty("proxyPort"), null);
+    con.close();
   }
 
   public void runProxyConnection(String connectionUrl) throws ClassNotFoundException, SQLException {

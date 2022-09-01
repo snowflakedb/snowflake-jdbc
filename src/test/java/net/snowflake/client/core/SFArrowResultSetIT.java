@@ -76,6 +76,7 @@ public class SFArrowResultSetIT {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
     resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
+    resultSetSerializable.setFirstChunkByteData(dataBytes);
     resultSetSerializable.setChunkFileCount(0);
 
     SFArrowResultSet resultSet =
@@ -198,6 +199,7 @@ public class SFArrowResultSetIT {
 
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
+    resultSetSerializable.setFirstChunkByteData(dataBytes);
     resultSetSerializable.setChunkFileCount(chunkCount);
     resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
     // build chunk downloader

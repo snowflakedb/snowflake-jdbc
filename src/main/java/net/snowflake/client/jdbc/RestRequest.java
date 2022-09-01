@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
 package net.snowflake.client.jdbc;
@@ -51,6 +51,9 @@ public class RestRequest {
    * @param httpClient client object used to communicate with other machine
    * @param httpRequest request object contains all the request information
    * @param retryTimeout : retry timeout (in seconds)
+   * @param authTimeout : authenticator specific timeout (in seconds)
+   * @param socketTimeout : curl timeout (in ms)
+   * @param retryCount : retry count for the request
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
@@ -65,6 +68,9 @@ public class RestRequest {
       CloseableHttpClient httpClient,
       HttpRequestBase httpRequest,
       long retryTimeout,
+      long authTimeout,
+      int socketTimeout,
+      int retryCount,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
@@ -96,10 +102,11 @@ public class RestRequest {
     // amount of time to wait for backing off before retry
     long backoffInMilli = minBackoffInMilli;
 
+    // auth timeout (ms)
+    long authTimeoutInMilli = authTimeout * 1000;
+
     DecorrelatedJitterBackoff backoff =
         new DecorrelatedJitterBackoff(backoffInMilli, maxBackoffInMilli);
-
-    int retryCount = 0;
 
     int origSocketTimeout = 0;
 
@@ -141,15 +148,23 @@ public class RestRequest {
          * overhead of looking up in metadata database.
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
-        if (builder.getPathSegments().contains("query-request")) {
-        //if (false) {
+        // If HTAP
+        if (System.getenv("HTAP_SIMULATION").equalsIgnoreCase("true") &&
+                builder.getPathSegments().contains("query-request")) {
           builder.setParameter("target", "htap_simulation");
         }
-        if (retryCount > 0) {
+        if (includeRetryParameters && retryCount > 0) {
           builder.setParameter("retryCount", String.valueOf(retryCount));
-          if (includeRetryParameters) {
-            builder.setParameter("clientStartTime", String.valueOf(startTime));
-          }
+          builder.setParameter("clientStartTime", String.valueOf(startTime));
+        }
+
+        // When the auth timeout is set, set the socket timeout as the authTimeout
+        // so that it can be renewed in time and pass it to the http request configuration.
+        if (authTimeout > 0) {
+          int requestSocketAndConnectTimeout = (int) authTimeout * 1000;
+          httpRequest.setConfig(
+              HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
+                  requestSocketAndConnectTimeout, withoutCookies));
         }
 
         if (includeRequestGuid) {
@@ -198,7 +213,7 @@ public class RestRequest {
        * If we got a response and the status code is not one of those
        * transient failures, no more retry
        */
-      if (isCertificateRevoked(savedEx) || isNonretryableHTTPCode(response, retryHTTP403)) {
+      if (isCertificateRevoked(savedEx) || isNonRetryableHTTPCode(response, retryHTTP403)) {
         String msg = "Unknown cause";
         if (response != null) {
           logger.debug("HTTP response code: {}", response.getStatusLine().getStatusCode());
@@ -220,6 +235,8 @@ public class RestRequest {
               Event.EventType.NETWORK_ERROR, msg + ", Request: " + httpRequest.toString(), false);
         }
         breakRetryReason = "status code does not need retry";
+        // reset retryCount
+        retryCount = 0;
         break;
       } else {
         if (response != null) {
@@ -244,7 +261,7 @@ public class RestRequest {
 
         // check canceling flag
         if (canceling != null && canceling.get()) {
-          logger.debug("Stop retrying since canceling is requested");
+          logger.debug("Stop retrying since canceling is requested", false);
           breakRetryReason = "canceling is requested";
           break;
         }
@@ -264,6 +281,7 @@ public class RestRequest {
                     + "Elapsed: {}(ms), timeout: {}(ms)",
                 elapsedMilliForTransientIssues,
                 retryTimeoutInMilliseconds);
+
             breakRetryReason = "retry timeout";
             TelemetryService.getInstance()
                 .logHttpRequestTelemetryEvent(
@@ -289,7 +307,30 @@ public class RestRequest {
                   "Exception encountered for HTTP request: " + savedEx.getMessage());
             }
             // no more retry
+            // reset state
+            retryCount = 0;
             break;
+          }
+        }
+
+        // Make sure that any authenticator specific info that needs to be
+        // updated get's updated before the next retry. Ex - JWT token
+        // Check to see if customer set socket/connect timeout has been reached,
+        // if not we don't increase the retry count since JWT renew doesn't count as a retry
+        // attempt.
+        if (authTimeout > 0
+            && elapsedMilliForTransientIssues > authTimeoutInMilli
+            && (socketTimeout == 0
+                || elapsedMilliForTransientIssues
+                    < socketTimeout)) /* socket timeout not reached */ {
+          /* connect timeout not reached */
+          // check if this is a login-request
+          if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
+            throw new SnowflakeSQLException(
+                ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
+                retryCount,
+                true,
+                elapsedMilliForTransientIssues / 1000);
           }
         }
 
@@ -303,15 +344,23 @@ public class RestRequest {
             elapsedMilliForTransientIssues += backoffInMilli;
             backoffInMilli = backoff.nextSleepTime(backoffInMilli);
           } catch (InterruptedException ex1) {
-            logger.debug("Backoff sleep before retrying login got interrupted");
+            logger.debug("Backoff sleep before retrying login got interrupted", false);
           }
         }
 
         retryCount++;
-        execTimeData.incrementRetryCount();
-        String responseCode =
-            response == null ? "null" : String.valueOf(response.getStatusLine().getStatusCode());
-        execTimeData.addRetryLocation("RestRequest StatusCode ".concat(responseCode));
+        // If the request failed with any other retry-able error and auth timeout is reached
+        // increase the retry count and throw special exception to renew the token before retrying.
+        if (authTimeout > 0) {
+          if (elapsedMilliForTransientIssues >= authTimeoutInMilli) {
+            throw new SnowflakeSQLException(
+                ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
+                retryCount,
+                false,
+                elapsedMilliForTransientIssues / 1000);
+          }
+        }
+
         int numOfRetryToTriggerTelemetry =
             TelemetryService.getInstance().getNumOfRetryToTriggerTelemetry();
         if (retryCount == numOfRetryToTriggerTelemetry) {
@@ -395,7 +444,7 @@ public class RestRequest {
     return response;
   }
 
-  static boolean isNonretryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
+  static boolean isNonRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
     return response != null
         && (response.getStatusLine().getStatusCode() < 500
             || // service unavailable
@@ -403,7 +452,7 @@ public class RestRequest {
         && // gateway timeout
         response.getStatusLine().getStatusCode() != 408
         && // request timeout
-        (retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
+        (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
 
   private static boolean isCertificateRevoked(Exception ex) {

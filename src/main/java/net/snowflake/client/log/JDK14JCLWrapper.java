@@ -29,7 +29,7 @@ public class JDK14JCLWrapper implements Log {
   }
 
   public void error(Object msg) {
-    logger.error(String.valueOf(msg));
+    logger.error(String.valueOf(msg), true);
   }
 
   public void error(Object msg, Throwable t) {
@@ -45,7 +45,7 @@ public class JDK14JCLWrapper implements Log {
   }
 
   public void info(Object msg) {
-    logger.info(String.valueOf(msg));
+    logger.info(String.valueOf(msg), true);
   }
 
   public void info(Object msg, Throwable t) {
