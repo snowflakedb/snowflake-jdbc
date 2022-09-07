@@ -576,8 +576,7 @@ public class SnowflakeResultSetSerializableV1
           rootNode.path("data").path("rowsetBase64").asText();
       resultSetSerializable.rootAllocator = new RootAllocator(Long.MAX_VALUE);
       // Set first chunk row count from firstChunkStringData
-      resultSetSerializable.firstChunkRowCount = rootNode.path("total").asInt();
-      //resultSetSerializable.setFirstChunkRowCountForArrow();
+      resultSetSerializable.setFirstChunkRowCountForArrow();
     } else {
       resultSetSerializable.firstChunkRowset = rootNode.path("data").path("rowset");
 
