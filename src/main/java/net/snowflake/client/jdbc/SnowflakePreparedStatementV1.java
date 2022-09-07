@@ -110,18 +110,21 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public ResultSet executeQuery() throws SQLException {
-    ExecTimeTelemetryData execTimeData =
-        new ExecTimeTelemetryData(
-            SnowflakeUtil.getEpochTimeInMicroSeconds(),
-            "ResultSet PreparedStatement.executeQuery()",
-            this.batchID);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
+    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
+      execTimeData =
+              new ExecTimeTelemetryData(
+                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
+                      "ResultSet PreparedStatement.executeQuery(String)",
+                      this.batchID);
+    }
     if (showStatementParameters) {
       logger.info("executeQuery()", false);
     } else {
       logger.debug("executeQuery()", false);
     }
     ResultSet rs = executeQueryInternal(sql, false, parameterBindings, execTimeData);
-    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return rs;
   }
@@ -133,18 +136,21 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    * @throws SQLException
    */
   public ResultSet executeAsyncQuery() throws SQLException {
-    ExecTimeTelemetryData execTimeData =
-        new ExecTimeTelemetryData(
-            SnowflakeUtil.getEpochTimeInMicroSeconds(),
-            "ResultSet PreparedStatement.executeAsyncQuery()",
-            this.batchID);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
+    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
+      execTimeData =
+              new ExecTimeTelemetryData(
+                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
+                      "ResultSet PreparedStatement.executeAsyncQuery(String)",
+                      this.batchID);
+    }
     if (showStatementParameters) {
       logger.info("executeAsyncQuery()", false);
     } else {
       logger.debug("executeAsyncQuery()", false);
     }
     ResultSet rs = executeQueryInternal(sql, true, parameterBindings, execTimeData);
-    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return rs;
   }
@@ -453,14 +459,17 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public boolean execute() throws SQLException {
-    ExecTimeTelemetryData execTimeData =
-        new ExecTimeTelemetryData(
-            SnowflakeUtil.getEpochTimeInMicroSeconds(),
-            "boolean PreparedStatement.execute()",
-            this.batchID);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
+    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
+      execTimeData =
+              new ExecTimeTelemetryData(
+                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
+                      "boolean PreparedStatement.execute(String)",
+                      this.batchID);
+    }
     logger.debug("execute: {}", sql);
     boolean res = executeInternal(sql, parameterBindings, execTimeData);
-    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return res;
   }

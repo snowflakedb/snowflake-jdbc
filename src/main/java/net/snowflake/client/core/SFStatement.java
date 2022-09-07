@@ -357,8 +357,7 @@ public class SFStatement extends SFBaseStatement {
 
       // if there are a large number of bind values, we should upload them to stage
       // instead of passing them in the payload (if enabled)
-      long bindStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
-      execTimeData.setBindStart(bindStart);
+      execTimeData.setBindStart();
       int numBinds = BindUploader.arrayBindValueCount(bindValues);
       String bindStagePath = null;
       if (0 < session.getArrayBindStageThreshold()
@@ -466,8 +465,7 @@ public class SFStatement extends SFBaseStatement {
           }
         }
       }
-      long bindEnd = getEpochTimeInMicroSeconds();
-      execTimeData.setBindEnd(bindEnd);
+      execTimeData.setBindEnd();
 
       if (session.isConservativeMemoryUsageEnabled()) {
         logger.debug("JDBC conservative memory usage is enabled.");

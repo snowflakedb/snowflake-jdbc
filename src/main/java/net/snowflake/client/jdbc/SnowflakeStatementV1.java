@@ -128,14 +128,18 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData =
-        new ExecTimeTelemetryData(
-            SnowflakeUtil.getEpochTimeInMicroSeconds(),
-            "ResultSet Statement.executeQuery(String)",
-            this.batchID);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
+    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
+      execTimeData =
+              new ExecTimeTelemetryData(
+                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
+                      "ResultSet Statement.executeQuery(String)",
+                      this.batchID);
+    }
+
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
-    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return rs;
   }
@@ -148,14 +152,17 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
   public ResultSet executeAsyncQuery(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData =
-        new ExecTimeTelemetryData(
-            SnowflakeUtil.getEpochTimeInMicroSeconds(),
-            "ResultSet Statement.executeAsyncQuery(String)",
-            this.batchID);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
+    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
+      execTimeData =
+              new ExecTimeTelemetryData(
+                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
+                      "ResultSet Statement.executeAsyncQuery(String)",
+                      this.batchID);
+    }
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal(sql, true, null, execTimeData);
-    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return rs;
   }
@@ -181,13 +188,16 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public long executeLargeUpdate(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData =
-        new ExecTimeTelemetryData(
-            SnowflakeUtil.getEpochTimeInMicroSeconds(),
-            "long Statement.executeLargeUpdate(String)",
-            this.batchID);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
+    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
+      execTimeData =
+              new ExecTimeTelemetryData(
+                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
+                      "ResultSet Statement.executeLargeUpdate(String)",
+                      this.batchID);
+    }
     long res = executeUpdateInternal(sql, null, true, execTimeData);
-    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return res;
   }
@@ -371,13 +381,16 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public boolean execute(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData =
-        new ExecTimeTelemetryData(
-            SnowflakeUtil.getEpochTimeInMicroSeconds(),
-            "boolean Statement.execute(String)",
-            this.batchID);
+    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
+    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
+      execTimeData =
+              new ExecTimeTelemetryData(
+                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
+                      "ResultSet Statement.execute(String)",
+                      this.batchID);
+    }
     boolean res = executeInternal(sql, null, execTimeData);
-    execTimeData.setQueryEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return res;
   }

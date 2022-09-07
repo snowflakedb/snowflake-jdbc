@@ -5,6 +5,7 @@ package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 
 public class ExecTimeTelemetryData {
@@ -42,73 +43,110 @@ public class ExecTimeTelemetryData {
     this.sendData = false;
   }
 
-  public void setBindStart(long bindStart) {
-    this.bindStart = bindStart;
+  public void setBindStart() {
+    if (!this.sendData)
+      return;
+    this.bindStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setOCSPStatus(Boolean ocspEnabled) {
+    if (!this.sendData)
+      return;
     this.ocspEnabled = ocspEnabled;
   }
 
-  public void setBindEnd(long bindEnd) {
-    this.bindEnd = bindEnd;
+  public void setBindEnd() {
+    if (!this.sendData)
+      return;
+    this.bindEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setHttpClientStart(long httpClientStart) {
-    this.httpClientStart = httpClientStart;
+  public void setHttpClientStart() {
+    if (!this.sendData)
+      return;
+    this.httpClientStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setHttpClientEnd(long httpClientEnd) {
-    this.httpClientEnd = httpClientEnd;
+  public void setHttpClientEnd() {
+    if (!this.sendData)
+      return;
+    this.httpClientEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setGzipStart(long gzipStart) {
-    this.gzipStart = gzipStart;
+  public void setGzipStart() {
+    if (!this.sendData)
+      return;
+    this.gzipStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setGzipEnd(long gzipEnd) {
-    this.gzipEnd = gzipEnd;
+  public void setGzipEnd() {
+    if (!this.sendData)
+      return;
+    this.gzipEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setQueryEnd(long queryEnd) {
-    this.queryEnd = queryEnd;
+  public void setQueryEnd() {
+    if (!this.sendData)
+      return;
+    this.queryEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setQueryId(String queryId) {
+    if (!this.sendData)
+      return;
     this.queryId = queryId;
   }
 
-  public void setProcessResultChunkStart(long processResultChunkStart) {
-    this.processResultChunkStart = processResultChunkStart;
+  public void setProcessResultChunkStart() {
+    if (!this.sendData)
+      return;
+    this.processResultChunkStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setProcessResultChunkEnd(long processResultChunkEnd) {
-    this.processResultChunkEnd = processResultChunkEnd;
+  public void setProcessResultChunkEnd() {
+    if (!this.sendData)
+      return;
+    this.processResultChunkEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setResponseIOStreamStart(long ioStreamStart) {
-    this.responseIOStreamStart = ioStreamStart;
+  public void setResponseIOStreamStart() {
+    if (!this.sendData)
+      return;
+    this.responseIOStreamStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setResponseIOStreamEnd(long ioStreamEnd) {
-    this.responseIOStreamEnd = ioStreamEnd;
+  public void setResponseIOStreamEnd() {
+    if (!this.sendData)
+      return;
+    this.responseIOStreamEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setCreateResultSetStart(long createResultSetStart) {
-    this.createResultSetStart = createResultSetStart;
+  public void setCreateResultSetStart() {
+    if (!this.sendData)
+      return;
+    this.createResultSetStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  public void setCreateResultSetEnd(long createResultSetEnd) {
-    this.createResultSetEnd = createResultSetEnd;
+  public void setCreateResultSetEnd() {
+    if (!this.sendData)
+      return;
+    this.createResultSetEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void incrementRetryCount() {
+    if (!this.sendData)
+      return;
     this.retryCount++;
   }
 
-  public void setRequestId(String requestId) { this.requestId = requestId; }
+  public void setRequestId(String requestId) {
+    if (!this.sendData)
+      return;
+    this.requestId = requestId; }
 
   public void addRetryLocation(String location) {
+    if (!this.sendData)
+      return;
     if (Strings.isNullOrEmpty(this.retryLocations)) {
       this.retryLocations = location;
     } else {

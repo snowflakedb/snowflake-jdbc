@@ -326,7 +326,7 @@ public class StmtUtil {
 
         ByteArrayEntity input;
         if (!stmtInput.httpClientSettingsKey.getGzipDisabled()) {
-          execTimeData.setGzipStart(SnowflakeUtil.getEpochTimeInMicroSeconds());
+          execTimeData.setGzipStart();
           // SNOW-18057: compress the post body in gzip
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
           GZIPOutputStream gzos = new GZIPOutputStream(baos);
@@ -335,7 +335,7 @@ public class StmtUtil {
           gzos.finish();
           input = new ByteArrayEntity(baos.toByteArray());
           httpRequest.addHeader("content-encoding", "gzip");
-          execTimeData.setGzipEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+          execTimeData.setGzipEnd();
         } else {
           input = new ByteArrayEntity(json.getBytes("UTF-8"));
         }

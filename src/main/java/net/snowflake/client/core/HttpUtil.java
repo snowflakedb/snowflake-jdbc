@@ -363,8 +363,7 @@ public class HttpUtil {
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
               .setUserAgent(buildUserAgent()) // needed for Okta
-              .disableCookieManagement() // SNOW-39748
-              .disableContentCompression();
+              .disableCookieManagement(); // SNOW-39748
 
       if (key != null && key.usesProxy()) {
         // use the custom proxy properties
@@ -776,13 +775,13 @@ public class HttpUtil {
                     : "null response"));
       }
 
-      execTimeData.setResponseIOStreamStart(SnowflakeUtil.getEpochTimeInMicroSeconds());
+      execTimeData.setResponseIOStreamStart();
       writer = new StringWriter();
       try (InputStream ins = response.getEntity().getContent()) {
         IOUtils.copy(ins, writer, "UTF-8");
       }
       theString = writer.toString();
-      execTimeData.setResponseIOStreamEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+      execTimeData.setResponseIOStreamEnd();
     } finally {
       IOUtils.closeQuietly(writer);
       IOUtils.closeQuietly(response);

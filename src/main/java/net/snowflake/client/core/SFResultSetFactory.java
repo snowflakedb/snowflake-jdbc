@@ -30,12 +30,12 @@ class SFResultSetFactory {
       ExecTimeTelemetryData execTimeData)
       throws SQLException {
 
-    execTimeData.setProcessResultChunkStart(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setProcessResultChunkStart();
     SnowflakeResultSetSerializableV1 resultSetSerializable =
         SnowflakeResultSetSerializableV1.create(result, statement.getSFBaseSession(), statement);
-    execTimeData.setProcessResultChunkEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setProcessResultChunkEnd();
     SFBaseResultSet rs;
-    execTimeData.setCreateResultSetStart(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setCreateResultSetStart();
     switch (resultSetSerializable.getQueryResultFormat()) {
       case ARROW:
         rs =
@@ -49,7 +49,7 @@ class SFResultSetFactory {
         rs = null;
         break;
     }
-    execTimeData.setCreateResultSetEnd(SnowflakeUtil.getEpochTimeInMicroSeconds());
+    execTimeData.setCreateResultSetEnd();
     if (rs == null) {
       throw new SnowflakeSQLLoggedException(
           statement.getSFBaseSession(),

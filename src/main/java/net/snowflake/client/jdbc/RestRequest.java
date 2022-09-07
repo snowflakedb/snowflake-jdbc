@@ -173,11 +173,9 @@ public class RestRequest {
         }
 
         httpRequest.setURI(builder.build());
-        long httpClientStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
-        execTimeData.setHttpClientStart(httpClientStart);
+        execTimeData.setHttpClientStart();
         response = httpClient.execute(httpRequest);
-        long httpClientEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
-        execTimeData.setHttpClientEnd(httpClientEnd);
+        execTimeData.setHttpClientEnd();
       } catch (Exception ex) {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, stop retrying
