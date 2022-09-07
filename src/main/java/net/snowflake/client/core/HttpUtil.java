@@ -275,11 +275,11 @@ public class HttpUtil {
    * @param key Key to HttpClient hashmap containing OCSP mode and proxy information, could be null
    * @param ocspCacheFile OCSP response cache file. If null, the default OCSP response file will be
    *     used.
-   * @param downloadCompressed Whether the HTTP client should be built requesting no decompression
+   * @param downloadUnCompressed Whether the HTTP client should be built requesting no decompression
    * @return HttpClient object
    */
   public static CloseableHttpClient buildHttpClient(
-      @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadCompressed) {
+      @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadUnCompressed) {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
 
@@ -389,7 +389,7 @@ public class HttpUtil {
         }
       }
       httpClientBuilder.setDefaultRequestConfig(DefaultRequestConfig);
-      if (downloadCompressed) {
+      if (downloadUnCompressed) {
         httpClientBuilder = httpClientBuilder.disableContentCompression();
       }
       return httpClientBuilder.build();
