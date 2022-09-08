@@ -8,10 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
@@ -188,6 +185,31 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         prepStatement.setInt(1, 2);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
           assertEquals(2, getSizeOfResultSet(resultSet));
+        }
+      }
+    }
+  }
+
+  @Test
+  public void testExecuteLargeBatch() throws SQLException {
+    try (Connection con = init()) {
+      try (Statement statement = con.createStatement()) {
+        statement.execute("create or replace table mytab(id int)");
+        try (PreparedStatement pstatement =
+            con.prepareStatement("insert into mytab(id) values (?)")) {
+          pstatement.setLong(1, 4);
+          pstatement.addBatch();
+          pstatement.setLong(1, 5);
+          pstatement.addBatch();
+          pstatement.setLong(1, 6);
+          pstatement.addBatch();
+          pstatement.executeLargeBatch();
+          con.commit();
+          try (ResultSet resultSet = statement.executeQuery("select * from mytab")) {
+            resultSet.next();
+            assertEquals(4, resultSet.getInt(1));
+          }
+          statement.execute("drop table if exists mytab");
         }
       }
     }

@@ -77,6 +77,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getDouble(columnIndex);
 
       case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
         return getTimestamp(columnIndex);
 
       case Types.DATE:
@@ -89,12 +90,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBoolean(columnIndex);
 
       default:
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session,
-                new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type),
-                null,
-                null);
+        throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
     }
   }
 
@@ -121,7 +117,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public String getString(int columnIndex) throws SFException {
-    logger.debug("public String getString(int columnIndex)");
+    logger.debug("public String getString(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -162,12 +158,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         Date date = getDate(columnIndex);
 
         if (dateFormatter == null) {
-          throw (SFException)
-              IncidentUtil.generateIncidentV2WithException(
-                  session,
-                  new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter"),
-                  null,
-                  null);
+          throw new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter");
         }
 
         String dateStr = ResultUtil.getDateAsString(date, dateFormatter);
@@ -181,12 +172,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         SFTime sfTime = getSFTime(columnIndex);
 
         if (timeFormatter == null) {
-          throw (SFException)
-              IncidentUtil.generateIncidentV2WithException(
-                  session,
-                  new SFException(ErrorCode.INTERNAL_ERROR, "missing time formatter"),
-                  null,
-                  null);
+          throw new SFException(ErrorCode.INTERNAL_ERROR, "missing time formatter");
         }
 
         int scale = resultSetMetaData.getScale(columnIndex);
@@ -199,12 +185,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
       case Types.BINARY:
         if (binaryFormatter == null) {
-          throw (SFException)
-              IncidentUtil.generateIncidentV2WithException(
-                  session,
-                  new SFException(ErrorCode.INTERNAL_ERROR, "missing binary formatter"),
-                  null,
-                  null);
+          throw new SFException(ErrorCode.INTERNAL_ERROR, "missing binary formatter");
         }
 
         if (binaryFormatter == SFBinaryFormat.HEX) {
@@ -225,7 +206,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public boolean getBoolean(int columnIndex) throws SFException {
-    logger.debug("public boolean getBoolean(int columnIndex)");
+    logger.debug("public boolean getBoolean(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     if (obj == null) {
       return false;
@@ -257,7 +238,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public byte getByte(int columnIndex) throws SFException {
-    logger.debug("public short getByte(int columnIndex)");
+    logger.debug("public short getByte(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -275,7 +256,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public short getShort(int columnIndex) throws SFException {
-    logger.debug("public short getShort(int columnIndex)");
+    logger.debug("public short getShort(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -303,7 +284,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public int getInt(int columnIndex) throws SFException {
-    logger.debug("public int getInt(int columnIndex)");
+    logger.debug("public int getInt(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -330,7 +311,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public long getLong(int columnIndex) throws SFException {
-    logger.debug("public long getLong(int columnIndex)");
+    logger.debug("public long getLong(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -352,13 +333,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     } catch (NumberFormatException nfe) {
 
       if (Types.INTEGER == columnType || Types.SMALLINT == columnType) {
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session,
-                new SFException(
-                    ErrorCode.INTERNAL_ERROR, SnowflakeUtil.LONG_STR + ": " + obj.toString()),
-                null,
-                null);
+        throw new SFException(
+            ErrorCode.INTERNAL_ERROR, SnowflakeUtil.LONG_STR + ": " + obj.toString());
       } else {
         throw new SFException(
             ErrorCode.INVALID_VALUE_CONVERT, columnType, SnowflakeUtil.LONG_STR, obj);
@@ -368,7 +344,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SFException {
-    logger.debug("public BigDecimal getBigDecimal(int columnIndex)");
+    logger.debug("public BigDecimal getBigDecimal(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -378,7 +354,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     try {
-      if (columnType != Types.TIME && columnType != Types.TIMESTAMP) {
+      if (columnType != Types.TIME
+          && columnType != Types.TIMESTAMP
+          && columnType != Types.TIMESTAMP_WITH_TIMEZONE) {
         return new BigDecimal(obj.toString());
       }
       throw new SFException(
@@ -392,7 +370,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SFException {
-    logger.debug("public BigDecimal getBigDecimal(int columnIndex)");
+    logger.debug("public BigDecimal getBigDecimal(int columnIndex)", false);
 
     Object obj = getObjectInternal(columnIndex);
 
@@ -422,7 +400,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   }
 
   private SFTimestamp getSFTimestamp(int columnIndex) throws SFException {
-    logger.debug("public Timestamp getTimestamp(int columnIndex)");
+    logger.debug("public Timestamp getTimestamp(int columnIndex)", false);
 
     Object obj = getObjectInternal(columnIndex);
 
@@ -441,7 +419,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public Time getTime(int columnIndex) throws SFException {
-    logger.debug("public Time getTime(int columnIndex)");
+    logger.debug("public Time getTime(int columnIndex)", false);
 
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     if (Types.TIME == columnType) {
@@ -453,7 +431,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
           sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
           sfTime.getNanosecondsWithinSecond(),
           resultSetSerializable.getUseSessionTimezone());
-    } else if (Types.TIMESTAMP == columnType) {
+    } else if (Types.TIMESTAMP == columnType || Types.TIMESTAMP_WITH_TIMEZONE == columnType) {
       Timestamp ts = getTimestamp(columnIndex);
       if (ts == null) {
         return null;
@@ -477,7 +455,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SFException {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
-    if (Types.TIMESTAMP == columnType) {
+    if (Types.TIMESTAMP == columnType || Types.TIMESTAMP_WITH_TIMEZONE == columnType) {
       if (tz == null) {
         tz = TimeZone.getDefault();
       }
@@ -549,7 +527,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public float getFloat(int columnIndex) throws SFException {
-    logger.debug("public float getFloat(int columnIndex)");
+    logger.debug("public float getFloat(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -561,7 +539,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     try {
       if (obj instanceof String) {
-        if (columnType != Types.TIME && columnType != Types.TIMESTAMP) {
+        if (columnType != Types.TIME
+            && columnType != Types.TIMESTAMP
+            && columnType != Types.TIMESTAMP_WITH_TIMEZONE) {
           if ("inf".equals(obj)) {
             return Float.POSITIVE_INFINITY;
           } else if ("-inf".equals(obj)) {
@@ -589,7 +569,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public double getDouble(int columnIndex) throws SFException {
-    logger.debug("public double getDouble(int columnIndex)");
+    logger.debug("public double getDouble(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -601,7 +581,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     try {
       if (obj instanceof String) {
-        if (columnType != Types.TIME && columnType != Types.TIMESTAMP) {
+        if (columnType != Types.TIME
+            && columnType != Types.TIMESTAMP
+            && columnType != Types.TIMESTAMP_WITH_TIMEZONE) {
           if ("inf".equals(obj)) {
             return Double.POSITIVE_INFINITY;
           } else if ("-inf".equals(obj)) {
@@ -629,7 +611,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public byte[] getBytes(int columnIndex) throws SFException {
-    logger.debug("public byte[] getBytes(int columnIndex)");
+    logger.debug("public byte[] getBytes(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -687,7 +669,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public Date getDate(int columnIndex, TimeZone tz) throws SFException {
-    logger.debug("public Date getDate(int columnIndex)");
+    logger.debug("public Date getDate(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -698,7 +680,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
     int columnType = resultSetMetaData.getColumnType(columnIndex);
 
-    if (Types.TIMESTAMP == columnType) {
+    if (Types.TIMESTAMP == columnType || Types.TIMESTAMP_WITH_TIMEZONE == columnType) {
       if (tz == null) {
         tz = TimeZone.getDefault();
       }

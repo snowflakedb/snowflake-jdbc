@@ -89,7 +89,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     this.encMat = encMat;
     this.session = sfSession;
 
-    logger.debug("Setting up the Azure client ");
+    logger.debug("Setting up the Azure client ", false);
 
     try {
       URI storageEndpoint =
@@ -465,7 +465,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     int retryCount = 0;
     do {
       try {
-        logger.debug("Starting upload");
+        logger.debug("Starting upload", false);
         InputStream fileInputStream = uploadStreamInfo.left;
         CloudBlobContainer container = azStorageClient.getContainerReference(remoteStorageLocation);
         CloudBlockBlob blob = container.getBlockBlobReference(destFileName);
@@ -483,7 +483,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             null,
             null,
             opContext);
-        logger.debug("Upload successful");
+        logger.debug("Upload successful", false);
 
         blob.uploadMetadata(null, null, opContext);
 

@@ -328,7 +328,7 @@ public class HttpUtil {
         // dump error stack
         StringWriter errors = new StringWriter();
         err.printStackTrace(new PrintWriter(errors));
-        logger.error(errors.toString());
+        logger.error(errors.toString(), true);
         throw new RuntimeException(err); // rethrow the exception
       }
     }

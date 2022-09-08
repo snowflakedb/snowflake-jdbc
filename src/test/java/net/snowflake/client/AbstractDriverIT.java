@@ -40,6 +40,7 @@ public class AbstractDriverIT {
     Map<String, String> params = new HashMap<>();
     String account;
     String host;
+
     if (accountName == null) {
       account = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT");
       host = TestUtil.systemGetEnv("SNOWFLAKE_TEST_HOST");

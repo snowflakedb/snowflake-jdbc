@@ -14,7 +14,6 @@ import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Base64;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.jdbc.*;
@@ -194,11 +193,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         }
 
         this.currentChunkIterator =
-            getSortedFirstResultChunk(resultSetSerializable.getFirstChunkStringData())
+            getSortedFirstResultChunk(resultSetSerializable.getFirstChunkByteData())
                 .getIterator(this);
       } else {
         this.currentChunkIterator =
-            buildFirstChunk(resultSetSerializable.getFirstChunkStringData()).getIterator(this);
+            buildFirstChunk(resultSetSerializable.getFirstChunkByteData()).getIterator(this);
       }
     }
   }
@@ -261,7 +260,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         try {
           currentChunkIterator.getChunk().freeData();
           if (chunkCount > 0) {
-            logger.debug("End of chunks");
+            logger.debug("End of chunks", false);
             DownloaderMetrics metrics = chunkDownloader.terminate();
             logChunkDownloaderMetrics(metrics);
           }
@@ -278,12 +277,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   /**
    * Decode rowset returned in query response the load data into arrow vectors
    *
-   * @param rowsetBase64 first chunk of rowset in arrow format and base64 encoded
+   * @param firstChunk first chunk of rowset in arrow format
    * @return result chunk with arrow data already being loaded
    */
-  private ArrowResultChunk buildFirstChunk(String rowsetBase64) throws SQLException {
-    byte[] bytes = Base64.getDecoder().decode(rowsetBase64);
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+  private ArrowResultChunk buildFirstChunk(byte[] firstChunk) throws SQLException {
+    ByteArrayInputStream inputStream = new ByteArrayInputStream(firstChunk);
 
     // create a result chunk
     ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator, session);
@@ -303,11 +301,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   /**
    * Decode rowset returned in query response the load data into arrow vectors and sort data
    *
-   * @param rowsetBase64 first chunk of rowset in arrow format and base64 encoded
+   * @param firstChunk first chunk of rowset in arrow format
    * @return result chunk with arrow data already being loaded
    */
-  private ArrowResultChunk getSortedFirstResultChunk(String rowsetBase64) throws SQLException {
-    ArrowResultChunk resultChunk = buildFirstChunk(rowsetBase64);
+  private ArrowResultChunk getSortedFirstResultChunk(byte[] firstChunk) throws SQLException {
+    ArrowResultChunk resultChunk = buildFirstChunk(firstChunk);
 
     // enable sorted chunk, the sorting happens when the result chunk is ready to consume
     resultChunk.enableSortFirstResultChunk();
@@ -351,7 +349,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       }
       return true;
     } else {
-      logger.debug("end of result");
+      logger.debug("end of result", false);
 
       /*
        * Here we check if the result has been truncated and throw exception if
@@ -361,9 +359,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           || Boolean.TRUE
               .toString()
               .equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2"))) {
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session, new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED), queryId, null);
+        throw new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
       }
 
       // mark end of result
@@ -553,7 +549,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         rootAllocator.close();
       }
     } catch (InterruptedException ie) {
-      logger.debug("interrupted during closing root allocator");
+      logger.debug("interrupted during closing root allocator", false);
     } catch (Exception e) {
       logger.debug("Exception happened when closing rootAllocator: ", e.getLocalizedMessage());
     }

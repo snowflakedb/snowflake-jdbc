@@ -296,6 +296,34 @@ public enum DBMetadataResultSetMetadata {
           Types.VARCHAR,
           Types.VARCHAR,
           Types.VARCHAR)),
+
+  GET_STREAMS(
+      Arrays.asList(
+          "STREAM_NAME",
+          "DATABASE_NAME",
+          "SCHEMA_NAME",
+          "OWNER",
+          "COMMENT",
+          "TABLE_NAME",
+          "SOURCE_TYPE",
+          "BASE_TABLES",
+          "TYPE",
+          "STALE",
+          "MODE"),
+      Arrays.asList(
+          "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT", "TEXT"),
+      Arrays.asList(
+          Types.VARCHAR,
+          Types.VARCHAR,
+          Types.VARCHAR,
+          Types.VARCHAR,
+          Types.VARCHAR,
+          Types.VARCHAR,
+          Types.VARCHAR,
+          Types.VARCHAR,
+          Types.VARCHAR,
+          Types.VARCHAR,
+          Types.VARCHAR)),
   ;
 
   private List<String> columnNames;

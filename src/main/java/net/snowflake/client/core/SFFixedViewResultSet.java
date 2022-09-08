@@ -59,27 +59,22 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
    */
   @Override
   public boolean next() throws SFException {
-    logger.debug("next called");
+    logger.debug("next called", false);
 
     List<Object> nextRowList;
     try {
       // call the fixed view next row method
       nextRowList = fixedView.getNextRow();
     } catch (Exception ex) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(
-                  ErrorCode.INTERNAL_ERROR,
-                  IncidentUtil.oneLiner("Error getting next row from " + "fixed view:", ex)),
-              null,
-              null);
+      throw new SFException(
+          ErrorCode.INTERNAL_ERROR,
+          IncidentUtil.oneLiner("Error getting next row from " + "fixed view:", ex));
     }
 
     row++;
 
     if (nextRowList == null) {
-      logger.debug("end of result");
+      logger.debug("end of result", false);
       return false;
     }
 
@@ -93,7 +88,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
 
   @Override
   protected Object getObjectInternal(int columnIndex) throws SFException {
-    logger.debug("public Object getObjectInternal(int columnIndex)");
+    logger.debug("public Object getObjectInternal(int columnIndex)", false);
 
     if (nextRow == null) {
       throw new SFException(ErrorCode.ROW_DOES_NOT_EXIST);

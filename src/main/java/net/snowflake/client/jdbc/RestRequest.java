@@ -255,7 +255,7 @@ public class RestRequest {
 
         // check canceling flag
         if (canceling != null && canceling.get()) {
-          logger.debug("Stop retrying since canceling is requested");
+          logger.debug("Stop retrying since canceling is requested", false);
           breakRetryReason = "canceling is requested";
           break;
         }
@@ -338,7 +338,7 @@ public class RestRequest {
             elapsedMilliForTransientIssues += backoffInMilli;
             backoffInMilli = backoff.nextSleepTime(backoffInMilli);
           } catch (InterruptedException ex1) {
-            logger.debug("Backoff sleep before retrying login got interrupted");
+            logger.debug("Backoff sleep before retrying login got interrupted", false);
           }
         }
 

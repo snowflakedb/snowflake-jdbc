@@ -47,7 +47,7 @@ class SSDManager {
         host_spec_ssd = systemGetEnv(hostSpecBypassEnvVariable);
       }
     } catch (Throwable ex) {
-      LOGGER.debug("Failed to get environment variable for Server Side Directive support");
+      LOGGER.debug("Failed to get environment variable for Server Side Directive support", false);
     }
 
     if (ssd_status == null) {
@@ -97,7 +97,7 @@ class SSDManager {
           hostSpecBypassSSD.setHostSpecDirective(ssd_val);
         }
       } catch (Throwable ex) {
-        LOGGER.debug("Could not read JSON from the directive passed.");
+        LOGGER.debug("Could not read JSON from the directive passed.", false);
       }
     }
   }
@@ -125,7 +125,7 @@ class SSDManager {
       pub_key_dep2.SSD_setKey(pub_key, ver);
     }
 
-    LOGGER.debug("Failed to update public key, unknown issuing deployment");
+    LOGGER.debug("Failed to update public key, unknown issuing deployment", false);
   }
 
   String getPubKey(String dep) {
@@ -135,7 +135,7 @@ class SSDManager {
       return pub_key_dep2.SSD_getKey();
     }
 
-    LOGGER.debug("Invalid deployment name");
+    LOGGER.debug("Invalid deployment name", false);
     return null;
   }
 
@@ -146,7 +146,7 @@ class SSDManager {
       return pub_key_dep2.SSD_getKeyVer();
     }
 
-    LOGGER.debug("Invalid deployment name");
+    LOGGER.debug("Invalid deployment name", false);
     return -1;
   }
 
@@ -177,7 +177,7 @@ class SSDManager {
               ASN1OctetString.getInstance("0").getEncoded(),
               ASN1Integer.getInstance(0).getValue());
     } catch (Throwable ex) {
-      LOGGER.debug("Could not create wildcard certid as cache key");
+      LOGGER.debug("Could not create wildcard certid as cache key", false);
       keyOcspResp = null;
     }
     return keyOcspResp;

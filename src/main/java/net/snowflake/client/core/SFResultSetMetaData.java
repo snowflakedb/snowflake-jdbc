@@ -281,7 +281,7 @@ public class SFResultSetMetaData {
                 .length();
       }
     } catch (SFException e) {
-      logger.debug("Failed to calculate the display size. Use default one.");
+      logger.debug("Failed to calculate the display size. Use default one.", false);
     }
   }
 
@@ -349,11 +349,12 @@ public class SFResultSetMetaData {
 
     int externalColumnType = internalColumnType;
 
-    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
-        || internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
+    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
       externalColumnType = Types.TIMESTAMP;
     }
-
+    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
+      externalColumnType = Types.TIMESTAMP_WITH_TIMEZONE;
+    }
     return externalColumnType;
   }
 
@@ -364,12 +365,7 @@ public class SFResultSetMetaData {
     }
 
     if (columnTypes.get(columnIdx) == null) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column),
-              queryId,
-              null);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
     }
 
     return columnTypes.get(columnIdx);
@@ -381,12 +377,7 @@ public class SFResultSetMetaData {
     }
 
     if (columnTypeNames.get(column - 1) == null) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column),
-              queryId,
-              null);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
     }
 
     return columnTypeNames.get(column - 1);

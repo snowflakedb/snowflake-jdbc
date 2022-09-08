@@ -104,6 +104,7 @@ public class SnowflakeResultSetSerializableV1
   int firstChunkRowCount;
   int chunkFileCount;
   List<ChunkFileMetadata> chunkFileMetadatas = new ArrayList<>();
+  byte[] firstChunkByteData;
 
   // below fields are used for building a ChunkDownloader which
   // uses http client to download chunk files
@@ -178,6 +179,7 @@ public class SnowflakeResultSetSerializableV1
     this.firstChunkRowCount = toCopy.firstChunkRowCount;
     this.chunkFileCount = toCopy.chunkFileCount;
     this.chunkFileMetadatas = toCopy.chunkFileMetadatas;
+    this.firstChunkByteData = toCopy.firstChunkByteData;
 
     // below fields are used for building a ChunkDownloader
     this.resultPrefetchThreads = toCopy.resultPrefetchThreads;
@@ -251,6 +253,10 @@ public class SnowflakeResultSetSerializableV1
 
   public void setFristChunkStringData(String firstChunkStringData) {
     this.firstChunkStringData = firstChunkStringData;
+  }
+
+  public void setFirstChunkByteData(byte[] firstChunkByteData) {
+    this.firstChunkByteData = firstChunkByteData;
   }
 
   public void setChunkDownloader(ChunkDownloader chunkDownloader) {
@@ -447,6 +453,10 @@ public class SnowflakeResultSetSerializableV1
     return firstChunkStringData;
   }
 
+  public byte[] getFirstChunkByteData() {
+    return firstChunkByteData;
+  }
+
   public boolean getTreatNTZAsUTC() {
     return treatNTZAsUTC;
   }
@@ -498,7 +508,7 @@ public class SnowflakeResultSetSerializableV1
       ResultStreamProvider resultStreamProvider)
       throws SnowflakeSQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
-    logger.debug("Entering create()");
+    logger.debug("Entering create()", false);
 
     SnowflakeUtil.checkErrorAndThrowException(rootNode);
 
@@ -531,6 +541,13 @@ public class SnowflakeResultSetSerializableV1
     Optional<QueryResultFormat> queryResultFormat =
         QueryResultFormat.lookupByName(rootNode.path("data").path("queryResultFormat").asText());
     resultSetSerializable.queryResultFormat = queryResultFormat.orElse(QueryResultFormat.JSON);
+
+    // extract query context and save it in current session
+    JsonNode queryContextNode = rootNode.path("data").path("queryContext");
+    String queryContext = queryContextNode.isNull() ? null : queryContextNode.asText();
+    if (!sfSession.isAsyncSession()) {
+      sfSession.setQueryContext(queryContext);
+    }
 
     // extract parameters
     resultSetSerializable.parameters =
@@ -567,6 +584,7 @@ public class SnowflakeResultSetSerializableV1
           || resultSetSerializable.firstChunkRowset.isMissingNode()) {
         resultSetSerializable.firstChunkRowCount = 0;
         resultSetSerializable.firstChunkStringData = null;
+        resultSetSerializable.firstChunkByteData = new byte[0];
       } else {
         resultSetSerializable.firstChunkRowCount = resultSetSerializable.firstChunkRowset.size();
         resultSetSerializable.firstChunkStringData =
@@ -942,6 +960,7 @@ public class SnowflakeResultSetSerializableV1
         curResultSetSerializable.firstChunkStringData = null;
         curResultSetSerializable.firstChunkRowCount = 0;
         curResultSetSerializable.firstChunkRowset = null;
+        curResultSetSerializable.firstChunkByteData = new byte[0];
       }
 
       // Append this chunk file to result serializable object
@@ -1052,16 +1071,18 @@ public class SnowflakeResultSetSerializableV1
   // Set the row count for first result chunk by parsing the chunk data.
   private void setFirstChunkRowCountForArrow() throws SnowflakeSQLException {
     firstChunkRowCount = 0;
-
+    firstChunkByteData = new byte[0];
     // If the first chunk doesn't exist or empty, set it as 0
     if (firstChunkStringData == null || firstChunkStringData.isEmpty()) {
       firstChunkRowCount = 0;
+      firstChunkByteData = new byte[0];
     }
     // Parse the Arrow result chunk
     else if (getQueryResultFormat().equals(QueryResultFormat.ARROW)) {
       // Below code is developed based on SFArrowResultSet.buildFirstChunk
       // and ArrowResultChunk.readArrowStream()
       byte[] bytes = Base64.getDecoder().decode(firstChunkStringData);
+      firstChunkByteData = bytes;
       VectorSchemaRoot root = null;
       RootAllocator localRootAllocator =
           (rootAllocator != null) ? rootAllocator : new RootAllocator(Long.MAX_VALUE);

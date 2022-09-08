@@ -55,8 +55,8 @@ public class JDK14Logger implements SFLogger {
     return this.jdkLogger.isLoggable(Level.WARNING);
   }
 
-  public void debug(String msg) {
-    logInternal(Level.FINE, msg, true);
+  public void debug(String msg, boolean isMasked) {
+    logInternal(Level.FINE, msg, isMasked);
   }
 
   // This function is used to display unmasked, potentially sensitive log information for internal
@@ -73,8 +73,8 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.FINE, msg, t);
   }
 
-  public void error(String msg) {
-    logInternal(Level.SEVERE, msg, true);
+  public void error(String msg, boolean isMasked) {
+    logInternal(Level.SEVERE, msg, isMasked);
   }
 
   public void error(String msg, Object... arguments) {
@@ -85,8 +85,8 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.SEVERE, msg, t);
   }
 
-  public void info(String msg) {
-    logInternal(Level.INFO, msg, true);
+  public void info(String msg, boolean isMasked) {
+    logInternal(Level.INFO, msg, isMasked);
   }
 
   public void info(String msg, Object... arguments) {
@@ -97,8 +97,8 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.INFO, msg, t);
   }
 
-  public void trace(String msg) {
-    logInternal(Level.FINEST, msg, true);
+  public void trace(String msg, boolean isMasked) {
+    logInternal(Level.FINEST, msg, isMasked);
   }
 
   public void trace(String msg, Object... arguments) {
@@ -109,8 +109,8 @@ public class JDK14Logger implements SFLogger {
     logInternal(Level.FINEST, msg, t);
   }
 
-  public void warn(String msg) {
-    logInternal(Level.WARNING, msg, true);
+  public void warn(String msg, boolean isMasked) {
+    logInternal(Level.WARNING, msg, isMasked);
   }
 
   public void warn(String msg, Object... arguments) {

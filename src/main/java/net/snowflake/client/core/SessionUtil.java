@@ -712,7 +712,7 @@ public class SessionUtil {
           databaseVersion = serverVersion;
         }
       } else {
-        logger.debug("server version is null");
+        logger.debug("server version is null", false);
       }
 
       if (databaseVersion != null) {
@@ -729,7 +729,7 @@ public class SessionUtil {
           }
         }
       } else {
-        logger.debug("database version is null");
+        logger.debug("database version is null", false);
       }
 
       if (!jsonNode.path("data").path("newClientForUpgrade").isNull()) {
@@ -1150,7 +1150,10 @@ public class SessionUtil {
 
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
-      oneTimeToken = jsonNode.get("cookieToken").asText();
+      oneTimeToken =
+          jsonNode.get("sessionToken") != null
+              ? jsonNode.get("sessionToken").asText()
+              : jsonNode.get("cookieToken").asText();
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
@@ -1349,7 +1352,7 @@ public class SessionUtil {
     for (JsonNode child : paramsNode) {
       // If there isn't a name then the response from GS must be erroneous.
       if (!child.hasNonNull("name")) {
-        logger.error("Common Parameter JsonNode encountered with " + "no parameter name!");
+        logger.error("Common Parameter JsonNode encountered with " + "no parameter name!", false);
         continue;
       }
 
@@ -1369,6 +1372,16 @@ public class SessionUtil {
       } else if (BOOLEAN_PARAMS.contains(paramName.toUpperCase())) {
         parameters.put(paramName, child.path("value").asBoolean());
       } else {
+        try {
+          // Value should only be boolean, int or string so we don't expect exceptions here.
+          parameters.put(paramName, mapper.treeToValue(child.path("value"), Object.class));
+        } catch (Exception e) {
+          logger.debug(
+              "Unknown Common Parameter Failed to Parse: {} -> {}. Exception: {}",
+              paramName,
+              child.path("value"),
+              e.getMessage());
+        }
         logger.debug("Unknown Common Parameter: {}", paramName);
       }
 

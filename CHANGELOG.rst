@@ -1,3 +1,40 @@
+**JDBC Driver 3.13.22**
+
+- \| | Updated the tika-core library to version 2.4.1.
+- \| | Fixed an issue where getColumnClassName() threw an exception when the column type is timestamp_tx.
+- \| | Fixed an issue where calling getSQLStateType() throws an exception while retrieving database metadata.
+- \| | Fixed an issue where calling executeLargeBatch() for prepared statements might result in no rows being inserted.
+
+**JDBC Driver 3.13.21**
+
+- \| | Fix memory leak with statement object in SnowflakeConnectionV1::createResultSet
+- \| | Fix memory leak with arrow result sets
+- \| | Fix JDBC chunk downloader missing data issue
+- \| | Update prefetch memory max retry number
+- \| | Supporting parsing otherParameters in JDBC
+- \| | Add query context support
+
+**JDBC Driver 3.13.20**
+
+- \|| Implemented fast fail functionality for 404 errors returned from Amazon S3
+- \Upgraded the following dependencies: arrow, tika-core 
+- \Upgraded the following Google library versions: google-auth-library, google-cloud-storage, google api client, google http client
+
+**JDBC Driver 3.13.19**
+
+- \| | Updated the isValid() function to send a heartbeat call instead of a SELECT 1 to validate the session connection.
+- \| | Added support for setting VARBINARY byte[] arrays in the SnowflakePreparedStatement.setObject() function.
+- \| | Updated the following dependencies in the JDBC driver:
+- \| | arrow version  0.15.1 to 7.0.0
+- \| | jackson version 2.11.0 to 2.13.2 
+- \| | bouncy version 1.64 to 1.70
+- \| | Fixed an issue with TIMESTAMP_INPUT_FORMAT for stage binding.
+
+**JDBC Driver 3.13.18**
+
+- \ | | Upgrade arrow and jackson versions to fix vulnerabilities
+- \SNOW-576187 | | Don't append retryCount to the scoped URL for chunk downloading
+
 **JDBC Driver 3.13.17**
 
 - \SNOW-571607 | | Create patch for driver release v3.13.16 to fix incorrect behavior for getSchemas() function 

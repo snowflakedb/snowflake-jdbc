@@ -20,7 +20,6 @@ import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
@@ -48,6 +47,8 @@ public class StmtUtil {
   static final String SF_QUERY_REQUEST_ID = "requestId";
 
   private static final String SF_QUERY_COMBINE_DESCRIBE_EXECUTE = "combinedDescribe";
+
+  private static final String SF_QUERY_CONTEXT = "queryContext";
 
   private static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
 
@@ -100,6 +101,8 @@ public class StmtUtil {
     OCSPMode ocspMode;
 
     HttpClientSettingsKey httpClientSettingsKey;
+
+    String queryContext;
 
     StmtInput() {}
 
@@ -222,6 +225,11 @@ public class StmtUtil {
       this.asyncExec = async;
       return this;
     }
+
+    public StmtInput setQueryContext(String queryContext) {
+      this.queryContext = queryContext;
+      return this;
+    }
   }
 
   /** Output for running a statement on server */
@@ -284,6 +292,10 @@ public class StmtUtil {
           uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
         }
 
+        if (!Strings.isNullOrEmpty(stmtInput.queryContext)) {
+          uriBuilder.addParameter(SF_QUERY_CONTEXT, stmtInput.queryContext);
+        }
+
         httpRequest = new HttpPost(uriBuilder.build());
 
         /*
@@ -308,7 +320,7 @@ public class StmtUtil {
 
         String json = mapper.writeValueAsString(sqlJsonBody);
 
-        logger.debug("JSON: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(json));
+        logger.debug("JSON: {}", json);
 
         // SNOW-18057: compress the post body in gzip
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -428,14 +440,7 @@ public class StmtUtil {
          * But we don't want to retry too many times
          */
         if (retries >= MAX_RETRIES) {
-          throw (SFException)
-              IncidentUtil.generateIncidentV2WithException(
-                  stmtInput.serverUrl,
-                  stmtInput.sessionToken,
-                  stmtInput.httpClientSettingsKey,
-                  new SFException(ErrorCode.BAD_RESPONSE, resultAsString),
-                  null,
-                  stmtInput.requestId);
+          throw new SFException(ErrorCode.BAD_RESPONSE, resultAsString);
         } else {
           logger.debug("Will retry get result. Retry count: {}", retries);
 
@@ -476,7 +481,7 @@ public class StmtUtil {
             try {
               Thread.sleep(stmtInput.injectClientPause * 1000);
             } catch (InterruptedException ex) {
-              logger.debug("exception encountered while injecting pause");
+              logger.debug("exception encountered while injecting pause", false);
             }
           }
         }
@@ -497,7 +502,7 @@ public class StmtUtil {
       }
     } while (queryInProgress);
 
-    logger.debug("Returning result");
+    logger.debug("Returning result", false);
 
     eventHandler.triggerStateTransition(
         BasicEvent.QueryState.PROCESSING_RESULT,
@@ -656,8 +661,7 @@ public class StmtUtil {
     try {
       URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
 
-      logger.debug(
-          "Aborting query: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(stmtInput.sql));
+      logger.debug("Aborting query: {}", stmtInput.sql);
 
       uriBuilder.setPath(SF_PATH_ABORT_REQUEST_V1);
 
@@ -674,8 +678,7 @@ public class StmtUtil {
 
       String json = mapper.writeValueAsString(sqlJsonBody);
 
-      logger.debug(
-          "JSON for cancel request: {}", (ArgSupplier) () -> SecretDetector.maskSecrets(json));
+      logger.debug("JSON for cancel request: {}", json);
 
       StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
       input.setContentType("application/json");
@@ -739,7 +742,7 @@ public class StmtUtil {
     // skip commenting prefixed with //
     while (trimmedSql.startsWith("//")) {
       if (logger.isDebugEnabled()) {
-        logger.debug("skipping // comments in: \n{}", SecretDetector.maskSecrets(trimmedSql));
+        logger.debug("skipping // comments in: \n{}", trimmedSql);
       }
 
       if (trimmedSql.indexOf('\n') > 0) {
@@ -750,15 +753,14 @@ public class StmtUtil {
       }
 
       if (logger.isDebugEnabled()) {
-        logger.debug(
-            "New sql after skipping // comments: \n{}", SecretDetector.maskSecrets(trimmedSql));
+        logger.debug("New sql after skipping // comments: \n{}", trimmedSql);
       }
     }
 
     // skip commenting enclosed with /* */
     while (trimmedSql.startsWith("/*")) {
       if (logger.isDebugEnabled()) {
-        logger.debug("skipping /* */ comments in: \n{}", SecretDetector.maskSecrets(trimmedSql));
+        logger.debug("skipping /* */ comments in: \n{}", trimmedSql);
       }
 
       if (trimmedSql.indexOf("*/") > 0) {
