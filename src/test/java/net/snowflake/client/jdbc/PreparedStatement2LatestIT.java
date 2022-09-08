@@ -133,8 +133,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         // describe is success and do the index range check
         ps =
             connection.prepareStatement(
-                "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?::NUMBER, 3) and MID"
-                    + " = ?");
+                "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?::NUMBER, 3) and MID = ?");
         ps.setObject(1, 0);
         ps.setObject(2, null);
 
