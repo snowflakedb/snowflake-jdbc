@@ -558,7 +558,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     uploadWithPresignedUrl(
         networkTimeoutInMilli,
         0, // auth timeout
-        SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_MS, // socket timeout
+        SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT, // socket timeout
         meta.getContentEncoding(),
         meta.getUserMetadata(),
         uploadStreamInfo.left,

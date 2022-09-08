@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
-import static net.snowflake.client.core.SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_MS;
+import static net.snowflake.client.core.SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -332,7 +332,7 @@ public class TelemetryClient implements Telemetry {
                     post,
                     TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
                     0,
-                    DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_MS,
+                    DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT,
                     0,
                     this.httpClient)
                 : HttpUtil.executeGeneralRequest(
