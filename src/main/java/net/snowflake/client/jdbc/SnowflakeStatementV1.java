@@ -128,14 +128,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
-    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
-      execTimeData =
-              new ExecTimeTelemetryData(
-                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
-                      "ResultSet Statement.executeQuery(String)",
-                      this.batchID);
-    }
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData("ResultSet Statement.executeQuery(String)", this.batchID);
 
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
@@ -152,14 +146,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
   public ResultSet executeAsyncQuery(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
-    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
-      execTimeData =
-              new ExecTimeTelemetryData(
-                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
-                      "ResultSet Statement.executeAsyncQuery(String)",
-                      this.batchID);
-    }
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData("ResultSet Statement.executeAsyncQuery(String)", this.batchID);
     raiseSQLExceptionIfStatementIsClosed();
     ResultSet rs = executeQueryInternal(sql, true, null, execTimeData);
     execTimeData.setQueryEnd();
@@ -188,14 +176,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public long executeLargeUpdate(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
-    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
-      execTimeData =
-              new ExecTimeTelemetryData(
-                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
-                      "ResultSet Statement.executeLargeUpdate(String)",
-                      this.batchID);
-    }
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData("ResultSet Statement.executeLargeUpdate(String)", this.batchID);
     long res = executeUpdateInternal(sql, null, true, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
@@ -381,14 +363,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    */
   @Override
   public boolean execute(String sql) throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
-    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
-      execTimeData =
-              new ExecTimeTelemetryData(
-                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
-                      "ResultSet Statement.execute(String)",
-                      this.batchID);
-    }
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData("ResultSet Statement.execute(String)", this.batchID);
     boolean res = executeInternal(sql, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();

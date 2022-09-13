@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.QueryStatus.*;
+import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +21,7 @@ import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -334,7 +336,7 @@ public class SFSession extends SFBaseSession {
 
         case VALIDATE_DEFAULT_PARAMETERS:
           if (propertyValue != null) {
-            setValidateDefaultParameters(SFLoginInput.getBooleanValue(propertyValue));
+            setValidateDefaultParameters(getBooleanValue(propertyValue));
           }
           break;
 
@@ -497,7 +499,15 @@ public class SFSession extends SFBaseSession {
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
-
+    // overwrite session parameter value with connection parameter value for OOB telemetry in HTAP
+    boolean isOOBTelemetryEnabled =
+        getBooleanValue(
+            connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED));
+    if (isOOBTelemetryEnabled) {
+      TelemetryService.enable();
+    } else {
+      TelemetryService.disable();
+    }
     String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
     String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
     String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);

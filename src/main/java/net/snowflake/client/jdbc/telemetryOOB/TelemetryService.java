@@ -1,6 +1,17 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+
 import com.google.common.base.Strings;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
@@ -15,18 +26,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.security.cert.CertificateException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
@@ -116,7 +115,7 @@ public class TelemetryService {
 
   public boolean isEnabled() {
     synchronized (enableLock) {
-      return false;
+      return enabled;
     }
   }
 
@@ -158,9 +157,9 @@ public class TelemetryService {
       case "REG":
         return TELEMETRY_SERVER_DEPLOYMENT.REG;
       case "DEV":
-         return TELEMETRY_SERVER_DEPLOYMENT.DEV;
+        return TELEMETRY_SERVER_DEPLOYMENT.DEV;
       case "QA1":
-         return TELEMETRY_SERVER_DEPLOYMENT.QA1;
+        return TELEMETRY_SERVER_DEPLOYMENT.QA1;
       case "PREPROD":
         return TELEMETRY_SERVER_DEPLOYMENT.PREPROD3;
       case "PROD":
@@ -197,7 +196,8 @@ public class TelemetryService {
     }
     Map<String, Object> conParams = conStr.getParameters();
     if (conParams.containsKey("TELEMETRY_DEPLOYMENT")) {
-      String conDeployment = String.valueOf(conParams.get("TELEMETRY_DEPLOYMENT")).trim().toUpperCase();
+      String conDeployment =
+          String.valueOf(conParams.get("TELEMETRY_DEPLOYMENT")).trim().toUpperCase();
       deployment = manuallyConfigureDeployment(conDeployment);
       if (deployment != null) {
         this.setDeployment(deployment);
@@ -371,7 +371,7 @@ public class TelemetryService {
             .setConnectionRequestTimeout(TIMEOUT)
             .setConnectionRequestTimeout(TIMEOUT)
             .setSocketTimeout(TIMEOUT)
-                //.setProxy(new HttpHost("127.0.0.1", 9090, "http"))
+            // .setProxy(new HttpHost("127.0.0.1", 9090, "http"))
             .build();
 
     public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr) {
@@ -381,15 +381,9 @@ public class TelemetryService {
     }
 
     public void run() {
-      String isTelemetryEnabledStr = systemGetEnv("TELEMETRY_ENABLED");
-      boolean enabled = false;
-      if(!Strings.isNullOrEmpty(isTelemetryEnabledStr)) {
-        enabled = Boolean.parseBoolean(isTelemetryEnabledStr);
-      }
-      if (!enabled) {
+      if (!instance.enabled) {
         return;
       }
-
       uploadPayload();
     }
 

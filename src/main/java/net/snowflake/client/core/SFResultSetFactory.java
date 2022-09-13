@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 
 /**
  * Factory class to create SFBaseResultSet class. Depending on result format, different instance

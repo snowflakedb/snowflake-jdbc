@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -149,8 +148,8 @@ public class RestRequest {
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
         // If HTAP
-        if (System.getenv("HTAP_SIMULATION").equalsIgnoreCase("true") &&
-                builder.getPathSegments().contains("query-request")) {
+        if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
+            && builder.getPathSegments().contains("query-request")) {
           builder.setParameter("target", "htap_simulation");
         }
         if (includeRetryParameters && retryCount > 0) {

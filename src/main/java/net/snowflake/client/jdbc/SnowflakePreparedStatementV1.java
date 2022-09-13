@@ -110,14 +110,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public ResultSet executeQuery() throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
-    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
-      execTimeData =
-              new ExecTimeTelemetryData(
-                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
-                      "ResultSet PreparedStatement.executeQuery(String)",
-                      this.batchID);
-    }
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData("ResultSet PreparedStatement.executeQuery(String)", this.batchID);
     if (showStatementParameters) {
       logger.info("executeQuery()", false);
     } else {
@@ -136,14 +130,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    * @throws SQLException
    */
   public ResultSet executeAsyncQuery() throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
-    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
-      execTimeData =
-              new ExecTimeTelemetryData(
-                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
-                      "ResultSet PreparedStatement.executeAsyncQuery(String)",
-                      this.batchID);
-    }
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData(
+            "ResultSet PreparedStatement.executeAsyncQuery(String)", this.batchID);
     if (showStatementParameters) {
       logger.info("executeAsyncQuery()", false);
     } else {
@@ -158,9 +147,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public long executeLargeUpdate() throws SQLException {
     ExecTimeTelemetryData execTimeTelemetryData =
-            new ExecTimeTelemetryData(SnowflakeUtil.getEpochTimeInMicroSeconds(),
-                    "long PreparedStatement.executeLargeUpdate()",
-                    this.batchID);
+        new ExecTimeTelemetryData("long PreparedStatement.executeLargeUpdate()", this.batchID);
     logger.debug("executeLargeUpdate()", false);
 
     return executeUpdateInternal(sql, parameterBindings, true, execTimeTelemetryData);
@@ -459,14 +446,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public boolean execute() throws SQLException {
-    ExecTimeTelemetryData execTimeData = new ExecTimeTelemetryData();
-    if (this.connection.getSFBaseSession().isClientTelemetryEnabled()) {
-      execTimeData =
-              new ExecTimeTelemetryData(
-                      SnowflakeUtil.getEpochTimeInMicroSeconds(),
-                      "boolean PreparedStatement.execute(String)",
-                      this.batchID);
-    }
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData("boolean PreparedStatement.execute(String)", this.batchID);
     logger.debug("execute: {}", sql);
     boolean res = executeInternal(sql, parameterBindings, execTimeData);
     execTimeData.setQueryEnd();

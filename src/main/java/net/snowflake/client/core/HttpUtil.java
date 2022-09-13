@@ -451,7 +451,8 @@ public class HttpUtil {
    */
   public static CloseableHttpClient initHttpClient(HttpClientSettingsKey key, File ocspCacheFile) {
     updateRoutePlanner(key);
-    return httpClient.computeIfAbsent(key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled()));
+    return httpClient.computeIfAbsent(
+        key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled()));
   }
 
   /**

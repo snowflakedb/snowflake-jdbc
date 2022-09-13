@@ -3,7 +3,6 @@ package net.snowflake.client.jdbc.telemetryOOB;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.UUID;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.SFException;

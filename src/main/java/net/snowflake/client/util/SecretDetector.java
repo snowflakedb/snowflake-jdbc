@@ -195,7 +195,7 @@ public class SecretDetector {
    */
   public static String maskSASToken(String text) {
     return text;
-    //return filterSASTokens(text);
+    // return filterSASTokens(text);
   }
 
   /**

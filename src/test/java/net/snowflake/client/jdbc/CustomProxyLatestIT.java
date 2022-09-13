@@ -1,20 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.common.core.SqlState;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
-
-import java.io.File;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
-import java.sql.*;
-import java.util.Properties;
-
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 import static net.snowflake.client.AbstractDriverIT.getFullPathFileInResource;
@@ -23,6 +8,20 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
+import java.sql.*;
+import java.util.Properties;
+import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.common.core.SqlState;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 // To run these tests, you must:
 // 1.) Start up a proxy connection. The simplest ways are via Squid or BurpSuite. Confluence doc on

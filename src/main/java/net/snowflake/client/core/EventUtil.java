@@ -6,7 +6,6 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
