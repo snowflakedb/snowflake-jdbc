@@ -246,7 +246,7 @@ public class FileUploaderSessionlessTest {
     Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
     Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
     Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals(null, stageInfo.getEndPoint());
+    Assert.assertEquals("null", stageInfo.getEndPoint());
     Assert.assertEquals(null, stageInfo.getStorageAccount());
     Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
   }
@@ -303,7 +303,7 @@ public class FileUploaderSessionlessTest {
     Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
     Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
     Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals(null, stageInfo.getEndPoint());
+    Assert.assertEquals("null", stageInfo.getEndPoint());
     Assert.assertEquals(null, stageInfo.getStorageAccount());
     Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
 
@@ -347,7 +347,7 @@ public class FileUploaderSessionlessTest {
     Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
     Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
     Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals(null, stageInfo.getEndPoint());
+    Assert.assertEquals("null", stageInfo.getEndPoint());
     Assert.assertEquals(null, stageInfo.getStorageAccount());
     Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
 
