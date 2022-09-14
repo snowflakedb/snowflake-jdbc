@@ -930,10 +930,17 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           jsonNode.path("data").path("stageInfo").path("isClientSideEncrypted").asBoolean(true);
     }
 
-    // endPoint and storageAccount are only available in Azure stages. Value
-    // will be present but null in other platforms.
+
+    // endPoint is currently known to be set for Azure stages or S3. For S3 it will be set specifically
+    // for FIPS or VPCE S3 endpoint. SNOW-652696
     String endPoint = null;
+    if ("AZURE".equalsIgnoreCase(stageLocationType) || "S3".equalsIgnoreCase(stageLocationType)) {
+      endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
+    }
+
     String stgAcct = null;
+    // storageAccount are only available in Azure stages. Value
+    // will be present but null in other platforms.
     if ("AZURE".equalsIgnoreCase(stageLocationType)) {
       // Jackson is doing some very strange things trying to pull the value of
       // the storageAccount node after adding the GCP library dependencies.
@@ -943,7 +950,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       // then comes back with double quotes around it, so we're stripping them
       // off. As long as our JSON doc doesn't add another node that starts with
       // "sto", this should work fine.
-      endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
       Iterator<Entry<String, JsonNode>> fields = jsonNode.path("data").path("stageInfo").fields();
       while (fields.hasNext()) {
         Entry<String, JsonNode> jsonField = fields.next();
