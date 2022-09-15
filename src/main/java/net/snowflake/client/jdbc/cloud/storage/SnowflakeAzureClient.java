@@ -260,7 +260,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    * @param command command to download file
    * @param localLocation local file path
    * @param destFileName destination file name
-   * @param parallelism [ not used by the Azure implementation ]
+   * @param parallelism number of threads for parallel downloading
    * @param remoteStorageLocation remote storage location, i.e. bucket for S3
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
@@ -287,14 +287,13 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         CloudBlobContainer container = azStorageClient.getContainerReference(remoteStorageLocation);
         CloudBlob blob = container.getBlockBlobReference(stageFilePath);
 
-        // Note that Azure doesn't offer a multi-part parallel download library,
-        // where the user has control of block size and parallelism
-        // we rely on Azure to handle the download, hence the "parallelism" parameter is ignored
-        // in the Azure implementation of the method
-        blob.downloadToFile(localFilePath, null, null, opContext);
+        BlobRequestOptions transferOptions = new BlobRequestOptions();
+        transferOptions.setConcurrentRequestCount(parallelism);
+
+        blob.downloadToFile(localFilePath, null, transferOptions, opContext);
 
         // Pull object metadata from Azure
-        blob.downloadAttributes(null, null, opContext);
+        blob.downloadAttributes(null, transferOptions, opContext);
 
         // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata = blob.getMetadata();
@@ -418,7 +417,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    *
    * @param session session object
    * @param command upload command
-   * @param parallelism [ not used by the Azure implementation ]
+   * @param parallelism number of threads for parallel uploading
    * @param uploadFromStream true if upload source is stream
    * @param remoteStorageLocation storage container name
    * @param srcFile source file if not uploading from a stream
@@ -473,19 +472,18 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         // Set the user-defined/Snowflake metadata and upload the BLOB
         blob.setMetadata((HashMap<String, String>) meta.getUserMetadata());
 
-        // Note that Azure doesn't offer a multi-part parallel upload library,
-        // where the user has control of block size and parallelism
-        // we rely on Azure to handle the upload, hence the "parallelism" parameter is ignored
-        // in the Azure implementation of the method
+        BlobRequestOptions transferOptions = new BlobRequestOptions();
+        transferOptions.setConcurrentRequestCount(parallelism);
+
         blob.upload(
             fileInputStream, // input stream to upload from
             -1, // -1 indicates an unknown stream length
             null,
-            null,
+            transferOptions,
             opContext);
         logger.debug("Upload successful", false);
 
-        blob.uploadMetadata(null, null, opContext);
+        blob.uploadMetadata(null, transferOptions, opContext);
 
         // close any open streams in the "toClose" list and return
         for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
