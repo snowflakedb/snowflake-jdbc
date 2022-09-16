@@ -92,7 +92,6 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
       properties.put("password", password);
     }
 
-
     try {
       Connection con = SnowflakeDriver.INSTANCE.connect(getUrl(), properties);
       logger.trace("Created a connection for {} at {}", user, (ArgSupplier) this::getUrl);
