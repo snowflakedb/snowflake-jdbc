@@ -1,3 +1,11 @@
+**JDBC Driver 3.13.23**
+
+- \|| Relocate Google Guava classes from com/google/common/util/concurrent/** in FIPS driver
+- \|| Return an empty resultset for getProcedures() when connected with a reader account 
+- \|| Use parallelism parameter for PUT/GET with Azure 
+- \|| Set default logger level for arrow project to SEVERE to avoid unwanted INFO messages 
+- \|| login test params updated and test case added 
+
 **JDBC Driver 3.13.22**
 
 - \| | Updated the tika-core library to version 2.4.1.
