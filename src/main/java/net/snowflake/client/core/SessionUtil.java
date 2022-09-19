@@ -252,6 +252,11 @@ public class SessionUtil {
       // OAuth does not require a username
       AssertUtil.assertTrue(
           loginInput.getUserName() != null, "missing user name for opening session");
+    } else {
+      // OAUTH needs either token or passord
+      AssertUtil.assertTrue(
+          loginInput.getToken() != null || loginInput.getPassword() != null,
+          "missing token or password for opening session");
     }
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)) {
       if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
