@@ -308,7 +308,7 @@
     <dependency>
       <groupId>com.google.auth</groupId>
       <artifactId>google-auth-library-oauth2-http</artifactId>
-      <version>1.5.3</version>
+      <version>1.11.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.cloud</groupId>
@@ -690,7 +690,7 @@
              <timestampFormat>yyyyMMddHHmmss</timestampFormat>
              <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
              <doCheck>false</doCheck>
-             <revisionOnScmFailure />
+             <revisionOnScmFailure/>
              <doUpdate>false</doUpdate>
              <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrememting buildNumber
                 AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrememting build number at the same time -->
@@ -897,7 +897,7 @@
                       </filter>
                    </filters>
                   <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                     </transformer>
                   </transformers>
