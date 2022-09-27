@@ -1142,17 +1142,21 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       String schemaName = resultSetStepOne.getString("schema_name");
       // Check that schema name match the original input
       // And check special case - schema with special name in quotes
-      boolean isSchemaNameMatch = compiledSchemaPattern != null && (compiledSchemaPattern.matcher(schemaName).matches()
-          || (schemaName.startsWith("\"") && schemaName.endsWith("\"")
-          && compiledSchemaPattern.matcher(schemaName).region(1, schemaName.length() - 1).matches()
-      )
-      );
+      boolean isSchemaNameMatch =
+          compiledSchemaPattern != null
+              && (compiledSchemaPattern.matcher(schemaName).matches()
+                  || (schemaName.startsWith("\"")
+                      && schemaName.endsWith("\"")
+                      && compiledSchemaPattern
+                          .matcher(schemaName)
+                          .region(1, schemaName.length() - 1)
+                          .matches()));
 
       // Check that procedure name and schema name match the original input in case wildcards have
       // been used.
       // Procedure name column check must occur later when columns are parsed.
       if ((compiledProcedurePattern != null
-          && !compiledProcedurePattern.matcher(procedureNameNoArgs).matches())
+              && !compiledProcedurePattern.matcher(procedureNameNoArgs).matches())
           || !isSchemaNameMatch) {
         continue;
       }
