@@ -21,6 +21,7 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.RunningOnTestaccount;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
@@ -1403,6 +1404,66 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           connection.close();
         }
       }
+    }
+  }
+
+  /**
+   * This tests that when the HTAP optimization parameter ENABLE_SNOW_654741_FOR_TESTING is set to
+   * true and no session parameters or db/schema/wh are returned for select/dml statements, the
+   * parameters and metadata are still accessible after creating a resultset object.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testHTAPOptimizations() throws SQLException {
+    // Set the HTAP test parameter to true
+    try (Connection con = getSnowflakeAdminConnection()) {
+      Statement statement = con.createStatement();
+      statement.execute(
+          "alter account "
+              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+              + " set ENABLE_SNOW_654741_FOR_TESTING=true");
+    }
+    // Create a normal connection and assert that database, schema, and warehouse have expected
+    // values
+    Connection con = getConnection();
+    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
+    assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").equalsIgnoreCase(con.getCatalog()));
+    assertTrue(
+        TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE").equalsIgnoreCase(session.getWarehouse()));
+    Statement statement = con.createStatement();
+    // Set TIMESTAMP_OUTPUT_FORMAT (which is a session parameter) to check its value later
+    statement.execute("alter session set TIMESTAMP_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FFTZH'");
+    statement.execute("create or replace table testtable1 (cola string, colb int)");
+    statement.execute("insert into testtable1 values ('row1', 1), ('row2', 2), ('row3', 3)");
+    ResultSet rs = statement.executeQuery("select * from testtable1");
+    assertEquals(3, getSizeOfResultSet(rs));
+    // Assert database, schema, and warehouse have the same values as before even though the select
+    // statement will
+    // return no parameters or metadata
+    assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
+    assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").equalsIgnoreCase(con.getCatalog()));
+    assertTrue(
+        TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE").equalsIgnoreCase(session.getWarehouse()));
+    // Assert session parameter TIMESTAMP_OUTPUT_FORMAT has the same value as before the select
+    // statement
+    assertEquals(
+        "YYYY-MM-DD HH24:MI:SS.FFTZH",
+        session.getCommonParameters().get("TIMESTAMP_OUTPUT_FORMAT"));
+    // cleanup
+    statement.execute("alter session unset TIMESTAMP_OUTPUT_FORMAT");
+    rs.close();
+    statement.close();
+    con.close();
+    // cleanup
+    try (Connection con2 = getSnowflakeAdminConnection()) {
+      statement = con2.createStatement();
+      statement.execute(
+          "alter account "
+              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+              + " unset ENABLE_SNOW_654741_FOR_TESTING");
     }
   }
 }
