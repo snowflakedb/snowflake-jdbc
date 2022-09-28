@@ -661,7 +661,7 @@ public abstract class SFBaseSession {
   }
 
   public void setDatabase(String database) {
-    if (Strings.isNullOrEmpty(database)) {
+    if (!Strings.isNullOrEmpty(database)) {
     this.database = database;
     }
   }
@@ -671,7 +671,7 @@ public abstract class SFBaseSession {
   }
 
   public void setSchema(String schema) {
-    if (Strings.isNullOrEmpty(schema)) {
+    if (!Strings.isNullOrEmpty(schema)) {
     this.schema = schema;
     }
   }
@@ -689,7 +689,7 @@ public abstract class SFBaseSession {
   }
 
   public void setWarehouse(String warehouse) {
-    if (Strings.isNullOrEmpty(warehouse)) {
+    if (!Strings.isNullOrEmpty(warehouse)) {
     this.warehouse = warehouse;
     }
   }
