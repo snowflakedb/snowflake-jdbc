@@ -12,11 +12,7 @@ import java.sql.DriverPropertyInfo;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SFConnectionHandler;
-import net.snowflake.client.jdbc.SnowflakeConnectString;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -123,6 +119,8 @@ public abstract class SFBaseSession {
   // Whether enable returning timestamp with timezone as data type
   private boolean enableReturnTimestampWithTimeZone = true;
 
+  private Map<String, Object> commonParameters;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -146,6 +144,14 @@ public abstract class SFBaseSession {
     Properties copy = new Properties();
     copy.putAll(this.clientInfo);
     return copy;
+  }
+
+  public void setCommonParameters(Map<String, Object> parameters) {
+    this.commonParameters = parameters;
+  }
+
+  public Map<String, Object> getCommonParameters() {
+    return this.commonParameters;
   }
 
   /**
@@ -675,7 +681,9 @@ public abstract class SFBaseSession {
   }
 
   public void setDatabase(String database) {
-    this.database = database;
+    if (!Strings.isNullOrEmpty(database)) {
+      this.database = database;
+    }
   }
 
   public String getSchema() {
@@ -683,7 +691,9 @@ public abstract class SFBaseSession {
   }
 
   public void setSchema(String schema) {
-    this.schema = schema;
+    if (!Strings.isNullOrEmpty(schema)) {
+      this.schema = schema;
+    }
   }
 
   public String getRole() {
@@ -699,7 +709,9 @@ public abstract class SFBaseSession {
   }
 
   public void setWarehouse(String warehouse) {
-    this.warehouse = warehouse;
+    if (!Strings.isNullOrEmpty(warehouse)) {
+      this.warehouse = warehouse;
+    }
   }
 
   public void setUseRegionalS3EndpointsForPresignedURL(boolean regionalS3Endpoint) {
