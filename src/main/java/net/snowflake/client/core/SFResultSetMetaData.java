@@ -344,6 +344,27 @@ public class SFResultSetMetaData {
     return columnCount;
   }
 
+  public String getDetailedString() {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 1; i <= columnCount; ++i) {
+      try {
+        String columnName = getColumnLabel(i);
+        int dataType = getColumnType(i);
+        String typeName = getColumnTypeName(i);
+        int fieldSize = getPrecision(i);
+        int fieldScale = getScale(i);
+        boolean isSigned = isSigned(i);
+        int isNullable = isNullable(i);
+        sb.append(String.format(
+            "Column %d: name: %s type: %d typeName: %s fieldSize: %d fieldScale: %d isSigned: %b isNullable %d\n",
+            i, columnName, dataType, typeName, fieldSize, fieldScale, isSigned, isNullable));
+      } catch (Throwable e) {
+        sb.append(String.format("Column %d: Failed to extract: %s", i, e.toString()));
+      }
+    }
+    return sb.toString();
+  }
+
   public int getColumnType(int column) throws SFException {
     int internalColumnType = getInternalColumnType(column);
 

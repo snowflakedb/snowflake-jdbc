@@ -41,6 +41,7 @@ public class SFStatement extends SFBaseStatement {
 
   private static Map<String, SFBaseResultSet> schemaQueryCache = new ConcurrentHashMap<>();
   private static boolean enableSchemaQueryCaching = true;
+  private static boolean enableDescribeOnlySchemaQueries = true;
 
   private SFSession session;
 
@@ -81,6 +82,14 @@ public class SFStatement extends SFBaseStatement {
 
   public static boolean getEnableSchemaQueryCaching() {
     return enableSchemaQueryCaching;
+  }
+
+  public static void setEnableDescribeOnlySchemaQueries(boolean enable) {
+    enableDescribeOnlySchemaQueries = enable;
+  }
+
+  public static boolean getEnableDescribeOnlySchemaQueries() {
+    return enableDescribeOnlySchemaQueries;
   }
 
   public SFStatement(SFSession session) {
@@ -145,17 +154,26 @@ public class SFStatement extends SFBaseStatement {
       CallingMethod caller)
       throws SQLException, SFException {
     logger.debug(
-        "Starting executeQuery sql: {}, enableSchemaQueryCaching: {}",
-        sql, enableSchemaQueryCaching);
-    if (enableSchemaQueryCaching) {
+        "Starting executeQuery sql: {}, enableSchemaQueryCaching: {}, describeOnly: {}",
+        sql, enableSchemaQueryCaching, describeOnly);
+    if (enableSchemaQueryCaching || enableDescribeOnlySchemaQueries) {
       String schemaQueryPrefix = getSchemaQueryPrefix(sql);
       if (schemaQueryPrefix != null) {
-        SFBaseResultSet cachedResult = schemaQueryCache.get(schemaQueryPrefix);
-        if (cachedResult != null) {
+        if (enableSchemaQueryCaching) {
+          SFBaseResultSet cachedResult = schemaQueryCache.get(schemaQueryPrefix);
+          if (cachedResult != null) {
+            if (logger.isDebugEnabled()) {
+              logger.debug(
+                  "Returning cached results for query: {} - caching prefix: {} - metadata: {}",
+                  sql, schemaQueryPrefix, cachedResult.getMetaData().getDetailedString());
+            }
+            return cachedResult;
+          }
+        }
+        if (enableDescribeOnlySchemaQueries) {
           logger.debug(
-              "Returning cached results for query: {} - caching prefix: {} - metadata: {}",
-              sql, schemaQueryPrefix, cachedResult.getMetaData().getColumnNames());
-          return cachedResult;
+              "Flipping describeOnly to true for query: {} with prefix: {}", sql, schemaQueryPrefix);
+          describeOnly = true;
         }
       }
     }
@@ -179,13 +197,21 @@ public class SFStatement extends SFBaseStatement {
         describeOnly, // internal query if describeOnly is true
         asyncExec,
         caller);
-    if (enableSchemaQueryCaching) {
+    if (enableSchemaQueryCaching || enableDescribeOnlySchemaQueries) {
       String schemaQueryPrefix = getSchemaQueryPrefix(sql);
       if (schemaQueryPrefix != null) {
-        logger.debug(
-            "Caching results for query: {} - caching prefix: {} - metadata: {}",
-            sql, schemaQueryPrefix, ret.getMetaData().getColumnNames());
-        schemaQueryCache.put(schemaQueryPrefix, ret);
+        if (enableSchemaQueryCaching) {
+          if (logger.isDebugEnabled()) {
+            logger.debug(
+                "Caching results for query: {} - caching prefix: {} - metadata: {}",
+                sql, schemaQueryPrefix, ret.getMetaData().getDetailedString());
+          }
+          schemaQueryCache.put(schemaQueryPrefix, ret);
+        } else if (enableDescribeOnlySchemaQueries && logger.isDebugEnabled()) {
+          logger.debug(
+              "Describe-only results for query: {} - caching prefix: {} - metadata: {}",
+              sql, schemaQueryPrefix, ret.getMetaData().getDetailedString());
+        }
       }
     }
     return ret;
