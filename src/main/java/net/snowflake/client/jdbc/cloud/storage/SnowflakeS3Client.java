@@ -198,19 +198,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               new AwsClientBuilder.EndpointConfiguration(
                   "s3." + region.getName() + ".amazonaws.com", region.getName()));
         } else {
-          amazonS3Builder.withRegion(region.getName());
+          if (this.stageEndPoint != null && this.stageEndPoint != "")
+            amazonS3Builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(this.stageEndPoint, region.getName()));
+          else
+            amazonS3Builder.withRegion(region.getName());
         }
       }
     }
     // Explicitly force to use virtual address style
     amazonS3Builder.withPathStyleAccessEnabled(false);
-
     amazonClient = (AmazonS3) amazonS3Builder.build();
-    if (this.stageEndPoint != null && this.stageEndPoint != "") {
-      // Set the FIPS endpoint if we need it. GS will tell us if we do by
-      // giving us an endpoint to use if required and supported by the region.
-      amazonClient.setEndpoint(this.stageEndPoint);
-    }
   }
 
   // Returns the Max number of retry attempts
