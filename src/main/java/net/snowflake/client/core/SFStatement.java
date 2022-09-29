@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,9 @@ import org.apache.http.client.methods.HttpRequestBase;
 public class SFStatement extends SFBaseStatement {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
+
+  private static Map<String, SFBaseResultSet> schemaQueryCache = new ConcurrentHashMap<>();
+  private static boolean enableSchemaQueryCaching = true;
 
   private SFSession session;
 
@@ -71,6 +75,14 @@ public class SFStatement extends SFBaseStatement {
   private int conservativeResultChunkSize;
   private long conservativeMemoryLimit; // in bytes
 
+  public static void setEnableSchemaQueryCaching(boolean enable) {
+    enableSchemaQueryCaching = enable;
+  }
+
+  public static boolean getEnableSchemaQueryCaching() {
+    return enableSchemaQueryCaching;
+  }
+
   public SFStatement(SFSession session) {
     logger.debug(" public SFStatement(SFSession session)", false);
 
@@ -101,6 +113,21 @@ public class SFStatement extends SFBaseStatement {
     }
   }
 
+  private String getSchemaQueryPrefix(String sql) {
+    String upperSql = sql.toUpperCase();
+    if (upperSql.endsWith("WHERE 1=0")) {
+      int sparkGenIndex = upperSql.lastIndexOf("SPARK_GEN_SUBQ_");
+      if (sparkGenIndex == -1) {
+        sparkGenIndex = upperSql.lastIndexOf("__SPARK_GEN_JDBC_SUBQUERY_NAME");
+      }
+      if (sparkGenIndex > -1) {
+        String baseSql = upperSql.substring(0, sparkGenIndex).trim();
+        return baseSql;
+      }
+    }
+    return null;
+  }
+
   /**
    * Execute SQL query with an option for describe only
    *
@@ -117,6 +144,21 @@ public class SFStatement extends SFBaseStatement {
       boolean asyncExec,
       CallingMethod caller)
       throws SQLException, SFException {
+    logger.debug(
+        "Starting executeQuery sql: {}, enableSchemaQueryCaching: {}",
+        sql, enableSchemaQueryCaching);
+    if (enableSchemaQueryCaching) {
+      String schemaQueryPrefix = getSchemaQueryPrefix(sql);
+      if (schemaQueryPrefix != null) {
+        SFBaseResultSet cachedResult = schemaQueryCache.get(schemaQueryPrefix);
+        if (cachedResult != null) {
+          logger.debug(
+              "Returning cached results for query: {} - caching prefix: {} - metadata: {}",
+              sql, schemaQueryPrefix, cachedResult.getMetaData().getColumnNames());
+          return cachedResult;
+        }
+      }
+    }
     sanityCheckQuery(sql);
 
     String trimmedSql = sql.trim();
@@ -130,13 +172,23 @@ public class SFStatement extends SFBaseStatement {
     }
 
     // NOTE: It is intentional two describeOnly parameters are specified.
-    return executeQueryInternal(
+    SFBaseResultSet ret = executeQueryInternal(
         sql,
         parametersBinding,
         describeOnly,
         describeOnly, // internal query if describeOnly is true
         asyncExec,
         caller);
+    if (enableSchemaQueryCaching) {
+      String schemaQueryPrefix = getSchemaQueryPrefix(sql);
+      if (schemaQueryPrefix != null) {
+        logger.debug(
+            "Caching results for query: {} - caching prefix: {} - metadata: {}",
+            sql, schemaQueryPrefix, ret.getMetaData().getColumnNames());
+        schemaQueryCache.put(schemaQueryPrefix, ret);
+      }
+    }
+    return ret;
   }
 
   /**

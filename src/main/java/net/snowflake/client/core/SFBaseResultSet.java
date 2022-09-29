@@ -118,7 +118,9 @@ public abstract class SFBaseResultSet {
     logger.debug("public void close()", false);
 
     // no exception even if already closed.
-    resultSetMetaData = null;
+    if (!SFStatement.getEnableSchemaQueryCaching()) {
+      resultSetMetaData = null;
+    }
     isClosed = true;
   }
 

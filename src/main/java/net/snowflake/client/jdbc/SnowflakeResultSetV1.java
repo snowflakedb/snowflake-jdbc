@@ -237,7 +237,9 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   }
 
   public ResultSetMetaData getMetaData() throws SQLException {
-    raiseSQLExceptionIfResultSetIsClosed();
+    if (!net.snowflake.client.core.SFStatement.getEnableSchemaQueryCaching()) {
+      raiseSQLExceptionIfResultSetIsClosed();
+    }
 
     return resultSetMetaData;
   }
