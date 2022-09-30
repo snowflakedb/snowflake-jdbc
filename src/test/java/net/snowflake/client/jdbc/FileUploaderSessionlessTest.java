@@ -317,7 +317,7 @@ public class FileUploaderSessionlessTest {
   }
 
   @Test
-  public void testGetS3StageData() throws Exception {
+  public void testGetS3StageDataWithStageEndpoint() throws Exception {
     StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3StageEndpointJsonNode);
     Map<String, String> expectedCreds = new HashMap<>();
     expectedCreds.put("AWS_ID", "EXAMPLE_AWS_ID");

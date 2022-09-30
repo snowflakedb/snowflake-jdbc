@@ -198,7 +198,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               new AwsClientBuilder.EndpointConfiguration(
                   "s3." + region.getName() + ".amazonaws.com", region.getName()));
         } else {
-          if (this.stageEndPoint != null && this.stageEndPoint != "")
+          if (this.stageEndPoint != null && this.stageEndPoint != "" && this.stageEndPoint != "null")
             amazonS3Builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(this.stageEndPoint, region.getName()));
           else
             amazonS3Builder.withRegion(region.getName());
