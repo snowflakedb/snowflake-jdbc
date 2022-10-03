@@ -252,6 +252,11 @@ public class SessionUtil {
       // OAuth does not require a username
       AssertUtil.assertTrue(
           loginInput.getUserName() != null, "missing user name for opening session");
+    } else {
+      // OAUTH needs either token or passord
+      AssertUtil.assertTrue(
+          loginInput.getToken() != null || loginInput.getPassword() != null,
+          "missing token or password for opening session");
     }
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)) {
       if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
@@ -443,8 +448,17 @@ public class SessionUtil {
         }
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OAUTH
-          || authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OAUTH) {
+        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
+
+        // Fix for HikariCP refresh token issue:SNOW-533673.
+        // If token value is not set but password field is set then
+        // the driver treats password as token.
+        if (loginInput.getToken() != null)
+          data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
+        else data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
+
+      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA) {
