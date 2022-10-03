@@ -37,7 +37,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>8.0.0</arrow.version>
+    <arrow.version>9.0.0</arrow.version>
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.15.3</jsoup.version>
     <tika.version>2.4.1</tika.version>
@@ -869,6 +869,7 @@
                             <exclude>META-INF/*.RSA</exclude>
                             <exclude>.netbeans_automatic_build</exclude>
                             <exclude>git.properties</exclude>
+                            <exclude>arrow-git.properties</exclude>
                             <exclude>google-http-client.properties</exclude>
                             <exclude>storage.v1.json</exclude> <!-- This is just a documentation file, not needed-->
                             <exclude>pipes-fork-server-default-log4j2.xml</exclude>
