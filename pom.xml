@@ -42,7 +42,7 @@
     <jsoup.version>1.15.3</jsoup.version>
     <tika.version>2.4.1</tika.version>
     <jackson.version>2.13.2</jackson.version>
-    <jacksondatabind.version>2.13.2.2</jacksondatabind.version>
+    <jacksondatabind.version>2.13.4</jacksondatabind.version>
     <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
     <httpclient.version>4.5.13</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
