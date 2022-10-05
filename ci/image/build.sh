@@ -4,7 +4,7 @@
 #
 set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $THIS_DIR/../_init.sh
+source $THIS_DIR/../_init7.sh
 
 cp -p $THIS_DIR/../../pom.xml $THIS_DIR
 cp -rp $THIS_DIR/../../dependencies/ $THIS_DIR/dependencies
