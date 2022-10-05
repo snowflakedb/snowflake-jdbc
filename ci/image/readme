@@ -1,0 +1,14 @@
+1. Build image on Mac. DevVm has network issue and build will fail.
+2. To build on Mac, clone the driver code from github
+3. Then run sh build.sh from this directory.
+4. It will create image with name like:
+   nexus.int.snowflakecomputing.com:8086/docker/client-jdbc-centos7-default-test:1
+5. You can login to Nexus, if you don't have credentials then request using LDAP JIRA bug format.
+   e.g https://snowflakecomputing.atlassian.net/browse/SNOW-672513
+
+   docker login nexus.int.snowflakecomputing.com:8086
+6. Once login successful, push the image:
+   docker push nexus.int.snowflakecomputing.com:8086/docker/client-jdbc-centos7-default-test:1
+7. You can brwose the docker image:
+   https://nexus.int.snowflakecomputing.com/#browse/browse:docker-internal
+
