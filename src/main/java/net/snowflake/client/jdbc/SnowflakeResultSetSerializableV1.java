@@ -4,18 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.Constants.GB;
-import static net.snowflake.client.core.Constants.MB;
-import static net.snowflake.client.core.SessionUtil.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -27,6 +17,17 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+
+import static net.snowflake.client.core.Constants.GB;
+import static net.snowflake.client.core.Constants.MB;
+import static net.snowflake.client.core.SessionUtil.*;
 
 /**
  * This object is an intermediate object between result JSON from GS and ResultSet. Originally, it
@@ -143,6 +144,7 @@ public class SnowflakeResultSetSerializableV1
   boolean treatNTZAsUTC;
   boolean formatDateWithTimezone;
   boolean useSessionTimezone;
+  int sessionClientMemoryLimit;
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
@@ -651,6 +653,7 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
     resultSetSerializable.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();
     resultSetSerializable.useSessionTimezone = sfSession.getUseSessionTimezone();
+    resultSetSerializable.sessionClientMemoryLimit = sfSession.getClientMemoryLimit();
 
     // setup transient fields from parameter
     resultSetSerializable.setupFieldsFromParameters();
@@ -814,7 +817,7 @@ public class SnowflakeResultSetSerializableV1
       if (this.parameters.get(CLIENT_PREFETCH_THREADS) != null) {
         this.resultPrefetchThreads = (int) this.parameters.get(CLIENT_PREFETCH_THREADS);
       }
-      this.memoryLimit = initMemoryLimit(this.parameters);
+      this.memoryLimit = initMemoryLimit(this.parameters, this.sessionClientMemoryLimit);
     }
 
     long maxChunkSize = (int) this.parameters.get(CLIENT_RESULT_CHUNK_SIZE) * MB;
@@ -843,18 +846,21 @@ public class SnowflakeResultSetSerializableV1
    * @param parameters The parameters for result JSON node
    * @return memory limit in bytes
    */
-  private static long initMemoryLimit(Map<String, Object> parameters) {
+  private static long initMemoryLimit(Map<String, Object> parameters, int sessionClientMemoryLimit) {
     // default setting
     long memoryLimit = DEFAULT_CLIENT_MEMORY_LIMIT * 1024 * 1024;
+    long maxMemoryToUse = Runtime.getRuntime().maxMemory() * 8 / 10;
     if (parameters.get(CLIENT_MEMORY_LIMIT) != null) {
       // use the settings from the customer
       memoryLimit = (int) parameters.get(CLIENT_MEMORY_LIMIT) * 1024L * 1024L;
-    }
 
-    long maxMemoryToUse = Runtime.getRuntime().maxMemory() * 8 / 10;
-    if ((int) parameters.get(CLIENT_MEMORY_LIMIT) == DEFAULT_CLIENT_MEMORY_LIMIT) {
-      // if the memory limit is the default value and best effort memory is enabled
-      // set the memory limit to 80% of the maximum as the best effort
+      if (DEFAULT_CLIENT_MEMORY_LIMIT == (int) parameters.get(CLIENT_MEMORY_LIMIT)) {
+        // if the memory limit is the default value and best effort memory is enabled
+        // set the memory limit to 80% of the maximum as the best effort
+        memoryLimit = Math.max(memoryLimit, maxMemoryToUse);
+      }
+    } else if (DEFAULT_CLIENT_MEMORY_LIMIT == sessionClientMemoryLimit) {
+      // If there is no memory limit given as parameter, check the session limits
       memoryLimit = Math.max(memoryLimit, maxMemoryToUse);
     }
 
@@ -875,7 +881,7 @@ public class SnowflakeResultSetSerializableV1
     setupFieldsFromParameters();
 
     // Setup memory limitation from parameters and System Runtime.
-    this.memoryLimit = initMemoryLimit(this.parameters);
+    this.memoryLimit = initMemoryLimit(this.parameters, this.sessionClientMemoryLimit);
 
     this.resultStreamProvider = new DefaultResultStreamProvider();
 
