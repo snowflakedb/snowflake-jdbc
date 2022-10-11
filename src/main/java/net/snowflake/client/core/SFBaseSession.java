@@ -4,19 +4,18 @@
 
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
-import net.snowflake.client.jdbc.*;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import com.google.common.base.Strings;
 import java.sql.DriverPropertyInfo;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are
@@ -117,6 +116,8 @@ public abstract class SFBaseSession {
   // Whether enable returning timestamp with timezone as data type
   private boolean enableReturnTimestampWithTimeZone = true;
 
+  private Map<String, Object> commonParameters;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -140,6 +141,14 @@ public abstract class SFBaseSession {
     Properties copy = new Properties();
     copy.putAll(this.clientInfo);
     return copy;
+  }
+
+  public void setCommonParameters(Map<String, Object> parameters) {
+    this.commonParameters = parameters;
+  }
+
+  public Map<String, Object> getCommonParameters() {
+    return this.commonParameters;
   }
 
   /**
@@ -662,7 +671,7 @@ public abstract class SFBaseSession {
 
   public void setDatabase(String database) {
     if (!Strings.isNullOrEmpty(database)) {
-    this.database = database;
+      this.database = database;
     }
   }
 
@@ -672,7 +681,7 @@ public abstract class SFBaseSession {
 
   public void setSchema(String schema) {
     if (!Strings.isNullOrEmpty(schema)) {
-    this.schema = schema;
+      this.schema = schema;
     }
   }
 
@@ -690,7 +699,7 @@ public abstract class SFBaseSession {
 
   public void setWarehouse(String warehouse) {
     if (!Strings.isNullOrEmpty(warehouse)) {
-    this.warehouse = warehouse;
+      this.warehouse = warehouse;
     }
   }
 
