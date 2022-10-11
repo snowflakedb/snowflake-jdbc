@@ -1406,6 +1406,9 @@ public class SessionUtil {
   }
 
   static void updateSfDriverParamValues(Map<String, Object> parameters, SFBaseSession session) {
+    if (parameters != null && !parameters.isEmpty()) {
+      session.setCommonParameters(parameters);
+    }
     for (Map.Entry<String, Object> entry : parameters.entrySet()) {
       logger.debug("processing parameter {}", entry.getKey());
 
