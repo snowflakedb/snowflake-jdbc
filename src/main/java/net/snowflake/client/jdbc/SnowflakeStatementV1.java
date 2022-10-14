@@ -651,7 +651,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   private long getUpdateCountIfDML() throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
-    if (updateCount != -1 && sfBaseStatement.getResultSet().getStatementType().isDML()) {
+    if (updateCount != -1) {
       return updateCount;
     }
     return -1;
