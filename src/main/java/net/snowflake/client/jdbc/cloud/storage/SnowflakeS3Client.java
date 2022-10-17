@@ -190,19 +190,16 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               .withClientConfiguration(clientConfig);
     }
 
-
     Region region = RegionUtils.getRegion(stageRegion);
-    if (this.stageEndPoint != null
-      && this.stageEndPoint != ""
-      && this.stageEndPoint != "null") {
+    if (this.stageEndPoint != null && this.stageEndPoint != "" && this.stageEndPoint != "null") {
       amazonS3Builder.withEndpointConfiguration(
-              new AwsClientBuilder.EndpointConfiguration(this.stageEndPoint, region.getName()));
+          new AwsClientBuilder.EndpointConfiguration(this.stageEndPoint, region.getName()));
     } else {
       if (region != null) {
         if (this.isUseS3RegionalUrl) {
           amazonS3Builder.withEndpointConfiguration(
-                  new AwsClientBuilder.EndpointConfiguration(
-                          "s3." + region.getName() + ".amazonaws.com", region.getName()));
+              new AwsClientBuilder.EndpointConfiguration(
+                  "s3." + region.getName() + ".amazonaws.com", region.getName()));
         } else {
           amazonS3Builder.withRegion(region.getName());
         }
