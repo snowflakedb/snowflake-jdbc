@@ -13,7 +13,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <arrow.version>9.0.0</arrow.version>
-    <jacksondatabind.version>2.13.4</jacksondatabind.version>
+    <jacksondatabind.version>2.13.4.1</jacksondatabind.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <jna.version>5.5.0</jna.version>
