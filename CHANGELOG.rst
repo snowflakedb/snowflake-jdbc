@@ -1,3 +1,7 @@
+**JDBC Driver 3.13.24**
+
+- \|| Release Notes
+
 **JDBC Driver 3.13.23**
 
 - \|| Relocate Google Guava classes from com/google/common/util/concurrent/** in FIPS driver
