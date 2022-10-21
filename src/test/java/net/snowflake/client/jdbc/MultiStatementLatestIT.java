@@ -49,7 +49,7 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
     assertEquals(0, statement.getUpdateCount());
 
     // second statement
-    assertFalse(statement.getMoreResults());
+    assertTrue(statement.getMoreResults());
     assertNull(statement.getResultSet());
     assertEquals(2, statement.getUpdateCount());
 
@@ -92,12 +92,12 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
     assertEquals(0, statement.getUpdateCount());
 
     // second statement
-    assertFalse(statement.getMoreResults());
+    assertTrue(statement.getMoreResults());
     assertNull(statement.getResultSet());
     assertEquals(1, statement.getUpdateCount());
 
     // third statement
-    assertFalse(statement.getMoreResults());
+    assertTrue(statement.getMoreResults());
     assertNull(statement.getResultSet());
     assertEquals(2, statement.getUpdateCount());
 
@@ -132,7 +132,7 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
     assertEquals(0, statement.getUpdateCount());
 
     // second statement
-    assertFalse(statement.getMoreResults());
+    assertTrue(statement.getMoreResults());
     assertNull(statement.getResultSet());
     assertEquals(2, statement.getUpdateCount());
 
@@ -175,12 +175,12 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
     assertEquals(0, statement.getUpdateCount());
 
     // second statement
-    assertFalse(statement.getMoreResults());
+    assertTrue(statement.getMoreResults());
     assertNull(statement.getResultSet());
     assertEquals(1, statement.getUpdateCount());
 
     // third statement
-    assertFalse(statement.getMoreResults());
+    assertTrue(statement.getMoreResults());
     assertNull(statement.getResultSet());
     assertEquals(0, statement.getUpdateCount());
 
