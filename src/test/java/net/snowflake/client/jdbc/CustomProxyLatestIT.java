@@ -148,7 +148,7 @@ public class CustomProxyLatestIT {
     System.setProperty("http.nonProxyHosts", "*");
     Connection con =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccoutn.us-east-1.snowflakecomputing.com", props);
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     Statement stmt = con.createStatement();
     ResultSet rs = stmt.executeQuery("select 1");
     rs.next();
@@ -173,7 +173,7 @@ public class CustomProxyLatestIT {
    * Before running this test, change the user and password to appropriate values. Set up a proxy
    * with Burpsuite so you can see what POST and GET requests are going through the proxy.
    *
-   * <p>This tests that the NonProxyHosts field is sucessfully updated for the same HttpClient
+   * <p>This tests that the NonProxyHosts field is successfully updated for the same HttpClient
    * object.
    *
    * @throws SQLException
@@ -376,7 +376,7 @@ public class CustomProxyLatestIT {
     System.setProperty("proxyPort", "3128");
     Connection con =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccoutn.us-east-1.snowflakecomputing.com", props);
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     assertEquals(System.getProperty("proxyHost"), null);
     assertEquals(System.getProperty("proxyPort"), null);
     con.close();
@@ -526,7 +526,7 @@ public class CustomProxyLatestIT {
    * appropriate values. Set up a proxy with Burpsuite so you can see what POST and GET requests are
    * going through the proxy.
    *
-   * <p>This tests that the NonProxyHosts field is sucessfully updated for the same HttpClient
+   * <p>This tests that the NonProxyHosts field is successfully updated for the same HttpClient
    * object.
    *
    * @throws SQLException

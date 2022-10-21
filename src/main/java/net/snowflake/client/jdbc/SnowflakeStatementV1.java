@@ -688,7 +688,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   public void setEscapeProcessing(boolean enable) throws SQLException {
     logger.debug("setEscapeProcessing(boolean enable)", false);
     // NOTE: We could raise an exception here, because not implemented
-    // but it may break the existing applications. For now returning nothnig.
+    // but it may break the existing applications. For now returning nothing.
     // we should revisit.
     raiseSQLExceptionIfStatementIsClosed();
   }

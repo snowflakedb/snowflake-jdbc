@@ -1703,7 +1703,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             try {
               jsonNode = mapper.readTree(dataTypeStr);
             } catch (Exception ex) {
-              logger.error("Exeception when parsing column" + " result", ex);
+              logger.error("Exception when parsing column" + " result", ex);
 
               throw new SnowflakeSQLException(
                   SqlState.INTERNAL_ERROR,
@@ -2169,9 +2169,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
           boolean passedFilter = false;
 
-          // Post filter the results based on the clinet type
+          // Post filter the results based on the client type
           if (client.equals("import")) {
-            // For imported dkeys, filter on the foreign key table
+            // For imported keys, filter on the foreign key table
             if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
                 && (compiledSchemaPattern == null
                     || compiledSchemaPattern.equals(fktable_schem)
@@ -2243,7 +2243,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    *
    * @param property_name operation type
    * @param property property value
-   * @return metdata property value
+   * @return metadata property value
    */
   private short getForeignKeyConstraintProperty(String property_name, String property) {
     short result = 0;

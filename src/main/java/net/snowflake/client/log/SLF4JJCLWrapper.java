@@ -14,7 +14,7 @@ import org.slf4j.spi.LocationAwareLogger;
  * to choose to give us the ability to filter out sensitive data.
  *
  * The reason why we don't unify this class and JDK14JCLWrapper class is that the
- * way SLF4J gets the log functions caller prevents us to use an exntra wrapper. If
+ * way SLF4J gets the log functions caller prevents us to use an extra wrapper. If
  * we really wrap up SLF4J, the log will not catch correct log callers.
  */
 public class SLF4JJCLWrapper implements Log {

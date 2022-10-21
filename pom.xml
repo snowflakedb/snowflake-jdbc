@@ -696,8 +696,8 @@
              <doCheck>false</doCheck>
              <revisionOnScmFailure/>
              <doUpdate>false</doUpdate>
-             <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrememting buildNumber
-                AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrememting build number at the same time -->
+             <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrementing buildNumber
+                AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrementing build number at the same time -->
            </configuration>
           </plugin>
           <plugin>

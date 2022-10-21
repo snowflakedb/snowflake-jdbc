@@ -403,7 +403,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   /**
    * Gets bytes from other data types
    *
-   * @throws Exception ariases if any exception occurs.
+   * @throws Exception arises if any exception occurs.
    */
   @Test
   public void testBytesCrossTypeTests() throws Exception {

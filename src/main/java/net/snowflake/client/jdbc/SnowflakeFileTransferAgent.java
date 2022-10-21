@@ -405,7 +405,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   }
 
   /**
-   * A callable that can be executed in a separate thread using exeuctor service.
+   * A callable that can be executed in a separate thread using executor service.
    *
    * <p>The callable does compression if needed and upload the result to the table's staging area.
    *
@@ -476,8 +476,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // Temp file that needs to be cleaned up when upload was successful
         FileBackedOutputStream fileBackedOutputStream = null;
 
-        // SNOW-16082: we should catpure exception if we fail to compress or
-        // calcuate digest.
+        // SNOW-16082: we should capture exception if we fail to compress or
+        // calculate digest.
         try {
           if (metadata.requireCompress) {
             InputStreamWithMetadata compressedSizeAndStream =
@@ -2314,7 +2314,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           continue;
         }
 
-        // stage file eixst and either we will be compressing or
+        // stage file exist and either we will be compressing or
         // the dest file has same size as the source file size we will
         // compare digest values below
         String localFileHashText = null;
@@ -2361,7 +2361,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         FileBackedOutputStream fileBackedOutputStream = null;
         InputStream stageFileStream = null;
         try {
-          // calculate digst for stage file
+          // calculate digest for stage file
           stageFileStream = new FileInputStream(stageFilePath);
 
           InputStreamWithMetadata res = computeDigest(stageFileStream, false);
@@ -2982,7 +2982,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   /*
    * Handles an InvalidKeyException which indicates that the JCE component
    * is not installed properly
-   * @param operation a string indicating the the operation type, e.g. upload/download
+   * @param operation a string indicating the operation type, e.g. upload/download
    * @param ex The exception to be handled
    * @throws throws the error as a SnowflakeSQLException
    */
