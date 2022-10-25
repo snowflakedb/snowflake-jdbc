@@ -9,7 +9,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
-import net.snowflake.client.core.IncidentUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -34,12 +33,7 @@ public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter 
   @Override
   public String toString(int index) throws SFException {
     if (context.getTimestampNTZFormatter() == null) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              context.getSession(),
-              new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp NTZ formatter"),
-              null,
-              null);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp NTZ formatter");
     }
     Timestamp ts = isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
 

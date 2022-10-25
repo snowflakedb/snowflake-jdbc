@@ -4,8 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.QueryStatus.getStatusFromString;
-import static net.snowflake.client.core.QueryStatus.isAnError;
+import static net.snowflake.client.core.QueryStatus.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,7 +14,7 @@ import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
@@ -47,12 +46,12 @@ public class SFSession extends SFBaseSession {
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final int MAX_SESSION_PARAMETERS = 1000;
-  private static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
+  public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
   private final AtomicInteger sequenceId = new AtomicInteger(0);
   private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
-  protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
+  private Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
   private boolean isClosed = true;
   private String sessionToken;
   private String masterToken;
@@ -134,10 +133,19 @@ public class SFSession extends SFBaseSession {
           canClose = false;
         }
       } catch (SQLException e) {
-        logger.error(e.getMessage());
+        logger.error(e.getMessage(), true);
       }
     }
     return canClose;
+  }
+
+  /**
+   * Add async query to list of active async queries based on its query ID
+   *
+   * @param queryID query ID
+   */
+  public void addQueryToActiveQueryList(String queryID) {
+    activeAsyncQueries.add(queryID);
   }
 
   /**
@@ -241,12 +249,20 @@ public class SFSession extends SFBaseSession {
     else if (isAnError(result)) {
       result.setErrorCode(ErrorCode.INTERNAL_ERROR.getMessageCode());
       result.setErrorMessage("no_error_code_from_server");
+    } else if (!isAnError(result)) {
+      result.setErrorCode(0);
+      result.setErrorMessage("No error reported");
     }
     // if an error message has been provided, set appropriate error message.
     // This should override the default error message displayed when there is
     // an error with no code.
     if (!Strings.isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
       result.setErrorMessage(errorMessage);
+    } else {
+      result.setErrorMessage("No error reported");
+    }
+    if (!isStillRunning(result)) {
+      activeAsyncQueries.remove(queryID);
     }
     return result;
   }
@@ -581,7 +597,7 @@ public class SFSession extends SFBaseSession {
   synchronized void renewSession(String prevSessionToken)
       throws SFException, SnowflakeSQLException {
     if (sessionToken != null && !sessionToken.equals(prevSessionToken)) {
-      logger.debug("not renew session because session token has not been updated.");
+      logger.debug("not renew session because session token has not been updated.", false);
       return;
     }
 
@@ -623,7 +639,7 @@ public class SFSession extends SFBaseSession {
    */
   @Override
   public void close() throws SFException, SnowflakeSQLException {
-    logger.debug(" public void close()");
+    logger.debug(" public void close()", false);
 
     // stop heartbeat for this session
     stopHeartbeatForThisSession();
@@ -646,6 +662,55 @@ public class SFSession extends SFBaseSession {
     isClosed = true;
   }
 
+  /**
+   * Makes a heartbeat call to check for session validity.
+   *
+   * @param timeout the query timeout
+   * @throws Exception if an error occurs
+   * @throws SFException exception raised from Snowflake
+   */
+  public void callHeartBeat(int timeout) throws Exception, SFException {
+    if (timeout > 0) {
+      callHeartBeatWithQueryTimeout(timeout);
+    } else {
+      heartbeat();
+    }
+  }
+
+  /**
+   * Makes a heartbeat call with query timeout to check for session validity.
+   *
+   * @param timeout the query timeout
+   * @throws Exception if an error occurs
+   * @throws SFException exception raised from Snowflake
+   */
+  private void callHeartBeatWithQueryTimeout(int timeout) throws Exception, SFException {
+    class HeartbeatTask implements Callable<Void> {
+
+      @Override
+      public Void call() throws SQLException {
+        try {
+          heartbeat();
+        } catch (SFException e) {
+          throw new SnowflakeSQLException(e, e.getSqlState(), e.getVendorCode(), e.getParams());
+        }
+        return null;
+      }
+    }
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    Future<Void> future = executor.submit(new HeartbeatTask());
+
+    // Cancel the heartbeat call when timeout is reached
+    try {
+      future.get(timeout, TimeUnit.SECONDS);
+    } catch (TimeoutException e) {
+      future.cancel(true);
+      throw new SFException(ErrorCode.QUERY_CANCELED);
+    } finally {
+      executor.shutdownNow();
+    }
+  }
+
   /** Start heartbeat for this session */
   protected void startHeartbeatForThisSession() {
     if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
@@ -654,18 +719,18 @@ public class SFSession extends SFBaseSession {
       HeartbeatBackground.getInstance()
           .addSession(this, masterTokenValidityInSeconds, heartbeatFrequency);
     } else {
-      logger.debug("heartbeat not enabled for the session");
+      logger.debug("heartbeat not enabled for the session", false);
     }
   }
 
   /** Stop heartbeat for this session */
   protected void stopHeartbeatForThisSession() {
     if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
-      logger.debug("stop heartbeat");
+      logger.debug("stop heartbeat", false);
 
       HeartbeatBackground.getInstance().removeSession(this);
     } else {
-      logger.debug("heartbeat not enabled for the session");
+      logger.debug("heartbeat not enabled for the session", false);
     }
   }
 
@@ -676,7 +741,7 @@ public class SFSession extends SFBaseSession {
    * @throws SQLException exception raised from SQL generic layers
    */
   protected void heartbeat() throws SFException, SQLException {
-    logger.debug(" public void heartbeat()");
+    logger.debug(" public void heartbeat()", false);
 
     if (isClosed) {
       return;
@@ -738,7 +803,7 @@ public class SFSession extends SFBaseSession {
         // check the response to see if it is session expiration response
         if (rootNode != null
             && (Constants.SESSION_EXPIRED_GS_CODE == rootNode.path("code").asInt())) {
-          logger.debug("renew session and retry");
+          logger.debug("renew session and retry", false);
           this.renewSession(prevSessionToken);
           retry = true;
           continue;
@@ -756,20 +821,10 @@ public class SFSession extends SFBaseSession {
 
         logger.error("unexpected exception", ex);
 
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                this,
-                new SFException(
-                    ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("unexpected exception", ex)),
-                null,
-                requestId);
+        throw new SFException(
+            ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("unexpected exception", ex));
       }
     } while (retry);
-  }
-
-  @Override
-  public void raiseError(Throwable exc, String jobId, String requestId) {
-    new Incident(this, exc, jobId, requestId).trigger();
   }
 
   void injectedDelay() {
@@ -842,7 +897,7 @@ public class SFSession extends SFBaseSession {
     // properties have been set, else the client won't properly resolve the URL.
     if (telemetryClient == null) {
       if (getUrl() == null) {
-        logger.error("Telemetry client created before session properties set.");
+        logger.error("Telemetry client created before session properties set.", false);
         return null;
       }
       telemetryClient = TelemetryClient.createTelemetry(this);
@@ -1022,5 +1077,10 @@ public class SFSession extends SFBaseSession {
     DriverPropertyInfo info = new DriverPropertyInfo(name, null);
     info.description = description;
     return info;
+  }
+
+  /** @return whether this session uses async queries */
+  public boolean isAsyncSession() {
+    return !activeAsyncQueries.isEmpty();
   }
 }

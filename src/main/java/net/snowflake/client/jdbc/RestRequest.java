@@ -150,11 +150,9 @@ public class RestRequest {
          * overhead of looking up in metadata database.
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
-        if (retryCount > 0) {
+        if (includeRetryParameters && retryCount > 0) {
           builder.setParameter("retryCount", String.valueOf(retryCount));
-          if (includeRetryParameters) {
-            builder.setParameter("clientStartTime", String.valueOf(startTime));
-          }
+          builder.setParameter("clientStartTime", String.valueOf(startTime));
         }
 
         // When the auth timeout is set, set the socket timeout as the authTimeout
@@ -209,7 +207,7 @@ public class RestRequest {
        * If we got a response and the status code is not one of those
        * transient failures, no more retry
        */
-      if (isCertificateRevoked(savedEx) || isNonretryableHTTPCode(response, retryHTTP403)) {
+      if (isCertificateRevoked(savedEx) || isNonRetryableHTTPCode(response, retryHTTP403)) {
         String msg = "Unknown cause";
         if (response != null) {
           logger.debug("HTTP response code: {}", response.getStatusLine().getStatusCode());
@@ -257,7 +255,7 @@ public class RestRequest {
 
         // check canceling flag
         if (canceling != null && canceling.get()) {
-          logger.debug("Stop retrying since canceling is requested");
+          logger.debug("Stop retrying since canceling is requested", false);
           breakRetryReason = "canceling is requested";
           break;
         }
@@ -340,7 +338,7 @@ public class RestRequest {
             elapsedMilliForTransientIssues += backoffInMilli;
             backoffInMilli = backoff.nextSleepTime(backoffInMilli);
           } catch (InterruptedException ex1) {
-            logger.debug("Backoff sleep before retrying login got interrupted");
+            logger.debug("Backoff sleep before retrying login got interrupted", false);
           }
         }
 
@@ -441,7 +439,7 @@ public class RestRequest {
     return response;
   }
 
-  static boolean isNonretryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
+  static boolean isNonRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {
     return response != null
         && (response.getStatusLine().getStatusCode() < 500
             || // service unavailable
@@ -449,7 +447,7 @@ public class RestRequest {
         && // gateway timeout
         response.getStatusLine().getStatusCode() != 408
         && // request timeout
-        (retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
+        (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
 
   private static boolean isCertificateRevoked(Exception ex) {

@@ -318,7 +318,7 @@ public class HttpUtil {
     if (key != null && key.getOcspMode() != OCSPMode.INSECURE) {
       // A custom TrustManager is required only if insecureMode is disabled,
       // which is by default in the production. insecureMode can be enabled
-      // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
+      // 1) OCSP service is down for reasons, 2) PowerMock test that doesn't
       // care OCSP checks.
       // OCSP FailOpen is ON by default
       try {
@@ -328,7 +328,7 @@ public class HttpUtil {
         // dump error stack
         StringWriter errors = new StringWriter();
         err.printStackTrace(new PrintWriter(errors));
-        logger.error(errors.toString());
+        logger.error(errors.toString(), true);
         throw new RuntimeException(err); // rethrow the exception
       }
     }
@@ -491,7 +491,7 @@ public class HttpUtil {
 
   /**
    * Return a request configuration inheriting from the default request configuration of the shared
-   * HttpClient with the coopkie spec set to ignore.
+   * HttpClient with the cookie spec set to ignore.
    *
    * @return RequestConfig object
    */

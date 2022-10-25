@@ -12,8 +12,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>0.15.1</arrow.version>
-    <jacksondatabind.version>2.11.0</jacksondatabind.version>
+    <arrow.version>9.0.0</arrow.version>
+    <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <jna.version>5.5.0</jna.version>
@@ -23,6 +23,16 @@
   </properties>
 
   <dependencies>
+    <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+      <version>4.1.77.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <version>4.1.77.Final</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-failsafe-plugin</artifactId>
@@ -112,7 +122,7 @@
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-archiver</artifactId>
-      <version>2.4.4</version>
+      <version>2.6</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -130,6 +140,36 @@
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-vector</artifactId>
       <version>${arrow.version}</version>
+      <exclusions>
+        <exclusion> <!-- Exclude earlier version to avoid whitesource vulnerability. -->
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-unsafe</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-netty</artifactId>
+      <version>${arrow.version}</version>
+      <exclusions>
+        <exclusion> <!-- Exclude earlier version to avoid whitesource vulnerability. -->
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-buffer</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.zaxxer</groupId>
@@ -140,7 +180,7 @@
     <dependency>
        <groupId>com.google.guava</groupId>
        <artifactId>guava</artifactId>
-       <version>28.0-jre</version>
+       <version>29.0-jre</version>
     </dependency>
     <!-- http://mvnrepository.com/artifact/net.java.dev.jna/jna -->
     <dependency>
@@ -199,9 +239,54 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/../dependencies/arrow-memory-${arrow.version}.jar</file>
+              <file>${project.basedir}/../dependencies/arrow-memory-${arrow.version}.pom</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-memory</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>pom</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-core</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/../dependencies/arrow-memory-core-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-core</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-unsafe</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/../dependencies/arrow-memory-unsafe-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-unsafe</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-netty</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.basedir}/../dependencies/arrow-memory-netty-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-netty</artifactId>
               <version>${arrow.version}</version>
               <packaging>jar</packaging>
               <generatePom>true</generatePom>

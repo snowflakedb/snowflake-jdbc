@@ -26,7 +26,7 @@ public class ResultUtil {
 
   public static final int MILLIS_IN_ONE_DAY = 86400000;
   public static final int DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS =
-      3; // default scale for sftime fraction seconds
+      3; // default scale for SFTime fraction seconds
 
   // Construct a default UTC zone for TIMESTAMPNTZ
   private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
@@ -180,7 +180,7 @@ public class ResultUtil {
       TimeZone sessionTZ,
       SFBaseSession session)
       throws SFException {
-    logger.debug("public Timestamp getTimestamp(int columnIndex)");
+    logger.debug("public Timestamp getTimestamp(int columnIndex)", false);
 
     try {
       TimeUtil.TimestampType tsType = null;
@@ -204,12 +204,7 @@ public class ResultUtil {
       // Construct a timestamp
       return TimeUtil.getSFTimestamp(timestampStr, scale, tsType, resultVersion, sessionTZ);
     } catch (IllegalArgumentException ex) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(ErrorCode.IO_ERROR, "Invalid timestamp value: " + timestampStr),
-              null,
-              null);
+      throw new SFException(ErrorCode.IO_ERROR, "Invalid timestamp value: " + timestampStr);
     }
   }
 
@@ -228,12 +223,7 @@ public class ResultUtil {
     try {
       return TimeUtil.getSFTime(obj, scale);
     } catch (IllegalArgumentException ex) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(ErrorCode.INTERNAL_ERROR, "Invalid time value: " + obj),
-              null,
-              null);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Invalid time value: " + obj);
     }
   }
 
@@ -294,12 +284,7 @@ public class ResultUtil {
     }
 
     if (formatter == null) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp formatter"),
-              null,
-              null);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp formatter");
     }
 
     try {
@@ -382,12 +367,7 @@ public class ResultUtil {
           (ArgSupplier) newDate::toString);
       return newDate;
     } catch (NumberFormatException ex) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(ErrorCode.INTERNAL_ERROR, "Invalid date value: " + str),
-              null,
-              null);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Invalid date value: " + str);
     }
   }
 
@@ -511,13 +491,8 @@ public class ResultUtil {
     List<SFStatementType> types = getResultTypes(result);
 
     if (ids.size() != types.size()) {
-      throw (SFException)
-          IncidentUtil.generateIncidentV2WithException(
-              session,
-              new SFException(
-                  ErrorCode.CHILD_RESULT_IDS_AND_TYPES_DIFFERENT_SIZES, ids.size(), types.size()),
-              null,
-              requestId);
+      throw new SFException(
+          ErrorCode.CHILD_RESULT_IDS_AND_TYPES_DIFFERENT_SIZES, ids.size(), types.size());
     }
 
     List<SFChildResult> res = new ArrayList<>();

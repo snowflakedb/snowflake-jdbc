@@ -51,6 +51,7 @@ import net.snowflake.client.util.SFPair;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLInitializationException;
 
@@ -130,7 +131,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     this.session = session;
     this.isClientSideEncrypted = isClientSideEncrypted;
 
-    logger.debug("Setting up AWS client ");
+    logger.debug("Setting up AWS client ", false);
 
     // Retrieve S3 stage credentials
     String awsID = (String) stageCredentials.get("AWS_KEY_ID");
@@ -189,8 +190,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               .withClientConfiguration(clientConfig);
     }
 
-    if (stageRegion != null) {
-      Region region = RegionUtils.getRegion(stageRegion);
+    Region region = RegionUtils.getRegion(stageRegion);
+    if (this.stageEndPoint != null && this.stageEndPoint != "" && this.stageEndPoint != "null") {
+      amazonS3Builder.withEndpointConfiguration(
+          new AwsClientBuilder.EndpointConfiguration(this.stageEndPoint, region.getName()));
+    } else {
       if (region != null) {
         if (this.isUseS3RegionalUrl) {
           amazonS3Builder.withEndpointConfiguration(
@@ -203,13 +207,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
     // Explicitly force to use virtual address style
     amazonS3Builder.withPathStyleAccessEnabled(false);
-
     amazonClient = (AmazonS3) amazonS3Builder.build();
-    if (this.stageEndPoint != null && this.stageEndPoint != "") {
-      // Set the FIPS endpoint if we need it. GS will tell us if we do by
-      // giving us an endpoint to use if required and supported by the region.
-      amazonClient.setEndpoint(this.stageEndPoint);
-    }
   }
 
   // Returns the Max number of retry attempts
@@ -691,7 +689,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
 
     if (ex instanceof AmazonClientException) {
-      if (retryCount > s3Client.getMaxRetries()) {
+      if (retryCount > s3Client.getMaxRetries() || s3Client.isClientException404(ex)) {
         String extendedRequestId = "none";
 
         if (ex instanceof AmazonS3Exception) {
@@ -787,6 +785,17 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             "Encountered exception during " + operation + ": " + ex.getMessage());
       }
     }
+  }
+
+  /** Checks the status code of the exception to see if it's a 404 */
+  public boolean isClientException404(Exception ex) {
+    if (ex instanceof AmazonServiceException) {
+      AmazonServiceException asEx = (AmazonServiceException) (ex);
+      if (asEx.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Returns the material descriptor key */

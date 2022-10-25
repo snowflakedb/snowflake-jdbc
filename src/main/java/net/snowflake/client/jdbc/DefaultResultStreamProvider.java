@@ -102,7 +102,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     else if (context.getQrmk() != null) {
       httpRequest.addHeader(SSE_C_ALGORITHM, SSE_C_AES);
       httpRequest.addHeader(SSE_C_KEY, context.getQrmk());
-      SnowflakeResultSetSerializableV1.logger.debug("Adding SSE-C headers");
+      SnowflakeResultSetSerializableV1.logger.debug("Adding SSE-C headers", false);
     }
 
     SnowflakeResultSetSerializableV1.logger.debug(
@@ -125,10 +125,10 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
             context.getAuthTimeout(),
             context.getSocketTimeout(),
             0,
-            0, // no socketime injection
+            0, // no socket timeout injection
             null, // no canceling
             false, // no cookie
-            false, // no retry
+            false, // no retry parameters in url
             false, // no request_guid
             true // retry on HTTP403 for AWS S3
             );

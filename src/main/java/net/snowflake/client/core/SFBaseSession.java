@@ -114,6 +114,9 @@ public abstract class SFBaseSession {
   // name of temporary stage to upload array binds to; null if none has been created yet
   private String arrayBindStage = null;
 
+  // Query context for current session
+  private String queryContext;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -742,19 +745,13 @@ public abstract class SFBaseSession {
   public abstract void close() throws SFException, SnowflakeSQLException;
 
   /**
-   * Raise an error within the current session. By default, this may log an incident with Snowflake.
-   *
-   * @param exc The throwable exception
-   * @param jobId jobId that failed
-   * @param requestId requestId that failed
-   */
-  public abstract void raiseError(Throwable exc, String jobId, String requestId);
-
-  /**
    * Returns the telemetry client, if supported, by this session. If not, should return a
    * NoOpTelemetryClient.
    */
   public abstract Telemetry getTelemetryClient();
+
+  /** Makes a heartbeat call to check for session validity. */
+  public abstract void callHeartBeat(int timeout) throws Exception, SFException;
 
   /**
    * JDBC API. Returns a list of warnings generated since starting this session, or the last time it
@@ -785,4 +782,14 @@ public abstract class SFBaseSession {
   public abstract int getHttpClientConnectionTimeout();
 
   public abstract int getHttpClientSocketTimeout();
+
+  public abstract boolean isAsyncSession();
+
+  public String getQueryContext() {
+    return queryContext;
+  }
+
+  public void setQueryContext(String queryContext) {
+    this.queryContext = queryContext;
+  }
 }

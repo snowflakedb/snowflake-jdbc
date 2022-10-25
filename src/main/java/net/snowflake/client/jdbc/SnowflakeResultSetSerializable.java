@@ -67,7 +67,7 @@ public interface SnowflakeResultSetSerializable {
   /**
    * Get ResultSet from the ResultSet Serializable object so that the user can access the data.
    *
-   * <p>This API is used by spark spark connector from 2.6.0 to 2.8.1. It is deprecated from
+   * <p>This API is used by spark connector from 2.6.0 to 2.8.1. It is deprecated from
    * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
    *
    * @return a ResultSet which represents for the data wrapped in the object
@@ -79,7 +79,7 @@ public interface SnowflakeResultSetSerializable {
   /**
    * Get ResultSet from the ResultSet Serializable object so that the user can access the data.
    *
-   * <p>This API is used by spark spark connector from 2.6.0 to 2.8.1. It is deprecated from
+   * <p>This API is used by spark connector from 2.6.0 to 2.8.1. It is deprecated from
    * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
    *
    * @param info The proxy server information if proxy is necessary.
@@ -98,21 +98,21 @@ public interface SnowflakeResultSetSerializable {
   ResultSet getResultSet(ResultSetRetrieveConfig resultSetRetrieveConfig) throws SQLException;
 
   /**
-   * Retrieve total row count included in the the ResultSet Serializable object.
+   * Retrieve total row count included in the ResultSet Serializable object.
    *
    * @return the total row count from metadata
    */
   long getRowCount() throws SQLException;
 
   /**
-   * Retrieve compressed data size included in the the ResultSet Serializable object.
+   * Retrieve compressed data size included in the ResultSet Serializable object.
    *
    * @return the total compressed data size in bytes from metadata
    */
   long getCompressedDataSizeInBytes() throws SQLException;
 
   /**
-   * Retrieve uncompressed data size included in the the ResultSet Serializable object.
+   * Retrieve uncompressed data size included in the ResultSet Serializable object.
    *
    * @return the total uncompressed data size in bytes from metadata
    */

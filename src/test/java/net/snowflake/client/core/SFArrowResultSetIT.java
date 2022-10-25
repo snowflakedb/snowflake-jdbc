@@ -76,6 +76,7 @@ public class SFArrowResultSetIT {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
     resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
+    resultSetSerializable.setFirstChunkByteData(dataBytes);
     resultSetSerializable.setChunkFileCount(0);
 
     SFArrowResultSet resultSet =
@@ -131,7 +132,7 @@ public class SFArrowResultSetIT {
     }
     Schema schema = new Schema(fieldList);
 
-    // genreate 10 chunk of data
+    // generate 10 chunk of data
     List<Object[][]> dataLists = new ArrayList<>();
     List<File> fileLists = new ArrayList<>();
     for (int i = 0; i < chunkCount; i++) {
@@ -180,7 +181,7 @@ public class SFArrowResultSetIT {
     }
     Schema schema = new Schema(fieldList);
 
-    // genreate 10 chunk of data
+    // generate 10 chunk of data
     List<Object[][]> dataLists = new ArrayList<>();
     List<File> fileLists = new ArrayList<>();
 
@@ -198,6 +199,7 @@ public class SFArrowResultSetIT {
 
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
+    resultSetSerializable.setFirstChunkByteData(dataBytes);
     resultSetSerializable.setChunkFileCount(chunkCount);
     resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
     // build chunk downloader

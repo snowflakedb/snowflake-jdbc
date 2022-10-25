@@ -234,7 +234,7 @@ public class SFResultSet extends SFJsonResultSet {
       }
     } else if (chunkCount > 0) {
       try {
-        logger.debug("End of chunks");
+        logger.debug("End of chunks", false);
         DownloaderMetrics metrics = chunkDownloader.terminate();
         logChunkDownloaderMetrics(metrics);
       } catch (InterruptedException ex) {
@@ -279,7 +279,7 @@ public class SFResultSet extends SFJsonResultSet {
       }
       return true;
     } else {
-      logger.debug("end of result");
+      logger.debug("end of result", false);
 
       /*
        * Here we check if the result has been truncated and throw exception if
@@ -289,9 +289,7 @@ public class SFResultSet extends SFJsonResultSet {
           || Boolean.TRUE
               .toString()
               .equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2"))) {
-        throw (SFException)
-            IncidentUtil.generateIncidentV2WithException(
-                session, new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED), queryId, null);
+        throw new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
       }
 
       // mark end of result

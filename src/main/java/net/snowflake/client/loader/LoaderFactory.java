@@ -16,7 +16,7 @@ public class LoaderFactory {
       Map<LoaderProperty, Object> properties,
       Connection uploadConnection,
       Connection processingConnection) {
-    LOGGER.debug("");
+    LOGGER.debug("", false);
     StreamLoader loader = new StreamLoader(properties, uploadConnection, processingConnection);
     return loader;
   }

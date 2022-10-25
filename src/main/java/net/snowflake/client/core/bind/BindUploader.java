@@ -16,15 +16,15 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SFBaseFileTransferAgent;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
@@ -51,6 +51,7 @@ public class BindUploader implements Closeable {
   private final DateFormat dateFormat;
   private final SimpleDateFormat timeFormat;
   private final String createStageSQL;
+  private Calendar cal;
 
   static class ColumnTypeDataPair {
     public String type;
@@ -80,15 +81,15 @@ public class BindUploader implements Closeable {
             + " field_optionally_enclosed_by='\"'"
             + ")";
 
-    Calendar calendarUTC = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-    calendarUTC.clear();
+    cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    cal.clear();
 
     this.timestampFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.");
-    this.timestampFormat.setCalendar(calendarUTC);
+    this.timestampFormat.setCalendar(cal);
     this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    this.dateFormat.setCalendar(calendarUTC);
+    this.dateFormat.setCalendar(cal);
     this.timeFormat = new SimpleDateFormat("HH:mm:ss.");
-    this.timeFormat.setCalendar(calendarUTC);
+    this.timeFormat.setCalendar(cal);
   }
 
   private synchronized String synchronizedDateFormat(String o) {
@@ -138,7 +139,7 @@ public class BindUploader implements Closeable {
     return SFPair.of(sec, nano);
   }
 
-  private synchronized String synchronizedTimestampFormat(String o) {
+  private synchronized String synchronizedTimestampFormat(String o, String type) {
     if (o == null) {
       return null;
     }
@@ -149,7 +150,18 @@ public class BindUploader implements Closeable {
     int nano = times.right;
 
     Timestamp v1 = new Timestamp(sec * 1000);
-    return timestampFormat.format(v1) + String.format("%09d", nano) + " +00:00";
+    // For timestamp_ntz, use UTC timezone. For timestamp_ltz, use the local timezone to minimise
+    // the gap.
+    if ("TIMESTAMP_LTZ".equals(type)) {
+      TimeZone tz = TimeZone.getDefault();
+      cal.setTimeZone(tz);
+      cal.clear();
+      timestampFormat.setCalendar(cal);
+    }
+
+    ZoneOffset offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.now());
+
+    return timestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
   }
 
   /**
@@ -311,7 +323,7 @@ public class BindUploader implements Closeable {
         List<String> convertedList = new ArrayList<>(list.size());
         if ("TIMESTAMP_LTZ".equals(type) || "TIMESTAMP_NTZ".equals(type)) {
           for (Object e : list) {
-            convertedList.add(synchronizedTimestampFormat((String) e));
+            convertedList.add(synchronizedTimestampFormat((String) e, type));
           }
         } else if ("DATE".equals(type)) {
           for (Object e : list) {
