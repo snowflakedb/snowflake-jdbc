@@ -779,10 +779,6 @@ public abstract class SFBaseSession {
 
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 
-  public abstract int getHttpClientConnectionTimeout();
-
-  public abstract int getHttpClientSocketTimeout();
-
   public abstract boolean isAsyncSession();
 
   public String getQueryContext() {
