@@ -31,3 +31,8 @@ declare TEST_IMAGE_VAL=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos7-default
 export TEST_IMAGE_NAME
 export TEST_IMAGE_VAL
 
+declare -A TEST_IMAGE_NAMES=(
+    [$DRIVER_NAME-centos7-default]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos7-default-test:$BUILD_IMAGE_VERSION
+)
+export TEST_IMAGE_NAMES
+
