@@ -4,7 +4,7 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.util.Base64;
+import java.util.Base64;
 import com.google.cloud.storage.Blob;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobProperties;
@@ -119,7 +119,7 @@ public class StorageObjectSummary {
 
   private static String convertBase64ToHex(String base64String) {
     try {
-      byte[] bytes = Base64.decode(base64String);
+      byte[] bytes = Base64.getDecoder().decode(base64String);
 
       final StringBuilder builder = new StringBuilder();
       for (byte b : bytes) {

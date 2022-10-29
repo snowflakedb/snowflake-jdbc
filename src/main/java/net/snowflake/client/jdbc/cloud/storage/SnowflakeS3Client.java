@@ -27,7 +27,7 @@ import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
-import com.amazonaws.util.Base64;
+import java.util.Base64;
 import java.io.*;
 import java.net.SocketTimeoutException;
 import java.security.InvalidKeyException;
@@ -153,7 +153,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
     AmazonS3Builder<?, ?> amazonS3Builder = AmazonS3Client.builder();
     if (encMat != null) {
-      byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
+      byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
       encryptionKeySize = decodedKey.length * 8;
 
       if (encryptionKeySize == 256) {
@@ -813,8 +813,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       byte[] encKeK,
       long contentLength) {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
-    meta.addUserMetadata(AMZ_KEY, Base64.encodeAsString(encKeK));
-    meta.addUserMetadata(AMZ_IV, Base64.encodeAsString(ivData));
+    meta.addUserMetadata(AMZ_KEY, Base64.getEncoder().encodeToString(encKeK));
+    meta.addUserMetadata(AMZ_IV, Base64.getEncoder().encodeToString(ivData));
     meta.setContentLength(contentLength);
   }
 

@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.util.Base64;
+import java.util.Base64;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -316,7 +316,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       return new InputStreamWithMetadata(
           countingStream.getCount(),
-          Base64.encodeAsString(digestStream.getMessageDigest().digest()),
+          Base64.getEncoder().encodeToString(digestStream.getMessageDigest().digest()),
           tempStream);
 
     } catch (IOException | NoSuchAlgorithmException ex) {
@@ -389,7 +389,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       return new InputStreamWithMetadata(
           countingOutputStream.getCount(),
-          Base64.encodeAsString(digestStream.getMessageDigest().digest()),
+          Base64.getEncoder().encodeToString(digestStream.getMessageDigest().digest()),
           tempStream);
     } else {
       CountingOutputStream countingOutputStream =
@@ -399,7 +399,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       IOUtils.copy(is, digestStream);
       return new InputStreamWithMetadata(
           countingOutputStream.getCount(),
-          Base64.encodeAsString(digestStream.getMessageDigest().digest()),
+          Base64.getEncoder().encodeToString(digestStream.getMessageDigest().digest()),
           null);
     }
   }
