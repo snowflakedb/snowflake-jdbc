@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc.cloud.storage;
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import java.util.Base64;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +19,7 @@ import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Base64;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
@@ -846,7 +846,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
     meta.addUserMetadata(
         AZ_ENCRYPTIONDATAPROP,
-        buildEncryptionMetadataJSON(Base64.getEncoder().encodeToString(ivData), Base64.getEncoder().encodeToString(encKeK)));
+        buildEncryptionMetadataJSON(
+            Base64.getEncoder().encodeToString(ivData),
+            Base64.getEncoder().encodeToString(encKeK)));
     meta.setContentLength(contentLength);
   }
 
