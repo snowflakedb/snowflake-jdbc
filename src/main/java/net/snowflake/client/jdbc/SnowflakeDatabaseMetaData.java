@@ -1577,7 +1577,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       final boolean extendedSet)
       throws SQLException {
     logger.debug(
-        "public ResultSet getColumns(String catalog={}, String schemaPattern={}"
+        "public ResultSet getColumns(String catalog={}, String schemaPattern={}, "
             + "String tableNamePattern={}, String columnNamePattern={}, boolean extendedSet={}",
         originalCatalog,
         originalSchemaPattern,
