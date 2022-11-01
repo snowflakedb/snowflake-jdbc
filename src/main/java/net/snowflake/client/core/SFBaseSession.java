@@ -795,7 +795,7 @@ public abstract class SFBaseSession {
    * have any behavior change. Stored proc JDBC will override this function to return the value of
    * SP_JDBC_ENABLE_TIMESTAMP_WITH_TIMEZONE from server for backward compatibility.
    */
-  public boolean getEnableTimestampReturnType() {
+  public boolean getEnableReturnTimestampWithTimeZone() {
     return true;
   }
 }
