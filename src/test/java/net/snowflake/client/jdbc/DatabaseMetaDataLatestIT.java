@@ -888,6 +888,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           .getSFBaseSession()
           .setEnableReturnTimestampWithTimeZoneForTesting(false);
 
+      metaData = connection.getMetaData();
       resultSet = metaData.getColumns(database, schema, "TS_TEST", "TS");
       resultSet.next();
       // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP when

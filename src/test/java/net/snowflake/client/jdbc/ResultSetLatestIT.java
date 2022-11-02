@@ -549,11 +549,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
           .getSFBaseSession()
           .setEnableReturnTimestampWithTimeZoneForTesting(false);
 
+      statement = connection.createStatement();
       resultSet = statement.executeQuery("select * from ts_test");
-      resultSet.next();
+      resultSetMetaData = resultSet.getMetaData();
       // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP when
       // enableReturnTimestampWithTimeZone is false.
-      assertEquals(resultSet.getObject("DATA_TYPE"), Types.TIMESTAMP);
+      assertEquals(resultSetMetaData.getColumnType(1), Types.TIMESTAMP);
     }
   }
 }
