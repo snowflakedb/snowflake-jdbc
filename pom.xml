@@ -41,8 +41,7 @@
     <slf4j.version>1.7.25</slf4j.version>
     <jsoup.version>1.15.3</jsoup.version>
     <tika.version>2.4.1</tika.version>
-    <jackson.version>2.13.2</jackson.version>
-    <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
+    <jackson-bom.version>2.13.4.20221013</jackson-bom.version>
     <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
     <httpclient.version>4.5.11</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
@@ -63,6 +62,13 @@
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-bom</artifactId>
         <version>${awssdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson-bom.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -159,18 +165,15 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jacksondatabind.version}</version>
       <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
     <dependency>
        <groupId>com.google.guava</groupId>
