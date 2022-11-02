@@ -543,6 +543,17 @@ public class ResultSetLatestIT extends ResultSet0IT {
       assertEquals(resultSetMetaData.getColumnType(1), 2014);
       // Assert that TIMESTAMP_TZ column returns Timestamp class name
       assertEquals(resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
+
+      connection
+          .unwrap(SnowflakeConnectionV1.class)
+          .getSFBaseSession()
+          .setEnableReturnTimestampWithTimeZoneForTesting(false);
+
+      resultSet = statement.executeQuery("select * from ts_test");
+      resultSet.next();
+      // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP when
+      // enableReturnTimestampWithTimeZone is false.
+      assertEquals(resultSet.getObject("DATA_TYPE"), Types.TIMESTAMP);
     }
   }
 }

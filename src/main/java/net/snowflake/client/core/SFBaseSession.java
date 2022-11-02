@@ -117,6 +117,9 @@ public abstract class SFBaseSession {
   // Query context for current session
   private String queryContext;
 
+  // Whether enable returning timestamp with timezone as data type
+  private boolean enableReturnTimestampWithTimeZone = true;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -796,6 +799,10 @@ public abstract class SFBaseSession {
    * SP_JDBC_ENABLE_TIMESTAMP_WITH_TIMEZONE from server for backward compatibility.
    */
   public boolean getEnableReturnTimestampWithTimeZone() {
-    return true;
+    return enableReturnTimestampWithTimeZone;
+  }
+
+  public void setEnableReturnTimestampWithTimeZoneForTesting(boolean value) {
+    enableReturnTimestampWithTimeZone = value;
   }
 }

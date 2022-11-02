@@ -882,6 +882,17 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       resultSet.next();
       // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
       assertEquals(resultSet.getObject("DATA_TYPE"), 2014);
+
+      connection
+          .unwrap(SnowflakeConnectionV1.class)
+          .getSFBaseSession()
+          .setEnableReturnTimestampWithTimeZoneForTesting(false);
+
+      resultSet = metaData.getColumns(database, schema, "TS_TEST", "TS");
+      resultSet.next();
+      // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP when
+      // enableReturnTimestampWithTimeZone is false.
+      assertEquals(resultSet.getObject("DATA_TYPE"), Types.TIMESTAMP);
     }
   }
 
