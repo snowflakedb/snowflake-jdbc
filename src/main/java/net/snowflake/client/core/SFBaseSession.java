@@ -802,7 +802,8 @@ public abstract class SFBaseSession {
     return enableReturnTimestampWithTimeZone;
   }
 
-  public void setEnableReturnTimestampWithTimeZoneForTesting(boolean value) {
+  /** only used for tests */
+  private void setEnableReturnTimestampWithTimeZoneForTesting(boolean value) {
     enableReturnTimestampWithTimeZone = value;
   }
 }

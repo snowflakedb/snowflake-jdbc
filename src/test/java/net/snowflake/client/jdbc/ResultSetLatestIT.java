@@ -8,6 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -533,7 +534,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @Test
-  public void testGetDataTypeWithTimestampTz() throws SQLException {
+  public void testGetDataTypeWithTimestampTz() throws Exception {
     try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
       statement.executeQuery("create or replace table ts_test(ts timestamp_tz)");
@@ -544,10 +545,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
       // Assert that TIMESTAMP_TZ column returns Timestamp class name
       assertEquals(resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
 
-      connection
-          .unwrap(SnowflakeConnectionV1.class)
-          .getSFBaseSession()
-          .setEnableReturnTimestampWithTimeZoneForTesting(false);
+      SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+      Method method =
+          SFBaseSession.class.getDeclaredMethod(
+              "setEnableReturnTimestampWithTimeZoneForTesting", boolean.class);
+      method.setAccessible(true);
+      method.invoke(baseSession, false);
 
       statement = connection.createStatement();
       resultSet = statement.executeQuery("select * from ts_test");
