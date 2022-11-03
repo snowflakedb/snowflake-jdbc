@@ -8,7 +8,7 @@ import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.*;
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Map;
@@ -886,11 +886,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(resultSet.getObject("DATA_TYPE"), 2014);
 
       SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
-      Method method =
-          SFBaseSession.class.getDeclaredMethod(
-              "setEnableReturnTimestampWithTimeZoneForTesting", boolean.class);
-      method.setAccessible(true);
-      method.invoke(baseSession, false);
+      Field field = SFBaseSession.class.getDeclaredField("enableReturnTimestampWithTimeZone");
+      field.setAccessible(true);
+      field.set(baseSession, false);
 
       metaData = connection.getMetaData();
       resultSet = metaData.getColumns(database, schema, "TS_TEST", "TS");

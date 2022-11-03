@@ -8,7 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -546,11 +546,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
       assertEquals(resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
 
       SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
-      Method method =
-          SFBaseSession.class.getDeclaredMethod(
-              "setEnableReturnTimestampWithTimeZoneForTesting", boolean.class);
-      method.setAccessible(true);
-      method.invoke(baseSession, false);
+      Field field = SFBaseSession.class.getDeclaredField("enableReturnTimestampWithTimeZone");
+      field.setAccessible(true);
+      field.set(baseSession, false);
 
       statement = connection.createStatement();
       resultSet = statement.executeQuery("select * from ts_test");
