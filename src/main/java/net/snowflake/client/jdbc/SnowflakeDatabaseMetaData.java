@@ -1732,7 +1732,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
               externalColumnType = Types.TIMESTAMP;
             }
             if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-              externalColumnType = Types.TIMESTAMP_WITH_TIMEZONE;
+              externalColumnType =
+                  session.getEnableReturnTimestampWithTimeZone()
+                      ? Types.TIMESTAMP_WITH_TIMEZONE
+                      : Types.TIMESTAMP;
             }
 
             nextRow[4] = externalColumnType;
