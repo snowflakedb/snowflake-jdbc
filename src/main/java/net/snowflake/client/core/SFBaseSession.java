@@ -117,6 +117,9 @@ public abstract class SFBaseSession {
   // Query context for current session
   private String queryContext;
 
+  // Whether enable returning timestamp with timezone as data type
+  private boolean enableReturnTimestampWithTimeZone = true;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -779,10 +782,6 @@ public abstract class SFBaseSession {
 
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 
-  public abstract int getHttpClientConnectionTimeout();
-
-  public abstract int getHttpClientSocketTimeout();
-
   public abstract boolean isAsyncSession();
 
   public String getQueryContext() {
@@ -791,5 +790,15 @@ public abstract class SFBaseSession {
 
   public void setQueryContext(String queryContext) {
     this.queryContext = queryContext;
+  }
+
+  /**
+   * If true, JDBC will enable returning TIMESTAMP_WITH_TIMEZONE as column type, otherwise it will
+   * not. This function will always return true for JDBC client, so that the client JDBC will not
+   * have any behavior change. Stored proc JDBC will override this function to return the value of
+   * SP_JDBC_ENABLE_TIMESTAMP_WITH_TIMEZONE from server for backward compatibility.
+   */
+  public boolean getEnableReturnTimestampWithTimeZone() {
+    return enableReturnTimestampWithTimeZone;
   }
 }

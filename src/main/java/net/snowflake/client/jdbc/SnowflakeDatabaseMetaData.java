@@ -1577,7 +1577,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       final boolean extendedSet)
       throws SQLException {
     logger.debug(
-        "public ResultSet getColumns(String catalog={}, String schemaPattern={}"
+        "public ResultSet getColumns(String catalog={}, String schemaPattern={}, "
             + "String tableNamePattern={}, String columnNamePattern={}, boolean extendedSet={}",
         originalCatalog,
         originalSchemaPattern,
@@ -1732,7 +1732,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
               externalColumnType = Types.TIMESTAMP;
             }
             if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-              externalColumnType = Types.TIMESTAMP_WITH_TIMEZONE;
+              externalColumnType =
+                  session.getEnableReturnTimestampWithTimeZone()
+                      ? Types.TIMESTAMP_WITH_TIMEZONE
+                      : Types.TIMESTAMP;
             }
 
             nextRow[4] = externalColumnType;
