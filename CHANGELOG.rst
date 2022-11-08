@@ -1,3 +1,11 @@
+**JDBC Driver 3.13.24**
+
+- \|| Upgraded the following libraries:
+- \|| arrow from version 8.0.0 to 9.0.0
+- \|| jacksondatabind from version 2.13.2.2 to 2.13.4.2
+- \|| google-cloud-storage from version 2.5.0 to 2.6.2
+- \|| Remove DML check on getUpdateCount() 
+
 **JDBC Driver 3.13.23**
 
 - \|| Relocate Google Guava classes from com/google/common/util/concurrent/** in FIPS driver
@@ -702,7 +710,7 @@
 
 **JDBC Driver 3.2.5**
 
-- \|SNOW-33566| Added support for ``ResultSet.isLast()``, ``isBeforeFirsrt()``, and ``isAfterLast()``.
+- \|SNOW-33566| Added support for ``ResultSet.isLast()``, ``isBeforeFirst()``, and ``isAfterLast()``.
 - \|SNOW-30962| Optimized the driver by combining ``describe`` and ``execute`` methods when there is no bind.
 
 **JDBC Driver 3.2.4**

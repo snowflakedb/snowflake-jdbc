@@ -594,6 +594,13 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       } catch (SFException ex) {
         throw new SnowflakeSQLLoggedException(connection.getSFBaseSession(), ex);
       }
+      // Multi statement queries should return true while there are still statements to iterate
+      // through.
+      if (queryID != null
+          && sfBaseStatement.hasChildren()
+          && sfBaseStatement.getChildQueryIds(queryID).length > 0) {
+        return true;
+      }
       return false;
     } else // no more results
     {
@@ -651,10 +658,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
   private long getUpdateCountIfDML() throws SQLException {
     raiseSQLExceptionIfStatementIsClosed();
-    if (updateCount != -1 && sfBaseStatement.getResultSet().getStatementType().isDML()) {
-      return updateCount;
-    }
-    return -1;
+    return updateCount;
   }
 
   @Override
@@ -688,7 +692,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   public void setEscapeProcessing(boolean enable) throws SQLException {
     logger.debug("setEscapeProcessing(boolean enable)", false);
     // NOTE: We could raise an exception here, because not implemented
-    // but it may break the existing applications. For now returning nothnig.
+    // but it may break the existing applications. For now returning nothing.
     // we should revisit.
     raiseSQLExceptionIfStatementIsClosed();
   }

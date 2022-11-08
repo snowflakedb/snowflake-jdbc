@@ -73,7 +73,7 @@ public class AbstractDriverIT {
     } else {
       account = accountName;
       // By default, the test will run against reg deployment.
-      // If developer needs to run in Intellij, you can set this env as ".dev.local"
+      // If developer needs to run in IntelliJ, you can set this env as ".dev.local"
       String deployment = getConnPropValueFromEnv(connectionType, "DEPLOYMENT");
       if (Strings.isNullOrEmpty(deployment)) {
         deployment = ".reg.local";
@@ -265,7 +265,7 @@ public class AbstractDriverIT {
    * @param paramProperties connection properties
    * @param isAdmin is Snowflake admin user?
    * @param usesCom uses com.snowflake instead of net.snowflake?
-   * @return Connectiona database connection
+   * @return Connection database connection
    * @throws SQLException raised if any error occurs
    */
   public static Connection getConnection(

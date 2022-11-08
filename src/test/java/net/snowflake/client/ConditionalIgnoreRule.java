@@ -42,7 +42,7 @@ public class ConditionalIgnoreRule implements MethodRule {
   public Statement apply(Statement base, FrameworkMethod method, Object target) {
     Statement result = base;
     if (hasConditionalIgnoreAnnotation(method)) {
-      IgnoreCondition condition = getIgnoreContition(target, method);
+      IgnoreCondition condition = getIgnoreCondition(target, method);
       if (condition.isSatisfied()) {
         result = new IgnoreStatement(condition);
       }
@@ -54,7 +54,7 @@ public class ConditionalIgnoreRule implements MethodRule {
     return method.getAnnotation(ConditionalIgnore.class) != null;
   }
 
-  private static IgnoreCondition getIgnoreContition(Object target, FrameworkMethod method) {
+  private static IgnoreCondition getIgnoreCondition(Object target, FrameworkMethod method) {
     ConditionalIgnore annotation = method.getAnnotation(ConditionalIgnore.class);
     return new IgnoreConditionCreator(target, annotation).create();
   }
