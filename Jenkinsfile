@@ -82,7 +82,7 @@ timestamps {
       string(name: 'client_git_commit', value: scmInfo.GIT_COMMIT),
       string(name: 'svn_revision', value: 'main'),
       string(name: 'branch', value: 'main'),
-      string(name: 'TARGET_DOCKER_TEST_IMAGE', value: 'jdbc-centos6-default'),
+      string(name: 'TARGET_DOCKER_TEST_IMAGE', value: 'jdbc-centos7-default'),
       string(name: 'parent_job', value: env.JOB_NAME),
       string(name: 'parent_build_number', value: env.BUILD_NUMBER),
       string(name: 'timeout_value', value: '420'),
