@@ -99,7 +99,7 @@ timestamps {
         // Append the bptp-built commit sha to params
         params += [string(name: 'svn_revision', value: commit_hash)]
       } catch(Exception e) {
-          println("Exception computing commit hash from: ${response}")
+        println("Exception computing commit hash from: ${response}")
       }
       parallel (
         'Test JDBC 1': { build job: 'RT-LanguageJDBC1-PC',parameters: params
