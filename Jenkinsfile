@@ -77,6 +77,7 @@ timestamps {
         |$WORKSPACE/ci/build.sh
       '''.stripMargin()
     }
+
     params = [
       string(name: 'client_git_branch', value: scmInfo.GIT_BRANCH),
       string(name: 'client_git_commit', value: scmInfo.GIT_COMMIT),
@@ -89,24 +90,38 @@ timestamps {
       string(name: 'PR_Key', value: scmInfo.GIT_BRANCH.substring(3))
     ]
     stage('Test') {
-      parallel (
-        'Test JDBC 1': { build job: 'RT-LanguageJDBC1-PC',parameters: params
-            },
-        'Test JDBC 2': { build job: 'RT-LanguageJDBC2-PC',parameters: params
-            },
-        'Test JDBC 3': { build job: 'RT-LanguageJDBC3-PC',parameters: params
-            },
-        'Test JDBC 4': { build job: 'RT-LanguageJDBC4-PC',parameters: params
-            },
-        'CodeCoverage JDBC': { build job: 'RT-LanguageJDBC-CodeCoverage-PC',parameters: params
-            }
-      )
+      commit_hash = "main" // default which we want to override
+      bptp_tag = "bptp-built"
+      withCredentials([
+            [$class: 'UsernamePasswordMultiBinding', credentialsId:
+                  'b4f59663-ae0a-4384-9fdc-c7f2fe1c4fca', usernameVariable:
+                  'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD']
+          ]) {
+          commit_hash = getBPTPTagCommit(bptp_tag)
+      }
+      println(commit_hash)
+      // TESTING
+      // parallel (
+      //   'Test JDBC 1': { build job: 'RT-LanguageJDBC1-PC',parameters: params
+      //       },
+      //   'Test JDBC 2': { build job: 'RT-LanguageJDBC2-PC',parameters: params
+      //       },
+      //   'Test JDBC 3': { build job: 'RT-LanguageJDBC3-PC',parameters: params
+      //       },
+      //   'Test JDBC 4': { build job: 'RT-LanguageJDBC4-PC',parameters: params
+      //       },
+      //   'CodeCoverage JDBC': { build job: 'RT-LanguageJDBC-CodeCoverage-PC',parameters: params
+      //       }
+      // )
     }
   }
 }
 
 
-
+def getBPTPTagCommit(String tag) {
+  def url = "https://api.github.com/repos/snowflakedb/snowflake/git/ref/tags/${tag}"
+  return sh '''curl -s -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GIT_PASSWORD" https://api.github.com/repos/snowflakedb/snowflake/git/ref/tags/bptp-built | jq -r .object.sha'''
+}
 
 
 def wgetUpdateGithub(String state, String folder, String targetUrl, String seconds) {
