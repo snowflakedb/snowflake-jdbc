@@ -69,14 +69,14 @@ timestamps {
       env.GIT_BRANCH = scmInfo.GIT_BRANCH
     }
 
-    stage('Build') {
-      sh '''\
-        |export JAVA_HOME=/usr/java/latest
-        |export PATH=$JAVA_HOME/bin:$PATH
-        |export GIT_BRANCH=${GIT_BRANCH}
-        |$WORKSPACE/ci/build.sh
-      '''.stripMargin()
-    }
+    // stage('Build') {
+    //   sh '''\
+    //     |export JAVA_HOME=/usr/java/latest
+    //     |export PATH=$JAVA_HOME/bin:$PATH
+    //     |export GIT_BRANCH=${GIT_BRANCH}
+    //     |$WORKSPACE/ci/build.sh
+    //   '''.stripMargin()
+    // }
 
     params = [
       string(name: 'client_git_branch', value: scmInfo.GIT_BRANCH),
