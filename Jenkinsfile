@@ -120,7 +120,7 @@ timestamps {
 
 def getBPTPTagCommit(String tag) {
   def url = "https://api.github.com/repos/snowflakedb/snowflake/git/ref/tags/${tag}"
-  return sh "curl -s -H 'Accept: application/vnd.github+json' -H 'Authorization: Bearer "${GIT_PASSWORD}"' https://api.github.com/repos/snowflakedb/snowflake/git/ref/tags/bptp-built | jq -r .object.sha'
+  return sh "curl -s -H 'Accept: application/vnd.github+json' -H 'Authorization: Bearer "${GIT_PASSWORD}"' https://api.github.com/repos/snowflakedb/snowflake/git/ref/tags/bptp-built | jq -r .object.sha"
 }
 
 
