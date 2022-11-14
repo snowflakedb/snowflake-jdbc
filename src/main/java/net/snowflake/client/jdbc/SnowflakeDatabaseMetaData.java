@@ -1157,7 +1157,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       // Procedure name column check must occur later when columns are parsed.
       if ((compiledProcedurePattern != null
               && !compiledProcedurePattern.matcher(procedureNameNoArgs).matches())
-          || !isSchemaNameMatch) {
+          || (compiledSchemaPattern != null && !isSchemaNameMatch)) {
         continue;
       }
       String catalogName = resultSetStepOne.getString("catalog_name");
