@@ -236,7 +236,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   session.getAuthTimeout(),
                   session.getHttpClientSocketTimeout(),
                   0,
-                  0, // no socketime injection
+                  0, // no socket timeout injection
                   null, // no canceling
                   false, // no cookie
                   false, // no retry
@@ -401,7 +401,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   session.getAuthTimeout(),
                   session.getHttpClientSocketTimeout(),
                   0,
-                  0, // no socketime injection
+                  0, // no socket timeout injection
                   null, // no canceling
                   false, // no cookie
                   false, // no retry
@@ -752,7 +752,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               authTimeout, // auth timeout
               httpClientSocketTimeout, // socket timeout in ms
               0,
-              0, // no socketime injection
+              0, // no socket timeout injection
               null, // no canceling
               false, // no cookie
               false, // no retry
@@ -1051,7 +1051,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   /*
    * Initializes the GCS client
-   * This method is used during the object contruction, but also to
+   * This method is used during the object construction, but also to
    * reset/recreate the encapsulated CloudBlobClient object with new
    * credentials (after token expiration)
    * @param stage   The stage information that the client will operate on

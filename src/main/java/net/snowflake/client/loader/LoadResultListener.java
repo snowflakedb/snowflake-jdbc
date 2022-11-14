@@ -38,7 +38,7 @@ public interface LoadResultListener {
   boolean throwOnError();
 
   /**
-   * Method to add to the the error count for a listener
+   * Method to add to the error count for a listener
    *
    * @param number the number of errors
    */
@@ -55,7 +55,7 @@ public interface LoadResultListener {
   int getErrorCount();
 
   /**
-   * Method to add to the the error record count for a listener
+   * Method to add to the error record count for a listener
    *
    * @param number the number of error records
    */

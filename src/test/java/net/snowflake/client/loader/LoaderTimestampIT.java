@@ -108,14 +108,15 @@ public class LoaderTimestampIT extends LoaderBase {
     // format the input TS with the target timezone
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
     sdf.setTimeZone(targetTimeZone);
-    String currenTsStr = sdf.format(testTs);
+    String currentTsStr = sdf.format(testTs);
 
     // format the retrieved TS with the original timezone
     sdf.setTimeZone(originalTimeZone);
     String retrievedTsStr = sdf.format(new Date(ts.getTime()));
 
     // They must be identical.
-    assertThat("Input and retrieved timestamp are different", retrievedTsStr, equalTo(currenTsStr));
+    assertThat(
+        "Input and retrieved timestamp are different", retrievedTsStr, equalTo(currentTsStr));
   }
 
   @Test

@@ -8,6 +8,7 @@ import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.*;
 
+import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Map;
@@ -16,6 +17,8 @@ import java.util.Set;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.SFBaseSession;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -870,7 +873,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testTimestampWithTimezoneDataType() throws SQLException {
+  public void testTimestampWithTimezoneDataType() throws Exception {
     try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
       statement.executeQuery("create or replace table ts_test(ts timestamp_tz)");
@@ -881,6 +884,18 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       resultSet.next();
       // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
       assertEquals(resultSet.getObject("DATA_TYPE"), 2014);
+
+      SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+      Field field = SFBaseSession.class.getDeclaredField("enableReturnTimestampWithTimeZone");
+      field.setAccessible(true);
+      field.set(baseSession, false);
+
+      metaData = connection.getMetaData();
+      resultSet = metaData.getColumns(database, schema, "TS_TEST", "TS");
+      resultSet.next();
+      // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP when
+      // enableReturnTimestampWithTimeZone is false.
+      assertEquals(resultSet.getObject("DATA_TYPE"), Types.TIMESTAMP);
     }
   }
 
@@ -1325,6 +1340,19 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       con.createStatement().execute("drop stream if exists " + targetStream);
       resultSet.close();
       statement.close();
+    }
+  }
+
+  /*
+   * This tests that an empty resultset will be returned for getProcedures when using a reader account.
+   */
+  @Test
+  @Ignore
+  public void testGetProceduresWithReaderAccount() throws SQLException {
+    try (Connection connection = getConnection()) {
+      DatabaseMetaData metadata = connection.getMetaData();
+      ResultSet rs = metadata.getProcedures(null, null, null);
+      assertEquals(0, getSizeOfResultSet(rs));
     }
   }
 }

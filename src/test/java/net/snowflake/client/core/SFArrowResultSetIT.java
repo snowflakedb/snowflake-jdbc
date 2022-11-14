@@ -132,7 +132,7 @@ public class SFArrowResultSetIT {
     }
     Schema schema = new Schema(fieldList);
 
-    // genreate 10 chunk of data
+    // generate 10 chunk of data
     List<Object[][]> dataLists = new ArrayList<>();
     List<File> fileLists = new ArrayList<>();
     for (int i = 0; i < chunkCount; i++) {
@@ -181,7 +181,7 @@ public class SFArrowResultSetIT {
     }
     Schema schema = new Schema(fieldList);
 
-    // genreate 10 chunk of data
+    // generate 10 chunk of data
     List<Object[][]> dataLists = new ArrayList<>();
     List<File> fileLists = new ArrayList<>();
 
