@@ -1,3 +1,7 @@
+**JDBC Driver 3.13.25**
+
+- \|| Set ALLOW_UNDERSCORES_IN_HOST to false by default.
+
 **JDBC Driver 3.13.24**
 
 - \|| Upgraded the following libraries:
