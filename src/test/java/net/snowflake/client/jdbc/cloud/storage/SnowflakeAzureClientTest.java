@@ -7,7 +7,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 import static org.junit.Assert.assertEquals;
 
 import com.microsoft.azure.storage.StorageExtendedErrorInformation;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import org.junit.Test;
 
 public class SnowflakeAzureClientTest {
@@ -26,7 +26,7 @@ public class SnowflakeAzureClientTest {
     String formatedStr = SnowflakeAzureClient.FormatStorageExtendedErrorInformation(info);
     assertEquals(expectedStr0, formatedStr);
 
-    HashMap<String, String[]> map = new HashMap<>();
+    LinkedHashMap<String, String[]> map = new LinkedHashMap<>();
     map.put("key1", new String[] {"hello", "world"});
     map.put("key2", new String[] {});
     map.put("key3", new String[] {"fake", "message"});
