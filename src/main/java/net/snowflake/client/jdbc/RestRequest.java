@@ -6,9 +6,9 @@ package net.snowflake.client.jdbc;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.*;
+import net.snowflake.client.core.*;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.HttpUtil;
@@ -61,7 +61,8 @@ public class RestRequest {
       boolean withoutCookies,
       boolean includeRetryParameters,
       boolean includeRequestGuid,
-      boolean retryHTTP403)
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeTelemetryData)
       throws SnowflakeSQLException {
     return execute(
         httpClient,
@@ -76,7 +77,8 @@ public class RestRequest {
         includeRetryParameters,
         includeRequestGuid,
         retryHTTP403,
-        false);
+        false, // noRetry
+        execTimeTelemetryData);
   }
 
   /**
@@ -91,7 +93,8 @@ public class RestRequest {
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
-   * @param includeRetryParameters whether to include retry parameters in retried requests
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
    * @param includeRequestGuid whether to include request_guid parameter
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
@@ -112,7 +115,8 @@ public class RestRequest {
       boolean includeRetryParameters,
       boolean includeRequestGuid,
       boolean retryHTTP403,
-      boolean noRetry)
+      boolean noRetry,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException {
     CloseableHttpResponse response = null;
 
@@ -150,6 +154,8 @@ public class RestRequest {
     // label the reason to break retry
     String breakRetryReason = "";
 
+    String lastStatusCodeForRetry = "";
+
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug("Retry count: {}", retryCount);
@@ -183,8 +189,14 @@ public class RestRequest {
          * overhead of looking up in metadata database.
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
+        // If HTAP
+        if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
+            && builder.getPathSegments().contains("query-request")) {
+          builder.setParameter("target", "htap_simulation");
+        }
         if (includeRetryParameters && retryCount > 0) {
           builder.setParameter("retryCount", String.valueOf(retryCount));
+          builder.setParameter("retryReason", lastStatusCodeForRetry);
           builder.setParameter("clientStartTime", String.valueOf(startTime));
         }
 
@@ -199,12 +211,13 @@ public class RestRequest {
 
         if (includeRequestGuid) {
           // Add request_guid for better tracing
-          builder.setParameter(SF_REQUEST_GUID, UUID.randomUUID().toString());
+          builder.setParameter(SF_REQUEST_GUID, UUIDUtils.getUUID().toString());
         }
 
         httpRequest.setURI(builder.build());
-
+        execTimeData.setHttpClientStart();
         response = httpClient.execute(httpRequest);
+        execTimeData.setHttpClientEnd();
       } catch (IllegalStateException ex) {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, then fail immediately and stop retrying.
@@ -394,7 +407,8 @@ public class RestRequest {
         }
 
         retryCount++;
-
+        lastStatusCodeForRetry =
+            response == null ? "0" : String.valueOf(response.getStatusLine().getStatusCode());
         // If the request failed with any other retry-able error and auth timeout is reached
         // increase the retry count and throw special exception to renew the token before retrying.
         if (authTimeout > 0) {

@@ -109,15 +109,19 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public ResultSet executeQuery() throws SQLException {
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData("ResultSet PreparedStatement.executeQuery(String)", this.batchID);
     if (showStatementParameters) {
       logger.info("executeQuery()", false);
     } else {
       logger.debug("executeQuery()", false);
     }
-    ResultSet rs = executeQueryInternal(sql, false, parameterBindings);
+    ResultSet rs = executeQueryInternal(sql, false, parameterBindings, execTimeData);
     if (statementMetaData.isValidMetaData()) {
       alreadyDescribed = true;
     }
+    execTimeData.setQueryEnd();
+    execTimeData.generateTelemetry();
     return rs;
   }
 
@@ -128,19 +132,26 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
    * @throws SQLException
    */
   public ResultSet executeAsyncQuery() throws SQLException {
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData(
+            "ResultSet PreparedStatement.executeAsyncQuery(String)", this.batchID);
     if (showStatementParameters) {
       logger.info("executeAsyncQuery()", false);
     } else {
       logger.debug("executeAsyncQuery()", false);
     }
-    return executeQueryInternal(sql, true, parameterBindings);
+    ResultSet rs = executeQueryInternal(sql, true, parameterBindings, execTimeData);
+    execTimeData.setQueryEnd();
+    execTimeData.generateTelemetry();
+    return rs;
   }
 
   @Override
   public long executeLargeUpdate() throws SQLException {
+    ExecTimeTelemetryData execTimeTelemetryData =
+        new ExecTimeTelemetryData("long PreparedStatement.executeLargeUpdate()", this.batchID);
     logger.debug("executeLargeUpdate()", false);
-
-    long updates = executeUpdateInternal(sql, parameterBindings, true);
+    long updates = executeUpdateInternal(sql, parameterBindings, true, execTimeTelemetryData);
     if (statementMetaData.isValidMetaData()) {
       alreadyDescribed = true;
     }
@@ -453,12 +464,15 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public boolean execute() throws SQLException {
+    ExecTimeTelemetryData execTimeData =
+        new ExecTimeTelemetryData("boolean PreparedStatement.execute(String)", this.batchID);
     logger.debug("execute: {}", sql);
-
-    boolean success = executeInternal(sql, parameterBindings);
+    boolean success = executeInternal(sql, parameterBindings, execTimeData);
     if (statementMetaData.isValidMetaData()) {
       alreadyDescribed = true;
     }
+    execTimeData.setQueryEnd();
+    execTimeData.generateTelemetry();
     return success;
   }
 
@@ -855,7 +869,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           }
         }
 
-        int updateCount = (int) executeUpdateInternal(this.sql, batchParameterBindings, false);
+        int updateCount =
+            (int)
+                executeUpdateInternal(
+                    this.sql, batchParameterBindings, false, new ExecTimeTelemetryData());
 
         // when update count is the same as the number of bindings in the batch,
         // expand the update count into an array (SNOW-14034)
