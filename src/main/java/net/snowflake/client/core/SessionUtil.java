@@ -83,6 +83,7 @@ public class SessionUtil {
   public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";
   public static final String CLIENT_MEMORY_LIMIT_JVM = "net.snowflake.jdbc.clientMemoryLimit";
   public static final String CLIENT_MEMORY_LIMIT = "CLIENT_MEMORY_LIMIT";
+  public static final String QUERY_CONTEXT_CACHE_SIZE = "QUERY_CONTEXT_CACHE_SIZE";
   public static final String CLIENT_PREFETCH_THREADS_JVM =
       "net.snowflake.jdbc.clientPrefetchThreads";
   public static final String CLIENT_PREFETCH_THREADS = "CLIENT_PREFETCH_THREADS";
@@ -1517,6 +1518,10 @@ public class SessionUtil {
         if (session != null) {
           session.setUseRegionalS3EndpointsForPresignedURL(
               SFLoginInput.getBooleanValue(entry.getValue()));
+        }
+      } else if (QUERY_CONTEXT_CACHE_SIZE.equalsIgnoreCase(entry.getKey())) {
+        if (session != null) {
+          session.setQueryContextCacheSize((int) entry.getValue());
         }
       } else {
         if (session != null) {

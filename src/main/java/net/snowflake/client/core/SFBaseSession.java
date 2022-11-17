@@ -117,6 +117,9 @@ public abstract class SFBaseSession {
   // Query context for current session
   private String queryContext;
 
+  // Maximum size of the query context cache for current session
+  private int queryContextCacheSize = 5;
+
   // Whether enable returning timestamp with timezone as data type
   private boolean enableReturnTimestampWithTimeZone = true;
 
@@ -625,6 +628,14 @@ public abstract class SFBaseSession {
 
   public void setClientMemoryLimit(int clientMemoryLimit) {
     this.clientMemoryLimit = clientMemoryLimit;
+  }
+
+  public int getQueryContextCacheSize() {
+    return queryContextCacheSize;
+  }
+
+  public void setQueryContextCacheSize(int queryContextCacheSize) {
+    this.queryContextCacheSize = queryContextCacheSize;
   }
 
   public int getClientResultChunkSize() {
