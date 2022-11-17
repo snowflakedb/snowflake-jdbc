@@ -98,6 +98,7 @@ public class SFSession extends SFBaseSession {
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
   private SnowflakeConnectString sfConnStr;
+  private QueryContextCache qcc;
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
@@ -535,6 +536,10 @@ public class SFSession extends SFBaseSession {
               getWarehouse()));
     }
 
+    // Initialize QCC
+    int qccSize = loginOutput.getQueryContextCacheSize();
+    qcc = new QueryContextCache(qccSize);
+
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
   }
@@ -659,6 +664,7 @@ public class SFSession extends SFBaseSession {
     SessionUtil.closeSession(loginInput);
     closeTelemetryClient();
     getClientInfo().clear();
+    if (qcc != null) qcc.clearCache();
     isClosed = true;
   }
 
@@ -1082,5 +1088,21 @@ public class SFSession extends SFBaseSession {
   /** @return whether this session uses async queries */
   public boolean isAsyncSession() {
     return !activeAsyncQueries.isEmpty();
+  }
+
+  @Override
+  public void setQueryContext(String queryContext) {
+    if (qcc != null) QueryContextUtil.deserializeFromArrowBase64(qcc, queryContext);
+  }
+
+  @Override
+  public String getQueryContext() {
+    String queryContext;
+    if (qcc != null) {
+      queryContext = QueryContextUtil.serializeToArrowBase64(qcc);
+    } else {
+      queryContext = null;
+    }
+    return queryContext;
   }
 }

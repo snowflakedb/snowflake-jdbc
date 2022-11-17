@@ -349,6 +349,7 @@ public class SessionUtil {
     int httpClientSocketTimeout = loginInput.getSocketTimeout();
     final ClientAuthnDTO.AuthenticatorType authenticatorType = getAuthenticator(loginInput);
     Map<String, Object> commonParams;
+    int queryContextCacheSize;
 
     try {
 
@@ -774,6 +775,11 @@ public class SessionUtil {
 
         logger.debug("adjusted socket timeout to = {}", httpClientSocketTimeout);
       }
+
+      if (!jsonNode.path("data").path("QUERY_CONTEXT_CACHE_SIZE").isNull()) {
+        queryContextCacheSize = jsonNode.path("data").path("QUERY_CONTEXT_CACHE_SIZE").asInt();
+      } else queryContextCacheSize = 5; // Default value
+      logger.debug("queryContextCacheSize: {}", queryContextCacheSize);
     } catch (SnowflakeSQLException ex) {
       throw ex; // must catch here to avoid Throwable to get the exception
     } catch (IOException ex) {
@@ -811,7 +817,8 @@ public class SessionUtil {
             sessionRole,
             sessionWarehouse,
             sessionId,
-            commonParams);
+            commonParams,
+            queryContextCacheSize);
 
     if (consentCacheIdToken
         && asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
