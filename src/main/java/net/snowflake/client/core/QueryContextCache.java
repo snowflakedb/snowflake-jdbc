@@ -153,10 +153,16 @@ public class QueryContextCache {
     addQCC(newQCC);
   }
 
+  /**
+   * Get all elements in the cache in the order of the priority.
+   *
+   * @return TreeSet containing cache elements
+   */
   TreeSet<QueryContextElement> getElements() {
     return treeSet;
   }
 
+  /** Debugging purpose, log the all entries in the cache. */
   void logCacheEntries() {
     if (logger.isDebugEnabled()) {
       TreeSet<QueryContextElement> elements = getElements();

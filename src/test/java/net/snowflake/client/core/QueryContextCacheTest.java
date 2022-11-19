@@ -40,6 +40,24 @@ public class QueryContextCacheTest {
     }
   }
 
+  private void initCacheWithDataInRandomOrder() {
+    qcc = new QueryContextCache(MAX_CAPACITY);
+    expectedIDs = new long[MAX_CAPACITY];
+    expectedReadTimestamp = new long[MAX_CAPACITY];
+    expectedPriority = new long[MAX_CAPACITY];
+    for (int i = 0; i < MAX_CAPACITY; i++) {
+      expectedIDs[i] = BASE_ID + i;
+      expectedReadTimestamp[i] = BASE_READ_TIMESTAMP + i;
+      expectedPriority[i] = BASE_PRIORITY + i;
+    }
+
+    qcc.merge(expectedIDs[3], expectedReadTimestamp[3], expectedPriority[3], CONTEXT);
+    qcc.merge(expectedIDs[2], expectedReadTimestamp[2], expectedPriority[2], CONTEXT);
+    qcc.merge(expectedIDs[4], expectedReadTimestamp[4], expectedPriority[4], CONTEXT);
+    qcc.merge(expectedIDs[0], expectedReadTimestamp[0], expectedPriority[0], CONTEXT);
+    qcc.merge(expectedIDs[1], expectedReadTimestamp[1], expectedPriority[1], CONTEXT);
+  }
+
   /** Test for empty cache */
   @Test
   public void testIsEmpty() throws Exception {
@@ -50,6 +68,13 @@ public class QueryContextCacheTest {
   @Test
   public void testWithSomeData() throws Exception {
     initCacheWithData();
+    // Compare elements
+    assertCacheData();
+  }
+
+  @Test
+  public void testWithSomeDataInRandomOrder() throws Exception {
+    initCacheWithDataInRandomOrder();
     // Compare elements
     assertCacheData();
   }

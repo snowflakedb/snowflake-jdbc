@@ -13,6 +13,14 @@ class QueryContextElement implements Comparable<QueryContextElement> {
   long priority; // Priority of the query context (bigint). Compare for different ids.
   byte[] context; // Opaque information (varbinary).
 
+  /**
+   * Constructor.
+   *
+   * @param id database id
+   * @param readTimestamp Server time when this entry read
+   * @param priority Priority of this entry w.r.t other ids
+   * @param context Opaque query context, used by query processor in the server.
+   */
   public QueryContextElement(long id, long readTimestamp, long priority, byte[] context) {
     this.id = id;
     this.readTimestamp = readTimestamp;
@@ -20,6 +28,7 @@ class QueryContextElement implements Comparable<QueryContextElement> {
     this.context = context;
   }
 
+  @Override
   public boolean equals(Object obj) {
     if (obj == this) return true;
 
@@ -32,6 +41,7 @@ class QueryContextElement implements Comparable<QueryContextElement> {
         && context.equals(other.context));
   }
 
+  @Override
   public int hashCode() {
     int hash = 31;
 
@@ -43,6 +53,12 @@ class QueryContextElement implements Comparable<QueryContextElement> {
     return hash;
   }
 
+  /**
+   * Keep elements in ascending order of the priority. This method called by TreeSet.
+   *
+   * @param obj the object to be compared.
+   * @return 0 if equals, -1 if this element is less than new element, otherwise 1.
+   */
   public int compareTo(QueryContextElement obj) {
     return (priority == obj.priority) ? 0 : (((priority - obj.priority) < 0) ? -1 : 1);
   }
