@@ -202,6 +202,6 @@ public class QueryContextUtil {
     idVector.set(pos, elem.id);
     tsVector.set(pos, elem.readTimestamp);
     priorityVector.set(pos, elem.priority);
-    contextVector.set(pos, elem.context);
+    contextVector.setSafe(pos, elem.context);
   }
 }

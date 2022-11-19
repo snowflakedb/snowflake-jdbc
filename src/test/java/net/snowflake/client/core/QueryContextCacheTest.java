@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.util.TreeSet;
@@ -146,11 +147,29 @@ public class QueryContextCacheTest {
   }
 
   @Test
-  public void testEmptyCacheWithEmptyData() throws Exception {
+  public void testEmptyCacheWithEmptyResponseData() throws Exception {
     initCacheWithData();
 
     QueryContextUtil.deserializeFromArrowBase64(qcc, "");
     assertThat("Empty cache", qcc.getElements().size() == 0);
+  }
+
+  @Test
+  public void testSerializeRequestAndDeserializeResponseData() throws Exception {
+    // Init qcc
+    initCacheWithData();
+    assertCacheData();
+
+    // Arrow format qcc request
+    String requestData = QueryContextUtil.serializeToArrowBase64(qcc);
+
+    // Clear qcc
+    qcc.clearCache();
+    assertThat("Empty cache", qcc.getElements().size() == 0);
+
+    // Arrow format qcc response
+    QueryContextUtil.deserializeFromArrowBase64(qcc, requestData);
+    assertCacheData();
   }
 
   private void assertCacheData() {
@@ -163,7 +182,7 @@ public class QueryContextCacheTest {
       assertEquals(expectedIDs[i], elem.id);
       assertEquals(expectedReadTimestamp[i], elem.readTimestamp);
       assertEquals(expectedPriority[i], elem.priority);
-      assertEquals(CONTEXT, elem.context);
+      assertArrayEquals(CONTEXT, elem.context);
       i++;
     }
   }
