@@ -1092,14 +1092,14 @@ public class SFSession extends SFBaseSession {
 
   @Override
   public void setQueryContext(String queryContext) {
-    if (qcc != null) QueryContextUtil.deserializeFromArrowBase64(qcc, queryContext);
+    if (qcc != null) qcc.deserializeFromArrowBase64(queryContext);
   }
 
   @Override
   public String getQueryContext() {
     String queryContext;
     if (qcc != null) {
-      queryContext = QueryContextUtil.serializeToArrowBase64(qcc);
+      queryContext = qcc.serializeToArrowBase64();
     } else {
       queryContext = null;
     }

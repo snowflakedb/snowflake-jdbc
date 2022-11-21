@@ -8,7 +8,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-import java.util.TreeSet;
 import org.junit.Test;
 
 public class QueryContextCacheTest {
@@ -62,7 +61,7 @@ public class QueryContextCacheTest {
   @Test
   public void testIsEmpty() throws Exception {
     initCache();
-    assertThat("Empty cache", qcc.getElements().size() == 0);
+    assertThat("Empty cache", qcc.getSize() == 0);
   }
 
   @Test
@@ -167,16 +166,16 @@ public class QueryContextCacheTest {
   public void testEmptyCacheWithNullData() throws Exception {
     initCacheWithData();
 
-    QueryContextUtil.deserializeFromArrowBase64(qcc, null);
-    assertThat("Empty cache", qcc.getElements().size() == 0);
+    qcc.deserializeFromArrowBase64(null);
+    assertThat("Empty cache", qcc.getSize() == 0);
   }
 
   @Test
   public void testEmptyCacheWithEmptyResponseData() throws Exception {
     initCacheWithData();
 
-    QueryContextUtil.deserializeFromArrowBase64(qcc, "");
-    assertThat("Empty cache", qcc.getElements().size() == 0);
+    qcc.deserializeFromArrowBase64("");
+    assertThat("Empty cache", qcc.getSize() == 0);
   }
 
   @Test
@@ -186,29 +185,33 @@ public class QueryContextCacheTest {
     assertCacheData();
 
     // Arrow format qcc request
-    String requestData = QueryContextUtil.serializeToArrowBase64(qcc);
+    String requestData = qcc.serializeToArrowBase64();
 
     // Clear qcc
     qcc.clearCache();
-    assertThat("Empty cache", qcc.getElements().size() == 0);
+    assertThat("Empty cache", qcc.getSize() == 0);
 
     // Arrow format qcc response
-    QueryContextUtil.deserializeFromArrowBase64(qcc, requestData);
+    qcc.deserializeFromArrowBase64(requestData);
     assertCacheData();
   }
 
   private void assertCacheData() {
-    assertThat("Non empty cache", qcc.getElements().size() == MAX_CAPACITY);
+    int size = qcc.getSize();
+    assertThat("Non empty cache", size == MAX_CAPACITY);
+
+    long[] ids = new long[size];
+    long[] readTimestamps = new long[size];
+    long[] priorities = new long[size];
+    byte[][] contexts = new byte[size][];
 
     // Compare elements
-    TreeSet<QueryContextElement> elems = qcc.getElements();
-    int i = 0;
-    for (QueryContextElement elem : elems) {
-      assertEquals(expectedIDs[i], elem.id);
-      assertEquals(expectedReadTimestamp[i], elem.readTimestamp);
-      assertEquals(expectedPriority[i], elem.priority);
-      assertArrayEquals(CONTEXT, elem.context);
-      i++;
+    qcc.getElements(ids, readTimestamps, priorities, contexts);
+    for (int i = 0; i < size; i++) {
+      assertEquals(expectedIDs[i], ids[i]);
+      assertEquals(expectedReadTimestamp[i], readTimestamps[i]);
+      assertEquals(expectedPriority[i], priorities[i]);
+      assertArrayEquals(CONTEXT, contexts[i]);
     }
   }
 }
