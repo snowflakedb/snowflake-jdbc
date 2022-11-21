@@ -664,7 +664,7 @@ public class SFSession extends SFBaseSession {
     SessionUtil.closeSession(loginInput);
     closeTelemetryClient();
     getClientInfo().clear();
-    if (qcc != null) qcc.clearCache();
+    qcc.clearCache();
     isClosed = true;
   }
 
@@ -1092,17 +1092,11 @@ public class SFSession extends SFBaseSession {
 
   @Override
   public void setQueryContext(String queryContext) {
-    if (qcc != null) qcc.deserializeFromArrowBase64(queryContext);
+    qcc.deserializeFromArrowBase64(queryContext);
   }
 
   @Override
   public String getQueryContext() {
-    String queryContext;
-    if (qcc != null) {
-      queryContext = qcc.serializeToArrowBase64();
-    } else {
-      queryContext = null;
-    }
-    return queryContext;
+    return qcc.serializeToArrowBase64();
   }
 }
