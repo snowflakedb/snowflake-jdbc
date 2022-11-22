@@ -290,7 +290,11 @@ public class QueryContextCache {
     idVector.set(pos, elem.id);
     tsVector.set(pos, elem.readTimestamp);
     priorityVector.set(pos, elem.priority);
-    contextVector.setSafe(pos, elem.context);
+    if (elem.context != null) {
+      contextVector.setSafe(pos, elem.context);
+    } else {
+      contextVector.setNull(pos);
+    }
   }
 
   /**

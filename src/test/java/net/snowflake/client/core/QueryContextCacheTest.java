@@ -27,6 +27,10 @@ public class QueryContextCacheTest {
   }
 
   private void initCacheWithData() {
+    initCacheWithDataWithContext(CONTEXT);
+  }
+
+  private void initCacheWithDataWithContext(byte[] context) {
     qcc = new QueryContextCache(MAX_CAPACITY);
     expectedIDs = new long[MAX_CAPACITY];
     expectedReadTimestamp = new long[MAX_CAPACITY];
@@ -35,7 +39,7 @@ public class QueryContextCacheTest {
       expectedIDs[i] = BASE_ID + i;
       expectedReadTimestamp[i] = BASE_READ_TIMESTAMP + i;
       expectedPriority[i] = BASE_PRIORITY + i;
-      qcc.merge(expectedIDs[i], expectedReadTimestamp[i], expectedPriority[i], CONTEXT);
+      qcc.merge(expectedIDs[i], expectedReadTimestamp[i], expectedPriority[i], context);
     }
   }
 
@@ -196,7 +200,29 @@ public class QueryContextCacheTest {
     assertCacheData();
   }
 
+  @Test
+  public void testSerializeRequestAndDeserializeResponseDataWithNullContext() throws Exception {
+    // Init qcc
+    initCacheWithDataWithContext(null);
+    assertCacheDataWithContext(null);
+
+    // Arrow format qcc request
+    String requestData = qcc.serializeToArrowBase64();
+
+    // Clear qcc
+    qcc.clearCache();
+    assertThat("Empty cache", qcc.getSize() == 0);
+
+    // Arrow format qcc response
+    qcc.deserializeFromArrowBase64(requestData);
+    assertCacheDataWithContext(null);
+  }
+
   private void assertCacheData() {
+    assertCacheDataWithContext(CONTEXT);
+  }
+
+  private void assertCacheDataWithContext(byte[] context) {
     int size = qcc.getSize();
     assertThat("Non empty cache", size == MAX_CAPACITY);
 
@@ -211,7 +237,7 @@ public class QueryContextCacheTest {
       assertEquals(expectedIDs[i], ids[i]);
       assertEquals(expectedReadTimestamp[i], readTimestamps[i]);
       assertEquals(expectedPriority[i], priorities[i]);
-      assertArrayEquals(CONTEXT, contexts[i]);
+      assertArrayEquals(context, contexts[i]);
     }
   }
 }
