@@ -68,40 +68,40 @@ public class QueryContextCache {
   void merge(long id, long readTimestamp, long priority, byte[] context) {
     if (idMap.containsKey(id)) {
       // ID found in the cache
-      QueryContextElement qcc = idMap.get(id);
-      if (readTimestamp > qcc.readTimestamp) {
-        if (qcc.priority == priority) {
+      QueryContextElement qce = idMap.get(id);
+      if (readTimestamp > qce.readTimestamp) {
+        if (qce.priority == priority) {
           // Same priority, overwrite new data at same place
-          qcc.readTimestamp = readTimestamp;
-          qcc.context = context;
+          qce.readTimestamp = readTimestamp;
+          qce.context = context;
         } else {
           // Change in priority
-          QueryContextElement newQCC =
+          QueryContextElement newQCE =
               new QueryContextElement(id, readTimestamp, priority, context);
 
-          replaceQCC(qcc, newQCC);
+          replaceQCE(qce, newQCE);
         } // new priority
       } // new data is recent
-      else if (readTimestamp == qcc.readTimestamp && qcc.priority != priority) {
+      else if (readTimestamp == qce.readTimestamp && qce.priority != priority) {
         // Same read timestamp but change in priority
-        QueryContextElement newQCC = new QueryContextElement(id, readTimestamp, priority, context);
-        replaceQCC(qcc, newQCC);
+        QueryContextElement newQCE = new QueryContextElement(id, readTimestamp, priority, context);
+        replaceQCE(qce, newQCE);
       }
     } // id found
     else {
       // new id
       if (priorityMap.containsKey(priority)) {
         // Same priority with different id
-        QueryContextElement qcc = priorityMap.get(priority);
+        QueryContextElement qce = priorityMap.get(priority);
         // Replace with new data
-        qcc.id = id;
-        qcc.readTimestamp = readTimestamp;
-        qcc.context = context;
+        qce.id = id;
+        qce.readTimestamp = readTimestamp;
+        qce.context = context;
       } else {
         // new priority
         // Add new element in the cache
-        QueryContextElement newQCC = new QueryContextElement(id, readTimestamp, priority, context);
-        addQCC(newQCC);
+        QueryContextElement newQCE = new QueryContextElement(id, readTimestamp, priority, context);
+        addQCE(newQCE);
       }
     }
   }
@@ -117,8 +117,8 @@ public class QueryContextCache {
     if (treeSet.size() > capacity) {
       // remove elements based on priority
       while (treeSet.size() > capacity) {
-        QueryContextElement qcc = treeSet.last();
-        removeQCC(qcc);
+        QueryContextElement qce = treeSet.last();
+        removeQCE(qce);
       }
     }
 
@@ -166,9 +166,9 @@ public class QueryContextCache {
         while (reader.loadNextBatch()) {
           VectorSchemaRoot root = reader.getVectorSchemaRoot();
           for (int i = 0; i < root.getRowCount(); ++i) {
-            QueryContextElement elem = deserializeEntry(root, i);
+            QueryContextElement qce = deserializeEntry(root, i);
             // Merge the element in the existing cache
-            merge(elem.id, elem.readTimestamp, elem.priority, elem.context);
+            merge(qce.id, qce.readTimestamp, qce.priority, qce.context);
           }
         }
       } catch (Exception e) {
@@ -296,38 +296,38 @@ public class QueryContextCache {
   /**
    * Add an element in the cache.
    *
-   * @param qcc element to add
+   * @param qce element to add
    */
-  private void addQCC(QueryContextElement qcc) {
-    idMap.put(qcc.id, qcc);
-    priorityMap.put(qcc.priority, qcc);
-    treeSet.add(qcc);
+  private void addQCE(QueryContextElement qce) {
+    idMap.put(qce.id, qce);
+    priorityMap.put(qce.priority, qce);
+    treeSet.add(qce);
   }
 
   /**
    * Remove an element from the cache.
    *
-   * @param qcc element to remove.
+   * @param qce element to remove.
    */
-  private void removeQCC(QueryContextElement qcc) {
-    treeSet.remove(qcc);
-    priorityMap.remove(qcc.priority);
-    idMap.remove(qcc.id);
+  private void removeQCE(QueryContextElement qce) {
+    treeSet.remove(qce);
+    priorityMap.remove(qce.priority);
+    idMap.remove(qce.id);
   }
 
   /**
    * Replace the cache element with a new response element. Remove old element exist in the cache
    * and add a new element received.
    *
-   * @param oldQCC an element exist in the cache
-   * @param newQCC a new element just received.
+   * @param oldQCE an element exist in the cache
+   * @param newQCE a new element just received.
    */
-  private void replaceQCC(QueryContextElement oldQCC, QueryContextElement newQCC) {
+  private void replaceQCE(QueryContextElement oldQCE, QueryContextElement newQCE) {
     // Remove old element from the cache
-    removeQCC(oldQCC);
+    removeQCE(oldQCE);
 
     // Add new element in the cache
-    addQCC(newQCC);
+    addQCE(newQCE);
   }
 
   /**
