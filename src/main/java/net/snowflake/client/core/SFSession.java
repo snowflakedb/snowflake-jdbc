@@ -537,8 +537,7 @@ public class SFSession extends SFBaseSession {
     }
 
     // Initialize QCC
-    int qccSize = loginOutput.getQueryContextCacheSize();
-    qcc = new QueryContextCache(qccSize);
+    qcc = new QueryContextCache(this.getQueryContextCacheSize());
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();

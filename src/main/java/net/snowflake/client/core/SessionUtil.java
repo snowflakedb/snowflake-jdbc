@@ -83,6 +83,7 @@ public class SessionUtil {
   public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";
   public static final String CLIENT_MEMORY_LIMIT_JVM = "net.snowflake.jdbc.clientMemoryLimit";
   public static final String CLIENT_MEMORY_LIMIT = "CLIENT_MEMORY_LIMIT";
+  public static final String QUERY_CONTEXT_CACHE_SIZE = "QUERY_CONTEXT_CACHE_SIZE";
   public static final String CLIENT_PREFETCH_THREADS_JVM =
       "net.snowflake.jdbc.clientPrefetchThreads";
   public static final String CLIENT_PREFETCH_THREADS = "CLIENT_PREFETCH_THREADS";
@@ -349,7 +350,6 @@ public class SessionUtil {
     int httpClientSocketTimeout = loginInput.getSocketTimeout();
     final ClientAuthnDTO.AuthenticatorType authenticatorType = getAuthenticator(loginInput);
     Map<String, Object> commonParams;
-    int queryContextCacheSize;
 
     try {
 
@@ -775,11 +775,6 @@ public class SessionUtil {
 
         logger.debug("adjusted socket timeout to = {}", httpClientSocketTimeout);
       }
-
-      if (!jsonNode.path("data").path("QUERY_CONTEXT_CACHE_SIZE").isNull()) {
-        queryContextCacheSize = jsonNode.path("data").path("QUERY_CONTEXT_CACHE_SIZE").asInt();
-      } else queryContextCacheSize = 5; // Default value
-      logger.debug("queryContextCacheSize: {}", queryContextCacheSize);
     } catch (SnowflakeSQLException ex) {
       throw ex; // must catch here to avoid Throwable to get the exception
     } catch (IOException ex) {
@@ -817,8 +812,7 @@ public class SessionUtil {
             sessionRole,
             sessionWarehouse,
             sessionId,
-            commonParams,
-            queryContextCacheSize);
+            commonParams);
 
     if (consentCacheIdToken
         && asBoolean(loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL))) {
@@ -1524,6 +1518,10 @@ public class SessionUtil {
         if (session != null) {
           session.setUseRegionalS3EndpointsForPresignedURL(
               SFLoginInput.getBooleanValue(entry.getValue()));
+        }
+      } else if (QUERY_CONTEXT_CACHE_SIZE.equalsIgnoreCase(entry.getKey())) {
+        if (session != null) {
+          session.setQueryContextCacheSize((int) entry.getValue());
         }
       } else {
         if (session != null) {

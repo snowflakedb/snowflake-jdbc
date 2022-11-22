@@ -25,8 +25,6 @@ public class SFLoginOutput {
   private boolean updatedByTokenRequest;
   private String sessionId;
 
-  private int queryContextCacheSize; // Maximum QCC size
-
   SFLoginOutput() {}
 
   SFLoginOutput(
@@ -44,8 +42,7 @@ public class SFLoginOutput {
       String sessionRole,
       String sessionWarehouse,
       String sessionId,
-      Map<String, Object> commonParams,
-      int queryContextCacheSize) {
+      Map<String, Object> commonParams) {
     this.sessionToken = sessionToken;
     this.masterToken = masterToken;
     this.idToken = idToken;
@@ -61,7 +58,6 @@ public class SFLoginOutput {
     this.commonParams = commonParams;
     this.masterTokenValidityInSeconds = masterTokenValidityInSeconds;
     this.sessionId = sessionId;
-    this.queryContextCacheSize = queryContextCacheSize;
   }
 
   public boolean getAutoCommit() {
@@ -167,9 +163,5 @@ public class SFLoginOutput {
 
   long getMasterTokenValidityInSeconds() {
     return masterTokenValidityInSeconds;
-  }
-
-  public int getQueryContextCacheSize() {
-    return queryContextCacheSize;
   }
 }
