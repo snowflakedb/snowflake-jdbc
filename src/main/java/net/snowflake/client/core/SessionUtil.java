@@ -252,11 +252,6 @@ public class SessionUtil {
       // OAuth does not require a username
       AssertUtil.assertTrue(
           loginInput.getUserName() != null, "missing user name for opening session");
-    } else {
-      // OAUTH needs either token or passord
-      AssertUtil.assertTrue(
-          loginInput.getToken() != null || loginInput.getPassword() != null,
-          "missing token or password for opening session");
     }
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)) {
       if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
@@ -270,7 +265,7 @@ public class SessionUtil {
         }
       }
     } else {
-      // TODO: patch for now. We should update mergeProperties
+      // TODO: patch for now. We should update mergeProperteis
       // to normalize all parameters using STRING_PARAMS, INT_PARAMS and
       // BOOLEAN_PARAMS.
       Object value = loginInput.getSessionParameters().get(CLIENT_STORE_TEMPORARY_CREDENTIAL);
@@ -396,7 +391,7 @@ public class SessionUtil {
         loginInput.setAuthTimeout(SessionUtilKeyPair.getTimeout());
       }
 
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       uriBuilder.setPath(SF_PATH_LOGIN_REQUEST);
       loginURI = uriBuilder.build();
@@ -448,17 +443,8 @@ public class SessionUtil {
         }
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
         data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OAUTH) {
-        data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
-
-        // Fix for HikariCP refresh token issue:SNOW-533673.
-        // If token value is not set but password field is set then
-        // the driver treats password as token.
-        if (loginInput.getToken() != null)
-          data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
-        else data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
-
-      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+      } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OAUTH
+          || authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
         data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA) {
@@ -590,6 +576,7 @@ public class SessionUtil {
       postRequest.setEntity(input);
 
       postRequest.addHeader("accept", "application/json");
+      postRequest.addHeader("Accept-Encoding", "");
 
       /*
        * HttpClient should take authorization header from char[] instead of
@@ -889,7 +876,7 @@ public class SessionUtil {
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
       uriBuilder.setPath(SF_PATH_TOKEN_REQUEST);
 
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       postRequest = new HttpPost(uriBuilder.build());
     } catch (URISyntaxException ex) {
@@ -998,7 +985,7 @@ public class SessionUtil {
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
 
       uriBuilder.addParameter(SF_QUERY_SESSION_DELETE, Boolean.TRUE.toString());
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       uriBuilder.setPath(SF_PATH_SESSION);
 
@@ -1269,7 +1256,7 @@ public class SessionUtil {
 
   /**
    * Logs an error generated during the federated authentication flow and re-throws it as a
-   * SnowflakeSQLException. Note that we separate IOExceptions since those tend to be network
+   * SnowflakeSQLException. Note that we seperate IOExceptions since those tend to be network
    * related.
    *
    * @param loginInput The login info from the request

@@ -36,45 +36,19 @@ public class AbstractDriverIT {
 
   protected final int ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST = 2003;
 
-  private static String getConnPropKeyFromEnv(String connectionType, String propKey) {
-    String envKey = String.format("SNOWFLAKE_%s_%s", connectionType, propKey);
-    return envKey;
-  }
-
-  private static String getConnPropValueFromEnv(String connectionType, String propKey) {
-    String envKey = String.format("SNOWFLAKE_%s_%s", connectionType, propKey);
-    return TestUtil.systemGetEnv(envKey);
-  }
-
   public static Map<String, String> getConnectionParameters(String accountName) {
-    return getConnectionParameters(accountName, "TEST");
-  }
-
-  /**
-   * getConnectionParameters is to obtain connection params from Env
-   *
-   * @param accountName the connection could be different with different accounts
-   * @param connectionType use connectionType is either "TEST"(default) or "ORG"
-   * @return properties' key-value map -- In the connection json files the parameters' format is
-   *     like below and these key/values have been flattened to a bunch of env variables of these
-   *     junit tests.
-   *     <p>"testconnection": { "SNOWFLAKE_TEST_ACCOUNT": "...", ... "SNOWFLAKE_TEST_ROLE": ".." },
-   *     "orgconnection": { "SNOWFLAKE_ORG_ACCOUNT": "...", ... "SNOWFLAKE_ORG_PORT": "443" } }
-   */
-  public static Map<String, String> getConnectionParameters(
-      String accountName, String connectionType) {
     Map<String, String> params = new HashMap<>();
     String account;
     String host;
 
     if (accountName == null) {
-      account = getConnPropValueFromEnv(connectionType, "ACCOUNT");
-      host = getConnPropValueFromEnv(connectionType, "HOST");
+      account = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT");
+      host = TestUtil.systemGetEnv("SNOWFLAKE_TEST_HOST");
     } else {
       account = accountName;
       // By default, the test will run against reg deployment.
-      // If developer needs to run in IntelliJ, you can set this env as ".dev.local"
-      String deployment = getConnPropValueFromEnv(connectionType, "DEPLOYMENT");
+      // If developer needs to run in Intellij, you can set this env as ".dev.local"
+      String deployment = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DEPLOYMENT");
       if (Strings.isNullOrEmpty(deployment)) {
         deployment = ".reg.local";
       }
@@ -94,7 +68,7 @@ public class AbstractDriverIT {
         !Strings.isNullOrEmpty(host));
     params.put("host", host);
 
-    String protocol = getConnPropValueFromEnv(connectionType, "PROTOCOL");
+    String protocol = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PROTOCOL");
     String ssl;
     if ("http".equals(protocol)) {
       ssl = "off";
@@ -103,16 +77,16 @@ public class AbstractDriverIT {
     }
     params.put("ssl", ssl);
 
-    String user = getConnPropValueFromEnv(connectionType, "USER");
+    String user = TestUtil.systemGetEnv("SNOWFLAKE_TEST_USER");
     assertThat("set SNOWFLAKE_TEST_USER environment variable.", !Strings.isNullOrEmpty(user));
     params.put("user", user);
 
-    String password = getConnPropValueFromEnv(connectionType, "PASSWORD");
+    String password = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PASSWORD");
     assertThat(
         "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
     params.put("password", password);
 
-    String port = getConnPropValueFromEnv(connectionType, "PORT");
+    String port = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
     if (Strings.isNullOrEmpty(port)) {
       if ("on".equals(ssl)) {
         port = "443";
@@ -123,36 +97,36 @@ public class AbstractDriverIT {
     assertThat("set SNOWFLAKE_TEST_PORT environment variable.", !Strings.isNullOrEmpty(port));
     params.put("port", port);
 
-    String database = getConnPropValueFromEnv(connectionType, "DATABASE");
+    String database = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE");
     assertThat(
         "set SNOWFLAKE_TEST_DATABASE environment variable.", !Strings.isNullOrEmpty(database));
     params.put("database", database);
 
-    String schema = getConnPropValueFromEnv(connectionType, "SCHEMA");
+    String schema = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA");
     assertThat("set SNOWFLAKE_TEST_SCHEMA environment variable.", !Strings.isNullOrEmpty(schema));
     params.put("schema", schema);
 
-    String role = getConnPropValueFromEnv(connectionType, "ROLE");
+    String role = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ROLE");
     assertThat("set SNOWFLAKE_TEST_ROLE environment variable.", !Strings.isNullOrEmpty(role));
     params.put("role", role);
 
-    String warehouse = getConnPropValueFromEnv(connectionType, "WAREHOUSE");
+    String warehouse = TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE");
     assertThat(
         "set SNOWFLAKE_TEST_WAREHOUSE environment variable.", !Strings.isNullOrEmpty(warehouse));
     params.put("warehouse", warehouse);
 
     params.put("uri", String.format("jdbc:snowflake://%s:%s", host, port));
 
-    String adminUser = getConnPropValueFromEnv(connectionType, "ADMIN_USER");
+    String adminUser = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_USER");
     params.put("adminUser", adminUser);
 
-    String adminPassword = getConnPropValueFromEnv(connectionType, "ADMIN_PASSWORD");
+    String adminPassword = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_PASSWORD");
     params.put("adminPassword", adminPassword);
 
-    String ssoUser = getConnPropValueFromEnv(connectionType, "SSO_USER");
+    String ssoUser = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_USER");
     params.put("ssoUser", ssoUser);
 
-    String ssoPassword = getConnPropValueFromEnv(connectionType, "SSO_PASSWORD");
+    String ssoPassword = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_PASSWORD");
     params.put("ssoPassword", ssoPassword);
 
     return params;
@@ -265,7 +239,7 @@ public class AbstractDriverIT {
    * @param paramProperties connection properties
    * @param isAdmin is Snowflake admin user?
    * @param usesCom uses com.snowflake instead of net.snowflake?
-   * @return Connection database connection
+   * @return Connectiona database connection
    * @throws SQLException raised if any error occurs
    */
   public static Connection getConnection(
@@ -312,6 +286,10 @@ public class AbstractDriverIT {
     properties.put("schema", params.get("schema"));
     properties.put("warehouse", params.get("warehouse"));
     properties.put("ssl", params.get("ssl"));
+    properties.put("query_tag", "megtesttag");
+    properties.put("useProxy", "true");
+    properties.put("proxyHost", "127.0.0.1");
+    properties.put("proxyPort", "9090");
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
 

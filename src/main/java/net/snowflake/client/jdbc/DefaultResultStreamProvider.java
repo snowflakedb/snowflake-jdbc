@@ -8,6 +8,7 @@ import java.io.PushbackInputStream;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.util.SecretDetector;
@@ -125,13 +126,13 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
             context.getAuthTimeout(),
             context.getSocketTimeout(),
             0,
-            0, // no socket timeout injection
+            0, // no socketime injection
             null, // no canceling
             false, // no cookie
             false, // no retry parameters in url
             false, // no request_guid
-            true // retry on HTTP403 for AWS S3
-            );
+            true, // retry on HTTP403 for AWS S3
+            new ExecTimeTelemetryData());
 
     SnowflakeResultSetSerializableV1.logger.debug(
         "Thread {} Call #chunk{} returned for URL: {}, response={}",

@@ -141,6 +141,8 @@ public class SecretDetector {
   }
 
   private static String filterSASTokens(String text) {
+    return text;
+    /*
     Matcher matcher =
         SAS_TOKEN_PATTERN.matcher(
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -149,6 +151,8 @@ public class SecretDetector {
       return matcher.replaceAll("$1=****");
     }
     return text;
+
+     */
   }
 
   private static String filterPassword(String text) {
@@ -190,7 +194,8 @@ public class SecretDetector {
    * @return Masked string
    */
   public static String maskSASToken(String text) {
-    return filterSASTokens(text);
+    return text;
+    // return filterSASTokens(text);
   }
 
   /**

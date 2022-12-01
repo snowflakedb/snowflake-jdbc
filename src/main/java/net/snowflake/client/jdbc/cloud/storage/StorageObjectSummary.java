@@ -28,7 +28,7 @@ public class StorageObjectSummary {
   private long size;
 
   /**
-   * Constructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
+   * Contructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
    *
    * @param location Location of the S3 object
    * @param key Key of the S3Object
@@ -43,7 +43,7 @@ public class StorageObjectSummary {
   }
 
   /**
-   * Constructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
+   * Contructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
    *
    * @param objSummary the AWS S3 ObjectSummary object to copy from
    * @return the ObjectSummary object created
@@ -61,7 +61,7 @@ public class StorageObjectSummary {
   }
 
   /**
-   * Constructs a StorageObjectSummary object from Azure BLOB properties Using factory methods to
+   * Contructs a StorageObjectSummary object from Azure BLOB properties Using factory methods to
    * create these objects since Azure can throw, while retrieving the BLOB properties
    *
    * @param listBlobItem an Azure ListBlobItem object
@@ -85,7 +85,7 @@ public class StorageObjectSummary {
       key = cloudBlob.getName();
       BlobProperties blobProperties = cloudBlob.getProperties();
       // the content md5 property is not always the actual md5 of the file. But for here, it's only
-      // used for skipping file on PUT command, hence is ok.
+      // used for skipping file on PUT command, hense is ok.
       md5 = convertBase64ToHex(blobProperties.getContentMD5());
       size = blobProperties.getLength();
     } catch (URISyntaxException | StorageException ex) {

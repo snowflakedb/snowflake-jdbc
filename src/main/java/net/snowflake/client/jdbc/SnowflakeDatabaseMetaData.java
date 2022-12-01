@@ -1577,7 +1577,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       final boolean extendedSet)
       throws SQLException {
     logger.debug(
-        "public ResultSet getColumns(String catalog={}, String schemaPattern={}, "
+        "public ResultSet getColumns(String catalog={}, String schemaPattern={}"
             + "String tableNamePattern={}, String columnNamePattern={}, boolean extendedSet={}",
         originalCatalog,
         originalSchemaPattern,
@@ -1703,7 +1703,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             try {
               jsonNode = mapper.readTree(dataTypeStr);
             } catch (Exception ex) {
-              logger.error("Exception when parsing column" + " result", ex);
+              logger.error("Exeception when parsing column" + " result", ex);
 
               throw new SnowflakeSQLException(
                   SqlState.INTERNAL_ERROR,
@@ -1732,13 +1732,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
               externalColumnType = Types.TIMESTAMP;
             }
             if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-
-              externalColumnType =
-                  session == null
-                      ? Types.TIMESTAMP_WITH_TIMEZONE
-                      : session.getEnableReturnTimestampWithTimeZone()
-                          ? Types.TIMESTAMP_WITH_TIMEZONE
-                          : Types.TIMESTAMP;
+              externalColumnType = Types.TIMESTAMP_WITH_TIMEZONE;
             }
 
             nextRow[4] = externalColumnType;
@@ -2175,9 +2169,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
           boolean passedFilter = false;
 
-          // Post filter the results based on the client type
+          // Post filter the results based on the clinet type
           if (client.equals("import")) {
-            // For imported keys, filter on the foreign key table
+            // For imported dkeys, filter on the foreign key table
             if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
                 && (compiledSchemaPattern == null
                     || compiledSchemaPattern.equals(fktable_schem)
@@ -2249,7 +2243,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    *
    * @param property_name operation type
    * @param property property value
-   * @return metadata property value
+   * @return metdata property value
    */
   private short getForeignKeyConstraintProperty(String property_name, String property) {
     short result = 0;
@@ -3353,8 +3347,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       resultSet = statement.executeQuery(sql);
     } catch (SnowflakeSQLException e) {
       if (e.getSQLState().equals(SqlState.NO_DATA)
-          || e.getSQLState().equals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND)
-          || e.getMessage().contains("Operation is not supported in reader account")) {
+          || e.getSQLState().equals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND)) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResult(
             metadataType, statement, e.getQueryId());
       }

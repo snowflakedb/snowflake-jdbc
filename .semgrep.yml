@@ -21,7 +21,7 @@ rules:
     }
 - id: java.lang.security.audit.cbc-padding-oracle.cbc-padding-oracle
   message: |
-    Using CBC with PKCS5Padding is susceptible to padding oracle attacks. A malicious actor
+    Using CBC with PKCS5Padding is susceptible to padding orcale attacks. A malicious actor
     could discern the difference between plaintext with valid or invalid padding. Further,
     CBC mode does not include any integrity checks (https://find-sec-bugs.github.io/bugs.htm#CIPHER_INTEGRITY).
     Use 'AES/GCM/NoPadding' instead.
@@ -393,7 +393,7 @@ rules:
   message: |
     Detected empty trust manager implementations. This is dangerous because it accepts any
     certificate, enabling man-in-the-middle attacks. Consider using a KeyStore
-    and TrustManagerFactory instead.
+    and TrustManagerFactory isntead.
     For more information, please refer to https://snowflakecomputing.atlassian.net/wiki/spaces/CLO/pages/1127713128/Semgrep+Finding+Remediation#insecure-trust-manager
   severity: WARNING
   languages: [java]

@@ -857,7 +857,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Ignore
   public void testPutGetGcsDownscopedCredential() throws Throwable {
     Connection connection = null;
     Statement statement = null;
@@ -937,84 +937,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     bw.write("Creating large test file for GCP PUT/GET test");
     bw.write(System.lineSeparator());
     bw.write("Creating large test file for GCP PUT/GET test");
-    bw.write(System.lineSeparator());
-    bw.close();
-    File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
-
-    String sourceFilePath = largeTempFile.getCanonicalPath();
-
-    try {
-      // copy info from 1 file to another and continue doubling file size until we reach ~1.5GB,
-      // which is a large file
-      for (int i = 0; i < 12; i++) {
-        copyContentFrom(largeTempFile, largeTempFile2);
-        copyContentFrom(largeTempFile2, largeTempFile);
-      }
-
-      // create a stage to put the file in
-      statement.execute("CREATE OR REPLACE STAGE largefile_stage");
-      assertTrue(
-          "Failed to put a file",
-          statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
-
-      // check that file exists in stage after PUT
-      findFile(statement, "ls @largefile_stage/");
-
-      // create a new table with columns matching CSV file
-      statement.execute("create or replace table large_table (colA string)");
-      // copy rows from file into table
-      statement.execute("copy into large_table from @largefile_stage/largeFile.csv.gz");
-      // copy back from table into different stage
-      statement.execute("create or replace stage extra_stage");
-      statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
-
-      // get file from new stage
-      assertTrue(
-          "Failed to get files",
-          statement.execute(
-              "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
-
-      // Make sure that the downloaded file exists; it should be gzip compressed
-      File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-      assert (downloaded.exists());
-
-      // unzip the file
-      Process p =
-          Runtime.getRuntime()
-              .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-      p.waitFor();
-
-      // compare the original file with the file that's been uploaded, copied into a table, copied
-      // back into a stage,
-      // downloaded, and unzipped
-      File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
-      assert (largeTempFile.length() == unzipped.length());
-      assert (FileUtils.contentEquals(largeTempFile, unzipped));
-    } finally {
-      statement.execute("DROP STAGE IF EXISTS largefile_stage");
-      statement.execute("DROP STAGE IF EXISTS extra_stage");
-      statement.execute("DROP TABLE IF EXISTS large_table");
-      statement.close();
-      connection.close();
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testPutGetLargeFileAzure() throws Throwable {
-    Properties paramProperties = new Properties();
-    Connection connection = getConnection("azureaccount", paramProperties);
-    Statement statement = connection.createStatement();
-
-    File destFolder = tmpFolder.newFolder();
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
-
-    File largeTempFile = tmpFolder.newFile("largeFile.csv");
-    BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile));
-    bw.write("Creating large test file for Azure PUT/GET test");
-    bw.write(System.lineSeparator());
-    bw.write("Creating large test file for Azure PUT/GET test");
     bw.write(System.lineSeparator());
     bw.close();
     File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
