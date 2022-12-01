@@ -1282,6 +1282,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testHTAPOptimizations() throws SQLException {
     // Set the HTAP test parameter to true
     try (Connection con = getSnowflakeAdminConnection()) {
