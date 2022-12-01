@@ -1,3 +1,18 @@
+**JDBC Driver 3.13.25**
+
+- \||**BCR (Behavior Change Release) Change**
+- \||Caution: Version 3.13.25 of the Snowflake JDBC driver changes the default value of the allowUnderscoresInHost parameter to false. This change might impact PrivateLink customers with account names containing underscores. In this situation, you must override the default value by setting allowUnderscoresInHost true.
+- \||**New Features**
+- \||Set the allowUnderscoresInHost parameter to false by default which converts underscores in account names to hyphens to avoid Apache httpclient connection error with underscores. This behavior can be turned off by setting allowUnderscoresInHost to true.
+- \||Updated the aws-java-sdk-bom library version from 1.11.394 to 1.12.327.
+- \||Added the enableReturnTimestampWithTimeZone parameter to set whether to include the timezone in a timestamp.
+- \||Added log warnings for each of the error return paths while parsing a SnowflakeConnectString.
+- \||Added commas to the SnowflakeDatabaseMetaData.getColumn() arguments to improve readability.
+- \||Added support for stored procedures.
+- \||**Bug Fixes**
+- \||Fixed an issue related to using the GET command when GCS_USE_DOWNSCOPED_CREDENTIAL is true.
+- \||Fixed an issue related to returning result types when the session handle is NULL.
+
 **JDBC Driver 3.13.24**
 
 - \|| Upgraded the following libraries:

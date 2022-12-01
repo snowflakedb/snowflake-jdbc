@@ -8,7 +8,7 @@ Snowflake JDBC Driver
     :target: http://www.apache.org/licenses/LICENSE-2.0.txt
     
 .. image:: https://maven-badges.herokuapp.com/maven-central/net.snowflake/snowflake-jdbc/badge.svg?style=plastic
-    :target: http://repo2.maven.org/maven2/net/snowflake/snowflake-jdbc/
+    :target: https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/
     
 Snowflake provides a JDBC type 4 driver that supports core functionality, allowing Java program to connect to Snowflake.
 
