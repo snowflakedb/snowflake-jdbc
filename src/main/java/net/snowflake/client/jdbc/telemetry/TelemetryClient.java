@@ -3,29 +3,21 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
-import static net.snowflake.client.core.SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
-import java.rmi.UnexpectedException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.concurrent.Future;
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryThreadPool;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
@@ -286,6 +278,8 @@ public class TelemetryClient implements Telemetry {
    * @throws IOException if closed or uploading batch fails
    */
   private boolean sendBatch() throws IOException {
+    return true;
+    /*
     if (isClosed) {
       throw new IOException("Telemetry connector is closed");
     }
@@ -331,8 +325,8 @@ public class TelemetryClient implements Telemetry {
                 ? HttpUtil.executeGeneralRequest(
                     post,
                     TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
-                    0,
-                    DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT,
+                    this.session.getAuthTimeout(),
+                    this.session.getHttpClientSocketTimeout(),
                     0,
                     this.httpClient)
                 : HttpUtil.executeGeneralRequest(
@@ -350,7 +344,7 @@ public class TelemetryClient implements Telemetry {
         return false;
       }
     }
-    return true;
+    return true;*/
   }
 
   /**

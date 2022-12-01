@@ -22,24 +22,40 @@ class SFResultSetFactory {
    * @param sortResult true if sort first chunk
    * @return result set object
    */
-  static SFBaseResultSet getResultSet(JsonNode result, SFStatement statement, boolean sortResult)
+  static SFBaseResultSet getResultSet(
+      JsonNode result,
+      SFStatement statement,
+      boolean sortResult,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException {
 
+    execTimeData.setProcessResultChunkStart();
     SnowflakeResultSetSerializableV1 resultSetSerializable =
         SnowflakeResultSetSerializableV1.create(result, statement.getSFBaseSession(), statement);
-
+    execTimeData.setProcessResultChunkEnd();
+    SFBaseResultSet rs;
+    execTimeData.setCreateResultSetStart();
     switch (resultSetSerializable.getQueryResultFormat()) {
       case ARROW:
-        return new SFArrowResultSet(
-            resultSetSerializable, statement.getSFBaseSession(), statement, sortResult);
+        rs =
+            new SFArrowResultSet(
+                resultSetSerializable, statement.getSFBaseSession(), statement, sortResult);
+        break;
       case JSON:
-        return new SFResultSet(resultSetSerializable, statement, sortResult);
+        rs = new SFResultSet(resultSetSerializable, statement, sortResult);
+        break;
       default:
-        throw new SnowflakeSQLLoggedException(
-            statement.getSFBaseSession(),
-            ErrorCode.INTERNAL_ERROR,
-            "Unsupported query result format: "
-                + resultSetSerializable.getQueryResultFormat().name());
+        rs = null;
+        break;
     }
+    execTimeData.setCreateResultSetEnd();
+    if (rs == null) {
+      throw new SnowflakeSQLLoggedException(
+          statement.getSFBaseSession(),
+          ErrorCode.INTERNAL_ERROR,
+          "Unsupported query result format: "
+              + resultSetSerializable.getQueryResultFormat().name());
+    }
+    return rs;
   }
 }

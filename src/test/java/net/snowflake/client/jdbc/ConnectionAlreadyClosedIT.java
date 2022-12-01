@@ -42,7 +42,7 @@ public class ConnectionAlreadyClosedIT extends BaseJDBCTest {
     expectConnectionAlreadyClosedException(connection::getTransactionIsolation);
     expectConnectionAlreadyClosedException(connection::getWarnings);
     expectConnectionAlreadyClosedException(connection::clearWarnings);
-    expectConnectionAlreadyClosedException(() -> connection.nativeSQL("select 1"));
+    expectConnectionAlreadyClosedException(() -> connection.nativeSQL("sekect 1"));
     expectConnectionAlreadyClosedException(() -> connection.setAutoCommit(false));
     expectConnectionAlreadyClosedException(() -> connection.setReadOnly(false));
     expectConnectionAlreadyClosedException(() -> connection.setCatalog("fakedb"));

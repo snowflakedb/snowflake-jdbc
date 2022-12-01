@@ -537,14 +537,20 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public SFBaseResultSet execute(
-        String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+        String sql,
+        Map<String, ParameterBindingDTO> parametersBinding,
+        CallingMethod caller,
+        ExecTimeTelemetryData execTimeData)
         throws SQLException, SFException {
       return new MockJsonResultSet(mockedResponse, sfSession);
     }
 
     @Override
     public SFBaseResultSet asyncExecute(
-        String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+        String sql,
+        Map<String, ParameterBindingDTO> parametersBinding,
+        CallingMethod caller,
+        ExecTimeTelemetryData execTimeData)
         throws SQLException, SFException {
       return null;
     }
@@ -707,6 +713,16 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     public SnowflakeConnectString getSnowflakeConnectionString() {
       return null;
+    }
+
+    @Override
+    public int getHttpClientConnectionTimeout() {
+      return 0;
+    }
+
+    @Override
+    public int getHttpClientSocketTimeout() {
+      return 0;
     }
 
     @Override

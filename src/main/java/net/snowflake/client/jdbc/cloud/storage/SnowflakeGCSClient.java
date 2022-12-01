@@ -25,10 +25,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -236,13 +233,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   session.getAuthTimeout(),
                   session.getHttpClientSocketTimeout(),
                   0,
-                  0, // no socket timeout injection
+                  0, // no socketime injection
                   null, // no canceling
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true // retry on HTTP 403
-                  );
+                  true, // retry on HTTP 403
+                  new ExecTimeTelemetryData());
 
           logger.debug(
               "Call returned for URL: {}",
@@ -296,8 +293,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           }
 
           logger.debug("Starting download without presigned URL", false);
-          blob.downloadTo(
-              localFile.toPath(), Blob.BlobSourceOption.shouldReturnRawInputStream(true));
+          blob.downloadTo(localFile.toPath());
           logger.debug("Download successful", false);
 
           // Get the user-defined BLOB metadata
@@ -402,13 +398,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   session.getAuthTimeout(),
                   session.getHttpClientSocketTimeout(),
                   0,
-                  0, // no socket timeout injection
+                  0, // no socketime injection
                   null, // no canceling
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true // retry on HTTP 403
-                  );
+                  true, // retry on HTTP 403
+                  new ExecTimeTelemetryData());
 
           logger.debug(
               "Call returned for URL: {}",
@@ -753,13 +749,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               authTimeout, // auth timeout
               httpClientSocketTimeout, // socket timeout in ms
               0,
-              0, // no socket timeout injection
+              0, // no socketime injection
               null, // no canceling
               false, // no cookie
               false, // no retry
               false, // no request_guid
-              true // retry on HTTP 403
-              );
+              true, // retry on HTTP 403
+              new ExecTimeTelemetryData());
 
       logger.debug(
           "Call returned for URL: {}",
@@ -1054,7 +1050,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   /*
    * Initializes the GCS client
-   * This method is used during the object construction, but also to
+   * This method is used during the object contruction, but also to
    * reset/recreate the encapsulated CloudBlobClient object with new
    * credentials (after token expiration)
    * @param stage   The stage information that the client will operate on

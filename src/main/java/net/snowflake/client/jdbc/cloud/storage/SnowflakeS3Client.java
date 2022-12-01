@@ -190,11 +190,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               .withClientConfiguration(clientConfig);
     }
 
-    Region region = RegionUtils.getRegion(stageRegion);
-    if (this.stageEndPoint != null && this.stageEndPoint != "" && this.stageEndPoint != "null") {
-      amazonS3Builder.withEndpointConfiguration(
-          new AwsClientBuilder.EndpointConfiguration(this.stageEndPoint, region.getName()));
-    } else {
+    if (stageRegion != null) {
+      Region region = RegionUtils.getRegion(stageRegion);
       if (region != null) {
         if (this.isUseS3RegionalUrl) {
           amazonS3Builder.withEndpointConfiguration(
@@ -207,7 +204,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
     // Explicitly force to use virtual address style
     amazonS3Builder.withPathStyleAccessEnabled(false);
+
     amazonClient = (AmazonS3) amazonS3Builder.build();
+    if (this.stageEndPoint != null && this.stageEndPoint != "") {
+      // Set the FIPS endpoint if we need it. GS will tell us if we do by
+      // giving us an endpoint to use if required and supported by the region.
+      amazonClient.setEndpoint(this.stageEndPoint);
+    }
   }
 
   // Returns the Max number of retry attempts

@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.QueryStatus.*;
+import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +21,7 @@ import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -334,7 +336,7 @@ public class SFSession extends SFBaseSession {
 
         case VALIDATE_DEFAULT_PARAMETERS:
           if (propertyValue != null) {
-            setValidateDefaultParameters(SFLoginInput.getBooleanValue(propertyValue));
+            setValidateDefaultParameters(getBooleanValue(propertyValue));
           }
           break;
 
@@ -388,7 +390,7 @@ public class SFSession extends SFBaseSession {
             + " passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={},"
             + " application={}, app_id={}, app_version={}, login_timeout={}, network_timeout={},"
             + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}."
-            + " session_parameters: client_store_temporary_credential={}",
+            + " session_parameters: client_store_temporary_credential={}, gzip_disabled={}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
@@ -422,7 +424,8 @@ public class SFSession extends SFBaseSession {
                 (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
             ? "***"
             : "(empty)",
-        sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
+        sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
+        connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
 
     HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
     logger.debug(
@@ -496,7 +499,15 @@ public class SFSession extends SFBaseSession {
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
-
+    // overwrite session parameter value with connection parameter value for OOB telemetry in HTAP.
+    // Default is enabled
+    if (connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED) == null
+        || getBooleanValue(
+            connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
+      TelemetryService.enable();
+    } else {
+      TelemetryService.disable();
+    }
     String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
     String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
     String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);
@@ -749,7 +760,7 @@ public class SFSession extends SFBaseSession {
 
     HttpPost postRequest = null;
 
-    String requestId = UUID.randomUUID().toString();
+    String requestId = UUIDUtils.getUUID().toString();
 
     boolean retry = false;
 
@@ -964,7 +975,8 @@ public class SFSession extends SFBaseSession {
           false, // not describe only
           true, // internal
           false, // asyncExec
-          null // caller isn't a JDBC interface method
+          null, // caller isn't a JDBC interface method
+          new ExecTimeTelemetryData() // Telemetry data- not needed here
           );
     } catch (SFException | SQLException ex) {
       logger.debug("Failed to run a command: {}, err={}", sql, ex);

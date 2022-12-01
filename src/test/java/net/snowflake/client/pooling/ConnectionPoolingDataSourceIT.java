@@ -47,7 +47,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
 
     try {
       // should fire connection error events
-      connection.setCatalog("nonexistent_database");
+      connection.setCatalog("unexisted_database");
       fail();
     } catch (SQLException e) {
       assertThat(e.getErrorCode(), is(2043));
