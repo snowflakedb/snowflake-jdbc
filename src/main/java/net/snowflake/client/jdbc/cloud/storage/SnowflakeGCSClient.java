@@ -296,7 +296,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           }
 
           logger.debug("Starting download without presigned URL", false);
-          blob.downloadTo(localFile.toPath());
+          blob.downloadTo(
+              localFile.toPath(), Blob.BlobSourceOption.shouldReturnRawInputStream(true));
           logger.debug("Download successful", false);
 
           // Get the user-defined BLOB metadata
