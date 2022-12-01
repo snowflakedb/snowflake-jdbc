@@ -130,21 +130,23 @@ public class SnowflakeConnectString implements Serializable {
         // if it's a global url
         parameters.put("ACCOUNT", account);
       }
-
-      if (account.contains("_")
-          && parameters.containsKey(
-              SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey().toUpperCase())
-          && "false"
-              .equalsIgnoreCase(
-                  (String)
-                      parameters.get(
-                          SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST
-                              .getPropertyKey()
-                              .toUpperCase()))
-          && host.startsWith(account)) {
+      // By default, don't allow underscores in host name unless the property is set to true via
+      // connection properties.
+      boolean allowUnderscoresInHost = false;
+      if ("true"
+          .equalsIgnoreCase(
+              (String)
+                  parameters.get(
+                      SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST
+                          .getPropertyKey()
+                          .toUpperCase()))) {
+        allowUnderscoresInHost = true;
+      }
+      if (account.contains("_") && !allowUnderscoresInHost && host.startsWith(account)) {
         // The account needs to have underscores in it and the host URL needs to start
         // with the account name. There are cases where the host URL might not have the
         // the account name in it, ex - ip address instead of host name.
+        // The property allowUnderscoresInHost needs to be set to false.
         // Update the Host URL to remove underscores if there are any
         String account_wo_uscores = account.replaceAll("_", "-");
         host = host.replaceFirst(account, account_wo_uscores);
