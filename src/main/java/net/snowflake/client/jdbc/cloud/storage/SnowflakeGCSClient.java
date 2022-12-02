@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc.cloud.storage;
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.util.Base64;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,6 +21,7 @@ import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -236,7 +236,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   session.getAuthTimeout(),
                   session.getHttpClientSocketTimeout(),
                   0,
-                  0, // no socketime injection
+                  0, // no socket timeout injection
                   null, // no canceling
                   false, // no cookie
                   false, // no retry
@@ -296,7 +296,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           }
 
           logger.debug("Starting download without presigned URL", false);
-          blob.downloadTo(localFile.toPath());
+          blob.downloadTo(
+              localFile.toPath(), Blob.BlobSourceOption.shouldReturnRawInputStream(true));
           logger.debug("Download successful", false);
 
           // Get the user-defined BLOB metadata
@@ -401,7 +402,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   session.getAuthTimeout(),
                   session.getHttpClientSocketTimeout(),
                   0,
-                  0, // no socketime injection
+                  0, // no socket timeout injection
                   null, // no canceling
                   false, // no cookie
                   false, // no retry
@@ -752,7 +753,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               authTimeout, // auth timeout
               httpClientSocketTimeout, // socket timeout in ms
               0,
-              0, // no socketime injection
+              0, // no socket timeout injection
               null, // no canceling
               false, // no cookie
               false, // no retry
@@ -988,7 +989,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
     meta.addUserMetadata(
         GCS_ENCRYPTIONDATAPROP,
-        buildEncryptionMetadataJSON(Base64.encodeAsString(ivData), Base64.encodeAsString(encKeK)));
+        buildEncryptionMetadataJSON(
+            Base64.getEncoder().encodeToString(ivData),
+            Base64.getEncoder().encodeToString(encKeK)));
     meta.setContentLength(contentLength);
   }
 
@@ -1051,7 +1054,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   /*
    * Initializes the GCS client
-   * This method is used during the object contruction, but also to
+   * This method is used during the object construction, but also to
    * reset/recreate the encapsulated CloudBlobClient object with new
    * credentials (after token expiration)
    * @param stage   The stage information that the client will operate on
@@ -1090,7 +1093,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       }
 
       if (encMat != null) {
-        byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
+        byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
         encryptionKeySize = decodedKey.length * 8;
 
         if (encryptionKeySize != 128 && encryptionKeySize != 192 && encryptionKeySize != 256) {

@@ -18,13 +18,13 @@ public class ConnectStringParseTest {
         cstring.getParameters().get(SFSessionProperty.ACCOUNT.getPropertyKey().toUpperCase()),
         is("abc"));
 
-    // Hostname should remain unchanged by default.
+    // Hostname should be updated by default.
     jdbcConnectString = "jdbc:snowflake://abc_test.us-east-1.snowflakecomputing.com";
     cstring = SnowflakeConnectString.parse(jdbcConnectString, info);
     assertThat(
         cstring.getParameters().get(SFSessionProperty.ACCOUNT.getPropertyKey().toUpperCase()),
         is("abc_test"));
-    assertThat(cstring.getHost(), is("abc_test.us-east-1.snowflakecomputing.com"));
+    assertThat(cstring.getHost(), is("abc-test.us-east-1.snowflakecomputing.com"));
 
     jdbcConnectString = "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com";
     cstring = SnowflakeConnectString.parse(jdbcConnectString, info);
