@@ -353,7 +353,12 @@ public class SFResultSetMetaData {
       externalColumnType = Types.TIMESTAMP;
     }
     if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-      externalColumnType = Types.TIMESTAMP_WITH_TIMEZONE;
+      externalColumnType =
+          session == null
+              ? Types.TIMESTAMP_WITH_TIMEZONE
+              : session.getEnableReturnTimestampWithTimeZone()
+                  ? Types.TIMESTAMP_WITH_TIMEZONE
+                  : Types.TIMESTAMP;
     }
     return externalColumnType;
   }
