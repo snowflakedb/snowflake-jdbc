@@ -33,7 +33,8 @@ public enum SnowflakeType {
   TIMESTAMP_NTZ,
   TIMESTAMP_TZ,
   VARIANT,
-  GEOGRAPHY;
+  GEOGRAPHY,
+  GEOMETRY;
 
   public static final String DATE_OR_TIME_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
   public static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.";

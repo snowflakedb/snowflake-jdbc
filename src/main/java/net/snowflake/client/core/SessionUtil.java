@@ -146,7 +146,8 @@ public class SessionUtil {
               "BINARY_OUTPUT_FORMAT",
               "CLIENT_TIMESTAMP_TYPE_MAPPING",
               SERVICE_NAME,
-              "GEOGRAPHY_OUTPUT_FORMAT"));
+              "GEOGRAPHY_OUTPUT_FORMAT",
+              "GEOMETRY_OUTPUT_FORMAT"));
   private static final Set<String> INT_PARAMS =
       new HashSet<>(
           Arrays.asList(

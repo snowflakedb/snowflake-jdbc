@@ -237,6 +237,23 @@ public class SnowflakeUtil {
         }
         break;
 
+      case GEOMETRY:
+        colType = Types.VARCHAR;
+        extColTypeName = "GEOMETRY";
+        JsonNode udtOutputTypeGeometry = colNode.path("outputType");
+        if (!udtOutputTypeGeometry.isMissingNode()) {
+          SnowflakeType outputTypeGeometry = SnowflakeType.fromString(udtOutputTypeGeometry.asText());
+          switch (outputTypeGeometry) {
+            case OBJECT:
+            case TEXT:
+              colType = Types.VARCHAR;
+              break;
+            case BINARY:
+              colType = Types.BINARY;
+          }
+        }
+        break;
+
       default:
         throw new SnowflakeSQLLoggedException(
             session,
