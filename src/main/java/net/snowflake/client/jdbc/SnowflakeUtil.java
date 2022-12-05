@@ -220,6 +220,11 @@ public class SnowflakeUtil {
         extColTypeName = "BINARY";
         break;
 
+      case GEOMETRY:
+        colType = Types.VARCHAR;
+        extColTypeName = "GEOMETRY";
+        break;
+
       case GEOGRAPHY:
         colType = Types.VARCHAR;
         extColTypeName = "GEOGRAPHY";

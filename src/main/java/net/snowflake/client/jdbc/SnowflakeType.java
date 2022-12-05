@@ -33,7 +33,8 @@ public enum SnowflakeType {
   TIMESTAMP_NTZ,
   TIMESTAMP_TZ,
   VARIANT,
-  GEOGRAPHY;
+  GEOGRAPHY,
+  GEOMETRY;
 
   public static final String DATE_OR_TIME_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
   public static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.";
@@ -76,6 +77,8 @@ public enum SnowflakeType {
         return JavaDataType.JAVA_BYTES;
       case ANY:
         return JavaDataType.JAVA_OBJECT;
+      case GEOMETRY:
+        return JavaDataType.JAVA_STRING;
       default:
         // Those are not supported, but no reason to panic
         return JavaDataType.JAVA_STRING;
