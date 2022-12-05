@@ -221,7 +221,7 @@ public class SnowflakeUtil {
         break;
 
       case GEOMETRY:
-        colType = 12;
+        colType = Types.VARCHAR;
         extColTypeName = "GEOMETRY";
         break;
 
