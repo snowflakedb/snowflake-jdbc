@@ -285,12 +285,13 @@ public class AbstractDriverIT {
     properties.put("db", params.get("database"));
     properties.put("schema", params.get("schema"));
     properties.put("warehouse", params.get("warehouse"));
-    //properties.put("ssl", "off");
+    properties.put("ssl", params.get("ssl"));
     properties.put("query_tag", "megtesttag");
     properties.put("useProxy", "true");
     properties.put("proxyHost", "127.0.0.1");
     properties.put("proxyPort", "9090");
-    properties.put("gzipDisabled", "true");
+    //properties.put("gzipDisabled", "true");
+
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
 
