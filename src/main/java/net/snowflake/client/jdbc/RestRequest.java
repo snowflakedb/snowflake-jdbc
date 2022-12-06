@@ -6,12 +6,8 @@ package net.snowflake.client.jdbc;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.core.Event;
-import net.snowflake.client.core.EventUtil;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.SFOCSPException;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -60,7 +56,8 @@ public class RestRequest {
       boolean withoutCookies,
       boolean includeRetryParameters,
       boolean includeRequestGuid,
-      boolean retryHTTP403)
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeTelemetryData)
       throws SnowflakeSQLException {
     return execute(
         httpClient,
@@ -75,7 +72,8 @@ public class RestRequest {
         includeRetryParameters,
         includeRequestGuid,
         retryHTTP403,
-        false);
+        false, // noRetry
+        execTimeTelemetryData);
   }
 
   /**
@@ -111,7 +109,8 @@ public class RestRequest {
       boolean includeRetryParameters,
       boolean includeRequestGuid,
       boolean retryHTTP403,
-      boolean noRetry)
+      boolean noRetry,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException {
     CloseableHttpResponse response = null;
 
@@ -182,6 +181,11 @@ public class RestRequest {
          * overhead of looking up in metadata database.
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
+        // If HTAP
+        if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
+            && builder.getPathSegments().contains("query-request")) {
+          builder.setParameter("target", "htap_simulation");
+        }
         if (includeRetryParameters && retryCount > 0) {
           builder.setParameter("retryCount", String.valueOf(retryCount));
           builder.setParameter("clientStartTime", String.valueOf(startTime));
@@ -198,12 +202,13 @@ public class RestRequest {
 
         if (includeRequestGuid) {
           // Add request_guid for better tracing
-          builder.setParameter(SF_REQUEST_GUID, UUID.randomUUID().toString());
+          builder.setParameter(SF_REQUEST_GUID, UUIDUtils.getUUID().toString());
         }
 
         httpRequest.setURI(builder.build());
-
+        execTimeData.setHttpClientStart();
         response = httpClient.execute(httpRequest);
+        execTimeData.setHttpClientEnd();
       } catch (Exception ex) {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, stop retrying
@@ -382,7 +387,6 @@ public class RestRequest {
         }
 
         retryCount++;
-
         // If the request failed with any other retry-able error and auth timeout is reached
         // increase the retry count and throw special exception to renew the token before retrying.
         if (authTimeout > 0) {

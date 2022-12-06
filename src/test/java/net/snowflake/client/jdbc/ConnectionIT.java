@@ -52,13 +52,68 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testSimpleConnection() throws SQLException {
     Connection con = getConnection();
     Statement statement = con.createStatement();
-    ResultSet resultSet = statement.executeQuery("show parameters");
+    statement.unwrap(SnowflakeStatement.class).setBatchID("testbatch5");
+    statement.execute("create or replace table test_table (c1 string)");
+    statement.execute("insert into test_table values('hello')");
+    ResultSet resultSet = statement.executeQuery("select * from test_table");
     assertTrue(resultSet.next());
-    assertFalse(con.isClosed());
+    statement.execute("delete from test_table where c1='hello'");
+    statement.unwrap(SnowflakeStatement.class).setBatchID("testbatch6");
+    statement.execute("create or replace table test_table_2 (c1 int)");
+    statement.execute("insert into test_table_2 values(5)");
+    resultSet = statement.executeQuery("select * from test_table_2");
+    assertTrue(resultSet.next());
+    statement.execute("delete from test_table_2 where c1=5");
     statement.close();
+    PreparedStatement prepSt =
+        con.prepareStatement("create or replace table bind_table (c1 string, c2 int)");
+    prepSt.unwrap(SnowflakeStatement.class).setBatchID("prepstTestBatch3");
+    prepSt.execute();
+    prepSt = con.prepareStatement("insert into bind_table values (?,?)");
+    prepSt.setString(1, "line1");
+    prepSt.setInt(2, 27);
+    prepSt.execute();
+    prepSt = con.prepareStatement("select * from bind_table");
+    resultSet = prepSt.executeQuery();
+    assertTrue(resultSet.next());
+    prepSt = con.prepareStatement("delete from bind_table where c2=27");
+    prepSt.execute();
     con.close();
     assertTrue(con.isClosed());
     con.close(); // ensure no exception
+  }
+
+  @Test
+  public void testTelemetryError() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+    props.put("warehouse", "twh");
+    props.put("database", "megtest");
+    props.put("schema", "megtest");
+    props.put("role", "sysadmin");
+    props.put("TELEMETRY_DEPLOYMENT", "QA1");
+    Connection con =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    Statement statement = con.createStatement();
+    statement.execute(
+        "create or replace table test_table (ycsb_key int, field1 int, field2 int, field3 int, field4 int, field5 int, field6 int, field7 int, field8 int, field9 int, field10 int)");
+    statement.unwrap(SnowflakeStatement.class).setBatchID("MegTroubleshooting");
+    for (int i = 0; i < 2; i++) {
+      ResultSet rs = statement.executeQuery("SELECT * FROM test_table WHERE ycsb_key = 98333");
+      System.out.println("Resultset size: " + getSizeOfResultSet(rs));
+      int res =
+          statement.executeUpdate(
+              "DELETE FROM test_table WHERE ycsb_key IN (98301, 1000001, 10002)");
+      System.out.println("Deleted: " + res);
+      res =
+          statement.executeUpdate(
+              "UPDATE test_table SET FIELD1=1,FIELD2=2,FIELD3=3,FIELD4=4,FIELD5=5, FIELD6=6,FIELD7=7,FIELD8=8, FIELD9=9,FIELD10=10 WHERE YCSB_KEY=98301");
+      System.out.println("Updated: " + res);
+      res = statement.executeUpdate("INSERT INTO test_table VALUES (1000001,9,8,7,6,5,4,3,2,1,0)");
+      System.out.println("Inserted: " + res);
+    }
   }
 
   @Test

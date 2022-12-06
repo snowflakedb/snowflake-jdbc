@@ -537,14 +537,20 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public SFBaseResultSet execute(
-        String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+        String sql,
+        Map<String, ParameterBindingDTO> parametersBinding,
+        CallingMethod caller,
+        ExecTimeTelemetryData execTimeData)
         throws SQLException, SFException {
       return new MockJsonResultSet(mockedResponse, sfSession);
     }
 
     @Override
     public SFBaseResultSet asyncExecute(
-        String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+        String sql,
+        Map<String, ParameterBindingDTO> parametersBinding,
+        CallingMethod caller,
+        ExecTimeTelemetryData execTimeData)
         throws SQLException, SFException {
       return null;
     }

@@ -21,10 +21,7 @@ import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.Map.Entry;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -237,8 +234,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true // retry on HTTP 403
-                  );
+                  true, // retry on HTTP 403
+                  new ExecTimeTelemetryData());
 
           logger.debug(
               "Call returned for URL: {}",
@@ -403,8 +400,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true // retry on HTTP 403
-                  );
+                  true, // retry on HTTP 403
+                  new ExecTimeTelemetryData());
 
           logger.debug(
               "Call returned for URL: {}",
@@ -755,8 +752,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               false, // no url retry query parameters
               false, // no request_guid
               true, // retry on HTTP 403
-              true // disable retry
-              );
+              true, // disable retry
+              new ExecTimeTelemetryData());
 
       logger.debug(
           "Call returned for URL: {}",

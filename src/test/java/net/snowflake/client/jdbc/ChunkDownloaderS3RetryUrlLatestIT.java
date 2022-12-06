@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -13,8 +13,11 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.*;
-import org.apache.http.client.methods.*;
+import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFStatement;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Before;
@@ -77,7 +80,8 @@ public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
         false, // without cookies
         false, // include retry parameters
         false, // include request GUID
-        true); // retry HTTP 403
+        true,
+        new ExecTimeTelemetryData()); // retry HTTP 403
 
     assertFalse(getRequest.containsHeader("retryCount"));
     assertFalse(getRequest.containsHeader("clientStartTime"));
