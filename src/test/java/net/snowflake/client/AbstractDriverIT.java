@@ -290,6 +290,8 @@ public class AbstractDriverIT {
     properties.put("useProxy", "true");
     properties.put("proxyHost", "127.0.0.1");
     properties.put("proxyPort", "9090");
+    //properties.put("gzipDisabled", "true");
+
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
 

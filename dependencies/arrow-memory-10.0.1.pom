@@ -15,10 +15,14 @@
     <groupId>org.apache.arrow</groupId>
     <artifactId>arrow-java-root</artifactId>
 <<<<<<< HEAD:dependencies/arrow-memory-10.0.1.pom
+<<<<<<< HEAD:dependencies/arrow-memory-10.0.1.pom
     <version>10.0.1</version>
 =======
     <version>8.0.0</version>
 >>>>>>> 00cc2d7c (one commit):dependencies/arrow-memory-8.0.0.pom
+=======
+    <version>8.0.0</version>
+>>>>>>> 140daa7bfbfadc37ef1a2720ca4ca6f28f8f6257:dependencies/arrow-memory-8.0.0.pom
   </parent>
   <artifactId>arrow-memory</artifactId>
   <name>Arrow Memory</name>

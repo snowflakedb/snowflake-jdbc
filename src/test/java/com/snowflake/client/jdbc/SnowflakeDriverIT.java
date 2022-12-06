@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.loader.BufferStage;
 import org.junit.Test;
 
 public class SnowflakeDriverIT extends AbstractDriverIT {

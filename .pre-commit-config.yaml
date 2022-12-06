@@ -1,5 +1,0 @@
-repos:
-- repo: git@github.com:snowflakedb/casec_precommit.git
-  rev: v1.7
-  hooks:
-  - id: secret-scanner
