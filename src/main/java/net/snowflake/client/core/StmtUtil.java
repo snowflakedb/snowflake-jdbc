@@ -13,7 +13,6 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.BasicEvent.QueryState;
@@ -257,7 +256,8 @@ public class StmtUtil {
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
-  public static StmtOutput execute(StmtInput stmtInput) throws SFException, SnowflakeSQLException {
+  public static StmtOutput execute(StmtInput stmtInput, ExecTimeTelemetryData execTimeData)
+      throws SFException, SnowflakeSQLException {
     HttpPost httpRequest = null;
 
     AssertUtil.assertTrue(
@@ -322,17 +322,23 @@ public class StmtUtil {
 
         logger.debug("JSON: {}", json);
 
-        // SNOW-18057: compress the post body in gzip
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        GZIPOutputStream gzos = new GZIPOutputStream(baos);
-        byte[] bytes = json.getBytes("UTF-8");
-        gzos.write(bytes);
-        gzos.finish();
-        ByteArrayEntity input = new ByteArrayEntity(baos.toByteArray());
+        ByteArrayEntity input;
+        if (!stmtInput.httpClientSettingsKey.getGzipDisabled()) {
+          execTimeData.setGzipStart();
+          // SNOW-18057: compress the post body in gzip
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          GZIPOutputStream gzos = new GZIPOutputStream(baos);
+          byte[] bytes = json.getBytes("UTF-8");
+          gzos.write(bytes);
+          gzos.finish();
+          input = new ByteArrayEntity(baos.toByteArray());
+          httpRequest.addHeader("content-encoding", "gzip");
+          execTimeData.setGzipEnd();
+        } else {
+          input = new ByteArrayEntity(json.getBytes("UTF-8"));
+        }
         input.setContentType("application/json");
         httpRequest.setEntity(input);
-        httpRequest.addHeader("content-encoding", "gzip");
-
         httpRequest.addHeader("accept", stmtInput.mediaType);
 
         httpRequest.setHeader(
@@ -360,10 +366,11 @@ public class StmtUtil {
                 stmtInput.canceling,
                 true, // include retry parameters
                 false, // no retry on HTTP 403
-                stmtInput.httpClientSettingsKey);
+                stmtInput.httpClientSettingsKey,
+                execTimeData);
       }
 
-      return pollForOutput(resultAsString, stmtInput, httpRequest);
+      return pollForOutput(resultAsString, stmtInput, httpRequest, execTimeData);
     } catch (Exception ex) {
       if (!(ex instanceof SnowflakeSQLException)) {
         if (ex instanceof IOException) {
@@ -398,7 +405,10 @@ public class StmtUtil {
   }
 
   private static StmtOutput pollForOutput(
-      String resultAsString, StmtInput stmtInput, HttpPost httpRequest)
+      String resultAsString,
+      StmtInput stmtInput,
+      HttpPost httpRequest,
+      ExecTimeTelemetryData execTimeData)
       throws SFException, SnowflakeSQLException {
     /*
      * Check response for error or for ping pong response
@@ -443,7 +453,8 @@ public class StmtUtil {
           throw new SFException(ErrorCode.BAD_RESPONSE, resultAsString);
         } else {
           logger.debug("Will retry get result. Retry count: {}", retries);
-
+          execTimeData.incrementRetryCount();
+          execTimeData.addRetryLocation("StmtUtil null response");
           retries++;
         }
       } else {
@@ -485,7 +496,8 @@ public class StmtUtil {
             }
           }
         }
-
+        execTimeData.incrementRetryCount();
+        execTimeData.addRetryLocation("StmtUtil queryInProgress");
         resultAsString = getQueryResult(pingPongResponseJson, previousGetResultPath, stmtInput);
 
         // save the previous get result path in case we run into session
@@ -567,7 +579,7 @@ public class StmtUtil {
 
       uriBuilder.setPath(getResultPath);
 
-      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpGet(uriBuilder.build());
 
@@ -594,7 +606,8 @@ public class StmtUtil {
           stmtInput.canceling,
           false, // no retry parameter
           false, // no retry on HTTP 403
-          stmtInput.httpClientSettingsKey);
+          stmtInput.httpClientSettingsKey,
+          new ExecTimeTelemetryData());
     } catch (URISyntaxException | IOException ex) {
       logger.error("Exception encountered when getting result for " + httpRequest, ex);
 
@@ -630,7 +643,8 @@ public class StmtUtil {
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);
 
-    StmtOutput stmtOutput = pollForOutput(resultAsString, stmtInput, null);
+    StmtOutput stmtOutput =
+        pollForOutput(resultAsString, stmtInput, null, new ExecTimeTelemetryData());
     return stmtOutput.getResult();
   }
 
@@ -665,7 +679,7 @@ public class StmtUtil {
 
       uriBuilder.setPath(SF_PATH_ABORT_REQUEST_V1);
 
-      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpPost(uriBuilder.build());
 
@@ -708,7 +722,8 @@ public class StmtUtil {
               null,
               false, // no retry parameter
               false, // no retry on HTTP 403
-              stmtInput.httpClientSettingsKey);
+              stmtInput.httpClientSettingsKey,
+              new ExecTimeTelemetryData());
 
       // trace the response if requested
       logger.debug("Json response: {}", jsonString);

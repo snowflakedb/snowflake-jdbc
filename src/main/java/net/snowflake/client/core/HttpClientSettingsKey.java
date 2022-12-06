@@ -23,6 +23,8 @@ public class HttpClientSettingsKey implements Serializable {
   private String proxyPassword = "";
   private String proxyProtocol = "http";
 
+  private Boolean gzipDisabled = false;
+
   public HttpClientSettingsKey(
       OCSPMode mode,
       String host,
@@ -30,7 +32,8 @@ public class HttpClientSettingsKey implements Serializable {
       String nonProxyHosts,
       String user,
       String password,
-      String scheme) {
+      String scheme,
+      Boolean gzipDisabled) {
     this.useProxy = true;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
     this.proxyHost = !Strings.isNullOrEmpty(host) ? host.trim() : "";
@@ -39,6 +42,7 @@ public class HttpClientSettingsKey implements Serializable {
     this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
     this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
     this.proxyProtocol = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
+    this.gzipDisabled = gzipDisabled;
   }
 
   public HttpClientSettingsKey(OCSPMode mode) {
@@ -111,5 +115,9 @@ public class HttpClientSettingsKey implements Serializable {
 
   public Protocol getProxyProtocol() {
     return this.proxyProtocol.equalsIgnoreCase("https") ? Protocol.HTTPS : Protocol.HTTP;
+  }
+
+  public Boolean getGzipDisabled() {
+    return gzipDisabled;
   }
 }

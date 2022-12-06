@@ -24,6 +24,8 @@ public interface SnowflakeStatement {
    */
   void setParameter(String name, Object value) throws SQLException;
 
+  void setBatchID(String batchID);
+
   /**
    * Execute SQL query asynchronously
    *

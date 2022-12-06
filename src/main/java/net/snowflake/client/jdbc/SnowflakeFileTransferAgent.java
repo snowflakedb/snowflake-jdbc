@@ -23,11 +23,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.Base64;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.cloud.storage.*;
@@ -1108,8 +1104,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               null, // bindValues
               false, // describeOnly
               false, // internal
-              false // async
-              );
+              false, // async
+              new ExecTimeTelemetryData()); // OOB telemetry timing queries
     } catch (SFException ex) {
       throw new SnowflakeSQLException(ex, ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }

@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
@@ -80,7 +81,8 @@ public class RestRequestTest {
         false, // without cookie
         includeRetryParameters,
         true,
-        true);
+        true,
+        new ExecTimeTelemetryData());
   }
 
   @Test
