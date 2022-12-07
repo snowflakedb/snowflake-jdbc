@@ -592,6 +592,7 @@
             <manifest>
               <mainClass>net.snowflake.client.jdbc.SnowflakeDriver</mainClass>
               <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <addClasspath>true</addClasspath>
             </manifest>
           </archive>
         </configuration>
