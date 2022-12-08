@@ -1596,7 +1596,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
     final Pattern compiledColumnPattern = Wildcard.toRegexPattern(columnNamePattern, true);
 
-    showCommand = "show /* JDBC:DatabaseMetaData.getColumns() */ columns";
+    String showCommand = "show /* JDBC:DatabaseMetaData.getColumns() */ columns";
 
     if (columnNamePattern != null
         && !columnNamePattern.isEmpty()
