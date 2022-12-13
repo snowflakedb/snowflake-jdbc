@@ -389,6 +389,11 @@
       <version>${jna.version}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency> <!-- It is used by client result cache -->
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+      <version>3.1.2</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -857,6 +862,10 @@
                        <pattern>org.codehaus</pattern>
                        <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
                      </relocation>                     
+                     <relocation>
+                       <pattern>com.github</pattern>
+                       <shadedPattern>${shadeBase}.github</shadedPattern>
+                     </relocation>
                    </relocations>
                    <filters>
                       <filter>

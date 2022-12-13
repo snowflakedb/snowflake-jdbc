@@ -1,4 +1,7 @@
 package net.snowflake.client.jdbc.ResultCache;
+/*
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
+ */
 
 /** Interface for client side result cache. */
 public interface IResultCache {
