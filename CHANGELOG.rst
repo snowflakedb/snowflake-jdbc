@@ -1,3 +1,9 @@
+**JDBC Driver 3.13.26**
+
+- \|| Upgraded the arrow library from version 9.0.0 to 10.0.1.
+- \|| Relocated files in META-INF/versions to META-INF/versions/<version_number>/net/snowflake/client/jdbc/internal.
+- \|| Added the getNano() and getOffset() methods to the SnowflakeTimeWithTimezone object to return the number of nanoseconds and the time zone offset, respectively.
+
 **JDBC Driver 3.13.25**
 
 - \||**BCR (Behavior Change Release) Change**
