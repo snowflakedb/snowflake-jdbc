@@ -392,7 +392,7 @@
     <dependency> <!-- It is used by client result cache -->
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
-      <version>3.1.2</version>
+      <version>2.9.3</version>
     </dependency>
   </dependencies>
 
