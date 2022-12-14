@@ -2,7 +2,7 @@
  * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
  */
 
-package net.snowflake.client.jdbc.ResultCache;
+package net.snowflake.client.jdbc.resultCache;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -43,6 +43,10 @@ public class SnowflakeResultCache implements IResultCache {
     }
 
     cache.cleanUp();
+  }
+
+  public Cache<String, ResultCacheElement> getCache() {
+    return cache;
   }
 
   private static class ResultCacheElement {
