@@ -28,7 +28,7 @@ class SFResultSetFactory {
 
     SnowflakeResultSetSerializableV1 resultSetSerializable =
             SnowflakeResultSetSerializableV1.create(result, statement.getSFBaseSession(), statement);
-    
+
     // Store select statements in cache
     if (resultSetSerializable.getStatementType().isSelect())
     {

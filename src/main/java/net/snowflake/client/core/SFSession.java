@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.*;
-import net.snowflake.client.jdbc.ResultCache.SnowflakeResultCache;
+import net.snowflake.client.jdbc.resultCache.SnowflakeResultCache;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.log.JDK14Logger;

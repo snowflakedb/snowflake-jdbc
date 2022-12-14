@@ -6,7 +6,7 @@ package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
 import net.snowflake.client.jdbc.*;
-import net.snowflake.client.jdbc.ResultCache.SnowflakeResultCache;
+import net.snowflake.client.jdbc.resultCache.SnowflakeResultCache;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -115,7 +115,7 @@ public abstract class SFBaseSession {
   // Query context for current session
   private String queryContext;
 
-  public SnowflakeResultCache resultCache;
+  public SnowflakeResultCache resultCache = null;
 
   // Whether enable returning timestamp with timezone as data type
   private boolean enableReturnTimestampWithTimeZone = true;
