@@ -1,17 +1,21 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
-import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
-import java.sql.*;
-import java.util.Map;
-import java.util.Properties;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.LoginInfoDTO;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLNonTransientConnectionException;
+import java.sql.Statement;
+import java.util.Map;
+import java.util.Properties;
+
+import static net.snowflake.client.core.SessionUtil.CLIENT_SFSQL;
+import static net.snowflake.client.core.SessionUtil.JVM_PARAMS_TO_PARAMS;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * The default ConnectionHandler used by SnowflakeConnectionV(x). Unless a separate implementation
@@ -102,6 +106,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       initSessionProperties(conStr, appID, appVersion);
       if (!skipOpen) {
         sfSession.open();
+        sfSession.initializeSnowflakeResultCache();
       }
 
     } catch (SFException ex) {

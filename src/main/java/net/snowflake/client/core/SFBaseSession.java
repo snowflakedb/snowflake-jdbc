@@ -4,22 +4,20 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.google.common.base.Strings;
+import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ResultCache.SnowflakeResultCache;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+
 import java.sql.DriverPropertyInfo;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SFConnectionHandler;
-import net.snowflake.client.jdbc.SnowflakeConnectString;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are
@@ -116,6 +114,8 @@ public abstract class SFBaseSession {
 
   // Query context for current session
   private String queryContext;
+
+  public SnowflakeResultCache resultCache;
 
   // Whether enable returning timestamp with timezone as data type
   private boolean enableReturnTimestampWithTimeZone = true;
