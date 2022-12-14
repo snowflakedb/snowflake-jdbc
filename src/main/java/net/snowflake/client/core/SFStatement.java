@@ -199,7 +199,7 @@ public class SFStatement extends SFBaseStatement {
      * If this is a select statement, results may be cached
      */
     if (sql.trim().toUpperCase().startsWith("SELECT")) {
-      Object cachedResult = session.resultCache.containsResult(sql);
+      Object cachedResult = session.resultCache.getResult(sql);
       if (cachedResult != null) {
         logger.debug("Fetching result from cache", false);
         resultSet = SFResultSetFactory.getResultFromCache(cachedResult, this, sortResult);
@@ -223,7 +223,7 @@ public class SFStatement extends SFBaseStatement {
 
     try {
       JsonNode jsonResult = (JsonNode) result;
-      resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult);
+      resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult, sql);
       childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
 
       // if child results are available, skip over this result set and set the
@@ -892,7 +892,7 @@ public class SFStatement extends SFBaseStatement {
       JsonNode result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
       Object sortProperty = session.getSessionPropertyByKey("sort");
       boolean sortResult = sortProperty != null && (Boolean) sortProperty;
-      resultSet = SFResultSetFactory.getResultSet(result, this, sortResult);
+      resultSet = SFResultSetFactory.getResultSet(result, this, sortResult, sqlText);
       // override statement type so we can treat the result set like a result of
       // the original statement called (and not the result scan)
       resultSet.setStatementType(nextResult.getType());
