@@ -4,20 +4,19 @@
 
 package net.snowflake.client.core;
 
-import com.google.common.base.Strings;
-import net.snowflake.client.jdbc.*;
-import net.snowflake.client.jdbc.ResultCache.SnowflakeResultCache;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import com.google.common.base.Strings;
 import java.sql.DriverPropertyInfo;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.resultCache.SnowflakeResultCache;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are

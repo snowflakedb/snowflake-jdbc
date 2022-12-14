@@ -4,11 +4,10 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.sql.SQLException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-
-import java.sql.SQLException;
 
 /**
  * Factory class to create SFBaseResultSet class. Depending on result format, different instance
@@ -18,54 +17,59 @@ class SFResultSetFactory {
   /**
    * Factory class used to generate ResultSet object according to query result format
    *
-   * @param result     raw response from server
-   * @param statement  statement that created current resultset
+   * @param result raw response from server
+   * @param statement statement that created current resultset
    * @param sortResult true if sort first chunk
    * @return result set object
    */
   static SFBaseResultSet getResultSet(JsonNode result, SFStatement statement, boolean sortResult)
-          throws SQLException {
+      throws SQLException {
 
     SnowflakeResultSetSerializableV1 resultSetSerializable =
-            SnowflakeResultSetSerializableV1.create(result, statement.getSFBaseSession(), statement);
+        SnowflakeResultSetSerializableV1.create(result, statement.getSFBaseSession(), statement);
 
-    //statement.getSFBaseSession().resultCache.putResult(resultSetSerializable, );
+    // statement.getSFBaseSession().resultCache.putResult(resultSetSerializable, );
 
     switch (resultSetSerializable.getQueryResultFormat()) {
       case ARROW:
         return new SFArrowResultSet(
-                resultSetSerializable, statement.getSFBaseSession(), statement, sortResult);
+            resultSetSerializable, statement.getSFBaseSession(), statement, sortResult);
       case JSON:
         return new SFResultSet(resultSetSerializable, statement, sortResult);
       default:
         throw new SnowflakeSQLLoggedException(
-                statement.getSFBaseSession(),
-                ErrorCode.INTERNAL_ERROR,
-                "Unsupported query result format: "
-                        + resultSetSerializable.getQueryResultFormat().name());
+            statement.getSFBaseSession(),
+            ErrorCode.INTERNAL_ERROR,
+            "Unsupported query result format: "
+                + resultSetSerializable.getQueryResultFormat().name());
     }
   }
 
-  static SFBaseResultSet getResultFromCache(Object resultSetSerializable, SFStatement statement, boolean sortResult) throws SQLException {
+  static SFBaseResultSet getResultFromCache(
+      Object resultSetSerializable, SFStatement statement, boolean sortResult) throws SQLException {
     if (resultSetSerializable instanceof SnowflakeResultSetSerializableV1) {
-      QueryResultFormat format = ((SnowflakeResultSetSerializableV1) resultSetSerializable).getQueryResultFormat();
+      QueryResultFormat format =
+          ((SnowflakeResultSetSerializableV1) resultSetSerializable).getQueryResultFormat();
       switch (format) {
         case ARROW:
           return new SFArrowResultSet(
-                  (SnowflakeResultSetSerializableV1) resultSetSerializable, statement.getSFBaseSession(), statement, sortResult);
+              (SnowflakeResultSetSerializableV1) resultSetSerializable,
+              statement.getSFBaseSession(),
+              statement,
+              sortResult);
         case JSON:
-          return new SFResultSet((SnowflakeResultSetSerializableV1) resultSetSerializable, statement, sortResult);
+          return new SFResultSet(
+              (SnowflakeResultSetSerializableV1) resultSetSerializable, statement, sortResult);
         default:
           throw new SnowflakeSQLLoggedException(
-                  statement.getSFBaseSession(),
-                  ErrorCode.INTERNAL_ERROR,
-                  "Unsupported query result format: "
-                          + format.name());
+              statement.getSFBaseSession(),
+              ErrorCode.INTERNAL_ERROR,
+              "Unsupported query result format: " + format.name());
       }
     }
     throw new SnowflakeSQLLoggedException(
-            statement.getSFBaseSession(),
-            ErrorCode.INTERNAL_ERROR,
-            "Unsupported result format stored in cache. Must be ResultSetSerializableV1");
+        statement.getSFBaseSession(),
+        ErrorCode.INTERNAL_ERROR,
+        "Unsupported result format stored in cache. Must be ResultSetSerializableV1");
   }
 }
