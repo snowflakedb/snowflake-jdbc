@@ -4,16 +4,17 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
-
-import java.sql.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SqlState;
+
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
 /** Snowflake statement */
 class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
@@ -232,6 +233,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
             sfBaseStatement.asyncExecute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY);
       } else {
+
         sfResultSet =
             sfBaseStatement.execute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY);
