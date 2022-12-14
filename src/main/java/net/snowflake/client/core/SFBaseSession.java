@@ -10,14 +10,12 @@ import net.snowflake.client.jdbc.resultCache.SnowflakeResultCache;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import java.sql.DriverPropertyInfo;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Snowflake session implementation base. The methods and fields contained within this class are
