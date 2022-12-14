@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc.resultCache;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import java.lang.reflect.Field;
 import org.junit.Test;
 
 public class SnowflakeResultCacheTest {
@@ -10,12 +11,14 @@ public class SnowflakeResultCacheTest {
   private SnowflakeResultCache resultCache = null;
   private Cache<String, ?> cache = null;
 
-  private void initCache() {
+  private void initCache() throws Exception {
     resultCache = new SnowflakeResultCache();
-    cache = resultCache.getCache();
+    Field field = SnowflakeResultCache.class.getDeclaredField("cache");
+    field.setAccessible(true);
+    cache = (Cache<String, ?>) field.get(resultCache);
   }
 
-  private void initCacheData() {
+  private void initCacheData() throws Exception {
     initCache();
 
     // Put dummy data in the cache
