@@ -45,10 +45,6 @@ public class SnowflakeResultCache implements IResultCache {
     cache.cleanUp();
   }
 
-  public Cache<String, ResultCacheElement> getCache() {
-    return cache;
-  }
-
   private static class ResultCacheElement {
     private final String queryId;
     private final String sessionId;
