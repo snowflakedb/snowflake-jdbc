@@ -1,11 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.endMetaData;
-import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.initMetaData;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
-import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -13,6 +7,19 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.endMetaData;
+import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.initMetaData;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Database Metadata tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -178,5 +185,35 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
     // params
     resultSet = databaseMetaData.getFunctionColumns("%", "%", "%", "%");
     assertEquals(0, getSizeOfResultSet(resultSet));
+  }
+
+  /** Tests that calling getTables() concurrently doesn't cause data race condition. */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGetTablesRaceCondition()
+      throws SQLException, ExecutionException, InterruptedException {
+    try (Connection connection = getConnection()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+      // Create 10 threads, each calls getTables() concurrently
+      ExecutorService executorService = Executors.newFixedThreadPool(10);
+      List<Future<?>> futures = new ArrayList<>();
+
+      for (int i = 0; i < 10; i++) {
+        futures.add(
+            executorService.submit(
+                () -> {
+                  try {
+                    databaseMetaData.getTables(database, schema, null, null);
+                  } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                  }
+                }));
+      }
+      executorService.shutdown();
+      for (int i = 0; i < 10; i++) futures.get(i).get();
+    }
   }
 }
