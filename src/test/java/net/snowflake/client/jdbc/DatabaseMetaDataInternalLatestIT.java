@@ -1,12 +1,9 @@
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.endMetaData;
+import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.initMetaData;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -15,11 +12,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.endMetaData;
-import static net.snowflake.client.jdbc.DatabaseMetaDataInternalIT.initMetaData;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryOthers;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /**
  * Database Metadata tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -200,7 +199,6 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
       // Create 10 threads, each calls getTables() concurrently
       ExecutorService executorService = Executors.newFixedThreadPool(10);
       List<Future<?>> futures = new ArrayList<>();
-
       for (int i = 0; i < 10; i++) {
         futures.add(
             executorService.submit(
