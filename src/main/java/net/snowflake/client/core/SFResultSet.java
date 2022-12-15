@@ -4,13 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.StmtUtil.eventHandler;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Comparator;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -20,6 +14,13 @@ import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
+
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Comparator;
+
+import static net.snowflake.client.core.StmtUtil.eventHandler;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /**
  * Snowflake ResultSet implementation
@@ -136,7 +137,7 @@ public class SFResultSet extends SFJsonResultSet {
     this.totalRowCountTruncated = resultSetSerializable.isTotalRowCountTruncated();
     this.parameters = resultSetSerializable.getParameters();
     this.columnCount = resultSetSerializable.getColumnCount();
-    this.firstChunkRowset = resultSetSerializable.getAndClearFirstChunkRowset();
+    this.firstChunkRowset = resultSetSerializable.getFirstChunkRowset();
     this.currentChunkRowCount = resultSetSerializable.getFirstChunkRowCount();
     this.chunkCount = resultSetSerializable.getChunkFileCount();
     this.chunkDownloader = resultSetSerializable.getChunkDownloader();

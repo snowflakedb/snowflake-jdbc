@@ -4,10 +4,11 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+
+import java.sql.SQLException;
 
 /**
  * Factory class to create SFBaseResultSet class. Depending on result format, different instance
@@ -28,8 +29,13 @@ class SFResultSetFactory {
     SnowflakeResultSetSerializableV1 resultSetSerializable =
         SnowflakeResultSetSerializableV1.create(result, statement.getSFBaseSession(), statement);
 
+    JsonNode resultIds = result.path("data").path("resultIds");
+    boolean multistatement = true;
+    if (resultIds.isNull() || resultIds.isMissingNode() || resultIds.asText().isEmpty()) {
+      multistatement = false;
+    }
     // Store select statements in cache
-    if (resultSetSerializable.getStatementType().isSelect())
+    if (resultSetSerializable.getStatementType().isSelect() && !multistatement)
     {
       SFBaseSession session = statement.getSFBaseSession();
       session.resultCache.putResult(sqlText, resultSetSerializable.getQueryId(),  session.getSessionId(), resultSetSerializable);
