@@ -107,13 +107,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private boolean stringsQuoted = false;
 
-  private String showCommand;
-
-  // Package-private function for displaying show command (for testing only)
-  String getShowCommand() {
-    return showCommand;
-  }
-
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
 
@@ -1460,8 +1453,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     }
 
     logger.debug("sql command to get table metadata: {}", showTablesCommand);
-    // for internal testing
-    showCommand = showTablesCommand;
 
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showTablesCommand, GET_TABLES);
     sendInBandTelemetryMetadataMetrics(
@@ -1653,8 +1644,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     }
 
     logger.debug("sql command to get column metadata: {}", showColumnsCommand);
-    // for internal testing
-    showCommand = showColumnsCommand;
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(

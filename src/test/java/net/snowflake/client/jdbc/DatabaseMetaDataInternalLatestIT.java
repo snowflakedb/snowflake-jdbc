@@ -58,19 +58,16 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
     // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
     ResultSet resultSet = databaseMetaData.getTables(null, null, null, null);
-    // Assert the show command scopes to schema level
-    assertEquals(
-        "show /* JDBC:DatabaseMetaData.getTables() */ objects in schema \"JDBC_DB1\".\"JDBC_SCHEMA11\"",
-        databaseMetaData.unwrap(SnowflakeDatabaseMetaData.class).getShowCommand());
-    assertEquals(1, getSizeOfResultSet(resultSet));
-
+    // Assert the tables are retrieved at schema level
+    resultSet.next();
+    assertEquals("JDBC_DB1", resultSet.getString(1));
+    assertEquals("JDBC_SCHEMA11", resultSet.getString(2));
     // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
     resultSet = databaseMetaData.getColumns(null, null, null, null);
-    // Assert the show command scopes to schema level
-    assertEquals(
-        "show /* JDBC:DatabaseMetaData.getColumns() */ columns in schema \"JDBC_DB1\".\"JDBC_SCHEMA11\"",
-        databaseMetaData.unwrap(SnowflakeDatabaseMetaData.class).getShowCommand());
-    assertEquals(3, getSizeOfResultSet(resultSet));
+    // Assert the columns are retrieved at schema level
+    resultSet.next();
+    assertEquals("JDBC_DB1", resultSet.getString(1));
+    assertEquals("JDBC_SCHEMA11", resultSet.getString(2));
   }
 
   @Test
