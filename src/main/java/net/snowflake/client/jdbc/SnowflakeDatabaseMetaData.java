@@ -107,13 +107,6 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private boolean stringsQuoted = false;
 
-  private String showCommand;
-
-  // Package-private function for displaying show command (for testing only)
-  String getShowCommand() {
-    return showCommand;
-  }
-
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
 
@@ -1418,17 +1411,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
 
-    showCommand = null;
+    String showTablesCommand = null;
     final boolean viewOnly =
         inputValidTableTypes.size() == 1 && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
     final boolean tableOnly =
         inputValidTableTypes.size() == 1 && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
     if (viewOnly) {
-      showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ views";
+      showTablesCommand = "show /* JDBC:DatabaseMetaData.getTables() */ views";
     } else if (tableOnly) {
-      showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ tables";
+      showTablesCommand = "show /* JDBC:DatabaseMetaData.getTables() */ tables";
     } else {
-      showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ objects";
+      showTablesCommand = "show /* JDBC:DatabaseMetaData.getTables() */ objects";
     }
 
     // only add pattern if it is not empty and not matching all character.
@@ -1436,11 +1429,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !tableNamePattern.isEmpty()
         && !tableNamePattern.trim().equals("%")
         && !tableNamePattern.trim().equals(".*")) {
-      showCommand += " like '" + tableNamePattern + "'";
+      showTablesCommand += " like '" + tableNamePattern + "'";
     }
 
     if (catalog == null) {
-      showCommand += " in account";
+      showTablesCommand += " in account";
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     } else {
@@ -1450,18 +1443,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       // a schema if the current schema a user is connected to is different
       // given that we don't support show tables without a known schema.
       if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
-        showCommand += " in database \"" + catalogEscaped + "\"";
+        showTablesCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
       } else {
         String schemaUnescaped = unescapeChars(schemaPattern);
-        showCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
+        showTablesCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
       }
     }
 
-    logger.debug("sql command to get table metadata: {}", showCommand);
+    logger.debug("sql command to get table metadata: {}", showTablesCommand);
 
-    resultSet = executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_TABLES);
+    resultSet = executeAndReturnEmptyResultIfNotFound(statement, showTablesCommand, GET_TABLES);
     sendInBandTelemetryMetadataMetrics(
         resultSet,
         "getTables",
@@ -1608,37 +1601,37 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
     final Pattern compiledColumnPattern = Wildcard.toRegexPattern(columnNamePattern, true);
 
-    showCommand = "show /* JDBC:DatabaseMetaData.getColumns() */ columns";
+    String showColumnsCommand = "show /* JDBC:DatabaseMetaData.getColumns() */ columns";
 
     if (columnNamePattern != null
         && !columnNamePattern.isEmpty()
         && !columnNamePattern.trim().equals("%")
         && !columnNamePattern.trim().equals(".*")) {
-      showCommand += " like '" + columnNamePattern + "'";
+      showColumnsCommand += " like '" + columnNamePattern + "'";
     }
 
     if (catalog == null) {
-      showCommand += " in account";
+      showColumnsCommand += " in account";
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
           extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
     } else {
       String catalogEscaped = escapeSqlQuotes(catalog);
       if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
-        showCommand += " in database \"" + catalogEscaped + "\"";
+        showColumnsCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
             extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
       } else {
         String schemaUnescaped = unescapeChars(schemaPattern);
         if (tableNamePattern == null || Wildcard.isWildcardPatternStr(tableNamePattern)) {
-          showCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
+          showColumnsCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
         } else if (tableNamePattern.isEmpty()) {
           return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
               extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
         } else {
           String tableNameUnescaped = unescapeChars(tableNamePattern);
-          showCommand +=
+          showColumnsCommand +=
               " in table \""
                   + catalogEscaped
                   + "\".\""
@@ -1650,11 +1643,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
 
-    logger.debug("sql command to get column metadata: {}", showCommand);
+    logger.debug("sql command to get column metadata: {}", showColumnsCommand);
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(
-            statement, showCommand, extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
+            statement, showColumnsCommand, extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
     sendInBandTelemetryMetadataMetrics(
         resultSet,
         "getColumns",
@@ -2617,37 +2610,37 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledStreamNamePattern = Wildcard.toRegexPattern(streamName, true);
 
-    String showCommand = "show streams";
+    String showStreamsCommand = "show streams";
 
     if (streamName != null
         && !streamName.isEmpty()
         && !streamName.trim().equals("%")
         && !streamName.trim().equals(".*")) {
-      showCommand += " like '" + streamName + "'";
+      showStreamsCommand += " like '" + streamName + "'";
     }
 
     if (catalog == null) {
-      showCommand += " in account";
+      showStreamsCommand += " in account";
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_STREAMS, statement);
     } else {
       String catalogEscaped = escapeSqlQuotes(catalog);
       if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
-        showCommand += " in database \"" + catalogEscaped + "\"";
+        showStreamsCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_STREAMS, statement);
       } else {
         String schemaUnescaped = unescapeChars(schemaPattern);
         if (streamName == null || Wildcard.isWildcardPatternStr(streamName)) {
-          showCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
+          showStreamsCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
         }
       }
     }
 
-    logger.debug("sql command to get stream metadata: {}", showCommand);
+    logger.debug("sql command to get stream metadata: {}", showStreamsCommand);
 
     ResultSet resultSet =
-        executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_STREAMS);
+        executeAndReturnEmptyResultIfNotFound(statement, showStreamsCommand, GET_STREAMS);
     sendInBandTelemetryMetadataMetrics(
         resultSet, "getStreams", originalCatalog, originalSchemaPattern, streamName, "none");
 

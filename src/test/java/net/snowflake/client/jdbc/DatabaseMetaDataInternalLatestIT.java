@@ -6,6 +6,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -52,19 +58,16 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
     // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
     ResultSet resultSet = databaseMetaData.getTables(null, null, null, null);
-    // Assert the show command scopes to schema level
-    assertEquals(
-        "show /* JDBC:DatabaseMetaData.getTables() */ objects in schema \"JDBC_DB1\".\"JDBC_SCHEMA11\"",
-        databaseMetaData.unwrap(SnowflakeDatabaseMetaData.class).getShowCommand());
-    assertEquals(1, getSizeOfResultSet(resultSet));
-
+    // Assert the tables are retrieved at schema level
+    resultSet.next();
+    assertEquals("JDBC_DB1", resultSet.getString(1));
+    assertEquals("JDBC_SCHEMA11", resultSet.getString(2));
     // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
     resultSet = databaseMetaData.getColumns(null, null, null, null);
-    // Assert the show command scopes to schema level
-    assertEquals(
-        "show /* JDBC:DatabaseMetaData.getColumns() */ columns in schema \"JDBC_DB1\".\"JDBC_SCHEMA11\"",
-        databaseMetaData.unwrap(SnowflakeDatabaseMetaData.class).getShowCommand());
-    assertEquals(3, getSizeOfResultSet(resultSet));
+    // Assert the columns are retrieved at schema level
+    resultSet.next();
+    assertEquals("JDBC_DB1", resultSet.getString(1));
+    assertEquals("JDBC_SCHEMA11", resultSet.getString(2));
   }
 
   @Test
@@ -178,5 +181,34 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
     // params
     resultSet = databaseMetaData.getFunctionColumns("%", "%", "%", "%");
     assertEquals(0, getSizeOfResultSet(resultSet));
+  }
+
+  /** Tests that calling getTables() concurrently doesn't cause data race condition. */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGetTablesRaceCondition()
+      throws SQLException, ExecutionException, InterruptedException {
+    try (Connection connection = getConnection()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+      // Create 10 threads, each calls getTables() concurrently
+      ExecutorService executorService = Executors.newFixedThreadPool(10);
+      List<Future<?>> futures = new ArrayList<>();
+      for (int i = 0; i < 10; i++) {
+        futures.add(
+            executorService.submit(
+                () -> {
+                  try {
+                    databaseMetaData.getTables(database, schema, null, null);
+                  } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                  }
+                }));
+      }
+      executorService.shutdown();
+      for (int i = 0; i < 10; i++) futures.get(i).get();
+    }
   }
 }
