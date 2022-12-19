@@ -35,9 +35,9 @@ class SFResultSetFactory {
       multistatement = false;
     }
     // Store select statements in cache
-    if (resultSetSerializable.getStatementType().isSelect() && !multistatement)
+    SFBaseSession session = statement.getSFBaseSession();
+    if (session.useResultCache && resultSetSerializable.getStatementType().isSelect() && !multistatement)
     {
-      SFBaseSession session = statement.getSFBaseSession();
       session.resultCache.putResult(sqlText, resultSetSerializable.getQueryId(),  session.getSessionId(), resultSetSerializable);
     }
 

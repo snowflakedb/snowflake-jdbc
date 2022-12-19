@@ -196,7 +196,7 @@ public class SFStatement extends SFBaseStatement {
     boolean sortResult = sortProperty != null && (Boolean) sortProperty;
 
     /** If this is a select statement, results may be cached */
-    if (!asyncExec && sql.trim().toUpperCase().startsWith("SELECT")) {
+    if (session.useResultCache &&!asyncExec && sql.trim().toUpperCase().startsWith("SELECT")) {
       Object cachedResult = session.resultCache.getResult(sql);
       if (cachedResult != null) {
         logger.debug("Fetching result from cache", false);
