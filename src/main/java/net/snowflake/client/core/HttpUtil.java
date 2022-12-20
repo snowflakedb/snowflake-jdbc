@@ -243,9 +243,11 @@ public class HttpUtil {
    * Constructs a user-agent header with the following pattern: connector_name/connector_version
    * (os-platform_info) language_implementation/language_version
    *
+   * @param customSuffix custom suffix that would be appended to user agent to identify the jdbc
+   *     usage.
    * @return string for user-agent header
    */
-  private static String buildUserAgent() {
+  private static String buildUserAgent(String customSuffix) {
     // Start with connector name
     StringBuilder builder = new StringBuilder("JDBC/");
     // Append connector version and parenthesis start
@@ -265,6 +267,7 @@ public class HttpUtil {
     String languageVersion =
         (systemGetProperty("java.version") != null) ? systemGetProperty("java.version") : "";
     builder.append(languageVersion);
+    builder.append(customSuffix);
     String userAgent = builder.toString();
     return userAgent;
   }
@@ -356,13 +359,14 @@ public class HttpUtil {
       connectionManager.setMaxTotal(maxConnections);
       connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
 
+      String userAgentIdentifier = key != null ? key.getUserAgentIdentifier() : "";
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
               .setConnectionManager(connectionManager)
               // Support JVM proxy settings
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
-              .setUserAgent(buildUserAgent()) // needed for Okta
+              .setUserAgent(buildUserAgent(userAgentIdentifier)) // needed for Okta
               .disableCookieManagement(); // SNOW-39748
 
       if (key != null && key.usesProxy()) {

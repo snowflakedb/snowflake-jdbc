@@ -15,23 +15,26 @@ import java.io.Serializable;
 public class HttpClientSettingsKey implements Serializable {
 
   private OCSPMode ocspMode;
-  private boolean useProxy;
+  private boolean useProxy = false;
   private String proxyHost = "";
   private int proxyPort = 0;
   private String nonProxyHosts = "";
   private String proxyUser = "";
   private String proxyPassword = "";
   private String proxyProtocol = "http";
+  private String userAgentIdentifier = "";
 
   public HttpClientSettingsKey(
       OCSPMode mode,
+      boolean useProxy,
       String host,
       int port,
       String nonProxyHosts,
       String user,
       String password,
-      String scheme) {
-    this.useProxy = true;
+      String scheme,
+      String userPrefix) {
+    this.useProxy = useProxy;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
     this.proxyHost = !Strings.isNullOrEmpty(host) ? host.trim() : "";
     this.proxyPort = port;
@@ -39,11 +42,7 @@ public class HttpClientSettingsKey implements Serializable {
     this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
     this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
     this.proxyProtocol = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
-  }
-
-  public HttpClientSettingsKey(OCSPMode mode) {
-    this.useProxy = false;
-    this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
+    this.userAgentIdentifier = userPrefix;
   }
 
   @Override
@@ -98,6 +97,10 @@ public class HttpClientSettingsKey implements Serializable {
 
   public String getProxyUser() {
     return this.proxyUser;
+  }
+
+  public String getUserAgentIdentifier() {
+    return this.userAgentIdentifier;
   }
 
   /** Be careful of using this! Should only be called when password is later masked. */

@@ -73,7 +73,10 @@ public class SessionUtilLatestIT {
     when(loginInput.getAppId()).thenReturn("testid");
     when(loginInput.getOCSPMode()).thenReturn(OCSPMode.FAIL_OPEN);
     when(loginInput.getHttpClientSettingsKey())
-        .thenReturn(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
+        .thenReturn(
+            new HttpClientSettingsKeyBuilder()
+                .setMode(OCSPMode.FAIL_OPEN)
+                .createHttpClientSettingsKey());
     return loginInput;
   }
 
