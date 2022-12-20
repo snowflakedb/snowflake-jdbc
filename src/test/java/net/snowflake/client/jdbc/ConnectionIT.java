@@ -3,22 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
-
-import java.io.*;
-import java.security.*;
-import java.sql.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
@@ -33,6 +17,23 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.*;
+import java.security.*;
+import java.sql.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+import static org.junit.Assume.assumeTrue;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
@@ -52,32 +53,10 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testSimpleConnection() throws SQLException {
     Connection con = getConnection();
     Statement statement = con.createStatement();
-    statement.unwrap(SnowflakeStatement.class).setBatchID("testbatch5");
-    statement.execute("create or replace table test_table (c1 string)");
-    statement.execute("insert into test_table values('hello')");
-    ResultSet resultSet = statement.executeQuery("select * from test_table");
+    ResultSet resultSet = statement.executeQuery("show parameters");
     assertTrue(resultSet.next());
-    statement.execute("delete from test_table where c1='hello'");
-    statement.unwrap(SnowflakeStatement.class).setBatchID("testbatch6");
-    statement.execute("create or replace table test_table_2 (c1 int)");
-    statement.execute("insert into test_table_2 values(5)");
-    resultSet = statement.executeQuery("select * from test_table_2");
-    assertTrue(resultSet.next());
-    statement.execute("delete from test_table_2 where c1=5");
+    assertFalse(con.isClosed());
     statement.close();
-    PreparedStatement prepSt =
-        con.prepareStatement("create or replace table bind_table (c1 string, c2 int)");
-    prepSt.unwrap(SnowflakeStatement.class).setBatchID("prepstTestBatch3");
-    prepSt.execute();
-    prepSt = con.prepareStatement("insert into bind_table values (?,?)");
-    prepSt.setString(1, "line1");
-    prepSt.setInt(2, 27);
-    prepSt.execute();
-    prepSt = con.prepareStatement("select * from bind_table");
-    resultSet = prepSt.executeQuery();
-    assertTrue(resultSet.next());
-    prepSt = con.prepareStatement("delete from bind_table where c2=27");
-    prepSt.execute();
     con.close();
     assertTrue(con.isClosed());
     con.close(); // ensure no exception

@@ -3,17 +3,18 @@
  */
 package net.snowflake.client;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import com.google.common.base.Strings;
+import org.junit.Rule;
+
+import javax.annotation.Nullable;
 import java.net.URL;
-import java.sql.*;
 import java.sql.Date;
+import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
-import org.junit.Rule;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /** Base test class with common constants, data structures and methods */
 public class AbstractDriverIT {
@@ -312,10 +313,6 @@ public class AbstractDriverIT {
     properties.put("schema", params.get("schema"));
     properties.put("warehouse", params.get("warehouse"));
     properties.put("ssl", params.get("ssl"));
-    properties.put("query_tag", "megtesttag");
-    properties.put("useProxy", "true");
-    properties.put("proxyHost", "127.0.0.1");
-    properties.put("proxyPort", "9090");
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
 
