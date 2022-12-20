@@ -4,18 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SessionUtil.*;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.BasicEvent.QueryState;
 import net.snowflake.client.core.bind.BindException;
 import net.snowflake.client.core.bind.BindUploader;
@@ -28,6 +17,21 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpRequestBase;
+
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static net.snowflake.client.core.SessionUtil.*;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Snowflake statement */
 public class SFStatement extends SFBaseStatement {
@@ -455,34 +459,6 @@ public class SFStatement extends SFBaseStatement {
         }
       }
       execTimeData.setBindEnd();
-
-      if (session.isConservativeMemoryUsageEnabled()) {
-        logger.debug("JDBC conservative memory usage is enabled.");
-        calculateConservativeMemoryUsage();
-      }
-
-      stmtInput
-          .setSql(sql)
-          .setMediaType(mediaType)
-          .setInternal(internal)
-          .setDescribeOnly(describeOnly)
-          .setAsync(asyncExec)
-          .setServerUrl(session.getServerUrl())
-          .setRequestId(requestId)
-          .setSequenceId(sequenceId)
-          .setParametersMap(statementParametersMap)
-          .setSessionToken(session.getSessionToken())
-          .setNetworkTimeoutInMillis(session.getNetworkTimeoutInMilli())
-          .setInjectSocketTimeout(session.getInjectSocketTimeout())
-          .setInjectClientPause(session.getInjectClientPause())
-          .setCanceling(canceling)
-          .setRetry(false)
-          .setDescribedJobId(describeJobUUID)
-          .setCombineDescribe(session.getEnableCombineDescribe())
-          .setQuerySubmissionTime(System.currentTimeMillis())
-          .setServiceName(session.getServiceName())
-          .setOCSPMode(session.getOCSPMode())
-          .setHttpClientSettingsKey(session.getHttpClientKey());
 
       if (canceling.get()) {
         logger.debug("Query cancelled", false);

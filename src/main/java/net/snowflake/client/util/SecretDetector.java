@@ -8,15 +8,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import java.io.IOException;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONStyle;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Search for credentials in sql and/or other text */
 public class SecretDetector {
@@ -141,8 +142,6 @@ public class SecretDetector {
   }
 
   private static String filterSASTokens(String text) {
-    return text;
-    /*
     Matcher matcher =
         SAS_TOKEN_PATTERN.matcher(
             text.length() <= MAX_LENGTH ? text : text.substring(0, MAX_LENGTH));
@@ -151,8 +150,6 @@ public class SecretDetector {
       return matcher.replaceAll("$1=****");
     }
     return text;
-
-     */
   }
 
   private static String filterPassword(String text) {
@@ -194,8 +191,7 @@ public class SecretDetector {
    * @return Masked string
    */
   public static String maskSASToken(String text) {
-    return text;
-    // return filterSASTokens(text);
+    return filterSASTokens(text);
   }
 
   /**
