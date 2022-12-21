@@ -50,7 +50,7 @@ public class SFTrustManagerMockitoMockLatestIT {
           .thenReturn(tested);
 
       new SFTrustManager(
-          new HttpClientSettingsKeyBuilder()
+          new HttpClientSettingsKey.Builder()
               .setMode(OCSPMode.FAIL_CLOSED)
               .createHttpClientSettingsKey(),
           null); // cache file location

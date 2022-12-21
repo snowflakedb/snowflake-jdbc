@@ -67,7 +67,7 @@ public class SFTrustManagerTest {
 
       SFTrustManager tManager =
           new SFTrustManager(
-              new HttpClientSettingsKeyBuilder()
+              new HttpClientSettingsKey.Builder()
                   .setMode(OCSPMode.FAIL_OPEN)
                   .createHttpClientSettingsKey(),
               null // OCSP Cache file custom location

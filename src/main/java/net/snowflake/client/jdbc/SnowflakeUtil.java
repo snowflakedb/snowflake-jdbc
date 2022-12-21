@@ -586,7 +586,7 @@ public class SnowflakeUtil {
         String proxyProtocol = info.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
 
         // create key for proxy properties
-        return new HttpClientSettingsKeyBuilder()
+        return new HttpClientSettingsKey.Builder()
             .setProxy()
             .setMode(mode)
             .setHost(proxyHost)
@@ -599,7 +599,7 @@ public class SnowflakeUtil {
       }
     }
     // if no proxy properties, return key with only OCSP mode
-    return new HttpClientSettingsKeyBuilder().setMode(mode).createHttpClientSettingsKey();
+    return new HttpClientSettingsKey.Builder().setMode(mode).createHttpClientSettingsKey();
   }
 
   /**

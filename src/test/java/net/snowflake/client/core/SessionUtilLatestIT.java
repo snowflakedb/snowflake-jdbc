@@ -74,7 +74,7 @@ public class SessionUtilLatestIT {
     when(loginInput.getOCSPMode()).thenReturn(OCSPMode.FAIL_OPEN);
     when(loginInput.getHttpClientSettingsKey())
         .thenReturn(
-            new HttpClientSettingsKeyBuilder()
+            new HttpClientSettingsKey.Builder()
                 .setMode(OCSPMode.FAIL_OPEN)
                 .createHttpClientSettingsKey());
     return loginInput;

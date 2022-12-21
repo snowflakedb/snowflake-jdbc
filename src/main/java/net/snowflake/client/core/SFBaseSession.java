@@ -314,7 +314,7 @@ public abstract class SFBaseSession {
       return ocspAndProxyKey;
     }
 
-    HttpClientSettingsKeyBuilder settingsKeyBuilder = new HttpClientSettingsKeyBuilder();
+    HttpClientSettingsKey.Builder settingsKeyBuilder = new HttpClientSettingsKey.Builder();
     // if not, create a new key
     boolean useProxy = false;
     if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
@@ -418,9 +418,9 @@ public abstract class SFBaseSession {
       }
     }
     // Check for any user agent prefix
-    if (connectionPropertiesMap.containsKey(SFSessionProperty.USER_AGENT_IDENTIFIER)) {
-      settingsKeyBuilder.setUserPrefix(
-          (String) connectionPropertiesMap.get(SFSessionProperty.USER_AGENT_IDENTIFIER));
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.USER_AGENT_SUFFIX)) {
+      settingsKeyBuilder.setUserAgentSuffix(
+          (String) connectionPropertiesMap.get(SFSessionProperty.USER_AGENT_SUFFIX));
     }
 
     ocspAndProxyKey = settingsKeyBuilder.createHttpClientSettingsKey();

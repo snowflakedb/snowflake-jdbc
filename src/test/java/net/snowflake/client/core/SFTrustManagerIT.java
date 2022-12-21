@@ -83,7 +83,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     for (String host : TARGET_HOSTS) {
       HttpClient client =
           HttpUtil.buildHttpClient(
-              new HttpClientSettingsKeyBuilder()
+              new HttpClientSettingsKey.Builder()
                   .setMode(OCSPMode.FAIL_CLOSED)
                   .createHttpClientSettingsKey(),
               null, // default OCSP response cache file
@@ -106,7 +106,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     for (String host : TARGET_HOSTS) {
       HttpClient client =
           HttpUtil.buildHttpClient(
-              new HttpClientSettingsKeyBuilder()
+              new HttpClientSettingsKey.Builder()
                   .setMode(OCSPMode.FAIL_CLOSED)
                   .createHttpClientSettingsKey(),
               ocspCacheFile, // a temp OCSP response cache file
@@ -125,7 +125,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     for (String host : TARGET_HOSTS) {
       HttpClient client =
           HttpUtil.buildHttpClient(
-              new HttpClientSettingsKeyBuilder()
+              new HttpClientSettingsKey.Builder()
                   .setMode(OCSPMode.FAIL_CLOSED)
                   .createHttpClientSettingsKey(),
               ocspCacheFile, // a temp OCSP response cache file
@@ -147,7 +147,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     for (String host : TARGET_HOSTS) {
       HttpClient client =
           HttpUtil.buildHttpClient(
-              new HttpClientSettingsKeyBuilder()
+              new HttpClientSettingsKey.Builder()
                   .setMode(OCSPMode.FAIL_OPEN)
                   .createHttpClientSettingsKey(),
               ocspCacheFile, // a temp OCSP response cache file
@@ -167,7 +167,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     String host = TARGET_HOSTS[0];
     HttpClient client =
         HttpUtil.buildHttpClient(
-            new HttpClientSettingsKeyBuilder()
+            new HttpClientSettingsKey.Builder()
                 .setMode(OCSPMode.FAIL_CLOSED)
                 .createHttpClientSettingsKey(),
             ocspCacheFile, // a temp OCSP response cache file

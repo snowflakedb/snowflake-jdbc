@@ -57,7 +57,7 @@ public enum SFSessionProperty {
   PRIVATE_KEY_FILE_PWD("private_key_file_pwd", false, String.class),
   CLIENT_INFO("snowflakeClientInfo", false, String.class),
   ALLOW_UNDERSCORES_IN_HOST("allowUnderscoresInHost", false, Boolean.class),
-  USER_AGENT_IDENTIFIER("user_agent_identifier", false, String.class);
+  USER_AGENT_SUFFIX("user_agent_suffix", false, String.class);
 
   // property key in string
   private String propertyKey;

@@ -972,7 +972,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             0,
             0,
             0,
-            new HttpClientSettingsKeyBuilder().setMode(null).createHttpClientSettingsKey());
+            new HttpClientSettingsKey.Builder().setMode(null).createHttpClientSettingsKey());
 
     JsonNode jsonNode = mapper.readTree(theString);
     assertEquals(

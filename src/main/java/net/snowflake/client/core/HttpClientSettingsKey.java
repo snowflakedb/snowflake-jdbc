@@ -22,7 +22,7 @@ public class HttpClientSettingsKey implements Serializable {
   private String proxyUser = "";
   private String proxyPassword = "";
   private String proxyProtocol = "http";
-  private String userAgentIdentifier = "";
+  private String userAgentSuffix = "";
 
   public HttpClientSettingsKey(
       OCSPMode mode,
@@ -42,7 +42,7 @@ public class HttpClientSettingsKey implements Serializable {
     this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
     this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
     this.proxyProtocol = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
-    this.userAgentIdentifier = userPrefix;
+    this.userAgentSuffix = userPrefix;
   }
 
   @Override
@@ -99,8 +99,8 @@ public class HttpClientSettingsKey implements Serializable {
     return this.proxyUser;
   }
 
-  public String getUserAgentIdentifier() {
-    return this.userAgentIdentifier;
+  public String getUserAgentSuffix() {
+    return this.userAgentSuffix;
   }
 
   /** Be careful of using this! Should only be called when password is later masked. */
@@ -114,5 +114,67 @@ public class HttpClientSettingsKey implements Serializable {
 
   public Protocol getProxyProtocol() {
     return this.proxyProtocol.equalsIgnoreCase("https") ? Protocol.HTTPS : Protocol.HTTP;
+  }
+
+  public static class Builder {
+    private OCSPMode mode;
+    private String host;
+    private int port;
+    private String nonProxyHosts;
+    private String user;
+    private String password;
+    private String scheme;
+    private String userAgentSuffix;
+    private boolean useProxy = false;
+
+    public Builder setMode(OCSPMode mode) {
+      this.mode = mode;
+      return this;
+    }
+
+    public Builder setHost(String host) {
+      this.host = host;
+      return this;
+    }
+
+    public Builder setProxy() {
+      this.useProxy = true;
+      return this;
+    }
+
+    public Builder setPort(int port) {
+      this.port = port;
+      return this;
+    }
+
+    public Builder setNonProxyHosts(String nonProxyHosts) {
+      this.nonProxyHosts = nonProxyHosts;
+      return this;
+    }
+
+    public Builder setUser(String user) {
+      this.user = user;
+      return this;
+    }
+
+    public Builder setPassword(String password) {
+      this.password = password;
+      return this;
+    }
+
+    public Builder setScheme(String scheme) {
+      this.scheme = scheme;
+      return this;
+    }
+
+    public Builder setUserAgentSuffix(String userAgentSuffix) {
+      this.userAgentSuffix = userAgentSuffix;
+      return this;
+    }
+
+    public HttpClientSettingsKey createHttpClientSettingsKey() {
+      return new HttpClientSettingsKey(
+          mode, useProxy, host, port, nonProxyHosts, user, password, scheme, userAgentSuffix);
+    }
   }
 }

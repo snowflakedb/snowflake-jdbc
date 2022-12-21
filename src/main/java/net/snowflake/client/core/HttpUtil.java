@@ -267,7 +267,7 @@ public class HttpUtil {
     String languageVersion =
         (systemGetProperty("java.version") != null) ? systemGetProperty("java.version") : "";
     builder.append(languageVersion);
-    builder.append(customSuffix);
+    builder.append(null == customSuffix ? "" : " " + customSuffix);
     String userAgent = builder.toString();
     return userAgent;
   }
@@ -359,14 +359,14 @@ public class HttpUtil {
       connectionManager.setMaxTotal(maxConnections);
       connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
 
-      String userAgentIdentifier = key != null ? key.getUserAgentIdentifier() : "";
+      String userAgentSuffix = key != null ? key.getUserAgentSuffix() : "";
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
               .setConnectionManager(connectionManager)
               // Support JVM proxy settings
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
-              .setUserAgent(buildUserAgent(userAgentIdentifier)) // needed for Okta
+              .setUserAgent(buildUserAgent(userAgentSuffix)) // needed for Okta
               .disableCookieManagement(); // SNOW-39748
 
       if (key != null && key.usesProxy()) {
