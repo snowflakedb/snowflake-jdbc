@@ -442,10 +442,6 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     // set parameter
     stmt.execute("alter session set ENABLE_DRIVER_TERSE_SHOW = true;");
-    // SNOW-487548: disable the key-value feature to hide is_hybrid column
-    // in show tables command. The column is controlled by two parameters:
-    // enable_key_value_table and qa_mode.
-    stmt.execute("alter session set ENABLE_KEY_VALUE_TABLE = false;");
     stmt.execute("alter session set qa_mode = false;");
 
     databaseMetaData = connection.getMetaData();
@@ -498,6 +494,10 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     resultSet = databaseMetaData.getTables("JDBC_DB1", "JDBC%", null, new String[] {"TABLE"});
     assertEquals(3, getSizeOfResultSet(resultSet));
 
+    // SNOW-487548: disable the key-value feature to hide is_hybrid column
+    // in show tables command. The column is controlled by two parameters:
+    // enable_key_value_table and qa_mode.
+    stmt.execute("alter session set ENABLE_KEY_VALUE_TABLE = false;");
     resultSet =
         databaseMetaData.getTables("JDBC_DB1", "JDBC_SCH%", "J_BC_TBL122", new String[] {"TABLE"});
     resultSet.next();
@@ -506,6 +506,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     assertEquals("JDBC_TBL122", resultSet.getString(3));
     assertEquals("TABLE", resultSet.getString(4));
     assertEquals("", resultSet.getString(5));
+    stmt.execute("alter session unset ENABLE_KEY_VALUE_TABLE;");
 
     resultSet = databaseMetaData.getTables("JDBC_DB1", null, "JDBC_TBL211", new String[] {"TABLE"});
     assertEquals(0, getSizeOfResultSet(resultSet));
