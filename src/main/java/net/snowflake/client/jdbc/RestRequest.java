@@ -446,6 +446,8 @@ public class RestRequest {
             response.getStatusLine().getStatusCode() >= 600)
         && // gateway timeout
         response.getStatusLine().getStatusCode() != 408
+        && // retry
+        response.getStatusLine().getStatusCode() != 429
         && // request timeout
         (!retryHTTP403 || response.getStatusLine().getStatusCode() != 403);
   }
