@@ -210,7 +210,7 @@ public class RestRequestTest {
     testCases.add(new TestCase(425, false, true));
     testCases.add(new TestCase(426, false, true));
     testCases.add(new TestCase(428, false, true));
-    testCases.add(new TestCase(429, false, true));
+    testCases.add(new TestCase(429, false, false)); // do retry on HTTP 429
     testCases.add(new TestCase(431, false, true));
     testCases.add(new TestCase(451, false, true));
     testCases.add(new TestCase(500, false, false));
@@ -263,7 +263,7 @@ public class RestRequestTest {
     testCases.add(new TestCase(425, true, true));
     testCases.add(new TestCase(426, true, true));
     testCases.add(new TestCase(428, true, true));
-    testCases.add(new TestCase(429, true, true));
+    testCases.add(new TestCase(429, true, false)); // do retry on HTTP 429
     testCases.add(new TestCase(431, true, true));
     testCases.add(new TestCase(451, true, true));
     testCases.add(new TestCase(500, true, false));
