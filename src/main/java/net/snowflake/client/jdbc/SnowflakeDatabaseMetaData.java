@@ -1188,11 +1188,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           nextRow[3] = paramNames[i]; // column/parameter name
           // column type
           if (i == 0) {
-            if (paramTypes[i].substring(0, 5).equalsIgnoreCase("table")) {
-              nextRow[4] = procedureColumnOut;
-            } else {
-              nextRow[4] = procedureColumnReturn;
-            }
+            nextRow[4] = procedureColumnReturn;
           } else {
             nextRow[4] = procedureColumnIn; // kind of column/parameter
           }

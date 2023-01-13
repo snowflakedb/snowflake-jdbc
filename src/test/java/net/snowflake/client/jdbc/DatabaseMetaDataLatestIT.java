@@ -1210,7 +1210,6 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertNull(resultSet.getString("COLUMN_DEF"));
-
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(12, resultSet.getInt("ORDINAL_POSITION"));
       assertEquals("YES", resultSet.getString("IS_NULLABLE"));
@@ -1353,6 +1352,31 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       DatabaseMetaData metadata = connection.getMetaData();
       ResultSet rs = metadata.getProcedures(null, null, null);
       assertEquals(0, getSizeOfResultSet(rs));
+    }
+  }
+
+  @Test
+  public void testGetProceduresColumnsWithReturnTypeTable() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      statement.execute("create table testtable (id int, name varchar(20), address varchar(20));");
+      statement.execute(
+          "create or replace procedure proctest ()\n"
+              + "returns table (\"id\" number(38,0), \"name\" varchar(20), \"address\" varchar(20))\n"
+              + "language sql\n"
+              + "execute as owner\n"
+              + "as 'declare\n"
+              + "    res resultset default (select * from testtable);\n"
+              + "  begin\n"
+              + "    return table(res);\n"
+              + "  end';");
+
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "PROCTEST", "%");
+      res.next();
+      assertEquals("5", res.getString("COLUMN_TYPE"));
+      res.close();
+      statement.close();
     }
   }
 }
