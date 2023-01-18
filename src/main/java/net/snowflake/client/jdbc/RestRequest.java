@@ -350,7 +350,7 @@ public class RestRequest {
 
         retryCount++;
         lastStatusCodeForRetry =
-            response == null ? "null" : String.valueOf(response.getStatusLine().getStatusCode());
+            response == null ? "0" : String.valueOf(response.getStatusLine().getStatusCode());
         // If the request failed with any other retry-able error and auth timeout is reached
         // increase the retry count and throw special exception to renew the token before retrying.
         if (authTimeout > 0) {
