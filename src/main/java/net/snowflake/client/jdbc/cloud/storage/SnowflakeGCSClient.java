@@ -758,8 +758,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               false, // no cookie
               false, // no retry
               false, // no request_guid
-              true // retry on HTTP 403
-              );
+              true, // retry on HTTP 403
+              true);
 
       logger.debug(
           "Call returned for URL: {}",

@@ -48,6 +48,23 @@ public class RestRequest {
   // retry at least once even if timeout limit has been reached
   private static final int MIN_RETRY_COUNT = 1;
 
+  public static CloseableHttpResponse execute(
+          CloseableHttpClient httpClient,
+          HttpRequestBase httpRequest,
+          long retryTimeout,
+          long authTimeout,
+          int socketTimeout,
+          int retryCount,
+          int injectSocketTimeout,
+          AtomicBoolean canceling,
+          boolean withoutCookies,
+          boolean includeRetryParameters,
+          boolean includeRequestGuid,
+          boolean retryHTTP403)
+          throws SnowflakeSQLException {
+    return execute(httpClient, httpRequest, retryTimeout, authTimeout, socketTimeout, retryCount, injectSocketTimeout, canceling, withoutCookies, includeRetryParameters, includeRequestGuid, retryHTTP403, false);
+  }
+
   /**
    * Execute an http request with retry logic.
    *
@@ -79,7 +96,8 @@ public class RestRequest {
       boolean withoutCookies,
       boolean includeRetryParameters,
       boolean includeRequestGuid,
-      boolean retryHTTP403)
+      boolean retryHTTP403,
+      boolean noRetry)
       throws SnowflakeSQLException {
     CloseableHttpResponse response = null;
 
@@ -207,7 +225,7 @@ public class RestRequest {
        * If we got a response and the status code is not one of those
        * transient failures, no more retry
        */
-      if (isCertificateRevoked(savedEx) || isNonRetryableHTTPCode(response, retryHTTP403)) {
+      if (noRetry || isCertificateRevoked(savedEx) || isNonRetryableHTTPCode(response, retryHTTP403)) {
         String msg = "Unknown cause";
         if (response != null) {
           logger.debug("HTTP response code: {}", response.getStatusLine().getStatusCode());
