@@ -100,10 +100,12 @@ public class RestRequestTest {
 
                 if (callCount == 0) {
                   assertFalse(params.contains("retryCount="));
+                  assertFalse(params.contains("retry="));
                   assertFalse(params.contains("clientStartTime="));
                   assertTrue(params.contains("request_guid="));
                 } else {
                   assertTrue(params.contains("retryCount=" + callCount));
+                  assertTrue(params.contains("retry=503"));
                   assertTrue(params.contains("clientStartTime="));
                   assertTrue(params.contains("request_guid="));
                 }
@@ -134,6 +136,7 @@ public class RestRequestTest {
                 String params = arg.getURI().getQuery();
 
                 assertFalse(params.contains("retryCount="));
+                assertFalse(params.contains("retry="));
                 assertFalse(params.contains("clientStartTime="));
                 assertTrue(params.contains("request_guid="));
 
