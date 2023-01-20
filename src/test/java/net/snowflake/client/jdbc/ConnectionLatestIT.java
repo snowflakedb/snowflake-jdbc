@@ -89,18 +89,22 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testDisableQueryContextCache() throws SQLException {
+    // Disable QCC via prop
     Properties props = new Properties();
     props.put("disableQueryContextCache", "true");
     Connection con = getConnection(props);
     Statement statement = con.createStatement();
     statement.execute("select 1");
+    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    // if QCC disable, this should be null
+    assertNull(session.getQueryContext());
     con.close();
   }
 
-  /**
-   * Verify the passed heartbeat frequency matches the output value if the input is valid (between
-   * 900 and 3600).
-   */
+    /**
+     * Verify the passed heartbeat frequency matches the output value if the input is valid (between
+     * 900 and 3600).
+     */
   @Test
   public void testHeartbeatFrequencyValidValue() throws Exception {
     Properties paramProperties = new Properties();
