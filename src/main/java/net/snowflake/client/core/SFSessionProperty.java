@@ -4,9 +4,10 @@
 
 package net.snowflake.client.core;
 
+import net.snowflake.client.jdbc.ErrorCode;
+
 import java.security.PrivateKey;
 import java.util.regex.Pattern;
-import net.snowflake.client.jdbc.ErrorCode;
 
 /**
  * session properties accepted for opening a new session.
@@ -60,8 +61,9 @@ public enum SFSessionProperty {
   CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED(
       "CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", false, Boolean.class),
   GZIP_DISABLED("gzipDisabled", false, Boolean.class),
-
-  DISABLE_QUERY_CONTEXT_CACHE("disableQueryContextCache", false, Boolean.class);
+  DISABLE_QUERY_CONTEXT_CACHE("disableQueryContextCache", false, Boolean.class),
+  HTAP_TELEMETRY_ENABLED(
+      "HTAP_TELEMETRY_ENABLED", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

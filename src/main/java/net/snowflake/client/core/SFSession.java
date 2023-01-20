@@ -500,13 +500,11 @@ public class SFSession extends SFBaseSession {
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
-    // overwrite session parameter value with connection parameter value for OOB telemetry in HTAP.
-    // Default is disabled.
-    if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
-      TelemetryService.enable();
+    // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
+    if (getBooleanValue(connectionPropertiesMap.get(SFSessionProperty.HTAP_TELEMETRY_ENABLED))) {
+      TelemetryService.enableHTAP();
     } else {
-      TelemetryService.disable();
+      TelemetryService.disableHTAP();
     }
     String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
     String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
