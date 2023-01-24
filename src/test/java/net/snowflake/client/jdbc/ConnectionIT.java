@@ -8,7 +8,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
-import static org.junit.Assume.*;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.*;
 import java.security.*;
@@ -52,7 +52,7 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testSimpleConnection() throws SQLException {
     Connection con = getConnection();
     Statement statement = con.createStatement();
-    ResultSet resultSet = statement.executeQuery("show parameters");
+    ResultSet resultSet = statement.executeQuery("select 1");
     assertTrue(resultSet.next());
     assertFalse(con.isClosed());
     statement.close();
