@@ -1,3 +1,7 @@
+**JDBC Driver 3.13.27**
+
+- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+
 **JDBC Driver 3.13.26**
 
 - \|| Upgraded the arrow library from version 9.0.0 to 10.0.1.
