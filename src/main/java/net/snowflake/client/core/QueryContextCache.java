@@ -94,9 +94,8 @@ public class QueryContextCache {
         // Same priority with different id
         QueryContextElement qce = priorityMap.get(priority);
         // Replace with new data
-        qce.id = id;
-        qce.readTimestamp = readTimestamp;
-        qce.context = context;
+        QueryContextElement newQCE = new QueryContextElement(id, readTimestamp, priority, context);
+        replaceQCE(qce, newQCE);
       } else {
         // new priority
         // Add new element in the cache

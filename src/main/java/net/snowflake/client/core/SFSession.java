@@ -4,10 +4,20 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.QueryStatus.*;
+import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import java.security.PrivateKey;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
@@ -21,17 +31,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-
-import java.security.PrivateKey;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-
-import static net.snowflake.client.core.QueryStatus.*;
-import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 
 /** Snowflake session implementation */
 public class SFSession extends SFBaseSession {
@@ -142,7 +141,6 @@ public class SFSession extends SFBaseSession {
     }
     return canClose;
   }
-
 
   /**
    * Add async query to list of active async queries based on its query ID
@@ -505,7 +503,7 @@ public class SFSession extends SFBaseSession {
     // overwrite session parameter value with connection parameter value for OOB telemetry in HTAP.
     // Default is disabled.
     if (getBooleanValue(
-            connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
+        connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
       TelemetryService.enable();
     } else {
       TelemetryService.disable();
@@ -548,8 +546,14 @@ public class SFSession extends SFBaseSession {
               getWarehouse()));
     }
 
-    // Initialize QCC
-    qcc = new QueryContextCache(this.getQueryContextCacheSize());
+    boolean disableQueryContextCache = getDisableQueryContextCacheOption();
+    logger.debug("Query context cache is {}",
+            ((disableQueryContextCache) ? "disabled" :"enabled"));
+
+            // Initialize QCC
+    if (!disableQueryContextCache) qcc = new QueryContextCache(this.getQueryContextCacheSize());
+    else qcc = null;
+
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
@@ -675,7 +679,10 @@ public class SFSession extends SFBaseSession {
     SessionUtil.closeSession(loginInput);
     closeTelemetryClient();
     getClientInfo().clear();
-    qcc.clearCache();
+
+    // qcc can be null, if disabled.
+    if (qcc != null) qcc.clearCache();
+
     isClosed = true;
   }
 
@@ -1102,13 +1109,30 @@ public class SFSession extends SFBaseSession {
     return !activeAsyncQueries.isEmpty();
   }
 
+  private boolean getDisableQueryContextCacheOption() {
+    Boolean disableQueryContextCache = false;
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.DISABLE_QUERY_CONTEXT_CACHE)) {
+      disableQueryContextCache =
+          (Boolean) connectionPropertiesMap.get(SFSessionProperty.DISABLE_QUERY_CONTEXT_CACHE);
+    }
+
+    return disableQueryContextCache;
+  }
+
   @Override
   public void setQueryContext(String queryContext) {
-    qcc.deserializeFromArrowBase64(queryContext);
+
+    boolean disableQueryContextCache = getDisableQueryContextCacheOption();
+
+    if (!disableQueryContextCache) qcc.deserializeFromArrowBase64(queryContext);
   }
 
   @Override
   public String getQueryContext() {
-    return qcc.serializeToArrowBase64();
+    boolean disableQueryContextCache = getDisableQueryContextCacheOption();
+
+    if (!disableQueryContextCache) return qcc.serializeToArrowBase64();
+    else return null;
   }
 }

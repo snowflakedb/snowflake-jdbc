@@ -3,8 +3,27 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
+import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -22,26 +41,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
-import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
 
 /**
  * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -88,10 +87,24 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     statement.execute("select 1");
   }
 
-  /**
-   * Verify the passed heartbeat frequency matches the output value if the input is valid (between
-   * 900 and 3600).
-   */
+  @Test
+  public void testDisableQueryContextCache() throws SQLException {
+    // Disable QCC via prop
+    Properties props = new Properties();
+    props.put("disableQueryContextCache", "true");
+    Connection con = getConnection(props);
+    Statement statement = con.createStatement();
+    statement.execute("select 1");
+    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    // if QCC disable, this should be null
+    assertNull(session.getQueryContext());
+    con.close();
+  }
+
+    /**
+     * Verify the passed heartbeat frequency matches the output value if the input is valid (between
+     * 900 and 3600).
+     */
   @Test
   public void testHeartbeatFrequencyValidValue() throws Exception {
     Properties paramProperties = new Properties();

@@ -59,7 +59,9 @@ public enum SFSessionProperty {
   ALLOW_UNDERSCORES_IN_HOST("allowUnderscoresInHost", false, Boolean.class),
   CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED(
       "CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", false, Boolean.class),
-  GZIP_DISABLED("gzipDisabled", false, Boolean.class);
+  GZIP_DISABLED("gzipDisabled", false, Boolean.class),
+
+  DISABLE_QUERY_CONTEXT_CACHE("disableQueryContextCache", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
