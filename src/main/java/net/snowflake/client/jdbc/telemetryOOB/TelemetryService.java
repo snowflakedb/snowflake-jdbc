@@ -1,6 +1,5 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
-import com.google.common.base.Strings;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
@@ -25,8 +24,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
@@ -201,20 +198,11 @@ public class TelemetryService {
     int port = conStr.getPort();
     // default value
     TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
-    // check if env value is set
-    String envDeployment = systemGetEnv("TELEMETRY_DEPLOYMENT");
-    if (!Strings.isNullOrEmpty(envDeployment)) {
-      envDeployment = envDeployment.trim().toUpperCase();
-      deployment = manuallyConfigureDeployment(envDeployment);
-      if (deployment != null) {
-        this.setDeployment(deployment);
-        return;
-      }
-    }
+
     Map<String, Object> conParams = conStr.getParameters();
-    if (conParams.containsKey("TELEMETRY_DEPLOYMENT")) {
+    if (conParams.containsKey("telemetryDeployment")) {
       String conDeployment =
-          String.valueOf(conParams.get("TELEMETRY_DEPLOYMENT")).trim().toUpperCase();
+          String.valueOf(conParams.get("telemetryDeployment")).trim().toUpperCase();
       deployment = manuallyConfigureDeployment(conDeployment);
       if (deployment != null) {
         this.setDeployment(deployment);
@@ -360,7 +348,7 @@ public class TelemetryService {
 
 
   public void reportChooseEvent(TelemetryEvent event, boolean isHTAP) {
-    if (event == null || event.isEmpty()) {
+    if ((!enabled && !isHTAP) || (!htapEnabled && isHTAP) || event == null || event.isEmpty()) {
       return;
     }
 
@@ -394,7 +382,6 @@ public class TelemetryService {
             .setConnectionRequestTimeout(TIMEOUT)
             .setConnectionRequestTimeout(TIMEOUT)
             .setSocketTimeout(TIMEOUT)
-            // .setProxy(new HttpHost("127.0.0.1", 9090, "http"))
             .build();
 
     public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr, boolean isHTAP) {
