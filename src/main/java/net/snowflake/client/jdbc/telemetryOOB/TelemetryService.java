@@ -133,6 +133,12 @@ public class TelemetryService {
     }
   }
 
+  public boolean isHTAPEnabled() {
+    synchronized (enableHTAPLock) {
+      return htapEnabled;
+    }
+  }
+
   public JSONObject getContext() {
     return context;
   }
@@ -200,9 +206,9 @@ public class TelemetryService {
     TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
 
     Map<String, Object> conParams = conStr.getParameters();
-    if (conParams.containsKey("telemetryDeployment")) {
+    if (conParams.containsKey("TELEMETRYDEPLOYMENT")) {
       String conDeployment =
-          String.valueOf(conParams.get("telemetryDeployment")).trim().toUpperCase();
+          String.valueOf(conParams.get("TELEMETRYDEPLOYMENT")).trim().toUpperCase();
       deployment = manuallyConfigureDeployment(conDeployment);
       if (deployment != null) {
         this.setDeployment(deployment);
@@ -384,11 +390,11 @@ public class TelemetryService {
             .setSocketTimeout(TIMEOUT)
             .build();
 
-    public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr, boolean isHTAP) {
+    public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr, boolean _isHTAP) {
       instance = _instance;
       payload = _payload;
       payloadLogStr = _payloadLogStr;
-      isHTAP = isHTAP;
+      isHTAP = _isHTAP;
     }
 
     public void run() {
