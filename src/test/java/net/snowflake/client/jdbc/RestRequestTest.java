@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,6 +52,16 @@ public class RestRequestTest {
     return successResponse;
   }
 
+  private CloseableHttpResponse socketTimeoutResponse() throws SocketTimeoutException {
+    StatusLine successStatusLine = mock(StatusLine.class);
+    when(successStatusLine.getStatusCode()).thenThrow(new SocketTimeoutException("Read timed out"));
+
+    CloseableHttpResponse successResponse = mock(CloseableHttpResponse.class);
+    when(successStatusLine.getStatusCode()).thenThrow(new SocketTimeoutException("Read timed out"));
+
+    return successResponse;
+  }
+
   private void execute(
       CloseableHttpClient client,
       String uri,
@@ -58,7 +69,7 @@ public class RestRequestTest {
       int authTimeout,
       int socketTimeout,
       boolean includeRetryParameters)
-      throws IOException, SnowflakeSQLException {
+      throws SnowflakeSQLException {
 
     RequestConfig.Builder builder =
         RequestConfig.custom()
@@ -100,10 +111,12 @@ public class RestRequestTest {
 
                 if (callCount == 0) {
                   assertFalse(params.contains("retryCount="));
+                  assertFalse(params.contains("retryReason="));
                   assertFalse(params.contains("clientStartTime="));
                   assertTrue(params.contains("request_guid="));
                 } else {
                   assertTrue(params.contains("retryCount=" + callCount));
+                  assertTrue(params.contains("retryReason=503"));
                   assertTrue(params.contains("clientStartTime="));
                   assertTrue(params.contains("request_guid="));
                 }
@@ -134,6 +147,7 @@ public class RestRequestTest {
                 String params = arg.getURI().getQuery();
 
                 assertFalse(params.contains("retryCount="));
+                assertFalse(params.contains("retryReason="));
                 assertFalse(params.contains("clientStartTime="));
                 assertTrue(params.contains("request_guid="));
 
@@ -312,5 +326,50 @@ public class RestRequestTest {
       assertThat(
           ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
     }
+  }
+
+  /**
+   * Test that after socket timeout, retryReason parameter is set for queries and is set to 0 for
+   * null response.
+   *
+   * @throws SnowflakeSQLException
+   * @throws IOException
+   */
+  @Test
+  public void testRetryParametersWithSocketTimeout() throws SnowflakeSQLException, IOException {
+
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
+
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
+                String params = arg.getURI().getQuery();
+
+                if (callCount == 0) {
+                  assertFalse(params.contains("retryCount="));
+                  assertFalse(params.contains("retryReason="));
+                  assertFalse(params.contains("clientStartTime="));
+                  assertTrue(params.contains("request_guid="));
+                } else {
+                  assertTrue(params.contains("retryCount=" + callCount));
+                  assertTrue(params.contains("retryReason=0"));
+                  assertTrue(params.contains("clientStartTime="));
+                  assertTrue(params.contains("request_guid="));
+                }
+
+                callCount += 1;
+                if (callCount >= 2) {
+                  return successResponse();
+                } else {
+                  return socketTimeoutResponse();
+                }
+              }
+            });
+
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true);
   }
 }

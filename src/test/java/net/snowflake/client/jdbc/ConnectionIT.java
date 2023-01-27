@@ -3,6 +3,22 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+import static org.junit.Assume.assumeTrue;
+
+import java.io.*;
+import java.security.*;
+import java.sql.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
@@ -17,23 +33,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.*;
-import java.security.*;
-import java.sql.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
@@ -60,39 +59,6 @@ public class ConnectionIT extends BaseJDBCTest {
     con.close();
     assertTrue(con.isClosed());
     con.close(); // ensure no exception
-  }
-
-  @Test
-  public void testTelemetryError() throws SQLException {
-    Properties props = new Properties();
-    props.put("user", "USER");
-    props.put("password", "PASSWORD");
-    props.put("warehouse", "twh");
-    props.put("database", "megtest");
-    props.put("schema", "megtest");
-    props.put("role", "sysadmin");
-    props.put("TELEMETRY_DEPLOYMENT", "QA1");
-    Connection con =
-        DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    Statement statement = con.createStatement();
-    statement.execute(
-        "create or replace table test_table (ycsb_key int, field1 int, field2 int, field3 int, field4 int, field5 int, field6 int, field7 int, field8 int, field9 int, field10 int)");
-    statement.unwrap(SnowflakeStatement.class).setBatchID("MegTroubleshooting");
-    for (int i = 0; i < 2; i++) {
-      ResultSet rs = statement.executeQuery("SELECT * FROM test_table WHERE ycsb_key = 98333");
-      System.out.println("Resultset size: " + getSizeOfResultSet(rs));
-      int res =
-          statement.executeUpdate(
-              "DELETE FROM test_table WHERE ycsb_key IN (98301, 1000001, 10002)");
-      System.out.println("Deleted: " + res);
-      res =
-          statement.executeUpdate(
-              "UPDATE test_table SET FIELD1=1,FIELD2=2,FIELD3=3,FIELD4=4,FIELD5=5, FIELD6=6,FIELD7=7,FIELD8=8, FIELD9=9,FIELD10=10 WHERE YCSB_KEY=98301");
-      System.out.println("Updated: " + res);
-      res = statement.executeUpdate("INSERT INTO test_table VALUES (1000001,9,8,7,6,5,4,3,2,1,0)");
-      System.out.println("Inserted: " + res);
-    }
   }
 
   @Test

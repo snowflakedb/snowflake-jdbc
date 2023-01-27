@@ -56,7 +56,8 @@ public class RestRequest {
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
-   * @param includeRetryParameters whether to include retry parameters in retried requests
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
    * @param includeRequestGuid whether to include request_guid parameter
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @return HttpResponse Object get from server
@@ -114,6 +115,8 @@ public class RestRequest {
     // label the reason to break retry
     String breakRetryReason = "";
 
+    String lastStatusCodeForRetry = "";
+
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug("Retry count: {}", retryCount);
@@ -154,6 +157,7 @@ public class RestRequest {
         }
         if (includeRetryParameters && retryCount > 0) {
           builder.setParameter("retryCount", String.valueOf(retryCount));
+          builder.setParameter("retryReason", lastStatusCodeForRetry);
           builder.setParameter("clientStartTime", String.valueOf(startTime));
         }
 
@@ -346,6 +350,8 @@ public class RestRequest {
         }
 
         retryCount++;
+        lastStatusCodeForRetry =
+            response == null ? "0" : String.valueOf(response.getStatusLine().getStatusCode());
         // If the request failed with any other retry-able error and auth timeout is reached
         // increase the retry count and throw special exception to renew the token before retrying.
         if (authTimeout > 0) {
