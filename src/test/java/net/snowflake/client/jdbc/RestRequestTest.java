@@ -5,8 +5,7 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -56,7 +56,8 @@ public class RestRequestTest {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      boolean includeRetryParameters)
+      boolean includeRetryParameters,
+      boolean noRetry)
       throws IOException, SnowflakeSQLException {
 
     RequestConfig.Builder builder =
@@ -80,7 +81,8 @@ public class RestRequestTest {
         false, // without cookie
         includeRetryParameters,
         true,
-        true);
+        true,
+        noRetry);
   }
 
   @Test
@@ -115,7 +117,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false);
   }
 
   @Test
@@ -144,7 +146,7 @@ public class RestRequestTest {
               }
             });
 
-    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false);
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, false, false);
   }
 
   private CloseableHttpResponse anyStatusCodeResponse(int statusCode) {
@@ -305,10 +307,43 @@ public class RestRequestTest {
         .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
 
     try {
-      execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true);
+      execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false);
     } catch (SnowflakeSQLException ex) {
       assertThat(
           ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
+    }
+  }
+
+  @Test
+  public void testNoRetry() throws IOException, SnowflakeSQLException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+    try {
+      TelemetryService.disable(); // disable telemetry for the test
+      CloseableHttpClient client = mock(CloseableHttpClient.class);
+      when(client.execute(any(HttpUriRequest.class)))
+          .thenAnswer(
+              new Answer<CloseableHttpResponse>() {
+                int callCount = 0;
+
+                @Override
+                public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                  callCount += 1;
+                  if (callCount <= 1) {
+                    return retryResponse(); // return a retryable resp on the first attempt
+                  } else {
+                    fail("No retry should happen when noRetry = true");
+                  }
+                  return successResponse();
+                }
+              });
+
+      execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, true);
+    } finally {
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
     }
   }
 }
