@@ -40,6 +40,26 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           + "    $$\n"
           + "    ;";
 
+  private static final String PI_PROCEDURE =
+      "create or replace procedure GETPI()\n"
+          + "    returns float not null\n"
+          + "    language javascript\n"
+          + "    as\n"
+          + "    $$\n"
+          + "    return 3.1415926;\n"
+          + "    $$\n"
+          + "    ;";
+
+  private static final String MESSAGE_PROCEDURE =
+      "create or replace procedure MESSAGE_PROC(message varchar)\n"
+          + "    returns varchar not null\n"
+          + "    language javascript\n"
+          + "    as\n"
+          + "    $$\n"
+          + "    return message;\n"
+          + "    $$\n"
+          + "    ;";
+
   /** Create catalog and schema for tests with double quotes */
   public void createDoubleQuotedSchemaAndCatalog(Statement statement) throws SQLException {
     statement.execute("create or replace database \"dbwith\"\"quotes\"");
@@ -1210,7 +1230,6 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
       assertEquals("", resultSet.getString("REMARKS"));
       assertNull(resultSet.getString("COLUMN_DEF"));
-
       assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
       assertEquals(12, resultSet.getInt("ORDINAL_POSITION"));
       assertEquals("YES", resultSet.getString("IS_NULLABLE"));
@@ -1353,6 +1372,125 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       DatabaseMetaData metadata = connection.getMetaData();
       ResultSet rs = metadata.getProcedures(null, null, null);
       assertEquals(0, getSizeOfResultSet(rs));
+    }
+  }
+
+  @Test
+  public void testGetProcedureColumnsReturnsResultSet() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      statement.execute(
+          "create or replace table testtable (id int, name varchar(20), address varchar(20));");
+      statement.execute(
+          "create or replace procedure PROCTEST()\n"
+              + "returns table (\"id\" number(38,0), \"name\" varchar(20), \"address\" varchar(20))\n"
+              + "language sql\n"
+              + "execute as owner\n"
+              + "as 'declare\n"
+              + "    res resultset default (select * from testtable);\n"
+              + "  begin\n"
+              + "    return table(res);\n"
+              + "  end';");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "PROCTEST", "%");
+      res.next();
+      assertEquals("PROCTEST", res.getString("PROCEDURE_NAME"));
+      assertEquals("id", res.getString("COLUMN_NAME"));
+      assertEquals(
+          DatabaseMetaData.procedureColumnResult,
+          res.getInt("COLUMN_TYPE")); // procedureColumnResult
+      assertEquals(Types.NUMERIC, res.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", res.getString("TYPE_NAME"));
+      assertEquals(1, res.getInt("ORDINAL_POSITION")); // result set column 1
+      res.next();
+      assertEquals("name", res.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(2, res.getInt("ORDINAL_POSITION")); // result set column 2
+      res.next();
+      assertEquals("address", res.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(3, res.getInt("ORDINAL_POSITION")); // result set column 3
+
+      res.close();
+      statement.execute("drop table if exists testtable");
+      statement.close();
+    }
+  }
+
+  @Test
+  public void testGetProcedureColumnsReturnsValue() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      DatabaseMetaData metaData = con.getMetaData();
+      // create a procedure with no parameters that has a return value
+      statement.execute(PI_PROCEDURE);
+      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "GETPI", "%");
+      res.next();
+      assertEquals("GETPI", res.getString("PROCEDURE_NAME"));
+      assertEquals("", res.getString("COLUMN_NAME"));
+      assertEquals(5, res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+      assertEquals(Types.FLOAT, res.getInt("DATA_TYPE"));
+      assertEquals("FLOAT", res.getString("TYPE_NAME"));
+      assertEquals(0, res.getInt("ORDINAL_POSITION"));
+
+      // create a procedure that returns the value of the argument that is passed in
+      statement.execute(MESSAGE_PROCEDURE);
+      res = metaData.getProcedureColumns(con.getCatalog(), null, "MESSAGE_PROC", "%");
+      res.next();
+      assertEquals("MESSAGE_PROC", res.getString("PROCEDURE_NAME"));
+      assertEquals("", res.getString("COLUMN_NAME"));
+      assertEquals(
+          DatabaseMetaData.procedureColumnReturn,
+          res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(0, res.getInt("ORDINAL_POSITION"));
+      res.next();
+      assertEquals("MESSAGE", res.getString("COLUMN_NAME"));
+      assertEquals(
+          DatabaseMetaData.procedureColumnIn, res.getInt("COLUMN_TYPE")); // procedureColumnIn
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(1, res.getInt("ORDINAL_POSITION"));
+
+      res.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  public void testGetProcedureColumnsReturnsNull() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      DatabaseMetaData metaData = con.getMetaData();
+      // The CREATE PROCEDURE statement must include a RETURNS clause that defines a return type,
+      // even
+      // if the procedure does not explicitly return anything.
+      statement.execute(
+          "create or replace table testtable (id int, name varchar(20), address varchar(20));");
+      statement.execute(
+          "create or replace procedure insertproc() \n"
+              + "returns varchar \n"
+              + "language javascript as \n"
+              + "'var sqlcommand = \n"
+              + "`insert into testtable (id, name, address) values (1, \\'Tom\\', \\'Pacific Avenue\\');` \n"
+              + "snowflake.execute({sqlText: sqlcommand}); \n"
+              + "';");
+      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "INSERTPROC", "%");
+      res.next();
+      // the procedure will return null as the value but column type will be varchar.
+      assertEquals("INSERTPROC", res.getString("PROCEDURE_NAME"));
+      assertEquals("", res.getString("COLUMN_NAME"));
+      assertEquals(
+          DatabaseMetaData.procedureColumnReturn,
+          res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(0, res.getInt("ORDINAL_POSITION"));
     }
   }
 }
