@@ -17,7 +17,7 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
       BRANCH=$(basename ${GIT_BRANCH})
     fi
 
-    target_stage=s3://sfc-jenkins/repository/jdbc/$BRANCH/${GIT_COMMIT}
+    target_stage=s3://sfc-eng-jenkins/repository/jdbc/$BRANCH/${GIT_COMMIT}
     echo "[INFO] Uploading jar to $target_stage/"
     aws s3 cp --only-show-errors $JDBC_ROOT/lib/ $target_stage/ --recursive --exclude "*" --include "*.jar"
     aws s3 cp --only-show-errors $JDBC_ROOT/FIPS/lib $target_stage/ --recursive --exclude "*" --include "*.jar"
