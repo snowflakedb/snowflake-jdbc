@@ -284,7 +284,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   @Test
   public void testHTAPTelemetry() throws SQLException {
     Properties properties = new Properties();
-    properties.put("htapTelemetryEnabled", "true");
+    properties.put("htapOOBTelemetryEnabled", "true");
     properties.put("telemetryDeployment", "qa1");
     properties.put("useProxy", "true");
     properties.put("proxyHost", "localhost");
