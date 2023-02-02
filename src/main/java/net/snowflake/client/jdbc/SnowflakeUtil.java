@@ -12,7 +12,10 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -586,20 +589,12 @@ public class SnowflakeUtil {
         String proxyProtocol = info.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
 
         // create key for proxy properties
-        return new HttpClientSettingsKey.Builder()
-            .setProxy()
-            .setMode(mode)
-            .setHost(proxyHost)
-            .setPort(proxyPort)
-            .setNonProxyHosts(nonProxyHosts)
-            .setUser(proxyUser)
-            .setPassword(proxyPassword)
-            .setScheme(proxyProtocol)
-            .createHttpClientSettingsKey();
+        return new HttpClientSettingsKey(
+            mode, proxyHost, proxyPort, nonProxyHosts, proxyUser, proxyPassword, proxyProtocol);
       }
     }
     // if no proxy properties, return key with only OCSP mode
-    return new HttpClientSettingsKey.Builder().setMode(mode).createHttpClientSettingsKey();
+    return new HttpClientSettingsKey(mode);
   }
 
   /**

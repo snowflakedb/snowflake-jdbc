@@ -321,7 +321,7 @@ public abstract class SFBaseSession {
       useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
     }
     if (useProxy) {
-      settingsKeyBuilder.setProxy();
+      settingsKeyBuilder.setUserProxy();
       try {
         settingsKeyBuilder.setPort(
             Integer.parseInt(connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString()));
@@ -377,7 +377,7 @@ public abstract class SFBaseSession {
                 ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
           }
           settingsKeyBuilder
-              .setProxy()
+              .setUserProxy()
               .setMode(getOCSPMode())
               .setHost(httpProxyHost)
               .setPort(proxyPort)
@@ -394,7 +394,7 @@ public abstract class SFBaseSession {
                 ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
           }
           settingsKeyBuilder
-              .setProxy()
+              .setUserProxy()
               .setMode(getOCSPMode())
               .setHost(httpProxyHost)
               .setPort(proxyPort)
@@ -423,7 +423,7 @@ public abstract class SFBaseSession {
           (String) connectionPropertiesMap.get(SFSessionProperty.USER_AGENT_SUFFIX));
     }
 
-    ocspAndProxyKey = settingsKeyBuilder.createHttpClientSettingsKey();
+    ocspAndProxyKey = settingsKeyBuilder.build();
     return ocspAndProxyKey;
   }
 

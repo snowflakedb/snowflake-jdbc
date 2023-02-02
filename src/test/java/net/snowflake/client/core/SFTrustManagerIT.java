@@ -83,9 +83,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     for (String host : TARGET_HOSTS) {
       HttpClient client =
           HttpUtil.buildHttpClient(
-              new HttpClientSettingsKey.Builder()
-                  .setMode(OCSPMode.FAIL_CLOSED)
-                  .createHttpClientSettingsKey(),
+              new HttpClientSettingsKey.Builder().setMode(OCSPMode.FAIL_CLOSED).build(),
               null, // default OCSP response cache file
               false // enable decompression
               );
@@ -106,9 +104,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     for (String host : TARGET_HOSTS) {
       HttpClient client =
           HttpUtil.buildHttpClient(
-              new HttpClientSettingsKey.Builder()
-                  .setMode(OCSPMode.FAIL_CLOSED)
-                  .createHttpClientSettingsKey(),
+              new HttpClientSettingsKey.Builder().setMode(OCSPMode.FAIL_CLOSED).build(),
               ocspCacheFile, // a temp OCSP response cache file
               false // enable decompression
               );
@@ -125,9 +121,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     for (String host : TARGET_HOSTS) {
       HttpClient client =
           HttpUtil.buildHttpClient(
-              new HttpClientSettingsKey.Builder()
-                  .setMode(OCSPMode.FAIL_CLOSED)
-                  .createHttpClientSettingsKey(),
+              new HttpClientSettingsKey.Builder().setMode(OCSPMode.FAIL_CLOSED).build(),
               ocspCacheFile, // a temp OCSP response cache file
               false // enable decompression
               );
@@ -147,9 +141,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     for (String host : TARGET_HOSTS) {
       HttpClient client =
           HttpUtil.buildHttpClient(
-              new HttpClientSettingsKey.Builder()
-                  .setMode(OCSPMode.FAIL_OPEN)
-                  .createHttpClientSettingsKey(),
+              new HttpClientSettingsKey.Builder().setMode(OCSPMode.FAIL_OPEN).build(),
               ocspCacheFile, // a temp OCSP response cache file
               false // enable decompression
               );
@@ -167,9 +159,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     String host = TARGET_HOSTS[0];
     HttpClient client =
         HttpUtil.buildHttpClient(
-            new HttpClientSettingsKey.Builder()
-                .setMode(OCSPMode.FAIL_CLOSED)
-                .createHttpClientSettingsKey(),
+            new HttpClientSettingsKey.Builder().setMode(OCSPMode.FAIL_CLOSED).build(),
             ocspCacheFile, // a temp OCSP response cache file
             false // enable decompression
             );
