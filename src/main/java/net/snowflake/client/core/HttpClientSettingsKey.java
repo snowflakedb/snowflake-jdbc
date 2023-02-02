@@ -22,7 +22,32 @@ public class HttpClientSettingsKey implements Serializable {
   private String proxyUser = "";
   private String proxyPassword = "";
   private String proxyProtocol = "http";
+  // Adds a suffix to the user agent header in the http requests made by the jdbc driver.
+  // More details in SNOW-717606
   private String userAgentSuffix = "";
+
+  public HttpClientSettingsKey(
+      OCSPMode mode,
+      String host,
+      int port,
+      String nonProxyHosts,
+      String user,
+      String password,
+      String scheme) {
+    this.useProxy = true;
+    this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
+    this.proxyHost = !Strings.isNullOrEmpty(host) ? host.trim() : "";
+    this.proxyPort = port;
+    this.nonProxyHosts = !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts.trim() : "";
+    this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
+    this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
+    this.proxyProtocol = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
+  }
+
+  public HttpClientSettingsKey(OCSPMode mode) {
+    this.useProxy = false;
+    this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
+  }
 
   public HttpClientSettingsKey(
       OCSPMode mode,
