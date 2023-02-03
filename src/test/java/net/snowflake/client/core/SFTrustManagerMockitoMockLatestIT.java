@@ -50,8 +50,7 @@ public class SFTrustManagerMockitoMockLatestIT {
           .thenReturn(tested);
 
       new SFTrustManager(
-          new HttpClientSettingsKey.Builder().setMode(OCSPMode.FAIL_CLOSED).build(),
-          null); // cache file location
+          new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED), null); // cache file location
 
       // The goal is to check if the cache file location is changed to the specified
       // directory, so it doesn't need to do OCSP check in this test.

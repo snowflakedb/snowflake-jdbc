@@ -67,8 +67,7 @@ public class SFTrustManagerTest {
 
       SFTrustManager tManager =
           new SFTrustManager(
-              new HttpClientSettingsKey.Builder().setMode(OCSPMode.FAIL_OPEN).build(),
-              null // OCSP Cache file custom location
+              new HttpClientSettingsKey(OCSPMode.FAIL_OPEN), null // OCSP Cache file custom location
               ); // Use OCSP Cache Server
       tManager.ocspCacheServer.resetOCSPResponseCacheServer("a1.snowflakecomputing.com");
       assertThat(

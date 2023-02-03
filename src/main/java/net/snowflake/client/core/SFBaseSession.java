@@ -313,32 +313,56 @@ public abstract class SFBaseSession {
     if (ocspAndProxyKey != null) {
       return ocspAndProxyKey;
     }
-
-    HttpClientSettingsKey.Builder settingsKeyBuilder = new HttpClientSettingsKey.Builder();
     // if not, create a new key
     boolean useProxy = false;
     if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
       useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
     }
+    // Check for any user agent suffix
+    String userAgentSuffix = "";
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.USER_AGENT_SUFFIX)) {
+      userAgentSuffix = (String) connectionPropertiesMap.get(SFSessionProperty.USER_AGENT_SUFFIX);
+    }
+
     if (useProxy) {
-      settingsKeyBuilder.setUserProxy();
+      int proxyPort;
       try {
-        settingsKeyBuilder.setPort(
-            Integer.parseInt(connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString()));
+        proxyPort =
+            Integer.parseInt(connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT).toString());
       } catch (NumberFormatException | NullPointerException e) {
         throw new SnowflakeSQLException(
             ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
       }
-      settingsKeyBuilder.setHost(
-          (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST));
-      settingsKeyBuilder.setUser(
-          (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_USER));
-      settingsKeyBuilder.setPassword(
-          (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD));
-      settingsKeyBuilder.setNonProxyHosts(
-          (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS));
-      settingsKeyBuilder.setScheme(
-          (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PROTOCOL));
+      String proxyHost = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST);
+      String proxyUser = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_USER);
+      String proxyPassword = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PASSWORD);
+      String nonProxyHosts =
+          (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
+      String proxyProtocol = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PROTOCOL);
+      if (userAgentSuffix.isEmpty()) {
+        ocspAndProxyKey =
+            new HttpClientSettingsKey(
+                getOCSPMode(),
+                proxyHost,
+                proxyPort,
+                nonProxyHosts,
+                proxyUser,
+                proxyPassword,
+                proxyProtocol);
+      } else {
+        ocspAndProxyKey =
+            new HttpClientSettingsKey(
+                getOCSPMode(),
+                proxyHost,
+                proxyPort,
+                nonProxyHosts,
+                proxyUser,
+                proxyPassword,
+                proxyProtocol,
+                userAgentSuffix);
+      }
+
+      return ocspAndProxyKey;
     }
     // If JVM proxy parameters are specified, proxies need to go through the JDBC driver's
     // HttpClientSettingsKey logic in order to work properly.
@@ -376,15 +400,28 @@ public abstract class SFBaseSession {
             throw new SnowflakeSQLException(
                 ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
           }
-          settingsKeyBuilder
-              .setUserProxy()
-              .setMode(getOCSPMode())
-              .setHost(httpProxyHost)
-              .setPort(proxyPort)
-              .setNonProxyHosts(combinedNonProxyHosts)
-              .setUser("" /*user = empty */)
-              .setPassword("" /*password = empty */)
-              .setScheme("https");
+          if (userAgentSuffix.isEmpty()) {
+            ocspAndProxyKey =
+                new HttpClientSettingsKey(
+                    getOCSPMode(),
+                    httpsProxyHost,
+                    proxyPort,
+                    combinedNonProxyHosts,
+                    "", /* user = empty */
+                    "", /* password = empty */
+                    "https");
+          } else {
+            ocspAndProxyKey =
+                new HttpClientSettingsKey(
+                    getOCSPMode(),
+                    httpsProxyHost,
+                    proxyPort,
+                    combinedNonProxyHosts,
+                    "", /* user = empty */
+                    "", /* password = empty */
+                    "https",
+                    userAgentSuffix);
+          }
         } else if (!Strings.isNullOrEmpty(httpProxyHost) && !Strings.isNullOrEmpty(httpProxyPort)) {
           int proxyPort;
           try {
@@ -393,37 +430,51 @@ public abstract class SFBaseSession {
             throw new SnowflakeSQLException(
                 ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
           }
-          settingsKeyBuilder
-              .setUserProxy()
-              .setMode(getOCSPMode())
-              .setHost(httpProxyHost)
-              .setPort(proxyPort)
-              .setNonProxyHosts(combinedNonProxyHosts)
-              .setUser("" /*user = empty */)
-              .setPassword("" /*password = empty */)
-              .setScheme("http");
+          if (userAgentSuffix.isEmpty()) {
+            ocspAndProxyKey =
+                new HttpClientSettingsKey(
+                    getOCSPMode(),
+                    httpProxyHost,
+                    proxyPort,
+                    combinedNonProxyHosts,
+                    "", /* user = empty */
+                    "", /* password = empty */
+                    "http");
+          } else {
+            ocspAndProxyKey =
+                new HttpClientSettingsKey(
+                    getOCSPMode(),
+                    httpProxyHost,
+                    proxyPort,
+                    combinedNonProxyHosts,
+                    "", /* user = empty */
+                    "", /* password = empty */
+                    "http",
+                    userAgentSuffix);
+          }
         } else {
           // Not enough parameters set to use the proxy.
           logger.debug(
               "http.useProxy={} but valid host and port were not provided. No proxy in use.",
               httpUseProxy);
           unsetInvalidProxyHostAndPort();
-          settingsKeyBuilder.setMode(getOCSPMode());
+          if (userAgentSuffix.isEmpty()) {
+            ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+          } else {
+            ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
+          }
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         unsetInvalidProxyHostAndPort();
-        settingsKeyBuilder.setMode(getOCSPMode());
+        if (userAgentSuffix.isEmpty()) {
+          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+        } else {
+          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
+        }
       }
     }
-    // Check for any user agent prefix
-    if (connectionPropertiesMap.containsKey(SFSessionProperty.USER_AGENT_SUFFIX)) {
-      settingsKeyBuilder.setUserAgentSuffix(
-          (String) connectionPropertiesMap.get(SFSessionProperty.USER_AGENT_SUFFIX));
-    }
-
-    ocspAndProxyKey = settingsKeyBuilder.build();
     return ocspAndProxyKey;
   }
 
