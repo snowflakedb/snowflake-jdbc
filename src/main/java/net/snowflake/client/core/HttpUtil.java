@@ -267,7 +267,9 @@ public class HttpUtil {
     String languageVersion =
         (systemGetProperty("java.version") != null) ? systemGetProperty("java.version") : "";
     builder.append(languageVersion);
-    builder.append(null == customSuffix ? "" : " " + customSuffix);
+    if (!customSuffix.isEmpty()) {
+      builder.append(" " + customSuffix);
+    }
     String userAgent = builder.toString();
     return userAgent;
   }

@@ -50,8 +50,7 @@ public class HttpClientSettingsKey implements Serializable {
   }
 
   HttpClientSettingsKey(OCSPMode mode, String userAgentSuffix) {
-    this.useProxy = false;
-    this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
+    this(mode);
     this.userAgentSuffix = userAgentSuffix;
   }
 
@@ -64,14 +63,7 @@ public class HttpClientSettingsKey implements Serializable {
       String password,
       String scheme,
       String userAgentSuffix) {
-    this.useProxy = true;
-    this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
-    this.proxyHost = !Strings.isNullOrEmpty(host) ? host.trim() : "";
-    this.proxyPort = port;
-    this.nonProxyHosts = !Strings.isNullOrEmpty(nonProxyHosts) ? nonProxyHosts.trim() : "";
-    this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
-    this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
-    this.proxyProtocol = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
+    this(mode, host, port, nonProxyHosts, user, password, scheme);
     this.userAgentSuffix = userAgentSuffix;
   }
 
