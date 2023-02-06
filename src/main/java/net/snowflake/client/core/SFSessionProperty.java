@@ -63,8 +63,7 @@ public enum SFSessionProperty {
   GZIP_DISABLED("gzipDisabled", false, Boolean.class),
   DISABLE_QUERY_CONTEXT_CACHE("disableQueryContextCache", false, Boolean.class),
   HTAP_OOB_TELEMETRY_ENABLED(
-      "htapOOBTelemetryEnabled", false, Boolean.class),
-  GZIP_DISABLED("gzipDisabled", false, Boolean.class);
+      "htapOOBTelemetryEnabled", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
