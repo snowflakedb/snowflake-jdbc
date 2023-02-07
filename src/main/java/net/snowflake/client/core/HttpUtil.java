@@ -10,6 +10,7 @@ import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
@@ -247,7 +248,8 @@ public class HttpUtil {
    *     usage.
    * @return string for user-agent header
    */
-  private static String buildUserAgent(String customSuffix) {
+  @VisibleForTesting
+  static String buildUserAgent(String customSuffix) {
     // Start with connector name
     StringBuilder builder = new StringBuilder("JDBC/");
     // Append connector version and parenthesis start

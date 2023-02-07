@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -32,5 +33,15 @@ public class SFSessionPropertyTest {
         assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
       }
     }
+  }
+
+  @Test
+  public void testCustomSuffixForUserAgentHeaders() {
+    String customSuffix = "test-suffix";
+    String userAgentHeader = HttpUtil.buildUserAgent(customSuffix);
+
+    assertThat("user-agent header should contain the suffix ",
+            userAgentHeader,
+            endsWith(customSuffix));
   }
 }
