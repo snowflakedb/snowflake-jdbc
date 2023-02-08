@@ -339,28 +339,16 @@ public abstract class SFBaseSession {
       String nonProxyHosts =
           (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
       String proxyProtocol = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PROTOCOL);
-      if (userAgentSuffix.isEmpty()) {
-        ocspAndProxyKey =
-            new HttpClientSettingsKey(
-                getOCSPMode(),
-                proxyHost,
-                proxyPort,
-                nonProxyHosts,
-                proxyUser,
-                proxyPassword,
-                proxyProtocol);
-      } else {
-        ocspAndProxyKey =
-            new HttpClientSettingsKey(
-                getOCSPMode(),
-                proxyHost,
-                proxyPort,
-                nonProxyHosts,
-                proxyUser,
-                proxyPassword,
-                proxyProtocol,
-                userAgentSuffix);
-      }
+      ocspAndProxyKey =
+          new HttpClientSettingsKey(
+              getOCSPMode(),
+              proxyHost,
+              proxyPort,
+              nonProxyHosts,
+              proxyUser,
+              proxyPassword,
+              proxyProtocol,
+              userAgentSuffix);
 
       return ocspAndProxyKey;
     }
@@ -400,28 +388,16 @@ public abstract class SFBaseSession {
             throw new SnowflakeSQLException(
                 ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
           }
-          if (userAgentSuffix.isEmpty()) {
-            ocspAndProxyKey =
-                new HttpClientSettingsKey(
-                    getOCSPMode(),
-                    httpsProxyHost,
-                    proxyPort,
-                    combinedNonProxyHosts,
-                    "", /* user = empty */
-                    "", /* password = empty */
-                    "https");
-          } else {
-            ocspAndProxyKey =
-                new HttpClientSettingsKey(
-                    getOCSPMode(),
-                    httpsProxyHost,
-                    proxyPort,
-                    combinedNonProxyHosts,
-                    "", /* user = empty */
-                    "", /* password = empty */
-                    "https",
-                    userAgentSuffix);
-          }
+          ocspAndProxyKey =
+              new HttpClientSettingsKey(
+                  getOCSPMode(),
+                  httpsProxyHost,
+                  proxyPort,
+                  combinedNonProxyHosts,
+                  "", /* user = empty */
+                  "", /* password = empty */
+                  "https",
+                  userAgentSuffix);
         } else if (!Strings.isNullOrEmpty(httpProxyHost) && !Strings.isNullOrEmpty(httpProxyPort)) {
           int proxyPort;
           try {
@@ -430,49 +406,30 @@ public abstract class SFBaseSession {
             throw new SnowflakeSQLException(
                 ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
           }
-          if (userAgentSuffix.isEmpty()) {
-            ocspAndProxyKey =
-                new HttpClientSettingsKey(
-                    getOCSPMode(),
-                    httpProxyHost,
-                    proxyPort,
-                    combinedNonProxyHosts,
-                    "", /* user = empty */
-                    "", /* password = empty */
-                    "http");
-          } else {
-            ocspAndProxyKey =
-                new HttpClientSettingsKey(
-                    getOCSPMode(),
-                    httpProxyHost,
-                    proxyPort,
-                    combinedNonProxyHosts,
-                    "", /* user = empty */
-                    "", /* password = empty */
-                    "http",
-                    userAgentSuffix);
-          }
+          ocspAndProxyKey =
+              new HttpClientSettingsKey(
+                  getOCSPMode(),
+                  httpProxyHost,
+                  proxyPort,
+                  combinedNonProxyHosts,
+                  "", /* user = empty */
+                  "", /* password = empty */
+                  "http",
+                  userAgentSuffix);
+
         } else {
           // Not enough parameters set to use the proxy.
           logger.debug(
               "http.useProxy={} but valid host and port were not provided. No proxy in use.",
               httpUseProxy);
           unsetInvalidProxyHostAndPort();
-          if (userAgentSuffix.isEmpty()) {
-            ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
-          } else {
-            ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
-          }
+          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         unsetInvalidProxyHostAndPort();
-        if (userAgentSuffix.isEmpty()) {
-          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
-        } else {
-          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
-        }
+        ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
       }
     }
     return ocspAndProxyKey;
