@@ -77,7 +77,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     service.resetNumOfRetryToTriggerTelemetry();
   }
 
-<<<<<<< HEAD
   @Test
   public void testHtapTelemetry() throws SQLException {
     Properties props = new Properties();
