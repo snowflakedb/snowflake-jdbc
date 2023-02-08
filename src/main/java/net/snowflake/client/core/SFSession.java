@@ -4,20 +4,10 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.QueryStatus.*;
-import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-import java.security.PrivateKey;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
@@ -31,6 +21,17 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+
+import java.security.PrivateKey;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
+import static net.snowflake.client.core.QueryStatus.*;
+import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 
 /** Snowflake session implementation */
 public class SFSession extends SFBaseSession {
@@ -500,13 +501,12 @@ public class SFSession extends SFBaseSession {
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
-    // overwrite session parameter value with connection parameter value for OOB telemetry in HTAP.
-    // Default is disabled.
+    // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
     if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
-      TelemetryService.enable();
+            connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
+      TelemetryService.enableHTAP();
     } else {
-      TelemetryService.disable();
+      TelemetryService.disableHTAP();
     }
     String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
     String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);

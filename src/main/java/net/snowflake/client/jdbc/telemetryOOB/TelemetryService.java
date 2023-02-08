@@ -1,6 +1,5 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
-import com.google.common.base.Strings;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
@@ -25,8 +24,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.
@@ -100,7 +97,11 @@ public class TelemetryService {
    */
   private static boolean enabled = true;
 
+  private static boolean htapEnabled = false;
+
   private static final Object enableLock = new Object();
+
+  private static final Object enableHTAPLock = new Object();
 
   public static void enable() {
     synchronized (enableLock) {
@@ -114,9 +115,27 @@ public class TelemetryService {
     }
   }
 
+  public static void enableHTAP() {
+    synchronized (enableHTAPLock) {
+      htapEnabled = true;
+    }
+  }
+
+  public static void disableHTAP() {
+    synchronized (enableHTAPLock) {
+      htapEnabled = false;
+    }
+  }
+
   public boolean isEnabled() {
     synchronized (enableLock) {
       return enabled;
+    }
+  }
+
+  public boolean isHTAPEnabled() {
+    synchronized (enableHTAPLock) {
+      return htapEnabled;
     }
   }
 
@@ -185,20 +204,11 @@ public class TelemetryService {
     int port = conStr.getPort();
     // default value
     TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
-    // check if env value is set
-    String envDeployment = systemGetEnv("TELEMETRY_DEPLOYMENT");
-    if (!Strings.isNullOrEmpty(envDeployment)) {
-      envDeployment = envDeployment.trim().toUpperCase();
-      deployment = manuallyConfigureDeployment(envDeployment);
-      if (deployment != null) {
-        this.setDeployment(deployment);
-        return;
-      }
-    }
+
     Map<String, Object> conParams = conStr.getParameters();
-    if (conParams.containsKey("TELEMETRY_DEPLOYMENT")) {
+    if (conParams.containsKey("TELEMETRYDEPLOYMENT")) {
       String conDeployment =
-          String.valueOf(conParams.get("TELEMETRY_DEPLOYMENT")).trim().toUpperCase();
+          String.valueOf(conParams.get("TELEMETRYDEPLOYMENT")).trim().toUpperCase();
       deployment = manuallyConfigureDeployment(conDeployment);
       if (deployment != null) {
         this.setDeployment(deployment);
@@ -339,13 +349,18 @@ public class TelemetryService {
 
   /** Report the event to the telemetry server in a new thread */
   public void report(TelemetryEvent event) {
-    if (event == null || event.isEmpty()) {
+    reportChooseEvent(event, /* isHTAP */ false);
+  }
+
+
+  public void reportChooseEvent(TelemetryEvent event, boolean isHTAP) {
+    if ((!enabled && !isHTAP) || (!htapEnabled && isHTAP) || event == null || event.isEmpty()) {
       return;
     }
 
     // Start a new thread to upload without blocking the current thread
     Runnable runUpload =
-        new TelemetryUploader(this, exportQueueToString(event), exportQueueToLogString(event));
+        new TelemetryUploader(this, exportQueueToString(event), exportQueueToLogString(event), isHTAP);
     TelemetryThreadPool.getInstance().execute(runUpload);
   }
 
@@ -366,25 +381,43 @@ public class TelemetryService {
     private TelemetryService instance;
     private String payload;
     private String payloadLogStr;
+    private boolean isHTAP;
     private static final int TIMEOUT = 5000; // 5 second timeout limit
     private static final RequestConfig config =
         RequestConfig.custom()
             .setConnectionRequestTimeout(TIMEOUT)
             .setConnectionRequestTimeout(TIMEOUT)
             .setSocketTimeout(TIMEOUT)
-            // .setProxy(new HttpHost("127.0.0.1", 9090, "http"))
             .build();
 
-    public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr) {
+    public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr, boolean _isHTAP) {
       instance = _instance;
       payload = _payload;
       payloadLogStr = _payloadLogStr;
+      isHTAP = _isHTAP;
     }
 
     public void run() {
-      if (!instance.enabled) {
+      if (!isHTAP && !instance.enabled) {
         return;
       }
+
+      if (isHTAP && !instance.htapEnabled) {
+        return;
+      }
+
+      if (!instance.isDeploymentEnabled()) {
+        // skip the disabled deployment
+        logger.debug("skip the disabled deployment: ", instance.serverDeployment.name);
+        return;
+      }
+
+      if (!instance.serverDeployment.url.matches(TELEMETRY_SERVER_URL_PATTERN)) {
+        // skip the disabled deployment
+        logger.debug("ignore invalid url: ", instance.serverDeployment.url);
+        return;
+      }
+
       uploadPayload();
     }
 
@@ -524,13 +557,15 @@ public class TelemetryService {
 
   /** log execution times from various processing slices */
   public void logExecutionTimeTelemetryEvent(JSONObject telemetryData, String eventName) {
-    TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
-    TelemetryEvent log =
-        logBuilder
-            .withName(eventName)
-            .withValue(telemetryData)
-            .withTag("eventType", eventName)
-            .build();
-    this.report(log);
+    if (htapEnabled) {
+      TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
+      TelemetryEvent log =
+              logBuilder
+                      .withName(eventName)
+                      .withValue(telemetryData)
+                      .withTag("eventType", eventName)
+                      .build();
+      this.reportChooseEvent(log, /* isHTAP */ true);
+    }
   }
 }

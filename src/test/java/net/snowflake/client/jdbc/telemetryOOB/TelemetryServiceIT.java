@@ -1,14 +1,5 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Statement;
-import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.category.TestCategoryCore;
@@ -24,6 +15,17 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Statement;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
 
 /** Standalone test cases for the out of band telemetry service */
 @Category(TestCategoryCore.class)
@@ -275,6 +277,29 @@ public class TelemetryServiceIT extends BaseJDBCTest {
             TelemetryService.getInstance().getClientFailureCount(),
             equalTo(0));
       }
+    }
+  }
+
+  @Ignore
+  @Test
+  public void testHTAPTelemetry() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("htapOOBTelemetryEnabled", "true");
+    properties.put("telemetryDeployment", "qa1");
+    properties.put("useProxy", "true");
+    properties.put("proxyHost", "localhost");
+    properties.put("proxyPort", "8181");
+    try (Connection con = getConnection(properties)) {
+      Statement statement = con.createStatement();
+      statement.execute("alter session set CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=false");
+      // Ensure that HTAP telemetry is collected for below select 1 statement
+      statement.execute("select 1");
+      // Ensure that HTAP telemetry is collected for below select 2 statement
+      statement.execute("alter session set CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=true");
+      statement.execute("select 2");
+      TelemetryService.disableHTAP();
+      // Ensure that no telemetry is collected for below select 3 statement
+      statement.execute("select 3");
     }
   }
 

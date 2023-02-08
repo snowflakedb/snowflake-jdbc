@@ -34,7 +34,7 @@ public class ExecTimeTelemetryData {
   private String requestId;
 
   public ExecTimeTelemetryData(String queryFunction, String batchId) {
-    if (TelemetryService.getInstance().isEnabled()) {
+    if (TelemetryService.getInstance().isHTAPEnabled()) {
       this.queryStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
       this.queryFunction = queryFunction;
       this.batchId = batchId;
