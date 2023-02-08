@@ -40,8 +40,7 @@ public class SFSessionPropertyTest {
     String customSuffix = "test-suffix";
     String userAgentHeader = HttpUtil.buildUserAgent(customSuffix);
 
-    assertThat("user-agent header should contain the suffix ",
-            userAgentHeader,
-            endsWith(customSuffix));
+    assertThat(
+        "user-agent header should contain the suffix ", userAgentHeader, endsWith(customSuffix));
   }
 }
