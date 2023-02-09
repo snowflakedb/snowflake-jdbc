@@ -337,21 +337,21 @@ public class RestRequestTest {
       TelemetryService.disable(); // disable telemetry for the test
       CloseableHttpClient client = mock(CloseableHttpClient.class);
       when(client.execute(any(HttpUriRequest.class)))
-              .thenAnswer(
-                      new Answer<CloseableHttpResponse>() {
-                        int callCount = 0;
+          .thenAnswer(
+              new Answer<CloseableHttpResponse>() {
+                int callCount = 0;
 
-                        @Override
-                        public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
-                          callCount += 1;
-                          if (callCount <= 1) {
-                            return retryResponse(); // return a retryable resp on the first attempt
-                          } else {
-                            fail("No retry should happen when noRetry = true");
-                          }
-                          return successResponse();
-                        }
-                      });
+                @Override
+                public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                  callCount += 1;
+                  if (callCount <= 1) {
+                    return retryResponse(); // return a retryable resp on the first attempt
+                  } else {
+                    fail("No retry should happen when noRetry = true");
+                  }
+                  return successResponse();
+                }
+              });
 
       execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, true);
     } finally {
@@ -363,48 +363,48 @@ public class RestRequestTest {
     }
   }
 
-    /**
-     * Test that after socket timeout, retryReason parameter is set for queries and is set to 0 for
-     * null response.
-     *
-     * @throws SnowflakeSQLException
-     * @throws IOException
-     */
-    @Test
-    public void testRetryParametersWithSocketTimeout() throws IOException, SnowflakeSQLException {
+  /**
+   * Test that after socket timeout, retryReason parameter is set for queries and is set to 0 for
+   * null response.
+   *
+   * @throws SnowflakeSQLException
+   * @throws IOException
+   */
+  @Test
+  public void testRetryParametersWithSocketTimeout() throws IOException, SnowflakeSQLException {
 
-      CloseableHttpClient client = mock(CloseableHttpClient.class);
-      when(client.execute(any(HttpUriRequest.class)))
-              .thenAnswer(
-                      new Answer<CloseableHttpResponse>() {
-                        int callCount = 0;
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
 
-                        @Override
-                        public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
-                          HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
-                          String params = arg.getURI().getQuery();
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
+                String params = arg.getURI().getQuery();
 
-                          if (callCount == 0) {
-                            assertFalse(params.contains("retryCount="));
-                            assertFalse(params.contains("retryReason="));
-                            assertFalse(params.contains("clientStartTime="));
-                            assertTrue(params.contains("request_guid="));
-                          } else {
-                            assertTrue(params.contains("retryCount=" + callCount));
-                            assertTrue(params.contains("retryReason=0"));
-                            assertTrue(params.contains("clientStartTime="));
-                            assertTrue(params.contains("request_guid="));
-                          }
+                if (callCount == 0) {
+                  assertFalse(params.contains("retryCount="));
+                  assertFalse(params.contains("retryReason="));
+                  assertFalse(params.contains("clientStartTime="));
+                  assertTrue(params.contains("request_guid="));
+                } else {
+                  assertTrue(params.contains("retryCount=" + callCount));
+                  assertTrue(params.contains("retryReason=0"));
+                  assertTrue(params.contains("clientStartTime="));
+                  assertTrue(params.contains("request_guid="));
+                }
 
-                          callCount += 1;
-                          if (callCount >= 2) {
-                            return successResponse();
-                          } else {
-                            return socketTimeoutResponse();
-                          }
-                        }
-                      });
+                callCount += 1;
+                if (callCount >= 2) {
+                  return successResponse();
+                } else {
+                  return socketTimeoutResponse();
+                }
+              }
+            });
 
-      execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false);
-    }
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false);
+  }
 }

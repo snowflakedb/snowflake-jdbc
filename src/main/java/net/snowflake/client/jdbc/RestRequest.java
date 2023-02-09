@@ -4,6 +4,9 @@
 
 package net.snowflake.client.jdbc;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -16,10 +19,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is an abstraction on top of http client.
