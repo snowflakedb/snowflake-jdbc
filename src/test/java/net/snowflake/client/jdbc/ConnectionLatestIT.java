@@ -101,10 +101,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     con.close();
   }
 
-    /**
-     * Verify the passed heartbeat frequency matches the output value if the input is valid (between
-     * 900 and 3600).
-     */
+  /**
+   * Verify the passed heartbeat frequency matches the output value if the input is valid (between
+   * 900 and 3600).
+   */
   @Test
   public void testHeartbeatFrequencyValidValue() throws Exception {
     Properties paramProperties = new Properties();

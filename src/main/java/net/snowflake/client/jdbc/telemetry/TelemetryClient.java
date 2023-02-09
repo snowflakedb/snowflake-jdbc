@@ -3,9 +3,17 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
+import static net.snowflake.client.core.SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.IOException;
+import java.rmi.UnexpectedException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.concurrent.Future;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
@@ -19,15 +27,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-
-import java.io.IOException;
-import java.rmi.UnexpectedException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.LinkedList;
-import java.util.concurrent.Future;
-
-import static net.snowflake.client.core.SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
 
 /**
  * Copyright (c) 2018-2019 Snowflake Computing Inc. All rights reserved.

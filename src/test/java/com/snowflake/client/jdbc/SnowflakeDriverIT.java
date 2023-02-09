@@ -1,12 +1,11 @@
 package com.snowflake.client.jdbc;
 
-import net.snowflake.client.AbstractDriverIT;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import static org.junit.Assert.assertTrue;
+import net.snowflake.client.AbstractDriverIT;
+import org.junit.Test;
 
 public class SnowflakeDriverIT extends AbstractDriverIT {
 
