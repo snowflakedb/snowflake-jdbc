@@ -1,5 +1,15 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Statement;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.category.TestCategoryCore;
@@ -15,17 +25,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Statement;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
 
 /** Standalone test cases for the out of band telemetry service */
 @Category(TestCategoryCore.class)

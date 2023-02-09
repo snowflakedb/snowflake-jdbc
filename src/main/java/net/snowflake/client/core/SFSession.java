@@ -503,7 +503,7 @@ public class SFSession extends SFBaseSession {
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
     // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
     if (getBooleanValue(
-            connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
+        connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
       TelemetryService.enableHTAP();
     } else {
       TelemetryService.disableHTAP();
