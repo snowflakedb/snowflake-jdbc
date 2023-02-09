@@ -215,8 +215,8 @@ public class TelemetryService {
   }
 
   public enum TELEMETRY_SERVER_DEPLOYMENT {
-    DEV("dev", TELEMETRY_API.SFCTEST),
-    REG("reg", TELEMETRY_API.SFCTEST),
+    DEV("dev", TELEMETRY_API.SFCDEV),
+    REG("reg", TELEMETRY_API.SFCDEV),
     QA1("qa1", TELEMETRY_API.SFCDEV),
     PREPROD3("preprod3", TELEMETRY_API.SFCDEV),
     PROD("prod", TELEMETRY_API.PROD);

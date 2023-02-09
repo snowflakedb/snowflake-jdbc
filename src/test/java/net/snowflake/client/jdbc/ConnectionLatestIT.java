@@ -477,7 +477,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
   public void testWrongHostNameTimeout() throws InterruptedException {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
@@ -518,7 +517,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
   public void testHttpsLoginTimeoutWithSSL() throws InterruptedException {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
