@@ -502,7 +502,7 @@ public class SFSession extends SFBaseSession {
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
     // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
     if (getBooleanValue(
-            connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
+        connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
       TelemetryService.enableHTAP();
     } else {
       TelemetryService.disableHTAP();
@@ -546,13 +546,12 @@ public class SFSession extends SFBaseSession {
     }
 
     boolean disableQueryContextCache = getDisableQueryContextCacheOption();
-    logger.debug("Query context cache is {}",
-            ((disableQueryContextCache) ? "disabled" :"enabled"));
+    logger.debug(
+        "Query context cache is {}", ((disableQueryContextCache) ? "disabled" : "enabled"));
 
-            // Initialize QCC
+    // Initialize QCC
     if (!disableQueryContextCache) qcc = new QueryContextCache(this.getQueryContextCacheSize());
     else qcc = null;
-
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
