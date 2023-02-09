@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.*;
 import java.lang.reflect.Field;
@@ -221,8 +223,9 @@ public class SnowflakeUtil {
         break;
 
       case GEOGRAPHY:
+      case GEOMETRY:
         colType = Types.VARCHAR;
-        extColTypeName = "GEOGRAPHY";
+        extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
         JsonNode udtOutputType = colNode.path("outputType");
         if (!udtOutputType.isMissingNode()) {
           SnowflakeType outputType = SnowflakeType.fromString(udtOutputType.asText());
