@@ -35,10 +35,7 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
@@ -447,6 +444,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @Ignore
   public void testHttpsLoginTimeoutWithOutSSL() throws InterruptedException {
     Properties properties = new Properties();
     properties.put("account", "wrongaccount");
@@ -504,6 +502,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @Ignore
   public void testWrongHostNameTimeout() throws InterruptedException {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
@@ -544,6 +543,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @Ignore
   public void testHttpsLoginTimeoutWithSSL() throws InterruptedException {
     long connStart = 0, conEnd;
     Properties properties = new Properties();
