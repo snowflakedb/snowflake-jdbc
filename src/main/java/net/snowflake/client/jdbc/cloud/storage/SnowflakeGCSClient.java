@@ -19,11 +19,7 @@ import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
@@ -756,9 +752,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               0, // no socket timeout injection
               null, // no canceling
               false, // no cookie
-              false, // no retry
+              false, // no url retry query parameters
               false, // no request_guid
-              true // retry on HTTP 403
+              true, // retry on HTTP 403
+              true // disable retry
               );
 
       logger.debug(

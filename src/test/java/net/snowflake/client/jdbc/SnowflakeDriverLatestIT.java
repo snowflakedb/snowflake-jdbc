@@ -850,6 +850,139 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       }
     }
   }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGeometryOutputTypes() throws Throwable {
+    Connection connection = null;
+    Statement regularStatement = null;
+
+    try {
+      Properties paramProperties = new Properties();
+
+      paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
+      paramProperties.put("ENABLE_GEOMETRY_TYPE", true);
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo2(geo geometry);");
+
+      regularStatement.execute(
+          "insert into t_geo2 values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
+
+      testGeometryOutputTypeSingle(
+          regularStatement, true, "geoJson", "GEOMETRY", "java.lang.String", Types.VARCHAR);
+
+      testGeometryOutputTypeSingle(
+          regularStatement, true, "wkt", "GEOMETRY", "java.lang.String", Types.VARCHAR);
+
+    } finally {
+      if (regularStatement != null) {
+        regularStatement.execute("drop table t_geo2");
+        regularStatement.close();
+      }
+
+      if (connection != null) {
+        connection.close();
+      }
+    }
+  }
+
+  private void testGeometryOutputTypeSingle(
+      Statement regularStatement,
+      boolean enableExternalTypeNames,
+      String outputFormat,
+      String expectedColumnTypeName,
+      String expectedColumnClassName,
+      int expectedColumnType)
+      throws Throwable {
+    ResultSet resultSet = null;
+
+    try {
+      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+
+      regularStatement.execute(
+          "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
+
+      resultSet = regularStatement.executeQuery("select * from t_geo2");
+
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // GeoJSON: SQL type OBJECT, Java type String
+      assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
+      assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
+      assertEquals(expectedColumnType, metadata.getColumnType(1));
+
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGeometryMetadata() throws Throwable {
+    Connection connection = null;
+    Statement regularStatement = null;
+
+    try {
+      Properties paramProperties = new Properties();
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo2(geo geometry);");
+
+      testGeometryMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+
+      testGeometryMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+
+    } finally {
+      if (regularStatement != null) {
+        regularStatement.execute("drop table t_geo2");
+        regularStatement.close();
+      }
+
+      if (connection != null) {
+        connection.close();
+      }
+    }
+  }
+
+  private void testGeometryMetadataSingle(
+      Connection connection,
+      Statement regularStatement,
+      String outputFormat,
+      int expectedColumnType)
+      throws Throwable {
+    ResultSet resultSet = null;
+
+    try {
+      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+
+      DatabaseMetaData md = connection.getMetaData();
+      resultSet = md.getColumns(null, null, "T_GEO2", null);
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(24, metadata.getColumnCount());
+
+      assertTrue(resultSet.next());
+
+      assertEquals(expectedColumnType, resultSet.getInt(5));
+      assertEquals("GEOMETRY", resultSet.getString(6));
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
+      }
+    }
+  }
+
   /**
    * Tests that upload and download small file to gcs stage. Require SNOW-206907 to be merged (still
    * pass when not merge, but will use presigned url instead of GoogleCredential)
