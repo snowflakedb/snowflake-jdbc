@@ -318,6 +318,12 @@ public abstract class SFBaseSession {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
       useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
     }
+    // Check for any user agent suffix
+    String userAgentSuffix = "";
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.USER_AGENT_SUFFIX)) {
+      userAgentSuffix = (String) connectionPropertiesMap.get(SFSessionProperty.USER_AGENT_SUFFIX);
+    }
+
     if (useProxy) {
       int proxyPort;
       try {
@@ -341,7 +347,8 @@ public abstract class SFBaseSession {
               nonProxyHosts,
               proxyUser,
               proxyPassword,
-              proxyProtocol);
+              proxyProtocol,
+              userAgentSuffix);
 
       return ocspAndProxyKey;
     }
@@ -389,7 +396,8 @@ public abstract class SFBaseSession {
                   combinedNonProxyHosts,
                   "", /* user = empty */
                   "", /* password = empty */
-                  "https");
+                  "https",
+                  userAgentSuffix);
         } else if (!Strings.isNullOrEmpty(httpProxyHost) && !Strings.isNullOrEmpty(httpProxyPort)) {
           int proxyPort;
           try {
@@ -406,20 +414,22 @@ public abstract class SFBaseSession {
                   combinedNonProxyHosts,
                   "", /* user = empty */
                   "", /* password = empty */
-                  "http");
+                  "http",
+                  userAgentSuffix);
+
         } else {
           // Not enough parameters set to use the proxy.
           logger.debug(
               "http.useProxy={} but valid host and port were not provided. No proxy in use.",
               httpUseProxy);
           unsetInvalidProxyHostAndPort();
-          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         unsetInvalidProxyHostAndPort();
-        ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+        ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
       }
     }
     return ocspAndProxyKey;

@@ -22,6 +22,9 @@ public class HttpClientSettingsKey implements Serializable {
   private String proxyUser = "";
   private String proxyPassword = "";
   private String proxyProtocol = "http";
+  // Adds a suffix to the user agent header in the http requests made by the jdbc driver.
+  // More details in SNOW-717606
+  private String userAgentSuffix = "";
 
   public HttpClientSettingsKey(
       OCSPMode mode,
@@ -44,6 +47,24 @@ public class HttpClientSettingsKey implements Serializable {
   public HttpClientSettingsKey(OCSPMode mode) {
     this.useProxy = false;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
+  }
+
+  HttpClientSettingsKey(OCSPMode mode, String userAgentSuffix) {
+    this(mode);
+    this.userAgentSuffix = userAgentSuffix;
+  }
+
+  HttpClientSettingsKey(
+      OCSPMode mode,
+      String host,
+      int port,
+      String nonProxyHosts,
+      String user,
+      String password,
+      String scheme,
+      String userAgentSuffix) {
+    this(mode, host, port, nonProxyHosts, user, password, scheme);
+    this.userAgentSuffix = userAgentSuffix;
   }
 
   @Override
@@ -98,6 +119,10 @@ public class HttpClientSettingsKey implements Serializable {
 
   public String getProxyUser() {
     return this.proxyUser;
+  }
+
+  public String getUserAgentSuffix() {
+    return this.userAgentSuffix;
   }
 
   /** Be careful of using this! Should only be called when password is later masked. */
