@@ -259,7 +259,8 @@ public class SessionUtil {
           "missing token or password for opening session");
     }
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER)) {
-      if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
+      if ((Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS)
+          && !loginInput.getSessionParameters().containsKey(CLIENT_STORE_TEMPORARY_CREDENTIAL)) {
         // force to set the flag for Mac/Windows users
         loginInput.getSessionParameters().put(CLIENT_STORE_TEMPORARY_CREDENTIAL, true);
       } else {
@@ -280,7 +281,8 @@ public class SessionUtil {
     }
 
     if (authenticator.equals(ClientAuthnDTO.AuthenticatorType.USERNAME_PASSWORD_MFA)) {
-      if (Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS) {
+      if ((Constants.getOS() == Constants.OS.MAC || Constants.getOS() == Constants.OS.WINDOWS)
+          && !loginInput.getSessionParameters().containsKey(CLIENT_REQUEST_MFA_TOKEN)) {
         loginInput.getSessionParameters().put(CLIENT_REQUEST_MFA_TOKEN, true);
       }
     }
