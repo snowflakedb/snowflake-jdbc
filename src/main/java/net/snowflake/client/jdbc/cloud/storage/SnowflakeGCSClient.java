@@ -892,6 +892,17 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
     }
 
+    // If there is no space left in the download location, java.io.IOException is thrown.
+    // Don't retry.
+    if (SnowflakeUtil.getRootCause(ex).getMessage().equals("No space left on device")) {
+      throw new SnowflakeSQLLoggedException(
+              session,
+              SqlState.SYSTEM_ERROR,
+              ErrorCode.IO_ERROR.getMessageCode(),
+              ex,
+              "Encountered exception during " + operation + ": " + ex.getMessage());
+    }
+
     if (ex instanceof StorageException) {
       // NOTE: this code path only handle Access token based operation,
       // presigned URL is not covered. Presigned Url do not raise

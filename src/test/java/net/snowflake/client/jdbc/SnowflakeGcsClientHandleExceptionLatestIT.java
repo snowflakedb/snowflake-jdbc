@@ -1,6 +1,9 @@
 package net.snowflake.client.jdbc;
 
 import com.google.cloud.storage.StorageException;
+
+import java.io.File;
+import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.security.InvalidKeyException;
 import java.sql.Connection;
@@ -14,17 +17,16 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeGCSClient;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeGcsClient handle exception function, only work with latest driver */
 @Category(TestCategoryOthers.class)
 public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT {
-
+  @Rule
+  public TemporaryFolder tmpFolder = new TemporaryFolder();
   private Connection connection;
   private SFStatement sfStatement;
   private SFSession sfSession;
@@ -149,6 +151,16 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
   public void errorWithNullSession() throws SQLException {
     spyingClient.handleStorageException(
         new StorageException(401, "Unauthenticated"), 0, "upload", null, command);
+  }
+
+  @Test(expected = SnowflakeSQLException.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void errorNoSpaceLeftOnDevice() throws SQLException, IOException {
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String getCommand = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file://" + destFolderCanonicalPath + "'";
+    spyingClient.handleStorageException(
+            new StorageException(0, "No space left on device", new IOException("No space left on device")), 0, "download", null, getCommand);
   }
 
   @After
