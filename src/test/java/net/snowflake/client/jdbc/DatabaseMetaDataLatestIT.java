@@ -733,12 +733,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(database, resultSet.getString("FUNCTION_CAT"));
       assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
       assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
-      assertEquals("", resultSet.getString("COLUMN_NAME"));
-      assertEquals(DatabaseMetaData.functionColumnOut, resultSet.getInt("COLUMN_TYPE"));
-      assertEquals(Types.OTHER, resultSet.getInt("DATA_TYPE"));
-      assertEquals(
-          "TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-          resultSet.getString("TYPE_NAME"));
+      assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
       assertEquals(0, resultSet.getInt("PRECISION"));
       // length column is not supported and will always be 0
       assertEquals(0, resultSet.getInt("LENGTH"));
@@ -749,14 +747,88 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
       assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
       // char octet length column is not supported and always returns 0
-      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
-      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
       // is_nullable column is not supported and always returns empty string
       assertEquals("", resultSet.getString("IS_NULLABLE"));
       assertEquals(
           "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
           resultSet.getString("SPECIFIC_NAME"));
-      /* There are no input parameters so only 1 row is returned, describing return value of function */
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getInt("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals(
+          "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+          resultSet.getString("SPECIFIC_NAME"));
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("BIN2", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
+      assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getInt("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(8388608, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals(
+          "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+          resultSet.getString("SPECIFIC_NAME"));
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("SHAREDCOL", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getInt("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals(
+          "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+          resultSet.getString("SPECIFIC_NAME"));
       assertFalse(resultSet.next());
       /* Assert that calling getFunctionColumns with no parameters returns empty result set */
       resultSet = metaData.getFunctionColumns("%", "%", "%", "%");
@@ -1372,6 +1444,49 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       DatabaseMetaData metadata = connection.getMetaData();
       ResultSet rs = metadata.getProcedures(null, null, null);
       assertEquals(0, getSizeOfResultSet(rs));
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGetProcedureColumns() throws Exception {
+    try (Connection connection = getConnection()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      connection.createStatement().execute(PI_PROCEDURE);
+      DatabaseMetaData metaData = connection.getMetaData();
+      /* Call getProcedureColumns with no parameters for procedure name or column. This should return  all procedures
+      in the current database and schema. It will return all rows as well (1 row per result and 1 row per parameter
+      for each procedure) */
+      ResultSet resultSet = metaData.getProcedureColumns(database, schema, "GETPI", "%");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS);
+      resultSet.next();
+      assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+      assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+      assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+      assertEquals("", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnReturn, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.FLOAT, resultSet.getInt("DATA_TYPE"));
+      assertEquals("FLOAT", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.procedureNoNulls, resultSet.getInt("NULLABLE"));
+      assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+      assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
+      assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("NO", resultSet.getString("IS_NULLABLE"));
+      assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
+      connection.createStatement().execute("drop procedure if exists GETPI()");
     }
   }
 
