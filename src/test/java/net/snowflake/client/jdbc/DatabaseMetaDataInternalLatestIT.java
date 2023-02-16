@@ -155,82 +155,25 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
     assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
     assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
     assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
-    assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
-    assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
-    assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
+    assertEquals("", resultSet.getString("COLUMN_NAME"));
+    assertEquals(DatabaseMetaData.functionColumnOut, resultSet.getInt("COLUMN_TYPE"));
+    assertEquals(Types.OTHER, resultSet.getInt("DATA_TYPE"));
+    assertEquals(
+        "TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+        resultSet.getString("TYPE_NAME"));
     assertEquals(0, resultSet.getInt("PRECISION"));
     assertEquals(0, resultSet.getInt("LENGTH"));
     assertEquals(0, resultSet.getInt("SCALE"));
     assertEquals(10, resultSet.getInt("RADIX"));
     assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
     assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-    assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
-    assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
-    assertEquals("", resultSet.getString("IS_NULLABLE"));
-    assertEquals(
-        "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-        resultSet.getString("SPECIFIC_NAME"));
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
-    assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
-    assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
-    assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
-    assertEquals(38, resultSet.getInt("PRECISION"));
-    assertEquals(0, resultSet.getInt("LENGTH"));
-    assertEquals(0, resultSet.getInt("SCALE"));
-    assertEquals(10, resultSet.getInt("RADIX"));
-    assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
-    assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
     assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
-    assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
+    assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
     assertEquals("", resultSet.getString("IS_NULLABLE"));
     assertEquals(
         "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
         resultSet.getString("SPECIFIC_NAME"));
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("BIN2", resultSet.getString("COLUMN_NAME"));
-    assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
-    assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
-    assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
-    assertEquals(38, resultSet.getInt("PRECISION"));
-    assertEquals(0, resultSet.getInt("LENGTH"));
-    assertEquals(0, resultSet.getInt("SCALE"));
-    assertEquals(10, resultSet.getInt("RADIX"));
-    assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
-    assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-    assertEquals(8388608, resultSet.getInt("CHAR_OCTET_LENGTH"));
-    assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
-    assertEquals("", resultSet.getString("IS_NULLABLE"));
-    assertEquals(
-        "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-        resultSet.getString("SPECIFIC_NAME"));
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("SHAREDCOL", resultSet.getString("COLUMN_NAME"));
-    assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
-    assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
-    assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
-    assertEquals(38, resultSet.getInt("PRECISION"));
-    assertEquals(0, resultSet.getInt("LENGTH"));
-    assertEquals(0, resultSet.getInt("SCALE"));
-    assertEquals(10, resultSet.getInt("RADIX"));
-    assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
-    assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-    assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
-    assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
-    assertEquals("", resultSet.getString("IS_NULLABLE"));
-    assertEquals(
-        "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-        resultSet.getString("SPECIFIC_NAME"));
+    assertFalse(resultSet.next());
     resultSet = databaseMetaData.getFunctionColumns(null, "%", "%", "%");
     // we have 81 columns returned
     assertEquals(4, getSizeOfResultSet(resultSet));
