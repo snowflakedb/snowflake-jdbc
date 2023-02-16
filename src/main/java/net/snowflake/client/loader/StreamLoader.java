@@ -706,7 +706,6 @@ public class StreamLoader implements Loader, Runnable {
   // If operation changes, existing stage needs to be scheduled for processing.
   @Override
   public void resetOperation(Operation op) {
-    LOGGER.debug("Reset Loader", false);
 
     if (op.equals(_op)) {
       // no-op
