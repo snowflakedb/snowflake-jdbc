@@ -107,6 +107,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private boolean stringsQuoted = false;
 
+  // The number of columns for the result set returned from the current procedure. A value of -1
+  // means the procedure doesn't return a result set
+  private int procedureResultsetColumnNum;
+
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
 
@@ -116,6 +120,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     this.metadataRequestUseSessionDatabase = session.getMetadataRequestUseSessionDatabase();
     this.stringsQuoted = session.isStringQuoted();
     this.ibInstance = session.getTelemetryClient();
+    this.procedureResultsetColumnNum = -1;
   }
 
   private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException {
@@ -1161,22 +1166,24 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           executeAndReturnEmptyResultIfNotFound(
               statement, showProcedureColCommand, GET_PROCEDURE_COLUMNS);
       resultSetStepTwo.next();
-      String[] params = parseParams(resultSetStepTwo.getString("value"));
+      // Retrieve the procedure arguments and procedure return values.
+      String args = resultSetStepTwo.getString("value");
       resultSetStepTwo.next();
       String res = resultSetStepTwo.getString("value");
-      String paramNames[] = new String[params.length / 2 + 1];
-      String paramTypes[] = new String[params.length / 2 + 1];
-      if (params.length > 1) {
-        for (int i = 0; i < params.length; i++) {
+      // parse procedure arguments and return values into a list of columns
+      // result value(s) will be at the top of the list, followed by any arguments
+      List<String> procedureCols = parseColumns(res, args);
+      String paramNames[] = new String[procedureCols.size() / 2];
+      String paramTypes[] = new String[procedureCols.size() / 2];
+      if (procedureCols.size() > 1) {
+        for (int i = 0; i < procedureCols.size(); i++) {
           if (i % 2 == 0) {
-            paramNames[i / 2 + 1] = params[i];
+            paramNames[i / 2] = procedureCols.get(i);
           } else {
-            paramTypes[i / 2 + 1] = params[i];
+            paramTypes[i / 2] = procedureCols.get(i);
           }
         }
       }
-      paramNames[0] = "";
-      paramTypes[0] = res;
       for (int i = 0; i < paramNames.length; i++) {
         // if it's the 1st in for loop, it's the result
         if (i == 0 || paramNames[i].equalsIgnoreCase(columnNamePattern) || addAllRows) {
@@ -1187,12 +1194,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           nextRow[2] = procedureNameNoArgs; // procedure name
           nextRow[3] = paramNames[i]; // column/parameter name
           // column type
-          if (i == 0) {
-            if (paramTypes[i].substring(0, 5).equalsIgnoreCase("table")) {
-              nextRow[4] = procedureColumnOut;
-            } else {
-              nextRow[4] = procedureColumnReturn;
-            }
+          if (i == 0 && procedureResultsetColumnNum < 0) {
+            nextRow[4] = procedureColumnReturn;
+          } else if (procedureResultsetColumnNum >= 0 && i < procedureResultsetColumnNum) {
+            nextRow[4] = procedureColumnResult;
           } else {
             nextRow[4] = procedureColumnIn; // kind of column/parameter
           }
@@ -1201,6 +1206,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           // don't include nullability in type name, such as NUMBER NOT NULL. Just include NUMBER.
           if (typeName.contains(" NOT NULL")) {
             typeNameTrimmed = typeName.substring(0, typeName.indexOf(' '));
+          }
+          // don't include column size in type name
+          if (typeNameTrimmed.contains("(") && typeNameTrimmed.contains(")")) {
+            typeNameTrimmed = typeNameTrimmed.substring(0, typeNameTrimmed.indexOf('('));
           }
           int type = convertStringToType(typeName);
           nextRow[5] = type; // data type
@@ -1270,7 +1279,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           } else {
             nextRow[16] = null;
           }
-          nextRow[17] = i; // ordinal position.
+          // the ordinal position is 0 for a return value.
+          // for result set columns, the ordinal position is of the column in the result set
+          // starting at 1
+          if (procedureResultsetColumnNum >= 0) {
+            if (i < procedureResultsetColumnNum) {
+              nextRow[17] = i + 1;
+            } else {
+              nextRow[17] = i - procedureResultsetColumnNum + 1;
+            }
+          } else {
+            nextRow[17] = i; // ordinal position.
+          }
           nextRow[19] = procedureNameUnparsed; // specific name
           rows.add(nextRow);
         }
@@ -3147,14 +3167,36 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   /**
-   * This is a function that takes in a string containing a function name, its parameter names, and
-   * its parameter types, and splits the string into a list of parameter names and types. The names
-   * will be every odd index and the types will be every even index.
+   * This is a function that takes in a string of return types and a string of parameter names and
+   * types. It splits both strings in a list of column names and column types. The names will be
+   * every odd index and the types will be every even index.
    */
-  private String[] parseParams(String args) {
-    String chopped = args.substring(args.indexOf('(') + 1, args.lastIndexOf(')'));
-    String[] params = chopped.split("\\s+|, ");
-    return params;
+  private List<String> parseColumns(String retType, String args) {
+    List<String> columns = new ArrayList<>();
+    if (retType.substring(0, 5).equalsIgnoreCase("table")) {
+      // if return type is a table there will be a result set
+      String typeStr = retType.substring(retType.indexOf('(') + 1, retType.lastIndexOf(')'));
+      String[] types = typeStr.split("\\s+|, ");
+      if (types.length != 1) {
+        for (int i = 0; i < types.length; i++) {
+          columns.add(types[i]);
+        }
+        procedureResultsetColumnNum = columns.size() / 2;
+      }
+    } else {
+      // otherwise it will be a return value
+      columns.add(""); // there is no name for this column
+      columns.add(retType);
+      procedureResultsetColumnNum = -1;
+    }
+    String argStr = args.substring(args.indexOf('(') + 1, args.lastIndexOf(')'));
+    String arguments[] = argStr.split("\\s+|, ");
+    if (arguments.length != 1) {
+      for (int i = 0; i < arguments.length; i++) {
+        columns.add(arguments[i]);
+      }
+    }
+    return columns;
   }
 
   @Override
@@ -3206,22 +3248,24 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       if (resultSetStepTwo.next() == false) {
         continue;
       }
-      String[] params = parseParams(resultSetStepTwo.getString("value"));
+      // Retrieve the function arguments and function return values.
+      String args = resultSetStepTwo.getString("value");
       resultSetStepTwo.next();
       String res = resultSetStepTwo.getString("value");
-      String paramNames[] = new String[params.length / 2 + 1];
-      String paramTypes[] = new String[params.length / 2 + 1];
-      if (params.length > 1) {
-        for (int i = 0; i < params.length; i++) {
+      // parse function arguments and return values into a list of columns
+      // result value(s) will be at the top of the list, followed by any arguments
+      List<String> functionCols = parseColumns(res, args);
+      String paramNames[] = new String[functionCols.size() / 2];
+      String paramTypes[] = new String[functionCols.size() / 2];
+      if (functionCols.size() > 1) {
+        for (int i = 0; i < functionCols.size(); i++) {
           if (i % 2 == 0) {
-            paramNames[i / 2 + 1] = params[i];
+            paramNames[i / 2] = functionCols.get(i);
           } else {
-            paramTypes[i / 2 + 1] = params[i];
+            paramTypes[i / 2] = functionCols.get(i);
           }
         }
       }
-      paramNames[0] = "";
-      paramTypes[0] = res;
       for (int i = 0; i < paramNames.length; i++) {
         // if it's the 1st in for loop, it's the result
         if (i == 0 || paramNames[i].equalsIgnoreCase(columnNamePattern) || addAllRows) {
@@ -3231,12 +3275,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           nextRow[1] = schemaPattern; // function schema. Can be null.
           nextRow[2] = functionNameNoArgs; // function name
           nextRow[3] = paramNames[i]; // column/parameter name
-          if (i == 0) {
-            if (paramTypes[i].substring(0, 5).equalsIgnoreCase("table")) {
-              nextRow[4] = functionColumnOut;
-            } else {
-              nextRow[4] = functionReturn;
-            }
+          if (i == 0 && procedureResultsetColumnNum < 0) {
+            nextRow[4] = functionReturn;
+          } else if (procedureResultsetColumnNum >= 0 && i < procedureResultsetColumnNum) {
+            nextRow[4] = functionColumnResult;
           } else {
             nextRow[4] = functionColumnIn; // kind of column/parameter
           }
@@ -3290,7 +3332,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           } else {
             nextRow[13] = null;
           }
-          nextRow[14] = i; // ordinal position.
+          // the ordinal position is 0 for a return value.
+          // for result set columns, the ordinal position is of the column in the result set
+          // starting at 1
+          if (procedureResultsetColumnNum >= 0) {
+            if (i < procedureResultsetColumnNum) {
+              nextRow[14] = i + 1;
+            } else {
+              nextRow[14] = i - procedureResultsetColumnNum + 1;
+            }
+          } else {
+            nextRow[14] = i; // ordinal position.
+          }
           nextRow[15] = ""; // nullability again. Not supported.
           nextRow[16] = functionNameUnparsed;
           rows.add(nextRow);
