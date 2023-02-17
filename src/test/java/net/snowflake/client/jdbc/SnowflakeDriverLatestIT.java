@@ -10,6 +10,7 @@ import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
 import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.cloud.storage.StorageException;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.sql.*;
@@ -22,12 +23,11 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.RunningOnTestaccount;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
-import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
-import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
+import net.snowflake.client.jdbc.cloud.storage.*;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -1400,6 +1400,44 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       } finally {
         if (connection != null) {
           connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+          connection.close();
+        }
+      }
+    }
+  }
+
+  @Test(expected = SnowflakeSQLException.class)
+  public void testNoSpaceLeftOnDeviceException() throws SQLException {
+    Connection connection = null;
+    List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
+      try {
+        connection = getConnection(accountName);
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        Statement statement = connection.createStatement();
+        SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+        statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+        statement.execute(
+            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");
+        String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
+        SnowflakeFileTransferAgent sfAgent =
+            new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+        StageInfo info = sfAgent.getStageInfo();
+        SnowflakeStorageClient client =
+            StorageClientFactory.getFactory().createClient(info, 1, null, /*session = */ null);
+
+        client.handleStorageException(
+            new StorageException(
+                client.getMaxRetries(),
+                Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+            client.getMaxRetries(),
+            "download",
+            null,
+            command);
+      } finally {
+        if (connection != null) {
+          connection.createStatement().execute("DROP STAGE if exists testPutGet_stage");
           connection.close();
         }
       }
