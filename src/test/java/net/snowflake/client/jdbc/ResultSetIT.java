@@ -74,7 +74,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetMethod() throws Throwable {
-    String prepInsertString = "insert into test_get values(?, ?, ?, ?, ?, ?, ?, ?)";
+    String prepInsertString = "insert into test_get values(?, ?, ?, ?, ?, ?, ?, ?, ?)";
     int bigInt = Integer.MAX_VALUE;
     long bigLong = Long.MAX_VALUE;
     short bigShort = Short.MAX_VALUE;
@@ -85,10 +85,12 @@ public class ResultSetIT extends ResultSet0IT {
     Connection connection = init();
     Clob clob = connection.createClob();
     clob.setString(1, "hello world");
+    Clob clob1 = connection.createClob();
+    clob1.setString(1, "hello world", 0, 5);
     Statement statement = connection.createStatement();
     statement.execute(
         "create or replace table test_get(colA integer, colB number, colC number, "
-            + "colD string, colE double, colF float, colG boolean, colH text)");
+            + "colD string, colE double, colF float, colG boolean, colH text, colI text)");
 
     PreparedStatement prepStatement = connection.prepareStatement(prepInsertString);
     prepStatement.setInt(1, bigInt);
@@ -99,6 +101,7 @@ public class ResultSetIT extends ResultSet0IT {
     prepStatement.setFloat(6, bigFloat);
     prepStatement.setBoolean(7, true);
     prepStatement.setClob(8, clob);
+    prepStatement.setClob(9, clob1);
     prepStatement.execute();
 
     statement.execute("select * from test_get");
@@ -126,6 +129,7 @@ public class ResultSetIT extends ResultSet0IT {
     assertTrue(resultSet.getBoolean(7));
     assertTrue(resultSet.getBoolean("COLG"));
     assertEquals("hello world", resultSet.getClob("COLH").toString());
+    assertEquals("hello", resultSet.getClob("COLI").toString());
 
     // test getStatement method
     assertEquals(statement, resultSet.getStatement());
@@ -690,6 +694,7 @@ public class ResultSetIT extends ResultSet0IT {
     charRead = reader.read(chars, 0, chars.length);
     assertEquals(charRead, 11);
     assertEquals("hello world", resultSet.getClob(1).toString());
+    assertEquals("ello", resultSet.getClob(1).getSubString(1, 4));
 
     // test reading truncated clob
     resultSet.next();

@@ -124,24 +124,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   // Index: Source file to presigned URL
   HashMap<String, String> srcFileToPresignedUrl;
 
-  public Map<?, ?> getStageCredentials() {
-    return new HashMap<>(stageInfo.getCredentials());
-  }
-
   public List<RemoteStoreFileEncryptionMaterial> getEncryptionMaterial() {
     return new ArrayList<>(encryptionMaterial);
-  }
-
-  public Map<String, RemoteStoreFileEncryptionMaterial> getSrcToMaterialsMap() {
-    return new HashMap<>(srcFileToEncMat);
-  }
-
-  public Map<String, String> getSrcToPresignedUrlMap() {
-    return new HashMap<>(srcFileToPresignedUrl);
-  }
-
-  public String getStageLocation() {
-    return stageInfo.getLocation();
   }
 
   private void initEncryptionMaterial(CommandType commandType, JsonNode jsonNode)
@@ -227,10 +211,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     DOWNLOADED("File downloaded");
 
     private String desc;
-
-    public String getDesc() {
-      return desc;
-    }
 
     private ResultStatus(String desc) {
       this.desc = desc;
