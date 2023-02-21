@@ -3,7 +3,10 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
 import java.sql.*;
@@ -301,6 +304,52 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       rs.close();
       prepStatement.close();
       statement.close();
+    }
+  }
+
+  @Test
+  public void testGetParameterMetaData() throws SQLException {
+    try (Connection connection = init()) {
+      try (PreparedStatement preparedStatement = connection.prepareStatement(updateSQL)) {
+        /* All binding parameters are of type text and have null precision and scale and are not nullable. Since every
+           binding parameter currently has identical properties, testing is minimal until this changes.
+        */
+        assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(1));
+        assertThat(preparedStatement.getParameterMetaData().getParameterType(1), is(Types.VARCHAR));
+        assertThat(preparedStatement.getParameterMetaData().getPrecision(1), is(0));
+        assertThat(preparedStatement.getParameterMetaData().getScale(1), is(0));
+        assertThat(
+            preparedStatement.getParameterMetaData().isNullable(1),
+            is(ParameterMetaData.parameterNoNulls));
+        assertThat(preparedStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
+        expectFeatureNotSupportedException(
+            () -> preparedStatement.getParameterMetaData().getParameterMode(1));
+        expectFeatureNotSupportedException(
+            () -> preparedStatement.getParameterMetaData().getParameterClassName(1));
+        expectFeatureNotSupportedException(
+            () -> preparedStatement.getParameterMetaData().isSigned(1));
+      }
+
+      try (PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
+        assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(6));
+        assertThat(preparedStatement.getParameterMetaData().getParameterType(1), is(Types.VARCHAR));
+        assertThat(preparedStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
+        assertThat(preparedStatement.getParameterMetaData().getParameterType(6), is(Types.VARCHAR));
+        assertThat(preparedStatement.getParameterMetaData().getParameterTypeName(6), is("text"));
+      }
+      // test a statement with no binding parameters to ensure the count is 0
+      try (PreparedStatement preparedStatement = connection.prepareStatement(selectAllSQL)) {
+        assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(0));
+        // try to access a binding parameter that is out of range of the list of parameters (in this
+        // case, the list is
+        // empty so everything is out of range) and ensure an exception is thrown
+        try {
+          preparedStatement.getParameterMetaData().getParameterType(3);
+          fail("An exception should have been thrown");
+        } catch (SQLException e) {
+          assertThat(e.getErrorCode(), is(NUMERIC_VALUE_OUT_OF_RANGE.getMessageCode()));
+        }
+      }
     }
   }
 }

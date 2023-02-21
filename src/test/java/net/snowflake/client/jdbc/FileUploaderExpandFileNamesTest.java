@@ -88,6 +88,10 @@ public class FileUploaderExpandFileNamesTest {
     Properties props = new Properties();
     builder.setProxyProperties(props);
     builder.setDestFileName("dummy_dest_file_name");
+    builder.setCommand("select * from test");
+    builder.setUseS3RegionalUrl(false);
+    builder.setStreamingIngestClientKey("test_key");
+    builder.setStreamingIngestClientName("test_name");
 
     SnowflakeFileTransferConfig config = builder.build();
 
@@ -100,6 +104,10 @@ public class FileUploaderExpandFileNamesTest {
     assert (config.getProxyProperties() == props);
     assert (config.getPrefix().equals("dummy_prefix"));
     assert (config.getDestFileName().equals("dummy_dest_file_name"));
+    assert (config.getCommand().equals("select * from test"));
+    assert (!config.getUseS3RegionalUrl());
+    assert (config.getStreamingIngestClientKey().equals("test_key"));
+    assert (config.getStreamingIngestClientName().equals("test_name"));
 
     assertEquals(expectedThrowCount, throwCount);
   }
