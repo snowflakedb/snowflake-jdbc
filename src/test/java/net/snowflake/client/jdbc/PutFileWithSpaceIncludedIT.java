@@ -24,7 +24,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryOthers.class)
-public class PutFileWithSpaceIncluded extends BaseJDBCTest {
+public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   /** Test PUT command to send a data file, which file name contains a space. */

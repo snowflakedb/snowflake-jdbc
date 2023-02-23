@@ -7,12 +7,15 @@ import static net.snowflake.client.AbstractDriverIT.getConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
+@Category(TestCategoryOthers.class)
 public class FileUploaderLatestIT extends FileUploaderSessionlessTest {
 
   /**

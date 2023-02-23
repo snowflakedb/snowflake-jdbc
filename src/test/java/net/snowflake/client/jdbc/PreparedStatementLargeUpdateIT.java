@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryStatement.class)
-public class PreparedStatementLargeUpdateIt extends BaseJDBCTest {
+public class PreparedStatementLargeUpdateIT extends BaseJDBCTest {
   @Test
   public void testLargeUpdate() throws Throwable {
     try (Connection con = getConnection()) {
