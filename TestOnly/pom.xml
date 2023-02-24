@@ -16,7 +16,7 @@
     <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
-    <jna.version>5.5.0</jna.version>
+    <jna.version>5.11.0</jna.version>
     <mockito.version>3.5.6</mockito.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
