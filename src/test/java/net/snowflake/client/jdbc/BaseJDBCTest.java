@@ -12,18 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLXML;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -40,6 +29,10 @@ public class BaseJDBCTest extends AbstractDriverIT {
 
   protected interface MethodRaisesSQLException {
     void run() throws SQLException;
+  }
+
+  protected interface MethodRaisesSQLClientInfoException {
+    void run() throws SQLClientInfoException;
   }
 
   protected void expectConnectionAlreadyClosedException(MethodRaisesSQLException f) {
@@ -75,6 +68,15 @@ public class BaseJDBCTest extends AbstractDriverIT {
       fail("must raise exception");
     } catch (SQLException ex) {
       assertTrue(ex instanceof SQLFeatureNotSupportedException);
+    }
+  }
+
+  protected void expectSQLClientInfoException(MethodRaisesSQLClientInfoException f) {
+    try {
+      f.run();
+      fail("must raise exception");
+    } catch (SQLClientInfoException ex) {
+      // noup
     }
   }
 

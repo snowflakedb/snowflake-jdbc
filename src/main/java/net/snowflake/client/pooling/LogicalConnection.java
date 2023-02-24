@@ -585,7 +585,7 @@ class LogicalConnection implements Connection {
     throwExceptionIfClosed();
 
     try {
-      return createArrayOf(typeName, elements);
+      return physicalConnection.createArrayOf(typeName, elements);
     } catch (SQLException e) {
       pooledConnection.fireConnectionErrorEvent(e);
       throw e;
