@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.log;
 
 import static org.junit.Assert.*;
@@ -48,6 +51,7 @@ public class JDK14JCLWrapperLatestIT {
 
   /** Logging levels */
   private enum LogLevel {
+    FATAL,
     ERROR,
     WARN,
     INFO,
@@ -79,6 +83,9 @@ public class JDK14JCLWrapperLatestIT {
 
   private void testLogMessagesWithThrowable(LogLevel level, String message, Throwable t) {
     switch (level) {
+      case FATAL:
+        wrapper.fatal(message, t);
+        break;
       case ERROR:
         wrapper.error(message, t);
         break;
@@ -94,6 +101,9 @@ public class JDK14JCLWrapperLatestIT {
 
   private void testLogMessagesNoThrowable(LogLevel level, String message) {
     switch (level) {
+      case FATAL:
+        wrapper.fatal(message);
+        break;
       case ERROR:
         wrapper.error(message);
         break;
@@ -138,7 +148,9 @@ public class JDK14JCLWrapperLatestIT {
    */
   @Test
   public void testNullLogMessages() {
-    LogLevel[] levelsDisplayingOutput = {LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO};
+    LogLevel[] levelsDisplayingOutput = {
+      LogLevel.FATAL, LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO
+    };
     LogLevel[] levelsWithNoOutput = {LogLevel.TRACE, LogLevel.DEBUG};
     for (LogLevel level : levelsWithNoOutput) {
       testNullLogMessagesWithThrowable(level, "sample message", null);
@@ -159,6 +171,7 @@ public class JDK14JCLWrapperLatestIT {
     assertFalse(wrapper.isTraceEnabled());
     assertFalse(wrapper.isDebugEnabled());
     assertTrue(wrapper.isInfoEnabled());
+    assertTrue(wrapper.isWarnEnabled());
     assertTrue(wrapper.isErrorEnabled());
     assertTrue(wrapper.isFatalEnabled());
   }
