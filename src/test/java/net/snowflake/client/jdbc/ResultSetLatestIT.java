@@ -558,4 +558,60 @@ public class ResultSetLatestIT extends ResultSet0IT {
       assertEquals(resultSetMetaData.getColumnType(1), Types.TIMESTAMP);
     }
   }
+
+  /**
+   * Test getClob(int), and getClob(String) handle SQL nulls and don't throw a NullPointerException
+   * (SNOW-749517)
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testGetEmptyOrNullClob() throws SQLException {
+    Connection connection = init();
+    Clob clob = connection.createClob();
+    clob.setString(1, "hello world");
+    Clob emptyClob = connection.createClob();
+    emptyClob.setString(1, "");
+    Statement statement = connection.createStatement();
+    statement.execute(
+        "create or replace table test_get_clob(colA varchar, colNull varchar, colEmpty text)");
+    PreparedStatement preparedStatement =
+        connection.prepareStatement("insert into test_get_clob values(?, ?, ?)");
+    preparedStatement.setClob(1, clob);
+    preparedStatement.setString(2, null);
+    preparedStatement.setClob(3, emptyClob);
+    preparedStatement.execute();
+
+    ResultSet resultSet = statement.executeQuery("select * from test_get_clob");
+    resultSet.next();
+    assertEquals("hello world", resultSet.getClob(1).toString());
+    assertEquals("hello world", resultSet.getClob("COLA").toString());
+    assertNull(resultSet.getClob(2));
+    assertNull(resultSet.getClob("COLNULL"));
+    assertEquals("", resultSet.getClob(3).toString());
+    assertEquals("", resultSet.getClob("COLEMPTY").toString());
+  }
+
+  /**
+   * Since now getClob(x) can return a null, theoretically someone may work with a null Clob and try
+   * to use the setClob(int, Clob) method which will result in a NullPointerException. (SNOW-749517)
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testSetNullClob() throws SQLException {
+    Connection connection = init();
+    Clob clob = null;
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_set_clob(colNull varchar)");
+    PreparedStatement preparedStatement =
+        connection.prepareStatement("insert into test_set_clob values(?)");
+    preparedStatement.setClob(1, clob);
+    preparedStatement.execute();
+
+    ResultSet resultSet = statement.executeQuery("select * from test_set_clob");
+    resultSet.next();
+    assertNull(resultSet.getClob(1));
+    assertNull(resultSet.getClob("COLNULL"));
+  }
 }

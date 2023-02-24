@@ -179,10 +179,16 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
   public void testWasNull() throws SQLException {
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
-    statement.execute("create or replace table test_null(colA number, colB string)");
-    PreparedStatement prepst = connection.prepareStatement("insert into test_null values (?, ?)");
+    Clob emptyClob = connection.createClob();
+    emptyClob.setString(1, "");
+    statement.execute(
+        "create or replace table test_null(colA number, colB string, colNull string, emptyClob string)");
+    PreparedStatement prepst =
+        connection.prepareStatement("insert into test_null values (?, ?, ?, ?)");
     prepst.setNull(1, Types.INTEGER);
     prepst.setString(2, "hello");
+    prepst.setString(3, null);
+    prepst.setClob(4, emptyClob);
     prepst.execute();
 
     ResultSet resultSet =
@@ -192,6 +198,9 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     assertTrue(resultSet.wasNull()); // integer value is null
     resultSet.getString(2);
     assertFalse(resultSet.wasNull()); // string value is not null
+    assertNull(resultSet.getClob(3));
+    assertNull(resultSet.getClob("COLNULL"));
+    assertEquals("", resultSet.getClob("EMPTYCLOB").toString());
   }
 
   @Test

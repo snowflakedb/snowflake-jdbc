@@ -794,7 +794,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public Clob getClob(int columnIndex) throws SQLException {
     logger.debug("public Clob getClob(int columnIndex)", false);
-    return new SnowflakeClob(getString(columnIndex));
+    String columnValue = getString(columnIndex);
+
+    return columnValue == null ? null : new SnowflakeClob(columnValue);
   }
 
   @Override
@@ -829,8 +831,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public Clob getClob(String columnLabel) throws SQLException {
     logger.debug("public Clob getClob(String columnLabel)", false);
+    String columnValue = getString(columnLabel);
 
-    return new SnowflakeClob(getString(columnLabel));
+    return columnValue == null ? null : new SnowflakeClob(columnValue);
   }
 
   @Override
