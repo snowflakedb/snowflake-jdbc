@@ -7,6 +7,8 @@ import static net.snowflake.client.AbstractDriverIT.getConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
@@ -25,8 +27,8 @@ public class FileUploaderLatestIT extends FileUploaderSessionlessTest {
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetS3StageDataWithS3Session() throws SQLException {
-
     Connection con = getConnection("s3testaccount");
     SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
     // Set UseRegionalS3EndpointsForPresignedURL to true in session
@@ -54,6 +56,7 @@ public class FileUploaderLatestIT extends FileUploaderSessionlessTest {
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetS3StageDataWithAzureSession() throws SQLException {
     Connection con = getConnection("azureaccount");
     SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
