@@ -535,7 +535,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setClob(int parameterIndex, Clob x) throws SQLException {
-    setString(parameterIndex, x.toString());
+    setString(parameterIndex, x == null ? null : x.toString());
   }
 
   @Override
