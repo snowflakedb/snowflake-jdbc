@@ -1,14 +1,22 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.log;
 
+import static org.junit.Assert.assertEquals;
+
+import net.snowflake.client.category.TestCategoryCore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /** A base class for testing implementations of {@link SFLogger} */
+@Category(TestCategoryCore.class)
 public abstract class AbstractLoggerIT {
+  public static final String fakeCreds =
+      "credentials=(aws_key_id='abc123' aws_secret_key='rtyuiop')";
+
   @Before
   void setUp() {
     setLogLevel(LogLevel.TRACE);
@@ -56,6 +64,33 @@ public abstract class AbstractLoggerIT {
         "Values are null and null", "Values are {} and {}", null, (ArgSupplier) () -> null);
   }
 
+  @Test
+  public void TestWithIsMaskedTrue() {
+    for (LogLevel level : LogLevel.values()) {
+      logMessage(level, fakeCreds, true);
+      String loggedMsg = getLoggedMessage();
+      String expectedMessage = "credentials=(aws_key_id='****' aws_secret_key='****')";
+      assertEquals(expectedMessage, loggedMsg);
+    }
+  }
+
+  @Test
+  public void TestWithIsMaskedFalse() {
+    for (LogLevel level : LogLevel.values()) {
+      logMessage(level, fakeCreds, false);
+      String loggedMsg = getLoggedMessage();
+      // message doesn't change since it's not masked
+      assertEquals(fakeCreds, loggedMsg);
+    }
+  }
+
+  @Test
+  public void testWithThrowable() {
+    for (LogLevel level : LogLevel.values()) {
+      logMessage(level, "sample message", (Throwable) null);
+    }
+  }
+
   /**
    * Logs the given message format and its arguments at each of the logging levels and verifies that
    * the logger logged the message correctly.
@@ -67,7 +102,7 @@ public abstract class AbstractLoggerIT {
       logMessage(level, msg, args);
 
       String loggedMsg = getLoggedMessage();
-      Assert.assertEquals(
+      assertEquals(
           String.format(
               "Message logged did not match expected value. " + "expected=%s actual=%s",
               expectedLogMsg, loggedMsg),
@@ -75,7 +110,7 @@ public abstract class AbstractLoggerIT {
           loggedMsg);
 
       LogLevel loggedMsgLevel = getLoggedMessageLevel();
-      Assert.assertEquals(
+      assertEquals(
           String.format(
               "Message was not logged at expected log level. " + "expected=%s actual=%s",
               level.toString(), loggedMsgLevel.toString()),
@@ -92,6 +127,24 @@ public abstract class AbstractLoggerIT {
    * @param args values for placeholders in the message format
    */
   abstract void logMessage(LogLevel level, String message, Object... args);
+
+  /**
+   * Log message at the given level.
+   *
+   * @param level level at which the message is to be logged
+   * @param message message or message format
+   * @param isMasked for masking secrets
+   */
+  abstract void logMessage(LogLevel level, String message, boolean isMasked);
+
+  /**
+   * Log message at the given level.
+   *
+   * @param level level at which the message is to be logged
+   * @param message message or message format
+   * @param throwable for exception thrown
+   */
+  abstract void logMessage(LogLevel level, String message, Throwable throwable);
 
   /**
    * Set minimum log level on the logger instance at which a message will be accepted.

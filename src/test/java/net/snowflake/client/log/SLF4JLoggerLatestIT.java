@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.log;
 
@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 
 /** A class for testing {@link SLF4JLogger} */
 @Category(TestCategoryCore.class)
-public class SLF4JLoggerIT extends AbstractLoggerIT {
+public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
   /** {@link SLF4JLogger} instance that will be tested in this class */
-  private static final SLF4JLogger LOGGER = new SLF4JLogger(SLF4JLoggerIT.class);
+  private static final SLF4JLogger LOGGER = new SLF4JLogger(SLF4JLoggerLatestIT.class);
 
   /**
    * Used for storing the log level set on the logger instance before starting the tests. Once the
@@ -40,7 +40,7 @@ public class SLF4JLoggerIT extends AbstractLoggerIT {
    * direct access to the internal logger is required.
    */
   private static final Logger internalLogger =
-      (Logger) LoggerFactory.getLogger(SLF4JLoggerIT.class);
+      (Logger) LoggerFactory.getLogger(SLF4JLoggerLatestIT.class);
 
   /**
    * Used for storing whether additive property was set on the logger instance before starting the
@@ -129,6 +129,48 @@ public class SLF4JLoggerIT extends AbstractLoggerIT {
         break;
       case TRACE:
         LOGGER.trace(message, args);
+        break;
+    }
+  }
+
+  @Override
+  void logMessage(LogLevel level, String message, Throwable throwable) {
+    switch (level) {
+      case ERROR:
+        LOGGER.error(message, throwable);
+        break;
+      case WARNING:
+        LOGGER.warn(message, throwable);
+        break;
+      case INFO:
+        LOGGER.info(message, throwable);
+        break;
+      case DEBUG:
+        LOGGER.debug(message, throwable);
+        break;
+      case TRACE:
+        LOGGER.trace(message, throwable);
+        break;
+    }
+  }
+
+  @Override
+  void logMessage(LogLevel level, String message, boolean isMasked) {
+    switch (level) {
+      case ERROR:
+        LOGGER.error(message, isMasked);
+        break;
+      case WARNING:
+        LOGGER.warn(message, isMasked);
+        break;
+      case INFO:
+        LOGGER.info(message, isMasked);
+        break;
+      case DEBUG:
+        LOGGER.debug(message, isMasked);
+        break;
+      case TRACE:
+        LOGGER.trace(message, isMasked);
         break;
     }
   }
