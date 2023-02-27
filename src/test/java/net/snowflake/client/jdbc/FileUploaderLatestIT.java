@@ -3,8 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.AbstractDriverIT.getConnection;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -18,7 +16,7 @@ import org.junit.experimental.categories.Category;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 @Category(TestCategoryOthers.class)
-public class FileUploaderLatestIT extends FileUploaderSessionlessTest {
+public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   /**
    * This tests that getStageInfo(JsonNode, session) reflects the boolean value of UseS3RegionalUrl
