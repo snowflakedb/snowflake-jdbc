@@ -4,7 +4,6 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
-import static net.snowflake.client.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -654,14 +653,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
     // If there is no space left in the download location, java.io.IOException is thrown.
     // Don't retry.
-    String exMessage = SnowflakeUtil.getRootCause(ex).getMessage();
-    if (exMessage != null && exMessage.equals(NO_SPACE_LEFT_ON_DEVICE_ERR)) {
-      throw new SnowflakeSQLLoggedException(
-          session,
-          SqlState.SYSTEM_ERROR,
-          ErrorCode.IO_ERROR.getMessageCode(),
-          ex,
-          "Encountered exception during " + operation + ": " + ex.getMessage());
+    if (SnowflakeUtil.getRootCause(ex) instanceof IOException) {
+      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex);
     }
 
     if (ex instanceof StorageException) {
