@@ -6,15 +6,14 @@ package net.snowflake.client.jdbc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import net.snowflake.client.jdbc.cloud.storage.StageInfo;
-import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.jdbc.cloud.storage.StageInfo;
+import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+import org.junit.Assert;
+import org.junit.Test;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames. */
 public class FileUploaderSessionlessTest extends FileUploaderPrepIT {

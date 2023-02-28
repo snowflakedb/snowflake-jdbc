@@ -6,12 +6,11 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
-
-import java.util.Arrays;
-import java.util.List;
 
 /** File uploader test prep reused by IT/connection tests and sessionless tests */
 abstract class FileUploaderPrepIT extends BaseJDBCTest {
