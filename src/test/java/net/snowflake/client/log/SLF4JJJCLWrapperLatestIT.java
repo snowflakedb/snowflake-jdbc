@@ -10,10 +10,13 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
+import net.snowflake.client.category.TestCategoryCore;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryCore.class)
 public class SLF4JJJCLWrapperLatestIT {
 
   /** Message last logged using SLF4JLogger. */

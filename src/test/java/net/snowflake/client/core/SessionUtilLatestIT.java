@@ -9,15 +9,18 @@ import static org.mockito.Mockito.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+@Category(TestCategoryCore.class)
 public class SessionUtilLatestIT {
 
   /**
