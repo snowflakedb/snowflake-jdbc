@@ -651,6 +651,12 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
     }
 
+    // If there is no space left in the download location, java.io.IOException is thrown.
+    // Don't retry.
+    if (SnowflakeUtil.getRootCause(ex) instanceof IOException) {
+      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex);
+    }
+
     if (ex instanceof StorageException) {
       StorageException se = (StorageException) ex;
 

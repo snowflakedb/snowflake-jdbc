@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -3008,5 +3009,27 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
     throw new SnowflakeSQLException(
         ex, SqlState.SYSTEM_ERROR, ErrorCode.AWS_CLIENT_ERROR.getMessageCode(), operation, msg);
+  }
+
+  /**
+   * For handling IOException: No space left on device when attempting to download a file to a
+   * location where there is not enough space. We don't want to retry on this exception.
+   *
+   * @param session the current session
+   * @param operation the operation i.e. GET
+   * @param ex the exception caught
+   * @throws SnowflakeSQLLoggedException
+   */
+  public static void throwNoSpaceLeftError(SFSession session, String operation, Exception ex)
+      throws SnowflakeSQLLoggedException {
+    String exMessage = SnowflakeUtil.getRootCause(ex).getMessage();
+    if (exMessage != null && exMessage.equals(NO_SPACE_LEFT_ON_DEVICE_ERR)) {
+      throw new SnowflakeSQLLoggedException(
+          session,
+          SqlState.SYSTEM_ERROR,
+          ErrorCode.IO_ERROR.getMessageCode(),
+          ex,
+          "Encountered exception during " + operation + ": " + ex.getMessage());
+    }
   }
 }
