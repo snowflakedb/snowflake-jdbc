@@ -5,11 +5,12 @@ labels: bug
 ---
 
 
-<b>
-If you need urgent assistance then file the issue using the support process: </br>
-https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge </br>
-otherwise continue here. </br>
-</b> </br>
+<!--
+If you need urgent assistance then file the issue using the support process: 
+https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge 
+otherwise continue here. 
+-->
+
 
 Please answer these questions before submitting your issue. 
 In order to accurately debug the issue this information is required. Thanks!
