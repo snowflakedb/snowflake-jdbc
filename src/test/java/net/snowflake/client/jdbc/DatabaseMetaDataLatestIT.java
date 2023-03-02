@@ -335,6 +335,30 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       statement.close();
     }
   }
+
+  /**
+   * Test against sql injection, ensure resultset is empty. Not done yet, just trying to see if this
+   * breaks anything
+   *
+   * @throws Throwable
+   */
+  @Test
+  public void testGetSchemasInjection() throws Throwable {
+    Connection con = getSnowflakeAdminConnection();
+    con.createStatement().execute("alter user testaccount.snowman set MULTI_STATEMENT_COUNT=0");
+    String schemaQuoted = "TESTSCHEMA\\'WITH\\'QUOTES";
+    con.close();
+    try (Connection connection = getConnection()) {
+      DatabaseMetaData metaData = connection.getMetaData();
+      String schema = "%' in database testwh; select 11 as bar; show databases like '%";
+      ResultSet resultSet = metaData.getSchemas(null, schema);
+      while (resultSet.next()) {
+        System.out.println(resultSet.getString(1));
+        System.out.println(resultSet.getString(2));
+      }
+    }
+  }
+
   /**
    * This tests that wildcards can be used for the schema name for getProcedureColumns().
    * Previously, only empty resultsets were returned.

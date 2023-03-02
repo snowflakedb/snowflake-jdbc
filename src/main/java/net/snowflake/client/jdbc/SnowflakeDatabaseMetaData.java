@@ -191,6 +191,27 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     return originalString.replace("\"", "\"\"");
   }
 
+  /**
+   * This guards against SQL injections by ensuring that any single quote is escaped properly.
+   *
+   * @param arg the original schema
+   * @return
+   */
+  private String escapeSingleQuoteForLikeCommand(String arg) {
+    int i = 0;
+    int index = arg.indexOf("'", i);
+    while (index != -1) {
+      if (index == 0 || (index > 0 && arg.charAt(index - 1) != '\\')) {
+        arg = arg.replace("'", "\\'");
+        i = index + 2;
+      } else {
+        i = index + 1;
+      }
+      index = i < arg.length() ? arg.indexOf("'", i) : -1;
+    }
+    return arg;
+  }
+
   private boolean isSchemaNameWildcardPattern(String inputString) {
     // if session schema contains wildcard, don't treat it as wildcard; treat as just a schema name
     return useSessionSchema ? false : Wildcard.isWildcardPatternStr(inputString);
@@ -1336,7 +1357,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     String showProcedureCommand = "show /* JDBC:DatabaseMetaData.getProcedures() */ " + type;
 
     if (name != null && !name.isEmpty() && !name.trim().equals("%") && !name.trim().equals(".*")) {
-      showProcedureCommand += " like '" + name + "'";
+      showProcedureCommand += " like '" + escapeSingleQuoteForLikeCommand(name) + "'";
     }
 
     if (catalog == null) {
@@ -1449,7 +1470,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !tableNamePattern.isEmpty()
         && !tableNamePattern.trim().equals("%")
         && !tableNamePattern.trim().equals(".*")) {
-      showTablesCommand += " like '" + tableNamePattern + "'";
+      showTablesCommand += " like '" + escapeSingleQuoteForLikeCommand(tableNamePattern) + "'";
     }
 
     if (catalog == null) {
@@ -1627,7 +1648,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !columnNamePattern.isEmpty()
         && !columnNamePattern.trim().equals("%")
         && !columnNamePattern.trim().equals(".*")) {
-      showColumnsCommand += " like '" + columnNamePattern + "'";
+      showColumnsCommand += " like '" + escapeSingleQuoteForLikeCommand(columnNamePattern) + "'";
     }
 
     if (catalog == null) {
@@ -2636,7 +2657,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !streamName.isEmpty()
         && !streamName.trim().equals("%")
         && !streamName.trim().equals(".*")) {
-      showStreamsCommand += " like '" + streamName + "'";
+      showStreamsCommand += " like '" + escapeSingleQuoteForLikeCommand(streamName) + "'";
     }
 
     if (catalog == null) {
@@ -3040,7 +3061,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !schemaPattern.isEmpty()
         && !schemaPattern.trim().equals("%")
         && !schemaPattern.trim().equals(".*")) {
-      showSchemas += " like '" + schemaPattern + "'";
+      showSchemas += " like '" + escapeSingleQuoteForLikeCommand(schemaPattern) + "'";
     }
 
     if (catalog == null) {
