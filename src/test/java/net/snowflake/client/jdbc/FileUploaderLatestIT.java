@@ -1,29 +1,20 @@
 /*
- * Copyright (c) 2012-2023 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2022 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.AbstractDriverIT.*;
-import static org.junit.Assert.*;
+import static net.snowflake.client.AbstractDriverIT.getConnection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.cloud.storage.SnowflakeGCSClient;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
-import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
-import net.snowflake.client.jdbc.cloud.storage.StorageProviderException;
 import org.junit.Assert;
 import org.junit.Test;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 public class FileUploaderLatestIT extends FileUploaderSessionlessTest {
-  private static final String TEST_DATA_FILE = "orders_100.csv";
-  private static final String OBJ_META_STAGE = "testObjMeta";
+
   /**
    * This tests that getStageInfo(JsonNode, session) reflects the boolean value of UseS3RegionalUrl
    * that has been set via the session.
@@ -76,113 +67,5 @@ public class FileUploaderLatestIT extends FileUploaderSessionlessTest {
     // The value should always be false for non-S3 accounts
     Assert.assertEquals(false, stageInfo.getUseS3RegionalUrl());
     con.close();
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetObjectMetadataWithGCS() throws Exception {
-    Connection connection = null;
-    try {
-      connection = getConnection("gpaaccount");
-      Statement statement = connection.createStatement();
-      statement.execute("CREATE OR REPLACE STAGE test_ObjMeta");
-
-      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
-      statement.execute(putCommand);
-
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      SnowflakeFileTransferAgent sfAgent =
-          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-      StageInfo info = sfAgent.getStageInfo();
-      SnowflakeGCSClient client =
-          SnowflakeGCSClient.createSnowflakeGCSClient(
-              info, sfAgent.getEncryptionMaterial().get(0), sfSession);
-
-      String location = info.getLocation();
-      int idx = location.indexOf('/');
-      String remoteStageLocation = location.substring(0, idx);
-      String path = location.substring(idx + 1) + TEST_DATA_FILE + ".gz";
-      StorageObjectMetadata metadata = client.getObjectMetadata(remoteStageLocation, path);
-      Assert.assertEquals("gzip", metadata.getContentEncoding());
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
-        connection.close();
-      }
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetObjectMetadataFileNotFoundWithGCS() throws Exception {
-    Connection connection = null;
-    try {
-      connection = getConnection("gpaaccount");
-      Statement statement = connection.createStatement();
-      statement.execute("CREATE OR REPLACE STAGE test_ObjMeta");
-
-      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
-      statement.execute(putCommand);
-
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      SnowflakeFileTransferAgent sfAgent =
-          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-      StageInfo info = sfAgent.getStageInfo();
-      SnowflakeGCSClient client =
-          SnowflakeGCSClient.createSnowflakeGCSClient(
-              info, sfAgent.getEncryptionMaterial().get(0), sfSession);
-
-      String location = info.getLocation();
-      int idx = location.indexOf('/');
-      String remoteStageLocation = location.substring(0, idx);
-      String path = location.substring(idx + 1) + "wrong_file.csv.gz";
-      client.getObjectMetadata(remoteStageLocation, path);
-      fail("should raise exception");
-    } catch (Exception ex) {
-      assertTrue(ex instanceof StorageProviderException);
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
-        connection.close();
-      }
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testGetObjectMetadataStorageExceptionWithGCS() throws Exception {
-    Connection connection = null;
-    try {
-      connection = getConnection("gpaaccount");
-      Statement statement = connection.createStatement();
-      statement.execute("CREATE OR REPLACE STAGE test_ObjMeta");
-
-      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
-      statement.execute(putCommand);
-
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      SnowflakeFileTransferAgent sfAgent =
-          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-      StageInfo info = sfAgent.getStageInfo();
-      SnowflakeGCSClient client =
-          SnowflakeGCSClient.createSnowflakeGCSClient(
-              info, sfAgent.getEncryptionMaterial().get(0), sfSession);
-
-      String location = info.getLocation();
-      int idx = location.indexOf('/');
-      String remoteStageLocation = location.substring(0, idx);
-      client.getObjectMetadata(remoteStageLocation, "");
-      fail("should raise exception");
-    } catch (Exception ex) {
-      assertTrue(ex instanceof StorageProviderException);
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
-        connection.close();
-      }
-    }
   }
 }
