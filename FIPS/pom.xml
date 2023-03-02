@@ -80,7 +80,7 @@
     <dependency>
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
-      <version>8.0</version>
+      <version>8.23</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
