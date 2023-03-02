@@ -4,14 +4,13 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.AbstractDriverIT.getFullPathFileInResource;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.*;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryCore;
+import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -23,7 +22,6 @@ public class IncidentUtilLatestIT {
   private static final String FILE_NAME = "sf_incident_123456.dmp.gz";
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testOneLinerDescription() {
     String desc = IncidentUtil.oneLiner("unexpected exception", new IOException("File not found"));
     assertEquals("unexpected exception java.io.IOException: File not found", desc.substring(0, 56));
@@ -31,26 +29,23 @@ public class IncidentUtilLatestIT {
 
   /** Tests dumping JVM metrics for the current process */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDumpVmMetrics() throws IOException {
-    // create the snowflake_dumps directory in the temp folder
-    File destFolder = tmpFolder.newFolder("snowflake_dumps");
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+    File targetVMFile = new File(getFullPathFileInResource("snowflake_dumps/" + FILE_NAME));
+    int index = targetVMFile.getPath().indexOf("snowflake_dumps");
+    String dumpPath = targetVMFile.getPath().substring(0, index - 1);
+    System.setProperty("snowflake.dump_path", dumpPath);
 
-    // create the dmp file to write vm metrics to
-    File targetVMFile = new File(destFolderCanonicalPathWithSeparator + FILE_NAME);
-    targetVMFile.createNewFile();
-
-    System.setProperty(EventUtil.DUMP_PATH_PROP, tmpFolder.getRoot().getCanonicalPath());
+    // write the VM metrics to the dump file
     IncidentUtil.dumpVmMetrics("123456");
 
-    // Read back the file
+    // Read back the file contents
     GZIPInputStream gzip = new GZIPInputStream(new FileInputStream(targetVMFile));
-    BufferedReader br = new BufferedReader(new InputStreamReader(gzip));
-
-    if (!br.ready()) {
-      fail();
-    }
+    StringWriter sWriter = new StringWriter();
+    IOUtils.copy(gzip, sWriter, "UTF-8");
+    String output = sWriter.toString();
+    assertEquals(
+        "\n\n\n---------------------------  METRICS " + "---------------------------\n\n",
+        output.substring(0, 69));
+    sWriter.close();
   }
 }
