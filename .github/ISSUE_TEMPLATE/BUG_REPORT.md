@@ -4,13 +4,16 @@ about: Something isn't working as expected? Here is the right place to report.
 labels: bug
 ---
 
+
 <!--
-If you need urgent assistance then file the issue using the support process:
-https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge
-otherwise continue here.
+If you need urgent assistance then file the issue using the support process: 
+https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge 
+otherwise continue here. 
 -->
 
-Please answer these questions before submitting your issue. Thanks!
+
+Please answer these questions before submitting your issue. 
+In order to accurately debug the issue this information is required. Thanks!
 
 1. What version of JDBC driver are you using?
 
@@ -33,3 +36,5 @@ Please answer these questions before submitting your issue. Thanks!
 6. Can you set logging to DEBUG and collect the logs?
 
    https://community.snowflake.com/s/article/How-to-generate-log-file-on-Snowflake-connectors
+   
+7. What is your Snowflake account identifier, if any? (Optional)
