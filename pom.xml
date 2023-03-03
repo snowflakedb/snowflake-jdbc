@@ -88,7 +88,7 @@
     <dependency>
       <groupId>com.nimbusds</groupId>
       <artifactId>nimbus-jose-jwt</artifactId>
-      <version>9.21</version>
+      <version>9.30.1</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
@@ -931,17 +931,17 @@
                 </goals>
                 <configuration>
                   <target>
-                    <unzip src="${project.build.directory}/${project.build.finalName}.jar" dest="${project.build.directory}/relocate" />
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}" />
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}" />
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}" />
-                    <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}" />
-                    <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}" />
-                    <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}" />
-                    <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar" />
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}" />
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}" />
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}" />
+                    <unzip src="${project.build.directory}/${project.build.finalName}.jar" dest="${project.build.directory}/relocate"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
+                    <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                   </target>
                 </configuration>
               </execution>
