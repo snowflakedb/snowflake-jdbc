@@ -198,6 +198,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    * @return
    */
   private String escapeSingleQuoteForLikeCommand(String arg) {
+    if (arg == null) {
+      return null;
+    }
     int i = 0;
     int index = arg.indexOf("'", i);
     while (index != -1) {
