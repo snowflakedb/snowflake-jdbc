@@ -335,6 +335,40 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       statement.close();
     }
   }
+
+  /**
+   * Test that SQL injection with multistatements into DatabaseMetaData get functions are no longer
+   * possible.
+   *
+   * @throws Throwable
+   */
+  @Test
+  public void testGetFunctionSqlInjectionProtection() throws Throwable {
+    Connection con = getSnowflakeAdminConnection();
+    // Allow multistatements; this is the only way a Sql injection would be possible
+    con.createStatement().execute("alter user testaccount.snowman set MULTI_STATEMENT_COUNT=0");
+    con.close();
+    try (Connection connection = getConnection()) {
+      DatabaseMetaData metaData = connection.getMetaData();
+      String schemaSqlInection = "%' in database testwh; select 11 as bar; show databases like '%";
+      ResultSet resultSet = metaData.getSchemas(null, schemaSqlInection);
+      // assert result set is empty
+      assertFalse(resultSet.next());
+      String columnSqlInjection = "%' in schema testschema; show columns like '%";
+      resultSet = metaData.getColumns(null, null, null, columnSqlInjection);
+      // assert result set is empty
+      assertFalse(resultSet.next());
+      String functionSqlInjection = "%' in account snowflake; show functions like '%";
+      resultSet = metaData.getColumns(null, null, null, functionSqlInjection);
+      // assert result set is empty
+      assertFalse(resultSet.next());
+    }
+    // Clean up by unsetting multistatement
+    con = getSnowflakeAdminConnection();
+    con.createStatement().execute("alter user testaccount.snowman unset MULTI_STATEMENT_COUNT");
+    con.close();
+  }
+
   /**
    * This tests that wildcards can be used for the schema name for getProcedureColumns().
    * Previously, only empty resultsets were returned.
