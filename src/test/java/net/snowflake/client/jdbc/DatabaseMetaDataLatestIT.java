@@ -344,11 +344,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testGetFunctionSqlInjectionProtection() throws Throwable {
-    Connection con = getSnowflakeAdminConnection();
-    // Allow multistatements; this is the only way a Sql injection would be possible
-    con.createStatement().execute("alter user testaccount.snowman set MULTI_STATEMENT_COUNT=0");
-    con.close();
     try (Connection connection = getConnection()) {
+      // Enable multistatements since this is the only way a sql injection could occur
+      connection.createStatement().execute("alter session set MULTI_STATEMENT_COUNT=0");
       DatabaseMetaData metaData = connection.getMetaData();
       String schemaSqlInection = "%' in database testwh; select 11 as bar; show databases like '%";
       ResultSet resultSet = metaData.getSchemas(null, schemaSqlInection);
@@ -362,11 +360,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       resultSet = metaData.getColumns(null, null, null, functionSqlInjection);
       // assert result set is empty
       assertFalse(resultSet.next());
+      // Clean up by unsetting multistatement
+      connection.createStatement().execute("alter session unset MULTI_STATEMENT_COUNT");
     }
-    // Clean up by unsetting multistatement
-    con = getSnowflakeAdminConnection();
-    con.createStatement().execute("alter user testaccount.snowman unset MULTI_STATEMENT_COUNT");
-    con.close();
   }
 
   /**
