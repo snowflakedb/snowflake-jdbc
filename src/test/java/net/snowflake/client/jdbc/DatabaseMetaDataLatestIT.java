@@ -337,26 +337,36 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   /**
-   * Test against sql injection, ensure resultset is empty. Not done yet, just trying to see if this
-   * breaks anything
+   * Test that SQL injection with multistatements into DatabaseMetaData get functions are no longer
+   * possible.
    *
    * @throws Throwable
    */
   @Test
-  public void testGetSchemasInjection() throws Throwable {
+  public void testGetFunctionSqlInjectionProtection() throws Throwable {
     Connection con = getSnowflakeAdminConnection();
+    // Allow multistatements; this is the only way a Sql injection would be possible
     con.createStatement().execute("alter user testaccount.snowman set MULTI_STATEMENT_COUNT=0");
-    String schemaQuoted = "TESTSCHEMA\\'WITH\\'QUOTES";
     con.close();
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
-      String schema = "%' in database testwh; select 11 as bar; show databases like '%";
-      ResultSet resultSet = metaData.getSchemas(null, schema);
-      while (resultSet.next()) {
-        System.out.println(resultSet.getString(1));
-        System.out.println(resultSet.getString(2));
-      }
+      String schemaSqlInection = "%' in database testwh; select 11 as bar; show databases like '%";
+      ResultSet resultSet = metaData.getSchemas(null, schemaSqlInection);
+      // assert result set is empty
+      assertFalse(resultSet.next());
+      String columnSqlInjection = "%' in schema testschema; show columns like '%";
+      resultSet = metaData.getColumns(null, null, null, columnSqlInjection);
+      // assert result set is empty
+      assertFalse(resultSet.next());
+      String functionSqlInjection = "%' in account snowflake; show functions like '%";
+      resultSet = metaData.getColumns(null, null, null, functionSqlInjection);
+      // assert result set is empty
+      assertFalse(resultSet.next());
     }
+    // Clean up by unsetting multistatement
+    con = getSnowflakeAdminConnection();
+    con.createStatement().execute("alter user testaccount.snowman unset MULTI_STATEMENT_COUNT");
+    con.close();
   }
 
   /**
