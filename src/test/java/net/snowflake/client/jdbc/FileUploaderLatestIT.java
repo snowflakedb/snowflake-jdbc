@@ -3,7 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -88,7 +89,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
     try {
       connection = getConnection("gcpaccount");
       Statement statement = connection.createStatement();
-      statement.execute("CREATE OR REPLACE STAGE test_ObjMeta");
+      statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
       String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
       String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
@@ -123,7 +124,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
     try {
       connection = getConnection("gcpaccount");
       Statement statement = connection.createStatement();
-      statement.execute("CREATE OR REPLACE STAGE test_ObjMeta");
+      statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
       String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
       String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
@@ -144,7 +145,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
       client.getObjectMetadata(remoteStageLocation, path);
       fail("should raise exception");
     } catch (Exception ex) {
-      assertTrue(ex instanceof StorageProviderException);
+      assertTrue(
+          "Wrong type of exception. Message: " + ex.getMessage(),
+          ex instanceof StorageProviderException);
     } finally {
       if (connection != null) {
         connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
@@ -160,7 +163,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
     try {
       connection = getConnection("gcpaccount");
       Statement statement = connection.createStatement();
-      statement.execute("CREATE OR REPLACE STAGE test_ObjMeta");
+      statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
       String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
       String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
@@ -180,7 +183,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
       client.getObjectMetadata(remoteStageLocation, "");
       fail("should raise exception");
     } catch (Exception ex) {
-      assertTrue(ex instanceof StorageProviderException);
+      assertTrue(
+          "Wrong type of exception. Message: " + ex.getMessage(),
+          ex instanceof StorageProviderException);
     } finally {
       if (connection != null) {
         connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
