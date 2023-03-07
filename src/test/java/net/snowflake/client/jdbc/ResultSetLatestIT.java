@@ -14,10 +14,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.SFBaseSession;
@@ -674,5 +671,72 @@ public class ResultSetLatestIT extends ResultSet0IT {
     resultSet.next();
     assertNull(resultSet.getClob(1));
     assertNull(resultSet.getClob("COLNULL"));
+  }
+
+  @Test
+  public void testCallStatementType() throws SQLException {
+    Properties props = new Properties();
+    props.put("USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS", "true");
+    try (Connection connection = getConnection(props)) {
+      try (Statement statement = connection.createStatement()) {
+        String sp =
+            "CREATE OR REPLACE PROCEDURE \"SP_ZSDLEADTIME_ARCHIVE_DAILY\"()\n"
+                + "RETURNS VARCHAR(16777216)\n"
+                + "LANGUAGE SQL\n"
+                + "EXECUTE AS CALLER\n"
+                + "AS \n"
+                + "'\n"
+                + "declare\n"
+                + "result varchar;\n"
+                + " \n"
+                + "    begin\n"
+                + "        BEGIN TRANSACTION;\n"
+                + "      \n"
+                + "        --Delete records older than 1 year\n"
+                + "        DELETE FROM MYTABLE1 WHERE ID < 5;\n"
+                + "       \n"
+                + "        --Insert new records\n"
+                + "        INSERT INTO MYTABLE1\n"
+                + "            (ID,\n"
+                + "            NAME\n"
+                + "            )\n"
+                + "            SELECT   \n"
+                + "            SEQ,FIRST_NAME\n"
+                + "            FROM MYCSVTABLE;\n"
+                + "        \n"
+                + "COMMIT;\n"
+                + "result := ''SUCCESS'';\n"
+                + "return result;\n"
+                + "exception\n"
+                + "    when other then\n"
+                + "        begin\n"
+                + "        ROLLBACK;\n"
+                + "            --Insert record about error\n"
+                + "            let line := ''sp-sql-msg: '' || SQLERRM || '' code : '' || SQLCODE;\n"
+                + "\n"
+                + "            let sp_name := ''SP_ZSDLEADTIME_ARCHIVE_DAILY'';\n"
+                + "            INSERT into MYTABLE1 values (1000, :line);\n"
+                + "        raise;\n"
+                + "    end;\n"
+                + "end;\n"
+                + "';";
+        statement.execute("create or replace table MYCSVTABLE (SEQ int, FIRST_NAME string)");
+        statement.execute("create or replace table MYTABLE1 (ID int, NAME string)");
+        statement.execute(sp);
+
+        CallableStatement cs = connection.prepareCall("CALL SP_ZSDLEADTIME_ARCHIVE_DAILY()");
+        cs.execute();
+        ResultSetMetaData resultSetMetaData = cs.getMetaData();
+        assertEquals("SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
+        assertEquals("VARCHAR", resultSetMetaData.getColumnTypeName(1));
+        assertEquals(0, resultSetMetaData.getScale(1));
+        assertEquals(16777216, resultSetMetaData.getPrecision(1));
+
+        cs.close();
+        statement.execute("drop procedure if exists SP_ZSDLEADTIME_ARCHIVE_DAILY()");
+        statement.execute("drop table if exists MYTABLE1");
+        statement.execute("drop table if exists MYCSVTABLE");
+      }
+    }
   }
 }
