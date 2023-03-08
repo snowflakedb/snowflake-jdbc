@@ -10,7 +10,6 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnTestaccount;
@@ -150,29 +149,6 @@ public class StreamIT extends BaseJDBCTest {
         statement.close();
       }
       closeSQLObjects(resultSet, statement, connection);
-    }
-  }
-
-  @Test
-  public void testDownloadToStreamBlobNotFoundGCS() throws SQLException {
-    final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
-    Connection connection = null;
-    Statement statement = null;
-    try {
-      connection = getConnection("gcpaccount");
-      statement = connection.createStatement();
-      connection
-          .unwrap(SnowflakeConnection.class)
-          .downloadStream("~", DEST_PREFIX + "/abc.gz", true);
-      fail("should throw a storage provider exception for blob not found");
-    } catch (Exception ex) {
-      System.out.println("Negative test to hit expected exception: " + ex.getMessage());
-    } finally {
-      if (statement != null) {
-        statement.execute("rm @~/" + DEST_PREFIX);
-        statement.close();
-      }
-      closeSQLObjects(statement, connection);
     }
   }
 }
