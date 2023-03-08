@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -87,7 +88,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   public void testGetObjectMetadataWithGCS() throws Exception {
     Connection connection = null;
     try {
-      connection = getConnection("gcpaccount");
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+      connection = getConnection("gcpaccount", paramProperties);
       Statement statement = connection.createStatement();
       statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
