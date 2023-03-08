@@ -13,7 +13,6 @@ import java.util.TimeZone;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 
@@ -44,14 +43,9 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     this.queryID = sfBaseResultSet.getQueryId();
     this.session = (SFSession) sfBaseResultSet.getSession();
     this.extraStatement = statement;
-    try {
-      this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
-      this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
-      this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
-    } catch (SFException ex) {
-      throw new SnowflakeSQLLoggedException(
-          this.session, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
-    }
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
+    this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
+    this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
   }
 
   /**
@@ -69,14 +63,9 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     this.queryID = sfBaseResultSet.getQueryId();
     this.sfBaseResultSet = sfBaseResultSet;
 
-    try {
-      this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
-      this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
-      this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
-    } catch (SFException ex) {
-      throw new SnowflakeSQLLoggedException(
-          this.session, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
-    }
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
+    this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
+    this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
   }
 
   public SFAsyncResultSet(String queryID, Statement statement) throws SQLException {
