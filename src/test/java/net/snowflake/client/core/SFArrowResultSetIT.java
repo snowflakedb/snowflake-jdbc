@@ -7,24 +7,13 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.time.Instant;
+import java.util.*;
 import net.snowflake.client.category.TestCategoryArrow;
-import net.snowflake.client.jdbc.ArrowResultChunk;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeResultChunk;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -38,6 +27,7 @@ import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,7 +65,7 @@ public class SFArrowResultSetIT {
 
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
-    resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
+    resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
     resultSetSerializable.setFirstChunkByteData(dataBytes);
     resultSetSerializable.setChunkFileCount(0);
 
@@ -93,10 +83,50 @@ public class SFArrowResultSetIT {
     assertThat(i, is(1000));
   }
 
+  /** Test that the first chunk can be sorted */
+  @Test
+  public void testSortedResultChunk() throws Throwable {
+    List<Field> fieldList = new ArrayList<>();
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "FIXED");
+    customFieldMeta.put("scale", "0");
+    FieldType type = new FieldType(false, Types.MinorType.INT.getType(), null, customFieldMeta);
+    fieldList.add(new Field("", type, null));
+    Schema schema = new Schema(fieldList);
+
+    Object[][] data = generateData(schema, 1000);
+    File file = createArrowFile("testNoOfflineData_0_0_0", schema, data, 10);
+
+    int dataSize = (int) file.length();
+    byte[] dataBytes = new byte[dataSize];
+
+    InputStream is = new FileInputStream(file);
+    is.read(dataBytes, 0, dataSize);
+
+    SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
+    resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
+    resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
+    resultSetSerializable.setFirstChunkByteData(dataBytes);
+    resultSetSerializable.setChunkFileCount(0);
+
+    SFArrowResultSet resultSet =
+        new SFArrowResultSet(resultSetSerializable, new NoOpTelemetryClient(), true);
+
+    int i = 0;
+    while (resultSet.next()) {
+      int val = resultSet.getInt(1);
+      assertThat(val, equalTo(data[0][i]));
+      i++;
+    }
+
+    // assert that total rowcount is 1000
+    assertThat(i, is(1000));
+  }
+
   @Test
   public void testEmptyResultSet() throws Throwable {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
-    resultSetSerializable.setFristChunkStringData(
+    resultSetSerializable.setFirstChunkStringData(
         Base64.getEncoder().encodeToString("".getBytes(StandardCharsets.UTF_8)));
     resultSetSerializable.setChunkFileCount(0);
 
@@ -106,7 +136,7 @@ public class SFArrowResultSetIT {
     assertThat(resultSet.isLast(), is(false));
     assertThat(resultSet.isAfterLast(), is(true));
 
-    resultSetSerializable.setFristChunkStringData(null);
+    resultSetSerializable.setFirstChunkStringData(null);
     resultSet = new SFArrowResultSet(resultSetSerializable, new NoOpTelemetryClient(), false);
 
     assertThat(resultSet.next(), is(false));
@@ -198,7 +228,7 @@ public class SFArrowResultSetIT {
     is.read(dataBytes, 0, dataSize);
 
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
-    resultSetSerializable.setFristChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
+    resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
     resultSetSerializable.setFirstChunkByteData(dataBytes);
     resultSetSerializable.setChunkFileCount(chunkCount);
     resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
@@ -279,7 +309,48 @@ public class SFArrowResultSetIT {
             }
             break;
           }
-
+        case DATEDAY:
+          {
+            for (int j = 0; j < rowCount; j++) {
+              data[i][j] = Date.from(Instant.now());
+            }
+            break;
+          }
+        case BIGINT:
+          {
+            for (int j = 0; j < rowCount; j++) {
+              data[i][j] = BigDecimal.valueOf(random.nextInt());
+            }
+            break;
+          }
+        case FLOAT8:
+          {
+            for (int j = 0; j < rowCount; j++) {
+              data[i][j] = random.nextFloat();
+            }
+            break;
+          }
+        case TINYINT:
+          {
+            for (int j = 0; j < rowCount; j++) {
+              data[i][j] = (byte) random.nextInt(1 << 8);
+            }
+            break;
+          }
+        case SMALLINT:
+          {
+            for (int j = 0; j < rowCount; j++) {
+              data[i][j] = (short) random.nextInt(1 << 16);
+            }
+            break;
+          }
+        case VARBINARY:
+          {
+            for (int j = 0; j < rowCount; j++) {
+              data[i][j] = RandomStringUtils.random(20).getBytes();
+            }
+            break;
+          }
           // add other data types as needed later
       }
     }
