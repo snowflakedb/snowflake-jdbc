@@ -8,7 +8,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.*;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -17,9 +16,7 @@ import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.IntVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.dictionary.DictionaryProvider;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.ipc.ArrowWriter;
@@ -91,6 +88,30 @@ public class SFArrowResultSetIT {
     customFieldMeta.put("logicalType", "FIXED");
     customFieldMeta.put("scale", "0");
     FieldType type = new FieldType(false, Types.MinorType.INT.getType(), null, customFieldMeta);
+    fieldList.add(new Field("", type, null));
+    customFieldMeta.put("logicalType", "DATE");
+    type = new FieldType(false, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
+    fieldList.add(new Field("", type, null));
+    customFieldMeta.put("logicalType", "REAL");
+    type = new FieldType(false, Types.MinorType.BIGINT.getType(), null, customFieldMeta);
+    fieldList.add(new Field("", type, null));
+    customFieldMeta.put("logicalType", "REAL");
+    type = new FieldType(false, Types.MinorType.DECIMAL.getType(), null, customFieldMeta);
+    fieldList.add(new Field("", type, null));
+    customFieldMeta.put("logicalType", "REAL");
+    type = new FieldType(false, Types.MinorType.FLOAT8.getType(), null, customFieldMeta);
+    fieldList.add(new Field("", type, null));
+    customFieldMeta.put("logicalType", "FIXED");
+    type = new FieldType(false, Types.MinorType.SMALLINT.getType(), null, customFieldMeta);
+    fieldList.add(new Field("", type, null));
+    customFieldMeta.put("logicalType", "FIXED");
+    type = new FieldType(false, Types.MinorType.TINYINT.getType(), null, customFieldMeta);
+    fieldList.add(new Field("", type, null));
+    customFieldMeta.put("logicalType", "BINARY");
+    type = new FieldType(false, Types.MinorType.VARBINARY.getType(), null, customFieldMeta);
+    fieldList.add(new Field("", type, null));
+    customFieldMeta.put("logicalType", "TEXT");
+    type = new FieldType(false, Types.MinorType.VARCHAR.getType(), null, customFieldMeta);
     fieldList.add(new Field("", type, null));
     Schema schema = new Schema(fieldList);
 
@@ -319,14 +340,14 @@ public class SFArrowResultSetIT {
         case BIGINT:
           {
             for (int j = 0; j < rowCount; j++) {
-              data[i][j] = BigDecimal.valueOf(random.nextInt());
+              data[i][j] = random.nextLong();
             }
             break;
           }
         case FLOAT8:
           {
             for (int j = 0; j < rowCount; j++) {
-              data[i][j] = random.nextFloat();
+              data[i][j] = random.nextDouble();
             }
             break;
           }
@@ -377,7 +398,21 @@ public class SFArrowResultSetIT {
 
           switch (vector.getMinorType()) {
             case INT:
+            case TINYINT:
+            case SMALLINT:
               writeIntToField(vector, data[j], i, rowsToAppend);
+              break;
+            case DATEDAY:
+              writeDateToField(vector, data[j], i, rowsToAppend);
+              break;
+            case BIGINT:
+              writeLongToField(vector, data[j], i, rowsToAppend);
+              break;
+            case FLOAT8:
+              writeDoubleToField(vector, data[j], i, rowsToAppend);
+              break;
+            case VARBINARY:
+              writeBytesToField(vector, data[j], i, rowsToAppend);
               break;
           }
         }
@@ -397,6 +432,54 @@ public class SFArrowResultSetIT {
     intVector.allocateNew();
     for (int i = 0; i < rowsToAppend; i++) {
       intVector.setSafe(i, 1, (int) data[startIndex + i]);
+    }
+    // how many are set
+    fieldVector.setValueCount(rowsToAppend);
+  }
+
+  private void writeDateToField(
+      FieldVector fieldVector, Object[] data, int startIndex, int rowsToAppend) {
+    DateDayVector datedayVector = (DateDayVector) fieldVector;
+    datedayVector.setInitialCapacity(rowsToAppend);
+    datedayVector.allocateNew();
+    for (int i = 0; i < rowsToAppend; i++) {
+      datedayVector.setSafe(i, 1, (int) data[startIndex + i]);
+    }
+    // how many are set
+    fieldVector.setValueCount(rowsToAppend);
+  }
+
+  private void writeLongToField(
+      FieldVector fieldVector, Object[] data, int startIndex, int rowsToAppend) {
+    BigIntVector vector = (BigIntVector) fieldVector;
+    vector.setInitialCapacity(rowsToAppend);
+    vector.allocateNew();
+    for (int i = 0; i < rowsToAppend; i++) {
+      vector.setSafe(i, 1, (long) data[startIndex + i]);
+    }
+    // how many are set
+    fieldVector.setValueCount(rowsToAppend);
+  }
+
+  private void writeDoubleToField(
+      FieldVector fieldVector, Object[] data, int startIndex, int rowsToAppend) {
+    Float8Vector vector = (Float8Vector) fieldVector;
+    vector.setInitialCapacity(rowsToAppend);
+    vector.allocateNew();
+    for (int i = 0; i < rowsToAppend; i++) {
+      vector.setSafe(i, 1, (double) data[startIndex + i]);
+    }
+    // how many are set
+    fieldVector.setValueCount(rowsToAppend);
+  }
+
+  private void writeBytesToField(
+      FieldVector fieldVector, Object[] data, int startIndex, int rowsToAppend) {
+    VarBinaryVector vector = (VarBinaryVector) fieldVector;
+    vector.setInitialCapacity(rowsToAppend);
+    vector.allocateNew();
+    for (int i = 0; i < rowsToAppend; i++) {
+      vector.setSafe(i, (byte[]) data[startIndex + i], 0, ((byte[]) data[startIndex + i]).length);
     }
     // how many are set
     fieldVector.setValueCount(rowsToAppend);
