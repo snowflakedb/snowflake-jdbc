@@ -1444,16 +1444,14 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     }
   }
 
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
     Connection connection = null;
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     try {
-      Properties paramProperties = new Properties();
-      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
-      connection = getConnection("gcpaccount", paramProperties);
+      connection = getConnection("gcpaccount");
       Statement statement = connection.createStatement();
 
       // create a stage to put the file in

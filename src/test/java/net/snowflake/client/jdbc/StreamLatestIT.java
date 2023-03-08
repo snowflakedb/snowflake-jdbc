@@ -121,14 +121,13 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDownloadToStreamGCSPresignedUrl() throws SQLException, IOException {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Connection connection = null;
     Statement statement = null;
-    Properties paramProperties = new Properties();
-    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
     try {
-      connection = getConnection("gcpaccount", paramProperties);
+      connection = getConnection("gcpaccount");
       statement = connection.createStatement();
       ResultSet rset =
           statement.executeQuery(
