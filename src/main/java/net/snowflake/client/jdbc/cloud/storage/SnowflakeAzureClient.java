@@ -674,7 +674,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         }
       }
       // If we have exceeded the max number of retries, propagate the error
-      if (retryCount > azClient.getMaxRetries()) {
+      // no need for back off and retry if the file does not exist
+      if (retryCount > azClient.getMaxRetries()
+          || ((StorageException) ex).getHttpStatusCode() == 404) {
         throw new SnowflakeSQLLoggedException(
             session,
             SqlState.SYSTEM_ERROR,
