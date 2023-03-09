@@ -3,13 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Assert;
@@ -314,6 +312,19 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
       Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       Assert.assertTrue(
           err.getMessage().contains("JDBC driver internal error: This API only supports"));
+    }
+  }
+
+  @Test
+  public void testGetFileTransferMetadatasSrcLocationsArrayError() throws JsonProcessingException {
+    JsonNode garbageNode = mapper.readTree("{\"data\": {\"src_locations\": \"abc\"}}");
+    try {
+      SnowflakeFileTransferAgent.getFileTransferMetadatas(garbageNode);
+      Assert.assertTrue(false);
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(
+          err.getMessage().contains("JDBC driver internal error: src_locations must be an array"));
     }
   }
 }
