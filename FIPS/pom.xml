@@ -70,7 +70,7 @@
     <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
       <groupId>io.netty</groupId>
       <artifactId>netty-common</artifactId>
-      <version>4.1.77.Final</version>
+      <version>4.1.89.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
