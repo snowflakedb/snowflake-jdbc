@@ -125,7 +125,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   public void testGetObjectMetadataFileNotFoundWithGCS() throws Exception {
     Connection connection = null;
     try {
-      connection = getConnection("gcpaccount");
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+      connection = getConnection("gcpaccount", paramProperties);
       Statement statement = connection.createStatement();
       statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
@@ -151,6 +153,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
       assertTrue(
           "Wrong type of exception. Message: " + ex.getMessage(),
           ex instanceof StorageProviderException);
+      assertTrue(ex.getMessage().matches(".*Blob.*not found in bucket.*"));
     } finally {
       if (connection != null) {
         connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
@@ -164,7 +167,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   public void testGetObjectMetadataStorageExceptionWithGCS() throws Exception {
     Connection connection = null;
     try {
-      connection = getConnection("gcpaccount");
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+      connection = getConnection("gcpaccount", paramProperties);
       Statement statement = connection.createStatement();
       statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
@@ -189,6 +194,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
       assertTrue(
           "Wrong type of exception. Message: " + ex.getMessage(),
           ex instanceof StorageProviderException);
+      assertTrue(ex.getMessage().matches(".*Permission.*denied.*"));
     } finally {
       if (connection != null) {
         connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);

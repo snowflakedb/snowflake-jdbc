@@ -3,16 +3,14 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -91,28 +89,30 @@ public class StreamLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testDownloadToStreamBlobNotFound() throws SQLException {
+  public void testDownloadToStreamBlobNotFoundGCS() throws SQLException {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Connection connection = null;
     Statement statement = null;
-    List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
-    for (String accountName : supportedAccounts) {
-      try {
-        connection = getConnection(accountName);
-        statement = connection.createStatement();
-        connection
-            .unwrap(SnowflakeConnection.class)
-            .downloadStream("~", DEST_PREFIX + "/abc.gz", true);
-        fail("should throw an exception for blob/key not found");
-      } catch (Exception ex) {
-        System.out.println("Negative test to hit expected exception: " + ex.getMessage());
-      } finally {
-        if (statement != null) {
-          statement.execute("rm @~/" + DEST_PREFIX);
-          statement.close();
-        }
-        closeSQLObjects(statement, connection);
+    try {
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+      connection = getConnection("gcpaccount", paramProperties);
+      statement = connection.createStatement();
+      connection
+          .unwrap(SnowflakeConnection.class)
+          .downloadStream("~", DEST_PREFIX + "/abc.gz", true);
+      fail("should throw a storage provider exception for blob not found");
+    } catch (Exception ex) {
+      assertTrue(ex instanceof SQLException);
+      assertTrue(
+          "Wrong exception message: " + ex.getMessage(),
+          ex.getMessage().matches(".*Blob.*not found in bucket.*"));
+    } finally {
+      if (statement != null) {
+        statement.execute("rm @~/" + DEST_PREFIX);
+        statement.close();
       }
+      closeSQLObjects(statement, connection);
     }
   }
 }

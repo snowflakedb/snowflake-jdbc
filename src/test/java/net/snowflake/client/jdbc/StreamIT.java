@@ -3,7 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.io.StringWriter;
