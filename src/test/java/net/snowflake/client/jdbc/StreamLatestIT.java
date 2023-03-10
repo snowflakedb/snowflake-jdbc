@@ -4,11 +4,17 @@
 package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,6 +86,33 @@ public class StreamLatestIT extends BaseJDBCTest {
       statement.execute("DROP TABLE IF EXISTS \"ice cream (nice)\"");
       statement.close();
       connection.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDownloadToStreamBlobNotFound() throws SQLException {
+    final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
+    Connection connection = null;
+    Statement statement = null;
+    List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
+      try {
+        connection = getConnection(accountName);
+        statement = connection.createStatement();
+        connection
+            .unwrap(SnowflakeConnection.class)
+            .downloadStream("~", DEST_PREFIX + "/abc.gz", true);
+        fail("should throw an exception for blob/key not found");
+      } catch (Exception ex) {
+        System.out.println("Negative test to hit expected exception: " + ex.getMessage());
+      } finally {
+        if (statement != null) {
+          statement.execute("rm @~/" + DEST_PREFIX);
+          statement.close();
+        }
+        closeSQLObjects(statement, connection);
+      }
     }
   }
 }
