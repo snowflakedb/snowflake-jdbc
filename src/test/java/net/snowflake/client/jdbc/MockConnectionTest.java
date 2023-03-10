@@ -710,16 +710,6 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
-    public int getHttpClientConnectionTimeout() {
-      return 0;
-    }
-
-    @Override
-    public int getHttpClientSocketTimeout() {
-      return 0;
-    }
-
-    @Override
     public boolean isAsyncSession() {
       return false;
     }

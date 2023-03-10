@@ -21,4 +21,4 @@ Here are the steps updating the target JDBC driver version.
 - Change the project version in ``pom.xml`` to the JDBC version that you want to run the tests.
 - Locate ``maven-compiler-plugin`` plugin in ``pom.xml``
 - Delete test case class files that should run along with the JDBC version.
-- Check ``*LatestIT.java`` and move the test cases that should run along wth the JDBC to the base classes.
+- Check ``*LatestIT.java`` and move the test cases that should run along with the JDBC to the base classes.

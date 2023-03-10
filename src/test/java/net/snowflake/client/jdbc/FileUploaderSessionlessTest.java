@@ -6,195 +6,19 @@ package net.snowflake.client.jdbc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
-/** Tests for SnowflakeFileTransferAgent.expandFileNames */
-public class FileUploaderSessionlessTest {
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
+/** Tests for SnowflakeFileTransferAgent.expandFileNames. */
+public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
+
   private ObjectMapper mapper = new ObjectMapper();
-
-  private final String exampleS3JsonString =
-      "{\n"
-          + "  \"data\": {\n"
-          + "    \"uploadInfo\": {\n"
-          + "      \"locationType\": \"S3\",\n"
-          + "      \"location\": \"example/location\",\n"
-          + "      \"path\": \"tables/19805757505/\",\n"
-          + "      \"region\": \"us-west-2\",\n"
-          + "      \"storageAccount\": null,\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AWS_KEY_ID\": \"EXAMPLE_AWS_KEY_ID\",\n"
-          + "        \"AWS_SECRET_KEY\": \"EXAMPLE_AWS_SECRET_KEY\",\n"
-          + "        \"AWS_TOKEN\": \"EXAMPLE_AWS_TOKEN\",\n"
-          + "        \"AWS_ID\": \"EXAMPLE_AWS_ID\",\n"
-          + "        \"AWS_KEY\": \"EXAMPLE_AWS_KEY\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": null\n"
-          + "    },\n"
-          + "    \"src_locations\": [\n"
-          + "      \"/tmp/files/orders_100.csv\"\n"
-          + "    ],\n"
-          + "    \"parallel\": 4,\n"
-          + "    \"threshold\": 209715200,\n"
-          + "    \"autoCompress\": true,\n"
-          + "    \"overwrite\": false,\n"
-          + "    \"sourceCompression\": \"auto_detect\",\n"
-          + "    \"clientShowEncryptionParameter\": true,\n"
-          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "    \"encryptionMaterial\": {\n"
-          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
-          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "      \"smkId\": 123\n"
-          + "    },\n"
-          + "    \"stageInfo\": {\n"
-          + "      \"locationType\": \"S3\",\n"
-          + "      \"location\": \"stage/location/foo/\",\n"
-          + "      \"path\": \"tables/19805757505/\",\n"
-          + "      \"region\": \"us-west-2\",\n"
-          + "      \"storageAccount\": null,\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AWS_KEY_ID\": \"EXAMPLE_AWS_KEY_ID\",\n"
-          + "        \"AWS_SECRET_KEY\": \"EXAMPLE_AWS_SECRET_KEY\",\n"
-          + "        \"AWS_TOKEN\": \"EXAMPLE_AWS_TOKEN\",\n"
-          + "        \"AWS_ID\": \"EXAMPLE_AWS_ID\",\n"
-          + "        \"AWS_KEY\": \"EXAMPLE_AWS_KEY\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": null\n"
-          + "    },\n"
-          + "    \"command\": \"UPLOAD\",\n"
-          + "    \"kind\": null,\n"
-          + "    \"operation\": \"Node\"\n"
-          + "  },\n"
-          + "  \"code\": null,\n"
-          + "  \"message\": null,\n"
-          + "  \"success\": true\n"
-          + "}";
-
-  private final String exampleAzureJsonString =
-      "{\n"
-          + "  \"data\": {\n"
-          + "    \"uploadInfo\": {\n"
-          + "      \"locationType\": \"AZURE\",\n"
-          + "      \"location\": \"EXAMPLE_LOCATION/\",\n"
-          + "      \"path\": \"EXAMPLE_PATH/\",\n"
-          + "      \"region\": \"westus\",\n"
-          + "      \"storageAccount\": \"sfcdevstage\",\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AZURE_SAS_TOKEN\": \"EXAMPLE_AZURE_SAS_TOKEN\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": \"blob.core.windows.net\"\n"
-          + "    },\n"
-          + "    \"src_locations\": [\n"
-          + "      \"/foo/orders_100.csv\"\n"
-          + "    ],\n"
-          + "    \"parallel\": 4,\n"
-          + "    \"threshold\": 209715200,\n"
-          + "    \"autoCompress\": true,\n"
-          + "    \"overwrite\": false,\n"
-          + "    \"sourceCompression\": \"auto_detect\",\n"
-          + "    \"clientShowEncryptionParameter\": false,\n"
-          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "    \"encryptionMaterial\": {\n"
-          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
-          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "      \"smkId\": 123\n"
-          + "    },\n"
-          + "    \"stageInfo\": {\n"
-          + "      \"locationType\": \"AZURE\",\n"
-          + "      \"location\": \"EXAMPLE_LOCATION/\",\n"
-          + "      \"path\": \"EXAMPLE_PATH/\",\n"
-          + "      \"region\": \"westus\",\n"
-          + "      \"storageAccount\": \"EXAMPLE_STORAGE_ACCOUNT\",\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {\n"
-          + "        \"AZURE_SAS_TOKEN\": \"EXAMPLE_AZURE_SAS_TOKEN\"\n"
-          + "      },\n"
-          + "      \"presignedUrl\": null,\n"
-          + "      \"endPoint\": \"blob.core.windows.net\"\n"
-          + "    },\n"
-          + "    \"command\": \"UPLOAD\",\n"
-          + "    \"kind\": null,\n"
-          + "    \"operation\": \"Node\"\n"
-          + "  },\n"
-          + "  \"code\": null,\n"
-          + "  \"message\": null,\n"
-          + "  \"success\": true\n"
-          + "}";
-
-  private final String exampleGCSJsonString =
-      "{\n"
-          + "  \"data\": {\n"
-          + "    \"uploadInfo\": {\n"
-          + "      \"locationType\": \"GCS\",\n"
-          + "      \"location\": \"foo/tables/9224/\",\n"
-          + "      \"path\": \"tables/9224/\",\n"
-          + "      \"region\": \"US-WEST1\",\n"
-          + "      \"storageAccount\": \"\",\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {},\n"
-          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
-          + "      \"endPoint\": \"\"\n"
-          + "    },\n"
-          + "    \"src_locations\": [\n"
-          + "      \"/foo/bart/orders_100.csv\"\n"
-          + "    ],\n"
-          + "    \"parallel\": 4,\n"
-          + "    \"threshold\": 209715200,\n"
-          + "    \"autoCompress\": true,\n"
-          + "    \"overwrite\": false,\n"
-          + "    \"sourceCompression\": \"auto_detect\",\n"
-          + "    \"clientShowEncryptionParameter\": false,\n"
-          + "    \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "    \"encryptionMaterial\": {\n"
-          + "      \"queryStageMasterKey\": \"EXAMPLE_QUERY_STAGE_MASTER_KEY\",\n"
-          + "      \"queryId\": \"EXAMPLE_QUERY_ID\",\n"
-          + "      \"smkId\": 123\n"
-          + "    },\n"
-          + "    \"stageInfo\": {\n"
-          + "      \"locationType\": \"GCS\",\n"
-          + "      \"location\": \"foo/tables/9224/\",\n"
-          + "      \"path\": \"tables/9224/\",\n"
-          + "      \"region\": \"US-WEST1\",\n"
-          + "      \"storageAccount\": \"\",\n"
-          + "      \"isClientSideEncrypted\": true,\n"
-          + "      \"creds\": {},\n"
-          + "      \"presignedUrl\": \"EXAMPLE_PRESIGNED_URL\",\n"
-          + "      \"endPoint\": \"\"\n"
-          + "    },\n"
-          + "    \"command\": \"UPLOAD\",\n"
-          + "    \"kind\": null,\n"
-          + "    \"operation\": \"Node\"\n"
-          + "  },\n"
-          + "  \"code\": null,\n"
-          + "  \"message\": null,\n"
-          + "  \"success\": true\n"
-          + "}";
-
-  protected JsonNode exampleS3JsonNode;
-  protected JsonNode exampleAzureJsonNode;
-  private JsonNode exampleGCSJsonNode;
-  private List<JsonNode> exampleNodes;
-
-  @Before
-  public void setup() throws Exception {
-    exampleS3JsonNode = mapper.readTree(exampleS3JsonString);
-    exampleAzureJsonNode = mapper.readTree(exampleAzureJsonString);
-    exampleGCSJsonNode = mapper.readTree(exampleGCSJsonString);
-    exampleNodes = Arrays.asList(exampleS3JsonNode, exampleAzureJsonNode, exampleGCSJsonNode);
-  }
 
   @Test
   public void testGetEncryptionMaterialMissing() throws Exception {
@@ -246,7 +70,26 @@ public class FileUploaderSessionlessTest {
     Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
     Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
     Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals(null, stageInfo.getEndPoint());
+    Assert.assertEquals("null", stageInfo.getEndPoint());
+    Assert.assertEquals(null, stageInfo.getStorageAccount());
+    Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+  }
+
+  @Test
+  public void testGetS3StageDataWithStageEndpoint() throws Exception {
+    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3StageEndpointJsonNode);
+    Map<String, String> expectedCreds = new HashMap<>();
+    expectedCreds.put("AWS_ID", "EXAMPLE_AWS_ID");
+    expectedCreds.put("AWS_KEY", "EXAMPLE_AWS_KEY");
+    expectedCreds.put("AWS_KEY_ID", "EXAMPLE_AWS_KEY_ID");
+    expectedCreds.put("AWS_SECRET_KEY", "EXAMPLE_AWS_SECRET_KEY");
+    expectedCreds.put("AWS_TOKEN", "EXAMPLE_AWS_TOKEN");
+
+    Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+    Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
+    Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
+    Assert.assertEquals("us-west-2", stageInfo.getRegion());
+    Assert.assertEquals("s3-fips.us-east-1.amazonaws.com", stageInfo.getEndPoint());
     Assert.assertEquals(null, stageInfo.getStorageAccount());
     Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
   }
@@ -303,7 +146,7 @@ public class FileUploaderSessionlessTest {
     Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
     Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
     Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals(null, stageInfo.getEndPoint());
+    Assert.assertEquals("null", stageInfo.getEndPoint());
     Assert.assertEquals(null, stageInfo.getStorageAccount());
     Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
 
@@ -347,7 +190,7 @@ public class FileUploaderSessionlessTest {
     Assert.assertEquals("stage/location/foo/", stageInfo.getLocation());
     Assert.assertEquals(expectedCreds, stageInfo.getCredentials());
     Assert.assertEquals("us-west-2", stageInfo.getRegion());
-    Assert.assertEquals(null, stageInfo.getEndPoint());
+    Assert.assertEquals("null", stageInfo.getEndPoint());
     Assert.assertEquals(null, stageInfo.getStorageAccount());
     Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
 

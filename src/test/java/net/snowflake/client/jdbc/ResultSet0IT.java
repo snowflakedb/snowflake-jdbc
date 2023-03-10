@@ -11,10 +11,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.experimental.categories.Category;
 
 /** Result set test base class. */
+@Category(TestCategoryResultSet.class)
 public class ResultSet0IT extends BaseJDBCTest {
   private final String queryResultFormat;
 

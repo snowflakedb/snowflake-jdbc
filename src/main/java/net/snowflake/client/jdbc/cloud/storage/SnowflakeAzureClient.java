@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc.cloud.storage;
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.util.Base64;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +19,7 @@ import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Base64;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
@@ -72,7 +72,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
   /*
    * Initializes the Azure client
-   * This method is used during the object contruction, but also to
+   * This method is used during the object construction, but also to
    * reset/recreate the encapsulated CloudBlobClient object with new
    * credentials (after SAS token expiration)
    * @param stage   The stage information that the client will operate on
@@ -106,7 +106,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       }
 
       if (stage.getIsClientSideEncrypted() && encMat != null) {
-        byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
+        byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
         encryptionKeySize = decodedKey.length * 8;
 
         if (encryptionKeySize != 128 && encryptionKeySize != 192 && encryptionKeySize != 256) {
@@ -260,7 +260,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    * @param command command to download file
    * @param localLocation local file path
    * @param destFileName destination file name
-   * @param parallelism [ not used by the Azure implementation ]
+   * @param parallelism number of threads for parallel downloading
    * @param remoteStorageLocation remote storage location, i.e. bucket for S3
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
@@ -287,14 +287,13 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         CloudBlobContainer container = azStorageClient.getContainerReference(remoteStorageLocation);
         CloudBlob blob = container.getBlockBlobReference(stageFilePath);
 
-        // Note that Azure doesn't offer a multi-part parallel download library,
-        // where the user has control of block size and parallelism
-        // we rely on Azure to handle the download, hence the "parallelism" parameter is ignored
-        // in the Azure implementation of the method
-        blob.downloadToFile(localFilePath, null, null, opContext);
+        BlobRequestOptions transferOptions = new BlobRequestOptions();
+        transferOptions.setConcurrentRequestCount(parallelism);
+
+        blob.downloadToFile(localFilePath, null, transferOptions, opContext);
 
         // Pull object metadata from Azure
-        blob.downloadAttributes(null, null, opContext);
+        blob.downloadAttributes(null, transferOptions, opContext);
 
         // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata = blob.getMetadata();
@@ -418,7 +417,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    *
    * @param session session object
    * @param command upload command
-   * @param parallelism [ not used by the Azure implementation ]
+   * @param parallelism number of threads for parallel uploading
    * @param uploadFromStream true if upload source is stream
    * @param remoteStorageLocation storage container name
    * @param srcFile source file if not uploading from a stream
@@ -473,19 +472,18 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         // Set the user-defined/Snowflake metadata and upload the BLOB
         blob.setMetadata((HashMap<String, String>) meta.getUserMetadata());
 
-        // Note that Azure doesn't offer a multi-part parallel upload library,
-        // where the user has control of block size and parallelism
-        // we rely on Azure to handle the upload, hence the "parallelism" parameter is ignored
-        // in the Azure implementation of the method
+        BlobRequestOptions transferOptions = new BlobRequestOptions();
+        transferOptions.setConcurrentRequestCount(parallelism);
+
         blob.upload(
             fileInputStream, // input stream to upload from
             -1, // -1 indicates an unknown stream length
             null,
-            null,
+            transferOptions,
             opContext);
         logger.debug("Upload successful", false);
 
-        blob.uploadMetadata(null, null, opContext);
+        blob.uploadMetadata(null, transferOptions, opContext);
 
         // close any open streams in the "toClose" list and return
         for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
@@ -653,6 +651,12 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
     }
 
+    // If there is no space left in the download location, java.io.IOException is thrown.
+    // Don't retry.
+    if (SnowflakeUtil.getRootCause(ex) instanceof IOException) {
+      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex);
+    }
+
     if (ex instanceof StorageException) {
       StorageException se = (StorageException) ex;
 
@@ -670,7 +674,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         }
       }
       // If we have exceeded the max number of retries, propagate the error
-      if (retryCount > azClient.getMaxRetries()) {
+      // no need for back off and retry if the file does not exist
+      if (retryCount > azClient.getMaxRetries()
+          || ((StorageException) ex).getHttpStatusCode() == 404) {
         throw new SnowflakeSQLLoggedException(
             session,
             SqlState.SYSTEM_ERROR,
@@ -848,7 +854,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
     meta.addUserMetadata(
         AZ_ENCRYPTIONDATAPROP,
-        buildEncryptionMetadataJSON(Base64.encodeAsString(ivData), Base64.encodeAsString(encKeK)));
+        buildEncryptionMetadataJSON(
+            Base64.getEncoder().encodeToString(ivData),
+            Base64.getEncoder().encodeToString(encKeK)));
     meta.setContentLength(contentLength);
   }
 

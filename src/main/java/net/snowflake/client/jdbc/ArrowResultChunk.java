@@ -27,7 +27,7 @@ import org.apache.arrow.vector.util.TransferPair;
 public class ArrowResultChunk extends SnowflakeResultChunk {
   /**
    * A 2-D array of arrow ValueVectors, this list represents data in the whole chunk. Since each
-   * chunk is divided into record batchs and each record batch is composed of list of column
+   * chunk is divided into record batches and each record batch is composed of list of column
    * vectors.
    *
    * <p>So the outer list is list of record batches, inner list represents list of columns

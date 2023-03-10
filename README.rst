@@ -8,7 +8,7 @@ Snowflake JDBC Driver
     :target: http://www.apache.org/licenses/LICENSE-2.0.txt
     
 .. image:: https://maven-badges.herokuapp.com/maven-central/net.snowflake/snowflake-jdbc/badge.svg?style=plastic
-    :target: http://repo2.maven.org/maven2/net/snowflake/snowflake-jdbc/
+    :target: https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/
     
 Snowflake provides a JDBC type 4 driver that supports core functionality, allowing Java program to connect to Snowflake.
 
@@ -139,13 +139,13 @@ where ``category`` is the class name under the package ``net.snowflake.client.ca
 Test Class Naming Convention
 ----------------------------
 
-The test cases are fallen into a couple of criterias:
+The test cases are fallen into a couple of criteria:
 
 - The unit test class names end with ``Test``. They run part of the JDBC build jobs.
 - The integration test class names end with ``IT``. They run part of the ``verify`` maven goal along with the test category specified by the parameter ``testCategory`` having ``net.snowflake.client.category`` classes.
 - The manual test class names end with ``Manual``. They don't run in the CI but you can run them manually.
 
-Aside from the general test criterias, the test case class names ending with ``LatestIT`` run only with the latest JDBC driver.
+Aside from the general test criteria, the test case class names ending with ``LatestIT`` run only with the latest JDBC driver.
 The main motivation behind is to skip those tests for the old JDBC driver. See ``./TestOnly`` directory for further information.
 
 Support

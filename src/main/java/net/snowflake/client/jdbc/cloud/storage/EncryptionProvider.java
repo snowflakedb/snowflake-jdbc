@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc.cloud.storage;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
 
-import com.amazonaws.util.Base64;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -20,6 +19,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
+import java.util.Base64;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -51,11 +51,11 @@ public class EncryptionProvider {
       RemoteStoreFileEncryptionMaterial encMat)
       throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
           BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException {
-    byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
+    byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
 
-    byte[] keyBytes = Base64.decode(keyBase64);
+    byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
 
-    byte[] ivBytes = Base64.decode(ivBase64);
+    byte[] ivBytes = Base64.getDecoder().decode(ivBase64);
 
     SecretKey queryStageMasterKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, AES);
 
@@ -85,9 +85,9 @@ public class EncryptionProvider {
       throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
           IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException,
           IOException {
-    byte[] keyBytes = Base64.decode(keyBase64);
-    byte[] ivBytes = Base64.decode(ivBase64);
-    byte[] qsmkBytes = Base64.decode(encMat.getQueryStageMasterKey());
+    byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
+    byte[] ivBytes = Base64.getDecoder().decode(ivBase64);
+    byte[] qsmkBytes = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
     final SecretKey fileKey;
 
     // Decrypt file key
@@ -144,7 +144,7 @@ public class EncryptionProvider {
       throws InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException,
           NoSuchProviderException, NoSuchPaddingException, FileNotFoundException,
           IllegalBlockSizeException, BadPaddingException {
-    final byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
+    final byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
     final int keySize = decodedKey.length;
     final byte[] fileKeyBytes = new byte[keySize];
     final byte[] ivData;

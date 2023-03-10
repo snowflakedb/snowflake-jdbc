@@ -10,6 +10,7 @@ import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
 import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.cloud.storage.StorageException;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.sql.*;
@@ -22,12 +23,11 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.RunningOnTestaccount;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
-import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
-import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
+import net.snowflake.client.jdbc.cloud.storage.*;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -850,6 +850,139 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       }
     }
   }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGeometryOutputTypes() throws Throwable {
+    Connection connection = null;
+    Statement regularStatement = null;
+
+    try {
+      Properties paramProperties = new Properties();
+
+      paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
+      paramProperties.put("ENABLE_GEOMETRY_TYPE", true);
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo2(geo geometry);");
+
+      regularStatement.execute(
+          "insert into t_geo2 values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
+
+      testGeometryOutputTypeSingle(
+          regularStatement, true, "geoJson", "GEOMETRY", "java.lang.String", Types.VARCHAR);
+
+      testGeometryOutputTypeSingle(
+          regularStatement, true, "wkt", "GEOMETRY", "java.lang.String", Types.VARCHAR);
+
+    } finally {
+      if (regularStatement != null) {
+        regularStatement.execute("drop table t_geo2");
+        regularStatement.close();
+      }
+
+      if (connection != null) {
+        connection.close();
+      }
+    }
+  }
+
+  private void testGeometryOutputTypeSingle(
+      Statement regularStatement,
+      boolean enableExternalTypeNames,
+      String outputFormat,
+      String expectedColumnTypeName,
+      String expectedColumnClassName,
+      int expectedColumnType)
+      throws Throwable {
+    ResultSet resultSet = null;
+
+    try {
+      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+
+      regularStatement.execute(
+          "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
+
+      resultSet = regularStatement.executeQuery("select * from t_geo2");
+
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(1, metadata.getColumnCount());
+
+      // GeoJSON: SQL type OBJECT, Java type String
+      assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
+      assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
+      assertEquals(expectedColumnType, metadata.getColumnType(1));
+
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGeometryMetadata() throws Throwable {
+    Connection connection = null;
+    Statement regularStatement = null;
+
+    try {
+      Properties paramProperties = new Properties();
+
+      connection = getConnection(paramProperties);
+
+      regularStatement = connection.createStatement();
+
+      regularStatement.execute("create or replace table t_geo2(geo geometry);");
+
+      testGeometryMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+
+      testGeometryMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+
+    } finally {
+      if (regularStatement != null) {
+        regularStatement.execute("drop table t_geo2");
+        regularStatement.close();
+      }
+
+      if (connection != null) {
+        connection.close();
+      }
+    }
+  }
+
+  private void testGeometryMetadataSingle(
+      Connection connection,
+      Statement regularStatement,
+      String outputFormat,
+      int expectedColumnType)
+      throws Throwable {
+    ResultSet resultSet = null;
+
+    try {
+      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+
+      DatabaseMetaData md = connection.getMetaData();
+      resultSet = md.getColumns(null, null, "T_GEO2", null);
+      ResultSetMetaData metadata = resultSet.getMetaData();
+
+      assertEquals(24, metadata.getColumnCount());
+
+      assertTrue(resultSet.next());
+
+      assertEquals(expectedColumnType, resultSet.getInt(5));
+      assertEquals("GEOMETRY", resultSet.getString(6));
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
+      }
+    }
+  }
+
   /**
    * Tests that upload and download small file to gcs stage. Require SNOW-206907 to be merged (still
    * pass when not merge, but will use presigned url instead of GoogleCredential)
@@ -857,7 +990,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @Ignore
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetGcsDownscopedCredential() throws Throwable {
     Connection connection = null;
     Statement statement = null;
@@ -937,6 +1070,84 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     bw.write("Creating large test file for GCP PUT/GET test");
     bw.write(System.lineSeparator());
     bw.write("Creating large test file for GCP PUT/GET test");
+    bw.write(System.lineSeparator());
+    bw.close();
+    File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+
+    String sourceFilePath = largeTempFile.getCanonicalPath();
+
+    try {
+      // copy info from 1 file to another and continue doubling file size until we reach ~1.5GB,
+      // which is a large file
+      for (int i = 0; i < 12; i++) {
+        copyContentFrom(largeTempFile, largeTempFile2);
+        copyContentFrom(largeTempFile2, largeTempFile);
+      }
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE largefile_stage");
+      assertTrue(
+          "Failed to put a file",
+          statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
+
+      // check that file exists in stage after PUT
+      findFile(statement, "ls @largefile_stage/");
+
+      // create a new table with columns matching CSV file
+      statement.execute("create or replace table large_table (colA string)");
+      // copy rows from file into table
+      statement.execute("copy into large_table from @largefile_stage/largeFile.csv.gz");
+      // copy back from table into different stage
+      statement.execute("create or replace stage extra_stage");
+      statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
+
+      // get file from new stage
+      assertTrue(
+          "Failed to get files",
+          statement.execute(
+              "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+
+      // Make sure that the downloaded file exists; it should be gzip compressed
+      File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
+      assert (downloaded.exists());
+
+      // unzip the file
+      Process p =
+          Runtime.getRuntime()
+              .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
+      p.waitFor();
+
+      // compare the original file with the file that's been uploaded, copied into a table, copied
+      // back into a stage,
+      // downloaded, and unzipped
+      File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
+      assert (largeTempFile.length() == unzipped.length());
+      assert (FileUtils.contentEquals(largeTempFile, unzipped));
+    } finally {
+      statement.execute("DROP STAGE IF EXISTS largefile_stage");
+      statement.execute("DROP STAGE IF EXISTS extra_stage");
+      statement.execute("DROP TABLE IF EXISTS large_table");
+      statement.close();
+      connection.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPutGetLargeFileAzure() throws Throwable {
+    Properties paramProperties = new Properties();
+    Connection connection = getConnection("azureaccount", paramProperties);
+    Statement statement = connection.createStatement();
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
+    File largeTempFile = tmpFolder.newFile("largeFile.csv");
+    BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile));
+    bw.write("Creating large test file for Azure PUT/GET test");
+    bw.write(System.lineSeparator());
+    bw.write("Creating large test file for Azure PUT/GET test");
     bw.write(System.lineSeparator());
     bw.close();
     File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
@@ -1189,6 +1400,44 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       } finally {
         if (connection != null) {
           connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+          connection.close();
+        }
+      }
+    }
+  }
+
+  @Test(expected = SnowflakeSQLException.class)
+  public void testNoSpaceLeftOnDeviceException() throws SQLException {
+    Connection connection = null;
+    List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
+      try {
+        connection = getConnection(accountName);
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        Statement statement = connection.createStatement();
+        SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+        statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+        statement.execute(
+            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");
+        String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
+        SnowflakeFileTransferAgent sfAgent =
+            new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+        StageInfo info = sfAgent.getStageInfo();
+        SnowflakeStorageClient client =
+            StorageClientFactory.getFactory().createClient(info, 1, null, /*session = */ null);
+
+        client.handleStorageException(
+            new StorageException(
+                client.getMaxRetries(),
+                Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+            client.getMaxRetries(),
+            "download",
+            null,
+            command);
+      } finally {
+        if (connection != null) {
+          connection.createStatement().execute("DROP STAGE if exists testPutGet_stage");
           connection.close();
         }
       }

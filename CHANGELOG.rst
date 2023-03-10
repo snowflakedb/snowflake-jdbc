@@ -1,3 +1,55 @@
+**JDBC Driver 3.13.28**
+
+- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+
+**JDBC Driver 3.13.27**
+
+- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+
+**JDBC Driver 3.13.26**
+
+- \|| Upgraded the arrow library from version 9.0.0 to 10.0.1.
+- \|| Relocated files in META-INF/versions to META-INF/versions/<version_number>/net/snowflake/client/jdbc/internal.
+- \|| Added the getNano() and getOffset() methods to the SnowflakeTimeWithTimezone object to return the number of nanoseconds and the time zone offset, respectively.
+
+**JDBC Driver 3.13.25**
+
+- \||**BCR (Behavior Change Release) Change**
+- \||Caution: Version 3.13.25 of the Snowflake JDBC driver changes the default value of the allowUnderscoresInHost parameter to false. This change might impact PrivateLink customers with account names containing underscores. In this situation, you must override the default value by setting allowUnderscoresInHost true.
+- \||**New Features**
+- \||Set the allowUnderscoresInHost parameter to false by default which converts underscores in account names to hyphens to avoid Apache httpclient connection error with underscores. This behavior can be turned off by setting allowUnderscoresInHost to true.
+- \||Updated the aws-java-sdk-bom library version from 1.11.394 to 1.12.327.
+- \||Added the enableReturnTimestampWithTimeZone parameter to set whether to include the timezone in a timestamp.
+- \||Added log warnings for each of the error return paths while parsing a SnowflakeConnectString.
+- \||Added commas to the SnowflakeDatabaseMetaData.getColumn() arguments to improve readability.
+- \||Added support for stored procedures.
+- \||**Bug Fixes**
+- \||Fixed an issue related to using the GET command when GCS_USE_DOWNSCOPED_CREDENTIAL is true.
+- \||Fixed an issue related to returning result types when the session handle is NULL.
+
+**JDBC Driver 3.13.24**
+
+- \|| Upgraded the following libraries:
+- \|| arrow from version 8.0.0 to 9.0.0
+- \|| jacksondatabind from version 2.13.2.2 to 2.13.4.2
+- \|| google-cloud-storage from version 2.5.0 to 2.6.2
+- \|| Remove DML check on getUpdateCount() 
+
+**JDBC Driver 3.13.23**
+
+- \|| Relocate Google Guava classes from com/google/common/util/concurrent/** in FIPS driver
+- \|| Return an empty resultset for getProcedures() when connected with a reader account 
+- \|| Use parallelism parameter for PUT/GET with Azure 
+- \|| Set default logger level for arrow project to SEVERE to avoid unwanted INFO messages 
+- \|| login test params updated and test case added 
+
+**JDBC Driver 3.13.22**
+
+- \| | Updated the tika-core library to version 2.4.1.
+- \| | Fixed an issue where getColumnClassName() threw an exception when the column type is timestamp_tx.
+- \| | Fixed an issue where calling getSQLStateType() throws an exception while retrieving database metadata.
+- \| | Fixed an issue where calling executeLargeBatch() for prepared statements might result in no rows being inserted.
+
 **JDBC Driver 3.13.21**
 
 - \| | Fix memory leak with statement object in SnowflakeConnectionV1::createResultSet
@@ -687,7 +739,7 @@
 
 **JDBC Driver 3.2.5**
 
-- \|SNOW-33566| Added support for ``ResultSet.isLast()``, ``isBeforeFirsrt()``, and ``isAfterLast()``.
+- \|SNOW-33566| Added support for ``ResultSet.isLast()``, ``isBeforeFirst()``, and ``isAfterLast()``.
 - \|SNOW-30962| Optimized the driver by combining ``describe`` and ``execute`` methods when there is no bind.
 
 **JDBC Driver 3.2.4**

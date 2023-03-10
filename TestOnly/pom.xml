@@ -12,11 +12,11 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>8.0.0</arrow.version>
-    <jacksondatabind.version>2.11.0</jacksondatabind.version>
+    <arrow.version>10.0.1</arrow.version>
+    <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
-    <jna.version>5.5.0</jna.version>
+    <jna.version>5.13.0</jna.version>
     <mockito.version>3.5.6</mockito.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
@@ -102,7 +102,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
-      <version>1.6</version>
+      <version>1.10.0</version>
       <type>jar</type>
       <scope>test</scope>
     </dependency>
@@ -122,7 +122,7 @@
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-archiver</artifactId>
-      <version>2.4.4</version>
+      <version>2.6</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -180,7 +180,7 @@
     <dependency>
        <groupId>com.google.guava</groupId>
        <artifactId>guava</artifactId>
-       <version>28.0-jre</version>
+       <version>29.0-jre</version>
     </dependency>
     <!-- http://mvnrepository.com/artifact/net.java.dev.jna/jna -->
     <dependency>

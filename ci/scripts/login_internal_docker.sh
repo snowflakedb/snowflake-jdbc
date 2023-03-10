@@ -3,7 +3,7 @@
 # Login the Internal Docker Registry
 #
 if [[ -z "$GITHUB_ACTIONS" ]]; then
-    echo "[INFO] Login the internal Docker Resistry"
+    echo "[INFO] Login the internal Docker Registry"
     NEXUS_USER=${USERNAME:-jenkins}
     if [[ -z "$NEXUS_PASSWORD" ]]; then
         echo "[ERROR] Set NEXUS_PASSWORD to your LDAP password to access the internal repository!"

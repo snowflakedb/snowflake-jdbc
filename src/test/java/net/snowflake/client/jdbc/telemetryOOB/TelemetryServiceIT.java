@@ -232,7 +232,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       generateDummyException(fakeVendorCode, null);
       fail();
     } catch (SnowflakeSQLLoggedException e) {
-      // The error response has the same code as the the fakeErrorCode
+      // The error response has the same code as the fakeErrorCode
       assertThat("Communication error", e.getErrorCode(), equalTo(fakeVendorCode));
 
       // since it returns normal response,

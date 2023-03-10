@@ -76,14 +76,14 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetColumn() throws SQLException {
-    String getAllColumsCount = "select count(*) from db.information_schema.columns";
+    String getAllColumnsCount = "select count(*) from db.information_schema.columns";
     connection = getConnection();
     statement = connection.createStatement();
     databaseMetaData = connection.getMetaData();
 
     resultSet = databaseMetaData.getColumns(null, null, null, null);
     assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllColumsCount), getSizeOfResultSet(resultSet));
+        getAllObjectCountInDBViaInforSchema(getAllColumnsCount), getSizeOfResultSet(resultSet));
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA11", null, null);
     assertEquals(3, getSizeOfResultSet(resultSet));
@@ -158,16 +158,16 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     statement = connection.createStatement();
     statement.execute(
         "create or replace function JDBC_DB1.JDBC_SCHEMA11.JDBCFUNCTEST111 "
-            + "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
+            + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
     statement.execute(
         "create or replace function JDBC_DB1.JDBC_SCHEMA12.JDBCFUNCTEST121 "
-            + "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
+            + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
     statement.execute(
         "create or replace function JDBC_DB1.JDBC_SCHEMA12.JDBCFUNCTEST122 "
-            + "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
+            + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
     statement.execute(
         "create or replace function JDBC_DB2.JDBC_SCHEMA21.JDBCFUNCTEST211 "
-            + "(a number, b number) RETURNS NUMBER COMMENT='mutiply numbers' as 'a*b'");
+            + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
     statement.execute(
         "create or replace function JDBC_DB2.JDBC_SCHEMA21.JDBCFUNCTEST212 () RETURNS TABLE(colA"
             + " varchar) as 'select COLA from JDBC_DB2.JDBC_SCHEMA21.JDBC_TBL211'");
@@ -181,7 +181,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
     assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
     assertEquals("JDBCFUNCTEST111", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("mutiply numbers", resultSet.getString("REMARKS"));
+    assertEquals("multiply numbers", resultSet.getString("REMARKS"));
     assertEquals(DatabaseMetaData.functionNoTable, resultSet.getInt("FUNCTION_TYPE"));
     assertEquals("JDBCFUNCTEST111", resultSet.getString("SPECIFIC_NAME"));
     assertFalse(resultSet.next());
@@ -291,7 +291,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     stmt.execute("alter session set USE_CACHED_SHOW_RESULT = true;");
     String accountName = getAccountName(stmt);
     // Setup test database
-    long accoutId = getAccountId(stmt, accountName);
+    long accountId = getAccountId(stmt, accountName);
     String dbname = "JDBC_DSHOW";
     String schemaname = "SSHOW_" + randomAlphaNumeric(6);
     stmt.execute("create or replace database " + dbname);
@@ -300,15 +300,15 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     stmt.execute("create table show1(c1 number);");
 
     // run show objects
-    long oldNumCacheRes = getNumCachedResults(stmt, accoutId);
+    long oldNumCacheRes = getNumCachedResults(stmt, accountId);
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    long newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    long newNumCacheRes = getNumCachedResults(stmt, accountId);
     // the number of cached results should increase by one
     assertEquals(1, newNumCacheRes - oldNumCacheRes);
     // run show objects in database again and the #cache should be the same
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     // the number of cached results should not increase
     assertEquals(0, newNumCacheRes - oldNumCacheRes);
 
@@ -316,11 +316,11 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     // and the 2nd getTables should reuse the cache
     stmt.execute("create table show2(c2 number);");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     assertEquals(1, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     assertEquals(0, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
 
@@ -328,11 +328,11 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     // and the 2nd getTables should reuse the cache
     stmt.execute("alter table show2 rename to show3");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     assertEquals(1, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     assertEquals(0, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
 
@@ -340,29 +340,29 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     // and the 2nd getTables should reuse the cache
     stmt.execute("alter table show3 set comment = 'show3'");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     assertEquals(1, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     assertEquals(0, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
 
     // insert table, then getTables should reuse last cache
     stmt.execute("insert into show3 values (3),(4)");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     assertEquals(0, newNumCacheRes - oldNumCacheRes);
 
     // drop table, then the first getTables should create a new cache
     // and the 2nd getTables should reuse the cache
     stmt.execute("drop table show1");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     assertEquals(1, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
-    newNumCacheRes = getNumCachedResults(stmt, accoutId);
+    newNumCacheRes = getNumCachedResults(stmt, accountId);
     assertEquals(0, newNumCacheRes - oldNumCacheRes);
 
     // clean up
@@ -442,10 +442,6 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     // set parameter
     stmt.execute("alter session set ENABLE_DRIVER_TERSE_SHOW = true;");
-    // SNOW-487548: disable the key-value feature to hide is_hybrid column
-    // in show tables command. The column is controlled by two parameters:
-    // enable_key_value_table and qa_mode.
-    stmt.execute("alter session set ENABLE_KEY_VALUE_TABLE = false;");
     stmt.execute("alter session set qa_mode = false;");
 
     databaseMetaData = connection.getMetaData();
@@ -498,6 +494,10 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     resultSet = databaseMetaData.getTables("JDBC_DB1", "JDBC%", null, new String[] {"TABLE"});
     assertEquals(3, getSizeOfResultSet(resultSet));
 
+    // SNOW-487548: disable the key-value feature to hide is_hybrid column
+    // in show tables command. The column is controlled by two parameters:
+    // enable_key_value_table and qa_mode.
+    stmt.execute("alter session set ENABLE_KEY_VALUE_TABLE = false;");
     resultSet =
         databaseMetaData.getTables("JDBC_DB1", "JDBC_SCH%", "J_BC_TBL122", new String[] {"TABLE"});
     resultSet.next();
@@ -506,6 +506,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     assertEquals("JDBC_TBL122", resultSet.getString(3));
     assertEquals("TABLE", resultSet.getString(4));
     assertEquals("", resultSet.getString(5));
+    stmt.execute("alter session unset ENABLE_KEY_VALUE_TABLE;");
 
     resultSet = databaseMetaData.getTables("JDBC_DB1", null, "JDBC_TBL211", new String[] {"TABLE"});
     assertEquals(0, getSizeOfResultSet(resultSet));

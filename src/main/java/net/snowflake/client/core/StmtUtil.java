@@ -292,7 +292,7 @@ public class StmtUtil {
           uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
         }
 
-        if (stmtInput.queryContext != null) {
+        if (!Strings.isNullOrEmpty(stmtInput.queryContext)) {
           uriBuilder.addParameter(SF_QUERY_CONTEXT, stmtInput.queryContext);
         }
 
@@ -730,7 +730,7 @@ public class StmtUtil {
    * A simple function to check if the statement is related to manipulate stage.
    *
    * @param sql a SQL statement/command
-   * @return PUT/GET/LIST/RM if statment belongs to one of them, otherwise return NULL
+   * @return PUT/GET/LIST/RM if statement belongs to one of them, otherwise return NULL
    */
   public static SFStatementType checkStageManageCommand(String sql) {
     if (sql == null) {

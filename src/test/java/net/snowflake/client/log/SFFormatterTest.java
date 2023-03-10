@@ -80,7 +80,7 @@ public class SFFormatterTest {
    * constructor
    */
   private class LRGenerator {
-    // Required by SFFormatter as a log record without these fiels would cause NullPointerException
+    // Required by SFFormatter as a log record without these fields would cause NullPointerException
     // in
     // our SF formatter
     // add more fields to plug in the log record if required for testing

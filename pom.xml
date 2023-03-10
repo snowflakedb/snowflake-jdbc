@@ -4,7 +4,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.13.21</version>
+  <version>3.13.28</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
@@ -37,23 +37,24 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>8.0.0</arrow.version>
+    <arrow.version>10.0.1</arrow.version>
     <slf4j.version>1.7.25</slf4j.version>
-    <jsoup.version>1.14.2</jsoup.version>
+    <jsoup.version>1.15.3</jsoup.version>
     <tika.version>2.4.1</tika.version>
     <jackson.version>2.13.2</jackson.version>
-    <jacksondatabind.version>2.13.2.2</jacksondatabind.version>
+    <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
     <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
     <httpclient.version>4.5.11</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
-    <awssdk.version>1.11.394</awssdk.version>
+    <awssdk.version>1.12.327</awssdk.version>
     <google.api.client.version>1.34.0</google.api.client.version>
     <google.http.client.version>1.41.4</google.http.client.version>
     <bouncycastle.version>1.70</bouncycastle.version>
-    <jna.version>5.5.0</jna.version>
+    <jna.version>5.13.0</jna.version>
     <mockito.version>3.5.6</mockito.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
+    <relocationBase>net/snowflake/client/jdbc/internal</relocationBase>
     <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
   </properties>
 
@@ -211,7 +212,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
-      <version>1.6</version>
+      <version>1.10.0</version>
       <type>jar</type>
       <scope>test</scope>
     </dependency>
@@ -224,7 +225,7 @@
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-archiver</artifactId>
-      <version>2.4.4</version>
+      <version>4.3.0</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -338,7 +339,7 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
-      <version>2.5.0</version>
+      <version>2.6.2</version>
       <exclusions>
         <exclusion>  <!-- Exclude sub-sub dependency gson to avoid whitesource vulnerability -->
           <groupId>com.google.code.gson</groupId>
@@ -694,10 +695,10 @@
              <timestampFormat>yyyyMMddHHmmss</timestampFormat>
              <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
              <doCheck>false</doCheck>
-             <revisionOnScmFailure />
+             <revisionOnScmFailure/>
              <doUpdate>false</doUpdate>
-             <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrememting buildNumber
-                AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrememting build number at the same time -->
+             <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrementing buildNumber
+                AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrementing build number at the same time -->
            </configuration>
           </plugin>
           <plugin>
@@ -721,6 +722,9 @@
                      <relocation>
                        <pattern>org.apache</pattern>
                        <shadedPattern>${shadeBase}.apache</shadedPattern>
+                       <excludes>
+                         <exclude>org.apache.log4j.*</exclude>
+                       </excludes>
                      </relocation>
                      <relocation>
                        <pattern>com.amazonaws</pattern>
@@ -869,6 +873,7 @@
                             <exclude>META-INF/*.RSA</exclude>
                             <exclude>.netbeans_automatic_build</exclude>
                             <exclude>git.properties</exclude>
+                            <exclude>arrow-git.properties</exclude>
                             <exclude>google-http-client.properties</exclude>
                             <exclude>storage.v1.json</exclude> <!-- This is just a documentation file, not needed-->
                             <exclude>pipes-fork-server-default-log4j2.xml</exclude>
@@ -903,10 +908,41 @@
                       </filter>
                    </filters>
                   <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                     </transformer>
                   </transformers>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <!-- relocate the META-INF/versions files manually due to the maven bug -->
+            <!-- https://issues.apache.org/jira/browse/MSHADE-406 -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>3.1.0</version>
+            <executions>
+              <execution>
+                <id>repack</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <unzip src="${project.build.directory}/${project.build.finalName}.jar" dest="${project.build.directory}/relocate" />
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}" />
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}" />
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}" />
+                    <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}" />
+                    <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}" />
+                    <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}" />
+                    <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar" />
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}" />
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}" />
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}" />
+                  </target>
                 </configuration>
               </execution>
             </executions>

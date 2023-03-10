@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.QueryStatus.NO_DATA;
+
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
@@ -11,7 +13,6 @@ import java.util.TimeZone;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 
@@ -23,6 +24,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private String queryID;
   private SFSession session;
   private Statement extraStatement;
+  private QueryStatus lastQueriedStatus = NO_DATA;
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -41,14 +43,9 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     this.queryID = sfBaseResultSet.getQueryId();
     this.session = (SFSession) sfBaseResultSet.getSession();
     this.extraStatement = statement;
-    try {
-      this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
-      this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
-      this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
-    } catch (SFException ex) {
-      throw new SnowflakeSQLLoggedException(
-          this.session, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
-    }
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
+    this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
+    this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
   }
 
   /**
@@ -66,14 +63,9 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     this.queryID = sfBaseResultSet.getQueryId();
     this.sfBaseResultSet = sfBaseResultSet;
 
-    try {
-      this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
-      this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
-      this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
-    } catch (SFException ex) {
-      throw new SnowflakeSQLLoggedException(
-          this.session, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
-    }
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
+    this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
+    this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
   }
 
   public SFAsyncResultSet(String queryID, Statement statement) throws SQLException {
@@ -102,7 +94,13 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     if (this.queryID == null) {
       throw new SQLException("QueryID unknown");
     }
-    return session.getQueryStatus(this.queryID);
+    if (this.lastQueriedStatus == QueryStatus.SUCCESS) {
+      return this.lastQueriedStatus;
+    }
+    this.lastQueriedStatus = session.getQueryStatus(this.queryID);
+    // if query has completed successfully, cache its success status to avoid unnecessary future
+    // server calls
+    return this.lastQueriedStatus;
   }
 
   /**
@@ -113,42 +111,46 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
    */
   private void getRealResults() throws SQLException {
     if (!resultSetForNextInitialized) {
-      QueryStatus qs = this.getStatus();
-      int noDataRetry = 0;
-      final int noDataMaxRetries = 30;
-      final int[] retryPattern = {1, 1, 2, 3, 4, 8, 10};
-      final int maxIndex = retryPattern.length - 1;
-      int retry = 0;
-      while (qs != QueryStatus.SUCCESS) {
-        // if query is not running due to a failure (Aborted, failed with error, etc), generate
-        // exception
-        if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue()) {
-          throw new SQLException(
-              "Status of query associated with resultSet is "
-                  + qs.getDescription()
-                  + ". Results not generated.");
-        }
-        // if no data about the query is returned after about 2 minutes, give up
-        if (qs == QueryStatus.NO_DATA) {
-          noDataRetry++;
-          if (noDataRetry >= noDataMaxRetries) {
+      // If query has already succeeded, go straight to result scan to get results
+      if (this.lastQueriedStatus != QueryStatus.SUCCESS) {
+        QueryStatus qs = this.getStatus();
+        int noDataRetry = 0;
+        final int noDataMaxRetries = 30;
+        final int[] retryPattern = {1, 1, 2, 3, 4, 8, 10};
+        final int maxIndex = retryPattern.length - 1;
+        int retry = 0;
+        while (qs != QueryStatus.SUCCESS) {
+          // if query is not running due to a failure (Aborted, failed with error, etc), generate
+          // exception
+          if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue()) {
             throw new SQLException(
-                "Cannot retrieve data on the status of this query. No information returned from server for queryID={}.",
-                this.queryID);
+                "Status of query associated with resultSet is "
+                    + qs.getDescription()
+                    + ". Results not generated.");
           }
+          // if no data about the query is returned after about 2 minutes, give up
+          if (qs == NO_DATA) {
+            noDataRetry++;
+            if (noDataRetry >= noDataMaxRetries) {
+              throw new SQLException(
+                  "Cannot retrieve data on the status of this query. No information returned from server for queryID={}.",
+                  this.queryID);
+            }
+          }
+          try {
+            // Sleep for an amount before trying again. Exponential backoff up to 5 seconds
+            // implemented.
+            Thread.sleep(500 * retryPattern[retry]);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          if (retry < maxIndex) {
+            retry++;
+          }
+          qs = this.getStatus();
         }
-        try {
-          // Sleep for an amount before trying again. Exponential backoff up to 5 seconds
-          // implemented.
-          Thread.sleep(500 * retryPattern[retry]);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-        if (retry < maxIndex) {
-          retry++;
-        }
-        qs = this.getStatus();
       }
+
       resultSetForNext =
           extraStatement.executeQuery("select * from table(result_scan('" + this.queryID + "'))");
       resultSetForNextInitialized = true;

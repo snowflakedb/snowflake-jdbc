@@ -12,24 +12,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLXML;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import net.snowflake.client.AbstractDriverIT;
@@ -40,6 +26,10 @@ public class BaseJDBCTest extends AbstractDriverIT {
 
   protected interface MethodRaisesSQLException {
     void run() throws SQLException;
+  }
+
+  protected interface MethodRaisesSQLClientInfoException {
+    void run() throws SQLClientInfoException;
   }
 
   protected void expectConnectionAlreadyClosedException(MethodRaisesSQLException f) {
@@ -75,6 +65,15 @@ public class BaseJDBCTest extends AbstractDriverIT {
       fail("must raise exception");
     } catch (SQLException ex) {
       assertTrue(ex instanceof SQLFeatureNotSupportedException);
+    }
+  }
+
+  protected void expectSQLClientInfoException(MethodRaisesSQLClientInfoException f) {
+    try {
+      f.run();
+      fail("must raise exception");
+    } catch (SQLClientInfoException ex) {
+      // noup
     }
   }
 
@@ -378,6 +377,41 @@ public class BaseJDBCTest extends AbstractDriverIT {
   class FakeInputStream extends InputStream {
     @Override
     public int read() throws IOException {
+      return 0;
+    }
+  }
+
+  class FakeCalendar extends Calendar {
+
+    @Override
+    protected void computeTime() {}
+
+    @Override
+    protected void computeFields() {}
+
+    @Override
+    public void add(int field, int amount) {}
+
+    @Override
+    public void roll(int field, boolean up) {}
+
+    @Override
+    public int getMinimum(int field) {
+      return 0;
+    }
+
+    @Override
+    public int getMaximum(int field) {
+      return 0;
+    }
+
+    @Override
+    public int getGreatestMinimum(int field) {
+      return 0;
+    }
+
+    @Override
+    public int getLeastMaximum(int field) {
       return 0;
     }
   }

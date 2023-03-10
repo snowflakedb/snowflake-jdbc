@@ -8,6 +8,7 @@ import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.*;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.*;
 
+import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.Map;
@@ -16,6 +17,8 @@ import java.util.Set;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.SFBaseSession;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -34,6 +37,26 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           + "    as\n"
           + "    $$\n"
           + "    var sql_command = \"Hello, world!\"\n"
+          + "    $$\n"
+          + "    ;";
+
+  private static final String PI_PROCEDURE =
+      "create or replace procedure GETPI()\n"
+          + "    returns float not null\n"
+          + "    language javascript\n"
+          + "    as\n"
+          + "    $$\n"
+          + "    return 3.1415926;\n"
+          + "    $$\n"
+          + "    ;";
+
+  private static final String MESSAGE_PROCEDURE =
+      "create or replace procedure MESSAGE_PROC(message varchar)\n"
+          + "    returns varchar not null\n"
+          + "    language javascript\n"
+          + "    as\n"
+          + "    $$\n"
+          + "    return message;\n"
           + "    $$\n"
           + "    ;";
 
@@ -312,6 +335,36 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       statement.close();
     }
   }
+
+  /**
+   * Test that SQL injection with multistatements into DatabaseMetaData get functions are no longer
+   * possible.
+   *
+   * @throws Throwable
+   */
+  @Test
+  public void testGetFunctionSqlInjectionProtection() throws Throwable {
+    try (Connection connection = getConnection()) {
+      // Enable multistatements since this is the only way a sql injection could occur
+      connection.createStatement().execute("alter session set MULTI_STATEMENT_COUNT=0");
+      DatabaseMetaData metaData = connection.getMetaData();
+      String schemaSqlInection = "%' in database testwh; select 11 as bar; show databases like '%";
+      ResultSet resultSet = metaData.getSchemas(null, schemaSqlInection);
+      // assert result set is empty
+      assertFalse(resultSet.next());
+      String columnSqlInjection = "%' in schema testschema; show columns like '%";
+      resultSet = metaData.getColumns(null, null, null, columnSqlInjection);
+      // assert result set is empty
+      assertFalse(resultSet.next());
+      String functionSqlInjection = "%' in account snowflake; show functions like '%";
+      resultSet = metaData.getColumns(null, null, null, functionSqlInjection);
+      // assert result set is empty
+      assertFalse(resultSet.next());
+      // Clean up by unsetting multistatement
+      connection.createStatement().execute("alter session unset MULTI_STATEMENT_COUNT");
+    }
+  }
+
   /**
    * This tests that wildcards can be used for the schema name for getProcedureColumns().
    * Previously, only empty resultsets were returned.
@@ -710,12 +763,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(database, resultSet.getString("FUNCTION_CAT"));
       assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
       assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
-      assertEquals("", resultSet.getString("COLUMN_NAME"));
-      assertEquals(DatabaseMetaData.functionColumnOut, resultSet.getInt("COLUMN_TYPE"));
-      assertEquals(Types.OTHER, resultSet.getInt("DATA_TYPE"));
-      assertEquals(
-          "TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-          resultSet.getString("TYPE_NAME"));
+      assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
       assertEquals(0, resultSet.getInt("PRECISION"));
       // length column is not supported and will always be 0
       assertEquals(0, resultSet.getInt("LENGTH"));
@@ -726,14 +777,88 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
       assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
       // char octet length column is not supported and always returns 0
-      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
-      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+      assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
       // is_nullable column is not supported and always returns empty string
       assertEquals("", resultSet.getString("IS_NULLABLE"));
       assertEquals(
           "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
           resultSet.getString("SPECIFIC_NAME"));
-      /* There are no input parameters so only 1 row is returned, describing return value of function */
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getInt("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals(
+          "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+          resultSet.getString("SPECIFIC_NAME"));
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("BIN2", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
+      assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getInt("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(8388608, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals(
+          "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+          resultSet.getString("SPECIFIC_NAME"));
+      resultSet.next();
+      assertEquals(database, resultSet.getString("FUNCTION_CAT"));
+      assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
+      assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
+      assertEquals("SHAREDCOL", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getInt("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+      assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("", resultSet.getString("IS_NULLABLE"));
+      assertEquals(
+          "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+          resultSet.getString("SPECIFIC_NAME"));
       assertFalse(resultSet.next());
       /* Assert that calling getFunctionColumns with no parameters returns empty result set */
       resultSet = metaData.getFunctionColumns("%", "%", "%", "%");
@@ -870,7 +995,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testTimestampWithTimezoneDataType() throws SQLException {
+  public void testTimestampWithTimezoneDataType() throws Exception {
     try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
       statement.executeQuery("create or replace table ts_test(ts timestamp_tz)");
@@ -881,6 +1006,18 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       resultSet.next();
       // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
       assertEquals(resultSet.getObject("DATA_TYPE"), 2014);
+
+      SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+      Field field = SFBaseSession.class.getDeclaredField("enableReturnTimestampWithTimeZone");
+      field.setAccessible(true);
+      field.set(baseSession, false);
+
+      metaData = connection.getMetaData();
+      resultSet = metaData.getColumns(database, schema, "TS_TEST", "TS");
+      resultSet.next();
+      // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP when
+      // enableReturnTimestampWithTimeZone is false.
+      assertEquals(resultSet.getObject("DATA_TYPE"), Types.TIMESTAMP);
     }
   }
 
@@ -1325,6 +1462,181 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       con.createStatement().execute("drop stream if exists " + targetStream);
       resultSet.close();
       statement.close();
+    }
+  }
+
+  /*
+   * This tests that an empty resultset will be returned for getProcedures when using a reader account.
+   */
+  @Test
+  @Ignore
+  public void testGetProceduresWithReaderAccount() throws SQLException {
+    try (Connection connection = getConnection()) {
+      DatabaseMetaData metadata = connection.getMetaData();
+      ResultSet rs = metadata.getProcedures(null, null, null);
+      assertEquals(0, getSizeOfResultSet(rs));
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGetProcedureColumns() throws Exception {
+    try (Connection connection = getConnection()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      connection.createStatement().execute(PI_PROCEDURE);
+      DatabaseMetaData metaData = connection.getMetaData();
+      /* Call getProcedureColumns with no parameters for procedure name or column. This should return  all procedures
+      in the current database and schema. It will return all rows as well (1 row per result and 1 row per parameter
+      for each procedure) */
+      ResultSet resultSet = metaData.getProcedureColumns(database, schema, "GETPI", "%");
+      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS);
+      resultSet.next();
+      assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+      assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+      assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+      assertEquals("", resultSet.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnReturn, resultSet.getInt("COLUMN_TYPE"));
+      assertEquals(Types.FLOAT, resultSet.getInt("DATA_TYPE"));
+      assertEquals("FLOAT", resultSet.getString("TYPE_NAME"));
+      assertEquals(38, resultSet.getInt("PRECISION"));
+      // length column is not supported and will always be 0
+      assertEquals(0, resultSet.getInt("LENGTH"));
+      assertEquals(0, resultSet.getShort("SCALE"));
+      // radix column is not supported and will always be default of 10 (assumes base 10 system)
+      assertEquals(10, resultSet.getInt("RADIX"));
+      // nullable column is not supported and always returns NullableUnknown
+      assertEquals(DatabaseMetaData.procedureNoNulls, resultSet.getInt("NULLABLE"));
+      assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+      assertNull(resultSet.getString("COLUMN_DEF"));
+      assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
+      assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
+      // char octet length column is not supported and always returns 0
+      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+      // is_nullable column is not supported and always returns empty string
+      assertEquals("NO", resultSet.getString("IS_NULLABLE"));
+      assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
+      connection.createStatement().execute("drop procedure if exists GETPI()");
+    }
+  }
+
+  @Test
+  public void testGetProcedureColumnsReturnsResultSet() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      statement.execute(
+          "create or replace table testtable (id int, name varchar(20), address varchar(20));");
+      statement.execute(
+          "create or replace procedure PROCTEST()\n"
+              + "returns table (\"id\" number(38,0), \"name\" varchar(20), \"address\" varchar(20))\n"
+              + "language sql\n"
+              + "execute as owner\n"
+              + "as 'declare\n"
+              + "    res resultset default (select * from testtable);\n"
+              + "  begin\n"
+              + "    return table(res);\n"
+              + "  end';");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "PROCTEST", "%");
+      res.next();
+      assertEquals("PROCTEST", res.getString("PROCEDURE_NAME"));
+      assertEquals("id", res.getString("COLUMN_NAME"));
+      assertEquals(
+          DatabaseMetaData.procedureColumnResult,
+          res.getInt("COLUMN_TYPE")); // procedureColumnResult
+      assertEquals(Types.NUMERIC, res.getInt("DATA_TYPE"));
+      assertEquals("NUMBER", res.getString("TYPE_NAME"));
+      assertEquals(1, res.getInt("ORDINAL_POSITION")); // result set column 1
+      res.next();
+      assertEquals("name", res.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(2, res.getInt("ORDINAL_POSITION")); // result set column 2
+      res.next();
+      assertEquals("address", res.getString("COLUMN_NAME"));
+      assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(3, res.getInt("ORDINAL_POSITION")); // result set column 3
+
+      res.close();
+      statement.execute("drop table if exists testtable");
+      statement.close();
+    }
+  }
+
+  @Test
+  public void testGetProcedureColumnsReturnsValue() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      DatabaseMetaData metaData = con.getMetaData();
+      // create a procedure with no parameters that has a return value
+      statement.execute(PI_PROCEDURE);
+      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "GETPI", "%");
+      res.next();
+      assertEquals("GETPI", res.getString("PROCEDURE_NAME"));
+      assertEquals("", res.getString("COLUMN_NAME"));
+      assertEquals(5, res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+      assertEquals(Types.FLOAT, res.getInt("DATA_TYPE"));
+      assertEquals("FLOAT", res.getString("TYPE_NAME"));
+      assertEquals(0, res.getInt("ORDINAL_POSITION"));
+
+      // create a procedure that returns the value of the argument that is passed in
+      statement.execute(MESSAGE_PROCEDURE);
+      res = metaData.getProcedureColumns(con.getCatalog(), null, "MESSAGE_PROC", "%");
+      res.next();
+      assertEquals("MESSAGE_PROC", res.getString("PROCEDURE_NAME"));
+      assertEquals("", res.getString("COLUMN_NAME"));
+      assertEquals(
+          DatabaseMetaData.procedureColumnReturn,
+          res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(0, res.getInt("ORDINAL_POSITION"));
+      res.next();
+      assertEquals("MESSAGE", res.getString("COLUMN_NAME"));
+      assertEquals(
+          DatabaseMetaData.procedureColumnIn, res.getInt("COLUMN_TYPE")); // procedureColumnIn
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(1, res.getInt("ORDINAL_POSITION"));
+
+      res.close();
+      statement.close();
+    }
+  }
+
+  @Test
+  public void testGetProcedureColumnsReturnsNull() throws SQLException {
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      DatabaseMetaData metaData = con.getMetaData();
+      // The CREATE PROCEDURE statement must include a RETURNS clause that defines a return type,
+      // even
+      // if the procedure does not explicitly return anything.
+      statement.execute(
+          "create or replace table testtable (id int, name varchar(20), address varchar(20));");
+      statement.execute(
+          "create or replace procedure insertproc() \n"
+              + "returns varchar \n"
+              + "language javascript as \n"
+              + "'var sqlcommand = \n"
+              + "`insert into testtable (id, name, address) values (1, \\'Tom\\', \\'Pacific Avenue\\');` \n"
+              + "snowflake.execute({sqlText: sqlcommand}); \n"
+              + "';");
+      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "INSERTPROC", "%");
+      res.next();
+      // the procedure will return null as the value but column type will be varchar.
+      assertEquals("INSERTPROC", res.getString("PROCEDURE_NAME"));
+      assertEquals("", res.getString("COLUMN_NAME"));
+      assertEquals(
+          DatabaseMetaData.procedureColumnReturn,
+          res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+      assertEquals(0, res.getInt("ORDINAL_POSITION"));
     }
   }
 }

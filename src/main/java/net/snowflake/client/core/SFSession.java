@@ -4,8 +4,7 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.QueryStatus.getStatusFromString;
-import static net.snowflake.client.core.QueryStatus.isAnError;
+import static net.snowflake.client.core.QueryStatus.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +51,7 @@ public class SFSession extends SFBaseSession {
   private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
-  protected Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
+  private Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
   private boolean isClosed = true;
   private String sessionToken;
   private String masterToken;
@@ -138,6 +137,15 @@ public class SFSession extends SFBaseSession {
       }
     }
     return canClose;
+  }
+
+  /**
+   * Add async query to list of active async queries based on its query ID
+   *
+   * @param queryID query ID
+   */
+  public void addQueryToActiveQueryList(String queryID) {
+    activeAsyncQueries.add(queryID);
   }
 
   /**
@@ -241,12 +249,20 @@ public class SFSession extends SFBaseSession {
     else if (isAnError(result)) {
       result.setErrorCode(ErrorCode.INTERNAL_ERROR.getMessageCode());
       result.setErrorMessage("no_error_code_from_server");
+    } else if (!isAnError(result)) {
+      result.setErrorCode(0);
+      result.setErrorMessage("No error reported");
     }
     // if an error message has been provided, set appropriate error message.
     // This should override the default error message displayed when there is
     // an error with no code.
     if (!Strings.isNullOrEmpty(errorMessage) && !errorMessage.equalsIgnoreCase("null")) {
       result.setErrorMessage(errorMessage);
+    } else {
+      result.setErrorMessage("No error reported");
+    }
+    if (!isStillRunning(result)) {
+      activeAsyncQueries.remove(queryID);
     }
     return result;
   }

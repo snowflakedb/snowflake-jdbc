@@ -8,6 +8,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
+import static org.junit.Assume.*;
 
 import java.io.*;
 import java.security.*;
@@ -125,7 +126,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
     Properties properties = new Properties();
 
-    properties.put("user", "fakesuer");
+    properties.put("user", "fakeuser");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
 
@@ -535,7 +536,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
     Properties properties = new Properties();
 
-    properties.put("user", "fakesuer");
+    properties.put("user", "fakeuser");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
     properties.put("insecureMode", true);
@@ -550,7 +551,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
     properties = new Properties();
 
-    properties.put("user", "fakesuer");
+    properties.put("user", "fakeuser");
     properties.put("password", "fakepwd");
     properties.put("account", "fakeaccount");
     try {
@@ -584,7 +585,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
   /** Verify the JVM memory parameters are set in the session */
   @Test
-  public void testClientMemoryJvmParameteres() throws Exception {
+  public void testClientMemoryJvmParameters() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put("CLIENT_PREFETCH_THREADS", "6");
     paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 48);
@@ -626,7 +627,7 @@ public class ConnectionIT extends BaseJDBCTest {
    * parameters take precedence over JVM.
    */
   @Test
-  public void testClientMixedMemoryJvmParameteres() throws Exception {
+  public void testClientMixedMemoryJvmParameters() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put("CLIENT_PREFETCH_THREADS", "6");
     paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 48);
@@ -976,8 +977,8 @@ public class ConnectionIT extends BaseJDBCTest {
     connection.close();
   }
 
-  private Properties setCommonConnectionParameters(boolean validateDefaultParameters) {
-    Map<String, String> params = getConnectionParameters();
+  private Properties kvMap2Properties(
+      Map<String, String> params, boolean validateDefaultParameters) {
     Properties props = new Properties();
     props.put("validateDefaultParameters", validateDefaultParameters);
     props.put("account", params.get("account"));
@@ -989,6 +990,25 @@ public class ConnectionIT extends BaseJDBCTest {
     props.put("schema", params.get("schema"));
     props.put("warehouse", params.get("warehouse"));
     return props;
+  }
+
+  private Properties setCommonConnectionParameters(boolean validateDefaultParameters) {
+    Map<String, String> params = getConnectionParameters();
+    return kvMap2Properties(params, validateDefaultParameters);
+  }
+
+  @Test
+  public void testFailOverOrgAccount() throws SQLException {
+    // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
+    assumeTrue(RunningOnGithubAction.isRunningOnGithubAction());
+
+    Map<String, String> kvParams = getConnectionParameters(null, "ORG");
+    Properties connProps = kvMap2Properties(kvParams, false);
+    String uri = kvParams.get("uri");
+
+    Connection con = DriverManager.getConnection(uri, connProps);
+    con.createStatement().execute("select 1");
+    con.close();
   }
 
   private class ConcurrentConnections implements Runnable {

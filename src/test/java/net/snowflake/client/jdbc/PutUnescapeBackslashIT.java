@@ -65,7 +65,7 @@ public class PutUnescapeBackslashIT extends AbstractDriverIT {
       String sql =
           String.format("PUT 'file://%s' @~/%s/", dataFile.getCanonicalPath(), remoteSubDir);
 
-      // Escape backslaches. This must be done by the application.
+      // Escape backslashes. This must be done by the application.
       sql = sql.replaceAll("\\\\", "\\\\\\\\");
       statement.execute(sql);
 

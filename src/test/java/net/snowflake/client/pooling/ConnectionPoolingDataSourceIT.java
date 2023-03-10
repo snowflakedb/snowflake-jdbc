@@ -47,7 +47,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
 
     try {
       // should fire connection error events
-      connection.setCatalog("unexisted_database");
+      connection.setCatalog("nonexistent_database");
       fail();
     } catch (SQLException e) {
       assertThat(e.getErrorCode(), is(2043));
@@ -87,6 +87,28 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
     // will close physical connection
     pooledConnection.close();
     assertThat(physicalConnection.isClosed(), is(true));
+  }
+
+  @Test
+  public void testPooledConnectionUsernamePassword() throws SQLException {
+    Map<String, String> properties = getConnectionParameters();
+
+    SnowflakeConnectionPoolDataSource poolDataSource = new SnowflakeConnectionPoolDataSource();
+
+    poolDataSource.setUrl(properties.get("uri"));
+    poolDataSource.setPortNumber(Integer.parseInt(properties.get("port")));
+    poolDataSource.setSsl("on".equals(properties.get("ssl")));
+    poolDataSource.setAccount(properties.get("account"));
+
+    PooledConnection pooledConnection =
+        poolDataSource.getPooledConnection(properties.get("user"), properties.get("password"));
+    TestingConnectionListener listener = new TestingConnectionListener();
+    pooledConnection.addConnectionEventListener(listener);
+
+    Connection connection = pooledConnection.getConnection();
+    connection.createStatement().execute("select 1");
+    connection.close();
+    pooledConnection.close();
   }
 
   private static class TestingConnectionListener implements ConnectionEventListener {

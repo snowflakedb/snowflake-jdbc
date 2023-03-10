@@ -4,9 +4,9 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.core.Constants.NO_SPACE_LEFT_ON_DEVICE_ERR;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.amazonaws.util.Base64;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,6 +22,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.Base64;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -316,7 +317,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       return new InputStreamWithMetadata(
           countingStream.getCount(),
-          Base64.encodeAsString(digestStream.getMessageDigest().digest()),
+          Base64.getEncoder().encodeToString(digestStream.getMessageDigest().digest()),
           tempStream);
 
     } catch (IOException | NoSuchAlgorithmException ex) {
@@ -389,7 +390,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       return new InputStreamWithMetadata(
           countingOutputStream.getCount(),
-          Base64.encodeAsString(digestStream.getMessageDigest().digest()),
+          Base64.getEncoder().encodeToString(digestStream.getMessageDigest().digest()),
           tempStream);
     } else {
       CountingOutputStream countingOutputStream =
@@ -399,13 +400,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       IOUtils.copy(is, digestStream);
       return new InputStreamWithMetadata(
           countingOutputStream.getCount(),
-          Base64.encodeAsString(digestStream.getMessageDigest().digest()),
+          Base64.getEncoder().encodeToString(digestStream.getMessageDigest().digest()),
           null);
     }
   }
 
   /**
-   * A callable that can be executed in a separate thread using exeuctor service.
+   * A callable that can be executed in a separate thread using executor service.
    *
    * <p>The callable does compression if needed and upload the result to the table's staging area.
    *
@@ -476,8 +477,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // Temp file that needs to be cleaned up when upload was successful
         FileBackedOutputStream fileBackedOutputStream = null;
 
-        // SNOW-16082: we should catpure exception if we fail to compress or
-        // calcuate digest.
+        // SNOW-16082: we should capture exception if we fail to compress or
+        // calculate digest.
         try {
           if (metadata.requireCompress) {
             InputStreamWithMetadata compressedSizeAndStream =
@@ -930,10 +931,17 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           jsonNode.path("data").path("stageInfo").path("isClientSideEncrypted").asBoolean(true);
     }
 
-    // endPoint and storageAccount are only available in Azure stages. Value
-    // will be present but null in other platforms.
+    // endPoint is currently known to be set for Azure stages or S3. For S3 it will be set
+    // specifically
+    // for FIPS or VPCE S3 endpoint. SNOW-652696
     String endPoint = null;
+    if ("AZURE".equalsIgnoreCase(stageLocationType) || "S3".equalsIgnoreCase(stageLocationType)) {
+      endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
+    }
+
     String stgAcct = null;
+    // storageAccount are only available in Azure stages. Value
+    // will be present but null in other platforms.
     if ("AZURE".equalsIgnoreCase(stageLocationType)) {
       // Jackson is doing some very strange things trying to pull the value of
       // the storageAccount node after adding the GCP library dependencies.
@@ -943,7 +951,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       // then comes back with double quotes around it, so we're stripping them
       // off. As long as our JSON doc doesn't add another node that starts with
       // "sto", this should work fine.
-      endPoint = jsonNode.path("data").path("stageInfo").findValue("endPoint").asText();
       Iterator<Entry<String, JsonNode>> fields = jsonNode.path("data").path("stageInfo").fields();
       while (fields.hasNext()) {
         Entry<String, JsonNode> jsonField = fields.next();
@@ -2308,7 +2315,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           continue;
         }
 
-        // stage file eixst and either we will be compressing or
+        // stage file exist and either we will be compressing or
         // the dest file has same size as the source file size we will
         // compare digest values below
         String localFileHashText = null;
@@ -2355,7 +2362,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         FileBackedOutputStream fileBackedOutputStream = null;
         InputStream stageFileStream = null;
         try {
-          // calculate digst for stage file
+          // calculate digest for stage file
           stageFileStream = new FileInputStream(stageFilePath);
 
           InputStreamWithMetadata res = computeDigest(stageFileStream, false);
@@ -2976,7 +2983,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   /*
    * Handles an InvalidKeyException which indicates that the JCE component
    * is not installed properly
-   * @param operation a string indicating the the operation type, e.g. upload/download
+   * @param operation a string indicating the operation type, e.g. upload/download
    * @param ex The exception to be handled
    * @throws throws the error as a SnowflakeSQLException
    */
@@ -3002,5 +3009,27 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
     throw new SnowflakeSQLException(
         ex, SqlState.SYSTEM_ERROR, ErrorCode.AWS_CLIENT_ERROR.getMessageCode(), operation, msg);
+  }
+
+  /**
+   * For handling IOException: No space left on device when attempting to download a file to a
+   * location where there is not enough space. We don't want to retry on this exception.
+   *
+   * @param session the current session
+   * @param operation the operation i.e. GET
+   * @param ex the exception caught
+   * @throws SnowflakeSQLLoggedException
+   */
+  public static void throwNoSpaceLeftError(SFSession session, String operation, Exception ex)
+      throws SnowflakeSQLLoggedException {
+    String exMessage = SnowflakeUtil.getRootCause(ex).getMessage();
+    if (exMessage != null && exMessage.equals(NO_SPACE_LEFT_ON_DEVICE_ERR)) {
+      throw new SnowflakeSQLLoggedException(
+          session,
+          SqlState.SYSTEM_ERROR,
+          ErrorCode.IO_ERROR.getMessageCode(),
+          ex,
+          "Encountered exception during " + operation + ": " + ex.getMessage());
+    }
   }
 }

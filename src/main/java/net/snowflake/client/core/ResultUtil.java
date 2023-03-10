@@ -26,7 +26,7 @@ public class ResultUtil {
 
   public static final int MILLIS_IN_ONE_DAY = 86400000;
   public static final int DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS =
-      3; // default scale for sftime fraction seconds
+      3; // default scale for SFTime fraction seconds
 
   // Construct a default UTC zone for TIMESTAMPNTZ
   private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");

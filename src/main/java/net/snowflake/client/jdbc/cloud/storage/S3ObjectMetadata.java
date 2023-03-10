@@ -10,7 +10,7 @@ import java.util.Map;
  * s3 implementation of platform independent StorageObjectMetadata interface, wraps an S3
  * ObjectMetadata class
  *
- * <p>It only supports a limited set of metadata properties currrently used by the JDBC client
+ * <p>It only supports a limited set of metadata properties currently used by the JDBC client
  *
  * @author lgiakoumakis
  */

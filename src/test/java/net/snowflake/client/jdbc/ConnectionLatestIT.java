@@ -271,6 +271,38 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     con.close();
   }
 
+  /**
+   * Tests that error message and error code are reset after an error. This test is not reliable as
+   * it uses sleep() call. It works locally but failed with PR.
+   *
+   * @throws SQLException
+   * @throws InterruptedException
+   */
+  // @Test
+  public void testQueryStatusErrorMessageAndErrorCode() throws SQLException, InterruptedException {
+    // open connection and run asynchronous query
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("create or replace table testTable(colA string, colB boolean)");
+    statement.execute("insert into testTable values ('test', true)");
+    ResultSet rs1 =
+        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from testTable");
+    QueryStatus status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+    // Set the error message and error code so we can confirm they are reset when getStatus() is
+    // called.
+    status.setErrorMessage(QueryStatus.FAILED_WITH_ERROR.toString());
+    status.setErrorCode(2003);
+    Thread.sleep(300);
+    status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
+    // Assert status of query is a success
+    assertEquals(QueryStatus.SUCCESS, status);
+    assertEquals("No error reported", status.getErrorMessage());
+    assertEquals(0, status.getErrorCode());
+    statement.execute("drop table if exists testTable");
+    statement.close();
+    con.close();
+  }
+
   @Test
   public void testPreparedStatementAsyncQuery() throws SQLException {
     Connection con = getConnection();
@@ -972,5 +1004,31 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // S3Client retries some exception for a default timeout of 5 minutes
     // Check that 404 was not retried
     assertTrue(endDownloadTime - startDownloadTime < 400000);
+  }
+
+  @Test
+  public void testIsAsyncSession() throws SQLException, InterruptedException {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      // Run a query that takes 5 seconds to complete
+      ResultSet rs =
+          statement
+              .unwrap(SnowflakeStatement.class)
+              .executeAsyncQuery("select count(*) from table(generator(timeLimit => 4))");
+      // Assert that activeAsyncQueries is non-empty with running query. Session is async and not
+      // safe to close
+      assertTrue(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isAsyncSession());
+      assertFalse(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isSafeToClose());
+      // Sleep 6 seconds to ensure query is finished running
+      TimeUnit.SECONDS.sleep(6);
+      // Assert that there are no longer any queries running.
+      // First, assert session is safe to close. This iterates through active queries, fetches their
+      // status, and removes them from the activeQueriesMap if they are no longer active.
+      assertTrue(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isSafeToClose());
+      // Next, assert session is no longer async (just fetches size of activeQueriesMap with no
+      // other action)
+      assertFalse(con.unwrap(SnowflakeConnectionV1.class).getSfSession().isAsyncSession());
+      rs.close();
+    }
   }
 }

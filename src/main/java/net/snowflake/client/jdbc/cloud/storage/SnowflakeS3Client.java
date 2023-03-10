@@ -27,13 +27,13 @@ import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
-import com.amazonaws.util.Base64;
 import java.io.*;
 import java.net.SocketTimeoutException;
 import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -153,7 +153,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
     AmazonS3Builder<?, ?> amazonS3Builder = AmazonS3Client.builder();
     if (encMat != null) {
-      byte[] decodedKey = Base64.decode(encMat.getQueryStageMasterKey());
+      byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
       encryptionKeySize = decodedKey.length * 8;
 
       if (encryptionKeySize == 256) {
@@ -190,8 +190,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               .withClientConfiguration(clientConfig);
     }
 
-    if (stageRegion != null) {
-      Region region = RegionUtils.getRegion(stageRegion);
+    Region region = RegionUtils.getRegion(stageRegion);
+    if (this.stageEndPoint != null && this.stageEndPoint != "" && this.stageEndPoint != "null") {
+      amazonS3Builder.withEndpointConfiguration(
+          new AwsClientBuilder.EndpointConfiguration(this.stageEndPoint, region.getName()));
+    } else {
       if (region != null) {
         if (this.isUseS3RegionalUrl) {
           amazonS3Builder.withEndpointConfiguration(
@@ -204,13 +207,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
     // Explicitly force to use virtual address style
     amazonS3Builder.withPathStyleAccessEnabled(false);
-
     amazonClient = (AmazonS3) amazonS3Builder.build();
-    if (this.stageEndPoint != null && this.stageEndPoint != "") {
-      // Set the FIPS endpoint if we need it. GS will tell us if we do by
-      // giving us an endpoint to use if required and supported by the region.
-      amazonClient.setEndpoint(this.stageEndPoint);
-    }
   }
 
   // Returns the Max number of retry attempts
@@ -691,6 +688,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
     }
 
+    // If there is no space left in the download location, java.io.IOException is thrown.
+    // Don't retry.
+    if (SnowflakeUtil.getRootCause(ex) instanceof IOException) {
+      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex);
+    }
+
     if (ex instanceof AmazonClientException) {
       if (retryCount > s3Client.getMaxRetries() || s3Client.isClientException404(ex)) {
         String extendedRequestId = "none";
@@ -816,8 +819,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       byte[] encKeK,
       long contentLength) {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
-    meta.addUserMetadata(AMZ_KEY, Base64.encodeAsString(encKeK));
-    meta.addUserMetadata(AMZ_IV, Base64.encodeAsString(ivData));
+    meta.addUserMetadata(AMZ_KEY, Base64.getEncoder().encodeToString(encKeK));
+    meta.addUserMetadata(AMZ_IV, Base64.getEncoder().encodeToString(ivData));
     meta.setContentLength(contentLength);
   }
 

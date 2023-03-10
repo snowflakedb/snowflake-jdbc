@@ -6,20 +6,10 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -147,7 +137,7 @@ public class EventHandler extends Handler {
 
   /** Creates and runs a new QueueFlusher thread */
   synchronized void startFlusher() {
-    // Create a new scheduled executor service with a threadfactory that
+    // Create a new scheduled executor service with a thread factory that
     // creates daemonized threads; this way if the user doesn't exit nicely
     // the JVM Runtime won't hang
     flusher =
@@ -405,54 +395,12 @@ public class EventHandler extends Handler {
     }
   }
 
-  /**
-   * Checks to see if the reporting of an incident should be throttled due to the number of times
-   * the signature has been seen in the last hour
-   *
-   * @param signature incident signature
-   * @return true if incidents needs to be throttled
-   */
-  private synchronized boolean needsToThrottle(String signature) {
-    AtomicInteger sigCount;
-
-    // Are we already throttling this signature?
-    if (throttledIncidents.containsKey(signature)) {
-      // Lazily check if it's time to unthrottle
-      if (throttledIncidents
-              .get(signature)
-              .plusHours(THROTTLE_DURATION_HRS)
-              .compareTo(DateTime.now())
-          <= 0) {
-        // Start counting the # of times we've seen this again & stop throttling.
-        throttledIncidents.remove(signature);
-        incidentCounter.put(signature, new AtomicInteger(1));
-        return false;
-      }
-
-      return true;
-    }
-
-    sigCount = incidentCounter.get(signature);
-    if (sigCount == null) {
-      // If there isn't an entry to track this signature, make one.
-      incidentCounter.put(signature, sigCount = new AtomicInteger(0));
-    } else if (sigCount.get() + 1 >= INCIDENT_THROTTLE_LIMIT_PER_HR) {
-      // We've hit the limit so throttle.
-      incidentCounter.remove(signature);
-      throttledIncidents.put(signature, DateTime.now());
-      return true;
-    }
-
-    sigCount.incrementAndGet();
-    return false;
-  }
-
   /* Overridden methods for Handler interface */
 
   /** Flushes all eventBuffer entries. */
   @Override
   public synchronized void flush() {
-    logger.debug("EventHandler flushing loger buffer", false);
+    logger.debug("EventHandler flushing logger buffer", false);
 
     dumpLogBuffer("");
   }

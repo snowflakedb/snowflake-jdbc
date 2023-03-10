@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.log;
 
 import static org.junit.Assert.*;
@@ -7,10 +10,13 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
+import net.snowflake.client.category.TestCategoryCore;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryCore.class)
 public class SLF4JJJCLWrapperLatestIT {
 
   /** Message last logged using SLF4JLogger. */
@@ -35,6 +41,7 @@ public class SLF4JJJCLWrapperLatestIT {
 
   /** Logging levels */
   private enum LogLevel {
+    FATAL,
     ERROR,
     WARN,
     INFO,
@@ -66,6 +73,9 @@ public class SLF4JJJCLWrapperLatestIT {
   // helper function, throwables allowed
   private void testNullLogMessagesWithThrowable(LogLevel level, String message, Throwable t) {
     switch (level) {
+      case FATAL:
+        wrapper.fatal(message, t);
+        break;
       case ERROR:
         wrapper.error(message, t);
         break;
@@ -88,6 +98,9 @@ public class SLF4JJJCLWrapperLatestIT {
   // helper function, no throwables
   private void testNullLogMessagesNoThrowable(LogLevel level, String message) {
     switch (level) {
+      case FATAL:
+        wrapper.fatal(message);
+        break;
       case ERROR:
         wrapper.error(message);
         break;
@@ -125,6 +138,7 @@ public class SLF4JJJCLWrapperLatestIT {
     assertFalse(wrapper.isTraceEnabled());
     assertFalse(wrapper.isDebugEnabled());
     assertTrue(wrapper.isInfoEnabled());
+    assertTrue(wrapper.isWarnEnabled());
     assertTrue(wrapper.isErrorEnabled());
     assertTrue(wrapper.isFatalEnabled());
   }

@@ -107,12 +107,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private boolean stringsQuoted = false;
 
-  private String showCommand;
-
-  // Package-private function for displaying show command (for testing only)
-  String getShowCommand() {
-    return showCommand;
-  }
+  // The number of columns for the result set returned from the current procedure. A value of -1
+  // means the procedure doesn't return a result set
+  private int procedureResultsetColumnNum;
 
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
@@ -123,6 +120,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     this.metadataRequestUseSessionDatabase = session.getMetadataRequestUseSessionDatabase();
     this.stringsQuoted = session.isStringQuoted();
     this.ibInstance = session.getTelemetryClient();
+    this.procedureResultsetColumnNum = -1;
   }
 
   private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException {
@@ -191,6 +189,30 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   // quotes to avoid syntax errors with SQL queries.
   private String escapeSqlQuotes(String originalString) {
     return originalString.replace("\"", "\"\"");
+  }
+
+  /**
+   * This guards against SQL injections by ensuring that any single quote is escaped properly.
+   *
+   * @param arg the original schema
+   * @return
+   */
+  private String escapeSingleQuoteForLikeCommand(String arg) {
+    if (arg == null) {
+      return null;
+    }
+    int i = 0;
+    int index = arg.indexOf("'", i);
+    while (index != -1) {
+      if (index == 0 || (index > 0 && arg.charAt(index - 1) != '\\')) {
+        arg = arg.replace("'", "\\'");
+        i = index + 2;
+      } else {
+        i = index + 1;
+      }
+      index = i < arg.length() ? arg.indexOf("'", i) : -1;
+    }
+    return arg;
   }
 
   private boolean isSchemaNameWildcardPattern(String inputString) {
@@ -1140,38 +1162,52 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       String procedureNameUnparsed = resultSetStepOne.getString("arguments").trim();
       String procedureNameNoArgs = resultSetStepOne.getString("name");
       String schemaName = resultSetStepOne.getString("schema_name");
+      // Check that schema name match the original input
+      // And check special case - schema with special name in quotes
+      boolean isSchemaNameMatch =
+          compiledSchemaPattern != null
+              && (compiledSchemaPattern.matcher(schemaName).matches()
+                  || (schemaName.startsWith("\"")
+                      && schemaName.endsWith("\"")
+                      && compiledSchemaPattern
+                          .matcher(schemaName)
+                          .region(1, schemaName.length() - 1)
+                          .matches()));
+
       // Check that procedure name and schema name match the original input in case wildcards have
       // been used.
       // Procedure name column check must occur later when columns are parsed.
       if ((compiledProcedurePattern != null
               && !compiledProcedurePattern.matcher(procedureNameNoArgs).matches())
-          || (compiledSchemaPattern != null
-              && !compiledSchemaPattern.matcher(schemaName).matches())) {
+          || (compiledSchemaPattern != null && !isSchemaNameMatch)) {
         continue;
       }
+      String catalogName = resultSetStepOne.getString("catalog_name");
       String showProcedureColCommand =
-          getSecondResultSetCommand(catalog, schemaName, procedureNameUnparsed, "procedure");
+          getSecondResultSetCommand(catalogName, schemaName, procedureNameUnparsed, "procedure");
 
       ResultSet resultSetStepTwo =
           executeAndReturnEmptyResultIfNotFound(
               statement, showProcedureColCommand, GET_PROCEDURE_COLUMNS);
       resultSetStepTwo.next();
-      String[] params = parseParams(resultSetStepTwo.getString("value"));
+      // Retrieve the procedure arguments and procedure return values.
+      String args = resultSetStepTwo.getString("value");
       resultSetStepTwo.next();
       String res = resultSetStepTwo.getString("value");
-      String paramNames[] = new String[params.length / 2 + 1];
-      String paramTypes[] = new String[params.length / 2 + 1];
-      if (params.length > 1) {
-        for (int i = 0; i < params.length; i++) {
+      // parse procedure arguments and return values into a list of columns
+      // result value(s) will be at the top of the list, followed by any arguments
+      List<String> procedureCols = parseColumns(res, args);
+      String paramNames[] = new String[procedureCols.size() / 2];
+      String paramTypes[] = new String[procedureCols.size() / 2];
+      if (procedureCols.size() > 1) {
+        for (int i = 0; i < procedureCols.size(); i++) {
           if (i % 2 == 0) {
-            paramNames[i / 2 + 1] = params[i];
+            paramNames[i / 2] = procedureCols.get(i);
           } else {
-            paramTypes[i / 2 + 1] = params[i];
+            paramTypes[i / 2] = procedureCols.get(i);
           }
         }
       }
-      paramNames[0] = "";
-      paramTypes[0] = res;
       for (int i = 0; i < paramNames.length; i++) {
         // if it's the 1st in for loop, it's the result
         if (i == 0 || paramNames[i].equalsIgnoreCase(columnNamePattern) || addAllRows) {
@@ -1182,12 +1218,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           nextRow[2] = procedureNameNoArgs; // procedure name
           nextRow[3] = paramNames[i]; // column/parameter name
           // column type
-          if (i == 0) {
-            if (paramTypes[i].substring(0, 5).equalsIgnoreCase("table")) {
-              nextRow[4] = procedureColumnOut;
-            } else {
-              nextRow[4] = procedureColumnReturn;
-            }
+          if (i == 0 && procedureResultsetColumnNum < 0) {
+            nextRow[4] = procedureColumnReturn;
+          } else if (procedureResultsetColumnNum >= 0 && i < procedureResultsetColumnNum) {
+            nextRow[4] = procedureColumnResult;
           } else {
             nextRow[4] = procedureColumnIn; // kind of column/parameter
           }
@@ -1196,6 +1230,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           // don't include nullability in type name, such as NUMBER NOT NULL. Just include NUMBER.
           if (typeName.contains(" NOT NULL")) {
             typeNameTrimmed = typeName.substring(0, typeName.indexOf(' '));
+          }
+          // don't include column size in type name
+          if (typeNameTrimmed.contains("(") && typeNameTrimmed.contains(")")) {
+            typeNameTrimmed = typeNameTrimmed.substring(0, typeNameTrimmed.indexOf('('));
           }
           int type = convertStringToType(typeName);
           nextRow[5] = type; // data type
@@ -1265,7 +1303,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           } else {
             nextRow[16] = null;
           }
-          nextRow[17] = i; // ordinal position.
+          // the ordinal position is 0 for a return value.
+          // for result set columns, the ordinal position is of the column in the result set
+          // starting at 1
+          if (procedureResultsetColumnNum >= 0) {
+            if (i < procedureResultsetColumnNum) {
+              nextRow[17] = i + 1;
+            } else {
+              nextRow[17] = i - procedureResultsetColumnNum + 1;
+            }
+          } else {
+            nextRow[17] = i; // ordinal position.
+          }
           nextRow[19] = procedureNameUnparsed; // specific name
           rows.add(nextRow);
         }
@@ -1311,7 +1360,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     String showProcedureCommand = "show /* JDBC:DatabaseMetaData.getProcedures() */ " + type;
 
     if (name != null && !name.isEmpty() && !name.trim().equals("%") && !name.trim().equals(".*")) {
-      showProcedureCommand += " like '" + name + "'";
+      showProcedureCommand += " like '" + escapeSingleQuoteForLikeCommand(name) + "'";
     }
 
     if (catalog == null) {
@@ -1406,17 +1455,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
 
-    showCommand = null;
+    String showTablesCommand = null;
     final boolean viewOnly =
         inputValidTableTypes.size() == 1 && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
     final boolean tableOnly =
         inputValidTableTypes.size() == 1 && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
     if (viewOnly) {
-      showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ views";
+      showTablesCommand = "show /* JDBC:DatabaseMetaData.getTables() */ views";
     } else if (tableOnly) {
-      showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ tables";
+      showTablesCommand = "show /* JDBC:DatabaseMetaData.getTables() */ tables";
     } else {
-      showCommand = "show /* JDBC:DatabaseMetaData.getTables() */ objects";
+      showTablesCommand = "show /* JDBC:DatabaseMetaData.getTables() */ objects";
     }
 
     // only add pattern if it is not empty and not matching all character.
@@ -1424,11 +1473,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !tableNamePattern.isEmpty()
         && !tableNamePattern.trim().equals("%")
         && !tableNamePattern.trim().equals(".*")) {
-      showCommand += " like '" + tableNamePattern + "'";
+      showTablesCommand += " like '" + escapeSingleQuoteForLikeCommand(tableNamePattern) + "'";
     }
 
     if (catalog == null) {
-      showCommand += " in account";
+      showTablesCommand += " in account";
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
     } else {
@@ -1438,18 +1487,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       // a schema if the current schema a user is connected to is different
       // given that we don't support show tables without a known schema.
       if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
-        showCommand += " in database \"" + catalogEscaped + "\"";
+        showTablesCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_TABLES, statement);
       } else {
         String schemaUnescaped = unescapeChars(schemaPattern);
-        showCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
+        showTablesCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
       }
     }
 
-    logger.debug("sql command to get table metadata: {}", showCommand);
+    logger.debug("sql command to get table metadata: {}", showTablesCommand);
 
-    resultSet = executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_TABLES);
+    resultSet = executeAndReturnEmptyResultIfNotFound(statement, showTablesCommand, GET_TABLES);
     sendInBandTelemetryMetadataMetrics(
         resultSet,
         "getTables",
@@ -1577,7 +1626,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       final boolean extendedSet)
       throws SQLException {
     logger.debug(
-        "public ResultSet getColumns(String catalog={}, String schemaPattern={}"
+        "public ResultSet getColumns(String catalog={}, String schemaPattern={}, "
             + "String tableNamePattern={}, String columnNamePattern={}, boolean extendedSet={}",
         originalCatalog,
         originalSchemaPattern,
@@ -1596,37 +1645,37 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(tableNamePattern, true);
     final Pattern compiledColumnPattern = Wildcard.toRegexPattern(columnNamePattern, true);
 
-    showCommand = "show /* JDBC:DatabaseMetaData.getColumns() */ columns";
+    String showColumnsCommand = "show /* JDBC:DatabaseMetaData.getColumns() */ columns";
 
     if (columnNamePattern != null
         && !columnNamePattern.isEmpty()
         && !columnNamePattern.trim().equals("%")
         && !columnNamePattern.trim().equals(".*")) {
-      showCommand += " like '" + columnNamePattern + "'";
+      showColumnsCommand += " like '" + escapeSingleQuoteForLikeCommand(columnNamePattern) + "'";
     }
 
     if (catalog == null) {
-      showCommand += " in account";
+      showColumnsCommand += " in account";
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
           extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
     } else {
       String catalogEscaped = escapeSqlQuotes(catalog);
       if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
-        showCommand += " in database \"" + catalogEscaped + "\"";
+        showColumnsCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
             extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
       } else {
         String schemaUnescaped = unescapeChars(schemaPattern);
         if (tableNamePattern == null || Wildcard.isWildcardPatternStr(tableNamePattern)) {
-          showCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
+          showColumnsCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
         } else if (tableNamePattern.isEmpty()) {
           return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(
               extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS, statement);
         } else {
           String tableNameUnescaped = unescapeChars(tableNamePattern);
-          showCommand +=
+          showColumnsCommand +=
               " in table \""
                   + catalogEscaped
                   + "\".\""
@@ -1638,11 +1687,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
 
-    logger.debug("sql command to get column metadata: {}", showCommand);
+    logger.debug("sql command to get column metadata: {}", showColumnsCommand);
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(
-            statement, showCommand, extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
+            statement, showColumnsCommand, extendedSet ? GET_COLUMNS_EXTENDED_SET : GET_COLUMNS);
     sendInBandTelemetryMetadataMetrics(
         resultSet,
         "getColumns",
@@ -1703,7 +1752,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             try {
               jsonNode = mapper.readTree(dataTypeStr);
             } catch (Exception ex) {
-              logger.error("Exeception when parsing column" + " result", ex);
+              logger.error("Exception when parsing column" + " result", ex);
 
               throw new SnowflakeSQLException(
                   SqlState.INTERNAL_ERROR,
@@ -1732,7 +1781,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
               externalColumnType = Types.TIMESTAMP;
             }
             if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-              externalColumnType = Types.TIMESTAMP_WITH_TIMEZONE;
+
+              externalColumnType =
+                  session == null
+                      ? Types.TIMESTAMP_WITH_TIMEZONE
+                      : session.getEnableReturnTimestampWithTimeZone()
+                          ? Types.TIMESTAMP_WITH_TIMEZONE
+                          : Types.TIMESTAMP;
             }
 
             nextRow[4] = externalColumnType;
@@ -2169,9 +2224,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
           boolean passedFilter = false;
 
-          // Post filter the results based on the clinet type
+          // Post filter the results based on the client type
           if (client.equals("import")) {
-            // For imported dkeys, filter on the foreign key table
+            // For imported keys, filter on the foreign key table
             if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
                 && (compiledSchemaPattern == null
                     || compiledSchemaPattern.equals(fktable_schem)
@@ -2243,7 +2298,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    *
    * @param property_name operation type
    * @param property property value
-   * @return metdata property value
+   * @return metadata property value
    */
   private short getForeignKeyConstraintProperty(String property_name, String property) {
     short result = 0;
@@ -2599,37 +2654,37 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schemaPattern, true);
     final Pattern compiledStreamNamePattern = Wildcard.toRegexPattern(streamName, true);
 
-    String showCommand = "show streams";
+    String showStreamsCommand = "show streams";
 
     if (streamName != null
         && !streamName.isEmpty()
         && !streamName.trim().equals("%")
         && !streamName.trim().equals(".*")) {
-      showCommand += " like '" + streamName + "'";
+      showStreamsCommand += " like '" + escapeSingleQuoteForLikeCommand(streamName) + "'";
     }
 
     if (catalog == null) {
-      showCommand += " in account";
+      showStreamsCommand += " in account";
     } else if (catalog.isEmpty()) {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_STREAMS, statement);
     } else {
       String catalogEscaped = escapeSqlQuotes(catalog);
       if (schemaPattern == null || isSchemaNameWildcardPattern(schemaPattern)) {
-        showCommand += " in database \"" + catalogEscaped + "\"";
+        showStreamsCommand += " in database \"" + catalogEscaped + "\"";
       } else if (schemaPattern.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_STREAMS, statement);
       } else {
         String schemaUnescaped = unescapeChars(schemaPattern);
         if (streamName == null || Wildcard.isWildcardPatternStr(streamName)) {
-          showCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
+          showStreamsCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaUnescaped + "\"";
         }
       }
     }
 
-    logger.debug("sql command to get stream metadata: {}", showCommand);
+    logger.debug("sql command to get stream metadata: {}", showStreamsCommand);
 
     ResultSet resultSet =
-        executeAndReturnEmptyResultIfNotFound(statement, showCommand, GET_STREAMS);
+        executeAndReturnEmptyResultIfNotFound(statement, showStreamsCommand, GET_STREAMS);
     sendInBandTelemetryMetadataMetrics(
         resultSet, "getStreams", originalCatalog, originalSchemaPattern, streamName, "none");
 
@@ -3009,7 +3064,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         && !schemaPattern.isEmpty()
         && !schemaPattern.trim().equals("%")
         && !schemaPattern.trim().equals(".*")) {
-      showSchemas += " like '" + schemaPattern + "'";
+      showSchemas += " like '" + escapeSingleQuoteForLikeCommand(schemaPattern) + "'";
     }
 
     if (catalog == null) {
@@ -3136,14 +3191,36 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   }
 
   /**
-   * This is a function that takes in a string containing a function name, its parameter names, and
-   * its parameter types, and splits the string into a list of parameter names and types. The names
-   * will be every odd index and the types will be every even index.
+   * This is a function that takes in a string of return types and a string of parameter names and
+   * types. It splits both strings in a list of column names and column types. The names will be
+   * every odd index and the types will be every even index.
    */
-  private String[] parseParams(String args) {
-    String chopped = args.substring(args.indexOf('(') + 1, args.lastIndexOf(')'));
-    String[] params = chopped.split("\\s+|, ");
-    return params;
+  private List<String> parseColumns(String retType, String args) {
+    List<String> columns = new ArrayList<>();
+    if (retType.substring(0, 5).equalsIgnoreCase("table")) {
+      // if return type is a table there will be a result set
+      String typeStr = retType.substring(retType.indexOf('(') + 1, retType.lastIndexOf(')'));
+      String[] types = typeStr.split("\\s+|, ");
+      if (types.length != 1) {
+        for (int i = 0; i < types.length; i++) {
+          columns.add(types[i]);
+        }
+        procedureResultsetColumnNum = columns.size() / 2;
+      }
+    } else {
+      // otherwise it will be a return value
+      columns.add(""); // there is no name for this column
+      columns.add(retType);
+      procedureResultsetColumnNum = -1;
+    }
+    String argStr = args.substring(args.indexOf('(') + 1, args.lastIndexOf(')'));
+    String arguments[] = argStr.split("\\s+|, ");
+    if (arguments.length != 1) {
+      for (int i = 0; i < arguments.length; i++) {
+        columns.add(arguments[i]);
+      }
+    }
+    return columns;
   }
 
   @Override
@@ -3195,22 +3272,24 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       if (resultSetStepTwo.next() == false) {
         continue;
       }
-      String[] params = parseParams(resultSetStepTwo.getString("value"));
+      // Retrieve the function arguments and function return values.
+      String args = resultSetStepTwo.getString("value");
       resultSetStepTwo.next();
       String res = resultSetStepTwo.getString("value");
-      String paramNames[] = new String[params.length / 2 + 1];
-      String paramTypes[] = new String[params.length / 2 + 1];
-      if (params.length > 1) {
-        for (int i = 0; i < params.length; i++) {
+      // parse function arguments and return values into a list of columns
+      // result value(s) will be at the top of the list, followed by any arguments
+      List<String> functionCols = parseColumns(res, args);
+      String paramNames[] = new String[functionCols.size() / 2];
+      String paramTypes[] = new String[functionCols.size() / 2];
+      if (functionCols.size() > 1) {
+        for (int i = 0; i < functionCols.size(); i++) {
           if (i % 2 == 0) {
-            paramNames[i / 2 + 1] = params[i];
+            paramNames[i / 2] = functionCols.get(i);
           } else {
-            paramTypes[i / 2 + 1] = params[i];
+            paramTypes[i / 2] = functionCols.get(i);
           }
         }
       }
-      paramNames[0] = "";
-      paramTypes[0] = res;
       for (int i = 0; i < paramNames.length; i++) {
         // if it's the 1st in for loop, it's the result
         if (i == 0 || paramNames[i].equalsIgnoreCase(columnNamePattern) || addAllRows) {
@@ -3220,12 +3299,10 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           nextRow[1] = schemaPattern; // function schema. Can be null.
           nextRow[2] = functionNameNoArgs; // function name
           nextRow[3] = paramNames[i]; // column/parameter name
-          if (i == 0) {
-            if (paramTypes[i].substring(0, 5).equalsIgnoreCase("table")) {
-              nextRow[4] = functionColumnOut;
-            } else {
-              nextRow[4] = functionReturn;
-            }
+          if (i == 0 && procedureResultsetColumnNum < 0) {
+            nextRow[4] = functionReturn;
+          } else if (procedureResultsetColumnNum >= 0 && i < procedureResultsetColumnNum) {
+            nextRow[4] = functionColumnResult;
           } else {
             nextRow[4] = functionColumnIn; // kind of column/parameter
           }
@@ -3279,7 +3356,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           } else {
             nextRow[13] = null;
           }
-          nextRow[14] = i; // ordinal position.
+          // the ordinal position is 0 for a return value.
+          // for result set columns, the ordinal position is of the column in the result set
+          // starting at 1
+          if (procedureResultsetColumnNum >= 0) {
+            if (i < procedureResultsetColumnNum) {
+              nextRow[14] = i + 1;
+            } else {
+              nextRow[14] = i - procedureResultsetColumnNum + 1;
+            }
+          } else {
+            nextRow[14] = i; // ordinal position.
+          }
           nextRow[15] = ""; // nullability again. Not supported.
           nextRow[16] = functionNameUnparsed;
           rows.add(nextRow);
@@ -3347,7 +3435,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       resultSet = statement.executeQuery(sql);
     } catch (SnowflakeSQLException e) {
       if (e.getSQLState().equals(SqlState.NO_DATA)
-          || e.getSQLState().equals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND)) {
+          || e.getSQLState().equals(SqlState.BASE_TABLE_OR_VIEW_NOT_FOUND)
+          || e.getMessage().contains("Operation is not supported in reader account")) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResult(
             metadataType, statement, e.getQueryId());
       }

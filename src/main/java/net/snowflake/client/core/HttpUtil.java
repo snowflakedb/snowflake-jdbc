@@ -10,6 +10,7 @@ import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import com.snowflake.client.jdbc.SnowflakeDriver;
@@ -243,9 +244,12 @@ public class HttpUtil {
    * Constructs a user-agent header with the following pattern: connector_name/connector_version
    * (os-platform_info) language_implementation/language_version
    *
+   * @param customSuffix custom suffix that would be appended to user agent to identify the jdbc
+   *     usage.
    * @return string for user-agent header
    */
-  private static String buildUserAgent() {
+  @VisibleForTesting
+  static String buildUserAgent(String customSuffix) {
     // Start with connector name
     StringBuilder builder = new StringBuilder("JDBC/");
     // Append connector version and parenthesis start
@@ -265,6 +269,9 @@ public class HttpUtil {
     String languageVersion =
         (systemGetProperty("java.version") != null) ? systemGetProperty("java.version") : "";
     builder.append(languageVersion);
+    if (!customSuffix.isEmpty()) {
+      builder.append(" " + customSuffix);
+    }
     String userAgent = builder.toString();
     return userAgent;
   }
@@ -318,7 +325,7 @@ public class HttpUtil {
     if (key != null && key.getOcspMode() != OCSPMode.INSECURE) {
       // A custom TrustManager is required only if insecureMode is disabled,
       // which is by default in the production. insecureMode can be enabled
-      // 1) OCSP service is down for reasons, 2) PowerMock test tht doesn't
+      // 1) OCSP service is down for reasons, 2) PowerMock test that doesn't
       // care OCSP checks.
       // OCSP FailOpen is ON by default
       try {
@@ -356,13 +363,14 @@ public class HttpUtil {
       connectionManager.setMaxTotal(maxConnections);
       connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
 
+      String userAgentSuffix = key != null ? key.getUserAgentSuffix() : "";
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
               .setConnectionManager(connectionManager)
               // Support JVM proxy settings
               .useSystemProperties()
               .setRedirectStrategy(new DefaultRedirectStrategy())
-              .setUserAgent(buildUserAgent()) // needed for Okta
+              .setUserAgent(buildUserAgent(userAgentSuffix)) // needed for Okta
               .disableCookieManagement(); // SNOW-39748
 
       if (key != null && key.usesProxy()) {
@@ -491,7 +499,7 @@ public class HttpUtil {
 
   /**
    * Return a request configuration inheriting from the default request configuration of the shared
-   * HttpClient with the coopkie spec set to ignore.
+   * HttpClient with the cookie spec set to ignore.
    *
    * @return RequestConfig object
    */

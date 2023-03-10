@@ -22,6 +22,9 @@ public final class Constants {
   // Error code for all invalid id token cases during login request
   public static final int ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE = 390195;
 
+  // Error message for IOException when no space is left for GET
+  public static final String NO_SPACE_LEFT_ON_DEVICE_ERR = "No space left on device";
+
   public enum OS {
     WINDOWS,
     LINUX,
@@ -45,6 +48,10 @@ public final class Constants {
       }
     }
     return os;
+  }
+
+  public static void clearOSForTesting() {
+    os = null;
   }
 
   public static final int MB = 1024 * 1024;

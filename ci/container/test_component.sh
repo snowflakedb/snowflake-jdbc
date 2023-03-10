@@ -18,6 +18,8 @@ else
     PARAMETER_FILE=$SOURCE_ROOT/src/test/resources/parameters.json
 fi
 eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
+eval $(jq -r '.orgconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
+
 
 if [[ -n "$GITHUB_SHA" ]]; then
     # Github Action

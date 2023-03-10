@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
  */
 package net.snowflake.client.log;
 
@@ -17,9 +17,9 @@ import org.junit.experimental.categories.Category;
 
 /** A class for testing {@link JDK14Logger} */
 @Category(TestCategoryCore.class)
-public class JDK14LoggerIT extends AbstractLoggerIT {
+public class JDK14LoggerLatestIT extends AbstractLoggerIT {
   /** {@link JDK14Logger} instance that will be tested in this class */
-  private static final JDK14Logger LOGGER = new JDK14Logger(JDK14LoggerIT.class.getName());
+  private static final JDK14Logger LOGGER = new JDK14Logger(JDK14LoggerLatestIT.class.getName());
 
   /**
    * Used for storing the log level set on the logger instance before starting the tests. Once the
@@ -35,7 +35,8 @@ public class JDK14LoggerIT extends AbstractLoggerIT {
    * <p>JDK14Logger doesn't expose methods to add handlers and set other configurations, hence
    * direct access to the internal logger is required.
    */
-  private static final Logger internalLogger = Logger.getLogger(JDK14LoggerIT.class.getName());
+  private static final Logger internalLogger =
+      Logger.getLogger(JDK14LoggerLatestIT.class.getName());
 
   /**
    * Used for storing whether the parent logger handlers were run in the logger instance before
@@ -94,6 +95,48 @@ public class JDK14LoggerIT extends AbstractLoggerIT {
         break;
       case TRACE:
         LOGGER.trace(message, args);
+        break;
+    }
+  }
+
+  @Override
+  void logMessage(LogLevel level, String message, boolean isMasked) {
+    switch (level) {
+      case ERROR:
+        LOGGER.error(message, isMasked);
+        break;
+      case WARNING:
+        LOGGER.warn(message, isMasked);
+        break;
+      case INFO:
+        LOGGER.info(message, isMasked);
+        break;
+      case DEBUG:
+        LOGGER.debug(message, isMasked);
+        break;
+      case TRACE:
+        LOGGER.trace(message, isMasked);
+        break;
+    }
+  }
+
+  @Override
+  void logMessage(LogLevel level, String message, Throwable throwable) {
+    switch (level) {
+      case ERROR:
+        LOGGER.error(message, throwable);
+        break;
+      case WARNING:
+        LOGGER.warn(message, throwable);
+        break;
+      case INFO:
+        LOGGER.info(message, throwable);
+        break;
+      case DEBUG:
+        LOGGER.debug(message, throwable);
+        break;
+      case TRACE:
+        LOGGER.trace(message, throwable);
         break;
     }
   }

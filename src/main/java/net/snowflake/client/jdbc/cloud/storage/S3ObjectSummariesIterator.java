@@ -21,7 +21,7 @@ public class S3ObjectSummariesIterator implements Iterator<StorageObjectSummary>
   private Iterator<S3ObjectSummary> s3ObjSummariesIterator;
 
   /*
-   * Constructs a summaries interator object from S3Object summary list
+   * Constructs a summaries iterator object from S3Object summary list
    * derived from the AWS client
    * @param s3ObjectSummaries a list of S3ObjectSummaries to construct from
    */

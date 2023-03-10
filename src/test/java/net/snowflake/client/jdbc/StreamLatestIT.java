@@ -3,12 +3,16 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,6 +84,35 @@ public class StreamLatestIT extends BaseJDBCTest {
       statement.execute("DROP TABLE IF EXISTS \"ice cream (nice)\"");
       statement.close();
       connection.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDownloadToStreamBlobNotFoundGCS() throws SQLException {
+    final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
+    Connection connection = null;
+    Statement statement = null;
+    try {
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+      connection = getConnection("gcpaccount", paramProperties);
+      statement = connection.createStatement();
+      connection
+          .unwrap(SnowflakeConnection.class)
+          .downloadStream("~", DEST_PREFIX + "/abc.gz", true);
+      fail("should throw a storage provider exception for blob not found");
+    } catch (Exception ex) {
+      assertTrue(ex instanceof SQLException);
+      assertTrue(
+          "Wrong exception message: " + ex.getMessage(),
+          ex.getMessage().matches(".*Blob.*not found in bucket.*"));
+    } finally {
+      if (statement != null) {
+        statement.execute("rm @~/" + DEST_PREFIX);
+        statement.close();
+      }
+      closeSQLObjects(statement, connection);
     }
   }
 }

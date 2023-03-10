@@ -630,7 +630,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * @param nextUpdate the next update
    * @return the tolerable validity beyond the next update.
    */
-  private static long calculateTolerableVadility(Date thisUpdate, Date nextUpdate) {
+  private static long calculateTolerableValidity(Date thisUpdate, Date nextUpdate) {
     return maxLong(
         (long)
             ((float) (nextUpdate.getTime() - thisUpdate.getTime())
@@ -650,7 +650,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     if (checkOCSPResponseValidityErrorParameter()) {
       return false; // test
     }
-    long tolerableValidity = calculateTolerableVadility(thisUpdate, nextUpdate);
+    long tolerableValidity = calculateTolerableValidity(thisUpdate, nextUpdate);
     return thisUpdate.getTime() - MAX_CLOCK_SKEW_IN_MILLISECONDS <= currentTime.getTime()
         && currentTime.getTime() <= nextUpdate.getTime() + tolerableValidity;
   }
@@ -1509,7 +1509,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
    * Creates a pair of Issuer and Subject certificates
    *
    * @param bcChain a list of bouncy castle Certificate
-   * @return a list of paif of Issuer and Subject certificates
+   * @return a list of pair of Issuer and Subject certificates
    */
   private List<SFPair<Certificate, Certificate>> getPairIssuerSubject(List<Certificate> bcChain)
       throws CertificateException {

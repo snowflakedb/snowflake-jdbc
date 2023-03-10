@@ -39,6 +39,14 @@ public class SnowflakeTimeWithTimezone extends Time {
     }
   }
 
+  public int getNano() {
+    return nanos;
+  }
+
+  public ZoneOffset getOffset() {
+    return offset;
+  }
+
   /**
    * Returns a string representation in session's timezone so as to display "wallclock time"
    *

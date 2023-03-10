@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2023 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.log;
 
 import static org.junit.Assert.*;
@@ -6,10 +9,13 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import net.snowflake.client.category.TestCategoryCore;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryCore.class)
 public class JDK14JCLWrapperLatestIT {
   JDK14JCLWrapper wrapper = new JDK14JCLWrapper(JDK14JCLWrapperLatestIT.class.getName());
   JDK14Logger logger = (JDK14Logger) wrapper.getLogger();
@@ -48,6 +54,7 @@ public class JDK14JCLWrapperLatestIT {
 
   /** Logging levels */
   private enum LogLevel {
+    FATAL,
     ERROR,
     WARN,
     INFO,
@@ -79,6 +86,9 @@ public class JDK14JCLWrapperLatestIT {
 
   private void testLogMessagesWithThrowable(LogLevel level, String message, Throwable t) {
     switch (level) {
+      case FATAL:
+        wrapper.fatal(message, t);
+        break;
       case ERROR:
         wrapper.error(message, t);
         break;
@@ -94,6 +104,9 @@ public class JDK14JCLWrapperLatestIT {
 
   private void testLogMessagesNoThrowable(LogLevel level, String message) {
     switch (level) {
+      case FATAL:
+        wrapper.fatal(message);
+        break;
       case ERROR:
         wrapper.error(message);
         break;
@@ -138,7 +151,9 @@ public class JDK14JCLWrapperLatestIT {
    */
   @Test
   public void testNullLogMessages() {
-    LogLevel[] levelsDisplayingOutput = {LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO};
+    LogLevel[] levelsDisplayingOutput = {
+      LogLevel.FATAL, LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO
+    };
     LogLevel[] levelsWithNoOutput = {LogLevel.TRACE, LogLevel.DEBUG};
     for (LogLevel level : levelsWithNoOutput) {
       testNullLogMessagesWithThrowable(level, "sample message", null);
@@ -159,6 +174,7 @@ public class JDK14JCLWrapperLatestIT {
     assertFalse(wrapper.isTraceEnabled());
     assertFalse(wrapper.isDebugEnabled());
     assertTrue(wrapper.isInfoEnabled());
+    assertTrue(wrapper.isWarnEnabled());
     assertTrue(wrapper.isErrorEnabled());
     assertTrue(wrapper.isFatalEnabled());
   }

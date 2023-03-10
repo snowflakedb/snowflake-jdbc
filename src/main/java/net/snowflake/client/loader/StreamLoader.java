@@ -119,7 +119,7 @@ public class StreamLoader implements Loader, Runnable {
   private final Connection _putConn;
   private final Connection _processConn;
 
-  // a per-instance bit of random noise to make make filenames more unique
+  // a per-instance bit of random noise to make filenames more unique
   private final String _noise;
 
   // Track fatal errors
@@ -651,7 +651,7 @@ public class StreamLoader implements Loader, Runnable {
           LOGGER.debug("Running Execute After SQL", false);
           _processConn.createStatement().execute(_after);
         }
-        // Loader sucessfully completed. Commit and return.
+        // Loader successfully completed. Commit and return.
         _processConn.createStatement().execute("commit");
         LOGGER.debug("Committed", false);
       } catch (SQLException ex) {
@@ -706,7 +706,6 @@ public class StreamLoader implements Loader, Runnable {
   // If operation changes, existing stage needs to be scheduled for processing.
   @Override
   public void resetOperation(Operation op) {
-    LOGGER.debug("Reset Loader", false);
 
     if (op.equals(_op)) {
       // no-op

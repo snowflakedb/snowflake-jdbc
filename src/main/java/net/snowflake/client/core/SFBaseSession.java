@@ -117,6 +117,9 @@ public abstract class SFBaseSession {
   // Query context for current session
   private String queryContext;
 
+  // Whether enable returning timestamp with timezone as data type
+  private boolean enableReturnTimestampWithTimeZone = true;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -315,6 +318,12 @@ public abstract class SFBaseSession {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
       useProxy = (boolean) connectionPropertiesMap.get(SFSessionProperty.USE_PROXY);
     }
+    // Check for any user agent suffix
+    String userAgentSuffix = "";
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.USER_AGENT_SUFFIX)) {
+      userAgentSuffix = (String) connectionPropertiesMap.get(SFSessionProperty.USER_AGENT_SUFFIX);
+    }
+
     if (useProxy) {
       int proxyPort;
       try {
@@ -338,7 +347,8 @@ public abstract class SFBaseSession {
               nonProxyHosts,
               proxyUser,
               proxyPassword,
-              proxyProtocol);
+              proxyProtocol,
+              userAgentSuffix);
 
       return ocspAndProxyKey;
     }
@@ -386,7 +396,8 @@ public abstract class SFBaseSession {
                   combinedNonProxyHosts,
                   "", /* user = empty */
                   "", /* password = empty */
-                  "https");
+                  "https",
+                  userAgentSuffix);
         } else if (!Strings.isNullOrEmpty(httpProxyHost) && !Strings.isNullOrEmpty(httpProxyPort)) {
           int proxyPort;
           try {
@@ -403,20 +414,22 @@ public abstract class SFBaseSession {
                   combinedNonProxyHosts,
                   "", /* user = empty */
                   "", /* password = empty */
-                  "http");
+                  "http",
+                  userAgentSuffix);
+
         } else {
           // Not enough parameters set to use the proxy.
           logger.debug(
               "http.useProxy={} but valid host and port were not provided. No proxy in use.",
               httpUseProxy);
           unsetInvalidProxyHostAndPort();
-          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         unsetInvalidProxyHostAndPort();
-        ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode());
+        ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
       }
     }
     return ocspAndProxyKey;
@@ -779,10 +792,6 @@ public abstract class SFBaseSession {
 
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 
-  public abstract int getHttpClientConnectionTimeout();
-
-  public abstract int getHttpClientSocketTimeout();
-
   public abstract boolean isAsyncSession();
 
   public String getQueryContext() {
@@ -791,5 +800,15 @@ public abstract class SFBaseSession {
 
   public void setQueryContext(String queryContext) {
     this.queryContext = queryContext;
+  }
+
+  /**
+   * If true, JDBC will enable returning TIMESTAMP_WITH_TIMEZONE as column type, otherwise it will
+   * not. This function will always return true for JDBC client, so that the client JDBC will not
+   * have any behavior change. Stored proc JDBC will override this function to return the value of
+   * SP_JDBC_ENABLE_TIMESTAMP_WITH_TIMEZONE from server for backward compatibility.
+   */
+  public boolean getEnableReturnTimestampWithTimeZone() {
+    return enableReturnTimestampWithTimeZone;
   }
 }

@@ -4,7 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
+
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Strings;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.sql.Types;
@@ -221,8 +224,9 @@ public class SnowflakeUtil {
         break;
 
       case GEOGRAPHY:
+      case GEOMETRY:
         colType = Types.VARCHAR;
-        extColTypeName = "GEOGRAPHY";
+        extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
         JsonNode udtOutputType = colNode.path("outputType");
         if (!udtOutputType.isMissingNode()) {
           SnowflakeType outputType = SnowflakeType.fromString(udtOutputType.asText());
@@ -246,7 +250,8 @@ public class SnowflakeUtil {
     }
 
     JsonNode extColTypeNameNode = colNode.path("extTypeName");
-    if (!extColTypeNameNode.isMissingNode()) {
+    if (!extColTypeNameNode.isMissingNode()
+        && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
       extColTypeName = extColTypeNameNode.asText();
     }
 

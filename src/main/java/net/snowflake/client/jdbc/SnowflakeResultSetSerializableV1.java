@@ -491,7 +491,7 @@ public class SnowflakeResultSetSerializableV1
 
   /**
    * A factory function to create SnowflakeResultSetSerializable object from result JSON node, with
-   * an overrideable ResultStreamProvider.
+   * an overridable ResultStreamProvider.
    *
    * @param rootNode result JSON node received from GS
    * @param sfSession the Snowflake session
@@ -999,7 +999,7 @@ public class SnowflakeResultSetSerializableV1
   /**
    * Get ResultSet from the ResultSet Serializable object so that the user can access the data.
    *
-   * <p>This API is used by spark spark connector from 2.6.0 to 2.8.1. It is deprecated from
+   * <p>This API is used by spark connector from 2.6.0 to 2.8.1. It is deprecated from
    * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
    *
    * @return a ResultSet which represents for the data wrapped in the object
@@ -1013,7 +1013,7 @@ public class SnowflakeResultSetSerializableV1
   /**
    * Get ResultSet from the ResultSet Serializable object so that the user can access the data.
    *
-   * <p>This API is used by spark spark connector from 2.6.0 to 2.8.1. It is deprecated from
+   * <p>This API is used by spark connector from 2.6.0 to 2.8.1. It is deprecated from
    * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
    *
    * @param info The proxy sever information if proxy is necessary.
@@ -1113,7 +1113,7 @@ public class SnowflakeResultSetSerializableV1
   }
 
   /**
-   * Retrieve total row count included in the the ResultSet Serializable object.
+   * Retrieve total row count included in the ResultSet Serializable object.
    *
    * <p>GS sends the data of first chunk and metadata of the other chunk if exist to client, so this
    * function calculates the row count for all of them.
@@ -1133,7 +1133,7 @@ public class SnowflakeResultSetSerializableV1
   }
 
   /**
-   * Retrieve compressed data size in the the ResultSet Serializable object.
+   * Retrieve compressed data size in the ResultSet Serializable object.
    *
    * <p>GS sends the data of first chunk and metadata of the other chunks if exist to client, so
    * this function calculates the data size for all of them. NOTE: if first chunk exists, this
@@ -1158,7 +1158,7 @@ public class SnowflakeResultSetSerializableV1
   }
 
   /**
-   * Retrieve Uncompressed data size in the the ResultSet Serializable object.
+   * Retrieve Uncompressed data size in the ResultSet Serializable object.
    *
    * <p>GS sends the data of first chunk and metadata of the other chunk if exist to client, so this
    * function calculates the data size for all of them.

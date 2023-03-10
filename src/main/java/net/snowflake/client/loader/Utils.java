@@ -10,7 +10,7 @@ public class Utils {
    * Find the root cause of the exception
    *
    * @param e throwable object
-   * @return the thowable cause
+   * @return the throwable cause
    */
   public static Throwable getCause(Throwable e) {
     Throwable cause = null;

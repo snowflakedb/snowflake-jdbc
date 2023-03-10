@@ -4,7 +4,6 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.util.Base64;
 import com.google.cloud.storage.Blob;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobProperties;
@@ -12,6 +11,7 @@ import com.microsoft.azure.storage.blob.CloudBlob;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.net.URISyntaxException;
+import java.util.Base64;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -28,7 +28,7 @@ public class StorageObjectSummary {
   private long size;
 
   /**
-   * Contructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
+   * Constructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
    *
    * @param location Location of the S3 object
    * @param key Key of the S3Object
@@ -43,7 +43,7 @@ public class StorageObjectSummary {
   }
 
   /**
-   * Contructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
+   * Constructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
    *
    * @param objSummary the AWS S3 ObjectSummary object to copy from
    * @return the ObjectSummary object created
@@ -61,7 +61,7 @@ public class StorageObjectSummary {
   }
 
   /**
-   * Contructs a StorageObjectSummary object from Azure BLOB properties Using factory methods to
+   * Constructs a StorageObjectSummary object from Azure BLOB properties Using factory methods to
    * create these objects since Azure can throw, while retrieving the BLOB properties
    *
    * @param listBlobItem an Azure ListBlobItem object
@@ -85,7 +85,7 @@ public class StorageObjectSummary {
       key = cloudBlob.getName();
       BlobProperties blobProperties = cloudBlob.getProperties();
       // the content md5 property is not always the actual md5 of the file. But for here, it's only
-      // used for skipping file on PUT command, hense is ok.
+      // used for skipping file on PUT command, hence is ok.
       md5 = convertBase64ToHex(blobProperties.getContentMD5());
       size = blobProperties.getLength();
     } catch (URISyntaxException | StorageException ex) {
@@ -119,7 +119,7 @@ public class StorageObjectSummary {
 
   private static String convertBase64ToHex(String base64String) {
     try {
-      byte[] bytes = Base64.decode(base64String);
+      byte[] bytes = Base64.getDecoder().decode(base64String);
 
       final StringBuilder builder = new StringBuilder();
       for (byte b : bytes) {

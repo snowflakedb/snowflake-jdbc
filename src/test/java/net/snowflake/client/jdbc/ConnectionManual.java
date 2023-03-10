@@ -14,7 +14,7 @@ import net.snowflake.client.core.SessionUtil;
  *
  * <p>- Prerequisite: 1. Create a shell script.
  *
- * <p>#!/bin/bash -e # # Run ConnectionManaulTest using IntelliJ remote debug # export
+ * <p>#!/bin/bash -e # # Run ConnectionManualTest using IntelliJ remote debug # export
  * SNOWFLAKE_TEST_ACCOUNT=ACCOUNT export SNOWFLAKE_TEST_SSO_USER=USER export
  * SNOWFLAKE_TEST_PORT=PORT export SNOWFLAKE_TEST_SSL=SSL export SNOWFLAKE_TEST_DATABASE=DATABASE
  * export SNOWFLAKE_TEST_SCHEMA=SCHEMA export SNOWFLAKE_TEST_SCHEMA2=SCHEMA2 export
