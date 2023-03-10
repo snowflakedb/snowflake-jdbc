@@ -14,10 +14,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.SFBaseSession;
@@ -381,20 +378,81 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertEquals(null, rs.getBinaryStream(9));
     assertEquals(null, rs.getBinaryStream("col9"));
     assertEquals(null, rs.getDate(10));
+    assertEquals(null, rs.getDate(10, new FakeCalendar()));
     assertEquals(null, rs.getDate("col10"));
+    assertEquals(null, rs.getDate("col10", new FakeCalendar()));
     assertEquals(null, rs.getTime(11));
+    assertEquals(null, rs.getTime(11, new FakeCalendar()));
     assertEquals(null, rs.getTime("col11"));
+    assertEquals(null, rs.getTime("col11", new FakeCalendar()));
     assertEquals(null, rs.getTimestamp(12));
+    assertEquals(null, rs.getTimestamp(12, new FakeCalendar()));
     assertEquals(null, rs.getTimestamp("col12"));
+    assertEquals(null, rs.getTimestamp("col12", new FakeCalendar()));
     assertEquals(null, rs.getDate(13));
     assertEquals(null, rs.getDate("col13"));
     assertEquals(null, rs.getAsciiStream(14));
     assertEquals(null, rs.getAsciiStream("col14"));
+    assertArrayEquals(new byte[0], rs.getBytes(15));
+    assertArrayEquals(new byte[0], rs.getBytes("col15"));
+    assertNull(rs.getBigDecimal(16));
+    assertNull(rs.getBigDecimal(16, 38));
+    assertNull(rs.getBigDecimal("col16"));
+    assertNull(rs.getBigDecimal("col16", 38));
+    assertNull(rs.getRef(17));
+    assertNull(rs.getRef("col17"));
+    assertNull(rs.getArray(18));
+    assertNull(rs.getArray("col18"));
+    assertNull(rs.getBlob(19));
+    assertNull(rs.getBlob("col19"));
+    assertNull(rs.getClob(20));
+    assertNull(rs.getClob("col20"));
+    assertEquals(0, rs.findColumn("col1"));
+    assertNull(rs.getUnicodeStream(21));
+    assertNull(rs.getUnicodeStream("col21"));
+    assertNull(rs.getURL(22));
+    assertNull(rs.getURL("col22"));
+    assertNull(rs.getObject(23));
+    assertNull(rs.getObject("col24"));
+    assertNull(rs.getObject(23, SnowflakeResultSetV1.class));
+    assertNull(rs.getObject("col23", SnowflakeResultSetV1.class));
+    assertNull(rs.getNString(25));
+    assertNull(rs.getNString("col25"));
+    assertNull(rs.getNClob(26));
+    assertNull(rs.getNClob("col26"));
+    assertNull(rs.getNCharacterStream(27));
+    assertNull(rs.getNCharacterStream("col27"));
+    assertNull(rs.getCharacterStream(28));
+    assertNull(rs.getCharacterStream("col28"));
+    assertNull(rs.getSQLXML(29));
+    assertNull(rs.getSQLXML("col29"));
+    assertNull(rs.getStatement());
+    assertNull(rs.getWarnings());
+    assertNull(rs.getCursorName());
+    assertNull(rs.getMetaData());
+    assertNull(rs.getRowId(1));
+    assertNull(rs.getRowId("col1"));
+    assertEquals(0, rs.getRow());
+    assertEquals(0, rs.getFetchDirection());
+    assertEquals(0, rs.getFetchSize());
+    assertEquals(0, rs.getType());
+    assertEquals(0, rs.getConcurrency());
+    assertEquals(0, rs.getHoldability());
+    assertNull(rs.unwrap(SnowflakeResultSetV1.class));
+    assertFalse(rs.isWrapperFor(SnowflakeResultSetV1.class));
     assertFalse(rs.wasNull());
     assertFalse(rs.isFirst());
     assertFalse(rs.isBeforeFirst());
     assertFalse(rs.isLast());
     assertFalse(rs.isAfterLast());
+    assertFalse(rs.first());
+    assertFalse(rs.last());
+    assertFalse(rs.previous());
+    assertFalse(rs.rowUpdated());
+    assertFalse(rs.rowInserted());
+    assertFalse(rs.rowDeleted());
+    assertFalse(rs.absolute(1));
+    assertFalse(rs.relative(1));
     rs.close();
     assertTrue(rs.isClosed());
     statement.close();
@@ -613,5 +671,72 @@ public class ResultSetLatestIT extends ResultSet0IT {
     resultSet.next();
     assertNull(resultSet.getClob(1));
     assertNull(resultSet.getClob("COLNULL"));
+  }
+
+  @Test
+  public void testCallStatementType() throws SQLException {
+    Properties props = new Properties();
+    props.put("USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS", "true");
+    try (Connection connection = getConnection(props)) {
+      try (Statement statement = connection.createStatement()) {
+        String sp =
+            "CREATE OR REPLACE PROCEDURE \"SP_ZSDLEADTIME_ARCHIVE_DAILY\"()\n"
+                + "RETURNS VARCHAR(16777216)\n"
+                + "LANGUAGE SQL\n"
+                + "EXECUTE AS CALLER\n"
+                + "AS \n"
+                + "'\n"
+                + "declare\n"
+                + "result varchar;\n"
+                + " \n"
+                + "    begin\n"
+                + "        BEGIN TRANSACTION;\n"
+                + "      \n"
+                + "        --Delete records older than 1 year\n"
+                + "        DELETE FROM MYTABLE1 WHERE ID < 5;\n"
+                + "       \n"
+                + "        --Insert new records\n"
+                + "        INSERT INTO MYTABLE1\n"
+                + "            (ID,\n"
+                + "            NAME\n"
+                + "            )\n"
+                + "            SELECT   \n"
+                + "            SEQ,FIRST_NAME\n"
+                + "            FROM MYCSVTABLE;\n"
+                + "        \n"
+                + "COMMIT;\n"
+                + "result := ''SUCCESS'';\n"
+                + "return result;\n"
+                + "exception\n"
+                + "    when other then\n"
+                + "        begin\n"
+                + "        ROLLBACK;\n"
+                + "            --Insert record about error\n"
+                + "            let line := ''sp-sql-msg: '' || SQLERRM || '' code : '' || SQLCODE;\n"
+                + "\n"
+                + "            let sp_name := ''SP_ZSDLEADTIME_ARCHIVE_DAILY'';\n"
+                + "            INSERT into MYTABLE1 values (1000, :line);\n"
+                + "        raise;\n"
+                + "    end;\n"
+                + "end;\n"
+                + "';";
+        statement.execute("create or replace table MYCSVTABLE (SEQ int, FIRST_NAME string)");
+        statement.execute("create or replace table MYTABLE1 (ID int, NAME string)");
+        statement.execute(sp);
+
+        CallableStatement cs = connection.prepareCall("CALL SP_ZSDLEADTIME_ARCHIVE_DAILY()");
+        cs.execute();
+        ResultSetMetaData resultSetMetaData = cs.getMetaData();
+        assertEquals("SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
+        assertEquals("VARCHAR", resultSetMetaData.getColumnTypeName(1));
+        assertEquals(0, resultSetMetaData.getScale(1));
+        assertEquals(16777216, resultSetMetaData.getPrecision(1));
+
+        cs.close();
+        statement.execute("drop procedure if exists SP_ZSDLEADTIME_ARCHIVE_DAILY()");
+        statement.execute("drop table if exists MYTABLE1");
+        statement.execute("drop table if exists MYCSVTABLE");
+      }
+    }
   }
 }

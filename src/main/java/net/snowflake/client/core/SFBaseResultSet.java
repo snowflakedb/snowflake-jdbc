@@ -128,7 +128,7 @@ public abstract class SFBaseResultSet {
     return wasNull;
   }
 
-  public SFResultSetMetaData getMetaData() throws SFException {
+  public SFResultSetMetaData getMetaData() {
     return resultSetMetaData;
   }
 
