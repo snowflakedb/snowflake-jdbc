@@ -274,6 +274,11 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
               .setSFSession(sfSession)
               .setCommand(PUT_COMMAND)
               .build());
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(
+          err.getMessage()
+              .contains("JDBC driver internal error: error encountered for compression"));
     } finally {
       if (con != null) {
         con.createStatement().execute("DROP STAGE if exists testStage");
@@ -442,6 +447,31 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
     } catch (SnowflakeSQLException err) {
       Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
       Assert.assertTrue(err.getMessage().contains("Error reading:"));
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
+      }
+    }
+    SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
+  }
+
+  @Test
+  public void testParseCommandException() throws SQLException {
+    Connection con = null;
+    // inject the SnowflakeSQLException
+    SnowflakeFileTransferAgent.setInjectedFileTransferException(
+        new SnowflakeSQLException("invalid data"));
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(err.getMessage().contains("Failed to parse the locations"));
     } finally {
       if (con != null) {
         con.createStatement().execute("DROP STAGE if exists testStage");

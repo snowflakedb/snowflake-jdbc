@@ -327,4 +327,18 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
           err.getMessage().contains("JDBC driver internal error: src_locations must be an array"));
     }
   }
+
+  @Test
+  public void testGetFileMetadatasEncryptionMaterialsException() {
+    JsonNode modifiedNode = exampleS3JsonNode.deepCopy();
+    ObjectNode foo = (ObjectNode) modifiedNode.path("data");
+    foo.put("encryptionMaterial", "[1, 2, 3]]");
+    try {
+      SnowflakeFileTransferAgent.getFileTransferMetadatas(modifiedNode);
+      Assert.assertTrue(false);
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(err.getMessage().contains("Failed to parse encryptionMaterial"));
+    }
+  }
 }

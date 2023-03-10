@@ -105,6 +105,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     injectedFileTransferException = th;
   }
 
+  static boolean isInjectedFileTransferExceptionEnabled() {
+    return injectedFileTransferException != null;
+  }
+
   public StageInfo getStageInfo() {
     return this.stageInfo;
   }
@@ -321,10 +325,12 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       countingStream.flush();
 
       // Normal flow will never hit here. This is only for testing purposes
-      if (SnowflakeFileTransferAgent.injectedFileTransferException != null
-          && injectedFileTransferException instanceof NoSuchAlgorithmException) {
+      if (isInjectedFileTransferExceptionEnabled()
+          && SnowflakeFileTransferAgent.injectedFileTransferException
+              instanceof NoSuchAlgorithmException) {
         throw (NoSuchAlgorithmException) SnowflakeFileTransferAgent.injectedFileTransferException;
       }
+
       return new InputStreamWithMetadata(
           countingStream.getCount(),
           Base64.getEncoder().encodeToString(digestStream.getMessageDigest().digest()),
@@ -373,8 +379,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       countingStream.flush();
 
       // Normal flow will never hit here. This is only for testing purposes
-      if (SnowflakeFileTransferAgent.injectedFileTransferException != null
-          && injectedFileTransferException instanceof IOException) {
+      if (isInjectedFileTransferExceptionEnabled()) {
         throw (IOException) SnowflakeFileTransferAgent.injectedFileTransferException;
       }
       return new InputStreamWithMetadata(countingStream.getCount(), null, tempStream);
@@ -780,6 +785,12 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     String[] src_locations;
 
     try {
+      // Normal flow will never hit here. This is only for testing purposes
+      if (isInjectedFileTransferExceptionEnabled()
+          && injectedFileTransferException instanceof SnowflakeSQLException) {
+        throw (SnowflakeSQLException) SnowflakeFileTransferAgent.injectedFileTransferException;
+      }
+
       src_locations = mapper.readValue(locationsNode.toString(), String[].class);
       initEncryptionMaterial(commandType, jsonNode);
       initPresignedUrls(commandType, jsonNode);
@@ -1712,7 +1723,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             entry.getValue().toString());
 
         // Normal flow will never hit here. This is only for testing purposes
-        if (SnowflakeFileTransferAgent.injectedFileTransferException != null
+        if (isInjectedFileTransferExceptionEnabled()
             && injectedFileTransferException instanceof Exception) {
           throw (Exception) SnowflakeFileTransferAgent.injectedFileTransferException;
         }
@@ -1985,8 +1996,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           storageFactory.createClient(stageInfo, 1, encMat, /*session = */ null);
 
       // Normal flow will never hit here. This is only for testing purposes
-      if (SnowflakeFileTransferAgent.injectedFileTransferException != null
-          && injectedFileTransferException instanceof Exception) {
+      if (isInjectedFileTransferExceptionEnabled()) {
         throw (Exception) SnowflakeFileTransferAgent.injectedFileTransferException;
       }
 
@@ -2466,8 +2476,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       try {
         // Normal flow will never hit here. This is only for testing purposes
-        if (SnowflakeFileTransferAgent.injectedFileTransferException != null
-            && injectedFileTransferException instanceof NoSuchAlgorithmException) {
+        if (isInjectedFileTransferExceptionEnabled()) {
           throw (NoSuchAlgorithmException) SnowflakeFileTransferAgent.injectedFileTransferException;
         }
 
