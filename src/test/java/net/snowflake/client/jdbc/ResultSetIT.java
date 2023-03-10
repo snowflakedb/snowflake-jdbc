@@ -410,6 +410,32 @@ public class ResultSetIT extends ResultSet0IT {
   }
 
   @Test
+  public void testGetBigDecimalNegative() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_dec(colA time)");
+    PreparedStatement preparedStatement =
+        connection.prepareStatement("insert into test_dec values(?)");
+    java.sql.Time time = new java.sql.Time(System.currentTimeMillis());
+    preparedStatement.setTime(1, time);
+    preparedStatement.executeUpdate();
+
+    statement.execute("select * from test_dec order by 1");
+    ResultSet resultSet = statement.getResultSet();
+    resultSet.next();
+    try {
+      resultSet.getBigDecimal(2, 38);
+      fail();
+    } catch (SQLException ex) {
+      assertEquals(200032, ex.getErrorCode());
+    }
+    statement.execute("drop table if exists test_dec");
+    statement.close();
+    resultSet.close();
+    connection.close();
+  }
+
+  @Test
   public void testCursorPosition() throws SQLException {
     Connection connection = init();
     Statement statement = connection.createStatement();
@@ -953,6 +979,23 @@ public class ResultSetIT extends ResultSet0IT {
       } finally {
         con.createStatement().execute("drop table if exists testnullts");
       }
+    }
+  }
+
+  @Test
+  public void testNextNegative() throws SQLException {
+    try (Connection con = init()) {
+      ResultSet rs = con.createStatement().executeQuery("select 1");
+      rs.next();
+      System.setProperty("snowflake.enable_incident_test2", "true");
+      try {
+        rs.next();
+        fail();
+      } catch (SQLException ex) {
+        assertEquals(200014, ex.getErrorCode());
+      }
+      System.setProperty("snowflake.enable_incident_test2", "false");
+      rs.close();
     }
   }
 }

@@ -15,10 +15,7 @@ import java.io.Writer;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import net.snowflake.client.AbstractDriverIT;
@@ -380,6 +377,41 @@ public class BaseJDBCTest extends AbstractDriverIT {
   class FakeInputStream extends InputStream {
     @Override
     public int read() throws IOException {
+      return 0;
+    }
+  }
+
+  class FakeCalendar extends Calendar {
+
+    @Override
+    protected void computeTime() {}
+
+    @Override
+    protected void computeFields() {}
+
+    @Override
+    public void add(int field, int amount) {}
+
+    @Override
+    public void roll(int field, boolean up) {}
+
+    @Override
+    public int getMinimum(int field) {
+      return 0;
+    }
+
+    @Override
+    public int getMaximum(int field) {
+      return 0;
+    }
+
+    @Override
+    public int getGreatestMinimum(int field) {
+      return 0;
+    }
+
+    @Override
+    public int getLeastMaximum(int field) {
       return 0;
     }
   }
