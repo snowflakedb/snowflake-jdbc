@@ -34,4 +34,10 @@ public class SnowflakeAzureClientTest {
     formatedStr = SnowflakeAzureClient.FormatStorageExtendedErrorInformation(info);
     assertEquals(expectedStr1, formatedStr);
   }
+
+  @Test
+  public void testFormatStorageExtendedErrorEmptyInformation() {
+    String formatedStr = SnowflakeAzureClient.FormatStorageExtendedErrorInformation(null);
+    assertEquals("", formatedStr);
+  }
 }
