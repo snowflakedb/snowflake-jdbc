@@ -6,8 +6,6 @@ package net.snowflake.client.core;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -19,11 +17,11 @@ import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.*;
+import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.dictionary.DictionaryProvider;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
 import org.apache.arrow.vector.ipc.ArrowWriter;
 import org.apache.arrow.vector.types.Types;
-import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
@@ -39,83 +37,10 @@ public class SFArrowResultSetIT {
   private Random random = new Random();
 
   /** allocator for arrow */
-  private BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+  protected BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
 
   /** temporary folder to store result files */
   @Rule public TemporaryFolder resultFolder = new TemporaryFolder();
-
-  /** Test that the first chunk can be sorted */
-  @Test
-  public void testSortedResultChunk() throws Throwable {
-    List<Field> fieldList = new ArrayList<>();
-    Map<String, String> customFieldMeta = new HashMap<>();
-    customFieldMeta.put("logicalType", "FIXED");
-    customFieldMeta.put("scale", "0");
-    FieldType type = new FieldType(false, Types.MinorType.INT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    customFieldMeta.put("logicalType", "DATE");
-    type = new FieldType(false, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    customFieldMeta.put("logicalType", "FIXED");
-    type = new FieldType(false, Types.MinorType.BIGINT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    customFieldMeta.put("logicalType", "REAL");
-    type = new FieldType(false, Types.MinorType.FLOAT8.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    customFieldMeta.put("logicalType", "FIXED");
-    type = new FieldType(false, Types.MinorType.SMALLINT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    customFieldMeta.put("logicalType", "FIXED");
-    type = new FieldType(false, Types.MinorType.TINYINT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    customFieldMeta.put("logicalType", "BINARY");
-    type = new FieldType(false, Types.MinorType.VARBINARY.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    customFieldMeta.put("logicalType", "TEXT");
-    type = new FieldType(false, Types.MinorType.VARCHAR.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    customFieldMeta.put("logicalType", "BOOLEAN");
-    type = new FieldType(false, Types.MinorType.BIT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    customFieldMeta.put("logicalType", "REAL");
-    type = new FieldType(false, new ArrowType.Decimal(38, 16, 128), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
-
-    Schema schema = new Schema(fieldList);
-
-    Object[][] data = generateData(schema, 1000);
-    File file = createArrowFile("testNoOfflineData_0_0_0", schema, data, 10);
-
-    int dataSize = (int) file.length();
-    byte[] dataBytes = new byte[dataSize];
-
-    InputStream is = new FileInputStream(file);
-    is.read(dataBytes, 0, dataSize);
-
-    SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
-    resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
-    resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
-    resultSetSerializable.setFirstChunkByteData(dataBytes);
-    resultSetSerializable.setChunkFileCount(0);
-
-    SFArrowResultSet resultSet =
-        new SFArrowResultSet(resultSetSerializable, new NoOpTelemetryClient(), true);
-
-    for (int i = 0; i < 1000; i++) {
-      resultSet.next();
-    }
-    assertEquals(null, resultSet.getObject(1));
-    assertFalse(resultSet.next());
-  }
 
   /** Test the case that all results are returned in first chunk */
   @Test
@@ -329,7 +254,7 @@ public class SFArrowResultSetIT {
     }
   }
 
-  private Object[][] generateData(Schema schema, int rowCount) {
+  Object[][] generateData(Schema schema, int rowCount) {
     Object[][] data = new Object[schema.getFields().size()][rowCount];
 
     for (int i = 0; i < schema.getFields().size(); i++) {
@@ -346,7 +271,7 @@ public class SFArrowResultSetIT {
         case INT:
           {
             for (int j = 0; j < rowCount; j++) {
-              data[i][j] = random.nextInt();
+              data[i][j] = 0;
             }
             break;
           }
@@ -361,7 +286,7 @@ public class SFArrowResultSetIT {
         case DECIMAL:
           {
             for (int j = 0; j < rowCount; j++) {
-              data[i][j] = random.nextLong();
+              data[i][j] = 154639183700000l;
             }
             break;
           }
@@ -407,8 +332,8 @@ public class SFArrowResultSetIT {
     return data;
   }
 
-  private File createArrowFile(
-      String fileName, Schema schema, Object[][] data, int rowsPerRecordBatch) throws IOException {
+  File createArrowFile(String fileName, Schema schema, Object[][] data, int rowsPerRecordBatch)
+      throws IOException {
     File file = resultFolder.newFile(fileName);
     VectorSchemaRoot root = VectorSchemaRoot.create(schema, allocator);
 
@@ -455,6 +380,10 @@ public class SFArrowResultSetIT {
             case DECIMAL:
               writeDecimalToField(vector, data[j], i, rowsToAppend);
               break;
+            case STRUCT:
+              writeTimestampStructToField(vector, data[j], data[j + 1], i, rowsToAppend);
+              j++;
+              break;
           }
         }
 
@@ -469,10 +398,11 @@ public class SFArrowResultSetIT {
   private void writeLongToField(
       FieldVector fieldVector, Object[] data, int startIndex, int rowsToAppend) {
     BigIntVector vector = (BigIntVector) fieldVector;
+
     vector.setInitialCapacity(rowsToAppend);
     vector.allocateNew();
     vector.setNull(0);
-    for (int i = 1; i < rowsToAppend; i++) {
+    for (int i = 0; i < rowsToAppend; i++) {
       vector.setSafe(i, 1, (long) data[startIndex + i]);
     }
     // how many are set
@@ -541,7 +471,6 @@ public class SFArrowResultSetIT {
     for (int i = 1; i < rowsToAppend; i++) {
       intVector.setSafe(i, 1, (int) data[startIndex + i]);
     }
-    // how many are set
     fieldVector.setValueCount(rowsToAppend);
   }
 
@@ -592,6 +521,24 @@ public class SFArrowResultSetIT {
     intVector.setNull(0);
     for (int i = 1; i < rowsToAppend; i++) {
       intVector.setSafe(i, new Text((String) data[startIndex + i]));
+    }
+    // how many are set
+    fieldVector.setValueCount(rowsToAppend);
+  }
+
+  private void writeTimestampStructToField(
+      FieldVector fieldVector, Object[] data, Object[] data2, int startIndex, int rowsToAppend) {
+    StructVector vector = (StructVector) fieldVector;
+    vector.setInitialCapacity(rowsToAppend);
+    vector.allocateNew();
+    vector.setNull(0);
+    for (int i = 1; i < rowsToAppend; i++) {
+      List<FieldVector> childVectors = vector.getChildrenFromFields();
+      BigIntVector v1 = (BigIntVector) childVectors.get(0);
+      v1.setSafe(i, 1, (long) data[startIndex + i]);
+
+      IntVector v2 = (IntVector) childVectors.get(1);
+      v2.setSafe(i, 1, (int) data2[startIndex + i]);
     }
     // how many are set
     fieldVector.setValueCount(rowsToAppend);
