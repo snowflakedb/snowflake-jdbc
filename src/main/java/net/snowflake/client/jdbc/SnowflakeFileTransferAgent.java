@@ -1411,6 +1411,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       threadExecutor.shutdown();
 
       try {
+        // Normal flow will never hit here. This is only for testing purposes
+        if (isInjectedFileTransferExceptionEnabled()
+            && SnowflakeFileTransferAgent.injectedFileTransferException
+                instanceof InterruptedException) {
+          throw (InterruptedException) SnowflakeFileTransferAgent.injectedFileTransferException;
+        }
+
         // wait for the task to complete
         uploadTask.get();
       } catch (InterruptedException ex) {
@@ -2273,6 +2280,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       logger.debug("start dragging object summaries from remote storage");
       do {
         try {
+          // Normal flow will never hit here. This is only for testing purposes
+          if (isInjectedFileTransferExceptionEnabled()
+              && SnowflakeFileTransferAgent.injectedFileTransferException
+                  instanceof StorageProviderException) {
+            throw (StorageProviderException)
+                SnowflakeFileTransferAgent.injectedFileTransferException;
+          }
           objectSummaries =
               storageClient.listObjects(
                   storeLocation.location,
