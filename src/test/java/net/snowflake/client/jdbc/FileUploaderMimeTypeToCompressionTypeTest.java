@@ -33,6 +33,7 @@ public class FileUploaderMimeTypeToCompressionTypeTest {
   public static Collection primeNumbers() {
     return Arrays.asList(
         new Object[][] {
+          {"text/", null},
           {"text/csv", null},
           {"snowflake/orc", FileCompressionType.ORC},
           {"snowflake/orc;p=1", FileCompressionType.ORC},
