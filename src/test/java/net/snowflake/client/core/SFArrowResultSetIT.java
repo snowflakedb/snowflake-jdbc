@@ -610,12 +610,6 @@ public class SFArrowResultSetIT {
     SFArrowResultSet resultSet =
         new SFArrowResultSet(resultSetSerializable, new NoOpTelemetryClient(), true);
 
-    ArrowResultChunk firstResultChunk =
-        new ArrowResultChunk("", 0, 0, 0, new RootAllocator(Long.MAX_VALUE), null);
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(dataBytes);
-    firstResultChunk.readArrowStream(inputStream);
-    firstResultChunk.mergeBatchesIntoOne();
-
     for (int i = 0; i < 1000; i++) {
       resultSet.next();
     }
@@ -685,7 +679,7 @@ public class SFArrowResultSetIT {
     Schema schema = new Schema(fieldList);
 
     Object[][] data = generateData(schema, 1000);
-    File file = createArrowFile("testNoOfflineData_0_0_0", schema, data, 10);
+    File file = createArrowFile("testVectorTypes", schema, data, 10);
 
     int dataSize = (int) file.length();
     byte[] dataBytes = new byte[dataSize];
@@ -697,7 +691,6 @@ public class SFArrowResultSetIT {
     resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
     resultSetSerializable.setFirstChunkByteData(dataBytes);
     resultSetSerializable.setChunkFileCount(0);
-    resultSetSerializable.setDateFormatter("YYYY-MM-DD");
 
     SFArrowResultSet resultSet =
         new SFArrowResultSet(resultSetSerializable, new NoOpTelemetryClient(), true);
