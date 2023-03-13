@@ -96,9 +96,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
   // default parallelism
   private int parallel = DEFAULT_PARALLEL;
-
   private SFSession session;
   private SFStatement statement;
+  private static Throwable injectedFileTransferException = null; // for testing purpose
+
+  // This function should only be used for testing purpose
+  static void setInjectedFileTransferException(Throwable th) {
+    injectedFileTransferException = th;
+  }
+
+  static boolean isInjectedFileTransferExceptionEnabled() {
+    return injectedFileTransferException != null;
+  }
 
   public StageInfo getStageInfo() {
     return this.stageInfo;
@@ -315,6 +324,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       countingStream.flush();
 
+      // Normal flow will never hit here. This is only for testing purposes
+      if (isInjectedFileTransferExceptionEnabled()
+          && SnowflakeFileTransferAgent.injectedFileTransferException
+              instanceof NoSuchAlgorithmException) {
+        throw (NoSuchAlgorithmException) SnowflakeFileTransferAgent.injectedFileTransferException;
+      }
+
       return new InputStreamWithMetadata(
           countingStream.getCount(),
           Base64.getEncoder().encodeToString(digestStream.getMessageDigest().digest()),
@@ -362,6 +378,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       countingStream.flush();
 
+      // Normal flow will never hit here. This is only for testing purposes
+      if (isInjectedFileTransferExceptionEnabled()) {
+        throw (IOException) SnowflakeFileTransferAgent.injectedFileTransferException;
+      }
       return new InputStreamWithMetadata(countingStream.getCount(), null, tempStream);
 
     } catch (IOException ex) {
@@ -765,6 +785,12 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     String[] src_locations;
 
     try {
+      // Normal flow will never hit here. This is only for testing purposes
+      if (isInjectedFileTransferExceptionEnabled()
+          && injectedFileTransferException instanceof SnowflakeSQLException) {
+        throw (SnowflakeSQLException) SnowflakeFileTransferAgent.injectedFileTransferException;
+      }
+
       src_locations = mapper.readValue(locationsNode.toString(), String[].class);
       initEncryptionMaterial(commandType, jsonNode);
       initPresignedUrls(commandType, jsonNode);
@@ -1696,6 +1722,12 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             entry.getKey(),
             entry.getValue().toString());
 
+        // Normal flow will never hit here. This is only for testing purposes
+        if (isInjectedFileTransferExceptionEnabled()
+            && injectedFileTransferException instanceof Exception) {
+          throw (Exception) SnowflakeFileTransferAgent.injectedFileTransferException;
+        }
+
         // The following currently ignore sub directories
         for (Object file :
             FileUtils.listFiles(dir, new WildcardFileFilter(entry.getValue()), null)) {
@@ -1962,6 +1994,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       SnowflakeStorageClient initialClient =
           storageFactory.createClient(stageInfo, 1, encMat, /*session = */ null);
+
+      // Normal flow will never hit here. This is only for testing purposes
+      if (isInjectedFileTransferExceptionEnabled()) {
+        throw (Exception) SnowflakeFileTransferAgent.injectedFileTransferException;
+      }
 
       switch (stageInfo.getStageType()) {
         case S3:
@@ -2438,6 +2475,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       final boolean remoteEncrypted;
 
       try {
+        // Normal flow will never hit here. This is only for testing purposes
+        if (isInjectedFileTransferExceptionEnabled()) {
+          throw (NoSuchAlgorithmException) SnowflakeFileTransferAgent.injectedFileTransferException;
+        }
+
         localFile =
             (commandType == CommandType.UPLOAD) ? mappedSrcFile : (localLocation + objFileName);
 
