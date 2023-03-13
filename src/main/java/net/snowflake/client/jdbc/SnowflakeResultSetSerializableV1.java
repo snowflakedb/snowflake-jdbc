@@ -251,14 +251,6 @@ public class SnowflakeResultSetSerializableV1
     this.chunkFileCount = chunkFileCount;
   }
 
-  public void setTimestampLTZFormatter(String timestampLTZFormatter) {
-    this.timestampLTZFormatter = SnowflakeDateTimeFormat.fromSqlFormat(timestampLTZFormatter);
-  }
-
-  public void setDateFormatter(String dateFormatter) {
-    this.dateFormatter = SnowflakeDateTimeFormat.fromSqlFormat(dateFormatter);
-  }
-
   public void setFirstChunkStringData(String firstChunkStringData) {
     this.firstChunkStringData = firstChunkStringData;
   }
