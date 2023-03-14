@@ -126,35 +126,31 @@ public class StreamLatestIT extends BaseJDBCTest {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Connection connection = null;
     Statement statement = null;
-    try {
-      connection = getConnection("gcpaccount");
-      statement = connection.createStatement();
-      ResultSet rset =
-          statement.executeQuery(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~/" + DEST_PREFIX);
-      assertTrue(rset.next());
-      assertEquals("Error message:" + rset.getString(8), "UPLOADED", rset.getString(7));
+    connection = getConnection("gcpaccount");
+    statement = connection.createStatement();
+    ResultSet rset =
+        statement.executeQuery(
+            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~/" + DEST_PREFIX);
+    assertTrue(rset.next());
+    assertEquals("Error message:" + rset.getString(8), "UPLOADED", rset.getString(7));
 
-      InputStream out =
-          connection
-              .unwrap(SnowflakeConnection.class)
-              .downloadStream("~", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
-      StringWriter writer = new StringWriter();
-      IOUtils.copy(out, writer, "UTF-8");
-      String output = writer.toString();
-      // the first 2 characters
-      assertEquals("1|", output.substring(0, 2));
+    InputStream out =
+        connection
+            .unwrap(SnowflakeConnection.class)
+            .downloadStream("~", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
+    StringWriter writer = new StringWriter();
+    IOUtils.copy(out, writer, "UTF-8");
+    String output = writer.toString();
+    // the first 2 characters
+    assertEquals("1|", output.substring(0, 2));
 
-      // the number of lines
-      String[] lines = output.split("\n");
-      assertEquals(28, lines.length);
-    } finally {
-      if (statement != null) {
-        statement.execute("rm @~/" + DEST_PREFIX);
-        statement.close();
-      }
-      closeSQLObjects(statement, connection);
-    }
+    // the number of lines
+    String[] lines = output.split("\n");
+    assertEquals(28, lines.length);
+
+    statement.execute("rm @~/" + DEST_PREFIX);
+    statement.close();
+    closeSQLObjects(statement, connection);
   }
 
   @Test
