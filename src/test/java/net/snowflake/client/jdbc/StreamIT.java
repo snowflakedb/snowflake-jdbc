@@ -3,7 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -11,8 +12,10 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnTestaccount;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
@@ -74,39 +77,42 @@ public class StreamIT extends BaseJDBCTest {
    * @throws Throwable if any error occurs.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTestaccount.class)
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDownloadStream() throws Throwable {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Connection connection = null;
     Statement statement = null;
-    try {
-      connection = getConnection();
-      statement = connection.createStatement();
-      ResultSet rset =
-          statement.executeQuery(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~/" + DEST_PREFIX);
-      assertTrue(rset.next());
-      assertEquals("UPLOADED", rset.getString(7));
+    List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
+      try {
+        connection = getConnection(accountName);
+        statement = connection.createStatement();
+        ResultSet rset =
+            statement.executeQuery(
+                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~/" + DEST_PREFIX);
+        assertTrue(rset.next());
+        assertEquals("UPLOADED", rset.getString(7));
 
-      InputStream out =
-          connection
-              .unwrap(SnowflakeConnection.class)
-              .downloadStream("~", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
-      StringWriter writer = new StringWriter();
-      IOUtils.copy(out, writer, "UTF-8");
-      String output = writer.toString();
-      // the first 2 characters
-      assertEquals("1|", output.substring(0, 2));
+        InputStream out =
+            connection
+                .unwrap(SnowflakeConnection.class)
+                .downloadStream("~", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
+        StringWriter writer = new StringWriter();
+        IOUtils.copy(out, writer, "UTF-8");
+        String output = writer.toString();
+        // the first 2 characters
+        assertEquals("1|", output.substring(0, 2));
 
-      // the number of lines
-      String[] lines = output.split("\n");
-      assertEquals(28, lines.length);
-    } finally {
-      if (statement != null) {
-        statement.execute("rm @~/" + DEST_PREFIX);
-        statement.close();
+        // the number of lines
+        String[] lines = output.split("\n");
+        assertEquals(28, lines.length);
+      } finally {
+        if (statement != null) {
+          statement.execute("rm @~/" + DEST_PREFIX);
+          statement.close();
+        }
+        closeSQLObjects(statement, connection);
       }
-      closeSQLObjects(statement, connection);
     }
   }
 
