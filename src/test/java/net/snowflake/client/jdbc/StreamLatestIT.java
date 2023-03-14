@@ -133,7 +133,7 @@ public class StreamLatestIT extends BaseJDBCTest {
           statement.executeQuery(
               "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~/" + DEST_PREFIX);
       assertTrue(rset.next());
-      assertEquals("UPLOADED", rset.getString(7));
+      assertEquals("Error message:" + rset.getString(8), "UPLOADED", rset.getString(7));
 
       InputStream out =
           connection
