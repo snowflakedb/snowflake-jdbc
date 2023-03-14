@@ -251,7 +251,7 @@ public class SnowflakeResultSetSerializableV1
     this.chunkFileCount = chunkFileCount;
   }
 
-  public void setFristChunkStringData(String firstChunkStringData) {
+  public void setFirstChunkStringData(String firstChunkStringData) {
     this.firstChunkStringData = firstChunkStringData;
   }
 

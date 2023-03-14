@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.core.OCSPMode;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -37,6 +38,21 @@ public class FileUploaderExpandFileNamesTest {
     assertTrue(files.contains(folderName + "/TestFileB"));
     assertTrue(files.contains(folderName + "/TestFileC"));
     assertTrue(files.contains(folderName + "/TestFileD"));
+  }
+
+  @Test
+  public void testProcessFileNamesException() {
+    // inject the Exception
+    SnowflakeFileTransferAgent.setInjectedFileTransferException(new Exception());
+    String[] locations = {"/Tes*Fil*A", "/TestFil?B", "~/TestFileC", "TestFileD"};
+
+    try {
+      SnowflakeFileTransferAgent.expandFileNames(locations);
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals(200007, err.getErrorCode());
+      Assert.assertEquals("22000", err.getSQLState());
+    }
+    SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
 
   @Test
