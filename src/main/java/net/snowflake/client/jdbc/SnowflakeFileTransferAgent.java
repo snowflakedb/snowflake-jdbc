@@ -469,6 +469,15 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
         if (uploadStream == null) {
           try {
+
+            // Normal flow will never hit here. This is only for testing purposes
+            if (isInjectedFileTransferExceptionEnabled()
+                && SnowflakeFileTransferAgent.injectedFileTransferException
+                    instanceof FileNotFoundException) {
+              throw (FileNotFoundException)
+                  SnowflakeFileTransferAgent.injectedFileTransferException;
+            }
+
             uploadStream = new FileInputStream(srcFilePath);
           } catch (FileNotFoundException ex) {
             metadata.resultStatus = ResultStatus.ERROR;

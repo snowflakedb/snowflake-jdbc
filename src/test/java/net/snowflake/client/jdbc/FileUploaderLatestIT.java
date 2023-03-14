@@ -3,10 +3,12 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -575,6 +577,76 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         statement.close();
       }
       closeSQLObjects(statement, connection);
+    }
+    SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
+  }
+
+  @Test
+  public void testFileTransferStageInfo() throws SQLException {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("CREATE OR REPLACE STAGE testStage");
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+    SnowflakeFileTransferAgent sfAgent =
+        new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+
+    StageInfo stageInfo = sfAgent.getStageInfo();
+    assertEquals(sfAgent.getStageCredentials(), stageInfo.getCredentials());
+    assertEquals(sfAgent.getStageLocation(), stageInfo.getLocation());
+
+    statement.execute("drop stage if exists testStage");
+    con.close();
+  }
+
+  @Test
+  public void testFileTransferMappingFromSourceFile() throws SQLException {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("CREATE OR REPLACE STAGE testStage");
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+    String command = "PUT file://" + getFullPathFileInResource("") + "/orders_10*.csv @testStage";
+    SnowflakeFileTransferAgent sfAgent1 =
+        new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+    sfAgent1.execute();
+
+    SnowflakeFileTransferAgent sfAgent2 =
+        new SnowflakeFileTransferAgent(
+            "GET @testStage file:///tmp/", sfSession, new SFStatement(sfSession));
+
+    assertEquals(2, sfAgent2.getSrcToMaterialsMap().size());
+    assertEquals(2, sfAgent2.getSrcToPresignedUrlMap().size());
+
+    statement.execute("drop stage if exists testStage");
+    con.close();
+  }
+
+  @Test
+  public void testUploadFileCallableFileNotFound() throws Exception {
+    // inject the FileNotFoundException
+    SnowflakeFileTransferAgent.setInjectedFileTransferException(
+        new FileNotFoundException("file does not exist"));
+    Connection connection = null;
+    Statement statement = null;
+    try {
+      connection = getConnection();
+
+      statement = connection.createStatement();
+      statement.execute("CREATE OR REPLACE STAGE testStage");
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+      String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+      sfAgent.execute();
+    } catch (Exception err) {
+      assertEquals(err.getCause(), instanceOf(FileNotFoundException.class));
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists testStage");
+        connection.close();
+      }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
