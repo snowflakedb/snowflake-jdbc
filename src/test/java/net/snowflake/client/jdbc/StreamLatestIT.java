@@ -123,7 +123,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDownloadToStreamGCSPresignedUrl() throws SQLException, IOException {
-    final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
+    final String DEST_PREFIX = "testUploadStream";
     Connection connection = null;
     Statement statement = null;
     connection = getConnection("gcpaccount");
