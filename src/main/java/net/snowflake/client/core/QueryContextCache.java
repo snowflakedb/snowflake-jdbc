@@ -49,8 +49,8 @@ public class QueryContextCache {
     idMap = new HashMap<>();
     priorityMap = new HashMap<>();
     treeSet = new TreeSet<>(Comparator
-    .comparingLong(QueryContextElement::getId)
-    .thenComparingLong(QueryContextElement::getPriority)
+    .comparingLong(QueryContextElement::getPriority)
+    .thenComparingLong(QueryContextElement::getId)
     .thenComparingLong(QueryContextElement::getReadTimestamp));
   }
 
