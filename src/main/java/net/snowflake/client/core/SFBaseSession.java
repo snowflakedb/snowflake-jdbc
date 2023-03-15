@@ -360,27 +360,49 @@ public abstract class SFBaseSession {
       String httpProxyPort = systemGetProperty("http.proxyPort");
       String httpsProxyHost = systemGetProperty("https.proxyHost");
       String httpsProxyPort = systemGetProperty("https.proxyPort");
+      String httpProxyProtocol = systemGetProperty("http.proxyProtocol");
       String noProxy = systemGetEnv("NO_PROXY");
       String nonProxyHosts = systemGetProperty("http.nonProxyHosts");
       // log the JVM parameters that are being used
       if (httpUseProxy) {
         logger.debug(
             "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={},"
-                + " https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}",
+                + " https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
             httpUseProxy,
             httpProxyHost,
             httpProxyPort,
             httpsProxyHost,
             httpsProxyPort,
             nonProxyHosts,
-            noProxy);
+            noProxy,
+            httpProxyProtocol);
         // There are 2 possible parameters for non proxy hosts that can be combined into 1
         String combinedNonProxyHosts = Strings.isNullOrEmpty(nonProxyHosts) ? "" : nonProxyHosts;
         if (!Strings.isNullOrEmpty(noProxy)) {
           combinedNonProxyHosts += combinedNonProxyHosts.length() == 0 ? "" : "|";
           combinedNonProxyHosts += noProxy;
         }
-        if (!Strings.isNullOrEmpty(httpsProxyHost) && !Strings.isNullOrEmpty(httpsProxyPort)) {
+
+        // It is possible that a user can have both http and https proxies in the
+        // default protocol is http
+        String proxyProtocol = "http";
+        if (!Strings.isNullOrEmpty(httpProxyProtocol)) {
+          proxyProtocol = httpProxyProtocol;
+        } else if (!Strings.isNullOrEmpty(httpsProxyHost)
+            && !Strings.isNullOrEmpty(httpsProxyPort)
+            && Strings.isNullOrEmpty(httpProxyHost)
+            && Strings.isNullOrEmpty(httpProxyPort)) {
+          proxyProtocol = "https";
+        } else if (Strings.isNullOrEmpty(httpsProxyHost)
+            && Strings.isNullOrEmpty(httpsProxyPort)
+            && !Strings.isNullOrEmpty(httpProxyHost)
+            && !Strings.isNullOrEmpty(httpProxyPort)) {
+          proxyProtocol = "http";
+        }
+
+        if (proxyProtocol.equals("https")
+            && !Strings.isNullOrEmpty(httpsProxyHost)
+            && !Strings.isNullOrEmpty(httpsProxyPort)) {
           int proxyPort;
           try {
             proxyPort = Integer.parseInt(httpsProxyPort);
@@ -398,7 +420,9 @@ public abstract class SFBaseSession {
                   "", /* password = empty */
                   "https",
                   userAgentSuffix);
-        } else if (!Strings.isNullOrEmpty(httpProxyHost) && !Strings.isNullOrEmpty(httpProxyPort)) {
+        } else if (proxyProtocol.equals("http")
+            && !Strings.isNullOrEmpty(httpProxyHost)
+            && !Strings.isNullOrEmpty(httpProxyPort)) {
           int proxyPort;
           try {
             proxyPort = Integer.parseInt(httpProxyPort);
