@@ -128,16 +128,20 @@ public class StreamLatestIT extends BaseJDBCTest {
     Statement statement = null;
     connection = getConnection("gcpaccount");
     statement = connection.createStatement();
+    statement.execute("create or replace stage testgcpstage");
     ResultSet rset =
         statement.executeQuery(
-            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~/" + DEST_PREFIX);
+            "PUT file://"
+                + getFullPathFileInResource(TEST_DATA_FILE)
+                + " @testgcpstage/"
+                + DEST_PREFIX);
     assertTrue(rset.next());
     assertEquals("Error message:" + rset.getString(8), "UPLOADED", rset.getString(7));
 
     InputStream out =
         connection
             .unwrap(SnowflakeConnection.class)
-            .downloadStream("~", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
+            .downloadStream("@testgcpstage", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
     StringWriter writer = new StringWriter();
     IOUtils.copy(out, writer, "UTF-8");
     String output = writer.toString();
