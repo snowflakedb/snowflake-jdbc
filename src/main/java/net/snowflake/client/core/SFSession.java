@@ -6,7 +6,7 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.core.QueryStatus.*;
 import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
-
+import net.snowflake.client.core.QueryContextCache;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -100,7 +100,7 @@ public class SFSession extends SFBaseSession {
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
   private SnowflakeConnectString sfConnStr;
-  private QueryContextCache qcc;
+  private QueryContextCache qcc; 
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
@@ -1120,17 +1120,24 @@ public class SFSession extends SFBaseSession {
 
   @Override
   public void setQueryContext(String queryContext) {
-
     boolean disableQueryContextCache = getDisableQueryContextCacheOption();
-
-    if (!disableQueryContextCache) qcc.deserializeFromArrowBase64(queryContext);
+    if (!disableQueryContextCache) 
+    {
+      qcc.deserializeQueryContextJson(queryContext);
+    }
   }
 
   @Override
   public String getQueryContext() {
     boolean disableQueryContextCache = getDisableQueryContextCacheOption();
 
-    if (!disableQueryContextCache) return qcc.serializeToArrowBase64();
-    else return null;
+    if (!disableQueryContextCache) 
+    {
+      String res = qcc.serializeQueryContextJson();
+      return res;
+    }
+    else {
+      return null;
+    }
   }
 }

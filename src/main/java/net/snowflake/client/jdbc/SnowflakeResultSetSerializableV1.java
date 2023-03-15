@@ -544,10 +544,11 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.queryResultFormat = queryResultFormat.orElse(QueryResultFormat.JSON);
 
     // extract query context and save it in current session
-    JsonNode queryContextNode = rootNode.path("data").path("queryContext");
-    String queryContext = queryContextNode.isNull() ? null : queryContextNode.asText();
+    JsonNode queryContextNode = rootNode.path("data").path("queryContext"); 
+    String queryContext = queryContextNode.isNull() ? null : queryContextNode.toString();
+
     if (!sfSession.isAsyncSession()) {
-      sfSession.setQueryContext(queryContext);
+      sfSession.setQueryContext(queryContext); 
     }
 
     // extract parameters

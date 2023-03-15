@@ -3,26 +3,22 @@
  */
 
 package net.snowflake.client.core;
-
+import static net.snowflake.client.jdbc.SnowflakeDriver.implementVersion;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.TreeSet;
+import java.util.Comparator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.BigIntVector;
-import org.apache.arrow.vector.VarBinaryVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.ArrowStreamReader;
-import org.apache.arrow.vector.ipc.ArrowStreamWriter;
-import org.apache.arrow.vector.types.Types;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.types.pojo.Field;
-import org.apache.arrow.vector.types.pojo.FieldType;
-import org.apache.arrow.vector.types.pojo.Schema;
 
 /**
  * Most Recently Used and Priority based cache. A separate cache for each connection in the driver.
@@ -37,11 +33,11 @@ public class QueryContextCache {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(QueryContextCache.class);
 
-  // Arrow format position
-  private static final int ID_POS = 0;
-  private static final int TIMESTAMP_POS = 1;
-  private static final int PRIORITY_POS = 2;
-  private static final int CONTEXT_POS = 3;
+  private static ObjectMapper jsonObjectMapper;
+
+  static{
+    jsonObjectMapper = new ObjectMapper();
+  }
 
   /**
    * Constructor.
@@ -52,7 +48,10 @@ public class QueryContextCache {
     this.capacity = capacity;
     idMap = new HashMap<>();
     priorityMap = new HashMap<>();
-    treeSet = new TreeSet<>();
+    treeSet = new TreeSet<>(Comparator
+    .comparingLong(QueryContextElement::getId)
+    .thenComparingLong(QueryContextElement::getPriority)
+    .thenComparingLong(QueryContextElement::getReadTimestamp));
   }
 
   /**
@@ -91,6 +90,7 @@ public class QueryContextCache {
     else {
       // new id
       if (priorityMap.containsKey(priority)) {
+
         // Same priority with different id
         QueryContextElement qce = priorityMap.get(priority);
         // Replace with new data
@@ -137,14 +137,11 @@ public class QueryContextCache {
   }
 
   /**
-   * Deserialize the query context from the base64 encoded arrow data.
-   *
-   * @param data the base64 encoded query context that was serialized using Arrow.
-   */
-  public void deserializeFromArrowBase64(String data) {
-    synchronized (this) {
-      logger.debug("deserializeFromArrowBase64() called: data from the server = {}", data);
+  * @param data: the QueryContext Object serialized as a JSON format string
+  */
+  public void deserializeQueryContextJson(String data) {
 
+    synchronized (this) {
       // Log existing cache entries
       logCacheEntries();
 
@@ -152,58 +149,150 @@ public class QueryContextCache {
         // Clear the cache
         clearCache();
 
-        logger.debug("deserializeFromArrowBase64() returns");
         // Log existing cache entries
         logCacheEntries();
 
         return;
       }
 
-      byte[] decoded = Base64.getDecoder().decode(data);
-      ByteArrayInputStream input = new ByteArrayInputStream(decoded);
-      try (ArrowStreamReader reader = new ArrowStreamReader(input, new RootAllocator())) {
-        while (reader.loadNextBatch()) {
-          VectorSchemaRoot root = reader.getVectorSchemaRoot();
-          for (int i = 0; i < root.getRowCount(); ++i) {
-            QueryContextElement qce = deserializeEntry(root, i);
-            // Merge the element in the existing cache
-            merge(qce.id, qce.readTimestamp, qce.priority, qce.context);
-          }
-        }
-      } catch (Exception e) {
-        logger.debug("deserializeFromArrowBase64: Exception = {}", e.getMessage());
-        // Not rethrowing. clear the cache as incomplete merge can lead to unexpected behavior.
-        clearCache();
+    try{
+      JsonNode rootNode = jsonObjectMapper.readTree(data);
+
+      // Deserialize the main entry. An example JSON is:
+      // {
+      //   "main_entry": {
+      //     "id": 1,
+      //     "read_timestamp": 123456789,
+      //     "priority": 0,
+      //     "context": "base64 encoded context"
+      // }
+      JsonNode mainEntryNode = rootNode.path("main_entry");
+      if (!mainEntryNode.isMissingNode()) {
+        QueryContextElement mainEntry = deserializeQueryContextElement(mainEntryNode);
+        merge(mainEntry.id, mainEntry.readTimestamp, mainEntry.priority, mainEntry.context);
       }
 
-      // After merging all entries, truncate to capacity
-      checkCacheCapacity();
+      // Deserialize the entries. An example JSON is:
+      // {
+      //   "entries": [
+      //     {
+      //       "id": 2,
+      //       "read_timestamp": 123456789,
+      //       "priority": 1,
+      //       "context": "base64 encoded context"
+      //     },
+      //     {
+      //       "id": 3,
+      //       "read_timestamp": 123456789,
+      //       "priority": 2,
+      //       "context": "base64 encoded context"
+      //     }
+      //   ]
 
-      logger.debug("deserializeFromArrowBase64() returns");
-      // Log existing cache entries
-      logCacheEntries();
-    } // Synchronized
+      JsonNode entriesNode = rootNode.path("entries");
+      if (entriesNode != null && entriesNode.isArray()) {
+          for (JsonNode entryNode : entriesNode) {
+            QueryContextElement entry = deserializeQueryContextElement(entryNode);
+            merge(entry.id, entry.readTimestamp, entry.priority, entry.context);
+          }
+      }
+    }catch (Exception e) {
+      logger.debug("deserializeQueryContextJson: Exception = {}", e.getMessage());
+      // Not rethrowing. clear the cache as incomplete merge can lead to unexpected behavior.
+      clearCache();
+    }
+
+    // After merging all entries, truncate to capacity
+    checkCacheCapacity();
+
+    // Log existing cache entries
+    logCacheEntries();
+
+  }// Synchronized
+}
+
+private static QueryContextElement deserializeQueryContextElement(JsonNode node) throws IOException {
+  QueryContextElement entry = new QueryContextElement();
+    JsonNode idNode = node.path("id");
+    if (idNode.isNumber()) {
+        entry.setId(idNode.asLong());
+    }
+
+    JsonNode timestampNode = node.path("timestamp");
+    if (timestampNode.isNumber()) {
+        entry.setReadTimestamp(timestampNode.asLong());
+    }
+
+    JsonNode priorityNode = node.path("priority");
+    if (priorityNode.isNumber()) {
+        entry.setPriority(priorityNode.asLong());
+    }
+
+    JsonNode contextNode = node.path("context");
+    if (contextNode.isTextual()) {
+        byte[] contextBytes = contextNode.asText().getBytes();
+        entry.setContext(contextBytes);
+    }
+
+    return entry;
+}
+
+/**
+ * Serialize the current QueryContext into a JSON format string
+*/
+public String serializeQueryContextJson() {
+  synchronized (this) {
+    // Log existing cache entries
+    logCacheEntries();
+
+    TreeSet<QueryContextElement> elements = getElements();
+    if (elements.size() == 0) return null;
+
+    try{
+      int index = 0;
+      ObjectNode rootNode = jsonObjectMapper.createObjectNode();
+      ArrayNode entriesNode = jsonObjectMapper.createArrayNode();
+      for (final QueryContextElement elem : elements) {
+        ObjectNode node = serializeQueryContextElement(elem, jsonObjectMapper);
+        if(index == 0){
+          // The first entry is the main entry
+          rootNode.set("main_entry", node);
+        }else{
+          entriesNode.add(node);
+        }
+        index++;
+      }
+      if(index > 1){
+        // Add the entries array only if there are more than one entry
+        rootNode.set("entries", entriesNode);
+      }
+
+    return jsonObjectMapper.writeValueAsString(rootNode);
+
+    }catch (Exception e) {
+        logger.debug("serializeQueryContextJson(): Exception {}", e.getMessage());
+        return null;
+      }
+
+
+  } // Synchronized
+}
+
+private ObjectNode serializeQueryContextElement(QueryContextElement entry, ObjectMapper jsonObjectMapper) throws IOException {
+  ObjectNode entryNode = jsonObjectMapper.createObjectNode();
+
+  entryNode.put("id", entry.getId());
+  entryNode.put("timestamp", entry.getReadTimestamp());
+  entryNode.put("priority", entry.getPriority());
+  
+  byte[] contextBytes = entry.getContext();
+  if (contextBytes != null) {
+      String contextStr = new String(contextBytes);
+      entryNode.put("context", contextStr);
   }
 
-  /**
-   * Deserialize a query context entry from an Arrow vector
-   *
-   * @param root the Arrow vector root
-   * @param pos the position of the entry to be deserialized from
-   * @return a deserialized query context entry
-   */
-  private static QueryContextElement deserializeEntry(VectorSchemaRoot root, int pos) {
-    BigIntVector idVector = (BigIntVector) root.getVector(ID_POS);
-    BigIntVector tsVector = (BigIntVector) root.getVector(TIMESTAMP_POS);
-    BigIntVector priorityVector = (BigIntVector) root.getVector(PRIORITY_POS);
-    VarBinaryVector contextVector = (VarBinaryVector) root.getVector(CONTEXT_POS);
-
-    return createElement(
-        idVector.get(pos),
-        tsVector.get(pos),
-        priorityVector.get(pos),
-        contextVector.isNull(pos) ? null : contextVector.get(pos));
-  }
+  return entryNode;
+}
 
   /**
    * @param id the id of the element
@@ -215,85 +304,6 @@ public class QueryContextCache {
   private static QueryContextElement createElement(
       long id, long timestamp, long priority, byte[] opaqueContext) {
     return new QueryContextElement(id, timestamp, priority, opaqueContext);
-  }
-
-  /**
-   * Serialize a query context into a base64 encoded string using Arrow. This will be used to send
-   * the serialized query context to Snowflake clients.
-   *
-   * @return If succeeds, the base64 encoded representation of the query context. Otherwise, return
-   *     null.
-   */
-  public String serializeToArrowBase64() {
-    synchronized (this) {
-      logger.debug("serializeToArrowBase64() called");
-      // Log existing cache entries
-      logCacheEntries();
-
-      TreeSet<QueryContextElement> elements = getElements();
-
-      if (elements.size() == 0) return null;
-      try (VectorSchemaRoot root =
-          VectorSchemaRoot.create(QUERY_CONTEXT_SCHEMA, new RootAllocator())) {
-        root.setRowCount(elements.size());
-        int pos = 0;
-        for (final QueryContextElement elem : elements) {
-          serializeEntry(root, elem, pos++);
-        }
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (ArrowStreamWriter writer = new ArrowStreamWriter(root, null, out)) {
-          writer.start();
-          writer.writeBatch();
-          writer.end();
-        }
-
-        String data = Base64.getEncoder().encodeToString(out.toByteArray());
-
-        logger.debug("serializeToArrowBase64(): data to send to server {}", data);
-
-        return data;
-      } catch (Exception e) {
-        logger.debug("serializeToArrowBase64(): Exception {}", e.getMessage());
-        return null;
-      }
-    } // Synchronized
-  }
-
-  /**
-   * A utility function to create an arrow field
-   *
-   * @param fieldName the name of the field
-   * @param arrowType the type of the field
-   * @param nullable whether the field is nullable
-   * @return the created arrow field
-   */
-  private static Field createArrowField(String fieldName, ArrowType arrowType, boolean nullable) {
-    FieldType fieldType = new FieldType(nullable, arrowType, null);
-    return new Field(fieldName, fieldType, null);
-  }
-
-  /**
-   * Serialize the query context entry into the Arrow vector.
-   *
-   * @param root the Arrow vector root. It must have been pre-allocated.
-   * @param elem the query context entry to be serialized
-   * @param pos the position where the entry should be serialized to.
-   */
-  private static void serializeEntry(VectorSchemaRoot root, QueryContextElement elem, int pos) {
-    BigIntVector idVector = (BigIntVector) root.getVector(ID_POS);
-    BigIntVector tsVector = (BigIntVector) root.getVector(TIMESTAMP_POS);
-    BigIntVector priorityVector = (BigIntVector) root.getVector(PRIORITY_POS);
-    VarBinaryVector contextVector = (VarBinaryVector) root.getVector(CONTEXT_POS);
-
-    idVector.set(pos, elem.id);
-    tsVector.set(pos, elem.readTimestamp);
-    priorityVector.set(pos, elem.priority);
-    if (elem.context != null) {
-      contextVector.setSafe(pos, elem.context);
-    } else {
-      contextVector.setNull(pos);
-    }
   }
 
   /**
@@ -328,7 +338,6 @@ public class QueryContextCache {
   private void replaceQCE(QueryContextElement oldQCE, QueryContextElement newQCE) {
     // Remove old element from the cache
     removeQCE(oldQCE);
-
     // Add new element in the cache
     addQCE(newQCE);
   }
@@ -365,27 +374,13 @@ public class QueryContextCache {
       TreeSet<QueryContextElement> elements = getElements();
       for (final QueryContextElement elem : elements) {
         logger.debug(
-            " Cache Entry: id: {} readTimestamp: {} priority: {} ",
+            " Cache Entry: id: {} readTimestamp: {} priority: {}",
             elem.id,
             elem.readTimestamp,
             elem.priority);
       }
     }
   }
-
-  /**
-   * Note that this schema has been shared to the GS. Changing this may break The query context
-   * contains a list of <id, timestamp, priority, opaque context> tuples. The client will maintain
-   * the lists locally to maintain the latest opaque context for each id, and perform eviction based
-   * on priority (lower numbers have high priorities) to make sure the list size is bounded.
-   */
-  private static final Schema QUERY_CONTEXT_SCHEMA =
-      new Schema(
-          Arrays.asList(
-              createArrowField("id", Types.MinorType.BIGINT.getType(), false),
-              createArrowField("timestamp", Types.MinorType.BIGINT.getType(), false),
-              createArrowField("priority", Types.MinorType.BIGINT.getType(), false),
-              createArrowField("context", Types.MinorType.VARBINARY.getType(), true)));
 
   /** Query context information. */
   private static class QueryContextElement implements Comparable<QueryContextElement> {
@@ -394,6 +389,10 @@ public class QueryContextCache {
     long priority; // Priority of the query context (bigint). Compare for different ids.
     byte[] context; // Opaque information (varbinary).
 
+    // Constructor with empty input
+    public QueryContextElement(){
+
+    }
     /**
      * Constructor.
      *
@@ -446,6 +445,38 @@ public class QueryContextCache {
      */
     public int compareTo(QueryContextElement obj) {
       return (priority == obj.priority) ? 0 : (((priority - obj.priority) < 0) ? -1 : 1);
+    }
+
+    public void setId(long id) {
+      this.id = id;
+    }
+
+    public void setPriority(long priority) {
+      this.priority = priority;
+    }
+
+    public void setContext(byte[] context) {
+      this.context = context;
+    }
+
+    public void setReadTimestamp(long readTimestamp) {
+      this.readTimestamp = readTimestamp;
+    }
+
+    public long getId() {
+      return id;
+    }
+
+    public long getReadTimestamp() {
+      return readTimestamp;
+    }
+
+    public long getPriority() {
+      return priority;
+    }
+
+    public byte[] getContext() {
+      return context;
     }
   }
 }

@@ -170,7 +170,7 @@ public class QueryContextCacheTest {
   public void testEmptyCacheWithNullData() throws Exception {
     initCacheWithData();
 
-    qcc.deserializeFromArrowBase64(null);
+    qcc.deserializeQueryContextJson(null);
     assertThat("Empty cache", qcc.getSize() == 0);
   }
 
@@ -178,7 +178,7 @@ public class QueryContextCacheTest {
   public void testEmptyCacheWithEmptyResponseData() throws Exception {
     initCacheWithData();
 
-    qcc.deserializeFromArrowBase64("");
+    qcc.deserializeQueryContextJson("");
     assertThat("Empty cache", qcc.getSize() == 0);
   }
 
@@ -189,14 +189,14 @@ public class QueryContextCacheTest {
     assertCacheData();
 
     // Arrow format qcc request
-    String requestData = qcc.serializeToArrowBase64();
+    String requestData = qcc.serializeQueryContextJson();
 
     // Clear qcc
     qcc.clearCache();
     assertThat("Empty cache", qcc.getSize() == 0);
 
     // Arrow format qcc response
-    qcc.deserializeFromArrowBase64(requestData);
+    qcc.deserializeQueryContextJson(requestData);
     assertCacheData();
   }
 
@@ -207,14 +207,14 @@ public class QueryContextCacheTest {
     assertCacheDataWithContext(null);
 
     // Arrow format qcc request
-    String requestData = qcc.serializeToArrowBase64();
+    String requestData = qcc.serializeQueryContextJson();
 
     // Clear qcc
     qcc.clearCache();
     assertThat("Empty cache", qcc.getSize() == 0);
 
     // Arrow format qcc response
-    qcc.deserializeFromArrowBase64(requestData);
+    qcc.deserializeQueryContextJson(requestData);
     assertCacheDataWithContext(null);
   }
 
