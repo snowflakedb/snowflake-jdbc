@@ -58,8 +58,8 @@ public class SessionUtilExternalBrowser {
       try {
         // start web browser
         if (!URLUtil.isValidURL(ssoUrl)) {
-          throw new SFException(ErrorCode.INVALID_CONNECTION_URL,
-                  "Invalid SSOUrl found - "+ssoUrl);
+          throw new SFException(
+              ErrorCode.INVALID_CONNECTION_URL, "Invalid SSOUrl found - " + ssoUrl);
         }
         if (java.awt.Desktop.isDesktopSupported()) {
           URI uri = new URI(ssoUrl);
