@@ -1443,4 +1443,53 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       }
     }
   }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
+    Connection connection = null;
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    try {
+      connection = getConnection("gcpaccount");
+      Statement statement = connection.createStatement();
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+      // Test put file with internal compression
+      String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+      List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
+
+      String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
+      for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
+        InputStream inputStream = new FileInputStream(srcPath);
+
+        assert (oneMetadata.isForOneFile());
+        SnowflakeFileTransferAgent.uploadWithoutConnection(
+            SnowflakeFileTransferConfig.Builder.newInstance()
+                .setSnowflakeFileTransferMetadata(oneMetadata)
+                .setUploadStream(inputStream)
+                .setRequireCompress(true)
+                .setNetworkTimeoutInMilli(0)
+                .setOcspMode(OCSPMode.FAIL_OPEN)
+                .build());
+      }
+
+      assertTrue(
+          "Failed to get files",
+          statement.execute(
+              "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
+      assert (isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+        connection.close();
+      }
+    }
+  }
 }

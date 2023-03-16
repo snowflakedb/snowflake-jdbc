@@ -18,6 +18,7 @@ import com.google.common.base.Strings;
 import java.io.*;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
+import java.nio.channels.Channels;
 import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.Map.Entry;
@@ -448,9 +449,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                     404, // because blob not found
                     "Blob" + blobId.getName() + " not found in bucket " + blobId.getBucket()));
           }
-
-          inputStream = new ByteArrayInputStream(blob.getContent());
-
+          inputStream = Channels.newInputStream(blob.reader());
           if (isEncrypting()) {
             // Get the user-defined BLOB metadata
             Map<String, String> userDefinedMetadata = blob.getMetadata();
@@ -776,11 +775,17 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           SqlState.INTERNAL_ERROR,
           "Unexpected: upload presigned URL invalid");
     } catch (Exception e) {
+      StringWriter sw = new StringWriter();
+      e.printStackTrace(new PrintWriter(sw));
+      String stackTrace = sw.toString();
       throw new SnowflakeSQLLoggedException(
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
-          "Unexpected: upload with presigned url failed");
+          "Unexpected: upload with presigned url failed. Ex: "
+              + e.getMessage()
+              + ", stacktrace: "
+              + stackTrace);
     }
   }
 
