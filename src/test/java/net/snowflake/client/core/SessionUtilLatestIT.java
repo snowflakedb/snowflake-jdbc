@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.TestUtil.systemGetEnv;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 import java.util.HashMap;
@@ -89,5 +90,17 @@ public class SessionUtilLatestIT {
     Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
     connectionPropertiesMap.put(SFSessionProperty.TRACING, "ALL");
     return connectionPropertiesMap;
+  }
+
+  @Test
+  public void testConvertSystemPropertyToIntValue() {
+    // SNOW-760642 - Test that new default for net.snowflake.jdbc.ttl is 60 seconds.
+    assertEquals(
+        60, HttpUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
+
+    // Test that TTL can be disabled
+    System.setProperty(HttpUtil.JDBC_TTL, "-1");
+    assertEquals(
+        -1, HttpUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
   }
 }
