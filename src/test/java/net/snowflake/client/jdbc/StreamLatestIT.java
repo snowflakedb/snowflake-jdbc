@@ -18,6 +18,7 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -121,7 +122,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Ignore
   public void testDownloadToStreamGCSPresignedUrl() throws SQLException, IOException {
     final String DEST_PREFIX = "testUploadStream";
     Connection connection = null;
