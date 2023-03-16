@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import java.util.Map;
+import net.snowflake.client.core.QueryContextDTO;
 
 /**
  * Body of a query request
@@ -24,6 +25,8 @@ public class QueryExecDTO {
 
   private Map<String, Object> parameters;
 
+  private QueryContextDTO queryContextDTO;
+
   private String describedJobId;
 
   private long querySubmissionTime;
@@ -33,6 +36,7 @@ public class QueryExecDTO {
   // Boolean value that, if true, indicates query should be asynchronous
   private boolean asyncExec;
 
+
   public QueryExecDTO(
       String sqlText,
       boolean describeOnly,
@@ -40,6 +44,7 @@ public class QueryExecDTO {
       Map<String, ParameterBindingDTO> bindings,
       String bindStage,
       Map<String, Object> parameters,
+      QueryContextDTO queryContext,
       long querySubmissionTime,
       boolean internal,
       boolean asyncExec) {
@@ -49,6 +54,7 @@ public class QueryExecDTO {
     this.bindings = bindings;
     this.bindStage = bindStage;
     this.parameters = parameters;
+    this.queryContextDTO = queryContext;
     this.querySubmissionTime = querySubmissionTime;
     this.isInternal = internal;
     this.asyncExec = asyncExec; // indicates whether query should be asynchronous
@@ -102,6 +108,14 @@ public class QueryExecDTO {
 
   public void setParameters(Map<String, Object> parameters) {
     this.parameters = parameters;
+  }
+
+  public QueryContextDTO getqueryContextDTO() {
+    return queryContextDTO;
+  }
+
+  public void queryContextDTO(QueryContextDTO queryContext) {
+    this.queryContextDTO = queryContext;
   }
 
   public String getDescribedJobId() {

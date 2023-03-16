@@ -1120,6 +1120,7 @@ public class SFSession extends SFBaseSession {
 
   @Override
   public void setQueryContext(String queryContext) {
+    System.out.println("SFSession::setQueryContext: " + queryContext);
     boolean disableQueryContextCache = getDisableQueryContextCacheOption();
     if (!disableQueryContextCache) 
     {
@@ -1128,12 +1129,13 @@ public class SFSession extends SFBaseSession {
   }
 
   @Override
-  public String getQueryContext() {
+  public QueryContextDTO getQueryContextDTO() {
     boolean disableQueryContextCache = getDisableQueryContextCacheOption();
 
     if (!disableQueryContextCache) 
     {
-      String res = qcc.serializeQueryContextJson();
+      // QueryContextDTO res = qcc.serializeQueryContextJson();
+      QueryContextDTO res = qcc.serializeQueryContextDTO();
       return res;
     }
     else {

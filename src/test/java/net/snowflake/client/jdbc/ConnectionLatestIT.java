@@ -94,7 +94,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     statement.execute("select 1");
     SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
     // if QCC disable, this should be null
-    assertNull(session.getQueryContext());
+    assertNull(session.getQueryContextDTO());
     con.close();
   }
 

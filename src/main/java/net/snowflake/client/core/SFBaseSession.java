@@ -817,13 +817,9 @@ public abstract class SFBaseSession {
 
   public abstract boolean isAsyncSession();
 
-  public String getQueryContext() {
-    return queryContext;
-  }
+  public abstract QueryContextDTO getQueryContextDTO();
 
-  public void setQueryContext(String queryContext) {
-    this.queryContext = queryContext;
-  }
+  public abstract void setQueryContext(String queryContext);
 
   /**
    * If true, JDBC will enable returning TIMESTAMP_WITH_TIMEZONE as column type, otherwise it will

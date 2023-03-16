@@ -7,11 +7,7 @@ import static net.snowflake.client.jdbc.SnowflakeDriver.implementVersion;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.TreeSet;
-import java.util.Comparator;
+import java.util.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -237,10 +233,7 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
     return entry;
 }
 
-/**
- * Serialize the current QueryContext into a JSON format string
-*/
-public String serializeQueryContextJson() {
+public QueryContextDTO serializeQueryContextDTO(){
   synchronized (this) {
     // Log existing cache entries
     logCacheEntries();
@@ -248,50 +241,46 @@ public String serializeQueryContextJson() {
     TreeSet<QueryContextElement> elements = getElements();
     if (elements.size() == 0) return null;
 
+    System.out.println("serializeQueryContextDTO(): elements.size() = " + elements.size() );
+    
     try{
+      QueryContextDTO queryContextDTO = new QueryContextDTO();
+      List<QueryContextEntryDTO> entries = new ArrayList<QueryContextEntryDTO>();
       int index = 0;
-      ObjectNode rootNode = jsonObjectMapper.createObjectNode();
-      ArrayNode entriesNode = jsonObjectMapper.createArrayNode();
       for (final QueryContextElement elem : elements) {
-        ObjectNode node = serializeQueryContextElement(elem, jsonObjectMapper);
+        QueryContextEntryDTO queryContextElementDTO = serializeQueryContextEntryDTO(elem, jsonObjectMapper);
         if(index == 0){
           // The first entry is the main entry
-          rootNode.set("main_entry", node);
+          queryContextDTO.setMainEntry(queryContextElementDTO);
         }else{
-          entriesNode.add(node);
+          entries.add(queryContextElementDTO);
         }
         index++;
       }
       if(index > 1){
         // Add the entries array only if there are more than one entry
-        rootNode.set("entries", entriesNode);
+        queryContextDTO.setEntries(entries);
       }
-
-    return jsonObjectMapper.writeValueAsString(rootNode);
+      return queryContextDTO;
 
     }catch (Exception e) {
-        logger.debug("serializeQueryContextJson(): Exception {}", e.getMessage());
+        logger.debug("serializQueryContextDTO(): Exception {}", e.getMessage());
         return null;
       }
-
-
-  } // Synchronized
+    }
 }
 
-private ObjectNode serializeQueryContextElement(QueryContextElement entry, ObjectMapper jsonObjectMapper) throws IOException {
-  ObjectNode entryNode = jsonObjectMapper.createObjectNode();
+private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement entry, ObjectMapper jsonObjectMapper) throws IOException {
+  QueryContextEntryDTO entryDTO = new QueryContextEntryDTO();
 
-  entryNode.put("id", entry.getId());
-  entryNode.put("timestamp", entry.getReadTimestamp());
-  entryNode.put("priority", entry.getPriority());
+  entryDTO.setId(entry.getId());
+  entryDTO.setTimestamp(entry.getReadTimestamp());
+  entryDTO.setPriority(entry.getPriority());
   
-  byte[] contextBytes = entry.getContext();
-  if (contextBytes != null) {
-      String contextStr = new String(contextBytes);
-      entryNode.put("context", contextStr);
-  }
+  // currently OpaqueContext is empty object. If we add some fields into OpaqueContext, we need to serialize it.
+  entryDTO.setContext(new OpaqueContextDTO());
 
-  return entryNode;
+  return entryDTO;
 }
 
   /**

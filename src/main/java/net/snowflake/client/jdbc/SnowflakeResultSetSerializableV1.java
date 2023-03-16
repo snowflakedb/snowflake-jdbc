@@ -546,7 +546,7 @@ public class SnowflakeResultSetSerializableV1
     // extract query context and save it in current session
     JsonNode queryContextNode = rootNode.path("data").path("queryContext"); 
     String queryContext = queryContextNode.isNull() ? null : queryContextNode.toString();
-
+    System.out.println("SnowflakeResultSetSerializableV1 queryContext: " + queryContext);
     if (!sfSession.isAsyncSession()) {
       sfSession.setQueryContext(queryContext); 
     }

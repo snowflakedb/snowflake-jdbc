@@ -101,7 +101,7 @@ public class StmtUtil {
 
     HttpClientSettingsKey httpClientSettingsKey;
 
-    String queryContext;
+    QueryContextDTO queryContextDTO;
 
     StmtInput() {}
 
@@ -225,8 +225,8 @@ public class StmtUtil {
       return this;
     }
 
-    public StmtInput setQueryContext(String queryContext) {
-      this.queryContext = queryContext;
+    public StmtInput setQueryContextDTO(QueryContextDTO queryContext) {
+      this.queryContextDTO = queryContext;
       return this;
     }
   }
@@ -292,11 +292,17 @@ public class StmtUtil {
           uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
         }
 
-        if (!Strings.isNullOrEmpty(stmtInput.queryContext)) {
-          uriBuilder.addParameter(SF_QUERY_CONTEXT, stmtInput.queryContext);
-        }
+//        if (!Strings.isNullOrEmpty(stmtInput.queryContext)) {
+//          uriBuilder.addParameter(SF_QUERY_CONTEXT, stmtInput.queryContext);
+//        }
 
         httpRequest = new HttpPost(uriBuilder.build());
+
+        if(stmtInput.queryContextDTO != null){
+          System.out.println("queryContextDTO: " + stmtInput.queryContextDTO.toString());
+        }else{
+          System.out.println("queryContextDTO is null");
+        }
 
         /*
          * sequence id is only needed for old query API, when old query API
@@ -310,6 +316,7 @@ public class StmtUtil {
                 stmtInput.bindValues,
                 stmtInput.bindStage,
                 stmtInput.parametersMap,
+                stmtInput.queryContextDTO,
                 stmtInput.querySubmissionTime,
                 stmtInput.describeOnly || stmtInput.internal,
                 stmtInput.asyncExec);
