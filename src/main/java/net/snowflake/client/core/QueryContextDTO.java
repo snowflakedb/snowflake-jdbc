@@ -7,7 +7,8 @@ public class QueryContextDTO {
     private List<QueryContextEntryDTO> entries;
 
     public QueryContextDTO() {
-        // empty constructor
+        mainEntry = null;
+        entries = null;
     }
 
     public QueryContextDTO(QueryContextEntryDTO mainEntry, List<QueryContextEntryDTO> entries) {
