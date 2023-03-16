@@ -240,8 +240,6 @@ public QueryContextDTO serializeQueryContextDTO(){
 
     TreeSet<QueryContextElement> elements = getElements();
     if (elements.size() == 0) return null;
-
-    System.out.println("serializeQueryContextDTO(): elements.size() = " + elements.size() );
     
     try{
       QueryContextDTO queryContextDTO = new QueryContextDTO();

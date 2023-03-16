@@ -292,17 +292,7 @@ public class StmtUtil {
           uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
         }
 
-//        if (!Strings.isNullOrEmpty(stmtInput.queryContext)) {
-//          uriBuilder.addParameter(SF_QUERY_CONTEXT, stmtInput.queryContext);
-//        }
-
         httpRequest = new HttpPost(uriBuilder.build());
-
-        if(stmtInput.queryContextDTO != null){
-          System.out.println("queryContextDTO: " + stmtInput.queryContextDTO.toString());
-        }else{
-          System.out.println("queryContextDTO is null");
-        }
 
         /*
          * sequence id is only needed for old query API, when old query API
