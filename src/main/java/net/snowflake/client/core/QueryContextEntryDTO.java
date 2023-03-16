@@ -1,7 +1,5 @@
 package net.snowflake.client.core;
 
-
-
 public class QueryContextEntryDTO {
     private Long id;
     private Long timestamp;
