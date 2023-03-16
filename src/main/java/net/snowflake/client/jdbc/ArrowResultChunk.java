@@ -443,7 +443,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
    * merge arrow result chunk with more than one batches into one record batch (Only used for the
    * first chunk when client side sorting is required)
    */
-  private void mergeBatchesIntoOne() throws SnowflakeSQLException {
+  public void mergeBatchesIntoOne() throws SnowflakeSQLException {
     try {
       List<ValueVector> first = batchOfVectors.get(0);
       for (int i = 1; i < batchOfVectors.size(); i++) {
