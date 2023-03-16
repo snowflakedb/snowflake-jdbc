@@ -119,7 +119,7 @@ public class SFTrustManagerTest {
       // Create an empty result set serializable object
       SnowflakeResultSetSerializableV1 resultSetSerializable =
           new SnowflakeResultSetSerializableV1();
-      resultSetSerializable.setFristChunkStringData(
+      resultSetSerializable.setFirstChunkStringData(
           Base64.getEncoder().encodeToString("".getBytes(StandardCharsets.UTF_8)));
       resultSetSerializable.setChunkFileCount(0);
       resultSetSerializable.getParameters().put(CLIENT_MEMORY_LIMIT, 10);
