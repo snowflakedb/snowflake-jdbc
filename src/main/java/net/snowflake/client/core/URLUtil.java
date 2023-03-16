@@ -14,32 +14,45 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class URLUtil {
 
     static final SFLogger logger = SFLoggerFactory.getLogger(URLUtil.class);
+    static final String validURLPattern = "^http(s?)\\:\\/\\/[0-9a-zA-Z]([-.\\w]*[0-9a-zA-Z@:])*(:(0-9)*)*(\\/?)([a-zA-Z0-9\\-\\.\\?\\,\\&\\(\\)\\/\\\\\\+&%\\$#_=@]*)?$";
+    static final Pattern pattern = Pattern.compile(validURLPattern);
+
     public static boolean isValidURL(String url) {
         try {
-            new URL(url).toURI();
-            return true;
-        } catch(MalformedURLException mex) {
-            logger.debug("Invalid URL found - ", url);
-            return false;
-        } catch (URISyntaxException uex) {
-            logger.debug("Invalid URL found - ", url);
-            return false;
+            Matcher matcher = pattern.matcher(url);
+            return matcher.find();
+        } catch (PatternSyntaxException pex) {
+            logger.debug("The URL REGEX is invalid. Falling back to basic sanity test");
+            try {
+                new URL(url).toURI();
+                return true;
+            } catch(MalformedURLException mex) {
+                logger.debug("The URL "+url+", is invalid");
+                return false;
+            } catch (URISyntaxException uex) {
+                logger.debug("The URL "+url+", is invalid");
+                return false;
+            }
         }
     }
 
     @Nullable
-    public static String urlEncode(String url) throws UnsupportedEncodingException {
-        String encodedURL;
+    public static String urlEncode(String target) throws UnsupportedEncodingException {
+        String encodedTarget;
         try {
-            encodedURL = URLEncoder.encode(url,
+            encodedTarget = URLEncoder.encode(target,
                     StandardCharsets.UTF_8.toString());
         } catch(UnsupportedEncodingException uex) {
+            logger.debug("The string to be encoded- "+target+", is invalid");
             return null;
         }
-        return encodedURL;
+        return encodedTarget;
     }
 }
