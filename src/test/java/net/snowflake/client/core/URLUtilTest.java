@@ -20,6 +20,7 @@ public class URLUtilTest {
   public void testInvalidURL() throws Exception {
     assertFalse(URLUtil.isValidURL("-a Calculator"));
     assertFalse(URLUtil.isValidURL("This is random text"));
+    assertFalse(URLUtil.isValidURL("file://TestForFile"));
   }
 
   @Test
