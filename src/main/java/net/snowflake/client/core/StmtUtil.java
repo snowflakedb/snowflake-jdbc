@@ -6,6 +6,7 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Strings;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -314,6 +315,10 @@ public class StmtUtil {
         if (!stmtInput.describeOnly) {
           sqlJsonBody.setDescribedJobId(stmtInput.describedJobId);
         }
+
+        // Currently OpaqueContextDTO (in QueryContextDTO) is an empty class, but we will add more fields to it in the future.
+        // So we need to disable this SerializationFeature.FAIL_ON_EMPTY_BEANS to avoid the exception.
+        mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
         String json = mapper.writeValueAsString(sqlJsonBody);
 
