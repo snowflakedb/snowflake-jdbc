@@ -213,4 +213,41 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
       }
     }
   }
+
+  @Test
+  public void testGetQueryID() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_uuid_with_bind(c1 number)");
+
+    PreparedStatement preparedStatement =
+        connection.prepareStatement("insert into test_uuid_with_bind values (?)");
+    preparedStatement.setInt(1, 5);
+    assertEquals(1, preparedStatement.executeUpdate());
+    String queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+    String queryId2 =
+        preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
+    preparedStatement
+        .getMetaData()
+        .unwrap(SnowflakeResultSetMetaData.class)
+        .getDescribeJobQueryId();
+
+    assertEquals(queryId1, queryId2);
+
+    preparedStatement =
+        connection.prepareStatement("select * from test_uuid_with_bind where c1 = ?");
+    preparedStatement.setInt(1, 5);
+
+    ResultSet resultSet = preparedStatement.executeQuery();
+    assertThat(resultSet.next(), is(true));
+    queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+    queryId2 = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    assertEquals(queryId1, queryId2);
+
+    resultSet.close();
+    preparedStatement.close();
+
+    statement.execute("drop table if exists test_uuid_with_bind");
+    connection.close();
+  }
 }

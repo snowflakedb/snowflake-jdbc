@@ -238,8 +238,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
             sfBaseStatement.execute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY);
       }
-
       sfResultSet.setSession(this.connection.getSFBaseSession());
+      queryID = sfResultSet.getQueryId();
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());

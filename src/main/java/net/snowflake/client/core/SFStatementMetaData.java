@@ -39,8 +39,11 @@ public class SFStatementMetaData {
       int numberOfBinds,
       boolean arrayBindSupported,
       List<MetaDataOfBinds> metaDataOfBinds,
-      boolean isValidMetaData) {
+      boolean isValidMetaData,
+      String queryId) {
     this.resultSetMetaData = resultSetMetaData;
+    // Reset query ID of metadata to match original query ID rather than describe query ID
+    this.resultSetMetaData.setQueryId(queryId);
     this.statementType = statementType;
     this.numberOfBinds = numberOfBinds;
     this.arrayBindSupported = arrayBindSupported;
@@ -122,6 +125,7 @@ public class SFStatementMetaData {
         0,
         false,
         new ArrayList<>(),
-        false); // invalid metadata
+        false,
+        "" /* query ID */); // invalid metadata
   }
 }

@@ -45,6 +45,8 @@ public class SFResultSetMetaData {
 
   private String queryId;
 
+  private String describeJobQueryId;
+
   private Map<String, Integer> columnNamePositionMap = new HashMap<>();
 
   private Map<String, Integer> columnNameUpperCasePositionMap = new HashMap<>();
@@ -122,6 +124,7 @@ public class SFResultSetMetaData {
       SnowflakeDateTimeFormat timeFormatter) {
     this.columnCount = columnMetadata.size();
     this.queryId = queryId;
+    this.describeJobQueryId = queryId;
     this.timestampNTZFormatter = timestampNTZFormatter;
     this.timestampLTZFormatter = timestampLTZFormatter;
     this.timestampTZFormatter = timestampTZFormatter;
@@ -292,6 +295,14 @@ public class SFResultSetMetaData {
    */
   public String getQueryId() {
     return queryId;
+  }
+
+  public String getDescribeJobQueryId() {
+    return describeJobQueryId;
+  }
+
+  public void setQueryId(String queryId) {
+    this.queryId = queryId;
   }
 
   /**

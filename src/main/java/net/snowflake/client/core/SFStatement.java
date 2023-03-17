@@ -144,7 +144,7 @@ public class SFStatement extends SFBaseStatement {
    * @throws SFException if result set is null
    */
   @Override
-  public SFStatementMetaData describe(String sql) throws SFException, SQLException {
+  public SFStatementMetaData describe(String sql, String queryId) throws SFException, SQLException {
     SFBaseResultSet baseResultSet = executeQuery(sql, null, true, false, null);
 
     describeJobUUID = baseResultSet.getQueryId();
@@ -155,7 +155,8 @@ public class SFStatement extends SFBaseStatement {
         baseResultSet.getNumberOfBinds(),
         baseResultSet.isArrayBindSupported(),
         baseResultSet.getMetaDataOfBinds(),
-        true); // valid metadata
+        true,
+        queryId); // valid metadata
   }
 
   /**
