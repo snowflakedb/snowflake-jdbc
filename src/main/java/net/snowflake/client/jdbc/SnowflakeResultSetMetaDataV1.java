@@ -25,14 +25,12 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   private SFResultSetMetaData resultSetMetaData;
   private String queryId;
-  private String describeJobQueryId;
   private QueryType queryType = QueryType.SYNC;
   private SFBaseSession session;
 
   SnowflakeResultSetMetaDataV1(SFResultSetMetaData resultSetMetaData) throws SnowflakeSQLException {
     this.resultSetMetaData = resultSetMetaData;
     this.queryId = resultSetMetaData.getQueryId();
-    this.describeJobQueryId = resultSetMetaData.getDescribeJobQueryId();
     this.session = resultSetMetaData.getSession();
   }
 
@@ -43,14 +41,6 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   /** @return query id */
   public String getQueryID() throws SQLException {
     return this.queryId;
-  }
-
-  /**
-   * @return query id of describe job if it exists; or same value as query ID if there is no
-   *     separate describe job
-   */
-  public String getDescribeJobQueryID() {
-    return this.describeJobQueryId;
   }
 
   /**

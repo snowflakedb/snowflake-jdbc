@@ -4,13 +4,12 @@
 
 package net.snowflake.client.core;
 
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Base abstract class for an SFStatement implementation. Statements are used in executing queries,
@@ -60,8 +59,7 @@ public abstract class SFBaseStatement {
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
-  public abstract SFStatementMetaData describe(String sql)
-      throws SFException, SQLException;
+  public abstract SFStatementMetaData describe(String sql) throws SFException, SQLException;
 
   /**
    * Executes the given SQL string.

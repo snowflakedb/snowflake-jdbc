@@ -4,20 +4,19 @@
 
 package net.snowflake.client.jdbc;
 
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.*;
+import java.sql.Date;
+import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
-
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.Date;
-import java.sql.*;
-import java.util.*;
 
 class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {
@@ -42,7 +41,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   private final String sql;
 
   private boolean showStatementParameters;
-
 
   /**
    * map of bind name to bind values for single query execution
@@ -107,7 +105,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       alreadyDescribed = true;
     }
   }
-
 
   @Override
   public ResultSet executeQuery() throws SQLException {

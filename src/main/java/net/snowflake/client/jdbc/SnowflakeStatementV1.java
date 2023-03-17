@@ -4,17 +4,16 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
+
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SqlState;
-
-import java.sql.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static net.snowflake.client.jdbc.ErrorCode.FEATURE_UNSUPPORTED;
 
 /** Snowflake statement */
 class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
@@ -195,7 +194,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       sfResultSet.setSession(this.connection.getSFBaseSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
       queryID = sfResultSet.getQueryId();
-      statementMetaData = new SFStatementMetaData(
+      statementMetaData =
+          new SFStatementMetaData(
               sfResultSet.getMetaData(),
               sfResultSet.getStatementType(),
               sfResultSet.getNumberOfBinds(),
@@ -250,7 +250,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         sfResultSet =
             sfBaseStatement.execute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY);
-        statementMetaData = new SFStatementMetaData(
+        statementMetaData =
+            new SFStatementMetaData(
                 sfResultSet.getMetaData(),
                 sfResultSet.getStatementType(),
                 sfResultSet.getNumberOfBinds(),
@@ -308,7 +309,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       sfResultSet =
           sfBaseStatement.execute(sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE);
       sfResultSet.setSession(this.connection.getSFBaseSession());
-      statementMetaData = new SFStatementMetaData(
+      statementMetaData =
+          new SFStatementMetaData(
               sfResultSet.getMetaData(),
               sfResultSet.getStatementType(),
               sfResultSet.getNumberOfBinds(),

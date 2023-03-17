@@ -1,18 +1,12 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.*;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import net.snowflake.client.category.TestCategoryConnection;
-import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.telemetry.Telemetry;
-import net.snowflake.client.jdbc.telemetry.TelemetryData;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,8 +15,13 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static org.junit.Assert.*;
+import net.snowflake.client.category.TestCategoryConnection;
+import net.snowflake.client.core.*;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /**
  * IT test for testing the "pluggable" implementation of SnowflakeConnection, SnowflakeStatement,
