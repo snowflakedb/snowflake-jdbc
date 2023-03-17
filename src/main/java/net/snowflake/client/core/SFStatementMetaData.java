@@ -4,13 +4,14 @@
 
 package net.snowflake.client.core;
 
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.common.core.SqlState;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.common.core.SqlState;
 
 /**
  * Statement metadata which includes the result metadata and bind information.
@@ -39,11 +40,8 @@ public class SFStatementMetaData {
       int numberOfBinds,
       boolean arrayBindSupported,
       List<MetaDataOfBinds> metaDataOfBinds,
-      boolean isValidMetaData,
-      String queryId) {
+      boolean isValidMetaData) {
     this.resultSetMetaData = resultSetMetaData;
-    // Reset query ID of metadata to match original query ID rather than describe query ID
-    this.resultSetMetaData.setQueryId(queryId);
     this.statementType = statementType;
     this.numberOfBinds = numberOfBinds;
     this.arrayBindSupported = arrayBindSupported;
@@ -125,7 +123,6 @@ public class SFStatementMetaData {
         0,
         false,
         new ArrayList<>(),
-        false,
-        "" /* query ID */); // invalid metadata
+        false); // invalid metadata
   }
 }

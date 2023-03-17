@@ -4,19 +4,20 @@
 
 package net.snowflake.client.jdbc;
 
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.*;
-import java.sql.Date;
-import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.Date;
+import java.sql.*;
+import java.util.*;
 
 class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {
@@ -42,8 +43,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   private boolean showStatementParameters;
 
-  /** statement and result metadata from describe phase */
-  private SFStatementMetaData statementMetaData;
+
   /**
    * map of bind name to bind values for single query execution
    *
@@ -94,7 +94,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   private void describeSqlIfNotTried() throws SQLException {
     if (!alreadyDescribed) {
       try {
-        this.statementMetaData = sfBaseStatement.describe(sql, getQueryID());
+        this.statementMetaData = sfBaseStatement.describe(sql);
       } catch (SFException e) {
         throw new SnowflakeSQLLoggedException(connection.getSFBaseSession(), e);
       } catch (SnowflakeSQLException e) {
@@ -108,6 +108,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     }
   }
 
+
   @Override
   public ResultSet executeQuery() throws SQLException {
     if (showStatementParameters) {
@@ -115,7 +116,11 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else {
       logger.debug("executeQuery()", false);
     }
-    return executeQueryInternal(sql, false, parameterBindings);
+    ResultSet rs = executeQueryInternal(sql, false, parameterBindings);
+    if (statementMetaData.isValidMetaData()) {
+      alreadyDescribed = true;
+    }
+    return rs;
   }
 
   /**
@@ -137,13 +142,16 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public long executeLargeUpdate() throws SQLException {
     logger.debug("executeLargeUpdate()", false);
 
-    return executeUpdateInternal(sql, parameterBindings, true);
+    long updates = executeUpdateInternal(sql, parameterBindings, true);
+    if (statementMetaData.isValidMetaData()) {
+      alreadyDescribed = true;
+    }
+    return updates;
   }
 
   @Override
   public int executeUpdate() throws SQLException {
     logger.debug("executeUpdate()", false);
-
     return (int) executeLargeUpdate();
   }
 
@@ -436,7 +444,11 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public boolean execute() throws SQLException {
     logger.debug("execute: {}", sql);
 
-    return executeInternal(sql, parameterBindings);
+    boolean success = executeInternal(sql, parameterBindings);
+    if (statementMetaData.isValidMetaData()) {
+      alreadyDescribed = true;
+    }
+    return success;
   }
 
   @Override
