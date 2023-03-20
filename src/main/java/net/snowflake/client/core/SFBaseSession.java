@@ -383,8 +383,8 @@ public abstract class SFBaseSession {
           combinedNonProxyHosts += noProxy;
         }
 
-        // It is possible that a user can have both http and https proxies in the
-        // default protocol is http
+        // It is possible that a user can have both http and https proxies specified in the JVM
+        // parameters. The default protocol is http.
         String proxyProtocol = "http";
         if (!Strings.isNullOrEmpty(httpProxyProtocol)) {
           proxyProtocol = httpProxyProtocol;
@@ -393,11 +393,6 @@ public abstract class SFBaseSession {
             && Strings.isNullOrEmpty(httpProxyHost)
             && Strings.isNullOrEmpty(httpProxyPort)) {
           proxyProtocol = "https";
-        } else if (Strings.isNullOrEmpty(httpsProxyHost)
-            && Strings.isNullOrEmpty(httpsProxyPort)
-            && !Strings.isNullOrEmpty(httpProxyHost)
-            && !Strings.isNullOrEmpty(httpProxyPort)) {
-          proxyProtocol = "http";
         }
 
         if (proxyProtocol.equals("https")
