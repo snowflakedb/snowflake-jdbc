@@ -915,4 +915,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   Map<String, ParameterBindingDTO> getParameterBindings() {
     return parameterBindings;
   }
+
+  // For testing use only
+  public boolean isAlreadyDescribed() {
+    return this.alreadyDescribed;
+  }
 }

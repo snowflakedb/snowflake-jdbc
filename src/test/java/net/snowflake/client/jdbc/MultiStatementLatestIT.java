@@ -222,12 +222,12 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
     assertFalse(rs.next());
 
     // second statement
-    assertFalse(statement.getMoreResults());
+    assertTrue(statement.getMoreResults());
     assertNull(statement.getResultSet());
     assertEquals(0, statement.getUpdateCount());
 
     // third statement
-    assertFalse(statement.getMoreResults());
+    assertTrue(statement.getMoreResults());
     assertNull(statement.getResultSet());
     assertEquals(2, statement.getUpdateCount());
 

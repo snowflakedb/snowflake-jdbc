@@ -294,10 +294,6 @@ public class SFResultSetMetaData {
     return queryId;
   }
 
-  public void setQueryId(String queryId) {
-    this.queryId = queryId;
-  }
-
   /**
    * get the session
    *

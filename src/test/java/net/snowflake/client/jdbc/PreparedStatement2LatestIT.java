@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
@@ -236,6 +237,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
     preparedStatement =
         connection.prepareStatement("select * from test_uuid_with_bind where c1 = ?");
+    assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
     preparedStatement.setInt(1, 5);
 
     ResultSet resultSet = preparedStatement.executeQuery();
@@ -265,6 +267,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     String queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
     preparedStatement =
         connection.prepareStatement("insert into test_uuid_with_bind values (?, ?)");
+    assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
     preparedStatement.setInt(1, 5);
     preparedStatement.setString(2, "hello");
     preparedStatement.addBatch();
@@ -290,5 +293,28 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     connection.createStatement().execute("drop table if exists test_uuid_with_bind");
     preparedStatement.close();
     connection.close();
+  }
+
+  @Test
+  public void testAlreadyDescribedMultipleResults() throws SQLException {
+    Connection connection = getConnection();
+    PreparedStatement prepStatement = connection.prepareStatement(insertSQL);
+    bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
+    prepStatement.execute();
+    // The statement above has already been described since it has been executed
+    assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    prepStatement = connection.prepareStatement(selectSQL);
+    // Assert the statement, once it has been re-created, has already described set to false
+    assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    prepStatement.setInt(1, 1);
+    ResultSet rs = prepStatement.executeQuery();
+    assertTrue(rs.next());
+    assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    prepStatement = connection.prepareStatement(selectAllSQL);
+    // Assert the statement, once it has been re-created, has already described set to false
+    assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    rs = prepStatement.executeQuery();
+    assertTrue(rs.next());
+    assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
   }
 }
