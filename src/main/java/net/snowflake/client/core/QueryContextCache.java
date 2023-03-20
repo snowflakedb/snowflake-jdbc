@@ -7,6 +7,7 @@ import static net.snowflake.client.jdbc.SnowflakeDriver.implementVersion;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
 import java.util.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Most Recently Used and Priority based cache. A separate cache for each connection in the driver.
@@ -233,6 +235,67 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
     return entry;
 }
 
+
+/**
+ * Deserialize the QueryContext cache from a QueryContextDTO object.
+*/
+public void deserializeQueryContextDTO(QueryContextDTO queryContextDTO){
+  synchronized (this) {
+    // Log existing cache entries
+    logCacheEntries();
+
+    if (queryContextDTO == null) {
+      // Clear the cache
+      clearCache();
+
+      // Log existing cache entries
+      logCacheEntries();
+
+      return;
+    }
+
+    try{
+      // Deserialize the main entry
+      QueryContextEntryDTO mainEntryDTO = queryContextDTO.getMainEntry();
+      
+      if(mainEntryDTO != null){
+        QueryContextElement mainEntry = deserializeQueryContextElementDTO(mainEntryDTO);
+        merge(mainEntry.id, mainEntry.readTimestamp, mainEntry.priority, mainEntry.context);
+        logCacheEntries();
+      }
+
+      // Deserialize the entries
+      List<QueryContextEntryDTO> entries = queryContextDTO.getEntries();
+      if(entries != null){
+        for (QueryContextEntryDTO entryDTO : entries) {
+          QueryContextElement entry = deserializeQueryContextElementDTO(entryDTO);
+          merge(entry.id, entry.readTimestamp, entry.priority, entry.context);
+          logCacheEntries();
+        }
+      }
+    }catch (Exception e) {
+      logger.debug("deserializeQueryContextDTO: Exception = {}", e.getMessage());
+      // Not rethrowing. clear the cache as incomplete merge can lead to unexpected behavior.
+      clearCache();
+    }
+
+    // After merging all entries, truncate to capacity
+    checkCacheCapacity();
+
+    // Log existing cache entries
+    logCacheEntries();
+
+  }// Synchronized
+}
+
+private static QueryContextElement deserializeQueryContextElementDTO(QueryContextEntryDTO entryDTO) throws IOException {
+  QueryContextElement entry = new QueryContextElement(entryDTO.getId(), entryDTO.getTimestamp(), entryDTO.getPriority(), entryDTO.getContext().getBase64Data());
+  return entry;
+}
+
+/**
+ * Serialize the QueryContext cache to a QueryContextDTO object, which can be serialized to JSON automatically later.
+*/
 public QueryContextDTO serializeQueryContextDTO(){
   synchronized (this) {
     // Log existing cache entries
@@ -246,7 +309,7 @@ public QueryContextDTO serializeQueryContextDTO(){
       List<QueryContextEntryDTO> entries = new ArrayList<QueryContextEntryDTO>();
       int index = 0;
       for (final QueryContextElement elem : elements) {
-        QueryContextEntryDTO queryContextElementDTO = serializeQueryContextEntryDTO(elem, jsonObjectMapper);
+        QueryContextEntryDTO queryContextElementDTO = serializeQueryContextEntryDTO(elem);
         if(index == 0){
           // The first entry is the main entry
           queryContextDTO.setMainEntry(queryContextElementDTO);
@@ -268,16 +331,9 @@ public QueryContextDTO serializeQueryContextDTO(){
     }
 }
 
-private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement entry, ObjectMapper jsonObjectMapper) throws IOException {
-  QueryContextEntryDTO entryDTO = new QueryContextEntryDTO();
-
-  entryDTO.setId(entry.getId());
-  entryDTO.setTimestamp(entry.getReadTimestamp());
-  entryDTO.setPriority(entry.getPriority());
-  
-  // currently OpaqueContext is empty object. If we add some fields into OpaqueContext, we need to serialize it.
-  entryDTO.setContext(new OpaqueContextDTO());
-
+private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement entry) throws IOException {
+  // OpaqueContextDTO contains a base64 encoded byte array. On JDBC side, we do not decode and encode it
+  QueryContextEntryDTO entryDTO = new QueryContextEntryDTO(entry.getId(), entry.getReadTimestamp(), entry.getPriority(), new OpaqueContextDTO(entry.getContext()));
   return entryDTO;
 }
 
@@ -376,10 +432,10 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
     long priority; // Priority of the query context (bigint). Compare for different ids.
     byte[] context; // Opaque information (varbinary).
 
-    // Constructor with empty input
-    public QueryContextElement(){
-
+    public QueryContextElement() {
+      // Default constructor
     }
+
     /**
      * Constructor.
      *

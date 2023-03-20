@@ -10,6 +10,9 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+
 public class QueryContextCacheTest {
   private QueryContextCache qcc = null;
   private long BASE_READ_TIMESTAMP = 1668727958;
@@ -188,15 +191,13 @@ public class QueryContextCacheTest {
     initCacheWithData();
     assertCacheData();
 
-    // Arrow format qcc request
-    String requestData = qcc.serializeQueryContextJson();
+    QueryContextDTO requestData = qcc.serializeQueryContextDTO();
 
     // Clear qcc
     qcc.clearCache();
     assertThat("Empty cache", qcc.getSize() == 0);
 
-    // Arrow format qcc response
-    qcc.deserializeQueryContextJson(requestData);
+    qcc.deserializeQueryContextDTO(requestData);
     assertCacheData();
   }
 
@@ -206,15 +207,13 @@ public class QueryContextCacheTest {
     initCacheWithDataWithContext(null);
     assertCacheDataWithContext(null);
 
-    // Arrow format qcc request
-    String requestData = qcc.serializeQueryContextJson();
+    QueryContextDTO requestData = qcc.serializeQueryContextDTO();
 
     // Clear qcc
     qcc.clearCache();
     assertThat("Empty cache", qcc.getSize() == 0);
 
-    // Arrow format qcc response
-    qcc.deserializeQueryContextJson(requestData);
+    qcc.deserializeQueryContextDTO(requestData);
     assertCacheDataWithContext(null);
   }
 

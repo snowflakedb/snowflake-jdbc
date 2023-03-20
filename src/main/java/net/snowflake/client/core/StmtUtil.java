@@ -320,7 +320,10 @@ public class StmtUtil {
         // So we need to disable this SerializationFeature.FAIL_ON_EMPTY_BEANS to avoid the exception.
         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
+        System.out.println("queryContextDTO: " + mapper.writeValueAsString(stmtInput.queryContextDTO));
+
         String json = mapper.writeValueAsString(sqlJsonBody);
+        System.out.println("queryExecDTO: " + json);
 
         logger.debug("JSON: {}", json);
 

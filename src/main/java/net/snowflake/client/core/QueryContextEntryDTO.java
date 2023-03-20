@@ -6,10 +6,6 @@ public class QueryContextEntryDTO {
     private Long priority;
     private OpaqueContextDTO context;
 
-    public QueryContextEntryDTO() {
-        // empty constructor
-    }
-
     public QueryContextEntryDTO(Long id, Long timestamp, Long priority, OpaqueContextDTO context) {
         this.id = id;
         this.timestamp = timestamp;
