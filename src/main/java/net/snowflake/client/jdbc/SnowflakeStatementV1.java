@@ -207,7 +207,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     } finally {
-      if (resultSet != null) {
+      if (resultSet != null && !resultSet.isClosed()) {
         openResultSets.add(resultSet);
       }
       resultSet = null;
@@ -268,7 +268,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
-    if (resultSet != null) {
+    if (resultSet != null && !resultSet.isClosed()) {
       openResultSets.add(resultSet);
     }
 
@@ -317,7 +317,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
               sfResultSet.isArrayBindSupported(),
               sfResultSet.getMetaDataOfBinds(),
               true); // valid metadata
-      if (resultSet != null) {
+      if (resultSet != null && !resultSet.isClosed()) {
         openResultSets.add(resultSet);
       }
       resultSet = connection.getHandler().createResultSet(sfResultSet, this);
@@ -330,7 +330,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       if (!sfResultSet.getStatementType().isGenerateResultSet()
           && (!connection.getSFBaseSession().isSfSQLMode() || sfBaseStatement.hasChildren())) {
         updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
-        if (resultSet != null) {
+        if (resultSet != null && !resultSet.isClosed()) {
           openResultSets.add(resultSet);
         }
         resultSet = null;
@@ -360,6 +360,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   /** @return the child query IDs for the multiple statements query. */
   public String[] getChildQueryIds(String queryID) throws SQLException {
     return sfBaseStatement.getChildQueryIds(queryID);
+  }
+
+  /** @return the open resultSets from this statement */
+  public Set<ResultSet> getOpenResultSets() {
+    return openResultSets;
   }
 
   /**
@@ -611,7 +616,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     if (hasResultSet) // result set returned
     {
       sfResultSet.setSession(this.connection.getSFBaseSession());
-      if (resultSet != null) {
+      if (resultSet != null && !resultSet.isClosed()) {
         openResultSets.add(resultSet);
       }
       resultSet = connection.getHandler().createResultSet(sfResultSet, this);
@@ -619,7 +624,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       return true;
     } else if (sfResultSet != null) // update count returned
     {
-      if (resultSet != null) {
+      if (resultSet != null && !resultSet.isClosed()) {
         openResultSets.add(resultSet);
       }
       resultSet = null;
