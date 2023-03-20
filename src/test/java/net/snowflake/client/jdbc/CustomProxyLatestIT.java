@@ -9,13 +9,16 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import com.amazonaws.Protocol;
 import java.io.File;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.sql.*;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -570,6 +573,82 @@ public class CustomProxyLatestIT {
           e.getErrorCode(),
           equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
     }
+  }
+
+  /**
+   * Test that http proxy is used when http.proxyProtocol is http and http.proxyHost/http.proxyPort
+   * is specified. Set up a http proxy and change the settings below.
+   */
+  @Test
+  @Ignore
+  public void testSetJVMProxyHttp() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+
+    System.setProperty("http.useProxy", "true");
+    System.setProperty("http.proxyHost", "localhost");
+    System.setProperty("http.proxyPort", "3128");
+    System.setProperty("http.nonProxyHosts", "*");
+    System.setProperty("http.proxyProtocol", "http");
+    Connection con =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
+    assertEquals(Protocol.HTTP, clientSettingsKey.getProxyProtocol());
+    con.close();
+  }
+
+  /**
+   * Test that https proxy is used when http.proxyProtocol is https and
+   * https.proxyHost/https.proxyPort is specified. Set up a https proxy and change the settings
+   * below.
+   */
+  @Test
+  @Ignore
+  public void testSetJVMProxyHttps() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+
+    System.setProperty("http.useProxy", "true");
+    System.setProperty("https.proxyHost", "localhost");
+    System.setProperty("https.proxyPort", "3128");
+    System.setProperty("http.nonProxyHosts", "*");
+    System.setProperty("http.proxyProtocol", "https");
+    Connection con =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
+    assertEquals(Protocol.HTTPS, clientSettingsKey.getProxyProtocol());
+    con.close();
+  }
+
+  /**
+   * Test that https proxy is used when https.proxyHost and https.proxyPort are specified. Set up a
+   * https proxy and change the settings below.
+   */
+  @Test
+  @Ignore
+  public void testSetJVMProxyDefaultHttps() throws SQLException {
+    Properties props = new Properties();
+    props.put("user", "USER");
+    props.put("password", "PASSWORD");
+
+    System.setProperty("http.useProxy", "true");
+    System.setProperty("https.proxyHost", "localhost");
+    System.setProperty("https.proxyPort", "3128");
+    System.setProperty("http.nonProxyHosts", "*");
+
+    Connection con =
+        DriverManager.getConnection(
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
+    assertEquals(Protocol.HTTPS, clientSettingsKey.getProxyProtocol());
+    con.close();
   }
 
   public void runAzureProxyConnection(
