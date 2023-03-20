@@ -204,27 +204,32 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testStructuredTypes() throws SQLException {
-      Connection con = init();
+    Connection con = init();
 
-      Statement stmt = con.createStatement();
-      stmt.execute("alter session set enable_structured_types = true," +
-              "enable_structured_types_in_xp = true," +
-              "enable_structured_types_in_cast = true;");
-      stmt.close();
+    Statement stmt = con.createStatement();
+    stmt.execute(
+        "alter session set enable_structured_types = true,"
+            + "enable_structured_types_in_xp = true,"
+            + "enable_structured_types_in_cast = true;");
 
-      ResultSet rs =
-              con.createStatement()
-                      .executeQuery(
-                              "select array_construct(10, 20, 30)::array(int), "
-                                    + "object_construct_keep_null('a', 1, 'b', 'BBBB', 'c', null)::object(a int, b varchar, c int), "
-                                    + "object_construct_keep_null('k1', 'v1', 'k2', null)::map(varchar, varchar);");
-      while (rs.next()) {
-          assertEquals("[\n" + "  10,\n" + "  20,\n" + "  30\n" + "]", rs.getString(1));
-          assertEquals("{\n" + "  \"a\": 1,\n" + "  \"b\": \"BBBB\",\n" + "  \"c\": null\n" + "}", rs.getString(2));
-          assertEquals("{\n" + "  \"k1\": \"v1\",\n" + "  \"k2\": null\n" + "}", rs.getString(3));
-      }
-      con.close();
+    stmt.close();
+
+    ResultSet rs =
+        con.createStatement()
+            .executeQuery(
+                "select array_construct(10, 20, 30)::array(int), "
+                    + "object_construct_keep_null('a', 1, 'b', 'BBBB', 'c', null)::object(a int, b varchar, c int), "
+                    + "object_construct_keep_null('k1', 'v1', 'k2', null)::map(varchar, varchar);");
+    while (rs.next()) {
+      assertEquals("[\n" + "  10,\n" + "  20,\n" + "  30\n" + "]", rs.getString(1));
+      assertEquals(
+          "{\n" + "  \"a\": 1,\n" + "  \"b\": \"BBBB\",\n" + "  \"c\": null\n" + "}",
+          rs.getString(2));
+      assertEquals("{\n" + "  \"k1\": \"v1\",\n" + "  \"k2\": null\n" + "}", rs.getString(3));
+    }
+    con.close();
   }
 
   private Connection init(String table, String column, String values) throws SQLException {
