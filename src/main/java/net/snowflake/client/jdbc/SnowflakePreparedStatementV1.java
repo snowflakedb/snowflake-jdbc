@@ -42,8 +42,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   private boolean showStatementParameters;
 
-  /** statement and result metadata from describe phase */
-  private SFStatementMetaData statementMetaData;
   /**
    * map of bind name to bind values for single query execution
    *
@@ -115,7 +113,11 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else {
       logger.debug("executeQuery()", false);
     }
-    return executeQueryInternal(sql, false, parameterBindings);
+    ResultSet rs = executeQueryInternal(sql, false, parameterBindings);
+    if (statementMetaData.isValidMetaData()) {
+      alreadyDescribed = true;
+    }
+    return rs;
   }
 
   /**
@@ -137,13 +139,16 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public long executeLargeUpdate() throws SQLException {
     logger.debug("executeLargeUpdate()", false);
 
-    return executeUpdateInternal(sql, parameterBindings, true);
+    long updates = executeUpdateInternal(sql, parameterBindings, true);
+    if (statementMetaData.isValidMetaData()) {
+      alreadyDescribed = true;
+    }
+    return updates;
   }
 
   @Override
   public int executeUpdate() throws SQLException {
     logger.debug("executeUpdate()", false);
-
     return (int) executeLargeUpdate();
   }
 
@@ -436,7 +441,11 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public boolean execute() throws SQLException {
     logger.debug("execute: {}", sql);
 
-    return executeInternal(sql, parameterBindings);
+    boolean success = executeInternal(sql, parameterBindings);
+    if (statementMetaData.isValidMetaData()) {
+      alreadyDescribed = true;
+    }
+    return success;
   }
 
   @Override
@@ -905,5 +914,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   // package private for testing purpose only
   Map<String, ParameterBindingDTO> getParameterBindings() {
     return parameterBindings;
+  }
+
+  // For testing use only
+  public boolean isAlreadyDescribed() {
+    return this.alreadyDescribed;
   }
 }

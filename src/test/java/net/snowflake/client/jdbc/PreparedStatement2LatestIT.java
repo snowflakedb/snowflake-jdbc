@@ -3,10 +3,10 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -212,5 +212,109 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         }
       }
     }
+  }
+
+  @Test
+  public void testRemoveExtraDescribeCalls() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table test_uuid_with_bind(c1 number)");
+
+    PreparedStatement preparedStatement =
+        connection.prepareStatement("insert into test_uuid_with_bind values (?)");
+    preparedStatement.setInt(1, 5);
+    assertEquals(1, preparedStatement.executeUpdate());
+    String queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+    // Calling getMetadata() should no longer require an additional server call because we have the
+    // metadata form the executeUpdate
+    String queryId2 =
+        preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
+    // Assert the query IDs are the same. This will be the case if there is no additional describe
+    // call for getMetadata().
+    assertEquals(queryId1, queryId2);
+
+    preparedStatement.addBatch();
+
+    preparedStatement =
+        connection.prepareStatement("select * from test_uuid_with_bind where c1 = ?");
+    assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    preparedStatement.setInt(1, 5);
+
+    ResultSet resultSet = preparedStatement.executeQuery();
+    assertThat(resultSet.next(), is(true));
+    queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+    queryId2 =
+        preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
+    String queryId3 = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    // Assert all 3 query IDs are the same because only 1 server call was executed
+    assertEquals(queryId1, queryId2);
+    assertEquals(queryId1, queryId3);
+
+    resultSet.close();
+    preparedStatement.close();
+
+    statement.execute("drop table if exists test_uuid_with_bind");
+    connection.close();
+  }
+
+  @Test
+  public void testRemoveExtraDescribeCallsSanityCheck() throws SQLException {
+    Connection connection = getConnection();
+    PreparedStatement preparedStatement =
+        connection.prepareStatement(
+            "create or replace table test_uuid_with_bind(c1 number, c2 string)");
+    preparedStatement.execute();
+    String queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+    preparedStatement =
+        connection.prepareStatement("insert into test_uuid_with_bind values (?, ?)");
+    assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    preparedStatement.setInt(1, 5);
+    preparedStatement.setString(2, "hello");
+    preparedStatement.addBatch();
+    preparedStatement.setInt(1, 7);
+    preparedStatement.setString(2, "hello1");
+    preparedStatement.addBatch();
+    String queryId2 =
+        preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
+    // These query IDs should not match because they are from 2 different prepared statements
+    assertNotEquals(queryId1, queryId2);
+    preparedStatement.executeBatch();
+    String queryId3 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+    // Another execute call was created, so prepared statement has new query ID
+    assertNotEquals(queryId2, queryId3);
+    // Calling getMetadata() should no longer require an additional server call because we have the
+    // metadata form the executeUpdate
+    String queryId4 =
+        preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
+    // Assert the query IDs are the same. This will be the case if there is no additional describe
+    // call for getMetadata().
+    assertEquals(queryId3, queryId4);
+
+    connection.createStatement().execute("drop table if exists test_uuid_with_bind");
+    preparedStatement.close();
+    connection.close();
+  }
+
+  @Test
+  public void testAlreadyDescribedMultipleResults() throws SQLException {
+    Connection connection = getConnection();
+    PreparedStatement prepStatement = connection.prepareStatement(insertSQL);
+    bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
+    prepStatement.execute();
+    // The statement above has already been described since it has been executed
+    assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    prepStatement = connection.prepareStatement(selectSQL);
+    // Assert the statement, once it has been re-created, has already described set to false
+    assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    prepStatement.setInt(1, 1);
+    ResultSet rs = prepStatement.executeQuery();
+    assertTrue(rs.next());
+    assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    prepStatement = connection.prepareStatement(selectAllSQL);
+    // Assert the statement, once it has been re-created, has already described set to false
+    assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    rs = prepStatement.executeQuery();
+    assertTrue(rs.next());
+    assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
   }
 }

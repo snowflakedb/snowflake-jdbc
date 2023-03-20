@@ -59,6 +59,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   /** Snowflake query ID from the latest executed query */
   private String queryID;
 
+  /** statement and result metadata from describe phase */
+  protected SFStatementMetaData statementMetaData = SFStatementMetaData.emptyMetaData();
+
   /** Snowflake query IDs from the latest executed batch */
   private List<String> batchQueryIDs = new LinkedList<>();
 
@@ -191,7 +194,16 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       sfResultSet.setSession(this.connection.getSFBaseSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
       queryID = sfResultSet.getQueryId();
+      statementMetaData =
+          new SFStatementMetaData(
+              sfResultSet.getMetaData(),
+              sfResultSet.getStatementType(),
+              sfResultSet.getNumberOfBinds(),
+              sfResultSet.isArrayBindSupported(),
+              sfResultSet.getMetaDataOfBinds(),
+              true); // valid metadata
     } catch (SFException ex) {
+      statementMetaData = SFStatementMetaData.emptyMetaData();
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     } finally {
@@ -233,14 +245,25 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         sfResultSet =
             sfBaseStatement.asyncExecute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY);
+        statementMetaData = SFStatementMetaData.emptyMetaData();
       } else {
         sfResultSet =
             sfBaseStatement.execute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY);
+        statementMetaData =
+            new SFStatementMetaData(
+                sfResultSet.getMetaData(),
+                sfResultSet.getStatementType(),
+                sfResultSet.getNumberOfBinds(),
+                sfResultSet.isArrayBindSupported(),
+                sfResultSet.getMetaDataOfBinds(),
+                true); // valid metadata
       }
-
       sfResultSet.setSession(this.connection.getSFBaseSession());
+      queryID = sfResultSet.getQueryId();
+
     } catch (SFException ex) {
+      statementMetaData = SFStatementMetaData.emptyMetaData();
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
@@ -286,6 +309,14 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       sfResultSet =
           sfBaseStatement.execute(sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE);
       sfResultSet.setSession(this.connection.getSFBaseSession());
+      statementMetaData =
+          new SFStatementMetaData(
+              sfResultSet.getMetaData(),
+              sfResultSet.getStatementType(),
+              sfResultSet.getNumberOfBinds(),
+              sfResultSet.isArrayBindSupported(),
+              sfResultSet.getMetaDataOfBinds(),
+              true); // valid metadata
       if (resultSet != null) {
         openResultSets.add(resultSet);
       }
@@ -309,6 +340,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       updateCount = NO_UPDATES;
       return true;
     } catch (SFException ex) {
+      statementMetaData = SFStatementMetaData.emptyMetaData();
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
