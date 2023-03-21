@@ -152,4 +152,36 @@ public class StatementLatestIT extends BaseJDBCTest {
     statement.close();
     connection.close();
   }
+
+  /**
+   * Tests that resultsets that have been closed are not added to the set of openResultSets.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testExecuteOpenResultSets() throws SQLException {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    ResultSet resultSet;
+
+    for (int i = 0; i < 10; i++) {
+      statement.execute("select 1");
+      statement.getResultSet();
+    }
+
+    assertEquals(9, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+    statement.close();
+
+    statement = con.createStatement();
+    for (int i = 0; i < 10; i++) {
+      statement.execute("select 1");
+      resultSet = statement.getResultSet();
+      resultSet.close();
+    }
+
+    assertEquals(0, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+
+    statement.close();
+    con.close();
+  }
 }
