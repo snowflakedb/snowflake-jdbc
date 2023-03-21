@@ -65,7 +65,7 @@ public class HttpUtil {
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
   static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
-  static final int DEFAULT_TTL = -1; // secs
+  static final int DEFAULT_TTL = 60; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
