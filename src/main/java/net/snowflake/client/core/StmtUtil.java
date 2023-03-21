@@ -316,14 +316,7 @@ public class StmtUtil {
           sqlJsonBody.setDescribedJobId(stmtInput.describedJobId);
         }
 
-        // Currently OpaqueContextDTO (in QueryContextDTO) is an empty class, but we will add more fields to it in the future.
-        // So we need to disable this SerializationFeature.FAIL_ON_EMPTY_BEANS to avoid the exception.
-        mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-
-        System.out.println("queryContextDTO: " + mapper.writeValueAsString(stmtInput.queryContextDTO));
-
         String json = mapper.writeValueAsString(sqlJsonBody);
-        System.out.println("queryExecDTO: " + json);
 
         logger.debug("JSON: {}", json);
 
