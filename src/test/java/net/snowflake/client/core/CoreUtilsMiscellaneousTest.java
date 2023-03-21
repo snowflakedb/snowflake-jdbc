@@ -55,16 +55,6 @@ public class CoreUtilsMiscellaneousTest {
     System.setProperty("os.name", originalOS);
   }
 
-  /** Assert HostSpecSSD functions work */
-  @Test
-  public void testHostSpecSSD() {
-    HostSpecSSD ssd = new HostSpecSSD();
-    ssd.setHostname("test");
-    ssd.setHostSpecDirective("test_directive");
-    assertEquals("test", ssd.getHostname());
-    assertEquals("test_directive", ssd.getHostSpecDirective());
-  }
-
   @Test
   public void testHttpClientSettingsKey() {
     // Create 2 identical HTTPClientKeys with different nonProxyHost settings
