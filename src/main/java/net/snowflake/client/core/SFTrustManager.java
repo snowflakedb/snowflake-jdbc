@@ -15,9 +15,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import com.nimbusds.jose.JWSVerifier;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jwt.SignedJWT;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -31,8 +28,6 @@ import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.X509EncodedKeySpec;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -171,8 +166,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   /** Date and timestamp format */
   private static final SimpleDateFormat DATE_FORMAT_UTC =
       new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-  /** SSD Support management */
-  static SSDManager ssdManager = new SSDManager();
+
   /** OCSP Response Cache server Retry URL pattern */
   static String SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN;
   /** OCSP response cache server URL. */
@@ -281,10 +275,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         (X509ExtendedTrustManager) getTrustManager(KeyManagerFactory.getDefaultAlgorithm());
 
     checkNewOCSPEndpointAvailability();
-
-    if (ssdManager.getSSDSupportStatus()) {
-      readDirectives();
-    }
 
     if (cacheFile != null) {
       fileCacheManager.overrideCacheFile(cacheFile);
@@ -675,25 +665,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     return ocspMode == OCSPMode.FAIL_OPEN;
   }
 
-  /**
-   * Look for Out of Band Server Side Directives
-   *
-   * <p>These can be two types only: 1. Key Update Directive - key_upd_ssd.ssd 2. Host Specific OCSP
-   * Bypass Directive - host_spec_bypass_ssd.ssd
-   */
-  private void readDirectives() {
-    KeyUpdSSD keyUpdDir = ssdManager.getKeyUpdateSSD();
-    HostSpecSSD hostSpecDir = ssdManager.getHostSpecBypassSSD();
-
-    if (keyUpdDir != null) {
-      processKeyUpdateDirective(keyUpdDir.getIssuer(), keyUpdDir.getKeyUpdDirective());
-    }
-
-    if (hostSpecDir != null) {
-      ssdManager.addToSSDCache(hostSpecDir.getHostSpecDirective());
-    }
-  }
-
   private void checkNewOCSPEndpointAvailability() {
     String new_ocsp_ept;
     try {
@@ -908,13 +879,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       final int maxRetryCounter = isOCSPFailOpen() ? 1 : 2;
       for (int retry = 0; retry < maxRetryCounter; ++retry) {
         try {
-          if (ssdManager.getSSDSupportStatus()) {
-            // Look for Host Specific SSD in SSD Cache
-            success = checkSSD(keyOcspResponse, peerHost);
-            if (success) {
-              break;
-            }
-          }
           SFPair<Long, String> value0 = OCSP_RESPONSE_CACHE.get(keyOcspResponse);
           OCSPResp ocspResp;
           try {
@@ -955,14 +919,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
               if (ex.getErrorCode() != OCSPErrorCode.REVOCATION_CHECK_FAILURE) {
                 throw ex;
               }
-              if (ssdManager.getSSDSupportStatus()
-                  && this.processOCSPBypassSSD(value0.right, keyOcspResponse, peerHost)) {
-                // Failed processing OCSP response. Try processing cache value as SSD
-                success = true;
-                break;
-              } else {
-                throw new CertificateException(ex.getMessage(), ex);
-              }
+              throw new CertificateException(ex.getMessage(), ex);
             }
           } catch (SFOCSPException ex) {
             if (ex.getErrorCode() == OCSPErrorCode.CERTIFICATE_STATUS_REVOKED) {
@@ -1022,40 +979,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         throw error;
       }
     }
-  }
-
-  /*
-   * Look for Host Specific SSD in SSD Cache
-   */
-  private boolean checkSSD(OcspResponseCacheKey keyOcspResponse, String peerHost) {
-    String hostSpecSSD;
-    SFPair<Long, String> resp = OCSP_RESPONSE_CACHE.get(ssdManager.getWildCardCertId());
-    if ((hostSpecSSD = ssdManager.getSSDFromCache()) != null) {
-      boolean retval = this.processOCSPBypassSSD(hostSpecSSD, keyOcspResponse, peerHost);
-      if (retval) {
-        return true;
-      } else {
-        LOGGER.info(
-            "Unable to process Host Specific OCSP Response. Removing" + " it from the SSD Cache",
-            false);
-        /* remove invalid entry from SSD Cache */
-        ssdManager.clearSSDCache();
-      }
-    } else if (resp.right != null) {
-      /*
-       * Process WildCard SSD if present
-       */
-      if (this.processOCSPBypassSSD(resp.right, ssdManager.getWildCardCertId(), "*")) {
-        return true;
-      } else {
-        /*
-         * Delete WildCard from cache
-         */
-        LOGGER.info("Found invalid wildcard SSD in cache, removing.", false);
-        OCSP_RESPONSE_CACHE.remove(ssdManager.getWildCardCertId());
-      }
-    }
-    return false;
   }
 
   /**
@@ -1570,169 +1493,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       }
     }
     return ocsp;
-  }
-
-  /** SSD Processing Code */
-  private void processKeyUpdateDirective(String issuer, String ssd) {
-    try {
-      /*
-       * Get unverified part of the JWT to extract issuer.
-       *
-       */
-      // PlainJWT jwt_unverified = PlainJWT.parse(ssd);
-      SignedJWT jwt_signed = SignedJWT.parse(ssd);
-      String jwt_issuer = (String) jwt_signed.getHeader().getCustomParam("ssd_iss");
-      String ssd_pubKey;
-
-      if (!jwt_issuer.equals(issuer)) {
-        LOGGER.debug("Issuer mismatch. Invalid SSD", false);
-        return;
-      }
-
-      if (jwt_issuer.equals("dep1")) {
-        ssd_pubKey = ssdManager.getPubKey("dep1");
-      } else {
-        ssd_pubKey = ssdManager.getPubKey("dep2");
-      }
-
-      if (ssd_pubKey == null) {
-        LOGGER.debug("Invalid SSD", false);
-        return;
-      }
-
-      String publicKeyContent =
-          ssd_pubKey
-              .replaceAll("\\n", "")
-              .replace("-----BEGIN PUBLIC KEY-----", "")
-              .replace("-----END PUBLIC KEY-----", "");
-      KeyFactory kf = KeyFactory.getInstance("RSA");
-      X509EncodedKeySpec keySpecX509 =
-          new X509EncodedKeySpec(Base64.decodeBase64(publicKeyContent));
-      RSAPublicKey rsaPubKey = (RSAPublicKey) kf.generatePublic(keySpecX509);
-
-      /*
-       * Verify signature of the JWT Token
-       */
-      SignedJWT jwt_token_verified = SignedJWT.parse(ssd);
-      JWSVerifier jwsVerifier = new RSASSAVerifier(rsaPubKey);
-      try {
-        if (jwt_token_verified.verify(jwsVerifier)) {
-          /*
-           * verify nbf time
-           */
-          long cur_time = System.currentTimeMillis();
-          Date nbf = jwt_token_verified.getJWTClaimsSet().getNotBeforeTime();
-          // long nbf = jwt_token_verified.getJWTClaimsSet().getLongClaim("nbf");
-          // double nbf = jwt_token_verified.getJWTClaimsSet().getDoubleClaim("nbf");
-          if (cur_time < nbf.getTime()) {
-            LOGGER.debug(
-                "The SSD token is not yet valid. Current time less than Not Before Time", false);
-            return;
-          }
-          float key_ver =
-              Float.parseFloat(jwt_token_verified.getJWTClaimsSet().getStringClaim("keyVer"));
-          if (key_ver <= ssdManager.getPubKeyVer(jwt_issuer)) {
-            return;
-          }
-          ssdManager.updateKey(
-              jwt_issuer, jwt_token_verified.getJWTClaimsSet().getStringClaim("pubKey"), key_ver);
-        }
-      } catch (Throwable ex) {
-        LOGGER.debug("Failed to verify JWT Token", false);
-        throw ex;
-      }
-    } catch (Throwable ex) {
-      LOGGER.debug("Failed to parse JWT Token, aborting", false);
-    }
-  }
-
-  private boolean processOCSPBypassSSD(String ocsp_ssd, OcspResponseCacheKey cid, String hostname) {
-    try {
-      /*
-       * Get unverified part of the JWT to extract issuer.
-       */
-      SignedJWT jwt_unverified = SignedJWT.parse(ocsp_ssd);
-      String jwt_issuer = (String) jwt_unverified.getHeader().getCustomParam("ssd_iss");
-      String ssd_pubKey;
-
-      if (jwt_issuer.equals("dep1")) {
-        ssd_pubKey = ssdManager.getPubKey("dep1");
-      } else {
-        ssd_pubKey = ssdManager.getPubKey("dep2");
-      }
-
-      String publicKeyContent =
-          ssd_pubKey
-              .replaceAll("\\n", "")
-              .replace("-----BEGIN PUBLIC KEY-----", "")
-              .replace("-----END PUBLIC KEY-----", "");
-      KeyFactory kf = KeyFactory.getInstance("RSA");
-      X509EncodedKeySpec keySpecX509 =
-          new X509EncodedKeySpec(Base64.decodeBase64(publicKeyContent));
-      RSAPublicKey rsaPubKey = (RSAPublicKey) kf.generatePublic(keySpecX509);
-
-      /*
-       * Verify signature of the JWT Token
-       * Verify time validity of the JWT Token (API does not do this)
-       */
-      SignedJWT jwt_token_verified = SignedJWT.parse(ocsp_ssd);
-      JWSVerifier jwsVerifier = new RSASSAVerifier(rsaPubKey);
-      if (jwt_token_verified.verify(jwsVerifier)) {
-        String sfc_endpoint = jwt_token_verified.getJWTClaimsSet().getStringClaim("sfcEndpoint");
-        String jwt_certid = jwt_token_verified.getJWTClaimsSet().getStringClaim("certId");
-        Date jwt_nbf = jwt_token_verified.getJWTClaimsSet().getNotBeforeTime();
-        Date jwt_exp = jwt_token_verified.getJWTClaimsSet().getExpirationTime();
-
-        long current_ts = System.currentTimeMillis();
-        if (current_ts < jwt_exp.getTime() && current_ts >= jwt_nbf.getTime()) {
-          if (!sfc_endpoint.equals("*")) {
-            /*
-             * In case there are multiple hostnames
-             * associated to the same account. The
-             * code expects a space separated list
-             * of all hostnames associated with this
-             * account in sfcEndpoint field
-             */
-
-            String[] splitString = sfc_endpoint.split("\\s+");
-
-            for (String s : splitString) {
-              if (s.equals(hostname)) {
-                return true;
-              }
-            }
-            return false;
-          }
-          /*
-           * No In Band token can have > 7 days validity
-           */
-          if (jwt_exp.getTime() - jwt_nbf.getTime() > (7 * 24 * 60 * 60 * 1000)) {
-            return false;
-          }
-          byte[] jwt_certid_dec = Base64.decodeBase64(jwt_certid);
-          DLSequence jwt_rawCertId =
-              (DLSequence) ASN1ObjectIdentifier.fromByteArray(jwt_certid_dec);
-          ASN1Encodable[] jwt_rawCertIdArray = jwt_rawCertId.toArray();
-          byte[] issuerNameHashDer = ((DEROctetString) jwt_rawCertIdArray[1]).getEncoded();
-          byte[] issuerKeyHashDer = ((DEROctetString) jwt_rawCertIdArray[2]).getEncoded();
-          BigInteger serialNumber = ((ASN1Integer) jwt_rawCertIdArray[3]).getValue();
-
-          OcspResponseCacheKey k =
-              new OcspResponseCacheKey(issuerNameHashDer, issuerKeyHashDer, serialNumber);
-
-          if (k.equals(cid)) {
-            LOGGER.debug("Found a Signed OCSP Bypass SSD for ceri id {}", cid);
-            return true;
-          }
-          LOGGER.debug("Found invalid OCSP bypass for cert id {}", cid);
-          return false;
-        }
-      }
-      return false;
-    } catch (Throwable ex) {
-      LOGGER.debug("Failed to parse JWT Token, aborting", false);
-      return false;
-    }
   }
 
   /** OCSP Response Utils */
