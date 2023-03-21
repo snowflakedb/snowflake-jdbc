@@ -772,7 +772,6 @@ public class MockConnectionTest extends BaseJDBCTest {
       }
       return null;
     }
-
   }
 
   public static class MockSnowflakeConnectionImpl implements SFConnectionHandler {
@@ -834,7 +833,5 @@ public class MockConnectionTest extends BaseJDBCTest {
               : SFBaseFileTransferAgent.CommandType.DOWNLOAD;
       return new MockSFFileTransferAgent(fileMap, "fileName", commandType);
     }
-
-
   }
 }
