@@ -5,18 +5,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class OpaqueContextDTO {
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  byte[] base64Data;
+  private String base64Data;
 
   @JsonCreator
-  public OpaqueContextDTO(@JsonProperty("base64Data") byte[] base64Data) {
+  public OpaqueContextDTO(@JsonProperty("base64Data") String base64Data) {
     this.base64Data = base64Data;
   }
 
-  public byte[] getBase64Data() {
+  public String getBase64Data() {
     return base64Data;
   }
 
-  public void setBase64Data(byte[] base64Data) {
+  public void setBase64Data(String base64Data) {
     this.base64Data = base64Data;
   }
 }
+

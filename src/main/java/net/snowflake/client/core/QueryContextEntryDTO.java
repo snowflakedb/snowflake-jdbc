@@ -1,47 +1,52 @@
 package net.snowflake.client.core;
 
 public class QueryContextEntryDTO {
-    private Long id;
-    private Long timestamp;
-    private Long priority;
+    private long id;
+    private long timestamp;
+    private long priority;
     private OpaqueContextDTO context;
-
-    public QueryContextEntryDTO(Long id, Long timestamp, Long priority, OpaqueContextDTO context) {
-        this.id = id;
-        this.timestamp = timestamp;
-        this.priority = priority;
-        this.context = context;
+  
+    public QueryContextEntryDTO() {
+      // empty constructor
     }
-
-    public Long getId() {
-        return id;
+  
+    public QueryContextEntryDTO(long id, long timestamp, long priority, OpaqueContextDTO context) {
+      this.id = id;
+      this.timestamp = timestamp;
+      this.priority = priority;
+      this.context = context;
     }
-
-    public void setId(Long id) {
-        this.id = id;
+  
+    public long getId() {
+      return id;
     }
-
-    public Long getTimestamp() {
-        return timestamp;
+  
+    public void setId(long id) {
+      this.id = id;
     }
-
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
+  
+    public long getTimestamp() {
+      return timestamp;
     }
-
-    public Long getPriority() {
-        return priority;
+  
+    public void setTimestamp(long timestamp) {
+      this.timestamp = timestamp;
     }
-
-    public void setPriority(Long priority) {
-        this.priority = priority;
+  
+    public long getPriority() {
+      return priority;
     }
-
+  
+    public void setPriority(long priority) {
+      this.priority = priority;
+    }
+  
     public OpaqueContextDTO getContext() {
-        return context;
+      return context;
     }
-
+  
     public void setContext(OpaqueContextDTO context) {
-        this.context = context;
+      this.context = context;
     }
-}
+  }
+  

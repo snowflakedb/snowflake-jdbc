@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class QueryContextCacheTest {
   private QueryContextCache qcc = null;
   private long BASE_READ_TIMESTAMP = 1668727958;
-  private byte[] CONTEXT = "Some query context".getBytes();
+  private String CONTEXT = "Some query context";
   private long BASE_ID = 0;
   private long BASE_PRIORITY = 0;
 
@@ -33,7 +33,7 @@ public class QueryContextCacheTest {
     initCacheWithDataWithContext(CONTEXT);
   }
 
-  private void initCacheWithDataWithContext(byte[] context) {
+  private void initCacheWithDataWithContext(String context) {
     qcc = new QueryContextCache(MAX_CAPACITY);
     expectedIDs = new long[MAX_CAPACITY];
     expectedReadTimestamp = new long[MAX_CAPACITY];
@@ -221,14 +221,14 @@ public class QueryContextCacheTest {
     assertCacheDataWithContext(CONTEXT);
   }
 
-  private void assertCacheDataWithContext(byte[] context) {
+  private void assertCacheDataWithContext(String context) {
     int size = qcc.getSize();
     assertThat("Non empty cache", size == MAX_CAPACITY);
 
     long[] ids = new long[size];
     long[] readTimestamps = new long[size];
     long[] priorities = new long[size];
-    byte[][] contexts = new byte[size][];
+    String[] contexts = new String[size];
 
     // Compare elements
     qcc.getElements(ids, readTimestamps, priorities, contexts);
@@ -236,7 +236,7 @@ public class QueryContextCacheTest {
       assertEquals(expectedIDs[i], ids[i]);
       assertEquals(expectedReadTimestamp[i], readTimestamps[i]);
       assertEquals(expectedPriority[i], priorities[i]);
-      assertArrayEquals(context, contexts[i]);
+      assertEquals(context, contexts[i]);
     }
   }
 }

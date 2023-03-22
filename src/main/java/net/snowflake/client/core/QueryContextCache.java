@@ -62,7 +62,7 @@ public class QueryContextCache {
    *     priority.
    * @param context Opaque query context.
    */
-  void merge(long id, long readTimestamp, long priority, byte[] context) {
+  void merge(long id, long readTimestamp, long priority, String context) {
     if (idMap.containsKey(id)) {
       // ID found in the cache
       QueryContextElement qce = idMap.get(id);
@@ -228,7 +228,7 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
 
     JsonNode contextNode = node.path("context");
     if (contextNode.isTextual()) {
-        byte[] contextBytes = contextNode.asText().getBytes();
+        String contextBytes = contextNode.asText();
         entry.setContext(contextBytes);
     }
 
@@ -345,7 +345,7 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
    * @return a query context element
    */
   private static QueryContextElement createElement(
-      long id, long timestamp, long priority, byte[] opaqueContext) {
+      long id, long timestamp, long priority, String opaqueContext) {
     return new QueryContextElement(id, timestamp, priority, opaqueContext);
   }
 
@@ -398,7 +398,7 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
     return treeSet.size();
   }
 
-  void getElements(long[] ids, long[] readTimestamps, long[] priorities, byte[][] contexts) {
+  void getElements(long[] ids, long[] readTimestamps, long[] priorities, String[] contexts) {
     TreeSet<QueryContextElement> elems = getElements();
     int i = 0;
 
@@ -430,7 +430,7 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
     long id; // database id as key. (bigint)
     long readTimestamp; // When the query context read (bigint). Compare for same id.
     long priority; // Priority of the query context (bigint). Compare for different ids.
-    byte[] context; // Opaque information (varbinary).
+    String context; // Opaque information (varbinary).
 
     public QueryContextElement() {
       // Default constructor
@@ -444,7 +444,7 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
      * @param priority Priority of this entry w.r.t other ids
      * @param context Opaque query context, used by query processor in the server.
      */
-    public QueryContextElement(long id, long readTimestamp, long priority, byte[] context) {
+    public QueryContextElement(long id, long readTimestamp, long priority, String context) {
       this.id = id;
       this.readTimestamp = readTimestamp;
       this.priority = priority;
@@ -465,7 +465,7 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
       return (id == other.id
           && readTimestamp == other.readTimestamp
           && priority == other.priority
-          && Arrays.equals(context, other.context));
+          && context.equals(other.context));
     }
 
     @Override
@@ -475,7 +475,7 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
       hash = hash * 31 + (int) id;
       hash += (hash * 31) + (int) readTimestamp;
       hash += (hash * 31) + (int) priority;
-      hash += (hash * 31) + Arrays.hashCode(context);
+      hash += (hash * 31) + context.hashCode();
 
       return hash;
     }
@@ -498,7 +498,7 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
       this.priority = priority;
     }
 
-    public void setContext(byte[] context) {
+    public void setContext(String context) {
       this.context = context;
     }
 
@@ -518,7 +518,7 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
       return priority;
     }
 
-    public byte[] getContext() {
+    public String getContext() {
       return context;
     }
   }
