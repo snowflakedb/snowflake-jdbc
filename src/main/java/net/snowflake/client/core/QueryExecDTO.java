@@ -58,25 +58,50 @@ public class QueryExecDTO {
     return sqlText;
   }
 
+  public void setSqlText(String sqlText) {
+    this.sqlText = sqlText;
+  }
+
   @Deprecated
   public Integer getSequenceId() {
     return sequenceId;
+  }
+
+  @Deprecated
+  public void setSequenceId(Integer sequenceId) {
+    this.sequenceId = sequenceId;
   }
 
   public Map<String, ParameterBindingDTO> getBindings() {
     return bindings;
   }
 
+  public void setBindings(Map<String, ParameterBindingDTO> bindings) {
+    this.bindings = bindings;
+  }
+
   public String getBindStage() {
     return bindStage;
+  }
+
+  public void setBindStage(String bindStage) {
+    this.bindStage = bindStage;
   }
 
   public boolean isDescribeOnly() {
     return describeOnly;
   }
 
+  public void setDescribeOnly(boolean describeOnly) {
+    this.describeOnly = describeOnly;
+  }
+
   public Map<String, Object> getParameters() {
     return parameters;
+  }
+
+  public void setParameters(Map<String, Object> parameters) {
+    this.parameters = parameters;
   }
 
   public String getDescribedJobId() {
@@ -91,8 +116,20 @@ public class QueryExecDTO {
     return querySubmissionTime;
   }
 
+  public void setQuerySubmissionTime(long querySubmissionTime) {
+    this.querySubmissionTime = querySubmissionTime;
+  }
+
+  public void setIsInternal(boolean isInternal) {
+    this.isInternal = isInternal;
+  }
+
   public boolean getIsInternal() {
     return this.isInternal;
+  }
+
+  public void setAsyncExec(boolean asyncExec) {
+    this.asyncExec = asyncExec;
   }
 
   public boolean getAsyncExec() {
