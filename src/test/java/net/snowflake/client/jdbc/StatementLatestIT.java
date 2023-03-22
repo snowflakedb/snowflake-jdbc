@@ -10,15 +10,16 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
+import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.bind.BindUploader;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -183,5 +184,44 @@ public class StatementLatestIT extends BaseJDBCTest {
 
     statement.close();
     con.close();
+  }
+
+  @Test
+  public void testPreparedStatementLogging() throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement stmt = con.createStatement()) {
+        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        sfSession.setPreparedStatementLogging(true);
+
+        stmt.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        stmt.executeQuery(
+            "create or replace table mytab(cola int, colb int, colc int, cold int, cole int"
+                + ", colf int, colg int, colh int)");
+        PreparedStatement pstatement =
+            con.prepareStatement(
+                "INSERT INTO LORNATESTDB.TESTSCHEMA.mytab(cola, colb, colc, cold, cole, colf, colg, colh) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+
+        for (int i = 1; i <= 1001; i++) {
+          pstatement.setInt(1, i);
+          pstatement.setInt(2, i);
+          pstatement.setInt(3, i);
+          pstatement.setInt(4, i);
+          pstatement.setInt(5, i);
+          pstatement.setInt(6, i);
+          pstatement.setInt(7, i);
+          pstatement.setInt(8, i);
+          pstatement.addBatch();
+        }
+
+        Map<String, ParameterBindingDTO> bindings =
+            pstatement.unwrap(SnowflakePreparedStatementV1.class).getBatchParameterBindings();
+        assertTrue(bindings.size() > 0);
+        int bindValues = BindUploader.arrayBindValueCount(bindings);
+        assertEquals(8008, bindValues);
+        pstatement.executeBatch();
+
+        stmt.execute("drop table if exists mytab");
+      }
+    }
   }
 }
