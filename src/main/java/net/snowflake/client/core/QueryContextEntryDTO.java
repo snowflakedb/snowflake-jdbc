@@ -1,5 +1,11 @@
 package net.snowflake.client.core;
 
+
+
+/**
+  * An entry in the set of query context exchanged with Cloud Services.
+  * This includes a domain identifier(id), a timestamp that is monodically increasing, a priority for eviction and the opaque information sent from the Cloud service.
+*/
 public class QueryContextEntryDTO {
     private long id;
     private long timestamp;

@@ -100,6 +100,7 @@ public class SFSession extends SFBaseSession {
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
   private SnowflakeConnectString sfConnStr;
+  // The cache of query context sent from Cloud Service.
   private QueryContextCache qcc; 
 
   // This constructor is used only by tests with no real connection.

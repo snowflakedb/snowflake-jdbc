@@ -120,7 +120,7 @@ public class QueryContextCacheTest {
     // Add one more element with new priority with existing id
     int updatedID = 3;
     long updatedPriority = BASE_PRIORITY + updatedID + 7;
-    ;
+    
     expectedPriority[updatedID] = updatedPriority;
     qcc.merge(
         BASE_ID + updatedID, BASE_READ_TIMESTAMP + updatedID, expectedPriority[updatedID], CONTEXT);

@@ -128,10 +128,10 @@ public class QueryContextCache {
   /** Clear the cache. */
   public void clearCache() {
     logger.debug("clearCache() called");
-
     idMap.clear();
     priorityMap.clear();
     treeSet.clear();
+    logger.debug("clearCache() returns. Number of entries in cache now {}", treeSet.size());
   }
 
   /**
@@ -146,10 +146,6 @@ public class QueryContextCache {
       if (data == null || data.length() == 0) {
         // Clear the cache
         clearCache();
-
-        // Log existing cache entries
-        logCacheEntries();
-
         return;
       }
 
@@ -159,7 +155,7 @@ public class QueryContextCache {
       // Deserialize the main entry. An example JSON is:
       // {
       //   "main_entry": {
-      //     "id": 1,
+      //     "id": 0,
       //     "read_timestamp": 123456789,
       //     "priority": 0,
       //     "context": "base64 encoded context"
@@ -174,13 +170,13 @@ public class QueryContextCache {
       // {
       //   "entries": [
       //     {
-      //       "id": 2,
+      //       "id": 1,
       //       "read_timestamp": 123456789,
       //       "priority": 1,
       //       "context": "base64 encoded context"
       //     },
       //     {
-      //       "id": 3,
+      //       "id": 2,
       //       "read_timestamp": 123456789,
       //       "priority": 2,
       //       "context": "base64 encoded context"
@@ -237,7 +233,8 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
 
 
 /**
- * Deserialize the QueryContext cache from a QueryContextDTO object.
+ * Deserialize the QueryContext cache from a QueryContextDTO object. This function currently is only used in QueryContextCacheTest.java where we check that after
+ * serialization and deserialization, the cache is the same as before.
 */
 public void deserializeQueryContextDTO(QueryContextDTO queryContextDTO){
   synchronized (this) {
@@ -255,19 +252,11 @@ public void deserializeQueryContextDTO(QueryContextDTO queryContextDTO){
     }
 
     try{
-      // Deserialize the main entry
-      QueryContextEntryDTO mainEntryDTO = queryContextDTO.getMainEntry();
       
-      if(mainEntryDTO != null){
-        QueryContextElement mainEntry = deserializeQueryContextElementDTO(mainEntryDTO);
-        merge(mainEntry.id, mainEntry.readTimestamp, mainEntry.priority, mainEntry.context);
-        logCacheEntries();
-      }
-
-      // Deserialize the entries
       List<QueryContextEntryDTO> entries = queryContextDTO.getEntries();
       if(entries != null){
         for (QueryContextEntryDTO entryDTO : entries) {
+          // The main entry priority will always be 0, we simply save a list of QueryContextEntryDTO in QueryContextDTO
           QueryContextElement entry = deserializeQueryContextElementDTO(entryDTO);
           merge(entry.id, entry.readTimestamp, entry.priority, entry.context);
           logCacheEntries();
@@ -307,21 +296,14 @@ public QueryContextDTO serializeQueryContextDTO(){
     try{
       QueryContextDTO queryContextDTO = new QueryContextDTO();
       List<QueryContextEntryDTO> entries = new ArrayList<QueryContextEntryDTO>();
-      int index = 0;
+      // the first element is the main entry with priority 0. We use a list of QueryContextEntryDTO to store all entries in QueryContextDTO
+      // to simplify the JDBC side QueryContextCache design.
       for (final QueryContextElement elem : elements) {
         QueryContextEntryDTO queryContextElementDTO = serializeQueryContextEntryDTO(elem);
-        if(index == 0){
-          // The first entry is the main entry
-          queryContextDTO.setMainEntry(queryContextElementDTO);
-        }else{
-          entries.add(queryContextElementDTO);
-        }
-        index++;
+        entries.add(queryContextElementDTO);
       }
-      if(index > 1){
-        // Add the entries array only if there are more than one entry
-        queryContextDTO.setEntries(entries);
-      }
+      queryContextDTO.setEntries(entries);
+      
       return queryContextDTO;
 
     }catch (Exception e) {

@@ -25,6 +25,7 @@ public class QueryExecDTO {
 
   private Map<String, Object> parameters;
 
+  //Optional query context sent to the JDBC driver from the Cloud Service.
   private QueryContextDTO queryContextDTO;
 
   private String describedJobId;

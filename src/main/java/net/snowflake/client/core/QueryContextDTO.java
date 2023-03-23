@@ -2,28 +2,20 @@ package net.snowflake.client.core;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+
+// The POJO object used by both JDBC and the Cloud service to exchange opaque informations.
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class QueryContextDTO {
 
-    private QueryContextEntryDTO mainEntry;
+    // QueryContextDTO is a list of QueryContextEntryDTO. The first entry is the main entry with priority 0.
     private List<QueryContextEntryDTO> entries;
 
     public QueryContextDTO() {
-        mainEntry = null;
         entries = null;
     }
 
-    public QueryContextDTO(QueryContextEntryDTO mainEntry, List<QueryContextEntryDTO> entries) {
-        this.mainEntry = mainEntry;
+    public QueryContextDTO(List<QueryContextEntryDTO> entries) {
         this.entries = entries;
-    }
-
-    public QueryContextEntryDTO getMainEntry() {
-        return mainEntry;
-    }
-
-    public void setMainEntry(QueryContextEntryDTO mainEntry) {
-        this.mainEntry = mainEntry;
     }
 
     public List<QueryContextEntryDTO> getEntries() {
