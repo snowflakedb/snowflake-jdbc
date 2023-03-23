@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.SSLException;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.HttpUtil;
@@ -204,13 +205,20 @@ public class RestRequest {
         httpRequest.setURI(builder.build());
 
         response = httpClient.execute(httpRequest);
-      } catch (Exception ex) {
+      } catch (IllegalStateException ex) {
         // if exception is caused by illegal state, e.g shutdown of http client
-        // because of closing of connection, stop retrying
-        if (ex instanceof IllegalStateException) {
-          throw new SnowflakeSQLLoggedException(
-              null, ErrorCode.INVALID_STATE, ex, /* session = */ ex.getMessage());
-        }
+        // because of closing of connection, then fail immediately and stop retrying.
+        throw new SnowflakeSQLLoggedException(
+            null, ErrorCode.INVALID_STATE, ex, /* session = */ ex.getMessage());
+
+      } catch (SSLException ex) {
+        // if an SSL issue occurs like an SSLHandshakeException then fail
+        // immediately and stop retrying the requests
+        throw new SnowflakeSQLLoggedException(
+            null, ErrorCode.NETWORK_ERROR, ex, /* session = */ ex.getMessage());
+
+      } catch (Exception ex) {
+
         savedEx = ex;
         // if the request took more than 5 min (socket timeout) log an error
         if ((System.currentTimeMillis() - startTimePerRequest) > 300000) {
@@ -225,6 +233,7 @@ public class RestRequest {
             requestInfoScrubbed,
             ex.getLocalizedMessage(),
             (ArgSupplier) sw::toString);
+
       } finally {
         // Reset the socket timeout to its original value if it is not the
         // very first iteration.
