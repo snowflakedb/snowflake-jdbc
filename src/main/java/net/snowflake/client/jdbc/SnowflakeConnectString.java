@@ -154,7 +154,7 @@ public class SnowflakeConnectString implements Serializable {
 
       return new SnowflakeConnectString(scheme, host, port, parameters, account);
     } catch (Exception ex) {
-      logger.info("Exception thrown while parsing Snowflake connect string", ex);
+      logger.warn("Exception thrown while parsing Snowflake connect string", ex);
       return INVALID_CONNECT_STRING;
     }
   }
