@@ -919,59 +919,6 @@ public class SFSession extends SFBaseSession {
     return mfaToken;
   }
 
-  /**
-   * Sets the current objects if the session is not up to date. It can happen if the session is
-   * created by the id token, which doesn't carry the current objects.
-   *
-   * @param loginInput The login input to use for this session
-   * @param loginOutput The login output to ose for this session
-   */
-  void setCurrentObjects(SFLoginInput loginInput, SFLoginOutput loginOutput) {
-    this.sessionToken = loginOutput.getSessionToken(); // used to run the commands.
-    runInternalCommand("USE ROLE IDENTIFIER(?)", loginInput.getRole());
-    runInternalCommand("USE WAREHOUSE IDENTIFIER(?)", loginInput.getWarehouse());
-    runInternalCommand("USE DATABASE IDENTIFIER(?)", loginInput.getDatabaseName());
-    runInternalCommand("USE SCHEMA IDENTIFIER(?)", loginInput.getSchemaName());
-    // This ensures the session returns the current objects and refresh
-    // the local cache.
-    SFBaseResultSet result = runInternalCommand("SELECT ?", "1");
-
-    // refresh the current objects
-    loginOutput.setSessionDatabase(getDatabase());
-    loginOutput.setSessionSchema(getSchema());
-    loginOutput.setSessionWarehouse(getWarehouse());
-    loginOutput.setSessionRole(getRole());
-    loginOutput.setIdToken(loginInput.getIdToken());
-
-    // no common parameter is updated.
-    if (result != null) {
-      loginOutput.setCommonParams(result.parameters);
-    }
-  }
-
-  private SFBaseResultSet runInternalCommand(String sql, String value) {
-    if (value == null) {
-      return null;
-    }
-
-    try {
-      Map<String, ParameterBindingDTO> bindValues = new HashMap<>();
-      bindValues.put("1", new ParameterBindingDTO("TEXT", value));
-      SFStatement statement = new SFStatement(this);
-      return statement.executeQueryInternal(
-          sql,
-          bindValues,
-          false, // not describe only
-          true, // internal
-          false, // asyncExec
-          null // caller isn't a JDBC interface method
-          );
-    } catch (SFException | SQLException ex) {
-      logger.debug("Failed to run a command: {}, err={}", sql, ex);
-    }
-    return null;
-  }
-
   public SnowflakeConnectString getSnowflakeConnectionString() {
     return sfConnStr;
   }
