@@ -8,7 +8,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.net.ssl.SSLException;
+import javax.net.ssl.*;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.HttpUtil;
@@ -211,7 +211,10 @@ public class RestRequest {
         throw new SnowflakeSQLLoggedException(
             null, ErrorCode.INVALID_STATE, ex, /* session = */ ex.getMessage());
 
-      } catch (SSLException ex) {
+      } catch (SSLHandshakeException
+          | SSLKeyException
+          | SSLPeerUnverifiedException
+          | SSLProtocolException ex) {
         // if an SSL issue occurs like an SSLHandshakeException then fail
         // immediately and stop retrying the requests
         throw new SnowflakeSQLLoggedException(
