@@ -53,8 +53,8 @@ public class SnowflakeFileTransferMetadataV1
   public boolean isForOneFile() {
     // The presigned url is for one file and the down-scoped token can be used for multiple files.
     return stageInfo.getStageType() == StageInfo.StageType.GCS
-            && !Strings.isNullOrEmpty(presignedUrl)
-            && !"null".equalsIgnoreCase(presignedUrl);
+        && !Strings.isNullOrEmpty(presignedUrl)
+        && !"null".equalsIgnoreCase(presignedUrl);
   }
 
   @JsonProperty("presignedUrl")
