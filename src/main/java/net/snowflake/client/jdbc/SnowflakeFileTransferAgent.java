@@ -1949,7 +1949,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     StageInfo stageInfo = metadata.getStageInfo();
     stageInfo.setProxyProperties(proxyProperties);
-    String destFileName = metadata.getPresignedUrlFileName();
+    // If the down-scoped token is used to upload file, one metadata may be used to upload
+    // multiple files, so use the dest file name in config.
+    String destFileName = metadata.isForOneFile() ? metadata.getPresignedUrlFileName()
+                                                  : config.getDestFileName();
 
     logger.debug("Begin upload data for " + destFileName);
 
@@ -2040,7 +2043,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         case GCS:
           pushFileToRemoteStoreWithPresignedUrl(
               metadata.getStageInfo(),
-              metadata.getPresignedUrlFileName(),
+              destFileName,
               uploadStream,
               fileBackedOutputStream,
               uploadSize,

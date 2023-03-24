@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Strings;
 import java.io.Serializable;
 import net.snowflake.client.jdbc.SFBaseFileTransferAgent.CommandType;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
@@ -50,7 +51,10 @@ public class SnowflakeFileTransferMetadataV1
 
   @Override
   public boolean isForOneFile() {
-    return stageInfo.getStageType() == StageInfo.StageType.GCS;
+    // The presigned url is for one file and the down-scoped token can be used for multiple files.
+    return stageInfo.getStageType() == StageInfo.StageType.GCS
+            && !Strings.isNullOrEmpty(presignedUrl)
+            && !"null".equalsIgnoreCase(presignedUrl);
   }
 
   @JsonProperty("presignedUrl")
