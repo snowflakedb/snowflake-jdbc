@@ -22,7 +22,7 @@ public class SFLoginOutput {
   private String sessionRole;
   private String sessionWarehouse;
   private Map<String, Object> commonParams;
-  private boolean updatedByTokenRequest;
+
   private String sessionId;
 
   SFLoginOutput() {}
@@ -90,18 +90,8 @@ public class SFLoginOutput {
     return idToken;
   }
 
-  SFLoginOutput setIdToken(String idToken) {
-    this.idToken = idToken;
-    return this;
-  }
-
   String getMfaToken() {
     return mfaToken;
-  }
-
-  SFLoginOutput setMfaToken(String mfaToken) {
-    this.mfaToken = mfaToken;
-    return this;
   }
 
   String getDatabaseVersion() {
@@ -124,41 +114,20 @@ public class SFLoginOutput {
     return commonParams;
   }
 
-  SFLoginOutput setCommonParams(Map<String, Object> commonParams) {
-    this.commonParams = commonParams;
-    return this;
-  }
-
   String getSessionDatabase() {
     return sessionDatabase;
-  }
-
-  void setSessionDatabase(String sessionDatabase) {
-    this.sessionDatabase = sessionDatabase;
   }
 
   String getSessionSchema() {
     return sessionSchema;
   }
 
-  void setSessionSchema(String sessionSchema) {
-    this.sessionSchema = sessionSchema;
-  }
-
   String getSessionRole() {
     return sessionRole;
   }
 
-  void setSessionRole(String sessionRole) {
-    this.sessionRole = sessionRole;
-  }
-
   String getSessionWarehouse() {
     return sessionWarehouse;
-  }
-
-  void setSessionWarehouse(String sessionWarehouse) {
-    this.sessionWarehouse = sessionWarehouse;
   }
 
   long getMasterTokenValidityInSeconds() {

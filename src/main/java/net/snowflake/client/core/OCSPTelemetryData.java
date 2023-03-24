@@ -21,23 +21,6 @@ public class OCSPTelemetryData {
     this.cacheEnabled = true;
   }
 
-  public OCSPTelemetryData(
-      String certid,
-      String sfc_peer_host,
-      String ocsp_url,
-      String ocsp_req,
-      OCSPMode ocspMode,
-      Boolean cache_enabled,
-      Boolean cache_hit) {
-    this.certId = certid;
-    this.sfcPeerHost = sfc_peer_host;
-    this.ocspUrl = ocsp_url;
-    this.ocspReq = ocsp_req;
-    this.ocspMode = ocspMode;
-    this.cacheEnabled = cache_enabled;
-    this.cacheHit = cache_hit;
-  }
-
   public void setCertId(String certId) {
     this.certId = certId;
   }

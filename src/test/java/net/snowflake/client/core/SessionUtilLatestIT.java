@@ -11,6 +11,7 @@ import static org.mockito.Mockito.*;
 import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.ClientAuthnDTO;
@@ -22,7 +23,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 @Category(TestCategoryCore.class)
-public class SessionUtilLatestIT {
+public class SessionUtilLatestIT extends BaseJDBCTest {
 
   /**
    * Tests the JWT renew functionality when retrying login requests. To run, update environment
