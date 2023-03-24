@@ -152,23 +152,16 @@ public class QueryContextCache {
     try{
       JsonNode rootNode = jsonObjectMapper.readTree(data);
 
-      // Deserialize the main entry. An example JSON is:
+      // Deserialize the entries. The first entry with priority is the main entry. On JDBC side, 
+      // we save all entries into one list to simplify the logic. An example JSON is:
       // {
-      //   "main_entry": {
-      //     "id": 0,
+      //   "entries": [
+      //    {
+      //     "id": 0,    
       //     "read_timestamp": 123456789,
       //     "priority": 0,
       //     "context": "base64 encoded context"
-      // }
-      JsonNode mainEntryNode = rootNode.path("main_entry");
-      if (!mainEntryNode.isMissingNode()) {
-        QueryContextElement mainEntry = deserializeQueryContextElement(mainEntryNode);
-        merge(mainEntry.id, mainEntry.readTimestamp, mainEntry.priority, mainEntry.context);
-      }
-
-      // Deserialize the entries. An example JSON is:
-      // {
-      //   "entries": [
+      //    },
       //     {
       //       "id": 1,
       //       "read_timestamp": 123456789,
