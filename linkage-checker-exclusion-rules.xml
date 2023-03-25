@@ -1,0 +1,49 @@
+<LinkageCheckerFilter>
+    <LinkageError>
+        <Target><Package name="org.graalvm.nativeimage"/></Target>
+        <Source><Package name="com.google.api.gax.nativeimage"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="com.google.crypto.tink"/></Target>
+        <Source><Package name="com.nimbusds.jose"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="org.bouncycastle.jcajce.provider"/></Target>
+        <Source><Package name="com.nimbusds.jose"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="org.brotli.dec"/></Target>
+        <Source><Package name="org.apache.commons.compress.compressors"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="com.github.luben.zstd"/></Target>
+        <Source><Package name="org.apache.commons.compress.compressors"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="com.google.appengine.api.urlfetch"/></Target>
+        <Source><Package name="com.google.api.client.extensions.appengine"/></Source>
+        <Reason>provided appengine</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="com.oracle"/></Target>
+        <Source><Package name="com.google.api.gax"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="org.osgi"/></Target>
+        <Source><Package name="org.apache.tika.config"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <!--
+    <LinkageError>
+        <Target><Package name=""/></Target>
+        <Source><Package name=""/></Source>
+        <Reason></Reason>
+    </LinkageError>
+    -->
+</LinkageCheckerFilter>
