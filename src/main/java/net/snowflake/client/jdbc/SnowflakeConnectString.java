@@ -31,12 +31,12 @@ public class SnowflakeConnectString implements Serializable {
 
   public static SnowflakeConnectString parse(String url, Properties info) {
     if (url == null) {
-      logger.warn("Connect strings must be non-null");
+      logger.debug("Connect strings must be non-null");
       return INVALID_CONNECT_STRING;
     }
     int pos = url.indexOf(PREFIX);
     if (pos != 0) {
-      logger.warn("Connect strings must start with jdbc:snowflake://");
+      logger.debug("Connect strings must start with jdbc:snowflake://");
       return INVALID_CONNECT_STRING; // not start with jdbc:snowflake://
     }
     String afterPrefix = url.substring(pos + PREFIX.length());
@@ -64,11 +64,11 @@ public class SnowflakeConnectString implements Serializable {
       String queryData = uri.getRawQuery();
 
       if (!scheme.equals("snowflake") && !scheme.equals("http") && !scheme.equals("https")) {
-        logger.warn("Connect strings must have a valid scheme: 'snowflake' or 'http' or 'https'");
+        logger.debug("Connect strings must have a valid scheme: 'snowflake' or 'http' or 'https'");
         return INVALID_CONNECT_STRING;
       }
       if (Strings.isNullOrEmpty(host)) {
-        logger.warn("Connect strings must have a valid host: found null or empty host");
+        logger.debug("Connect strings must have a valid host: found null or empty host");
         return INVALID_CONNECT_STRING;
       }
       if (port == -1) {
@@ -76,7 +76,7 @@ public class SnowflakeConnectString implements Serializable {
       }
       String path = uri.getPath();
       if (!Strings.isNullOrEmpty(path) && !"/".equals(path)) {
-        logger.warn("Connect strings must have no path: expecting empty or null or '/'");
+        logger.debug("Connect strings must have no path: expecting empty or null or '/'");
         return INVALID_CONNECT_STRING;
       }
       String account = null;

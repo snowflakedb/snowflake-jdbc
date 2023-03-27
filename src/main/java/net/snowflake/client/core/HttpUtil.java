@@ -90,8 +90,8 @@ public class HttpUtil {
       new ConcurrentHashMap<>();
 
   /** The map of snowflake route planners */
-  private static Map<HttpClientSettingsKey, SnowflakeMutableProxyRoutePlanner>
-      httpClientRoutePlanner = new ConcurrentHashMap<>();
+  static Map<HttpClientSettingsKey, SnowflakeMutableProxyRoutePlanner> httpClientRoutePlanner =
+      new ConcurrentHashMap<>();
 
   /** Handle on the static connection manager, to gather statistics mainly */
   private static PoolingHttpClientConnectionManager connectionManager = null;
@@ -100,9 +100,6 @@ public class HttpUtil {
   private static RequestConfig DefaultRequestConfig = null;
 
   private static boolean socksProxyDisabled = false;
-
-  /** customized proxy properties */
-  static boolean httpUseProxy = false;
 
   public static long getDownloadedConditionTimeoutInSeconds() {
     return DEFAULT_DOWNLOADED_CONDITION_TIMEOUT;

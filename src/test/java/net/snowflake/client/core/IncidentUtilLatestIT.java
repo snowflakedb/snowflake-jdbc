@@ -4,12 +4,15 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.AbstractDriverIT.getFullPathFileInResource;
 import static org.junit.Assert.assertEquals;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.category.TestCategoryCore;
+import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -17,7 +20,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryCore.class)
-public class IncidentUtilLatestIT {
+public class IncidentUtilLatestIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
   private static final String FILE_NAME = "sf_incident_123456.dmp.gz";
 

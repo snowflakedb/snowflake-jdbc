@@ -61,6 +61,10 @@ public class SnowflakeDriver implements Driver {
       disableArrowResultFormat = true;
       disableArrowResultFormatMessage = t.getLocalizedMessage();
     }
+    if ("true"
+        .equals(SnowflakeUtil.systemGetProperty("snowflake.jdbc.enable.illegalAccessWarning"))) {
+      return;
+    }
     disableIllegalReflectiveAccessWarning();
   }
 

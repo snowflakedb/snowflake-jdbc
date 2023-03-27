@@ -11,6 +11,7 @@ import com.amazonaws.Protocol;
 import com.microsoft.azure.storage.OperationContext;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.HashMap;
 import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -174,5 +175,34 @@ public class CoreUtilsMiscellaneousTest {
     } catch (SnowflakeSQLException e) {
       assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
     }
+  }
+
+  @Test
+  public void testSizeOfHttpClientMapWithVariableNonProxyHosts() {
+    // clear httpClient hashmap before test
+    HttpUtil.httpClient = new HashMap<>();
+    // Clear client route planner hashmap before test
+    HttpUtil.httpClientRoutePlanner = new HashMap<>();
+    HttpClientSettingsKey key1 =
+        new HttpClientSettingsKey(
+            null, "localhost", 8080, "google.com | baz.com", "testuser", "pw", "https");
+    // Assert there is 1 entry in the hashmap now
+    HttpUtil.getHttpClient(key1);
+    assertEquals(1, HttpUtil.httpClient.size());
+    HttpClientSettingsKey key2 =
+        new HttpClientSettingsKey(
+            null, "localhost", 8080, "snowflake.com", "testuser", "pw", "https");
+    HttpUtil.getHttpClient(key2);
+    // Assert there is still 1 entry because key is re-used when only proxy difference is
+    // nonProxyHosts
+    assertEquals(1, HttpUtil.httpClient.size());
+    // Assert previous key has updated non-proxy hosts
+    assertEquals("snowflake.com", key1.getNonProxyHosts());
+    HttpClientSettingsKey key3 =
+        new HttpClientSettingsKey(
+            null, "differenthost.com", 8080, "snowflake.com", "testuser", "pw", "https");
+    // Assert proxy with different host generates new entry in httpClient map
+    HttpUtil.getHttpClient(key3);
+    assertEquals(2, HttpUtil.httpClient.size());
   }
 }
