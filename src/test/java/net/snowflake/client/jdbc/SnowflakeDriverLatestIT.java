@@ -1451,10 +1451,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     try {
-      Properties paramProperties = new Properties();
-      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
-      // connection = getConnection("gcpaccount", paramProperties);
-      connection = getConnection(null, paramProperties);
+      connection = getConnection("gcpaccount");
       Statement statement = connection.createStatement();
 
       // create a stage to put the file in
