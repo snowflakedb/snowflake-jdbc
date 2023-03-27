@@ -14,10 +14,7 @@ import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Clock;
 import com.yammer.metrics.core.VirtualMachineMetrics;
 import com.yammer.metrics.reporting.MetricsServlet;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
@@ -117,6 +114,12 @@ public class IncidentUtil {
 
       logger.debug("Dump file {} is created.", dumpFile);
     } catch (Exception exc) {
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      exc.printStackTrace(pw);
+      String stackTrace = sw.toString();
+      System.out.println("Unable to write dump file. Message: " + exc.getMessage());
+      System.out.println(stackTrace);
       logger.error("Unable to write dump file, exception: {}", exc.getMessage());
     } finally {
       if (writer != null) {
