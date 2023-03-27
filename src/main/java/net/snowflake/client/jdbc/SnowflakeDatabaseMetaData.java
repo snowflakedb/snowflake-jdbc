@@ -1189,7 +1189,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       ResultSet resultSetStepTwo =
           executeAndReturnEmptyResultIfNotFound(
               statement, showProcedureColCommand, GET_PROCEDURE_COLUMNS);
-      resultSetStepTwo.next();
+      if (resultSetStepTwo.next() == false) {
+        continue;
+      }
       // Retrieve the procedure arguments and procedure return values.
       String args = resultSetStepTwo.getString("value");
       resultSetStepTwo.next();
