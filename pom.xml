@@ -661,6 +661,13 @@
             <breakBuildBasedOnSemanticVersioning>true</breakBuildBasedOnSemanticVersioning>
             <ignoreMissingClasses>true</ignoreMissingClasses>
             <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>
+            <includes>
+              <include>com.snowflake</include>
+              <include>net.snowflake</include>
+            </includes>
+            <excludes>
+              <exclude>${shadeBase}</exclude>
+            </excludes>
           </parameter>
         </configuration>
         <executions>
