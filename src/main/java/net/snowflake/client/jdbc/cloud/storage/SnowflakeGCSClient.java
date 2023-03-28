@@ -546,21 +546,29 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       throw new IllegalArgumentException("Unexpected metadata object type");
     }
 
-    if (Strings.isNullOrEmpty(presignedUrl)) {
-      throw new IllegalArgumentException("pre-signed URL has to be specified");
-    }
+    if (Strings.isNullOrEmpty(presignedUrl) || "null".equalsIgnoreCase(presignedUrl)) {
+      logger.debug("Starting upload with downscoped token");
+      uploadWithDownScopedToken(
+          remoteStorageLocation,
+          destFileName,
+          meta.getContentEncoding(),
+          meta.getUserMetadata(),
+          uploadStreamInfo.left);
+      logger.debug("Upload successfully with downscoped token");
+    } else {
+      logger.debug("Starting upload with presigned url");
 
-    logger.debug("Starting upload");
-    uploadWithPresignedUrl(
-        networkTimeoutInMilli,
-        0, // auth timeout
-        SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT, // socket timeout
-        meta.getContentEncoding(),
-        meta.getUserMetadata(),
-        uploadStreamInfo.left,
-        presignedUrl,
-        ocspModeAndProxyKey);
-    logger.debug("Upload successful", false);
+      uploadWithPresignedUrl(
+          networkTimeoutInMilli,
+          0, // auth timeout
+          SFSession.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT, // socket timeout
+          meta.getContentEncoding(),
+          meta.getUserMetadata(),
+          uploadStreamInfo.left,
+          presignedUrl,
+          ocspModeAndProxyKey);
+      logger.debug("Upload successfully with presigned url");
+    }
 
     // close any open streams in the "toClose" list and return
     for (FileInputStream is : toClose) {
@@ -641,16 +649,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     do {
       try {
         logger.debug("Starting upload", false);
-        InputStream fileInputStream = uploadStreamInfo.left;
 
-        BlobId blobId = BlobId.of(remoteStorageLocation, destFileName);
-        BlobInfo blobInfo =
-            BlobInfo.newBuilder(blobId)
-                .setContentEncoding(meta.getContentEncoding())
-                .setMetadata(meta.getUserMetadata())
-                .build();
-
-        gcsClient.create(blobInfo, fileInputStream);
+        uploadWithDownScopedToken(
+            remoteStorageLocation,
+            destFileName,
+            meta.getContentEncoding(),
+            meta.getUserMetadata(),
+            uploadStreamInfo.left);
 
         logger.debug("Upload successful", false);
 
@@ -691,6 +696,31 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
         "Unexpected: upload unsuccessful without exception!");
+  }
+
+  /**
+   * Upload file with down scoped token.
+   *
+   * @param remoteStorageLocation storage container name
+   * @param destFileName file name on remote storage after upload
+   * @param contentEncoding Object's content encoding. We do special things for "gzip"
+   * @param metadata Custom metadata to be uploaded with the object
+   * @param content File content
+   */
+  private void uploadWithDownScopedToken(
+      String remoteStorageLocation,
+      String destFileName,
+      String contentEncoding,
+      Map<String, String> metadata,
+      InputStream content) {
+    BlobId blobId = BlobId.of(remoteStorageLocation, destFileName);
+    BlobInfo blobInfo =
+        BlobInfo.newBuilder(blobId)
+            .setContentEncoding(contentEncoding)
+            .setMetadata(metadata)
+            .build();
+
+    gcsClient.create(blobInfo, content);
   }
 
   /**

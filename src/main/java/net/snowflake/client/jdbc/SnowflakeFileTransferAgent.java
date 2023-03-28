@@ -2038,9 +2038,16 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               streamingIngestClientKey);
           break;
         case GCS:
+          // If the down-scoped token is used to upload file, one metadata may be used to upload
+          // multiple files, so use the dest file name in config.
+          destFileName =
+              metadata.isForOneFile()
+                  ? metadata.getPresignedUrlFileName()
+                  : config.getDestFileName();
+
           pushFileToRemoteStoreWithPresignedUrl(
               metadata.getStageInfo(),
-              metadata.getPresignedUrlFileName(),
+              destFileName,
               uploadStream,
               fileBackedOutputStream,
               uploadSize,
