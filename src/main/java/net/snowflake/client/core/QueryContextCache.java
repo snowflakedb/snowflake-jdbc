@@ -180,7 +180,9 @@ public class QueryContextCache {
       if (entriesNode != null && entriesNode.isArray()) {
           for (JsonNode entryNode : entriesNode) {
             QueryContextElement entry = deserializeQueryContextElement(entryNode);
-            merge(entry.id, entry.readTimestamp, entry.priority, entry.context);
+            if(entry != null){
+              merge(entry.id, entry.readTimestamp, entry.priority, entry.context);
+            }
           }
       }
     }catch (Exception e) {
@@ -203,22 +205,34 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
     JsonNode idNode = node.path("id");
     if (idNode.isNumber()) {
         entry.setId(idNode.asLong());
+    }else{
+      logger.debug("deserializeQueryContextElement: `id` field is not Number type");
+      return null;
     }
 
     JsonNode timestampNode = node.path("timestamp");
     if (timestampNode.isNumber()) {
         entry.setReadTimestamp(timestampNode.asLong());
+    }else{
+      logger.debug("deserializeQueryContextElement: `timestamp` field is not Long type");
+      return null;
     }
 
     JsonNode priorityNode = node.path("priority");
     if (priorityNode.isNumber()) {
         entry.setPriority(priorityNode.asLong());
+    }else{
+      logger.debug("deserializeQueryContextElement: `priority` field is not Long type");
+      return null;
     }
 
     JsonNode contextNode = node.path("context");
     if (contextNode.isTextual()) {
         String contextBytes = contextNode.asText();
         entry.setContext(contextBytes);
+    }else{
+      logger.debug("deserializeQueryContextElement: `context` field is not String type");
+      return null;
     }
 
     return entry;
