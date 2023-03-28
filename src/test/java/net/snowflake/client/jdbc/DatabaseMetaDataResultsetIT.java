@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2012-2020 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2012-2023 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.*;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +15,7 @@ import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
-  private static final int columnCount = 7;
+  private static final int columnCount = 9;
   private static final int INT_DATA = 1;
   private static final String TEXT_DATA = "TEST";
   private static final String EPOCH_DATE = "1970-01-01";
@@ -24,10 +25,14 @@ public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   private static final Time TIME_DATA = new Time(NOW);
   private static final Timestamp TIMESTAMP_DATA = new Timestamp(NOW);
   private static final boolean BOOLEAN_DATA = true;
+  private static final BigDecimal DECIMAL_DATA = new BigDecimal(0.01);
+  private static final long BIGINT_DATA = 10100000L;
   private static final List<String> columnNames =
-      Arrays.asList("int", "text", "date", "double", "time", "timestamp", "bool");
+      Arrays.asList(
+          "int", "text", "date", "double", "time", "timestamp", "bool", "decimal", "bigint");
   private static final List<String> columnTypeNames =
-      Arrays.asList("INTEGER", "TEXT", "DATA", "DOUBLE", "TIME", "TIMESTAMP", "BOOLEAN");
+      Arrays.asList(
+          "INTEGER", "TEXT", "DATA", "DOUBLE", "TIME", "TIMESTAMP", "BOOLEAN", "DECIMAL", "BIGINT");
   private static final List<Integer> columnTypes =
       Arrays.asList(
           Types.INTEGER,
@@ -36,7 +41,9 @@ public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
           Types.DOUBLE,
           Types.TIME,
           Types.TIMESTAMP,
-          Types.BOOLEAN);
+          Types.BOOLEAN,
+          Types.DECIMAL,
+          Types.BIGINT);
   private static final Object[][] rows = {
     {
       INT_DATA,
@@ -45,9 +52,11 @@ public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
       DOUBLE_DATA,
       TIME_DATA,
       TIMESTAMP_DATA,
-      BOOLEAN_DATA
+      BOOLEAN_DATA,
+      DECIMAL_DATA,
+      BIGINT_DATA
     },
-    {0, null, null, 0, null, null, false}
+    {0, null, null, 0, null, null, false, null, 0}
   };
 
   @Test
@@ -129,5 +138,19 @@ public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   public void testGetBoolean() throws SQLException {
     ResultSet resultSet = getResultSet(true);
     assertEquals(BOOLEAN_DATA, resultSet.getBoolean("bool"));
+  }
+
+  @Test
+  public void testGetObject() throws SQLException {
+    ResultSet resultSet = getResultSet(true);
+    assertEquals(INT_DATA, resultSet.getObject(1));
+    assertEquals(TEXT_DATA, resultSet.getObject(2));
+    assertEquals(Date.valueOf(EPOCH_DATE), resultSet.getObject(3));
+    assertEquals(DOUBLE_DATA, resultSet.getObject(4));
+    assertEquals(TIME_DATA, resultSet.getObject(5));
+    assertEquals(TIMESTAMP_DATA, resultSet.getObject(6));
+    assertEquals(BOOLEAN_DATA, resultSet.getObject(7));
+    assertEquals(DECIMAL_DATA, resultSet.getObject(8));
+    assertEquals(BIGINT_DATA, resultSet.getObject(9));
   }
 }
