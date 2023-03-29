@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -15,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -22,10 +24,8 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.cloud.storage.SnowflakeGCSClient;
-import net.snowflake.client.jdbc.cloud.storage.StageInfo;
-import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
-import net.snowflake.client.jdbc.cloud.storage.StorageProviderException;
+import net.snowflake.client.jdbc.cloud.storage.*;
+import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -649,5 +649,77 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGetS3StorageObjectMetadata() throws Throwable {
+    Connection connection = null;
+    try {
+      connection = getConnection("s3testaccount");
+      Statement statement = connection.createStatement();
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
+
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+      // Test put file with internal compression
+      String putCommand = "put file:///dummy/path/file1.gz @" + OBJ_META_STAGE;
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+      List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
+
+      String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
+      for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
+        InputStream inputStream = new FileInputStream(srcPath);
+
+        SnowflakeFileTransferAgent.uploadWithoutConnection(
+            SnowflakeFileTransferConfig.Builder.newInstance()
+                .setSnowflakeFileTransferMetadata(oneMetadata)
+                .setUploadStream(inputStream)
+                .setRequireCompress(true)
+                .setNetworkTimeoutInMilli(0)
+                .setOcspMode(OCSPMode.FAIL_OPEN)
+                .setSFSession(sfSession)
+                .setCommand(putCommand)
+                .build());
+
+        SnowflakeStorageClient client =
+            StorageClientFactory.getFactory()
+                .createClient(
+                    ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo(),
+                    1,
+                    null,
+                    /*session = */ null);
+
+        String location =
+            ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo().getLocation();
+        int idx = location.indexOf('/');
+        String remoteStageLocation = location.substring(0, idx);
+        String path = location.substring(idx + 1) + "file1.gz";
+        StorageObjectMetadata meta = client.getObjectMetadata(remoteStageLocation, path);
+
+        ObjectMetadata s3Meta = new ObjectMetadata();
+        s3Meta.setContentLength(meta.getContentLength());
+        s3Meta.setContentEncoding(meta.getContentEncoding());
+        s3Meta.setUserMetadata(meta.getUserMetadata());
+
+        S3StorageObjectMetadata s3Metadata = new S3StorageObjectMetadata(s3Meta);
+        RemoteStoreFileEncryptionMaterial encMat = sfAgent.getEncryptionMaterial().get(0);
+        Map<String, String> matDesc =
+            mapper.readValue(s3Metadata.getUserMetadata().get("x-amz-matdesc"), Map.class);
+
+        assertEquals(encMat.getQueryId(), matDesc.get("queryId"));
+        assertEquals(encMat.getSmkId().toString(), matDesc.get("smkId"));
+        assertEquals(1360, s3Metadata.getContentLength());
+        assertEquals("gzip", s3Metadata.getContentEncoding());
+      }
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
+        connection.close();
+      }
+    }
   }
 }
