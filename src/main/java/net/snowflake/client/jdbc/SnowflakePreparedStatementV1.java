@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.sql.*;
 import java.sql.Date;
@@ -218,6 +219,17 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   }
 
   @Override
+  public void setBigInteger(int parameterIndex, BigInteger x) throws SQLException {
+    logger.debug("setBigInteger(parameterIndex: {}, BigInteger x)", parameterIndex);
+
+    ParameterBindingDTO binding =
+        new ParameterBindingDTO(
+            SnowflakeUtil.javaTypeToSFTypeString(Types.BIGINT, connection.getSFBaseSession()),
+            String.valueOf(x));
+    parameterBindings.put(String.valueOf(parameterIndex), binding);
+  }
+
+  @Override
   public void setFloat(int parameterIndex, float x) throws SQLException {
     logger.debug("setFloat(parameterIndex: {}, float x)", parameterIndex);
 
@@ -414,6 +426,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setInt(parameterIndex, (Integer) x);
     } else if (x instanceof Long) {
       setLong(parameterIndex, (Long) x);
+    } else if (x instanceof BigInteger) {
+      setBigInteger(parameterIndex, (BigInteger) x);
     } else if (x instanceof Float) {
       setFloat(parameterIndex, (Float) x);
     } else if (x instanceof Double) {
