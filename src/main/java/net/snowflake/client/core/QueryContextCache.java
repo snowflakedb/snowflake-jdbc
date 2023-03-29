@@ -182,6 +182,10 @@ public class QueryContextCache {
             QueryContextElement entry = deserializeQueryContextElement(entryNode);
             if(entry != null){
               merge(entry.id, entry.readTimestamp, entry.priority, entry.context);
+            }else{
+              logger.warn("deserializeQueryContextJson: deserializeQueryContextElement meets mismatch field type. Clear the QueryContextCache.");
+              clearCache();
+              return;
             }
           }
       }
@@ -206,7 +210,7 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
     if (idNode.isNumber()) {
         entry.setId(idNode.asLong());
     }else{
-      logger.debug("deserializeQueryContextElement: `id` field is not Number type");
+      logger.warn("deserializeQueryContextElement: `id` field is not Number type");
       return null;
     }
 
@@ -214,7 +218,7 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
     if (timestampNode.isNumber()) {
         entry.setReadTimestamp(timestampNode.asLong());
     }else{
-      logger.debug("deserializeQueryContextElement: `timestamp` field is not Long type");
+      logger.warn("deserializeQueryContextElement: `timestamp` field is not Long type");
       return null;
     }
 
@@ -222,7 +226,7 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
     if (priorityNode.isNumber()) {
         entry.setPriority(priorityNode.asLong());
     }else{
-      logger.debug("deserializeQueryContextElement: `priority` field is not Long type");
+      logger.warn("deserializeQueryContextElement: `priority` field is not Long type");
       return null;
     }
 
@@ -231,7 +235,7 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
         String contextBytes = contextNode.asText();
         entry.setContext(contextBytes);
     }else{
-      logger.debug("deserializeQueryContextElement: `context` field is not String type");
+      logger.warn("deserializeQueryContextElement: `context` field is not String type");
       return null;
     }
 
