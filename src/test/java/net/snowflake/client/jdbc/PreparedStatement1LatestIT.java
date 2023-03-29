@@ -241,7 +241,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   }
 
   @Test
-  public void testSetObjectMethodWithBigIntegerColumn() throws SQLException {
+  public void testSetObjectMethodWithBigIntegerColumn() {
     try (Connection connection = init()) {
       connection.createStatement().execute("create or replace table test_bigint(id NUMBER)");
 
@@ -251,11 +251,16 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         int rows = prepStatement.executeUpdate();
         assertTrue("Row count doesn't match", rows == 1);
       }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      fail(
+          "testSetObjectMethodWithBigIntegerColumn failed with an exception message: "
+              + e.getMessage());
     }
   }
 
   @Test
-  public void testSetObjectMethodWithLargeBigIntegerColumn() throws SQLException {
+  public void testSetObjectMethodWithLargeBigIntegerColumn() {
     try (Connection connection = init()) {
       connection.createStatement().execute("create or replace table test_bigint(id NUMBER)");
 
@@ -266,6 +271,11 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         int rows = prepStatement.executeUpdate();
         assertTrue("Row count doesn't match", rows == 1);
       }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      fail(
+          "testSetObjectMethodWithLargeBigIntegerColumn failed with an exception message: "
+              + e.getMessage());
     }
   }
 
