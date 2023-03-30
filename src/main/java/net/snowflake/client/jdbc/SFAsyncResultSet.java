@@ -4,17 +4,19 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.QueryStatus.NO_DATA;
+import com.google.api.client.util.Strings;
+import net.snowflake.client.core.QueryStatus;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.common.core.SqlState;
 
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.common.core.SqlState;
+
+import static net.snowflake.client.core.QueryStatus.NO_DATA;
 
 /** SFAsyncResultSet implementation */
 class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
@@ -103,6 +105,11 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     return this.lastQueriedStatus;
   }
 
+  @Override
+  public String getQueryErrorMessage() throws SQLException {
+    return this.lastQueriedStatus.getErrorMessage();
+  }
+
   /**
    * helper function for next() and getMetaData(). Calls result_scan to get resultSet after
    * asynchronous query call
@@ -123,10 +130,14 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
           // if query is not running due to a failure (Aborted, failed with error, etc), generate
           // exception
           if (!QueryStatus.isStillRunning(qs) && qs.getValue() != QueryStatus.SUCCESS.getValue()) {
+            String errorMessage = qs.getErrorMessage();
+            if (Strings.isNullOrEmpty(errorMessage)) {
+              errorMessage = "No error message available";
+            }
             throw new SQLException(
                 "Status of query associated with resultSet is "
                     + qs.getDescription()
-                    + ". Results not generated.");
+                    + ". " + errorMessage + " Results not generated.");
           }
           // if no data about the query is returned after about 2 minutes, give up
           if (qs == NO_DATA) {

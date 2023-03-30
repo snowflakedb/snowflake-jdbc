@@ -4,9 +4,10 @@
 
 package net.snowflake.client.jdbc;
 
+import net.snowflake.client.core.QueryStatus;
+
 import java.sql.SQLException;
 import java.util.List;
-import net.snowflake.client.core.QueryStatus;
 
 /** This interface defines Snowflake specific APIs for ResultSet */
 public interface SnowflakeResultSet {
@@ -24,6 +25,13 @@ public interface SnowflakeResultSet {
    * @throws SQLException
    */
   QueryStatus getStatus() throws SQLException;
+
+  /**
+   * This function retrieves the error message recorded from the error status of an asynchronous query. If there is no error or no error is returned by the server, an empty string will be returned.
+   * @return String value of query's error message
+   * @throws SQLException
+   */
+  String getQueryErrorMessage() throws SQLException;
 
   /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing

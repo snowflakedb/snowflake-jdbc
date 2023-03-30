@@ -3,27 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
-import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.*;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -41,6 +22,26 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
+import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -224,8 +225,30 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     if (status != QueryStatus.NO_DATA) {
       assertEquals(QueryStatus.FAILED_WITH_ERROR, status);
       assertEquals(2003, status.getErrorCode());
+      assertEquals("SQL compilation error:\n" +
+              "Object 'NONEXISTENTTABLE' does not exist or not authorized.", status.getErrorMessage());
     }
     statement.close();
+    con.close();
+  }
+
+  @Test
+  public void testGetErrorMessageFromAsyncQuery() throws SQLException, InterruptedException {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    // Create another query that will not be successful (querying table that does not exist)
+    ResultSet rs1 =
+            statement
+                    .unwrap(SnowflakeStatement.class)
+                    .executeAsyncQuery("select * from nonexistentTable2");
+    try {
+      rs1.next();
+    } catch (SQLException ex) {
+      assertEquals("", ex.getMessage());
+      assertEquals("SQL compilation error:\nObject 'NONEXISTENTTABLE' does not exist or not authorized.", rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+    }
+    statement.close();
+    rs1.close();
     con.close();
   }
 
