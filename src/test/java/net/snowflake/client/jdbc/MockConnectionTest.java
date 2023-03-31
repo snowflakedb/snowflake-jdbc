@@ -719,6 +719,17 @@ public class MockConnectionTest extends BaseJDBCTest {
     public boolean isAsyncSession() {
       return false;
     }
+
+    @Override
+    public void setQueryContext(String queryContext) {
+      // Do nothing. Just for overriding.
+    }
+
+    @Override
+    public QueryContextDTO getQueryContextDTO(){
+      // Do nothing. Just for overriding.
+      return null;
+    }
   }
 
   private static class MockSFFileTransferAgent extends SFBaseFileTransferAgent {

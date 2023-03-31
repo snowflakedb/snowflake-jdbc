@@ -110,9 +110,6 @@ public abstract class SFBaseSession {
   // name of temporary stage to upload array binds to; null if none has been created yet
   private String arrayBindStage = null;
 
-  // Query context for current session
-  private String queryContext;
-
   // Maximum size of the query context cache for current session
   private int queryContextCacheSize = 5;
 
@@ -817,13 +814,9 @@ public abstract class SFBaseSession {
 
   public abstract boolean isAsyncSession();
 
-  public String getQueryContext() {
-    return queryContext;
-  }
+  public abstract QueryContextDTO getQueryContextDTO();
 
-  public void setQueryContext(String queryContext) {
-    this.queryContext = queryContext;
-  }
+  public abstract void setQueryContext(String queryContext);
 
   /**
    * If true, JDBC will enable returning TIMESTAMP_WITH_TIMEZONE as column type, otherwise it will

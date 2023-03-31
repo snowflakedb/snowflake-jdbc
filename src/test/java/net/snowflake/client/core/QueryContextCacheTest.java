@@ -10,10 +10,13 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+
 public class QueryContextCacheTest {
   private QueryContextCache qcc = null;
   private long BASE_READ_TIMESTAMP = 1668727958;
-  private byte[] CONTEXT = "Some query context".getBytes();
+  private String CONTEXT = "Some query context";
   private long BASE_ID = 0;
   private long BASE_PRIORITY = 0;
 
@@ -30,7 +33,7 @@ public class QueryContextCacheTest {
     initCacheWithDataWithContext(CONTEXT);
   }
 
-  private void initCacheWithDataWithContext(byte[] context) {
+  private void initCacheWithDataWithContext(String context) {
     qcc = new QueryContextCache(MAX_CAPACITY);
     expectedIDs = new long[MAX_CAPACITY];
     expectedReadTimestamp = new long[MAX_CAPACITY];
@@ -117,7 +120,7 @@ public class QueryContextCacheTest {
     // Add one more element with new priority with existing id
     int updatedID = 3;
     long updatedPriority = BASE_PRIORITY + updatedID + 7;
-    ;
+    
     expectedPriority[updatedID] = updatedPriority;
     qcc.merge(
         BASE_ID + updatedID, BASE_READ_TIMESTAMP + updatedID, expectedPriority[updatedID], CONTEXT);
@@ -170,7 +173,7 @@ public class QueryContextCacheTest {
   public void testEmptyCacheWithNullData() throws Exception {
     initCacheWithData();
 
-    qcc.deserializeFromArrowBase64(null);
+    qcc.deserializeQueryContextJson(null);
     assertThat("Empty cache", qcc.getSize() == 0);
   }
 
@@ -178,7 +181,7 @@ public class QueryContextCacheTest {
   public void testEmptyCacheWithEmptyResponseData() throws Exception {
     initCacheWithData();
 
-    qcc.deserializeFromArrowBase64("");
+    qcc.deserializeQueryContextJson("");
     assertThat("Empty cache", qcc.getSize() == 0);
   }
 
@@ -188,15 +191,13 @@ public class QueryContextCacheTest {
     initCacheWithData();
     assertCacheData();
 
-    // Arrow format qcc request
-    String requestData = qcc.serializeToArrowBase64();
+    QueryContextDTO requestData = qcc.serializeQueryContextDTO();
 
     // Clear qcc
     qcc.clearCache();
     assertThat("Empty cache", qcc.getSize() == 0);
 
-    // Arrow format qcc response
-    qcc.deserializeFromArrowBase64(requestData);
+    qcc.deserializeQueryContextDTO(requestData);
     assertCacheData();
   }
 
@@ -206,15 +207,13 @@ public class QueryContextCacheTest {
     initCacheWithDataWithContext(null);
     assertCacheDataWithContext(null);
 
-    // Arrow format qcc request
-    String requestData = qcc.serializeToArrowBase64();
+    QueryContextDTO requestData = qcc.serializeQueryContextDTO();
 
     // Clear qcc
     qcc.clearCache();
     assertThat("Empty cache", qcc.getSize() == 0);
 
-    // Arrow format qcc response
-    qcc.deserializeFromArrowBase64(requestData);
+    qcc.deserializeQueryContextDTO(requestData);
     assertCacheDataWithContext(null);
   }
 
@@ -222,14 +221,14 @@ public class QueryContextCacheTest {
     assertCacheDataWithContext(CONTEXT);
   }
 
-  private void assertCacheDataWithContext(byte[] context) {
+  private void assertCacheDataWithContext(String context) {
     int size = qcc.getSize();
     assertThat("Non empty cache", size == MAX_CAPACITY);
 
     long[] ids = new long[size];
     long[] readTimestamps = new long[size];
     long[] priorities = new long[size];
-    byte[][] contexts = new byte[size][];
+    String[] contexts = new String[size];
 
     // Compare elements
     qcc.getElements(ids, readTimestamps, priorities, contexts);
@@ -237,7 +236,7 @@ public class QueryContextCacheTest {
       assertEquals(expectedIDs[i], ids[i]);
       assertEquals(expectedReadTimestamp[i], readTimestamps[i]);
       assertEquals(expectedPriority[i], priorities[i]);
-      assertArrayEquals(context, contexts[i]);
+      assertEquals(context, contexts[i]);
     }
   }
 }

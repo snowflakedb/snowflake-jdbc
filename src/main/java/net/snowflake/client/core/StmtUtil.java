@@ -6,6 +6,7 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Strings;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -101,7 +102,7 @@ public class StmtUtil {
 
     HttpClientSettingsKey httpClientSettingsKey;
 
-    String queryContext;
+    QueryContextDTO queryContextDTO;
 
     StmtInput() {}
 
@@ -225,8 +226,8 @@ public class StmtUtil {
       return this;
     }
 
-    public StmtInput setQueryContext(String queryContext) {
-      this.queryContext = queryContext;
+    public StmtInput setQueryContextDTO(QueryContextDTO queryContext) {
+      this.queryContextDTO = queryContext;
       return this;
     }
   }
@@ -292,10 +293,6 @@ public class StmtUtil {
           uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
         }
 
-        if (!Strings.isNullOrEmpty(stmtInput.queryContext)) {
-          uriBuilder.addParameter(SF_QUERY_CONTEXT, stmtInput.queryContext);
-        }
-
         httpRequest = new HttpPost(uriBuilder.build());
 
         /*
@@ -310,6 +307,7 @@ public class StmtUtil {
                 stmtInput.bindValues,
                 stmtInput.bindStage,
                 stmtInput.parametersMap,
+                stmtInput.queryContextDTO,
                 stmtInput.querySubmissionTime,
                 stmtInput.describeOnly || stmtInput.internal,
                 stmtInput.asyncExec);
@@ -317,6 +315,8 @@ public class StmtUtil {
         if (!stmtInput.describeOnly) {
           sqlJsonBody.setDescribedJobId(stmtInput.describedJobId);
         }
+
+        logger.debug("queryContextDTO: {}", mapper.writeValueAsString(stmtInput.queryContextDTO));
 
         String json = mapper.writeValueAsString(sqlJsonBody);
 
