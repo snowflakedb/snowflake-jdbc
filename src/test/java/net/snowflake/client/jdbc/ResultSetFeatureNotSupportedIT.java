@@ -1,7 +1,14 @@
 package net.snowflake.client.jdbc;
 
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Collections;
 import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.Test;
