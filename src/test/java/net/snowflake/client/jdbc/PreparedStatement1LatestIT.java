@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
 import static org.junit.Assert.*;
 
+import java.math.BigInteger;
 import java.sql.*;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -236,6 +237,45 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         prepStatement.setObject(1, "HELLO WORLD".getBytes());
         prepStatement.execute(); // shouldn't raise an error.
       }
+    }
+  }
+
+  @Test
+  public void testSetObjectMethodWithBigIntegerColumn() {
+    try (Connection connection = init()) {
+      connection.createStatement().execute("create or replace table test_bigint(id NUMBER)");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into test_bigint(id) values(?)")) {
+        prepStatement.setObject(1, BigInteger.valueOf(9999));
+        int rows = prepStatement.executeUpdate();
+        assertTrue("Row count doesn't match", rows == 1);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      fail(
+          "testSetObjectMethodWithBigIntegerColumn failed with an exception message: "
+              + e.getMessage());
+    }
+  }
+
+  @Test
+  public void testSetObjectMethodWithLargeBigIntegerColumn() {
+    try (Connection connection = init()) {
+      connection.createStatement().execute("create or replace table test_bigint(id NUMBER)");
+
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into test_bigint(id) values(?)")) {
+        BigInteger largeBigInt = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.TEN);
+        prepStatement.setObject(1, largeBigInt);
+        int rows = prepStatement.executeUpdate();
+        assertTrue("Row count doesn't match", rows == 1);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      fail(
+          "testSetObjectMethodWithLargeBigIntegerColumn failed with an exception message: "
+              + e.getMessage());
     }
   }
 
