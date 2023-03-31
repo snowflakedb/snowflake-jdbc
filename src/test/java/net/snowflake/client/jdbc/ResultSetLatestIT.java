@@ -739,4 +739,21 @@ public class ResultSetLatestIT extends ResultSet0IT {
       }
     }
   }
+
+  /**
+   * Test that new query error message function for checking async query error messages is not
+   * implemented for synchronous queries *
+   */
+  @Test
+  public void testNewFeaturesNotSupported() throws SQLException {
+    Connection con = init();
+    ResultSet rs = con.createStatement().executeQuery("select 1");
+    try {
+      rs.unwrap(SnowflakeResultSet.class).getQueryErrorMessage();
+    } catch (SQLFeatureNotSupportedException ex) {
+      // catch SQLFeatureNotSupportedException
+    }
+    rs.close();
+    con.close();
+  }
 }

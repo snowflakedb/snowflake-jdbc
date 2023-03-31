@@ -4,19 +4,18 @@
 
 package net.snowflake.client.jdbc;
 
-import com.google.api.client.util.Strings;
-import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.common.core.SqlState;
+import static net.snowflake.client.core.QueryStatus.NO_DATA;
 
+import com.google.api.client.util.Strings;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-
-import static net.snowflake.client.core.QueryStatus.NO_DATA;
+import net.snowflake.client.core.QueryStatus;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation */
 class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
@@ -137,7 +136,9 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
             throw new SQLException(
                 "Status of query associated with resultSet is "
                     + qs.getDescription()
-                    + ". " + errorMessage + " Results not generated.");
+                    + ". "
+                    + errorMessage
+                    + " Results not generated.");
           }
           // if no data about the query is returned after about 2 minutes, give up
           if (qs == NO_DATA) {
