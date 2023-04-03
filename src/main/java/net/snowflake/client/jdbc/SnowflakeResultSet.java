@@ -26,6 +26,16 @@ public interface SnowflakeResultSet {
   QueryStatus getStatus() throws SQLException;
 
   /**
+   * This function retrieves the error message recorded from the error status of an asynchronous
+   * query. If there is no error or no error is returned by the server, an empty string will be
+   * returned.
+   *
+   * @return String value of query's error message
+   * @throws SQLException
+   */
+  String getQueryErrorMessage() throws SQLException;
+
+  /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing
    *
    * @param maxSizeInBytes The expected max data size wrapped in the ResultSetSerializables object.

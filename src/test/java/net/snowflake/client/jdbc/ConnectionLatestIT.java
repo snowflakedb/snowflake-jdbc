@@ -224,7 +224,37 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     if (status != QueryStatus.NO_DATA) {
       assertEquals(QueryStatus.FAILED_WITH_ERROR, status);
       assertEquals(2003, status.getErrorCode());
+      assertEquals(
+          "SQL compilation error:\n"
+              + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
+          status.getErrorMessage());
     }
+    statement.close();
+    con.close();
+  }
+
+  @Test
+  public void testGetErrorMessageFromAsyncQuery() throws SQLException {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    // Create another query that will not be successful (querying table that does not exist)
+    ResultSet rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("bad query!");
+    try {
+      rs1.next();
+    } catch (SQLException ex) {
+      assertEquals(
+          "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
+              + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
+          ex.getMessage());
+      assertEquals(
+          "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
+          rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+    }
+    rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1");
+    rs1.next();
+    // Assert there is no error message when query is successful
+    assertEquals("No error reported", rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+    rs1.close();
     statement.close();
     con.close();
   }
