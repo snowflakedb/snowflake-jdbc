@@ -752,6 +752,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       rs.unwrap(SnowflakeResultSet.class).getQueryErrorMessage();
     } catch (SQLFeatureNotSupportedException ex) {
       // catch SQLFeatureNotSupportedException
+      assertEquals("This function is only supported for asynchronous queries.", ex.getMessage());
     }
     rs.close();
     con.close();

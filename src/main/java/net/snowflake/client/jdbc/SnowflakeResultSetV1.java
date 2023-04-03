@@ -58,7 +58,8 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    */
   @Override
   public String getQueryErrorMessage() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        session, "This function is only supported for asynchronous queries.");
   }
 
   /**
