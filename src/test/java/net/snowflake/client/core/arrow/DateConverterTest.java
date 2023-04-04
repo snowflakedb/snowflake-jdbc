@@ -93,7 +93,8 @@ public class DateConverterTest extends BaseConverterTest {
       } else {
         assertTrue(converter.isNull(j));
       }
-      Object oldObj = ArrowResultUtil.getDate(intVal, TimeZone.getDefault(), TimeZone.getDefault());
+      Object oldObj =
+          ArrowResultUtil.getDate(intVal, TimeZone.getTimeZone("UTC"), TimeZone.getDefault());
       if (nullValIndex.contains(j)) {
         assertThat(intVal, is(0));
         assertThat(obj, is(nullValue()));
