@@ -274,4 +274,53 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
     statement.close();
     connection.close();
   }
+
+  /** Test use of anonymous blocks (SNOW-758262) */
+  @Test
+  public void testAnonymousBlocksUse() throws SQLException {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("create or replace table tab758262(c1 number)");
+    // Test anonymous block with multistatement
+    int multistatementcount = 2;
+    statement
+        .unwrap(SnowflakeStatement.class)
+        .setParameter("MULTI_STATEMENT_COUNT", multistatementcount);
+    String multiStmtQuery =
+        "begin\n"
+            + "insert into tab758262 values (1);\n"
+            + "return 'done';\n"
+            + "end;\n"
+            + "select * from tab758262;";
+
+    statement.execute(multiStmtQuery);
+    for (int i = 0; i < multistatementcount - 1; i++) {
+      assertTrue(statement.getMoreResults());
+    }
+    ResultSet rs = statement.getResultSet();
+    assertTrue(rs.next());
+    assertEquals(1, rs.getInt(1));
+
+    // Test anonymous block in the middle of other queries in multistatement
+    multiStmtQuery =
+        "insert into tab758262 values (25), (26);\n"
+            + "begin\n"
+            + "insert into tab758262 values (27);\n"
+            + "return 'done';\n"
+            + "end;\n"
+            + "select * from tab758262;";
+    multistatementcount = 3;
+    statement
+        .unwrap(SnowflakeStatement.class)
+        .setParameter("MULTI_STATEMENT_COUNT", multistatementcount);
+    statement.execute(multiStmtQuery);
+    for (int i = 0; i < multistatementcount - 1; i++) {
+      assertTrue(statement.getMoreResults());
+    }
+    rs = statement.getResultSet();
+    assertEquals(4, getSizeOfResultSet(rs));
+    rs.close();
+    statement.close();
+    connection.close();
+  }
 }
