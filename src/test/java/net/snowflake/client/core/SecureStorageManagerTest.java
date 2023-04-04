@@ -226,9 +226,9 @@ public class SecureStorageManagerTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnWinMac.class)
   public void testLoadNativeLibrary() {
-    // Make sure the loading of native platform library won't break.
+    // Only run on Mac or Windows. Make sure the loading of native platform library won't break.
     if (Constants.getOS() == Constants.OS.MAC) {
-      assertThat(SecureStorageAppleManager.SecurityLibManager.getInstance(), is(nullValue()));
+      assertThat(SecureStorageAppleManager.SecurityLibManager.getInstance(), is(notNullValue()));
     }
 
     if (Constants.getOS() == Constants.OS.WINDOWS) {
