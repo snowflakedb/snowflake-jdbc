@@ -175,7 +175,7 @@ public class SnowflakeDriver implements Driver {
   public Connection connect(String url, Properties info) throws SQLException {
     SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
     if (!conStr.isValid()) {
-      return null;
+      throw new SnowflakeSQLException("Connection string is invalid. Unable to parse.");
     }
     return new SnowflakeConnectionV1(url, info);
   }

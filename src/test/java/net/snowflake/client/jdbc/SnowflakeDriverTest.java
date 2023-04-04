@@ -362,10 +362,10 @@ public class SnowflakeDriverTest {
     assertFalse(snowflakeDriver.acceptsURL("jdbc:mysql://localhost:3306/dbname"));
   }
 
-  @Test
+  @Test(expected = SQLException.class)
   public void testInvalidNullConnect() throws SQLException {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
-    assertNull(snowflakeDriver.connect(null, null));
+    snowflakeDriver.connect(null, null);
   }
 
   @Test
@@ -404,5 +404,19 @@ public class SnowflakeDriverTest {
   public void testSuppressIllegalReflectiveAccessWarning() {
     // Just to make sure this function won't break anything
     SnowflakeDriver.disableIllegalReflectiveAccessWarning();
+  }
+
+  @Test
+  public void testParseConnectStringException() {
+    SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
+    Properties info = new Properties();
+    String jdbcConnectString =
+        "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com/?private_key_file=C:\\temp\\rsa_key.p8&private_key_file_pwd=test_password&user=test_user";
+    try {
+      snowflakeDriver.connect(jdbcConnectString, info);
+      fail();
+    } catch (Exception ex) {
+      assertEquals("Connection string is invalid. Unable to parse.", ex.getMessage());
+    }
   }
 }
