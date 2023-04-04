@@ -757,4 +757,27 @@ public class ResultSetLatestIT extends ResultSet0IT {
     rs.close();
     con.close();
   }
+
+  @Test
+  public void testGetObjectJsonResult() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set jdbc_query_result_format ='json'");
+    statement.execute("create or replace table testObj (colA double, colB boolean)");
+
+    PreparedStatement preparedStatement =
+        connection.prepareStatement("insert into testObj values(?, ?)");
+    preparedStatement.setDouble(1, 22.2);
+    preparedStatement.setBoolean(2, true);
+    preparedStatement.executeQuery();
+
+    ResultSet resultSet = statement.executeQuery("select * from testObj");
+    resultSet.next();
+    assertEquals(22.2, resultSet.getObject(1));
+    assertEquals(true, resultSet.getObject(2));
+
+    statement.execute("drop table if exists testObj");
+    statement.close();
+    connection.close();
+  }
 }
