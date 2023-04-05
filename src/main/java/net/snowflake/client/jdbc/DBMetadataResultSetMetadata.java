@@ -324,6 +324,10 @@ public enum DBMetadataResultSetMetadata {
           Types.VARCHAR,
           Types.VARCHAR,
           Types.VARCHAR)),
+  GET_TABLE_TYPES(
+      Collections.singletonList("TABLE_TYPE"),
+      Collections.singletonList("TEXT"),
+      Collections.singletonList(Types.VARCHAR)),
   ;
 
   private List<String> columnNames;
