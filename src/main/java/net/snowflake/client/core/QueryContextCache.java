@@ -234,6 +234,10 @@ private static QueryContextElement deserializeQueryContextElement(JsonNode node)
     if (contextNode.isTextual()) {
         String contextBytes = contextNode.asText();
         entry.setContext(contextBytes);
+    }else if(contextNode.isEmpty()){
+      // Currenly the OpaqueContext field is empty in the JSON received from GS. In the future, it will
+      // be filled with OpaqueContext object in base64 format.
+      logger.debug("deserializeQueryContextElement `context` field is empty");
     }else{
       logger.warn("deserializeQueryContextElement: `context` field is not String type");
       return null;
