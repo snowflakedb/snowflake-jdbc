@@ -187,7 +187,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
         types.add(resultSet.getString(1));
       }
       assertEquals(2, types.size());
-      assertTrue(types.contains("TABLE"));
+      assertTrue(types.contains("BASE TABLE"));
       assertTrue(types.contains("VIEW"));
     }
   }
