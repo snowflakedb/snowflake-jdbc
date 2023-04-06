@@ -1391,6 +1391,16 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   /** Helper to upload data from a stream */
   private void uploadStream() throws SnowflakeSQLException {
     try {
+      FileMetadata fileMetadata = fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM);
+
+      if (fileMetadata.resultStatus == ResultStatus.SKIPPED) {
+        logger.debug(
+            "Skipping {}, status: {}, details: {}",
+            SRC_FILE_NAME_FOR_STREAM,
+            fileMetadata.resultStatus,
+            fileMetadata.errorDetails);
+        return;
+      }
       threadExecutor = SnowflakeUtil.createDefaultExecutorService("sf-stream-upload-worker-", 1);
 
       RemoteStoreFileEncryptionMaterial encMat = encryptionMaterial.get(0);
@@ -1401,7 +1411,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                 getUploadFileCallable(
                     stageInfo,
                     SRC_FILE_NAME_FOR_STREAM,
-                    fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
+                    fileMetadata,
                     (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
                         ? null
                         : storageFactory.createClient(stageInfo, parallel, encMat, session),
