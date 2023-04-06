@@ -13,6 +13,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.util.List;
@@ -652,6 +654,70 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   }
 
   @Test
+  public void testUploadFileStreamWithNoOverwrite() throws Exception {
+    Connection connection = null;
+
+    try {
+      connection = getConnection();
+      Statement statement = connection.createStatement();
+      statement.execute("CREATE OR REPLACE STAGE testStage");
+
+      uploadFileToStageUsingStream(connection, false);
+      ResultSet resultSet = statement.executeQuery("LIST @testStage");
+      resultSet.next();
+      String expectedValue = resultSet.getString("last_modified");
+
+      Thread.sleep(1000); // add 1 sec delay between uploads.
+
+      uploadFileToStageUsingStream(connection, false);
+      resultSet = statement.executeQuery("LIST @testStage");
+      resultSet.next();
+      String actualValue = resultSet.getString("last_modified");
+
+      assertTrue(expectedValue.equals(actualValue));
+    } catch (Exception e) {
+      Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists testStage");
+        connection.close();
+      }
+    }
+  }
+
+  @Test
+  public void testUploadFileStreamWithOverwrite() throws Exception {
+    Connection connection = null;
+
+    try {
+      connection = getConnection();
+      Statement statement = connection.createStatement();
+      statement.execute("CREATE OR REPLACE STAGE testStage");
+
+      uploadFileToStageUsingStream(connection, true);
+      ResultSet resultSet = statement.executeQuery("LIST @testStage");
+      resultSet.next();
+      String expectedValue = resultSet.getString("last_modified");
+
+      Thread.sleep(1000); // add 1 sec delay between uploads.
+
+      uploadFileToStageUsingStream(connection, true);
+      resultSet = statement.executeQuery("LIST @testStage");
+      resultSet.next();
+      String actualValue = resultSet.getString("last_modified");
+
+      assertFalse(expectedValue.equals(actualValue));
+    } catch (Exception e) {
+      Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists testStage");
+        connection.close();
+      }
+    }
+  }
+
+  @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetS3StorageObjectMetadata() throws Throwable {
     Connection connection = null;
@@ -721,5 +787,27 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         connection.close();
       }
     }
+  }
+
+  private void uploadFileToStageUsingStream(Connection connection, boolean overwrite)
+      throws Exception {
+    SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+
+    String putCommand = "PUT file://" + sourceFilePath + " @testStage";
+
+    if (overwrite) {
+      putCommand += " overwrite=true";
+    }
+
+    SnowflakeFileTransferAgent sfAgent =
+        new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+
+    InputStream is = Files.newInputStream(Paths.get(sourceFilePath));
+
+    sfAgent.setSourceStream(is);
+    sfAgent.setDestFileNameForStreamSource("test_file");
+
+    sfAgent.execute();
   }
 }
