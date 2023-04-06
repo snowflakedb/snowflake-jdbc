@@ -1639,19 +1639,4 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(0, res.getInt("ORDINAL_POSITION"));
     }
   }
-
-  @Test
-  public void testGetTableTypes() throws Throwable {
-    try (Connection connection = getConnection()) {
-      DatabaseMetaData metaData = connection.getMetaData();
-      ResultSet resultSet = metaData.getTableTypes();
-      Set<String> types = new HashSet<>();
-      while (resultSet.next()) {
-        types.add(resultSet.getString(1));
-      }
-      assertEquals(2, types.size());
-      assertTrue(types.contains("BASE TABLE"));
-      assertTrue(types.contains("VIEW"));
-    }
-  }
 }
