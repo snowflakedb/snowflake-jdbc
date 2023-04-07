@@ -44,7 +44,7 @@
     <jackson.version>2.13.2</jackson.version>
     <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
     <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
-    <httpclient.version>4.5.11</httpclient.version>
+    <httpclient.version>4.5.13</httpclient.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <awssdk.version>1.12.327</awssdk.version>
@@ -931,17 +931,17 @@
                 </goals>
                 <configuration>
                   <target>
-                    <unzip src="${project.build.directory}/${project.build.finalName}.jar" dest="${project.build.directory}/relocate" />
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}" />
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}" />
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}" />
-                    <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}" />
-                    <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}" />
-                    <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}" />
-                    <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar" />
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}" />
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}" />
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}" />
+                    <unzip src="${project.build.directory}/${project.build.finalName}.jar" dest="${project.build.directory}/relocate"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
+                    <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                   </target>
                 </configuration>
               </execution>
