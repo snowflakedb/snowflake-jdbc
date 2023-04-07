@@ -1116,6 +1116,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
       URL url;
       if (!ocspCacheServer.new_endpoint_enabled) {
+        String urlEncodedOCSPReq = URLUtil.urlEncode(ocspReqDerBase64);
         if (SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null) {
           URL ocspUrl = new URL(ocspUrlStr);
           url =
@@ -1123,11 +1124,10 @@ public class SFTrustManager extends X509ExtendedTrustManager {
                   String.format(
                       SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
                       ocspUrl.getHost(),
-                      ocspReqDerBase64));
+                      urlEncodedOCSPReq));
         } else {
-          url = new URL(String.format("%s/%s", ocspUrlStr, ocspReqDerBase64));
+          url = new URL(String.format("%s/%s", ocspUrlStr, urlEncodedOCSPReq));
         }
-
         LOGGER.debug("not hit cache. Fetching OCSP response from CA OCSP server. {}", url);
       } else {
         url = new URL(ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL);
