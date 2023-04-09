@@ -107,8 +107,7 @@ public class SnowflakeUtil {
         errorCode = ErrorCode.INTERNAL_ERROR.getMessageCode();
         errorMessage = "no_error_code_from_server";
 
-        try {
-          PrintWriter writer = new PrintWriter("output.json", "UTF-8");
+        try (PrintWriter writer = new PrintWriter("output.json", "UTF-8")) {
           writer.print(rootNode.toString());
         } catch (Exception ex) {
           logger.debug("{}", ex);
