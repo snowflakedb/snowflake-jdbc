@@ -20,13 +20,8 @@ import org.slf4j.spi.LocationAwareLogger;
 public class SLF4JJCLWrapper implements Log {
   private Logger slf4jLogger;
 
-  private boolean isLocationAwareLogger;
-
-  private static final String FQCN = SLF4JJCLWrapper.class.getName();
-
   public SLF4JJCLWrapper(String name) {
     slf4jLogger = LoggerFactory.getLogger(name);
-    isLocationAwareLogger = slf4jLogger instanceof LocationAwareLogger;
   }
 
   Logger getLogger() {

@@ -17,8 +17,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 public class JsonResultChunk extends SnowflakeResultChunk {
-  private static final int NULL_VALUE = Integer.MIN_VALUE;
-
   private static final SFLogger logger = SFLoggerFactory.getLogger(JsonResultChunk.class);
 
   private ResultChunkData data;

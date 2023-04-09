@@ -2116,7 +2116,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       throws SQLException, IOException {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
-    String origDestFileName = destFileName;
     if (remoteLocation.path != null && !remoteLocation.path.isEmpty()) {
       destFileName =
           remoteLocation.path + (!remoteLocation.path.endsWith("/") ? "/" : "") + destFileName;
