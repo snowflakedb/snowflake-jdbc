@@ -37,7 +37,8 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
       throws SQLException {
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
-    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
+    this.resultSetMetaData =
+        new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData(), statement);
   }
 
   /**
@@ -76,7 +77,9 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     super(resultSetSerializable);
 
     this.sfBaseResultSet = sfBaseResultSet;
-    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
+    this.resultSetMetaData =
+        new SnowflakeResultSetMetaDataV1(
+            sfBaseResultSet.getMetaData(), resultSetSerializable.getResultSet().getStatement());
   }
 
   /**
