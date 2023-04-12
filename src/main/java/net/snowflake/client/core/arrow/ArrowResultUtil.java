@@ -6,6 +6,7 @@ package net.snowflake.client.core.arrow;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -81,6 +82,28 @@ public class ArrowResultUtil {
           (ArgSupplier) preDate::toString,
           (ArgSupplier) newDate::toString);
       return newDate;
+    } catch (NumberFormatException ex) {
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Invalid date value: " + day);
+    }
+  }
+
+  /**
+   * Method to get local date from epcho millsecs
+   *
+   * @param day
+   * @param tz
+   * @return
+   * @throws SFException
+   */
+  public static Date getDate(int day, TimeZone tz) throws SFException {
+    try {
+      // return the date adjusted to the tz time zone
+      long milliSecsSinceEpoch = (long) day * ResultUtil.MILLIS_IN_ONE_DAY;
+
+      LocalDate localDate =
+          Instant.ofEpochMilli(milliSecsSinceEpoch).atZone(tz.toZoneId()).toLocalDate();
+
+      return Date.valueOf(localDate);
     } catch (NumberFormatException ex) {
       throw new SFException(ErrorCode.INTERNAL_ERROR, "Invalid date value: " + day);
     }

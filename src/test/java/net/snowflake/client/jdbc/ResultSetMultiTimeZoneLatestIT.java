@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.sql.*;
 import java.sql.Date;
@@ -25,7 +26,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     // all tests in this class need to run for both query result formats json and arrow
     // UTC and Europe/London have different offsets during daylight savings time so it is important
     // to test both to ensure daylight savings time is correct
-    String[] timeZones = new String[] {"UTC", "Asia/Singapore", "MEZ", "Europe/London"};
+    String[] timeZones = new String[] {"UTC", "Asia/Singapore", "MEZ", "Europe/London", "PST"};
     String[] queryFormats = new String[] {"json", "arrow"};
     List<Object[]> ret = new ArrayList<>();
     for (String queryFormat : queryFormats) {
@@ -37,9 +38,11 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
   }
 
   private final String queryResultFormat;
+  private final String timeZone;
 
   public ResultSetMultiTimeZoneLatestIT(String queryResultFormat, String timeZone) {
     this.queryResultFormat = queryResultFormat;
+    this.timeZone = timeZone;
     System.setProperty("user.timezone", timeZone);
   }
 
@@ -114,6 +117,29 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     rs.close();
     statement.close();
     connection.close();
+  }
+
+  @Test
+  public void testGetDateWithJdbcUseSessionTimezoneDisabled() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
+    statement.execute(
+        "ALTER SESSION SET TIMEZONE = 'Asia/Kolkata';"); // This value will be ignored because of
+    // JDBC_USE_SESSION_TIMEZONE
+
+    ResultSet rs = statement.executeQuery("SELECT DATE '2021-01-01 00:00:00' as datefield");
+    rs.next();
+
+    Date d1 = rs.getDate(1);
+    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(timeZone));
+
+    Date d2 = rs.getDate(1, cal);
+    if (timeZone.equals("PST")) {
+      assertNotEquals(d1, d2); // PST time is behind UTC. so d2 will be 2020-12-31
+    } else {
+      assertEquals(d1, d2);
+    }
   }
 
   /**

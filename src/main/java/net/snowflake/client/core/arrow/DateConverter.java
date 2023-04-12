@@ -35,6 +35,10 @@ public class DateConverter extends AbstractArrowVectorConverter {
       if (jvmTz == null || sessionTimeZone == null || !useDateFormat) {
         return ArrowResultUtil.getDate(val);
       }
+
+      if (!useSessionTimezone) {
+        return ArrowResultUtil.getDate(val, jvmTz);
+      }
       // Note: use default time zone to match with current getDate() behavior
       return ArrowResultUtil.getDate(val, jvmTz, sessionTimeZone);
     }

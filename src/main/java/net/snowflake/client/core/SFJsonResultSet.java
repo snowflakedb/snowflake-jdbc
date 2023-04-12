@@ -699,6 +699,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (tz == null || !resultSetSerializable.getFormatDateWithTimeZone()) {
         return ArrowResultUtil.getDate(Integer.parseInt((String) obj));
       }
+      if (!resultSetSerializable.getUseSessionTimezone()) {
+        return ArrowResultUtil.getDate(Integer.parseInt((String) obj), tz);
+      }
       return ArrowResultUtil.getDate(Integer.parseInt((String) obj), tz, sessionTimeZone);
     }
     // for Types.TIME and all other type, throw user error
