@@ -1093,11 +1093,17 @@ public class SessionUtil {
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
       if (!isPrefixEqual(postBackUrl, loginInput.getServerUrl())) {
-        logger.debug(
-            "The specified authenticator {} and the destination URL "
-                + "in the SAML assertion {} do not match.",
-            loginInput.getAuthenticator(),
-            postBackUrl);
+        URL idpDestinationUrl = new URL(postBackUrl);
+        URL clientDestinationUrl = new URL(loginInput.getServerUrl());
+        String idpDestinationHostName = idpDestinationUrl.getHost();
+        String clientDestinationHostName = clientDestinationUrl.getHost();
+
+        logger.error(
+            "The Snowflake hostname specified in the client connection {} does not match "
+                + "the destination hostname in the SAML response returned by the IdP: {}",
+            clientDestinationHostName,
+            idpDestinationHostName);
+
         // Session is in process of getting created, so exception constructor takes in null session
         // value
         throw new SnowflakeSQLLoggedException(
