@@ -655,7 +655,7 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.httpClientKey = sfSession.getHttpClientKey();
     resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
-    resultSetSerializable.authTimeout = sfSession.getAuthTimeout();
+    resultSetSerializable.authTimeout = 0;
     resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
     resultSetSerializable.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
     resultSetSerializable.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();
