@@ -317,4 +317,30 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     assertTrue(rs.next());
     assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
   }
+
+  @Test
+  public void testExecuteLargeBatchOverMaxInt() throws SQLException {
+    Connection connection = null;
+    try {
+      connection = getConnection();
+      try (Statement statement = connection.createStatement()) {
+        statement.execute("create or replace table over_int(id decimal);");
+        for (int i = 1; i <= 11; i++) {
+          statement.execute(
+              "insert into over_int (SELECT seq8() FROM table(generator(rowCount => 200000000)));");
+        }
+        String sqlStatement = "UPDATE over_int SET id = 200";
+
+        PreparedStatement pstmt = connection.prepareStatement(sqlStatement);
+        pstmt.addBatch();
+        long[] queryResult = pstmt.executeLargeBatch();
+        assertEquals(1, queryResult.length);
+      }
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("drop table if exists over_int ");
+        connection.close();
+      }
+    }
+  }
 }
