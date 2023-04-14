@@ -68,6 +68,8 @@ public class IncidentUtil {
   public static void dumpVmMetrics(String incidentId) {
     PrintWriter writer = null;
     try {
+      File dmpFileDirectory = new File(EventUtil.getDumpPathPrefix());
+      dmpFileDirectory.mkdirs();
       String dumpFile =
           EventUtil.getDumpPathPrefix() + "/" + INC_DUMP_FILE_NAME + incidentId + INC_DUMP_FILE_EXT;
 
@@ -200,7 +202,11 @@ public class IncidentUtil {
       json.writeNumberField("thread_count", vm.threadCount());
       json.writeNumberField("current_time", Clock.defaultClock().time());
       json.writeNumberField("uptime", vm.uptime());
-      json.writeNumberField("fd_usage", vm.fileDescriptorUsage());
+      try {
+        json.writeNumberField("fd_usage", vm.fileDescriptorUsage());
+      } catch (Exception e) {
+        logger.info("Error writing fd_usage", e);
+      }
 
       json.writeFieldName("thread-states");
       json.writeStartObject();
