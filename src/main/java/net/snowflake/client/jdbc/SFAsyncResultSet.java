@@ -65,7 +65,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     this.queryID = sfBaseResultSet.getQueryId();
     this.sfBaseResultSet = sfBaseResultSet;
 
-    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData(), null);
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData(), resultSetSerializable.getResultSet().getStatement());
     this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
     this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
   }

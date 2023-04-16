@@ -77,6 +77,10 @@ public class SFResultSetMetaData {
 
   private boolean isResultColumnCaseInsensitive = false;
 
+
+
+  private List<Boolean> isAutoIncrementList;
+
   public SFResultSetMetaData(
       int columnCount,
       List<String> columnNames,
@@ -109,7 +113,6 @@ public class SFResultSetMetaData {
         dateFormatter,
         timeFormatter);
   }
-
   public SFResultSetMetaData(
       List<SnowflakeColumnMetadata> columnMetadata,
       String queryId,
@@ -127,7 +130,6 @@ public class SFResultSetMetaData {
     this.timestampTZFormatter = timestampTZFormatter;
     this.dateFormatter = dateFormatter;
     this.timeFormatter = timeFormatter;
-    calculateDateTimeStringLength();
 
     this.columnNames = new ArrayList<>(this.columnCount);
     this.columnTypeNames = new ArrayList<>(this.columnCount);
@@ -139,6 +141,7 @@ public class SFResultSetMetaData {
     this.columnSrcSchemas = new ArrayList<>(this.columnCount);
     this.columnSrcTables = new ArrayList<>(this.columnCount);
     this.columnDisplaySizes = new ArrayList<>(this.columnCount);
+    this.isAutoIncrementList = new ArrayList<>(this.columnCount);
     this.isResultColumnCaseInsensitive = isResultColumnCaseInsensitive;
 
     for (int colIdx = 0; colIdx < columnCount; colIdx++) {
@@ -155,6 +158,7 @@ public class SFResultSetMetaData {
       columnSrcSchemas.add(columnMetadata.get(colIdx).getColumnSrcSchema());
       columnSrcTables.add(columnMetadata.get(colIdx).getColumnSrcTable());
       columnDisplaySizes.add(calculateDisplaySize(columnMetadata.get(colIdx)));
+      isAutoIncrementList.add(columnMetadata.get(colIdx).isAutoIncrement());
     }
 
     this.session = session;
@@ -463,5 +467,17 @@ public class SFResultSetMetaData {
       return 25;
     }
     return columnDisplaySizes.get(column - 1);
+  }
+
+  public boolean getIsAutoIncrement(int column){
+    if(isAutoIncrementList == null || isAutoIncrementList.size() == 0) {
+      return false;
+    }
+
+    return isAutoIncrementList.get(column - 1);
+  }
+
+  public List<Boolean> getIsAutoIncrementList() {
+    return isAutoIncrementList;
   }
 }

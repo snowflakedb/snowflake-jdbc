@@ -97,35 +97,36 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public boolean isAutoIncrement(int column) throws SQLException {
-    String dbName = resultSetMetaData.getCatalogName(column);
-    String schemaName = resultSetMetaData.getSchemaName(column);
-    String tableName = resultSetMetaData.getTableName(column);
-    String columnName = resultSetMetaData.getColumnLabel(column);
+//    String dbName = resultSetMetaData.getCatalogName(column);
+//    String schemaName = resultSetMetaData.getSchemaName(column);
+//    String tableName = resultSetMetaData.getTableName(column);
+//    String columnName = resultSetMetaData.getColumnLabel(column);
+//
+//    DatabaseMetaData dbmd = this.statement.getConnection().getMetaData();
+//
+//    try (ResultSet rs = dbmd.getColumns(dbName, schemaName, tableName, columnName)) {
+//      while(rs.next()){
+//        String fetchedTableName = rs.getString("TABLE_NAME");
+//        String fetchedSchemaName = rs.getString("TABLE_SCHEM");
+//        String fetchedColumnName = rs.getString("COLUMN_NAME");
+//        String fetchedDBName = rs.getString("TABLE_CAT");
+//        if (fetchedDBName.equals(dbName)
+//                && fetchedTableName.equals(tableName)
+//                && fetchedSchemaName.equals(schemaName)
+//                && fetchedColumnName.equals(columnName)) {
+//          return "YES".equals(rs.getString("IS_AUTOINCREMENT"));
+//        }
+//      }
+//    } catch (SQLException ex) {
+//      throw new SnowflakeSQLLoggedException(
+//          session,
+//          SqlState.INTERNAL_ERROR,
+//          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+//          ex,
+//          "Failed to fetch column meta data ");
+//    }
 
-    DatabaseMetaData dbmd = this.statement.getConnection().getMetaData();
-
-    try (ResultSet rs = dbmd.getColumns(dbName, schemaName, tableName, columnName)) {
-      while(rs.next()){
-        String fetchedTableName = rs.getString("TABLE_NAME");
-        String fetchedSchemaName = rs.getString("TABLE_SCHEM");
-        String fetchedColumnName = rs.getString("COLUMN_NAME");
-        String fetchedDBName = rs.getString("TABLE_CAT");
-        if (fetchedDBName.equals(dbName)
-                && fetchedTableName.equals(tableName)
-                && fetchedSchemaName.equals(schemaName)
-                && fetchedColumnName.equals(columnName)) {
-          return "YES".equals(rs.getString("IS_AUTOINCREMENT"));
-        }
-      }
-    } catch (SQLException ex) {
-      throw new SnowflakeSQLLoggedException(
-          session,
-          SqlState.INTERNAL_ERROR,
-          ErrorCode.INTERNAL_ERROR.getMessageCode(),
-          ex,
-          "Failed to fetch column meta data ");
-    }
-    return false;
+    return resultSetMetaData.getIsAutoIncrement(column);
   }
 
   @Override

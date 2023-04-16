@@ -789,25 +789,25 @@ public class ResultSetLatestIT extends ResultSet0IT {
     Statement statement = connection.createStatement();
 
     String sampleCreateTableWithAllColTypes =
-        "CREATE or replace TABLE case_sensitive ("
-            + "  boolean_col BOOLEAN,"
-            + "  date_col DATE,"
-            + "  time_col TIME,"
-            + "  timestamp_col TIMESTAMP,"
-            + "  timestamp_ltz_col TIMESTAMP_LTZ,"
-            + "  timestamp_ntz_col TIMESTAMP_NTZ,"
-            + "  number_col NUMBER,"
-            + "  float_col FLOAT,"
-            + "  double_col DOUBLE,"
-            + "  binary_col BINARY,"
-            + "  geography_col GEOGRAPHY,"
-            + "  variant_col VARIANT,"
-            + "  object_col1 OBJECT,"
-            + "  array_col1 ARRAY,"
-            + "  text_col1 TEXT,"
-            + "  varchar_col VARCHAR(16777216),"
-            + "  char_col CHAR(16777216)"
-            + ");";
+            "CREATE or replace TABLE case_sensitive ("
+                    + "  boolean_col BOOLEAN,"
+                    + "  date_col DATE,"
+                    + "  time_col TIME,"
+                    + "  timestamp_col TIMESTAMP,"
+                    + "  timestamp_ltz_col TIMESTAMP_LTZ,"
+                    + "  timestamp_ntz_col TIMESTAMP_NTZ,"
+                    + "  number_col NUMBER,"
+                    + "  float_col FLOAT,"
+                    + "  double_col DOUBLE,"
+                    + "  binary_col BINARY,"
+                    + "  geography_col GEOGRAPHY,"
+                    + "  variant_col VARIANT,"
+                    + "  object_col1 OBJECT,"
+                    + "  array_col1 ARRAY,"
+                    + "  text_col1 TEXT,"
+                    + "  varchar_col VARCHAR(16777216),"
+                    + "  char_col CHAR(16777216)"
+                    + ");";
 
     statement.execute(sampleCreateTableWithAllColTypes);
     ResultSet rs = statement.executeQuery("select * from case_sensitive");
@@ -831,6 +831,43 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertTrue(metaData.isCaseSensitive(15)); // TEXT
     assertTrue(metaData.isCaseSensitive(16)); // VARCHAR
     assertTrue(metaData.isCaseSensitive(17)); // CHAR
+
+  }
+  public void testAutoIncrementJsonResult() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set ENABLE_FIX_759900=TRUE");
+    statement.execute("alter session set jdbc_query_result_format ='json'");
+
+    statement.execute("create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
+    statement.execute("insert into auto_inc(name) values('test1')");
+
+    ResultSet resultSet = statement.executeQuery("select * from auto_inc");
+    resultSet.next();
+
+    ResultSetMetaData metaData = resultSet.getMetaData();
+    assertTrue(metaData.isAutoIncrement(1));
+    assertFalse(metaData.isAutoIncrement(2));
+    assertTrue(metaData.isAutoIncrement(3));
+  }
+
+  @Test
+  public void testAutoIncrementArrowResult() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set ENABLE_FIX_759900=TRUE");
+    statement.execute("alter session set jdbc_query_result_format ='arrow'");
+
+    statement.execute("create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
+    statement.execute("insert into auto_inc(name) values('test1')");
+
+    ResultSet resultSet = statement.executeQuery("select * from auto_inc");
+    resultSet.next();
+
+    ResultSetMetaData metaData = resultSet.getMetaData();
+    assertTrue(metaData.isAutoIncrement(1));
+    assertFalse(metaData.isAutoIncrement(2));
+    assertTrue(metaData.isAutoIncrement(3));
   }
 
   @Test

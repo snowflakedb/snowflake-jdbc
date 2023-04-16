@@ -268,6 +268,8 @@ public class SnowflakeUtil {
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
 
+    boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
+
     return new SnowflakeColumnMetadata(
         colName,
         colType,
@@ -280,7 +282,8 @@ public class SnowflakeUtil {
         baseType,
         colSrcDatabase,
         colSrcSchema,
-        colSrcTable);
+        colSrcTable,
+            isAutoIncrement);
   }
 
   static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
@@ -397,7 +400,8 @@ public class SnowflakeUtil {
               stype, // fixed
               "", // database
               "", // schema
-              "")); // table
+              "",
+                  false)); // table
     }
 
     return rowType;
