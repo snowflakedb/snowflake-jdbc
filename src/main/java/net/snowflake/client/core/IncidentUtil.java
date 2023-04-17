@@ -116,12 +116,6 @@ public class IncidentUtil {
 
       logger.debug("Dump file {} is created.", dumpFile);
     } catch (Exception exc) {
-      StringWriter sw = new StringWriter();
-      PrintWriter pw = new PrintWriter(sw);
-      exc.printStackTrace(pw);
-      String stackTrace = sw.toString();
-      System.out.println("Unable to write dump file. Message: " + exc.getMessage());
-      System.out.println(stackTrace);
       logger.error("Unable to write dump file, exception: {}", exc.getMessage());
     } finally {
       if (writer != null) {
@@ -203,6 +197,7 @@ public class IncidentUtil {
       json.writeNumberField("current_time", Clock.defaultClock().time());
       json.writeNumberField("uptime", vm.uptime());
       try {
+        // This function can throw an error with java 11.
         json.writeNumberField("fd_usage", vm.fileDescriptorUsage());
       } catch (Exception e) {
         logger.info("Error writing fd_usage", e);
