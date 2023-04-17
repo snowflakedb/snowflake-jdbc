@@ -83,11 +83,6 @@
       <version>9.21</version>
     </dependency>
     <dependency>
-      <groupId>net.minidev</groupId>
-      <artifactId>json-smart</artifactId>
-      <version>2.4.8</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-failsafe-plugin</artifactId>
       <version>3.0.0-M1</version>
