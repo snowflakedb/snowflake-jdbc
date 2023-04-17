@@ -4,9 +4,10 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.IncidentUtil.INC_DUMP_FILE_EXT;
+import static net.snowflake.client.core.IncidentUtil.INC_DUMP_FILE_NAME;
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -33,16 +34,20 @@ public class IncidentUtilLatestIT extends BaseJDBCTest {
   /** Tests dumping JVM metrics for the current process */
   @Test
   public void testDumpVmMetrics() throws IOException {
-    File targetVMFile = new File(getFullPathFileInResource("snowflake_dumps/" + FILE_NAME));
-    int index = targetVMFile.getPath().indexOf("snowflake_dumps");
-    String dumpPath = targetVMFile.getPath().substring(0, index - 1);
+    String dumpPath = tmpFolder.newFolder().getCanonicalPath();
     System.setProperty("snowflake.dump_path", dumpPath);
 
+    String incidentId = "123456";
+
     // write the VM metrics to the dump file
-    IncidentUtil.dumpVmMetrics("123456");
+    IncidentUtil.dumpVmMetrics(incidentId);
+
+    // Get location of where file will be written
+    String targetVMFileLocation =
+        EventUtil.getDumpPathPrefix() + "/" + INC_DUMP_FILE_NAME + incidentId + INC_DUMP_FILE_EXT;
 
     // Read back the file contents
-    GZIPInputStream gzip = new GZIPInputStream(new FileInputStream(targetVMFile));
+    GZIPInputStream gzip = new GZIPInputStream(new FileInputStream(targetVMFileLocation));
     StringWriter sWriter = new StringWriter();
     IOUtils.copy(gzip, sWriter, "UTF-8");
     String output = sWriter.toString();

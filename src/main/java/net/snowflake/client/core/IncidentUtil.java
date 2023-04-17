@@ -14,10 +14,7 @@ import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Clock;
 import com.yammer.metrics.core.VirtualMachineMetrics;
 import com.yammer.metrics.reporting.MetricsServlet;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
@@ -71,6 +68,8 @@ public class IncidentUtil {
   public static void dumpVmMetrics(String incidentId) {
     PrintWriter writer = null;
     try {
+      File dmpFileDirectory = new File(EventUtil.getDumpPathPrefix());
+      dmpFileDirectory.mkdirs();
       String dumpFile =
           EventUtil.getDumpPathPrefix() + "/" + INC_DUMP_FILE_NAME + incidentId + INC_DUMP_FILE_EXT;
 
@@ -197,7 +196,12 @@ public class IncidentUtil {
       json.writeNumberField("thread_count", vm.threadCount());
       json.writeNumberField("current_time", Clock.defaultClock().time());
       json.writeNumberField("uptime", vm.uptime());
-      json.writeNumberField("fd_usage", vm.fileDescriptorUsage());
+      try {
+        // This function can throw an error with java 11.
+        json.writeNumberField("fd_usage", vm.fileDescriptorUsage());
+      } catch (Exception e) {
+        logger.info("Error writing fd_usage", e);
+      }
 
       json.writeFieldName("thread-states");
       json.writeStartObject();
