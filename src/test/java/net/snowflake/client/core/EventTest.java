@@ -51,6 +51,7 @@ public class EventTest {
       // Set dmp file path
       String dumpPath = homeDirectory.getCanonicalPath();
       System.setProperty(DUMP_PATH_PROP, dumpPath);
+      EventUtil.setDumpPathPrefixForTesting(dumpPath);
       Event event = new BasicEvent(Event.EventType.NETWORK_ERROR, "network timeout");
       event.writeEventDumpLine("network timeout after 60 seconds");
       // Assert the dump path prefix function correctly leads to the temporary dump directory

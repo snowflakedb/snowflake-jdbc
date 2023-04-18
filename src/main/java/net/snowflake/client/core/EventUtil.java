@@ -20,7 +20,7 @@ public class EventUtil {
   public static final String DUMP_SUBDIR = "snowflake_dumps";
 
   private static final String DUMP_FILE_ID = UUID.randomUUID().toString();
-  private static final String DUMP_PATH_PREFIX =
+  private static String DUMP_PATH_PREFIX =
       systemGetProperty(DUMP_PATH_PROP) == null ? "/tmp" : systemGetProperty(DUMP_PATH_PROP);
   private static final long MAX_DUMP_FILE_SIZE_BYTES =
       systemGetProperty(DUMP_SIZE_PROP) == null
@@ -32,6 +32,15 @@ public class EventUtil {
   private static int MAX_ENTRIES = 1000;
 
   private static int FLUSH_PERIOD_MS = 10000;
+
+  /**
+   * Junit is not recognizing the system properties for EventTest, so overriding the value here
+   *
+   * @param value
+   */
+  public static void setDumpPathPrefixForTesting(String value) {
+    DUMP_PATH_PREFIX = value;
+  }
 
   /**
    * Initializes the common eventHandler instance for all sessions/threads
