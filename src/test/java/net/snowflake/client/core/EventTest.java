@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -21,7 +20,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-public class EventTest extends BaseJDBCTest {
+public class EventTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
   private File homeDirectory;
   private File dmpDirectory;
