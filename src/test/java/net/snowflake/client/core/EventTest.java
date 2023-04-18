@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.apache.commons.io.IOUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,7 +27,11 @@ public class EventTest extends BaseJDBCTest {
   @Before
   public void setUp() throws IOException {
     dmpDirectory = tmpFolder.newFolder("snowflake_dumps");
-    System.setProperty("snowflake.dump_path", tmpFolder.getRoot().getCanonicalPath());
+  }
+
+  @After
+  public void tearDown() {
+    dmpDirectory.delete();
   }
 
   @Test
@@ -40,27 +45,34 @@ public class EventTest extends BaseJDBCTest {
 
   @Test
   public void testWriteEventDumpLine() throws IOException {
-    Event event = new BasicEvent(Event.EventType.NETWORK_ERROR, "network timeout");
-    event.writeEventDumpLine("network timeout after 60 seconds");
-    // Assert the dump path prefix function correctly leads to the temporary dump directory created
-    String dmpPath1 = EventUtil.getDumpPathPrefix();
-    String dmpPath2 = dmpDirectory.getCanonicalPath();
-    assertEquals(dmpPath2, dmpPath1);
-    File dumpFile =
-        new File(
-            EventUtil.getDumpPathPrefix()
-                + "/"
-                + "sf_event_"
-                + EventUtil.getDumpFileId()
-                + ".dmp.gz");
-    GZIPInputStream gzip = new GZIPInputStream(Files.newInputStream(dumpFile.toPath()));
-    StringWriter sWriter = new StringWriter();
-    IOUtils.copy(gzip, sWriter, "UTF-8");
+    try {
+      // Set dmp file path
+      System.setProperty("snowflake.dump_path", tmpFolder.getRoot().getCanonicalPath());
+      Event event = new BasicEvent(Event.EventType.NETWORK_ERROR, "network timeout");
+      event.writeEventDumpLine("network timeout after 60 seconds");
+      // Assert the dump path prefix function correctly leads to the temporary dump directory
+      // created
+      String dmpPath1 = EventUtil.getDumpPathPrefix();
+      String dmpPath2 = dmpDirectory.getCanonicalPath();
+      assertEquals(dmpPath2, dmpPath1);
+      File dumpFile =
+          new File(
+              EventUtil.getDumpPathPrefix()
+                  + "/"
+                  + "sf_event_"
+                  + EventUtil.getDumpFileId()
+                  + ".dmp.gz");
+      GZIPInputStream gzip = new GZIPInputStream(Files.newInputStream(dumpFile.toPath()));
+      StringWriter sWriter = new StringWriter();
+      IOUtils.copy(gzip, sWriter, "UTF-8");
 
-    assertTrue(sWriter.toString().contains("network timeout after 60 seconds"));
+      assertTrue(sWriter.toString().contains("network timeout after 60 seconds"));
 
-    gzip.close();
-    sWriter.close();
-    dumpFile.delete();
+      gzip.close();
+      sWriter.close();
+      dumpFile.delete();
+    } finally {
+      System.clearProperty("snowflake.dump_path");
+    }
   }
 }
