@@ -22,11 +22,13 @@ import org.junit.rules.TemporaryFolder;
 
 public class EventTest extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  private File homeDirectory;
   private File dmpDirectory;
 
   @Before
   public void setUp() throws IOException {
-    dmpDirectory = tmpFolder.newFolder("snowflake_dumps");
+    homeDirectory = tmpFolder.newFolder("homedir");
+    dmpDirectory = tmpFolder.newFolder("homedir", "snowflake_dumps");
   }
 
   @After
@@ -47,7 +49,8 @@ public class EventTest extends BaseJDBCTest {
   public void testWriteEventDumpLine() throws IOException {
     try {
       // Set dmp file path
-      System.setProperty("snowflake.dump_path", tmpFolder.getRoot().getCanonicalPath());
+      String dumpPath = homeDirectory.getCanonicalPath();
+      System.setProperty("snowflake.dump_path", dumpPath);
       Event event = new BasicEvent(Event.EventType.NETWORK_ERROR, "network timeout");
       event.writeEventDumpLine("network timeout after 60 seconds");
       // Assert the dump path prefix function correctly leads to the temporary dump directory
