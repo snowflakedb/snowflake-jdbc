@@ -77,6 +77,7 @@ public class EventTest {
       dumpFile.delete();
     } finally {
       System.clearProperty("snowflake.dump_path");
+      EventUtil.setDumpPathPrefixForTesting(EventUtil.getDumpPathPrefix());
     }
   }
 }
