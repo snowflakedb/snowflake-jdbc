@@ -7,7 +7,9 @@ package net.snowflake.client.core;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -19,10 +21,11 @@ import org.junit.rules.TemporaryFolder;
 
 public class EventTest extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  private File dmpDirectory;
 
   @Before
   public void setUp() throws IOException {
-    tmpFolder.newFolder("snowflake_dumps");
+    dmpDirectory = tmpFolder.newFolder("snowflake_dumps");
     System.setProperty("snowflake.dump_path", tmpFolder.getRoot().getCanonicalPath());
   }
 
@@ -39,7 +42,10 @@ public class EventTest extends BaseJDBCTest {
   public void testWriteEventDumpLine() throws IOException {
     Event event = new BasicEvent(Event.EventType.NETWORK_ERROR, "network timeout");
     event.writeEventDumpLine("network timeout after 60 seconds");
-
+    // Assert the dump path prefix function correctly leads to the temporary dump directory created
+    String dmpPath1 = EventUtil.getDumpPathPrefix();
+    String dmpPath2 = dmpDirectory.getCanonicalPath();
+    assertEquals(dmpPath2, dmpPath1);
     File dumpFile =
         new File(
             EventUtil.getDumpPathPrefix()
