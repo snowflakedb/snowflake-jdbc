@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.EventUtil.DUMP_PATH_PROP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -50,14 +51,14 @@ public class EventTest extends BaseJDBCTest {
     try {
       // Set dmp file path
       String dumpPath = homeDirectory.getCanonicalPath();
-      System.setProperty("snowflake.dump_path", dumpPath);
+      System.setProperty(DUMP_PATH_PROP, dumpPath);
       Event event = new BasicEvent(Event.EventType.NETWORK_ERROR, "network timeout");
       event.writeEventDumpLine("network timeout after 60 seconds");
       // Assert the dump path prefix function correctly leads to the temporary dump directory
       // created
       String dmpPath1 = EventUtil.getDumpPathPrefix();
       String dmpPath2 = dmpDirectory.getCanonicalPath();
-      assertEquals(dmpPath2, dmpPath1);
+      assertEquals("dump path is: " + EventUtil.getDumpPathPrefix(), dmpPath2, dmpPath1);
       File dumpFile =
           new File(
               EventUtil.getDumpPathPrefix()
