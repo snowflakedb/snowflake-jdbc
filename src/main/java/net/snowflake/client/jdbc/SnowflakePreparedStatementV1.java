@@ -877,8 +877,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       } else {
         // Array binding is not supported
         if (isLong) {
-          updateCounts.longArr = executeBatchInternal(false).longArr;
-
+          updateCounts.longArr = executeBatchInternal(true).longArr;
         } else {
           updateCounts.intArr = executeBatchInternal(false).intArr;
         }
