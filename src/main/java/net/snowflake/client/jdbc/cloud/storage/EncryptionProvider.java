@@ -96,10 +96,7 @@ public class EncryptionProvider {
       SecretKey queryStageMasterKey = new SecretKeySpec(qsmkBytes, 0, qsmkBytes.length, AES);
       keyCipher.init(Cipher.DECRYPT_MODE, queryStageMasterKey);
       byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
-
-      // NB: we assume qsmk.length == fileKey.length
-      //     (fileKeyBytes.length may be bigger due to padding)
-      fileKey = new SecretKeySpec(fileKeyBytes, 0, qsmkBytes.length, AES);
+      fileKey = new SecretKeySpec(fileKeyBytes, AES);
     }
 
     // Decrypt file
