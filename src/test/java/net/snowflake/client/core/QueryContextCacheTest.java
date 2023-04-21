@@ -44,6 +44,7 @@ public class QueryContextCacheTest {
       expectedPriority[i] = BASE_PRIORITY + i;
       qcc.merge(expectedIDs[i], expectedReadTimestamp[i], expectedPriority[i], context);
     }
+    qcc.syncPriorityMap();
   }
 
   private void initCacheWithDataInRandomOrder() {
@@ -62,6 +63,7 @@ public class QueryContextCacheTest {
     qcc.merge(expectedIDs[4], expectedReadTimestamp[4], expectedPriority[4], CONTEXT);
     qcc.merge(expectedIDs[0], expectedReadTimestamp[0], expectedPriority[0], CONTEXT);
     qcc.merge(expectedIDs[1], expectedReadTimestamp[1], expectedPriority[1], CONTEXT);
+    qcc.syncPriorityMap();
   }
 
   /** Test for empty cache */
@@ -92,6 +94,7 @@ public class QueryContextCacheTest {
     // Add one more element at the end
     int i = MAX_CAPACITY;
     qcc.merge(BASE_ID + i, BASE_READ_TIMESTAMP + i, BASE_PRIORITY + i, CONTEXT);
+    qcc.syncPriorityMap();
     qcc.checkCacheCapacity();
 
     // Compare elements
@@ -107,6 +110,7 @@ public class QueryContextCacheTest {
     expectedReadTimestamp[updatedID] = BASE_READ_TIMESTAMP + updatedID + 10;
     qcc.merge(
         BASE_ID + updatedID, expectedReadTimestamp[updatedID], BASE_PRIORITY + updatedID, CONTEXT);
+    qcc.syncPriorityMap();
     qcc.checkCacheCapacity();
 
     // Compare elements
@@ -124,6 +128,7 @@ public class QueryContextCacheTest {
     expectedPriority[updatedID] = updatedPriority;
     qcc.merge(
         BASE_ID + updatedID, BASE_READ_TIMESTAMP + updatedID, expectedPriority[updatedID], CONTEXT);
+    qcc.syncPriorityMap();
     qcc.checkCacheCapacity();
 
     for (int i = updatedID; i < MAX_CAPACITY - 1; i++) {
@@ -147,8 +152,8 @@ public class QueryContextCacheTest {
     int i = MAX_CAPACITY;
     long UpdatedPriority = BASE_PRIORITY + 1;
     qcc.merge(BASE_ID + i, BASE_READ_TIMESTAMP + i, UpdatedPriority, CONTEXT);
+    qcc.syncPriorityMap();
     qcc.checkCacheCapacity();
-
     expectedIDs[1] = BASE_ID + i;
     expectedReadTimestamp[1] = BASE_READ_TIMESTAMP + i;
 
@@ -163,6 +168,7 @@ public class QueryContextCacheTest {
     // Add one more element with same priority
     int i = 2;
     qcc.merge(BASE_ID + i, BASE_READ_TIMESTAMP + i - 10, BASE_PRIORITY + i, CONTEXT);
+    qcc.syncPriorityMap();
     qcc.checkCacheCapacity();
 
     // Compare elements
