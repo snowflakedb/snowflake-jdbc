@@ -316,7 +316,7 @@ public class StmtUtil {
           sqlJsonBody.setDescribedJobId(stmtInput.describedJobId);
         }
 
-        logger.debug("queryContextDTO: {}" + mapper.writeValueAsString(stmtInput.queryContextDTO));
+        logger.debug("queryContextDTO: {}", mapper.writeValueAsString(stmtInput.queryContextDTO));
 
         String json = mapper.writeValueAsString(sqlJsonBody);
 
