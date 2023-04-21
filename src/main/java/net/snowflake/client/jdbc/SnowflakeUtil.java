@@ -283,7 +283,7 @@ public class SnowflakeUtil {
         colSrcDatabase,
         colSrcSchema,
         colSrcTable,
-            isAutoIncrement);
+        isAutoIncrement);
   }
 
   static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
@@ -401,7 +401,7 @@ public class SnowflakeUtil {
               "", // database
               "", // schema
               "",
-                  false)); // table
+              false)); // isAutoincrement
     }
 
     return rowType;

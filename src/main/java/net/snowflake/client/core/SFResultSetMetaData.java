@@ -77,8 +77,6 @@ public class SFResultSetMetaData {
 
   private boolean isResultColumnCaseInsensitive = false;
 
-
-
   private List<Boolean> isAutoIncrementList;
 
   public SFResultSetMetaData(
@@ -113,6 +111,7 @@ public class SFResultSetMetaData {
         dateFormatter,
         timeFormatter);
   }
+
   public SFResultSetMetaData(
       List<SnowflakeColumnMetadata> columnMetadata,
       String queryId,
@@ -130,6 +129,7 @@ public class SFResultSetMetaData {
     this.timestampTZFormatter = timestampTZFormatter;
     this.dateFormatter = dateFormatter;
     this.timeFormatter = timeFormatter;
+    calculateDateTimeStringLength();
 
     this.columnNames = new ArrayList<>(this.columnCount);
     this.columnTypeNames = new ArrayList<>(this.columnCount);
@@ -469,8 +469,8 @@ public class SFResultSetMetaData {
     return columnDisplaySizes.get(column - 1);
   }
 
-  public boolean getIsAutoIncrement(int column){
-    if(isAutoIncrementList == null || isAutoIncrementList.size() == 0) {
+  public boolean getIsAutoIncrement(int column) {
+    if (isAutoIncrementList == null || isAutoIncrementList.size() == 0) {
       return false;
     }
 

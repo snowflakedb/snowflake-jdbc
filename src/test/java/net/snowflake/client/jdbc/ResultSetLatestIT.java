@@ -839,7 +839,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
     statement.execute("alter session set ENABLE_FIX_759900=TRUE");
     statement.execute("alter session set jdbc_query_result_format ='json'");
 
-    statement.execute("create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
+    statement.execute(
+        "create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
     statement.execute("insert into auto_inc(name) values('test1')");
 
     ResultSet resultSet = statement.executeQuery("select * from auto_inc");
@@ -858,7 +859,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
     statement.execute("alter session set ENABLE_FIX_759900=TRUE");
     statement.execute("alter session set jdbc_query_result_format ='arrow'");
 
-    statement.execute("create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
+    statement.execute(
+        "create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
     statement.execute("insert into auto_inc(name) values('test1')");
 
     ResultSet resultSet = statement.executeQuery("select * from auto_inc");

@@ -155,7 +155,7 @@ public class SnowflakeColumnMetadata implements Serializable {
     sBuilder.append(",database=").append(columnSrcDatabase);
     sBuilder.append(",schema=").append(columnSrcSchema);
     sBuilder.append(",table=").append(columnSrcTable);
-//    sBuilder.append((",isAutoIncrement=")).append(isAutoIncrement);
+    sBuilder.append((",isAutoIncrement=")).append(isAutoIncrement);
 
     return sBuilder.toString();
   }

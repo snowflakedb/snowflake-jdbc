@@ -587,7 +587,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     raiseSQLExceptionIfStatementIsClosed();
 
     describeSqlIfNotTried();
-    return new SnowflakeResultSetMetaDataV1(this.statementMetaData.getResultSetMetaData(), this);
+    return new SnowflakeResultSetMetaDataV1(this.statementMetaData.getResultSetMetaData());
   }
 
   @Override

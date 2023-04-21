@@ -44,8 +44,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     this.queryID = sfBaseResultSet.getQueryId();
     this.session = (SFSession) sfBaseResultSet.getSession();
     this.extraStatement = statement;
-    this.resultSetMetaData =
-        new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData(), statement);
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
     this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
     this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
   }
@@ -65,7 +64,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     this.queryID = sfBaseResultSet.getQueryId();
     this.sfBaseResultSet = sfBaseResultSet;
 
-    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData(), resultSetSerializable.getResultSet().getStatement());
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
     this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
     this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
   }

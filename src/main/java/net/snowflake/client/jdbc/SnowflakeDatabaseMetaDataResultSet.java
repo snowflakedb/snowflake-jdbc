@@ -55,7 +55,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
         new SFResultSetMetaData(
             columnNames.size(), columnNames, columnTypeNames, columnTypes, session);
 
-    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfset, statement);
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfset);
 
     this.nextRow = new Object[columnNames.size()];
   }
@@ -87,7 +87,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
         new SFResultSetMetaData(
             columnNames.size(), columnNames, columnTypeNames, columnTypes, session);
 
-    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfset, statement);
+    this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfset);
 
     this.nextRow = new Object[columnNames.size()];
   }
