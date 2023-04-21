@@ -373,7 +373,9 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
    */
   private void addQCE(QueryContextElement qce) {
     idMap.put(qce.id, qce);
-    priorityMap.put(qce.priority, qce);
+    // In a round of merge operations, we should save the new priority->qce mapping in an additional map 
+    // and sync `newPriorityMap` to `priorityMap` at the end of a for loop of `merge` operations
+    newPriorityMap.put(qce.priority, qce);
     treeSet.add(qce);
   }
 
