@@ -797,11 +797,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
             + "  number_col NUMBER,"
             + "  float_col FLOAT,"
             + "  double_col DOUBLE,"
+            + "  binary_col BINARY,"
             + "  geography_col GEOGRAPHY,"
             + "  variant_col VARIANT,"
             + "  object_col1 OBJECT,"
             + "  array_col1 ARRAY,"
-            + "  binary_col BINARY,"
             + "  text_col1 TEXT,"
             + "  varchar_col VARCHAR(16777216),"
             + "  char_col CHAR(16777216)"
@@ -812,20 +812,20 @@ public class ResultSetLatestIT extends ResultSet0IT {
     ResultSetMetaData metaData = rs.getMetaData();
 
     assertFalse(metaData.isCaseSensitive(1)); // BOOLEAN
-    assertFalse(metaData.isCaseSensitive(2)); // date
-    assertFalse(metaData.isCaseSensitive(3)); // DATE
+    assertFalse(metaData.isCaseSensitive(2)); // DATE
+    assertFalse(metaData.isCaseSensitive(3)); // TIME
     assertFalse(metaData.isCaseSensitive(4)); // TIMESTAMP
     assertFalse(metaData.isCaseSensitive(5)); // TIMESTAMP_LTZ
     assertFalse(metaData.isCaseSensitive(6)); // TIMESTAMP_NTZ
     assertFalse(metaData.isCaseSensitive(7)); // NUMBER
     assertFalse(metaData.isCaseSensitive(8)); // FLOAT
     assertFalse(metaData.isCaseSensitive(9)); // DOUBLE
+    assertFalse(metaData.isCaseSensitive(10)); // BINARY
 
-    assertTrue(metaData.isCaseSensitive(10)); // GEOGRAPHY
-    assertTrue(metaData.isCaseSensitive(11)); // VARIANT
-    assertTrue(metaData.isCaseSensitive(12)); // OBJECT
-    assertTrue(metaData.isCaseSensitive(13)); // ARRAY
-    assertTrue(metaData.isCaseSensitive(14)); // BINARY
+    assertTrue(metaData.isCaseSensitive(11)); // GEOGRAPHY
+    assertTrue(metaData.isCaseSensitive(12)); // VARIANT
+    assertTrue(metaData.isCaseSensitive(13)); // OBJECT
+    assertTrue(metaData.isCaseSensitive(14)); // ARRAY
     assertTrue(metaData.isCaseSensitive(15)); // TEXT
     assertTrue(metaData.isCaseSensitive(16)); // VARCHAR
     assertTrue(metaData.isCaseSensitive(17)); // CHAR
