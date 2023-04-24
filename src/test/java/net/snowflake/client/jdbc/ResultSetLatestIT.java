@@ -780,4 +780,54 @@ public class ResultSetLatestIT extends ResultSet0IT {
     statement.close();
     connection.close();
   }
+
+  @Test
+  public void testMetadataIsCaseSensitive() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+
+    String sampleCreateTableWithAllColTypes =
+        "CREATE or replace TABLE case_sensitive ("
+            + "  boolean_col BOOLEAN,"
+            + "  date_col DATE,"
+            + "  time_col TIME,"
+            + "  timestamp_col TIMESTAMP,"
+            + "  timestamp_ltz_col TIMESTAMP_LTZ,"
+            + "  timestamp_ntz_col TIMESTAMP_NTZ,"
+            + "  number_col NUMBER,"
+            + "  float_col FLOAT,"
+            + "  double_col DOUBLE,"
+            + "  geography_col GEOGRAPHY,"
+            + "  variant_col VARIANT,"
+            + "  object_col1 OBJECT,"
+            + "  array_col1 ARRAY,"
+            + "  binary_col BINARY,"
+            + "  text_col1 TEXT,"
+            + "  varchar_col VARCHAR(16777216),"
+            + "  char_col CHAR(16777216)"
+            + ");";
+
+    statement.execute(sampleCreateTableWithAllColTypes);
+    ResultSet rs = statement.executeQuery("select * from case_sensitive");
+    ResultSetMetaData metaData = rs.getMetaData();
+
+    assertFalse(metaData.isCaseSensitive(1)); // BOOLEAN
+    assertFalse(metaData.isCaseSensitive(2)); // date
+    assertFalse(metaData.isCaseSensitive(3)); // DATE
+    assertFalse(metaData.isCaseSensitive(4)); // TIMESTAMP
+    assertFalse(metaData.isCaseSensitive(5)); // TIMESTAMP_LTZ
+    assertFalse(metaData.isCaseSensitive(6)); // TIMESTAMP_NTZ
+    assertFalse(metaData.isCaseSensitive(7)); // NUMBER
+    assertFalse(metaData.isCaseSensitive(8)); // FLOAT
+    assertFalse(metaData.isCaseSensitive(9)); // DOUBLE
+
+    assertTrue(metaData.isCaseSensitive(10)); // GEOGRAPHY
+    assertTrue(metaData.isCaseSensitive(11)); // VARIANT
+    assertTrue(metaData.isCaseSensitive(12)); // OBJECT
+    assertTrue(metaData.isCaseSensitive(13)); // ARRAY
+    assertTrue(metaData.isCaseSensitive(14)); // BINARY
+    assertTrue(metaData.isCaseSensitive(15)); // TEXT
+    assertTrue(metaData.isCaseSensitive(16)); // VARCHAR
+    assertTrue(metaData.isCaseSensitive(17)); // CHAR
+  }
 }

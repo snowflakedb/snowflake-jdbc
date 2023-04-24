@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -96,7 +97,23 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public boolean isCaseSensitive(int column) throws SQLException {
-    return false;
+    int colType = getColumnType(column);
+
+    switch (colType) {
+      case Types.INTEGER:
+      case Types.BIGINT:
+      case Types.DECIMAL:
+      case Types.DOUBLE:
+      case Types.BOOLEAN:
+      case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+      case Types.DATE:
+      case Types.TIME:
+        return false;
+
+      default:
+        return true;
+    }
   }
 
   @Override
