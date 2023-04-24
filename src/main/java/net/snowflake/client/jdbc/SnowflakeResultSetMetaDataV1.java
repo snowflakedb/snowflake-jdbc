@@ -100,6 +100,13 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     int colType = getColumnType(column);
 
     switch (colType) {
+        // Note: SF types ARRAY, OBJECT, BINARY, GEOGRAPHY, GEOMETRY are also represented as
+        // VARCHAR.
+      case Types.VARCHAR:
+      case Types.CHAR:
+      case Types.BINARY:
+        return true;
+
       case Types.INTEGER:
       case Types.BIGINT:
       case Types.DECIMAL:
@@ -109,10 +116,8 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
       case Types.TIMESTAMP_WITH_TIMEZONE:
       case Types.DATE:
       case Types.TIME:
-        return false;
-
       default:
-        return true;
+        return false;
     }
   }
 
