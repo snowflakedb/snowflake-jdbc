@@ -833,10 +833,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertTrue(metaData.isCaseSensitive(17)); // CHAR
   }
 
+  @Test
   public void testAutoIncrementJsonResult() throws SQLException {
-    Connection connection = init();
+    Properties paramProperties = new Properties();
+    paramProperties.put("ENABLE_FIX_759900", true);
+    Connection connection = init(paramProperties);
     Statement statement = connection.createStatement();
-    statement.execute("alter session set ENABLE_FIX_759900=TRUE");
     statement.execute("alter session set jdbc_query_result_format ='json'");
 
     statement.execute(
@@ -854,9 +856,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
   @Test
   public void testAutoIncrementArrowResult() throws SQLException {
-    Connection connection = init();
+    Properties paramProperties = new Properties();
+    paramProperties.put("ENABLE_FIX_759900", true);
+    Connection connection = init(paramProperties);
     Statement statement = connection.createStatement();
-    statement.execute("alter session set ENABLE_FIX_759900=TRUE");
     statement.execute("alter session set jdbc_query_result_format ='arrow'");
 
     statement.execute(
