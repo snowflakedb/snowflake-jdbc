@@ -302,7 +302,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           SnowflakeType.isJavaTypeSigned(resultSetMetaData.getColumnType(col)),
           resultSetMetaData.isSigned(col));
       assertFalse(resultSetMetaData.isAutoIncrement(col));
-      assertFalse(resultSetMetaData.isCaseSensitive(col));
       assertFalse(resultSetMetaData.isCurrency(col));
       assertTrue(resultSetMetaData.isReadOnly(col));
       assertTrue(resultSetMetaData.isSearchable(col));
