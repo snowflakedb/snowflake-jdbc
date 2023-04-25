@@ -114,9 +114,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   /** Test connection to database using Snowflake Oauth instead of username/pw * */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testOauthConnection() throws SQLException {
     Map<String, String> params = getConnectionParameters();
-    Connection con = getConnection();
+    Connection con = getConnection("s3testaccount");
     Statement statement = con.createStatement();
     statement.execute("use role accountadmin");
     statement.execute(
@@ -140,7 +141,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     props.put("authenticator", ClientAuthnDTO.AuthenticatorType.OAUTH.name());
     props.put("token", token);
     props.put("role", role);
-    con = getConnection(props);
+    con = getConnection("s3testaccount", props);
     con.createStatement().execute("select 1");
     con.close();
   }
