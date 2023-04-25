@@ -29,6 +29,8 @@ public class QueryContextCache {
 
   private final HashMap<Long, QueryContextElement> priorityMap; // Map for priority and QCC
 
+  private final HashMap<Long, QueryContextElement> newPriorityMap; // Intermediate map for priority and QCC for current round of merging
+
   private static final SFLogger logger = SFLoggerFactory.getLogger(QueryContextCache.class);
 
   private static ObjectMapper jsonObjectMapper;
@@ -46,6 +48,7 @@ public class QueryContextCache {
     this.capacity = capacity;
     idMap = new HashMap<>();
     priorityMap = new HashMap<>();
+    newPriorityMap = new HashMap<>();
     treeSet = new TreeSet<>(Comparator
     .comparingLong(QueryContextElement::getPriority)
     .thenComparingLong(QueryContextElement::getId)
@@ -104,13 +107,24 @@ public class QueryContextCache {
   }
 
   /**
+   * Sync the newPriorityMap with the priorityMap at the end of current round of merge
+   */
+  void syncPriorityMap() {
+    logger.debug("syncPriorityMap called priorityMap size = {}, newPrioirtyMap size = {}", priorityMap.size(), newPriorityMap.size());
+    for (Map.Entry<Long, QueryContextElement> entry : newPriorityMap.entrySet()) {
+      priorityMap.put(entry.getKey(), entry.getValue());
+    }
+    // clear the newPriorityMap for next round of QCC merge(a round consists of multiple entries)
+    newPriorityMap.clear();
+  }
+
+  /**
    * After the merge, loop through priority list and make sure cache is at most capacity. Remove all
    * other elements from the list based on priority.
    */
   void checkCacheCapacity() {
     logger.debug(
         "checkCacheCapacity() called. treeSet size {} cache capacity {}", treeSet.size(), capacity);
-
     if (treeSet.size() > capacity) {
       // remove elements based on priority
       while (treeSet.size() > capacity) {
@@ -188,6 +202,9 @@ public class QueryContextCache {
               return;
             }
           }
+          // after merging all entries, sync the internal priority map to priority map. Because of priority swicth from GS side,
+          // there could be priority key conflict if we directly operating on the priorityMap during a round of merge.
+          syncPriorityMap();
       }
     }catch (Exception e) {
       logger.debug("deserializeQueryContextJson: Exception = {}", e.getMessage());
@@ -276,6 +293,9 @@ public void deserializeQueryContextDTO(QueryContextDTO queryContextDTO){
           merge(entry.id, entry.readTimestamp, entry.priority, entry.context);
           logCacheEntries();
         }
+        // after merging all entries, sync the internal priority map to priority map. Because of priority swicth from GS side,
+        // there could be priority key conflict if we directly operating on the priorityMap during a round of merge.
+        syncPriorityMap();
       }
     }catch (Exception e) {
       logger.debug("deserializeQueryContextDTO: Exception = {}", e.getMessage());
@@ -353,7 +373,9 @@ private QueryContextEntryDTO serializeQueryContextEntryDTO(QueryContextElement e
    */
   private void addQCE(QueryContextElement qce) {
     idMap.put(qce.id, qce);
-    priorityMap.put(qce.priority, qce);
+    // In a round of merge operations, we should save the new priority->qce mapping in an additional map 
+    // and sync `newPriorityMap` to `priorityMap` at the end of a for loop of `merge` operations
+    newPriorityMap.put(qce.priority, qce);
     treeSet.add(qce);
   }
 
