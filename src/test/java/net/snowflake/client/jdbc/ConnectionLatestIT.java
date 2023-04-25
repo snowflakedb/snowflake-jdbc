@@ -459,6 +459,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
+    // Adding authenticator type for code coverage purposes
+    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.toString());
     properties.put("ssl", "off");
     int count = TelemetryService.getInstance().getEventCount();
     try {
@@ -517,6 +519,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
+    // Adding authenticator type for code coverage purposes
+    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.toString());
     try {
       connStart = System.currentTimeMillis();
       Map<String, String> params = getConnectionParameters();
@@ -685,6 +689,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("user", testUser);
     properties.put("ssl", parameters.get("ssl"));
     properties.put("port", parameters.get("port"));
+    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.toString());
     connection = DriverManager.getConnection(uri, properties);
     connection.close();
 

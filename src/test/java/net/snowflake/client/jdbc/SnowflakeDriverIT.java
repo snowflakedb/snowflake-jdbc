@@ -25,6 +25,7 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.RunningOnTestaccount;
 import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
@@ -109,6 +110,40 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   public static Connection getConnection() throws SQLException {
     return getConnection(AbstractDriverIT.DONT_INJECT_SOCKET_TIMEOUT);
+  }
+
+  /** Test connection to database using Snowflake Oauth instead of username/pw * */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testOauthConnection() throws SQLException {
+    Map<String, String> params = getConnectionParameters();
+    Connection con = getConnection("s3testaccount");
+    Statement statement = con.createStatement();
+    statement.execute("use role accountadmin");
+    statement.execute(
+        "create or replace security integration jdbc_oauth_integration\n"
+            + "  type=oauth\n"
+            + "  oauth_client=CUSTOM\n"
+            + "  oauth_client_type=CONFIDENTIAL\n"
+            + "  oauth_redirect_uri='https://localhost.com/oauth'\n"
+            + "  oauth_issue_refresh_tokens=true\n"
+            + "  enabled=true oauth_refresh_token_validity=86400;");
+    String role = params.get("role");
+    ResultSet rs =
+        statement.executeQuery(
+            "select system$it('create_oauth_access_token', 'JDBC_OAUTH_INTEGRATION', '"
+                + role
+                + "')");
+    rs.next();
+    String token = rs.getString(1);
+    con.close();
+    Properties props = new Properties();
+    props.put("authenticator", ClientAuthnDTO.AuthenticatorType.OAUTH.name());
+    props.put("token", token);
+    props.put("role", role);
+    con = getConnection("s3testaccount", props);
+    con.createStatement().execute("select 1");
+    con.close();
   }
 
   @Ignore
