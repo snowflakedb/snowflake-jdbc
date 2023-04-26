@@ -217,8 +217,15 @@ public class RestRequest {
           | SSLProtocolException ex) {
         // if an SSL issue occurs like an SSLHandshakeException then fail
         // immediately and stop retrying the requests
+
+        String formattedMsg =
+            "No trusted certificate found.\n"
+                + "Please make sure that the hostnames and port numbers listed in SYSTEM$ALLOWLIST are added to your firewall's allowed list.\n"
+                + "To troubleshoot your connection further, you can refer to this article:\n"
+                + "https://community.snowflake.com/s/article/Snowflake-Client-Connectivity-Troubleshooting. \n";
+
         throw new SnowflakeSQLLoggedException(
-            null, ErrorCode.NETWORK_ERROR, ex, /* session = */ ex.getMessage());
+            null, ErrorCode.NETWORK_ERROR, ex, formattedMsg + ex.getMessage());
 
       } catch (Exception ex) {
 
