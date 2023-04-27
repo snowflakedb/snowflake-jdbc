@@ -153,7 +153,7 @@ public class SFSession extends SFBaseSession {
    * @return enum of type QueryStatus indicating the query's status
    * @throws SQLException
    */
-  public QueryStatus getQueryStatus(String queryID) throws SQLException {
+  public JsonNode getQueryMetadata(String queryID) throws SQLException {
     // create the URL to check the query monitoring endpoint
     String statusUrl = "";
     String sessionUrl = getUrl();
@@ -228,7 +228,16 @@ public class SFSession extends SFBaseSession {
         }
       }
     } while (sessionRenewed);
-    JsonNode queryNode = jsonNode.path("data").path("queries");
+    return jsonNode.path("data").path("queries");
+  }
+
+  /**
+   * @param queryID query ID of the query whose status is being investigated
+   * @return enum of type QueryStatus indicating the query's status
+   * @throws SQLException
+   */
+  public QueryStatus getQueryStatus(String queryID) throws SQLException {
+    JsonNode queryNode = getQueryMetadata(queryID);
     String queryStatus = "";
     String errorMessage = "";
     int errorCode = 0;

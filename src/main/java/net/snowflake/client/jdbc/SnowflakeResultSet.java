@@ -6,6 +6,8 @@ package net.snowflake.client.jdbc;
 
 import java.sql.SQLException;
 import java.util.List;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.QueryStatus;
 
 /** This interface defines Snowflake specific APIs for ResultSet */
@@ -34,6 +36,14 @@ public interface SnowflakeResultSet {
    * @throws SQLException
    */
   String getQueryErrorMessage() throws SQLException;
+
+  /**
+   * This function retrieves the metadata of an asynchronous query.
+   *
+   * @return JsonNode of query metadata
+   * @throws SQLException
+   */
+  JsonNode getQueryMetadata() throws SQLException;
 
   /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing

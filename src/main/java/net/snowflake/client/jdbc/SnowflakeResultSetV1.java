@@ -13,6 +13,8 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
@@ -58,6 +60,12 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    */
   @Override
   public String getQueryErrorMessage() throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        session, "This function is only supported for asynchronous queries.");
+  }
+
+  @Override
+  public JsonNode getQueryMetadata() throws SQLException {
     throw new SnowflakeLoggedFeatureNotSupportedException(
         session, "This function is only supported for asynchronous queries.");
   }

@@ -5,7 +5,10 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.QueryStatus.NO_DATA;
+import static net.snowflake.client.core.QueryStatus.getStatusFromString;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.google.api.client.util.Strings;
 import java.math.BigDecimal;
 import java.sql.*;
@@ -25,6 +28,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private String queryID;
   private SFSession session;
   private Statement extraStatement;
+  private JsonNode lastQueriedMetadata = NullNode.instance;
   private QueryStatus lastQueriedStatus = NO_DATA;
 
   /**
@@ -107,6 +111,31 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   @Override
   public String getQueryErrorMessage() throws SQLException {
     return this.lastQueriedStatus.getErrorMessage();
+  }
+
+  private boolean isLastQueriedMetadataStatusSuccess() {
+    JsonNode queryNode = this.lastQueriedMetadata;
+    if (queryNode.isEmpty()) {
+      return false;
+    }
+    String queryStatus = queryNode.get(0).path("status").asText();
+    return getStatusFromString(queryStatus) == QueryStatus.SUCCESS;
+  }
+
+  @Override
+  public JsonNode getQueryMetadata() throws SQLException {
+    if (session == null) {
+      throw new SQLException("Session not set");
+    }
+    if (this.queryID == null) {
+      throw new SQLException("QueryID unknown");
+    }
+    if (isLastQueriedMetadataStatusSuccess()) {
+      return this.lastQueriedMetadata;
+    }
+    this.lastQueriedMetadata = session.getQueryMetadata(this.queryID);
+    // if query has completed successfully, cache its metadata to avoid unnecessary future server calls
+    return this.lastQueriedMetadata;
   }
 
   /**
