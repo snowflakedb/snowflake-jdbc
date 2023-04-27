@@ -96,6 +96,14 @@ public class EncryptionProvider {
       SecretKey queryStageMasterKey = new SecretKeySpec(qsmkBytes, 0, qsmkBytes.length, AES);
       keyCipher.init(Cipher.DECRYPT_MODE, queryStageMasterKey);
       byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
+
+      // previous version: fileKey = new SecretKeySpec(fileKeyBytes, offset = 0, len = qsmk.length,
+      // AES);
+      // This incorrectly assumes fileKey is always same length as qsmk. If we perform put from
+      // jdbc, fileKey and qsmk are same length,
+      // but in the case of AwsStorageClient.putObjectInternal() in GS code, they are not. This
+      // leads to some decryption bugs.
+      // See: SnowflakeDriverLatestIt.testS3PutInGs
       fileKey = new SecretKeySpec(fileKeyBytes, AES);
     }
 
