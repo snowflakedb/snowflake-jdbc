@@ -26,6 +26,8 @@ public class HttpClientSettingsKey implements Serializable {
   // More details in SNOW-717606
   private String userAgentSuffix = "";
 
+  private Boolean gzipDisabled = false;
+
   public HttpClientSettingsKey(
       OCSPMode mode,
       String host,
@@ -33,7 +35,9 @@ public class HttpClientSettingsKey implements Serializable {
       String nonProxyHosts,
       String user,
       String password,
-      String scheme) {
+      String scheme,
+      String userAgentSuffix,
+      Boolean gzipDisabled) {
     this.useProxy = true;
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
     this.proxyHost = !Strings.isNullOrEmpty(host) ? host.trim() : "";
@@ -42,6 +46,8 @@ public class HttpClientSettingsKey implements Serializable {
     this.proxyUser = !Strings.isNullOrEmpty(user) ? user.trim() : "";
     this.proxyPassword = !Strings.isNullOrEmpty(password) ? password.trim() : "";
     this.proxyProtocol = !Strings.isNullOrEmpty(scheme) ? scheme.trim() : "http";
+    this.gzipDisabled = gzipDisabled;
+    this.userAgentSuffix = !Strings.isNullOrEmpty(userAgentSuffix) ? userAgentSuffix.trim() : "";
   }
 
   public HttpClientSettingsKey(OCSPMode mode) {
@@ -49,22 +55,10 @@ public class HttpClientSettingsKey implements Serializable {
     this.ocspMode = mode != null ? mode : OCSPMode.FAIL_OPEN;
   }
 
-  HttpClientSettingsKey(OCSPMode mode, String userAgentSuffix) {
+  HttpClientSettingsKey(OCSPMode mode, String userAgentSuffix, Boolean gzipDisabled) {
     this(mode);
-    this.userAgentSuffix = userAgentSuffix;
-  }
-
-  HttpClientSettingsKey(
-      OCSPMode mode,
-      String host,
-      int port,
-      String nonProxyHosts,
-      String user,
-      String password,
-      String scheme,
-      String userAgentSuffix) {
-    this(mode, host, port, nonProxyHosts, user, password, scheme);
-    this.userAgentSuffix = userAgentSuffix;
+    this.userAgentSuffix = !Strings.isNullOrEmpty(userAgentSuffix) ? userAgentSuffix.trim() : "";
+    this.gzipDisabled = gzipDisabled;
   }
 
   @Override
@@ -72,18 +66,22 @@ public class HttpClientSettingsKey implements Serializable {
     if (obj instanceof HttpClientSettingsKey) {
       HttpClientSettingsKey comparisonKey = (HttpClientSettingsKey) obj;
       if (comparisonKey.ocspMode.getValue() == this.ocspMode.getValue()) {
-        if (!comparisonKey.useProxy && !this.useProxy) {
-          return true;
-        } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
-            && comparisonKey.proxyPort == this.proxyPort
-            && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)
-            && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)
-            && comparisonKey.proxyProtocol.equalsIgnoreCase(this.proxyProtocol)) {
-          // update nonProxyHost if changed
-          if (!this.nonProxyHosts.equalsIgnoreCase(comparisonKey.nonProxyHosts)) {
-            comparisonKey.nonProxyHosts = this.nonProxyHosts;
+        if (comparisonKey.gzipDisabled.equals(this.gzipDisabled)) {
+          if (comparisonKey.userAgentSuffix.equalsIgnoreCase(this.userAgentSuffix)) {
+            if (!comparisonKey.useProxy && !this.useProxy) {
+              return true;
+            } else if (comparisonKey.proxyHost.equalsIgnoreCase(this.proxyHost)
+                && comparisonKey.proxyPort == this.proxyPort
+                && comparisonKey.proxyUser.equalsIgnoreCase(this.proxyUser)
+                && comparisonKey.proxyPassword.equalsIgnoreCase(this.proxyPassword)
+                && comparisonKey.proxyProtocol.equalsIgnoreCase(this.proxyProtocol)) {
+              // update nonProxyHost if changed
+              if (!this.nonProxyHosts.equalsIgnoreCase(comparisonKey.nonProxyHosts)) {
+                comparisonKey.nonProxyHosts = this.nonProxyHosts;
+              }
+              return true;
+            }
           }
-          return true;
         }
       }
     }
@@ -136,5 +134,9 @@ public class HttpClientSettingsKey implements Serializable {
 
   public Protocol getProxyProtocol() {
     return this.proxyProtocol.equalsIgnoreCase("https") ? Protocol.HTTPS : Protocol.HTTP;
+  }
+
+  public Boolean getGzipDisabled() {
+    return gzipDisabled;
   }
 }

@@ -143,6 +143,7 @@ public class SnowflakeResultSetSerializableV1
   boolean treatNTZAsUTC;
   boolean formatDateWithTimezone;
   boolean useSessionTimezone;
+  int sessionClientMemoryLimit;
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
@@ -553,7 +554,8 @@ public class SnowflakeResultSetSerializableV1
 
     // extract query context and save it in current session
     JsonNode queryContextNode = rootNode.path("data").path("queryContext");
-    String queryContext = queryContextNode.isNull() ? null : queryContextNode.asText();
+    String queryContext = queryContextNode.isNull() ? null : queryContextNode.toString();
+
     if (!sfSession.isAsyncSession()) {
       sfSession.setQueryContext(queryContext);
     }
@@ -561,6 +563,9 @@ public class SnowflakeResultSetSerializableV1
     // extract parameters
     resultSetSerializable.parameters =
         SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
+    if (resultSetSerializable.parameters.isEmpty()) {
+      resultSetSerializable.parameters = sfSession.getCommonParameters();
+    }
 
     // initialize column metadata
     resultSetSerializable.columnCount = rootNode.path("data").path("rowtype").size();
@@ -855,16 +860,16 @@ public class SnowflakeResultSetSerializableV1
   private static long initMemoryLimit(Map<String, Object> parameters) {
     // default setting
     long memoryLimit = DEFAULT_CLIENT_MEMORY_LIMIT * 1024 * 1024;
+    long maxMemoryToUse = Runtime.getRuntime().maxMemory() * 8 / 10;
     if (parameters.get(CLIENT_MEMORY_LIMIT) != null) {
       // use the settings from the customer
       memoryLimit = (int) parameters.get(CLIENT_MEMORY_LIMIT) * 1024L * 1024L;
-    }
 
-    long maxMemoryToUse = Runtime.getRuntime().maxMemory() * 8 / 10;
-    if ((int) parameters.get(CLIENT_MEMORY_LIMIT) == DEFAULT_CLIENT_MEMORY_LIMIT) {
-      // if the memory limit is the default value and best effort memory is enabled
-      // set the memory limit to 80% of the maximum as the best effort
-      memoryLimit = Math.max(memoryLimit, maxMemoryToUse);
+      if (DEFAULT_CLIENT_MEMORY_LIMIT == (int) parameters.get(CLIENT_MEMORY_LIMIT)) {
+        // if the memory limit is the default value and best effort memory is enabled
+        // set the memory limit to 80% of the maximum as the best effort
+        memoryLimit = Math.max(memoryLimit, maxMemoryToUse);
+      }
     }
 
     // always make sure memoryLimit <= 80% of the maximum

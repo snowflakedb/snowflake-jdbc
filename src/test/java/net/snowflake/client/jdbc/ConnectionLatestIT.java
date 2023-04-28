@@ -35,10 +35,7 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
@@ -75,6 +72,20 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       TelemetryService.disable();
     }
     service.resetNumOfRetryToTriggerTelemetry();
+  }
+
+  @Test
+  public void testDisableQueryContextCache() throws SQLException {
+    // Disable QCC via prop
+    Properties props = new Properties();
+    props.put("disableQueryContextCache", "true");
+    Connection con = getConnection(props);
+    Statement statement = con.createStatement();
+    statement.execute("select 1");
+    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    // if QCC disable, this should be null
+    assertNull(session.getQueryContextDTO());
+    con.close();
   }
 
   /**

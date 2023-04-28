@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.QueryStatus.*;
+import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +21,7 @@ import java.util.logging.Level;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -98,6 +100,8 @@ public class SFSession extends SFBaseSession {
   // client to log session metrics to telemetry in GS
   private Telemetry telemetryClient;
   private SnowflakeConnectString sfConnStr;
+  // The cache of query context sent from Cloud Service.
+  private QueryContextCache qcc;
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
@@ -334,7 +338,7 @@ public class SFSession extends SFBaseSession {
 
         case VALIDATE_DEFAULT_PARAMETERS:
           if (propertyValue != null) {
-            setValidateDefaultParameters(SFLoginInput.getBooleanValue(propertyValue));
+            setValidateDefaultParameters(getBooleanValue(propertyValue));
           }
           break;
 
@@ -388,7 +392,7 @@ public class SFSession extends SFBaseSession {
             + " passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={},"
             + " application={}, app_id={}, app_version={}, login_timeout={}, network_timeout={},"
             + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}."
-            + " session_parameters: client_store_temporary_credential={}",
+            + " session_parameters: client_store_temporary_credential={}, gzip_disabled={}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
@@ -422,7 +426,8 @@ public class SFSession extends SFBaseSession {
                 (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
             ? "***"
             : "(empty)",
-        sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL));
+        sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
+        connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
 
     HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
     logger.debug(
@@ -496,7 +501,13 @@ public class SFSession extends SFBaseSession {
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
-
+    // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
+    if (getBooleanValue(
+        connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
+      TelemetryService.enableHTAP();
+    } else {
+      TelemetryService.disableHTAP();
+    }
     String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
     String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
     String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);
@@ -534,6 +545,14 @@ public class SFSession extends SFBaseSession {
               loginWarehouse,
               getWarehouse()));
     }
+
+    boolean disableQueryContextCache = getDisableQueryContextCacheOption();
+    logger.debug(
+        "Query context cache is {}", ((disableQueryContextCache) ? "disabled" : "enabled"));
+
+    // Initialize QCC
+    if (!disableQueryContextCache) qcc = new QueryContextCache(this.getQueryContextCacheSize());
+    else qcc = null;
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
@@ -659,6 +678,10 @@ public class SFSession extends SFBaseSession {
     SessionUtil.closeSession(loginInput);
     closeTelemetryClient();
     getClientInfo().clear();
+
+    // qcc can be null, if disabled.
+    if (qcc != null) qcc.clearCache();
+
     isClosed = true;
   }
 
@@ -749,7 +772,7 @@ public class SFSession extends SFBaseSession {
 
     HttpPost postRequest = null;
 
-    String requestId = UUID.randomUUID().toString();
+    String requestId = UUIDUtils.getUUID().toString();
 
     boolean retry = false;
 
@@ -1029,5 +1052,36 @@ public class SFSession extends SFBaseSession {
   /** @return whether this session uses async queries */
   public boolean isAsyncSession() {
     return !activeAsyncQueries.isEmpty();
+  }
+
+  private boolean getDisableQueryContextCacheOption() {
+    Boolean disableQueryContextCache = false;
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.DISABLE_QUERY_CONTEXT_CACHE)) {
+      disableQueryContextCache =
+          (Boolean) connectionPropertiesMap.get(SFSessionProperty.DISABLE_QUERY_CONTEXT_CACHE);
+    }
+
+    return disableQueryContextCache;
+  }
+
+  @Override
+  public void setQueryContext(String queryContext) {
+    boolean disableQueryContextCache = getDisableQueryContextCacheOption();
+    if (!disableQueryContextCache) {
+      qcc.deserializeQueryContextJson(queryContext);
+    }
+  }
+
+  @Override
+  public QueryContextDTO getQueryContextDTO() {
+    boolean disableQueryContextCache = getDisableQueryContextCacheOption();
+
+    if (!disableQueryContextCache) {
+      QueryContextDTO res = qcc.serializeQueryContextDTO();
+      return res;
+    } else {
+      return null;
+    }
   }
 }

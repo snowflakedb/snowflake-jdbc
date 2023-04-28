@@ -96,7 +96,11 @@ public class TelemetryService {
    */
   private static boolean enabled = true;
 
+  private static boolean htapEnabled = false;
+
   private static final Object enableLock = new Object();
+
+  private static final Object enableHTAPLock = new Object();
 
   public static void enable() {
     synchronized (enableLock) {
@@ -110,9 +114,27 @@ public class TelemetryService {
     }
   }
 
+  public static void enableHTAP() {
+    synchronized (enableHTAPLock) {
+      htapEnabled = true;
+    }
+  }
+
+  public static void disableHTAP() {
+    synchronized (enableHTAPLock) {
+      htapEnabled = false;
+    }
+  }
+
   public boolean isEnabled() {
     synchronized (enableLock) {
       return enabled;
+    }
+  }
+
+  public boolean isHTAPEnabled() {
+    synchronized (enableHTAPLock) {
+      return htapEnabled;
     }
   }
 
@@ -149,6 +171,23 @@ public class TelemetryService {
     }
   }
 
+  private TELEMETRY_SERVER_DEPLOYMENT manuallyConfigureDeployment(String dep) {
+    switch (dep) {
+      case "REG":
+        return TELEMETRY_SERVER_DEPLOYMENT.REG;
+      case "DEV":
+        return TELEMETRY_SERVER_DEPLOYMENT.DEV;
+      case "QA1":
+        return TELEMETRY_SERVER_DEPLOYMENT.QA1;
+      case "PREPROD":
+        return TELEMETRY_SERVER_DEPLOYMENT.PREPROD3;
+      case "PROD":
+        return TELEMETRY_SERVER_DEPLOYMENT.PROD;
+      default:
+        return null;
+    }
+  }
+
   /**
    * configure telemetry deployment based on connection url and info Note: it is not thread-safe
    * while connecting to different deployments simultaneously.
@@ -164,6 +203,17 @@ public class TelemetryService {
     int port = conStr.getPort();
     // default value
     TELEMETRY_SERVER_DEPLOYMENT deployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
+
+    Map<String, Object> conParams = conStr.getParameters();
+    if (conParams.containsKey("TELEMETRYDEPLOYMENT")) {
+      String conDeployment =
+          String.valueOf(conParams.get("TELEMETRYDEPLOYMENT")).trim().toUpperCase();
+      deployment = manuallyConfigureDeployment(conDeployment);
+      if (deployment != null) {
+        this.setDeployment(deployment);
+        return;
+      }
+    }
     if (conStr.getHost().contains("reg") || conStr.getHost().contains("local")) {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.REG;
       if (port == 8080) {
@@ -173,8 +223,9 @@ public class TelemetryService {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
     } else if (conStr.getHost().contains("preprod3")) {
       deployment = TELEMETRY_SERVER_DEPLOYMENT.PREPROD3;
+    } else if (conStr.getHost().contains("snowflake.temptest")) {
+      deployment = TELEMETRY_SERVER_DEPLOYMENT.QA1;
     }
-
     this.setDeployment(deployment);
   }
 
@@ -297,13 +348,18 @@ public class TelemetryService {
 
   /** Report the event to the telemetry server in a new thread */
   public void report(TelemetryEvent event) {
-    if (!enabled || event == null || event.isEmpty()) {
+    reportChooseEvent(event, /* isHTAP */ false);
+  }
+
+  public void reportChooseEvent(TelemetryEvent event, boolean isHTAP) {
+    if ((!enabled && !isHTAP) || (!htapEnabled && isHTAP) || event == null || event.isEmpty()) {
       return;
     }
 
     // Start a new thread to upload without blocking the current thread
     Runnable runUpload =
-        new TelemetryUploader(this, exportQueueToString(event), exportQueueToLogString(event));
+        new TelemetryUploader(
+            this, exportQueueToString(event), exportQueueToLogString(event), isHTAP);
     TelemetryThreadPool.getInstance().execute(runUpload);
   }
 
@@ -324,6 +380,7 @@ public class TelemetryService {
     private TelemetryService instance;
     private String payload;
     private String payloadLogStr;
+    private boolean isHTAP;
     private static final int TIMEOUT = 5000; // 5 second timeout limit
     private static final RequestConfig config =
         RequestConfig.custom()
@@ -332,14 +389,20 @@ public class TelemetryService {
             .setSocketTimeout(TIMEOUT)
             .build();
 
-    public TelemetryUploader(TelemetryService _instance, String _payload, String _payloadLogStr) {
+    public TelemetryUploader(
+        TelemetryService _instance, String _payload, String _payloadLogStr, boolean _isHTAP) {
       instance = _instance;
       payload = _payload;
       payloadLogStr = _payloadLogStr;
+      isHTAP = _isHTAP;
     }
 
     public void run() {
-      if (!instance.enabled) {
+      if (!isHTAP && !instance.enabled) {
+        return;
+      }
+
+      if (isHTAP && !instance.htapEnabled) {
         return;
       }
 
@@ -378,7 +441,7 @@ public class TelemetryService {
             logger.debug("telemetry server request success: " + response, true);
             instance.count();
           } else if (statusCode == 429) {
-            logger.debug("telemetry server request hit server cap on response: " + response, true);
+            logger.debug("telemetry server request hit server cap on response: " + response);
             instance.serverFailureCnt.incrementAndGet();
           } else {
             logger.debug("telemetry server request error: " + response, true);
@@ -448,6 +511,7 @@ public class TelemetryService {
       int retryCount,
       String sqlState,
       int errorCode) {
+
     if (enabled) {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
       JSONObject value = new JSONObject();
@@ -488,6 +552,20 @@ public class TelemetryService {
               .withTag("responseStatusCode", responseStatusCode)
               .build();
       this.report(log);
+    }
+  }
+
+  /** log execution times from various processing slices */
+  public void logExecutionTimeTelemetryEvent(JSONObject telemetryData, String eventName) {
+    if (htapEnabled) {
+      TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
+      TelemetryEvent log =
+          logBuilder
+              .withName(eventName)
+              .withValue(telemetryData)
+              .withTag("eventType", eventName)
+              .build();
+      this.reportChooseEvent(log, /* isHTAP */ true);
     }
   }
 }
