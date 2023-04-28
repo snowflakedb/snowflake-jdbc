@@ -431,7 +431,6 @@ public class TelemetryService {
         post.setEntity(new StringEntity(payload));
         post.setHeader("Content-type", "application/json");
         post.setHeader("x-api-key", instance.serverDeployment.getApiKey());
-
         try (CloseableHttpClient httpClient =
             HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
           response = httpClient.execute(post);
@@ -462,7 +461,12 @@ public class TelemetryService {
         if (response != null) {
           res = response.toString();
         }
-        instance.lastClientError = "Response: " + res + "; Error: " + e.getMessage();
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        String stacktrace = sw.toString();
+        instance.lastClientError =
+            "Response: " + res + "; Error: " + e.getMessage() + "; Stacktrace: " + stacktrace;
         instance.clientFailureCnt.incrementAndGet();
         success = false;
       } finally {
