@@ -159,6 +159,7 @@ public class RestRequest {
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug("Retry count: {}", retryCount);
+      logger.debug("Attempting request: {}", requestInfoScrubbed);
 
       try {
         // update start time
@@ -398,8 +399,6 @@ public class RestRequest {
                 elapsedMilliForTransientIssues / 1000);
           }
         }
-
-        logger.debug("Retrying request: {}", requestInfoScrubbed);
 
         // sleep for backoff - elapsed amount of time
         if (backoffInMilli > elapsedMilliForLastCall) {
