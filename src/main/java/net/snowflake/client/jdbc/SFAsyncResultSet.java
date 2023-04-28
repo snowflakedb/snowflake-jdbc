@@ -28,8 +28,8 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private String queryID;
   private SFSession session;
   private Statement extraStatement;
-  private JsonNode lastQueriedMetadata = NullNode.instance;
   private QueryStatus lastQueriedStatus = NO_DATA;
+  private QueryStatusV2 lastQueriedStatusV2 = QueryStatusV2.empty();
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -113,29 +113,20 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     return this.lastQueriedStatus.getErrorMessage();
   }
 
-  private boolean isLastQueriedMetadataStatusSuccess() {
-    JsonNode queryNode = this.lastQueriedMetadata;
-    if (queryNode.isEmpty()) {
-      return false;
-    }
-    String queryStatus = queryNode.get(0).path("status").asText();
-    return getStatusFromString(queryStatus) == QueryStatus.SUCCESS;
-  }
-
   @Override
-  public JsonNode getQueryMetadata() throws SQLException {
+  public QueryStatusV2 getQueryStatus() throws SQLException {
     if (session == null) {
       throw new SQLException("Session not set");
     }
     if (this.queryID == null) {
       throw new SQLException("QueryID unknown");
     }
-    if (isLastQueriedMetadataStatusSuccess()) {
-      return this.lastQueriedMetadata;
+    if (this.lastQueriedStatusV2.isSuccess()) {
+      return this.lastQueriedStatusV2;
     }
-    this.lastQueriedMetadata = session.getQueryMetadata(this.queryID);
+    this.lastQueriedStatusV2 = session.getQueryStatusV2(this.queryID);
     // if query has completed successfully, cache its metadata to avoid unnecessary future server calls
-    return this.lastQueriedMetadata;
+    return this.lastQueriedStatusV2;
   }
 
   /**

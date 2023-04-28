@@ -65,7 +65,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   }
 
   @Override
-  public JsonNode getQueryMetadata() throws SQLException {
+  public QueryStatusV2 getQueryStatus() throws SQLException {
     throw new SnowflakeLoggedFeatureNotSupportedException(
         session, "This function is only supported for asynchronous queries.");
   }

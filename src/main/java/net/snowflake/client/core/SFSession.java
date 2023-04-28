@@ -277,6 +277,37 @@ public class SFSession extends SFBaseSession {
   }
 
   /**
+   * @param queryID query ID of the query whose status is being investigated
+   * @return a QueryStatusV2 instance indicating the query's status
+   * @throws SQLException
+   */
+  public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
+    JsonNode queryNode = getQueryMetadata(queryID);
+    logger.debug("Query status: {}", queryNode.asText());
+    if (queryNode.isEmpty()) {
+      return QueryStatusV2.empty();
+    }
+    JsonNode node = queryNode.get(0);
+    long endTime = node.path("endTime").asLong(0);
+    int errorCode = node.path("errorCode").asInt(0);
+    String errorMessage = node.path("errorMessage").asText("No error reported");
+    String name = node.path("status").asText("");
+    String sqlText = node.path("sqlText").asText("");
+    long startTime = node.path("startTime").asLong(0);
+    String state = node.path("state").asText("");
+    int totalDuration = node.path("totalDuration").asInt(0);
+    String warehouseExternalSize = node.path("warehouseExternalSize").asText(null);
+    int warehouseId = node.path("warehouseId").asInt(0);
+    String warehouseName = node.path("warehouseName").asText(null);
+    String warehouseServerType = node.path("warehouseServerType").asText(null);
+    QueryStatusV2 result = new QueryStatusV2(endTime, errorCode, errorMessage, name, sqlText, startTime, state, totalDuration, warehouseExternalSize, warehouseId, warehouseName, warehouseServerType);
+    if (!result.isStillRunning()) {
+      activeAsyncQueries.remove(queryID);
+    }
+    return result;
+  }
+
+  /**
    * Add a property If a property is known for connection, add it to connection properties If not,
    * add it as a dynamic session parameters
    *
