@@ -18,6 +18,8 @@ import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLHandshakeException;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SessionUtil;
@@ -834,6 +836,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testAutoIncrementJsonResult() throws SQLException {
     Properties paramProperties = new Properties();
     paramProperties.put("ENABLE_FIX_759900", true);
@@ -855,6 +858,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testAutoIncrementArrowResult() throws SQLException {
     Properties paramProperties = new Properties();
     paramProperties.put("ENABLE_FIX_759900", true);
