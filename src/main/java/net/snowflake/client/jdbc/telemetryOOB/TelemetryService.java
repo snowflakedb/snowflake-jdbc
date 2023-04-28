@@ -437,13 +437,13 @@ public class TelemetryService {
           int statusCode = response.getStatusLine().getStatusCode();
 
           if (statusCode == 200) {
-            logger.debug("telemetry server request success: " + response, true);
+            logger.debug("telemetry server request success: {}", response, true);
             instance.count();
           } else if (statusCode == 429) {
-            logger.debug("telemetry server request hit server cap on response: " + response);
+            logger.debug("telemetry server request hit server cap on response: {}", response);
             instance.serverFailureCnt.incrementAndGet();
           } else {
-            logger.debug("telemetry server request error: " + response, true);
+            logger.debug("telemetry server request error: {}", response, true);
             instance.lastClientError = response.toString();
             instance.clientFailureCnt.incrementAndGet();
             success = false;
@@ -461,12 +461,7 @@ public class TelemetryService {
         if (response != null) {
           res = response.toString();
         }
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        e.printStackTrace(pw);
-        String stacktrace = sw.toString();
-        instance.lastClientError =
-            "Response: " + res + "; Error: " + e.getMessage() + "; Stacktrace: " + stacktrace;
+        instance.lastClientError = "Response: " + res + "; Error: " + e.getMessage();
         instance.clientFailureCnt.incrementAndGet();
         success = false;
       } finally {
