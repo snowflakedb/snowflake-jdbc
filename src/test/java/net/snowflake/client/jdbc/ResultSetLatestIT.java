@@ -18,6 +18,8 @@ import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLHandshakeException;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SessionUtil;
@@ -831,6 +833,50 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertTrue(metaData.isCaseSensitive(15)); // TEXT
     assertTrue(metaData.isCaseSensitive(16)); // VARCHAR
     assertTrue(metaData.isCaseSensitive(17)); // CHAR
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAutoIncrementJsonResult() throws SQLException {
+    Properties paramProperties = new Properties();
+    paramProperties.put("ENABLE_FIX_759900", true);
+    Connection connection = init(paramProperties);
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set jdbc_query_result_format ='json'");
+
+    statement.execute(
+        "create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
+    statement.execute("insert into auto_inc(name) values('test1')");
+
+    ResultSet resultSet = statement.executeQuery("select * from auto_inc");
+    resultSet.next();
+
+    ResultSetMetaData metaData = resultSet.getMetaData();
+    assertTrue(metaData.isAutoIncrement(1));
+    assertFalse(metaData.isAutoIncrement(2));
+    assertTrue(metaData.isAutoIncrement(3));
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAutoIncrementArrowResult() throws SQLException {
+    Properties paramProperties = new Properties();
+    paramProperties.put("ENABLE_FIX_759900", true);
+    Connection connection = init(paramProperties);
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set jdbc_query_result_format ='arrow'");
+
+    statement.execute(
+        "create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
+    statement.execute("insert into auto_inc(name) values('test1')");
+
+    ResultSet resultSet = statement.executeQuery("select * from auto_inc");
+    resultSet.next();
+
+    ResultSetMetaData metaData = resultSet.getMetaData();
+    assertTrue(metaData.isAutoIncrement(1));
+    assertFalse(metaData.isAutoIncrement(2));
+    assertTrue(metaData.isAutoIncrement(3));
   }
 
   @Test

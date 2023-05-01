@@ -22,6 +22,8 @@ public class SnowflakeColumnMetadata implements Serializable {
   private String columnSrcSchema;
   private String columnSrcDatabase;
 
+  private boolean isAutoIncrement;
+
   public SnowflakeColumnMetadata(
       String name,
       int type,
@@ -34,7 +36,8 @@ public class SnowflakeColumnMetadata implements Serializable {
       SnowflakeType base,
       String columnSrcDatabase,
       String columnSrcSchema,
-      String columnSrcTable) {
+      String columnSrcTable,
+      boolean isAutoIncrement) {
     this.name = name;
     this.type = type;
     this.nullable = nullable;
@@ -47,6 +50,7 @@ public class SnowflakeColumnMetadata implements Serializable {
     this.columnSrcDatabase = columnSrcDatabase;
     this.columnSrcSchema = columnSrcSchema;
     this.columnSrcTable = columnSrcTable;
+    this.isAutoIncrement = isAutoIncrement;
   }
 
   public String getName() {
@@ -129,6 +133,14 @@ public class SnowflakeColumnMetadata implements Serializable {
     return this.columnSrcDatabase;
   }
 
+  public boolean isAutoIncrement() {
+    return isAutoIncrement;
+  }
+
+  public void setAutoIncrement(boolean autoIncrement) {
+    isAutoIncrement = autoIncrement;
+  }
+
   public String toString() {
     StringBuilder sBuilder = new StringBuilder();
 
@@ -143,6 +155,7 @@ public class SnowflakeColumnMetadata implements Serializable {
     sBuilder.append(",database=").append(columnSrcDatabase);
     sBuilder.append(",schema=").append(columnSrcSchema);
     sBuilder.append(",table=").append(columnSrcTable);
+    sBuilder.append((",isAutoIncrement=")).append(isAutoIncrement);
 
     return sBuilder.toString();
   }

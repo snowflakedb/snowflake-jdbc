@@ -92,7 +92,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public boolean isAutoIncrement(int column) throws SQLException {
-    return false;
+    return resultSetMetaData.getIsAutoIncrement(column);
   }
 
   @Override
