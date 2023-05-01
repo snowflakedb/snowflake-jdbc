@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.cloud.storage.StorageException;
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
@@ -1614,6 +1615,47 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           "alter account "
               + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
               + " unset ENABLE_SNOW_654741_FOR_TESTING");
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testS3PutInGS() throws Throwable {
+    Connection connection = null;
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    try {
+      Properties paramProperties = new Properties();
+      connection = getConnection("s3testaccount", paramProperties);
+      Statement statement = connection.createStatement();
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+      // put file using GS system commmand, this is internal GS behavior
+      final String fileName = "testFile.json";
+      final String content = "testName: testS3PutInGs";
+      String putSystemCall =
+          String.format(
+              "call system$it('PUT_FILE_TO_STAGE', '%s', '%s', '%s')",
+              testStageName, fileName, content);
+      statement.execute(putSystemCall);
+
+      // get file using jdbc
+      String getCall =
+          String.format("GET @%s 'file://%s/'", testStageName, destFolderCanonicalPath);
+      statement.execute(getCall);
+
+      InputStream downloadedFileStream =
+          new FileInputStream(destFolderCanonicalPath + "/" + fileName);
+      String downloadedFile = IOUtils.toString(downloadedFileStream, StandardCharsets.UTF_8);
+      assertTrue(
+          "downloaded content does not equal uploaded content", content.equals(downloadedFile));
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+        connection.close();
+      }
     }
   }
 }
