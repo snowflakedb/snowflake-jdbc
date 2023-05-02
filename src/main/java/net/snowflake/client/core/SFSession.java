@@ -322,9 +322,6 @@ public class SFSession extends SFBaseSession {
         case TRACING:
           if (propertyValue != null) {
             tracingLevel = Level.parse(((String) propertyValue).toUpperCase());
-            if (tracingLevel != null && logger instanceof JDK14Logger) {
-              JDK14Logger.honorTracingParameter(tracingLevel);
-            }
           }
           break;
 
