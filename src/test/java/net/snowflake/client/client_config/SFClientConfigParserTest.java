@@ -1,7 +1,7 @@
-package net.snowflake.client.log;
+package net.snowflake.client.client_config;
 
+import static net.snowflake.client.core.client_config.SFClientConfigParser.*;
 import static net.snowflake.client.jdbc.SnowflakeUtil.*;
-import static net.snowflake.client.log.SFLoggerUtil.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mockStatic;
 
@@ -9,11 +9,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import net.snowflake.client.core.client_config.SFClientConfig;
+import net.snowflake.client.core.client_config.SFClientConfigParser;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 
-public class SFLoggerUtilTest {
+public class SFClientConfigParserTest {
   private static final String CONFIG_JSON =
       "{\"common\":{\"log_level\":\"info\",\"log_path\":\"/jdbc.log\"}}";
 
@@ -22,7 +24,8 @@ public class SFLoggerUtilTest {
     Path configFilePath = Paths.get("config.json");
     try {
       Files.write(configFilePath, CONFIG_JSON.getBytes());
-      SFClientConfig actualConfig = SFLoggerUtil.loadSFClientConfig(configFilePath.toString());
+      SFClientConfig actualConfig =
+          SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
 
@@ -35,7 +38,7 @@ public class SFLoggerUtilTest {
   @Test
   public void testloadSFClientConfigInValidPath() {
     String configFilePath = "InvalidPath";
-    SFClientConfig config = SFLoggerUtil.loadSFClientConfig(configFilePath.toString());
+    SFClientConfig config = SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
     assertTrue(config == null);
   }
 
@@ -45,7 +48,7 @@ public class SFLoggerUtilTest {
       String invalidJson = "invalidJson";
       Path configFilePath = Paths.get("config.json");
       Files.write(configFilePath, invalidJson.getBytes());
-      SFClientConfig config = SFLoggerUtil.loadSFClientConfig(configFilePath.toString());
+      SFClientConfig config = SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
 
       assertTrue(config == null);
     } catch (IOException e) {
@@ -60,7 +63,7 @@ public class SFLoggerUtilTest {
     try {
       Files.write(configFilePath, CONFIG_JSON.getBytes());
       systemSetEnv(SF_CLIENT_CONFIG_ENV_NAME, "config.json");
-      SFClientConfig actualConfig = SFLoggerUtil.loadSFClientConfig(null);
+      SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
 
@@ -78,7 +81,7 @@ public class SFLoggerUtilTest {
 
     try {
       Files.write(configFilePath, CONFIG_JSON.getBytes());
-      SFClientConfig actualConfig = SFLoggerUtil.loadSFClientConfig(null);
+      SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
 
@@ -97,7 +100,7 @@ public class SFLoggerUtilTest {
 
       Path configFilePath = Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME);
       Files.write(configFilePath, CONFIG_JSON.getBytes());
-      SFClientConfig actualConfig = SFLoggerUtil.loadSFClientConfig(null);
+      SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
 
@@ -114,7 +117,7 @@ public class SFLoggerUtilTest {
         Paths.get(systemGetProperty("java.io.tmpdir"), SF_CLIENT_CONFIG_FILE_NAME);
     try {
       Files.write(configFilePath, CONFIG_JSON.getBytes());
-      SFClientConfig actualConfig = SFLoggerUtil.loadSFClientConfig(null);
+      SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
 
@@ -126,7 +129,7 @@ public class SFLoggerUtilTest {
 
   @Test
   public void testloadSFClientNoConditionsMatch() {
-    SFClientConfig actualConfig = SFLoggerUtil.loadSFClientConfig(null);
+    SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
     assertTrue(actualConfig == null);
   }
 
