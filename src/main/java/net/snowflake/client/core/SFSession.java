@@ -291,7 +291,9 @@ public class SFSession extends SFBaseSession {
     long endTime = node.path("endTime").asLong(0);
     int errorCode = node.path("errorCode").asInt(0);
     String errorMessage = node.path("errorMessage").asText("No error reported");
+    String id = node.path("id").asText("");
     String name = node.path("status").asText("");
+    long sessionId = node.path("sessionId").asLong(0);
     String sqlText = node.path("sqlText").asText("");
     long startTime = node.path("startTime").asLong(0);
     String state = node.path("state").asText("");
@@ -300,7 +302,7 @@ public class SFSession extends SFBaseSession {
     int warehouseId = node.path("warehouseId").asInt(0);
     String warehouseName = node.path("warehouseName").asText(null);
     String warehouseServerType = node.path("warehouseServerType").asText(null);
-    QueryStatusV2 result = new QueryStatusV2(endTime, errorCode, errorMessage, name, sqlText, startTime, state, totalDuration, warehouseExternalSize, warehouseId, warehouseName, warehouseServerType);
+    QueryStatusV2 result = new QueryStatusV2(endTime, errorCode, errorMessage, id, name, sessionId, sqlText, startTime, state, totalDuration, warehouseExternalSize, warehouseId, warehouseName, warehouseServerType);
     if (!result.isStillRunning()) {
       activeAsyncQueries.remove(queryID);
     }

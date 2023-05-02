@@ -6,7 +6,9 @@ public final class QueryStatusV2 {
   private final long endTime;
   private final int errorCode;
   private final String errorMessage;
+  private final String id;
   private final String name;
+  private final long sessionId;
   private final String sqlText;
   private final long startTime;
   private final String state;
@@ -21,7 +23,9 @@ public final class QueryStatusV2 {
       long endTime,
       int errorCode,
       String errorMessage,
+      String id,
       String name,
+      long sessionId,
       String sqlText,
       long startTime,
       String state,
@@ -33,7 +37,9 @@ public final class QueryStatusV2 {
     this.endTime = endTime;
     this.errorCode = errorCode;
     this.errorMessage = errorMessage;
+    this.id = id;
     this.name = name;
+    this.sessionId = sessionId;
     this.sqlText = sqlText;
     this.startTime = startTime;
     this.state = state;
@@ -46,7 +52,7 @@ public final class QueryStatusV2 {
   }
 
   public static QueryStatusV2 empty() {
-    return new QueryStatusV2(0, 0, "", "", "", 0, "", 0, "", 0, "", "");
+    return new QueryStatusV2(0, 0, "", "", "", 0, "", 0, "", 0, "", 0, "", "");
   }
 
   public boolean isEmpty() {
@@ -77,8 +83,16 @@ public final class QueryStatusV2 {
     return errorMessage;
   }
 
+  public String getId() {
+    return id;
+  }
+
   public String getName() {
     return name;
+  }
+
+  public long getSessionId() {
+    return sessionId;
   }
 
   public String getSqlText() {
