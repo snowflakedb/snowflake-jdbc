@@ -65,7 +65,9 @@ public enum SFSessionProperty {
       "CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", false, Boolean.class),
   GZIP_DISABLED("gzipDisabled", false, Boolean.class),
   DISABLE_QUERY_CONTEXT_CACHE("disableQueryContextCache", false, Boolean.class),
-  HTAP_OOB_TELEMETRY_ENABLED("htapOOBTelemetryEnabled", false, Boolean.class);
+  HTAP_OOB_TELEMETRY_ENABLED("htapOOBTelemetryEnabled", false, Boolean.class),
+
+  CLIENT_CONFIG_FILE("clientConfigFile", false, String.class);
 
   // property key in string
   private String propertyKey;

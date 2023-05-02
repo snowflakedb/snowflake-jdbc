@@ -22,7 +22,6 @@ import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
@@ -322,9 +321,6 @@ public class SFSession extends SFBaseSession {
         case TRACING:
           if (propertyValue != null) {
             tracingLevel = Level.parse(((String) propertyValue).toUpperCase());
-            if (tracingLevel != null && logger instanceof JDK14Logger) {
-              JDK14Logger.honorTracingParameter(tracingLevel);
-            }
           }
           break;
 

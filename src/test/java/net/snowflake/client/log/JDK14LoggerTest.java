@@ -3,9 +3,11 @@
  */
 package net.snowflake.client.log;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.file.Paths;
 import java.util.logging.Level;
 import org.junit.Test;
 
@@ -23,7 +25,9 @@ public class JDK14LoggerTest {
 
     String level = "all";
     Level tracingLevel = Level.parse(level.toUpperCase());
-    JDK14Logger.honorTracingParameter(tracingLevel);
+    String logOutputPath =
+        Paths.get(systemGetProperty("java.io.tmpdir"), "snowflake_jdbc.log").toString();
+    JDK14Logger.instantiateLogger(tracingLevel, logOutputPath);
     assertTrue(logger.isDebugEnabled());
   }
 }
