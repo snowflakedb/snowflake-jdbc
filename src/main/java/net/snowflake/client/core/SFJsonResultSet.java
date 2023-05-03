@@ -27,9 +27,6 @@ import org.apache.arrow.vector.Float8Vector;
 public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
 
-  // Timezone used for TimestampNTZ
-  private static final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
-
   TimeZone sessionTimeZone;
 
   // Precision of maximum long value in Java (2^63-1). Precision is 19

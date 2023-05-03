@@ -6,7 +6,6 @@ package net.snowflake.client.log;
 import org.apache.commons.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.spi.LocationAwareLogger;
 
 /* Although this class doesn't really include SLF4J, this class play the role of
  * a wrapper class of snowflake SLF4JLogger for apache Jakarta Commons
@@ -20,13 +19,8 @@ import org.slf4j.spi.LocationAwareLogger;
 public class SLF4JJCLWrapper implements Log {
   private Logger slf4jLogger;
 
-  private boolean isLocationAwareLogger;
-
-  private static final String FQCN = SLF4JJCLWrapper.class.getName();
-
   public SLF4JJCLWrapper(String name) {
     slf4jLogger = LoggerFactory.getLogger(name);
-    isLocationAwareLogger = slf4jLogger instanceof LocationAwareLogger;
   }
 
   Logger getLogger() {
