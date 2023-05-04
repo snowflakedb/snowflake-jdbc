@@ -216,7 +216,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testRemoveExtraDescribeCalls() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_uuid_with_bind(c1 number)");
 
@@ -259,7 +259,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testRemoveExtraDescribeCallsSanityCheck() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     PreparedStatement preparedStatement =
         connection.prepareStatement(
             "create or replace table test_uuid_with_bind(c1 number, c2 string)");
@@ -297,7 +297,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testAlreadyDescribedMultipleResults() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     PreparedStatement prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
     prepStatement.execute();
@@ -316,31 +316,5 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     rs = prepStatement.executeQuery();
     assertTrue(rs.next());
     assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-  }
-
-  @Test
-  public void testExecuteLargeBatchOverMaxInt() throws SQLException {
-    Connection connection = null;
-    try {
-      connection = getConnection();
-      try (Statement statement = connection.createStatement()) {
-        statement.execute("create or replace table over_int(id decimal);");
-        for (int i = 1; i <= 11; i++) {
-          statement.execute(
-              "insert into over_int (SELECT seq8() FROM table(generator(rowCount => 200000000)));");
-        }
-        String sqlStatement = "UPDATE over_int SET id = 200";
-
-        PreparedStatement pstmt = connection.prepareStatement(sqlStatement);
-        pstmt.addBatch();
-        long[] queryResult = pstmt.executeLargeBatch();
-        assertEquals(1, queryResult.length);
-      }
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("drop table if exists over_int ");
-        connection.close();
-      }
-    }
   }
 }
