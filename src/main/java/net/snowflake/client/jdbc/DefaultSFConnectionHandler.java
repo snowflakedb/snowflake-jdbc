@@ -12,9 +12,9 @@ import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
+import net.snowflake.client.config.SFClientConfig;
+import net.snowflake.client.config.SFClientConfigParser;
 import net.snowflake.client.core.*;
-import net.snowflake.client.core.client_config.SFClientConfig;
-import net.snowflake.client.core.client_config.SFClientConfigParser;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.*;
 import net.snowflake.common.core.LoginInfoDTO;
@@ -106,6 +106,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     try {
       // pass the parameters to sfSession
       initSessionProperties(conStr, appID, appVersion);
+      setClientConfig();
       initLogger();
       if (!skipOpen) {
         sfSession.open();
@@ -117,53 +118,98 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     }
   }
 
+  private void setClientConfig() throws SnowflakeSQLLoggedException {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = sfSession.getConnectionPropertiesMap();
+    String clientConfigFilePath =
+        (String) connectionPropertiesMap.getOrDefault(SFSessionProperty.CLIENT_CONFIG_FILE, null);
+
+    SFClientConfig sfClientConfig;
+    try {
+      sfClientConfig = SFClientConfigParser.loadSFClientConfig(clientConfigFilePath);
+    } catch (IOException e) {
+      throw new SnowflakeSQLLoggedException(sfSession, ErrorCode.INTERNAL_ERROR, e.getMessage());
+    }
+    sfSession.setSfClientConfig(sfClientConfig);
+  }
+
   /**
-   * Method to instantiate JDK14Logger. This method will be used JDK14Logger and if java.util.logging.config.file properties file is missing.
-   * This method perfoms following things:
-   * 1. Checks if CLIENT_CONFIG_FILE is present. If yes, it loads the logLevel and logPath from client config.
-   * 2. Checks if Tracing parameter is present in URL or connection properties. If yes, it will overwrite the logLevel from step1.
-   * 3. Instantiates java.util.logging with logLevel and logPath.
-   * 4. If both logLevel and logPath are null, this method doesn't do anything.
+   * This method instantiates a JDK14Logger. This will be used if the java.util.logging.config.file
+   * properties file is missing. The method performs the following actions: 1. Check if the
+   * CLIENT_CONFIG_FILE is present. If it is, the method loads the logLevel and logPath from the
+   * client config. 2. Check if the Tracing parameter is present in the URL or connection
+   * properties. If it is, the method will overwrite the logLevel obtained from step 1. 3.
+   * Instantiate java.util.logging with the specified logLevel and logPath. 4. If both the logLevel
+   * and logPath are null, this method doesn't do anything.
    */
-  private void initLogger() {
+  private void initLogger() throws SnowflakeSQLLoggedException {
     if (logger instanceof JDK14Logger
         && systemGetProperty("java.util.logging.config.file") == null) {
-      // if logging properties isn't defined.
       Map<SFSessionProperty, Object> connectionPropertiesMap =
           sfSession.getConnectionPropertiesMap();
-      String clientConfigFilePath =
-          (String) connectionPropertiesMap.getOrDefault(SFSessionProperty.CLIENT_CONFIG_FILE, null);
-      SFClientConfig sfClientConfig = SFClientConfigParser.loadSFClientConfig(clientConfigFilePath);
       String tracingLevelFromConnectionProp =
           (String) connectionPropertiesMap.getOrDefault(SFSessionProperty.TRACING, null);
 
       Level logLevel = null;
-      String logPath = "%t/snowflake_jdbc%u.log"; // default pattern.
+      String logPattern = "%t/snowflake_jdbc%u.log"; // default pattern.
+      SFClientConfig sfClientConfig = sfSession.getSfClientConfig();
 
       if (sfClientConfig != null) {
-        String levelStr = sfClientConfig.getCommonProps().getLogLevel();
         String logPathFromConfig = sfClientConfig.getCommonProps().getLogPath();
-        Path path = Paths.get(logPathFromConfig, "jdbc");
-        if(!Files.exists(path)){
-          try {
-            Files.createDirectories(path);
-          } catch (IOException e) {
-            // do nothing.
-          }
-        }
-        logPath = Paths.get(logPath, "jdbc", "snowflake_jdbc%u.log").toString();
+        logPattern = constructLogPattern(logPathFromConfig);
+        String levelStr = sfClientConfig.getCommonProps().getLogLevel();
         SFLogLevel sfLogLevel = SFLogLevel.getLogLevel(levelStr);
         logLevel = SFToJavaLogMapper.toJavaUtilLoggingLevel(sfLogLevel);
       }
 
       if (tracingLevelFromConnectionProp != null) {
+        // Log level from connection param will overwrite the log level from sf config file.
         logLevel = Level.parse(tracingLevelFromConnectionProp.toUpperCase());
       }
 
-      if (logLevel != null && logPath != null) {
-        JDK14Logger.instantiateLogger(logLevel, logPath);
+      if (logLevel != null && logPattern != null) {
+        try {
+          JDK14Logger.instantiateLogger(logLevel, logPattern);
+        } catch (IOException ex) {
+          throw new SnowflakeSQLLoggedException(
+              sfSession, ErrorCode.INTERNAL_ERROR, ex.getMessage());
+        }
+        if (sfClientConfig != null) {
+          logger.debug(
+              String.format(
+                  "SF Client config found at location: %s.", sfClientConfig.getConfigFilePath()));
+        }
+        logger.debug(
+            String.format(
+                "Instantiating JDK14Logger with level: %s , output path: %s",
+                logLevel, logPattern));
       }
     }
+  }
+
+  private String constructLogPattern(String logPathFromConfig) throws SnowflakeSQLLoggedException {
+    if (JDK14Logger.STDOUT.equalsIgnoreCase(logPathFromConfig)) {
+      return JDK14Logger.STDOUT;
+    }
+
+    String logPattern = "%t/snowflake_jdbc%u.log"; // java.tmpdir
+
+    if (logPathFromConfig != null && !logPathFromConfig.isEmpty()) {
+      Path path = Paths.get(logPathFromConfig, "jdbc");
+      if (!Files.exists(path)) {
+        try {
+          Files.createDirectories(path);
+        } catch (IOException ex) {
+          throw new SnowflakeSQLLoggedException(
+              sfSession,
+              ErrorCode.INTERNAL_ERROR,
+              String.format(
+                  "Un-able to create log path mentioned in configfile %s ,%s",
+                  logPathFromConfig, ex.getMessage()));
+        }
+      }
+      logPattern = Paths.get(path.toString(), "snowflake_jdbc%u.log").toString();
+    }
+    return logPattern;
   }
 
   private void initSessionProperties(SnowflakeConnectString conStr, String appID, String appVersion)

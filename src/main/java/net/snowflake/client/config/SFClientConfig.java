@@ -1,5 +1,6 @@
 package net.snowflake.client.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
@@ -7,6 +8,8 @@ import java.util.Objects;
 public class SFClientConfig {
   @JsonProperty("common")
   private CommonProps commonProps;
+
+  @JsonIgnore private String configFilePath;
 
   public SFClientConfig() {}
 
@@ -20,6 +23,14 @@ public class SFClientConfig {
 
   public void setCommonProps(CommonProps commonProps) {
     this.commonProps = commonProps;
+  }
+
+  public String getConfigFilePath() {
+    return configFilePath;
+  }
+
+  public void setConfigFilePath(String configFilePath) {
+    this.configFilePath = configFilePath;
   }
 
   @Override

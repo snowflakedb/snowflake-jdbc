@@ -18,11 +18,11 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
@@ -63,6 +63,8 @@ public class SFSession extends SFBaseSession {
   private String privateKeyFileLocation;
   private String privateKeyPassword;
   private PrivateKey privateKey;
+
+  private SFClientConfig sfClientConfig;
 
   /**
    * Amount of seconds a user is willing to tolerate for establishing the connection with database.
@@ -1080,5 +1082,13 @@ public class SFSession extends SFBaseSession {
     } else {
       return null;
     }
+  }
+
+  public SFClientConfig getSfClientConfig() {
+    return sfClientConfig;
+  }
+
+  public void setSfClientConfig(SFClientConfig sfClientConfig) {
+    this.sfClientConfig = sfClientConfig;
   }
 }
