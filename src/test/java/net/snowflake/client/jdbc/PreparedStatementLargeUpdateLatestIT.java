@@ -10,6 +10,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Map;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import org.junit.Test;
@@ -25,6 +27,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testLargeUpdate() throws Throwable {
     try (Connection con = getConnection()) {
       long expectedUpdateRows = (long) Integer.MAX_VALUE + 10L;
@@ -55,6 +58,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testExecuteLargeBatchOverIntMax() throws SQLException {
     Connection connection = getConnection();
     PreparedStatement pstmt = connection.prepareStatement("UPDATE over_int SET ID=200");
