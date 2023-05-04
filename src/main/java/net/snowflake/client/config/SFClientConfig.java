@@ -1,4 +1,4 @@
-package net.snowflake.client.core.client_config;
+package net.snowflake.client.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;

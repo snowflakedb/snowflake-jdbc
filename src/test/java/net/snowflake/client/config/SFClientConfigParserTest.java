@@ -1,6 +1,6 @@
-package net.snowflake.client.client_config;
+package net.snowflake.client.config;
 
-import static net.snowflake.client.core.client_config.SFClientConfigParser.*;
+import static net.snowflake.client.config.SFClientConfigParser.*;
 import static net.snowflake.client.jdbc.SnowflakeUtil.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mockStatic;
@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import net.snowflake.client.core.client_config.SFClientConfig;
-import net.snowflake.client.core.client_config.SFClientConfigParser;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -38,8 +36,13 @@ public class SFClientConfigParserTest {
   @Test
   public void testloadSFClientConfigInValidPath() {
     String configFilePath = "InvalidPath";
-    SFClientConfig config = SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
-    assertTrue(config == null);
+    SFClientConfig config = null;
+    try {
+      SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
+      fail("testloadSFClientConfigInValidPath"); // this will not be reached!
+    } catch (IOException e) {
+      // do nothing
+    }
   }
 
   @Test
@@ -48,11 +51,11 @@ public class SFClientConfigParserTest {
       String invalidJson = "invalidJson";
       Path configFilePath = Paths.get("config.json");
       Files.write(configFilePath, invalidJson.getBytes());
-      SFClientConfig config = SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
+      SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
 
-      assertTrue(config == null);
-    } catch (IOException e) {
       fail("testloadSFClientConfigInValidJson");
+    } catch (IOException e) {
+      // DO Nothing
     }
   }
 
@@ -128,7 +131,7 @@ public class SFClientConfigParserTest {
   }
 
   @Test
-  public void testloadSFClientNoConditionsMatch() {
+  public void testloadSFClientNoConditionsMatch() throws IOException {
     SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
     assertTrue(actualConfig == null);
   }

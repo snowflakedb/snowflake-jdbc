@@ -1,4 +1,4 @@
-package net.snowflake.client.core.client_config;
+package net.snowflake.client.config;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
@@ -9,8 +9,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 public class SFClientConfigParser {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFClientConfigParser.class);
   public static final String SF_CLIENT_CONFIG_FILE_NAME = "sf_client_config.json";
   public static final String SF_CLIENT_CONFIG_ENV_NAME = "SF_CLIENT_CONFIG_FILE";
 
@@ -27,49 +30,45 @@ public class SFClientConfigParser {
    *     properties
    * @return SFClientConfig
    */
-  public static SFClientConfig loadSFClientConfig(String configFilePath) {
-    ObjectMapper objectMapper = new ObjectMapper();
-
-    File configFile = null;
-    try {
-      if (configFilePath != null && !configFilePath.isEmpty()) {
-        // 1. Try to read the file at  configFilePath.
-        configFile = new File(configFilePath);
-        return objectMapper.readValue(configFile, SFClientConfig.class);
-      } else if (System.getenv().containsKey(SF_CLIENT_CONFIG_ENV_NAME)) {
-        // 2. If SF_CLIENT_CONFIG_ENV_NAME is set, read from env.
-        String envPath = systemGetEnv(SF_CLIENT_CONFIG_ENV_NAME);
-        configFile = new File(envPath);
-        return objectMapper.readValue(configFile, SFClientConfig.class);
+  public static SFClientConfig loadSFClientConfig(String configFilePath) throws IOException {
+    String derivedConfigFilePath = null;
+    if (configFilePath != null && !configFilePath.isEmpty()) {
+      // 1. Try to read the file at  configFilePath.
+      derivedConfigFilePath = configFilePath;
+    } else if (System.getenv().containsKey(SF_CLIENT_CONFIG_ENV_NAME)) {
+      // 2. If SF_CLIENT_CONFIG_ENV_NAME is set, read from env.
+      derivedConfigFilePath = systemGetEnv(SF_CLIENT_CONFIG_ENV_NAME);
+    } else {
+      // 3. Read SF_CLIENT_CONFIG_FILE_NAME from where jdbc jar is loaded.
+      String driverLocation = getConfigFilePathFromJDBCJarLocation();
+      if (Files.exists(Paths.get(driverLocation))) {
+        derivedConfigFilePath = driverLocation;
       } else {
-        // 3. Read SF_CLIENT_CONFIG_FILE_NAME from where jdbc jar is loaded.
-        String driverLocation = getConfigFilePathFromJDBCJarLocation();
-        if (Files.exists(Paths.get(driverLocation))) {
-          configFile = new File(driverLocation);
-          return objectMapper.readValue(configFile, SFClientConfig.class);
-        }
         // 4. Read SF_CLIENT_CONFIG_FILE_NAME if it is present in user home directory.
         String userHomeFilePath =
             Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME).toString();
         if (Files.exists(Paths.get(userHomeFilePath))) {
-          configFile = new File(userHomeFilePath);
-          return objectMapper.readValue(configFile, SFClientConfig.class);
-        }
-
-        // 5. Read SF_CLIENT_CONFIG_FILE_NAME if it is present in tmpdir.
-        String tmpFilePath =
-            Paths.get(systemGetProperty("java.io.tmpdir"), SF_CLIENT_CONFIG_FILE_NAME).toString();
-        if (Files.exists(Paths.get(tmpFilePath))) {
-          configFile = new File(tmpFilePath);
-          return objectMapper.readValue(configFile, SFClientConfig.class);
+          derivedConfigFilePath = userHomeFilePath;
+        } else {
+          // 5. Read SF_CLIENT_CONFIG_FILE_NAME if it is present in tmpdir.
+          String tmpFilePath =
+              Paths.get(systemGetProperty("java.io.tmpdir"), SF_CLIENT_CONFIG_FILE_NAME).toString();
+          if (Files.exists(Paths.get(tmpFilePath))) {
+            derivedConfigFilePath = tmpFilePath;
+          }
         }
       }
-    } catch (IOException e) {
-      System.err.println(
-          String.format(
-              "***** Error occured while reading sf client configuration file :%s, %s  *****",
-              configFile.getPath(), e.getMessage()));
-      e.printStackTrace(System.err);
+    }
+    if (derivedConfigFilePath != null) {
+      try {
+        File configFile = new File(derivedConfigFilePath);
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.readValue(configFile, SFClientConfig.class);
+      } catch (IOException e) {
+        String customErrorMessage =
+            "Error while reading config file at location: " + derivedConfigFilePath;
+        throw new IOException(customErrorMessage, e);
+      }
     }
     // return null if none of the above conditions are satisfied.
     return null;
