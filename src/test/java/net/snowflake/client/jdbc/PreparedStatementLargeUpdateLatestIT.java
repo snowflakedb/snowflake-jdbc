@@ -60,21 +60,26 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testExecuteLargeBatchOverIntMax() throws SQLException {
-    Connection connection = getConnection();
-    PreparedStatement pstmt = connection.prepareStatement("UPDATE over_int SET ID=200");
-    PreparedStatement spyp = spy(pstmt);
-    long numRows = Integer.MAX_VALUE + 10L;
-    // Mock internal method which returns rowcount
-    Mockito.doReturn(numRows)
-        .when((SnowflakePreparedStatementV1) spyp)
-        .executeUpdateInternal(
-            Mockito.any(String.class),
-            Mockito.any(Map.class),
-            Mockito.any(boolean.class),
-            Mockito.any(ExecTimeTelemetryData.class));
-    pstmt.addBatch();
-    long[] queryResult = spyp.executeLargeBatch();
-    assertEquals(1, queryResult.length);
-    assertEquals(numRows, queryResult[0]);
+    try (Connection connection = getConnection()) {
+      connection
+          .createStatement()
+          .execute("create or replace table over_int_table (val string, id int)");
+      PreparedStatement pstmt = connection.prepareStatement("UPDATE over_int_table SET ID=200");
+      PreparedStatement spyp = spy(pstmt);
+      long numRows = Integer.MAX_VALUE + 10L;
+      // Mock internal method which returns rowcount
+      Mockito.doReturn(numRows)
+          .when((SnowflakePreparedStatementV1) spyp)
+          .executeUpdateInternal(
+              Mockito.any(String.class),
+              Mockito.any(Map.class),
+              Mockito.any(boolean.class),
+              Mockito.any(ExecTimeTelemetryData.class));
+      pstmt.addBatch();
+      long[] queryResult = spyp.executeLargeBatch();
+      assertEquals(1, queryResult.length);
+      assertEquals(numRows, queryResult[0]);
+      connection.createStatement().execute("drop table if exists over_int_table");
+    }
   }
 }
