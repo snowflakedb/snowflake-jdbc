@@ -900,4 +900,27 @@ public class ResultSetLatestIT extends ResultSet0IT {
                   "https://community.snowflake.com/s/article/Snowflake-Client-Connectivity-Troubleshooting."));
     }
   }
+
+  @Test
+  public void testGranularTimeFunctionsInSessionTimezone() throws SQLException {
+    Connection connection = null;
+    Statement statement = null;
+    try {
+      connection = getConnection();
+      statement = connection.createStatement();
+      statement.execute("create or replace table testGranularTime(t time)");
+      statement.execute("insert into testGranularTime values ('10:10:10')");
+      ResultSet resultSet = statement.executeQuery("select * from testGranularTime");
+      resultSet.next();
+      assertEquals(resultSet.getTime(1), Time.valueOf("10:10:10"));
+      assertEquals(resultSet.getTime(1).getHours(), 10);
+      assertEquals(resultSet.getTime(1).getMinutes(), 10);
+      assertEquals(resultSet.getTime(1).getSeconds(), 10);
+      resultSet.close();
+    } finally {
+      statement.execute("drop table if exists testGranularTime");
+      statement.close();
+      connection.close();
+    }
+  }
 }

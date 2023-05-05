@@ -6,6 +6,7 @@ package net.snowflake.client.core.arrow;
 import java.nio.ByteBuffer;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.*;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
@@ -45,10 +46,19 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
       if (sfTime == null) {
         return null;
       }
-      return new SnowflakeTimeWithTimezone(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
-          sfTime.getNanosecondsWithinSecond(),
-          useSessionTimezone);
+      Time ts =
+          new Time(
+              sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+      if (useSessionTimezone) {
+        LocalDateTime lcd =
+            LocalDateTime.ofEpochSecond(
+                SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
+                sfTime.getNanosecondsWithinSecond(),
+                ZoneOffset.UTC);
+        return Time.valueOf(lcd.toLocalTime());
+      } else {
+        return ts;
+      }
     }
   }
 
