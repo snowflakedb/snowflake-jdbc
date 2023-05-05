@@ -3,6 +3,7 @@ package net.snowflake.client.log;
 /** Extended log levels for snowflake package. */
 public enum SFLogLevel {
   // OFF is highest level, no logs will be shown at this level.
+  // We can extend this enum to add levels for perf instrumentation and network request/response.
   OFF(50, "OFF"),
   ERROR(40, "ERROR"),
   WARN(30, "WARN"),
