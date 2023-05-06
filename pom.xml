@@ -50,7 +50,7 @@
     <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
     <version.plugin.projectinforeports>3.4.2</version.plugin.projectinforeports>
     <version.plugin.shade>3.4.1</version.plugin.shade>
-    <version.plugin.sortpom>3.2.1</version.plugin.sortpom>
+    <version.plugin.sortpom>3.0.1</version.plugin.sortpom>
     <version.plugin.source>3.2.1</version.plugin.source>
     <version.plugin.surefire>3.0.0</version.plugin.surefire>
   </properties>
@@ -702,7 +702,8 @@
           <showWarnings>true</showWarnings>
           <executable>javac</executable>
           <fork>true</fork>
-          <release>8</release>
+          <source>8</source>
+          <target>8</target>
           <compilerArgs>
             <arg>-Xlint:all,-path</arg>
           </compilerArgs>
