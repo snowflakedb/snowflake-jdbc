@@ -3,7 +3,6 @@
      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
   <version>3.13.32</version>
@@ -51,7 +50,7 @@
     <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
     <version.plugin.projectinforeports>3.4.2</version.plugin.projectinforeports>
     <version.plugin.shade>3.4.1</version.plugin.shade>
-    <version.plugin.sortpom>3.0.1</version.plugin.sortpom>
+    <version.plugin.sortpom>3.2.1</version.plugin.sortpom>
     <version.plugin.source>3.2.1</version.plugin.source>
     <version.plugin.surefire>3.0.0</version.plugin.surefire>
   </properties>
@@ -703,8 +702,7 @@
           <showWarnings>true</showWarnings>
           <executable>javac</executable>
           <fork>true</fork>
-          <source>8</source>
-          <target>8</target>
+          <release>8</release>
           <compilerArgs>
             <arg>-Xlint:all,-path</arg>
           </compilerArgs>
