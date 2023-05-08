@@ -33,7 +33,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 
-/** @author jhuang */
+/**
+ * @author jhuang
+ */
 public class SnowflakeUtil {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);

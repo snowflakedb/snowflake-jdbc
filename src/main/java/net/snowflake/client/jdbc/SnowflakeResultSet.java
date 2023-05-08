@@ -10,7 +10,9 @@ import net.snowflake.client.core.QueryStatus;
 
 /** This interface defines Snowflake specific APIs for ResultSet */
 public interface SnowflakeResultSet {
-  /** @return the Snowflake query ID of the query which generated this result set */
+  /**
+   * @return the Snowflake query ID of the query which generated this result set
+   */
   String getQueryID() throws SQLException;
 
   /**

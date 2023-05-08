@@ -121,7 +121,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
-  /** @deprecated */
+  /**
+   * @deprecated
+   */
   @Deprecated
   @Override
   public InputStream getUnicodeStream(int columnIndex) throws SQLException {
@@ -192,7 +194,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     return getDouble(findColumn(columnLabel));
   }
 
-  /** @deprecated */
+  /**
+   * @deprecated
+   */
   @Deprecated
   @Override
   public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
@@ -235,7 +239,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
-  /** @deprecated */
+  /**
+   * @deprecated
+   */
   @Deprecated
   @Override
   public InputStream getUnicodeStream(String columnLabel) throws SQLException {

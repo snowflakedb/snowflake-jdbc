@@ -313,7 +313,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     return converters;
   }
 
-  /** @return an iterator to iterate over current chunk */
+  /**
+   * @return an iterator to iterate over current chunk
+   */
   public ArrowChunkIterator getIterator(DataConversionContext dataConversionContext) {
     return new ArrowChunkIterator(this, dataConversionContext);
   }
@@ -429,7 +431,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
       return currentConverters.get(columnIdx);
     }
 
-    /** @return index of row in current record batch */
+    /**
+     * @return index of row in current record batch
+     */
     public int getCurrentRowInRecordBatch() {
       if (resultChunk.sortFirstResultChunkEnabled() && currentRecordBatchIndex == 0) {
         return resultChunk.firstResultChunkSortedIndices.get(currentRowInRecordBatch);

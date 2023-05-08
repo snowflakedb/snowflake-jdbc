@@ -39,7 +39,9 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     this.queryType = type;
   }
 
-  /** @return query id */
+  /**
+   * @return query id
+   */
   public String getQueryID() throws SQLException {
     return this.queryId;
   }
@@ -53,12 +55,16 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     this.queryId = queryId;
   }
 
-  /** @return list of column names */
+  /**
+   * @return list of column names
+   */
   public List<String> getColumnNames() throws SQLException {
     return resultSetMetaData.getColumnNames();
   }
 
-  /** @return index of the column by name, index starts from zero */
+  /**
+   * @return index of the column by name, index starts from zero
+   */
   public int getColumnIndex(String columnName) throws SQLException {
     return resultSetMetaData.getColumnIndex(columnName);
   }

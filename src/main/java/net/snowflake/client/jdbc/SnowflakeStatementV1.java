@@ -372,23 +372,31 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     }
   }
 
-  /** @return the query ID of the latest executed query */
+  /**
+   * @return the query ID of the latest executed query
+   */
   public String getQueryID() {
     // return the queryID for the query executed last time
     return queryID;
   }
 
-  /** @return the query IDs of the latest executed batch queries */
+  /**
+   * @return the query IDs of the latest executed batch queries
+   */
   public List<String> getBatchQueryIDs() {
     return Collections.unmodifiableList(batchQueryIDs);
   }
 
-  /** @return the child query IDs for the multiple statements query. */
+  /**
+   * @return the child query IDs for the multiple statements query.
+   */
   public String[] getChildQueryIds(String queryID) throws SQLException {
     return sfBaseStatement.getChildQueryIds(queryID);
   }
 
-  /** @return the open resultSets from this statement */
+  /**
+   * @return the open resultSets from this statement
+   */
   public Set<ResultSet> getOpenResultSets() {
     return openResultSets;
   }

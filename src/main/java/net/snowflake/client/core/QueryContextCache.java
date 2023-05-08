@@ -144,7 +144,9 @@ public class QueryContextCache {
     logger.debug("clearCache() returns. Number of entries in cache now {}", treeSet.size());
   }
 
-  /** @param data: the QueryContext Object serialized as a JSON format string */
+  /**
+   * @param data: the QueryContext Object serialized as a JSON format string
+   */
   public void deserializeQueryContextJson(String data) {
 
     synchronized (this) {

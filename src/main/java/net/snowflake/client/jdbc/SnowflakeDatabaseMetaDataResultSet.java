@@ -435,7 +435,9 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
     return queryId;
   }
 
-  /** @deprecated */
+  /**
+   * @deprecated
+   */
   @Deprecated
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {

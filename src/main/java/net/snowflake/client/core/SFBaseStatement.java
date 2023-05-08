@@ -190,6 +190,8 @@ public abstract class SFBaseStatement {
 
   public abstract int getConservativePrefetchThreads();
 
-  /** @return the child query IDs for the multiple statements query. */
+  /**
+   * @return the child query IDs for the multiple statements query.
+   */
   public abstract String[] getChildQueryIds(String queryID) throws SQLException;
 }

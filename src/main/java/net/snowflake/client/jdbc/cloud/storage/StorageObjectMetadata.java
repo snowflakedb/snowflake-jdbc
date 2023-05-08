@@ -15,10 +15,14 @@ import java.util.Map;
  * @author lgiakoumakis
  */
 public interface StorageObjectMetadata {
-  /** @return returns a Map/key-value pairs of metadata properties */
+  /**
+   * @return returns a Map/key-value pairs of metadata properties
+   */
   Map<String, String> getUserMetadata();
 
-  /** @return returns the size of object in bytes */
+  /**
+   * @return returns the size of object in bytes
+   */
   long getContentLength();
 
   /**

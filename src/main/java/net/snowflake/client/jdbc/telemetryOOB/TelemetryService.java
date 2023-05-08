@@ -63,7 +63,9 @@ public class TelemetryService {
   // current snowflake connection string
   private SnowflakeConnectString sfConnStr;
 
-  /** @return return thread local instance */
+  /**
+   * @return return thread local instance
+   */
   public static TelemetryService getInstance() {
     return _threadLocal.get();
   }
@@ -245,13 +247,13 @@ public class TelemetryService {
   private enum TELEMETRY_API {
     SFCTEST(
         "https://sfctest.client-telemetry.snowflakecomputing.com/enqueue",
-        "rRNY3EPNsB4U89XYuqsZKa7TSxb9QVX93yNM4tS6"),
+        "rRNY3EPNsB4U89XYuqsZKa7TSxb9QVX93yNM4tS6"), // pragma: allowlist secret
     SFCDEV(
         "https://sfcdev.client-telemetry.snowflakecomputing.com/enqueue",
-        "kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf"),
+        "kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf"), // pragma: allowlist secret
     PROD(
         "https://client-telemetry.snowflakecomputing.com/enqueue",
-        "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX");
+        "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX"); // pragma: allowlist secret
 
     private final String url;
 
@@ -315,7 +317,9 @@ public class TelemetryService {
 
   private String lastClientError = "";
 
-  /** @return the number of events successfully reported by this service */
+  /**
+   * @return the number of events successfully reported by this service
+   */
   public int getEventCount() {
     return eventCnt.get();
   }
@@ -336,7 +340,9 @@ public class TelemetryService {
     return serverFailureCnt.get();
   }
 
-  /** @return the string containing the most recent failed response */
+  /**
+   * @return the string containing the most recent failed response
+   */
   public String getLastClientError() {
     return this.lastClientError;
   }
