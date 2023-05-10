@@ -11,8 +11,6 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.*;
@@ -430,15 +428,12 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
           new Time(
               sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
       if (resultSetSerializable.getUseSessionTimezone()) {
-        LocalDateTime lcd =
-            LocalDateTime.ofEpochSecond(
+        ts =
+            SnowflakeUtil.getTimeInSessionTimezone(
                 SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
-                sfTime.getNanosecondsWithinSecond(),
-                ZoneOffset.UTC);
-        return Time.valueOf(lcd.toLocalTime());
-      } else {
-        return ts;
+                sfTime.getNanosecondsWithinSecond());
       }
+      return ts;
     } else if (Types.TIMESTAMP == columnType || Types.TIMESTAMP_WITH_TIMEZONE == columnType) {
       Timestamp ts = getTimestamp(columnIndex);
       if (ts == null) {

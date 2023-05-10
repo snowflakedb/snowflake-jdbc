@@ -50,15 +50,12 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
           new Time(
               sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
       if (useSessionTimezone) {
-        LocalDateTime lcd =
-            LocalDateTime.ofEpochSecond(
+        ts =
+            SnowflakeUtil.getTimeInSessionTimezone(
                 SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
-                sfTime.getNanosecondsWithinSecond(),
-                ZoneOffset.UTC);
-        return Time.valueOf(lcd.toLocalTime());
-      } else {
-        return ts;
+                sfTime.getNanosecondsWithinSecond());
       }
+      return ts;
     }
   }
 
