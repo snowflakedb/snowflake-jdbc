@@ -9,7 +9,7 @@ public class SFToJavaLogMapper {
 
   static {
     levelMap.put(SFLogLevel.TRACE, java.util.logging.Level.FINEST);
-    levelMap.put(SFLogLevel.DEBUG, java.util.logging.Level.FINER);
+    levelMap.put(SFLogLevel.DEBUG, java.util.logging.Level.FINE);
     levelMap.put(SFLogLevel.INFO, java.util.logging.Level.INFO);
     levelMap.put(SFLogLevel.WARN, java.util.logging.Level.WARNING);
     levelMap.put(SFLogLevel.ERROR, java.util.logging.Level.SEVERE);

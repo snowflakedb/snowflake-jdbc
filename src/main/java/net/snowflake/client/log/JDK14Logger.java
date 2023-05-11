@@ -29,7 +29,9 @@ public class JDK14Logger implements SFLogger {
   private Set<String> logMethods =
       new HashSet<>(Arrays.asList("debug", "error", "info", "trace", "warn", "debugNoMask"));
 
-  private static boolean isLegacyLoggerInit = false;
+  private static boolean isLoggerInit = false;
+
+  public static String STDOUT = "STDOUT";
 
   public JDK14Logger(String name) {
     this.jdkLogger = Logger.getLogger(name);
@@ -171,18 +173,15 @@ public class JDK14Logger implements SFLogger {
   }
 
   /**
-   * This is legacy way of enable logging in JDBC (through TRACING parameter) Only effective when
-   * java.util.logging.config.file is not specified
+   * This is way to enable logging in JDBC through TRACING parameter or sf client config file.
    *
    * @param level
    */
-  public static synchronized void honorTracingParameter(Level level) {
-    if (!isLegacyLoggerInit
-        && systemGetProperty("java.util.logging.config.file") == null
-        && systemGetProperty("java.util.logging.config.class") == null) {
-      legacyLoggerInit(level);
-
-      isLegacyLoggerInit = true;
+  public static synchronized void instantiateLogger(Level level, String logPath)
+      throws IOException {
+    if (!isLoggerInit) {
+      loggerInit(level, logPath);
+      isLoggerInit = true;
     }
   }
 
@@ -244,33 +243,9 @@ public class JDK14Logger implements SFLogger {
     return results;
   }
 
-  @Deprecated
-  private static void legacyLoggerInit(Level level) {
-    // get log count and size
-    String defaultLogSizeVal = systemGetProperty("snowflake.jdbc.log.size");
-    String defaultLogCountVal = systemGetProperty("snowflake.jdbc.log.count");
-
-    // default log size to 1 GB
-    int logSize = 1000000000;
-
-    // default number of log files to rotate to 2
-    int logCount = 2;
-
-    if (defaultLogSizeVal != null) {
-      try {
-        logSize = Integer.parseInt(defaultLogSizeVal);
-      } catch (Exception ex) {
-        ;
-      }
-    }
-
-    if (defaultLogCountVal != null) {
-      try {
-        logCount = Integer.parseInt(defaultLogCountVal);
-      } catch (Exception ex) {
-        ;
-      }
-    }
+  private static void loggerInit(Level level, String outputPath) throws IOException {
+    Logger snowflakeLoggerInformaticaV1 =
+        Logger.getLogger(SFFormatter.INFORMATICA_V1_CLASS_NAME_PREFIX);
 
     // setup event handler
     EventHandler eventHandler = EventUtil.getEventHandlerInstance();
@@ -278,23 +253,53 @@ public class JDK14Logger implements SFLogger {
     eventHandler.setFormatter(new SimpleFormatter());
     JDK14Logger.addHandler(eventHandler);
 
-    Logger snowflakeLoggerInformaticaV1 =
-        Logger.getLogger(SFFormatter.INFORMATICA_V1_CLASS_NAME_PREFIX);
     snowflakeLoggerInformaticaV1.setLevel(level);
+    JDK14Logger.setLevel(level);
     snowflakeLoggerInformaticaV1.addHandler(eventHandler);
 
-    // write log file to tmp directory
-    try {
-      FileHandler fileHandler = new FileHandler("%t/snowflake_jdbc%u.log", logSize, logCount, true);
+    if (STDOUT.equalsIgnoreCase(outputPath)) {
+      // Initialize console handler
+      ConsoleHandler consoleHandler = new ConsoleHandler();
+      consoleHandler.setLevel(level);
+      consoleHandler.setFormatter(new SFFormatter());
+      JDK14Logger.addHandler(consoleHandler);
+      snowflakeLoggerInformaticaV1.addHandler(consoleHandler);
+
+    } else {
+      // Initialize file handler.
+      // get log count and size
+      String defaultLogSizeVal = systemGetProperty("snowflake.jdbc.log.size");
+      String defaultLogCountVal = systemGetProperty("snowflake.jdbc.log.count");
+
+      // default log size to 1 GB
+      int logSize = 1000000000;
+
+      // default number of log files to rotate to 2
+      int logCount = 2;
+
+      if (defaultLogSizeVal != null) {
+        try {
+          logSize = Integer.parseInt(defaultLogSizeVal);
+        } catch (Exception ex) {
+          ;
+        }
+      }
+
+      if (defaultLogCountVal != null) {
+        try {
+          logCount = Integer.parseInt(defaultLogCountVal);
+        } catch (Exception ex) {
+          ;
+        }
+      }
+
+      // write log file to tmp directory
+      FileHandler fileHandler = new FileHandler(outputPath, logSize, logCount, true);
       fileHandler.setFormatter(new SFFormatter());
       fileHandler.setLevel(level);
+
       JDK14Logger.addHandler(fileHandler);
-
-      // set default level and add handler for snowflake logger
-      JDK14Logger.setLevel(level);
-
       snowflakeLoggerInformaticaV1.addHandler(fileHandler);
-    } catch (IOException e) {
     }
   }
 

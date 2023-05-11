@@ -63,7 +63,10 @@ public class SFClientConfigParser {
       try {
         File configFile = new File(derivedConfigFilePath);
         ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(configFile, SFClientConfig.class);
+        SFClientConfig clientConfig = objectMapper.readValue(configFile, SFClientConfig.class);
+        clientConfig.setConfigFilePath(derivedConfigFilePath);
+
+        return clientConfig;
       } catch (IOException e) {
         String customErrorMessage =
             "Error while reading config file at location: " + derivedConfigFilePath;

@@ -3,6 +3,7 @@ package net.snowflake.client.log;
 import static net.snowflake.client.log.SFToJavaLogMapper.toJavaUtilLoggingLevel;
 import static org.junit.Assert.assertEquals;
 
+import java.util.logging.Level;
 import org.junit.Test;
 
 public class SFToJavaLogMapperTest {
@@ -13,7 +14,7 @@ public class SFToJavaLogMapperTest {
     assertEquals(toJavaUtilLoggingLevel(SFLogLevel.ERROR), java.util.logging.Level.SEVERE);
     assertEquals(toJavaUtilLoggingLevel(SFLogLevel.WARN), java.util.logging.Level.WARNING);
     assertEquals(toJavaUtilLoggingLevel(SFLogLevel.INFO), java.util.logging.Level.INFO);
-    assertEquals(toJavaUtilLoggingLevel(SFLogLevel.DEBUG), java.util.logging.Level.FINER);
+    assertEquals(toJavaUtilLoggingLevel(SFLogLevel.DEBUG), Level.FINE);
     assertEquals(toJavaUtilLoggingLevel(SFLogLevel.TRACE), java.util.logging.Level.FINEST);
   }
 }
