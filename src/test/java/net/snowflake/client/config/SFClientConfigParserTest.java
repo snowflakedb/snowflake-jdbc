@@ -79,7 +79,7 @@ public class SFClientConfigParserTest {
 
   @Test
   public void testloadSFClientConfigWithDriverLoaction() {
-    String configLocation = getConfigFilePathFromJDBCJarLocation();
+    String configLocation = Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
     Path configFilePath = Paths.get(configLocation);
 
     try {
