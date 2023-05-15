@@ -40,7 +40,8 @@ public class SFClientConfigParser {
       derivedConfigFilePath = systemGetEnv(SF_CLIENT_CONFIG_ENV_NAME);
     } else {
       // 3. Read SF_CLIENT_CONFIG_FILE_NAME from where jdbc jar is loaded.
-      String driverLocation = Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
+      String driverLocation =
+          Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
       if (Files.exists(Paths.get(driverLocation))) {
         derivedConfigFilePath = driverLocation;
       } else {
@@ -88,12 +89,13 @@ public class SFClientConfigParser {
       // remove /snowflake-jdbc-3.13.29.jar from the path.
       String updatedPath = jarPath.substring(0, jarPath.lastIndexOf("/"));
 
-      if (systemGetProperty("os.name") != null && systemGetProperty("os.name").toLowerCase().startsWith("windows")) {
+      if (systemGetProperty("os.name") != null
+          && systemGetProperty("os.name").toLowerCase().startsWith("windows")) {
         // Path translation for windows
-        if(updatedPath.startsWith("/")){
+        if (updatedPath.startsWith("/")) {
           updatedPath = updatedPath.substring(1);
         }
-        updatedPath = updatedPath.replaceAll("/", "\\");
+        updatedPath = updatedPath.replace("/", "\\");
       }
       return updatedPath;
     }
