@@ -52,7 +52,6 @@ public class TelemetryService {
   private static HashSet<String> ENABLED_DEPLOYMENT =
       new HashSet<>(
           Arrays.asList(
-              TELEMETRY_SERVER_DEPLOYMENT.DEV.name,
               TELEMETRY_SERVER_DEPLOYMENT.REG.name,
               TELEMETRY_SERVER_DEPLOYMENT.QA1.name,
               TELEMETRY_SERVER_DEPLOYMENT.PREPROD3.name,
