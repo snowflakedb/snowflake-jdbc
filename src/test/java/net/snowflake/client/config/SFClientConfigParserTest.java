@@ -79,7 +79,8 @@ public class SFClientConfigParserTest {
 
   @Test
   public void testloadSFClientConfigWithDriverLoaction() {
-    String configLocation = getConfigFilePathFromJDBCJarLocation();
+    String configLocation =
+        Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
     Path configFilePath = Paths.get(configLocation);
 
     try {
@@ -140,5 +141,14 @@ public class SFClientConfigParserTest {
   public void testgetConfigFileNameFromJDBCJarLocation() {
     String jdbcDirectoryPath = getConfigFilePathFromJDBCJarLocation();
     assertTrue(jdbcDirectoryPath != null && !jdbcDirectoryPath.isEmpty());
+  }
+
+  @Test
+  public void testgetConfigFileNameFromJDBCJarLocationForWindows() {
+    try (MockedStatic<SnowflakeUtil> mockedSnowflakeUtil = mockStatic(SnowflakeUtil.class)) {
+      mockedSnowflakeUtil.when(() -> systemGetProperty("os.name")).thenReturn("windows");
+      String jdbcDirectoryPath = getConfigFilePathFromJDBCJarLocation();
+      assertFalse(jdbcDirectoryPath.contains("/")); // windows use \ in paths
+    }
   }
 }
