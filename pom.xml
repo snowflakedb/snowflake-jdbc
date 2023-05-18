@@ -977,6 +977,20 @@
             </executions>
           </plugin>
           <plugin>
+            <!-- google linkage checker doesn't work well with shaded jar, disable the check in this case for now -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-linkage-checker</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
             <configuration/>
