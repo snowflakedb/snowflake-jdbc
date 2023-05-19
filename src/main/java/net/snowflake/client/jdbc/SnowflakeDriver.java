@@ -173,6 +173,13 @@ public class SnowflakeDriver implements Driver {
    */
   @Override
   public Connection connect(String url, Properties info) throws SQLException {
+    if (url == null) {
+      // expected return format per the JDBC spec for java.sql.Driver#connect()
+      throw new SnowflakeSQLException("Unable to connect to url of 'null'.");
+    }
+    if (!SnowflakeConnectString.hasSupportedPrefix(url)) {
+      return null; // expected return format per the JDBC spec for java.sql.Driver#connect()
+    }
     SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
     if (!conStr.isValid()) {
       throw new SnowflakeSQLException("Connection string is invalid. Unable to parse.");

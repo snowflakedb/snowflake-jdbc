@@ -30,6 +30,10 @@ public class SnowflakeConnectString implements Serializable {
 
   private static final String PREFIX = "jdbc:snowflake://";
 
+  public static boolean hasSupportedPrefix(String url) {
+    return url.startsWith(PREFIX);
+  }
+
   public static SnowflakeConnectString parse(String url, Properties info) {
     if (url == null) {
       logger.debug("Connect strings must be non-null");
