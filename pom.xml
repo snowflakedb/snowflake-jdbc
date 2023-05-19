@@ -673,6 +673,7 @@
         </configuration>
         <executions>
           <execution>
+            <id>japicmp</id>
             <goals>
               <goal>cmp</goal>
             </goals>
@@ -1271,6 +1272,19 @@
       </activation>
       <build>
         <plugins>
+          <plugin>
+            <groupId>com.github.siom79.japicmp</groupId>
+            <artifactId>japicmp-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>japicmp</id>
+                <goals>
+                  <goal>cmp</goal>
+                </goals>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
