@@ -98,15 +98,12 @@ for c in "${CATEGORY[@]}"; do
                 --batch-mode --show-version
         popd >& /dev/null
     else
-        # maven 3.6.3 very likely doesn't handle closed http connection correctly
-        # stop using http pool as a mitigation
         echo "[INFO] Run $c tests"
         mvn -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
             -DtestCategory=net.snowflake.client.category.$c \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-            -Dmaven.wagon.http.pool=false \
             verify \
             --batch-mode --show-version
     fi
