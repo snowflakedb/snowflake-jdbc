@@ -1272,6 +1272,12 @@
       </activation>
       <build>
         <plugins>
+          <!--
+            Downloading
+              1. japicmp
+              2. maven-dependency-lugin analyst
+            in jenkins node would cause http connection failure. Temporarily disable them.
+          -->
           <plugin>
             <groupId>com.github.siom79.japicmp</groupId>
             <artifactId>japicmp-maven-plugin</artifactId>
@@ -1280,6 +1286,19 @@
                 <id>japicmp</id>
                 <goals>
                   <goal>cmp</goal>
+                </goals>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>analyze</id>
+                <goals>
+                  <goal>analyze-only</goal>
                 </goals>
                 <phase>none</phase>
               </execution>
