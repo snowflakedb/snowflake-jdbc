@@ -1601,15 +1601,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
 
-    String tableTypeCommand =
-        "SELECT DISTINCT\n"
-            + "  CASE TABLE_TYPE\n"
-            + "    WHEN 'BASE TABLE' THEN 'TABLE' // For backward compatibility. \n"
-            + "    ELSE TABLE_TYPE\n"
-            + "  END AS TABLE_TYPE\n"
-            + "FROM INFORMATION_SCHEMA.TABLES;";
-
-    return executeAndReturnEmptyResultIfNotFound(statement, tableTypeCommand, GET_TABLE_TYPES);
+    // TODO: We should really get the list of table types from GS
+    return new SnowflakeDatabaseMetaDataResultSet(
+        Collections.singletonList("TABLE_TYPE"),
+        Collections.singletonList("TEXT"),
+        Collections.singletonList(Types.VARCHAR),
+        new Object[][] {{"TABLE"}, {"VIEW"}},
+        statement);
   }
 
   @Override
