@@ -48,6 +48,8 @@ public class RestRequest {
 
   // retry at least once even if timeout limit has been reached
   private static final int MIN_RETRY_COUNT = 1;
+  // assume that if we reach this point, then something catastrophic has happened
+  private static final int MAX_RETRY_COUNT = 100;
 
   public static CloseableHttpResponse execute(
       CloseableHttpClient httpClient,
@@ -157,7 +159,7 @@ public class RestRequest {
     String lastStatusCodeForRetry = "";
 
     // try request till we get a good response or retry timeout
-    while (true) {
+    while (retryCount < MAX_RETRY_COUNT) {
       logger.debug("Retry count: {}", retryCount);
       logger.debug("Attempting request: {}", requestInfoScrubbed);
 
