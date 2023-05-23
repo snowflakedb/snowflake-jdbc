@@ -10,10 +10,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
-import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
-import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
@@ -58,10 +55,16 @@ public class IntToTimeConverter extends AbstractArrowVectorConverter {
       if (sfTime == null) {
         return null;
       }
-      return new SnowflakeTimeWithTimezone(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
-          sfTime.getNanosecondsWithinSecond(),
-          useSessionTimezone);
+      Time ts =
+          new Time(
+              sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+      if (useSessionTimezone) {
+        ts =
+            SnowflakeUtil.getTimeInSessionTimezone(
+                SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
+                sfTime.getNanosecondsWithinSecond());
+      }
+      return ts;
     }
   }
 

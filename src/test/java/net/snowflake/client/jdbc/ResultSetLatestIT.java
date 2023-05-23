@@ -900,4 +900,55 @@ public class ResultSetLatestIT extends ResultSet0IT {
                   "https://community.snowflake.com/s/article/Snowflake-Client-Connectivity-Troubleshooting."));
     }
   }
+
+  @Test
+  public void testGranularTimeFunctionsInSessionTimezone() throws SQLException {
+    Connection connection = null;
+    Statement statement = null;
+    try {
+      connection = getConnection();
+      statement = connection.createStatement();
+      statement.execute("create or replace table testGranularTime(t time)");
+      statement.execute("insert into testGranularTime values ('10:10:10')");
+      ResultSet resultSet = statement.executeQuery("select * from testGranularTime");
+      resultSet.next();
+      assertEquals(Time.valueOf("10:10:10"), resultSet.getTime(1));
+      assertEquals(10, resultSet.getTime(1).getHours());
+      assertEquals(10, resultSet.getTime(1).getMinutes());
+      assertEquals(10, resultSet.getTime(1).getSeconds());
+      resultSet.close();
+    } finally {
+      statement.execute("drop table if exists testGranularTime");
+      statement.close();
+      connection.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGranularTimeFunctionsInUTC() throws SQLException {
+    Connection connection = null;
+    Statement statement = null;
+    TimeZone origTz = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
+    try {
+      connection = getConnection();
+      statement = connection.createStatement();
+      statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
+      statement.execute("create or replace table testGranularTime(t time)");
+      statement.execute("insert into testGranularTime values ('10:10:10')");
+      ResultSet resultSet = statement.executeQuery("select * from testGranularTime");
+      resultSet.next();
+      assertEquals(Time.valueOf("02:10:10"), resultSet.getTime(1));
+      assertEquals(02, resultSet.getTime(1).getHours());
+      assertEquals(10, resultSet.getTime(1).getMinutes());
+      assertEquals(10, resultSet.getTime(1).getSeconds());
+      resultSet.close();
+    } finally {
+      TimeZone.setDefault(origTz);
+      statement.execute("drop table if exists testGranularTime");
+      statement.close();
+      connection.close();
+    }
+  }
 }

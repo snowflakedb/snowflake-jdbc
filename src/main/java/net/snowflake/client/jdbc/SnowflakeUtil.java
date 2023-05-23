@@ -10,8 +10,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import java.io.*;
 import java.lang.reflect.Field;
+import java.sql.Time;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -649,5 +652,24 @@ public class SnowflakeUtil {
       returnVal = millis / 1000;
     }
     return returnVal;
+  }
+
+  /**
+   * Get the time value in session timezone instead of UTC calculation done by java.sql.Time.
+   *
+   * @param time time in seconds
+   * @param nanos nanoseconds
+   * @return time in session timezone
+   */
+  public static Time getTimeInSessionTimezone(Long time, int nanos) {
+    LocalDateTime lcd = LocalDateTime.ofEpochSecond(time, nanos, ZoneOffset.UTC);
+    Time ts = Time.valueOf(lcd.toLocalTime());
+    // Time.valueOf() will create the time without the nanoseconds i.e. only hh:mm:ss
+    // Using calendar to add the nanoseconds back to time
+    Calendar c = Calendar.getInstance();
+    c.setTimeInMillis(ts.getTime());
+    c.add(Calendar.MILLISECOND, nanos / 1000000);
+    ts.setTime(c.getTimeInMillis());
+    return ts;
   }
 }
