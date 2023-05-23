@@ -1,27 +1,6 @@
 **JDBC Driver 3.13.31**
 
-- \ Fetch metadata.getTableTypes() from the backend service" (#1392)
-- \Fix ConfigFile parser issues in Windows (#1390)
-- \ 3. Instantiate JDK14Logger with sf client configuration  (#1384)
-- \ 1. Client Config Reader (#1375)
-- \ 2. Add Custom snowflake log levels (#1378)
-- \ 930c7ecf SNOW-806332 Fix test timeouts (#1380)
-- \ 9b7fb9d2 Test pr 1354 (#1379)
-- \ Security upgrade commons-io:commons-io from 2.2 to 2.7 (#1376)
-- \ 24cc8adf SNOW-797605 bug fix for case where qsmk and fileKey have different lengths, updat… (#1362)
-- \ Security upgrade org.apache.httpcomponents:httpclient from 4.5.11 to 4.5.13 (#1348)
-- \ SnowflakeResultSetMetaDataV1.IsAutoIncrement implementation (#1364)
-- \ Include request id log for failed connection (#1372)
-- \ fb593b49 Debugging logger issue causing failing tests (#1373)
-- \ 0f53c507 SNOW-780605 All HTAP changes in this commit (#1365)
-- \ Add troubleshoot msg for ssl errors (#1369)
-- \ b93155ed SNOW-748294 Add code coverage for uncovered authentication types (#1368)
-- \ ResultSetMetadata.isCaseSensitive implementation (#1367)
-- \ aaf787e7 Bump json-smart from 2.4.8 to 2.4.9 (#1312)
-- \ Security upgrade com.nimbusds:nimbus-jose-jwt from 8.23 to 9.21 (#1315)
-- \ 78ba1f0c Add unit tests for default handler in ExternalBrowser auth (#1361)
-- \ 4b3fe191 SNOW-778564 Fix issue with executeLargeBatch() when updating is greater than max integer value (#1356)
-- \
+- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
 
 **JDBC Driver 3.13.30**
 
