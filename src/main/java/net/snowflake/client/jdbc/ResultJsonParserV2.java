@@ -2,6 +2,8 @@ package net.snowflake.client.jdbc;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.common.core.SqlState;
 
@@ -65,12 +67,8 @@ public class ResultJsonParserV2 {
    * Check if the chunk has been parsed correctly. After calling this it is safe to acquire the
    * output data
    */
-  public void endParsing(SFBaseSession session) throws SnowflakeSQLException {
-    if (((Buffer) partialEscapedUnicode).position() > 0) {
-      ((Buffer) partialEscapedUnicode).flip();
-      continueParsingInternal(partialEscapedUnicode, true, session);
-      ((Buffer) partialEscapedUnicode).clear();
-    }
+  public void endParsing(ByteBuffer in, SFBaseSession session) throws SnowflakeSQLException {
+    continueParsingInternal(in, true, session);
 
     if (state != State.ROW_FINISHED) {
       throw new SnowflakeSQLLoggedException(
@@ -89,7 +87,7 @@ public class ResultJsonParserV2 {
    * @param in readOnly byteBuffer backed by an array (the data to be reed is from position to
    *     limit)
    */
-  public void continueParsing(ByteBuffer in, SFBaseSession session) throws SnowflakeSQLException {
+  public int continueParsing(ByteBuffer in, SFBaseSession session) throws SnowflakeSQLException {
     if (state == State.UNINITIALIZED) {
       throw new SnowflakeSQLLoggedException(
           session,
@@ -97,26 +95,8 @@ public class ResultJsonParserV2 {
           SqlState.INTERNAL_ERROR,
           "Json parser hasn't been initialized!");
     }
-
-    // If stopped during a \\u, continue here
-    if (((Buffer) partialEscapedUnicode).position() > 0) {
-      int lenToCopy = Math.min(12 - ((Buffer) partialEscapedUnicode).position(), in.remaining());
-      if (lenToCopy > partialEscapedUnicode.remaining()) {
-        resizePartialEscapedUnicode(lenToCopy);
-      }
-      partialEscapedUnicode.put(in.array(), in.arrayOffset() + ((Buffer) in).position(), lenToCopy);
-      ((Buffer) in).position(((Buffer) in).position() + lenToCopy);
-
-      if (((Buffer) partialEscapedUnicode).position() < 12) {
-        // Not enough data to parse escaped unicode
-        return;
-      }
-      ByteBuffer toBeParsed = partialEscapedUnicode.duplicate();
-      ((Buffer) toBeParsed).flip();
-      continueParsingInternal(toBeParsed, false, session);
-      ((Buffer) partialEscapedUnicode).clear();
-    }
     continueParsingInternal(in, false, session);
+    return in.remaining();
   }
 
   private void resizePartialEscapedUnicode(int lenToCopy) {
@@ -369,18 +349,8 @@ public class ResultJsonParserV2 {
                 }
                 state = State.IN_STRING;
               } else {
-                // store until next data arrives
-                if (partialEscapedUnicode.remaining() < in.remaining() + 2) {
-                  resizePartialEscapedUnicode(in.remaining() + 2);
-                }
-                partialEscapedUnicode.put((byte) 0x5c /* '\\' */);
-                partialEscapedUnicode.put(
-                    in.array(),
-                    in.arrayOffset() + ((Buffer) in).position() - 1,
-                    in.remaining() + 1);
-
-                ((Buffer) in).position(((Buffer) in).position() + in.remaining());
-                state = State.IN_STRING;
+                in.position(in.position() - 1);
+                state = State.ESCAPE;
                 return;
               }
               break;

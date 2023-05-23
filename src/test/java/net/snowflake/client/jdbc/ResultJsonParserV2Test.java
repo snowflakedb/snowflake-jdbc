@@ -30,8 +30,14 @@ public class ResultJsonParserV2Test {
     JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length, session);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
     jp.startParsing(chunk, session);
-    jp.continueParsing(ByteBuffer.wrap(data), session);
-    jp.endParsing(session);
+    ByteBuffer byteBuffer = ByteBuffer.wrap(data);
+    jp.continueParsing(byteBuffer, session);
+    byte[] remaining = new byte[byteBuffer.remaining()];
+    byteBuffer.get(remaining);
+    jp.endParsing(
+            ByteBuffer.wrap(remaining),
+            session
+    );
     assertEquals("1", chunk.getCell(0, 0).toString());
     assertEquals("1.01", chunk.getCell(0, 1).toString());
     assertNull(chunk.getCell(1, 0));
@@ -68,15 +74,24 @@ public class ResultJsonParserV2Test {
     JsonResultChunk chunk = new JsonResultChunk("", 8, 2, data.length, session);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
     jp.startParsing(chunk, session);
-    int len = 2;
+    int len = 2; // FIXME: This may be too low a buffer size for jp.continueParsing(...) and jp.endParsing(...) to work correctly with their current algorithm
+    ByteBuffer byteBuffer = null;
     for (int i = 0; i < data.length; i += len) {
       if (i + len < data.length) {
-        jp.continueParsing(ByteBuffer.wrap(data, i, len), session);
+        byteBuffer = ByteBuffer.wrap(data, i, len);
+        jp.continueParsing(byteBuffer, session);
       } else {
-        jp.continueParsing(ByteBuffer.wrap(data, i, data.length - i), session);
+        byteBuffer = ByteBuffer.wrap(data, i, data.length - i);
+        jp.continueParsing(byteBuffer, session);
       }
     }
-    jp.endParsing(session);
+    byte[] remaining = new byte[byteBuffer.remaining()];
+    byteBuffer.get(remaining);
+    jp.endParsing(
+            ByteBuffer.wrap(remaining),
+            session
+    );
+
     assertEquals("1", chunk.getCell(0, 0).toString());
     assertEquals("1.01", chunk.getCell(0, 1).toString());
     assertNull(chunk.getCell(1, 0));
@@ -136,8 +151,14 @@ public class ResultJsonParserV2Test {
     JsonResultChunk chunk = new JsonResultChunk("", 2, 2, data.length, session);
     ResultJsonParserV2 jp = new ResultJsonParserV2();
     jp.startParsing(chunk, session);
-    jp.continueParsing(ByteBuffer.wrap(data), session);
-    jp.endParsing(session);
+    ByteBuffer byteBuffer = ByteBuffer.wrap(data);
+    jp.continueParsing(byteBuffer, session);
+    byte[] remaining = new byte[byteBuffer.remaining()];
+    byteBuffer.get(remaining);
+    jp.endParsing(
+            ByteBuffer.wrap(remaining),
+            session
+    );
     assertEquals(a.toString(), chunk.getCell(0, 0).toString());
     assertEquals(b.toString(), chunk.getCell(0, 1).toString());
     assertEquals(c.toString(), chunk.getCell(1, 0).toString());

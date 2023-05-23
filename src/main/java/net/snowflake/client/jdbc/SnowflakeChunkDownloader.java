@@ -9,15 +9,15 @@ import static net.snowflake.client.core.Constants.MB;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+
+import io.netty.buffer.ByteBuf;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -1035,19 +1035,40 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         jp.startParsing((JsonResultChunk) resultChunk, session);
 
         byte[] buf = new byte[STREAM_BUFFER_SIZE];
+        byte[] prevBuffer = null;
+        ByteBuffer bBuf = null;
         int len;
         logger.debug(
             "Thread {} start to read inputstream for #chunk{}",
             Thread.currentThread().getId(),
             chunkIndex);
         while ((len = jsonInputStream.read(buf)) != -1) {
-          jp.continueParsing(ByteBuffer.wrap(buf, 0, len), session);
+          if (prevBuffer != null) {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            os.write(prevBuffer);
+            os.write(buf);
+            buf = os.toByteArray();
+            len += prevBuffer.length;
+          }
+          bBuf = ByteBuffer.wrap(buf, 0, len);
+          jp.continueParsing(bBuf, session);
+          if (bBuf.remaining() > 0) {
+            prevBuffer = new byte[bBuf.remaining()];
+            bBuf.get(prevBuffer);
+          } else {
+            prevBuffer = null;
+          }
         }
         logger.debug(
             "Thread {} finish reading inputstream for #chunk{}",
             Thread.currentThread().getId(),
             chunkIndex);
-        jp.endParsing(session);
+        if (prevBuffer != null) {
+          bBuf = ByteBuffer.wrap(prevBuffer);
+        } else {
+          bBuf = ByteBuffer.wrap(new byte[0]);
+        }
+        jp.endParsing(bBuf, session);
       }
     };
   }
