@@ -50,11 +50,6 @@ public class ResultJsonParserV2 {
     state = State.NEXT_ROW;
     outputPosition = 0;
     outputCurValuePosition = 0;
-    if (partialEscapedUnicode == null) {
-      partialEscapedUnicode = ByteBuffer.wrap(new byte[256]);
-    } else {
-      ((Buffer) partialEscapedUnicode).clear();
-    }
     currentColumn = 0;
 
     // outputDataLength can be smaller as no ',' and '[' are stored
@@ -65,12 +60,8 @@ public class ResultJsonParserV2 {
    * Check if the chunk has been parsed correctly. After calling this it is safe to acquire the
    * output data
    */
-  public void endParsing(SFBaseSession session) throws SnowflakeSQLException {
-    if (((Buffer) partialEscapedUnicode).position() > 0) {
-      ((Buffer) partialEscapedUnicode).flip();
-      continueParsingInternal(partialEscapedUnicode, true, session);
-      ((Buffer) partialEscapedUnicode).clear();
-    }
+  public void endParsing(ByteBuffer in, SFBaseSession session) throws SnowflakeSQLException {
+    continueParsingInternal(in, true, session);
 
     if (state != State.ROW_FINISHED) {
       throw new SnowflakeSQLLoggedException(
@@ -89,7 +80,7 @@ public class ResultJsonParserV2 {
    * @param in readOnly byteBuffer backed by an array (the data to be reed is from position to
    *     limit)
    */
-  public void continueParsing(ByteBuffer in, SFBaseSession session) throws SnowflakeSQLException {
+  public int continueParsing(ByteBuffer in, SFBaseSession session) throws SnowflakeSQLException {
     if (state == State.UNINITIALIZED) {
       throw new SnowflakeSQLLoggedException(
           session,
@@ -97,44 +88,8 @@ public class ResultJsonParserV2 {
           SqlState.INTERNAL_ERROR,
           "Json parser hasn't been initialized!");
     }
-
-    // If stopped during a \\u, continue here
-    if (((Buffer) partialEscapedUnicode).position() > 0) {
-      int lenToCopy = Math.min(12 - ((Buffer) partialEscapedUnicode).position(), in.remaining());
-      if (lenToCopy > partialEscapedUnicode.remaining()) {
-        resizePartialEscapedUnicode(lenToCopy);
-      }
-      partialEscapedUnicode.put(in.array(), in.arrayOffset() + ((Buffer) in).position(), lenToCopy);
-      ((Buffer) in).position(((Buffer) in).position() + lenToCopy);
-
-      if (((Buffer) partialEscapedUnicode).position() < 12) {
-        // Not enough data to parse escaped unicode
-        return;
-      }
-      ByteBuffer toBeParsed = partialEscapedUnicode.duplicate();
-      ((Buffer) toBeParsed).flip();
-      continueParsingInternal(toBeParsed, false, session);
-      ((Buffer) partialEscapedUnicode).clear();
-    }
     continueParsingInternal(in, false, session);
-  }
-
-  private void resizePartialEscapedUnicode(int lenToCopy) {
-    int newSize = 2 * partialEscapedUnicode.capacity();
-    while (newSize < partialEscapedUnicode.capacity() + lenToCopy) {
-      newSize *= 2;
-    }
-    byte[] newArray = new byte[newSize];
-    System.arraycopy(
-        partialEscapedUnicode.array(),
-        partialEscapedUnicode.arrayOffset(),
-        newArray,
-        0,
-        ((Buffer) partialEscapedUnicode).position());
-    ByteBuffer newBuf = ByteBuffer.wrap(newArray);
-    ((Buffer) newBuf).position(((Buffer) partialEscapedUnicode).position());
-    ((Buffer) partialEscapedUnicode).clear();
-    partialEscapedUnicode = newBuf;
+    return in.remaining();
   }
 
   /**
@@ -369,18 +324,12 @@ public class ResultJsonParserV2 {
                 }
                 state = State.IN_STRING;
               } else {
-                // store until next data arrives
-                if (partialEscapedUnicode.remaining() < in.remaining() + 2) {
-                  resizePartialEscapedUnicode(in.remaining() + 2);
-                }
-                partialEscapedUnicode.put((byte) 0x5c /* '\\' */);
-                partialEscapedUnicode.put(
-                    in.array(),
-                    in.arrayOffset() + ((Buffer) in).position() - 1,
-                    in.remaining() + 1);
-
-                ((Buffer) in).position(((Buffer) in).position() + in.remaining());
-                state = State.IN_STRING;
+                // if the number of bytes left un-parsed in the buffer is less than 9 (unless it is
+                // the last remaining data in the buffer),
+                // there is not enough bytes to parse the codepoint. Move the position back 1,
+                // so we can re-enter parsing at this position with the ESCAPE state.
+                in.position(in.position() - 1);
+                state = State.ESCAPE;
                 return;
               }
               break;

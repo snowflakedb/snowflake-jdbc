@@ -9,10 +9,7 @@ import static net.snowflake.client.core.Constants.MB;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
@@ -1035,19 +1032,47 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         jp.startParsing((JsonResultChunk) resultChunk, session);
 
         byte[] buf = new byte[STREAM_BUFFER_SIZE];
+
+        // To be used to copy the leftover buffer data in the case of buffer ending in escape state
+        // during parsing.
+        byte[] prevBuffer = null;
+        ByteBuffer bBuf = null;
         int len;
         logger.debug(
             "Thread {} start to read inputstream for #chunk{}",
             Thread.currentThread().getId(),
             chunkIndex);
         while ((len = jsonInputStream.read(buf)) != -1) {
-          jp.continueParsing(ByteBuffer.wrap(buf, 0, len), session);
+          if (prevBuffer != null) {
+            // if parsing stopped during an escape sequence in jp.continueParsing() and there is
+            // leftover data in the buffer,
+            // prepend the copied data to the next buffer read from the output stream.
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            os.write(prevBuffer);
+            os.write(buf);
+            buf = os.toByteArray();
+            len += prevBuffer.length;
+          }
+          bBuf = ByteBuffer.wrap(buf, 0, len);
+          jp.continueParsing(bBuf, session);
+          if (bBuf.remaining() > 0) {
+            // if there is any data left un-parsed, it will be prepended to the next buffer read.
+            prevBuffer = new byte[bBuf.remaining()];
+            bBuf.get(prevBuffer);
+          } else {
+            prevBuffer = null;
+          }
         }
         logger.debug(
             "Thread {} finish reading inputstream for #chunk{}",
             Thread.currentThread().getId(),
             chunkIndex);
-        jp.endParsing(session);
+        if (prevBuffer != null) {
+          bBuf = ByteBuffer.wrap(prevBuffer);
+        } else {
+          bBuf = ByteBuffer.wrap(new byte[0]);
+        }
+        jp.endParsing(bBuf, session);
       }
     };
   }
