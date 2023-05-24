@@ -2,8 +2,6 @@ package net.snowflake.client.jdbc;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.common.core.SqlState;
 
@@ -52,11 +50,6 @@ public class ResultJsonParserV2 {
     state = State.NEXT_ROW;
     outputPosition = 0;
     outputCurValuePosition = 0;
-    if (partialEscapedUnicode == null) {
-      partialEscapedUnicode = ByteBuffer.wrap(new byte[256]);
-    } else {
-      ((Buffer) partialEscapedUnicode).clear();
-    }
     currentColumn = 0;
 
     // outputDataLength can be smaller as no ',' and '[' are stored
@@ -97,24 +90,6 @@ public class ResultJsonParserV2 {
     }
     continueParsingInternal(in, false, session);
     return in.remaining();
-  }
-
-  private void resizePartialEscapedUnicode(int lenToCopy) {
-    int newSize = 2 * partialEscapedUnicode.capacity();
-    while (newSize < partialEscapedUnicode.capacity() + lenToCopy) {
-      newSize *= 2;
-    }
-    byte[] newArray = new byte[newSize];
-    System.arraycopy(
-        partialEscapedUnicode.array(),
-        partialEscapedUnicode.arrayOffset(),
-        newArray,
-        0,
-        ((Buffer) partialEscapedUnicode).position());
-    ByteBuffer newBuf = ByteBuffer.wrap(newArray);
-    ((Buffer) newBuf).position(((Buffer) partialEscapedUnicode).position());
-    ((Buffer) partialEscapedUnicode).clear();
-    partialEscapedUnicode = newBuf;
   }
 
   /**
@@ -349,6 +324,10 @@ public class ResultJsonParserV2 {
                 }
                 state = State.IN_STRING;
               } else {
+                // if the number of bytes left un-parsed in the buffer is less than 9 (unless it is
+                // the last remaining data in the buffer),
+                // there is not enough bytes to parse the codepoint. Move the position back 1,
+                // so we can re-enter parsing at this position with the ESCAPE state.
                 in.position(in.position() - 1);
                 state = State.ESCAPE;
                 return;

@@ -9,15 +9,12 @@ import static net.snowflake.client.core.Constants.MB;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
-import io.netty.buffer.ByteBuf;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.SnowflakeResultChunk.DownloadState;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -1035,6 +1032,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         jp.startParsing((JsonResultChunk) resultChunk, session);
 
         byte[] buf = new byte[STREAM_BUFFER_SIZE];
+
+        // To be used to copy the leftover buffer data in the case of buffer ending in escape state
+        // during parsing.
         byte[] prevBuffer = null;
         ByteBuffer bBuf = null;
         int len;
@@ -1044,6 +1044,9 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             chunkIndex);
         while ((len = jsonInputStream.read(buf)) != -1) {
           if (prevBuffer != null) {
+            // if parsing stopped during an escape sequence in jp.continueParsing() and there is
+            // leftover data in the buffer,
+            // prepend the copied data to the next buffer read from the output stream.
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             os.write(prevBuffer);
             os.write(buf);
@@ -1053,6 +1056,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           bBuf = ByteBuffer.wrap(buf, 0, len);
           jp.continueParsing(bBuf, session);
           if (bBuf.remaining() > 0) {
+            // if there is any data left un-parsed, it will be prepended to the next buffer read.
             prevBuffer = new byte[bBuf.remaining()];
             bBuf.get(prevBuffer);
           } else {
