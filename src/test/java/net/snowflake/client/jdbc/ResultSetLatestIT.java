@@ -927,4 +927,55 @@ public class ResultSetLatestIT extends ResultSet0IT {
       connection.close();
     }
   }
+
+  @Test
+  public void testJsonParsingOfAsciiCharacters() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set jdbc_query_result_format ='json'");
+    // statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
+    statement.execute(
+        "create or replace table asciiTable (colA string, colB string, colC string, colD string, colE string, colF string, colG string, colH string, colI string, colJ string, colK string, colL string)");
+
+    PreparedStatement preparedStatement =
+        connection.prepareStatement(
+            "insert into asciiTable values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    for (int i = 0; i < 35000; i++) {
+      preparedStatement.setInt(1, i);
+      preparedStatement.setString(2, "123456");
+      preparedStatement.setString(3, "dummy");
+      preparedStatement.setString(
+          4,
+          "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000Ì\u0000\u0000\u0000\u0000\u0003ä\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000");
+      preparedStatement.setString(5, null);
+      preparedStatement.setString(6, " ");
+      preparedStatement.setString(
+          7,
+          "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000Ì\u0000\u0000\u0000\u0000\u0003ä\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000");
+      preparedStatement.setString(8, "021-436-5589");
+      preparedStatement.setString(9, " ");
+      preparedStatement.setString(10, "dummy");
+      preparedStatement.setString(11, "934-999-567");
+      preparedStatement.setString(12, " ");
+      preparedStatement.addBatch();
+    }
+    preparedStatement.executeBatch();
+
+    ResultSet resultSet = statement.executeQuery("select count(*) from asciiTable");
+    resultSet.next();
+    assertEquals("35000", resultSet.getString(1));
+
+    resultSet = statement.executeQuery("select * from asciiTable");
+    while (resultSet.next()) {
+      String expectedHexVal =
+          "00 00 00 00 00 00 00 00 00 C3 8C 00 00 00 00 03 C3 A4 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ";
+      assertEquals(expectedHexVal, ResultJsonParserV2Test.stringToHex(resultSet.getString(4)));
+      assertEquals(expectedHexVal, ResultJsonParserV2Test.stringToHex(resultSet.getString(7)));
+    }
+
+    statement.execute("drop table if exists asciiTable");
+    preparedStatement.close();
+    statement.close();
+    connection.close();
+  }
 }
