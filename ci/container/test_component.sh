@@ -83,7 +83,6 @@ for c in "${CATEGORY[@]}"; do
                 -Djacoco.skip.instrument=false \
                 -DtestCategory=net.snowflake.client.category.$c \
                 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-                -Dself-contained-jar \
                 verify \
                 --batch-mode --show-version
         popd >& /dev/null
@@ -94,6 +93,7 @@ for c in "${CATEGORY[@]}"; do
                 -Djava.io.tmpdir=$WORKSPACE \
                 -Djacoco.skip.instrument=false \
                 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                -Dnot-self-contained-jar \
                 verify \
                 --batch-mode --show-version
         popd >& /dev/null
@@ -104,6 +104,7 @@ for c in "${CATEGORY[@]}"; do
             -Djacoco.skip.instrument=false \
             -DtestCategory=net.snowflake.client.category.$c \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+            -Dnot-self-contained-jar \
             verify \
             --batch-mode --show-version
     fi
