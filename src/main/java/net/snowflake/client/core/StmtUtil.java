@@ -85,6 +85,8 @@ public class StmtUtil {
     int injectSocketTimeout; // seconds
     int injectClientPause; // seconds
 
+    int retryCount;
+
     AtomicBoolean canceling = null; // canceling flag
     boolean retry;
     String prevGetResultURL = null; // previous get result URL from ping pong
@@ -229,6 +231,14 @@ public class StmtUtil {
       this.queryContextDTO = queryContext;
       return this;
     }
+
+    public int getRetryCount() {
+      return retryCount;
+    }
+
+    public void setRetryCount(int retryCount) {
+      this.retryCount = retryCount;
+    }
   }
 
   /** Output for running a statement on server */
@@ -362,7 +372,7 @@ public class StmtUtil {
                 stmtInput.networkTimeoutInMillis / 1000,
                 stmtInput.socketTimeout,
                 0,
-                0,
+                stmtInput.retryCount,
                 stmtInput.injectSocketTimeout,
                 stmtInput.canceling,
                 true, // include retry parameters
