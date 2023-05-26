@@ -945,6 +945,11 @@
     </profile>
     <profile>
       <id>self-contained-jar</id>
+      <activation>
+        <property>
+          <name>!not-self-contained-jar</name>
+        </property>
+      </activation>
       <build>
         <plugins>
           <plugin>
