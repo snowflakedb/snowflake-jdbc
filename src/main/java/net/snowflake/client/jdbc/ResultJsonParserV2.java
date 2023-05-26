@@ -328,7 +328,7 @@ public class ResultJsonParserV2 {
                 // the last remaining data in the buffer),
                 // there is not enough bytes to parse the codepoint. Move the position back 1,
                 // so we can re-enter parsing at this position with the ESCAPE state.
-                in.position(in.position() - 1);
+                ((Buffer) in).position(((Buffer) in).position() - 1);
                 state = State.ESCAPE;
                 return;
               }
