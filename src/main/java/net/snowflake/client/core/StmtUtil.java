@@ -61,6 +61,8 @@ public class StmtUtil {
   // twice as much as our default socket timeout
   static final int SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS = 600000; // 10 min
 
+  static final int MAX_RETRIES = 7; // Default max retries for transient http requests!
+
   static final SFLogger logger = SFLoggerFactory.getLogger(StmtUtil.class);
 
   /** Input for executing a statement on server */
@@ -85,7 +87,7 @@ public class StmtUtil {
     int injectSocketTimeout; // seconds
     int injectClientPause; // seconds
 
-    int retryCount;
+    int maxRetries = MAX_RETRIES;
 
     AtomicBoolean canceling = null; // canceling flag
     boolean retry;
@@ -232,12 +234,12 @@ public class StmtUtil {
       return this;
     }
 
-    public int getRetryCount() {
-      return retryCount;
+    public int getMaxRetries() {
+      return maxRetries;
     }
 
-    public void setRetryCount(int retryCount) {
-      this.retryCount = retryCount;
+    public void setMaxRetries(int maxRetries) {
+      this.maxRetries = maxRetries;
     }
   }
 
@@ -372,7 +374,7 @@ public class StmtUtil {
                 stmtInput.networkTimeoutInMillis / 1000,
                 stmtInput.socketTimeout,
                 0,
-                stmtInput.retryCount,
+                stmtInput.maxRetries,
                 stmtInput.injectSocketTimeout,
                 stmtInput.canceling,
                 true, // include retry parameters
@@ -612,7 +614,7 @@ public class StmtUtil {
           stmtInput.networkTimeoutInMillis / 1000,
           stmtInput.socketTimeout,
           0,
-          0,
+          stmtInput.maxRetries,
           0,
           stmtInput.canceling,
           false, // no retry parameter
