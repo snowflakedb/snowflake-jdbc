@@ -232,8 +232,7 @@ public class RestRequest {
         // if an SSL issue occurs like an SSLHandshakeException then fail
         // immediately and stop retrying the requests
 
-        throw new SnowflakeSQLLoggedException(
-            null, ErrorCode.NETWORK_ERROR, ex, ex.getMessage());
+        throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, ex.getMessage());
 
       } catch (Exception ex) {
 
