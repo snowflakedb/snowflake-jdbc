@@ -21,7 +21,9 @@ import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-/** @author jrosen + mkeller */
+/**
+ * @author jrosen + mkeller
+ */
 public class IncidentUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(IncidentUtil.class);
 

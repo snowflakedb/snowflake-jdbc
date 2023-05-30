@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>net.snowflake</groupId>
@@ -8,54 +9,50 @@
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
-  <url>http://maven.apache.org</url>
+  <url>https://github.com/snowflakedb/snowflake-jdbc</url>
 
-  <repositories>
-    <repository>
-      <id>Central</id>
-      <name>Internal Central Repo2</name>
-      <layout>default</layout>
-      <url>https://nexus.int.snowflakecomputing.com/repository/maven-central/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-
-  <prerequisites>
-    <maven>3.3.9</maven>
-  </prerequisites>
-
-  <!-- dummy scm connection required to get the buildnumber plugin working -->
   <scm>
-    <connection>scm:svn:http://127.0.0.1/svn/dummy</connection>
-    <developerConnection>scm:svn:https://127.0.0.1/svn/dummy</developerConnection>
-    <tag>HEAD</tag>
-    <url>http://127.0.0.1/websvn/dummy</url>
+    <connection>scm:git:https://github.com/snowflakedb/snowflake-jdbc.git</connection>
+    <url>https://github.com/snowflakedb/snowflake-jdbc</url>
   </scm>
 
   <properties>
+    <arrow.version>10.0.1</arrow.version>
+    <awssdk.version>1.12.327</awssdk.version>
+    <bouncycastle.version>1.70</bouncycastle.version>
+    <google.api.client.version>1.34.0</google.api.client.version>
+    <jacoco.skip.instrument>true</jacoco.skip.instrument>
+    <jna.version>5.13.0</jna.version>
+    <jsoup.version>1.15.3</jsoup.version>
+    <mockito.version>3.5.6</mockito.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>10.0.1</arrow.version>
-    <slf4j.version>2.0.6</slf4j.version>
-    <jsoup.version>1.15.3</jsoup.version>
-    <tika.version>2.4.1</tika.version>
-    <jackson.version>2.13.2</jackson.version>
-    <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
-    <!-- Caution: version 4.5.12 and onward of apache httpclient causes a regression in recognizing S3 certificates (SNOW-259063) -->
-    <httpclient.version>4.5.13</httpclient.version>
-    <jacoco.version>0.8.4</jacoco.version>
-    <jacoco.skip.instrument>true</jacoco.skip.instrument>
-    <awssdk.version>1.12.327</awssdk.version>
-    <google.api.client.version>1.34.0</google.api.client.version>
-    <google.http.client.version>1.41.4</google.http.client.version>
-    <bouncycastle.version>1.70</bouncycastle.version>
-    <jna.version>5.13.0</jna.version>
-    <mockito.version>3.5.6</mockito.version>
-    <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <relocationBase>net/snowflake/client/jdbc/internal</relocationBase>
+    <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
+    <tika.version>2.4.1</tika.version>
+    <version.maven>3.6.3</version.maven>
+    <version.plugin.antrun>3.1.0</version.plugin.antrun>
+    <version.plugin.buildnumber>3.0.0</version.plugin.buildnumber>
+    <version.plugin.clean>3.2.0</version.plugin.clean>
+    <version.plugin.compiler>3.11.0</version.plugin.compiler>
+    <version.plugin.dependency>3.5.0</version.plugin.dependency>
+    <version.plugin.deploy>3.1.1</version.plugin.deploy>
+    <version.plugin.enforcer>3.0.0-M3</version.plugin.enforcer>
+    <version.plugin.exec>3.1.0</version.plugin.exec>
+    <version.plugin.failsafe>3.0.0</version.plugin.failsafe>
+    <version.plugin.fmt>2.19</version.plugin.fmt>
+    <version.plugin.gpg>3.0.1</version.plugin.gpg>
+    <version.plugin.install>3.1.1</version.plugin.install>
+    <version.plugin.jacoco>0.8.8</version.plugin.jacoco>
+    <version.plugin.japicmp>0.17.2</version.plugin.japicmp>
+    <version.plugin.jar>3.3.0</version.plugin.jar>
+    <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
+    <version.plugin.projectinforeports>3.4.2</version.plugin.projectinforeports>
+    <version.plugin.shade>3.4.1</version.plugin.shade>
+    <version.plugin.sortpom>3.0.1</version.plugin.sortpom>
+    <version.plugin.source>3.2.1</version.plugin.source>
+    <version.plugin.surefire>3.0.0</version.plugin.surefire>
   </properties>
 
   <dependencyManagement>
@@ -67,91 +64,172 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>2.13.5</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-bom</artifactId>
+        <version>4.1.82.Final</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>classworlds</groupId>
+        <artifactId>classworlds</artifactId>
+        <version>1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.api.grpc</groupId>
+        <artifactId>proto-google-common-protos</artifactId>
+        <version>2.8.4</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.9.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>2.11.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>31.1-jre</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client</artifactId>
+        <version>1.41.7</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client-gson</artifactId>
+        <version>1.41.7</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>3.19.6</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java-util</artifactId>
+        <version>3.19.6</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-cli</groupId>
+        <artifactId>commons-cli</artifactId>
+        <version>1.2</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>1.15</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.11.0</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging</artifactId>
+        <version>1.2</version>
+      </dependency>
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-context</artifactId>
+        <version>1.45.2</version>
+      </dependency>
+      <dependency>
+        <groupId>io.opencensus</groupId>
+        <artifactId>opencensus-api</artifactId>
+        <version>0.31.0</version>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.13.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>1.21</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.12.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.5.14</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>4.4.16</version>
+      </dependency>
+      <dependency>
+        <groupId>org.checkerframework</groupId>
+        <artifactId>checker-qual</artifactId>
+        <version>3.21.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-container-default</artifactId>
+        <version>1.0-alpha-9-stable-1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>3.4.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-core</artifactId>
+        <version>2.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>9.3</version>
+      </dependency>
+      <dependency>
+        <groupId>org.threeten</groupId>
+        <artifactId>threetenbp</artifactId>
+        <version>1.6.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.tukaani</groupId>
+        <artifactId>xz</artifactId>
+        <version>1.9</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.6</version>
+        <scope>provided</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
+
   <dependencies>
-    <dependency> <!-- commons-codec is not a direct dependency. Used by arrow-vector, httpclient, google-client-api -->
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>1.14</version>
-    </dependency>
-    <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
-      <groupId>io.netty</groupId>
-      <artifactId>netty-common</artifactId>
-      <version>4.1.77.Final</version>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-buffer</artifactId>
-      <version>4.1.77.Final</version>
-    </dependency>
-    <dependency>
-      <groupId>com.nimbusds</groupId>
-      <artifactId>nimbus-jose-jwt</artifactId>
-      <version>9.21</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-failsafe-plugin</artifactId>
-      <version>3.0.0-M1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.1</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest</artifactId>
-      <version>2.1</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-inline</artifactId>
-      <version>${mockito.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>commons-dbcp</groupId>
-      <artifactId>commons-dbcp</artifactId>
-      <version>1.4</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.mchange</groupId>
-      <artifactId>c3p0</artifactId>
-      <version>0.9.5.4</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.zaxxer</groupId>
-      <artifactId>HikariCP</artifactId>
-      <version>2.4.3</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <version>${httpclient.version}</version>
-      <type>jar</type>
-      <exclusions>
-        <exclusion>  <!-- exclude earlier version of commons-codec to avoid whitesource vulnerability -->
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>2.8.0</version>
-      <type>jar</type>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-kms</artifactId>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
@@ -159,78 +237,57 @@
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jacksondatabind.version}</version>
-      <type>jar</type>
+      <artifactId>jackson-annotations</artifactId>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-      <version>${jackson.version}</version>
+      <artifactId>jackson-databind</artifactId>
     </dependency>
     <dependency>
-       <groupId>com.google.guava</groupId>
-       <artifactId>guava</artifactId>
-       <version>30.0-jre</version>
+      <groupId>com.google.api</groupId>
+      <artifactId>gax</artifactId>
+      <version>2.16.0</version>
     </dependency>
     <dependency>
-      <groupId>net.snowflake</groupId>
-      <artifactId>snowflake-common</artifactId>
-      <version>5.1.4</version>
-      <type>jar</type>
-      <scope>compile</scope>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-core</artifactId>
+      <version>2.6.0</version>
     </dependency>
     <dependency>
-      <groupId>commons-cli</groupId>
-      <artifactId>commons-cli</artifactId>
-      <version>1.2</version>
-      <type>jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency> <!-- commons-codec is not a direct dependency. Used by arrow-vector, httpclient, google-client-api -->
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>1.14</version>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-storage</artifactId>
+      <version>2.6.2</version>
     </dependency>
     <dependency>
-      <groupId>net.minidev</groupId>
-      <artifactId>json-smart</artifactId>
-      <version>2.4.9</version>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.11</version>
-      <type>jar</type>
-      <scope>test</scope>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-text</artifactId>
-      <version>1.10.0</version>
-      <type>jar</type>
-      <scope>test</scope>
+      <groupId>com.google.http-client</groupId>
+      <artifactId>google-http-client</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.mojo</groupId>
-      <artifactId>exec-maven-plugin</artifactId>
-      <version>1.2.1</version>
-      <scope>test</scope>
+      <groupId>com.microsoft.azure</groupId>
+      <artifactId>azure-storage</artifactId>
+      <version>5.0.0</version>
     </dependency>
     <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-archiver</artifactId>
-      <version>4.3.0</version>
-      <scope>provided</scope>
+      <groupId>com.nimbusds</groupId>
+      <artifactId>nimbus-jose-jwt</artifactId>
+      <version>9.21</version>
     </dependency>
     <dependency>
       <groupId>com.yammer.metrics</groupId>
-      <artifactId>metrics-graphite</artifactId>
+      <artifactId>metrics-core</artifactId>
       <version>2.2.0</version>
     </dependency>
     <dependency>
@@ -239,10 +296,55 @@
       <version>2.2.0</version>
     </dependency>
     <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.2</version>
+    </dependency>
+    <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
       <version>3.1.0</version>
-      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.8.1</version>
+    </dependency>
+    <dependency>
+      <groupId>net.minidev</groupId>
+      <artifactId>json-smart</artifactId>
+      <version>2.4.9</version>
+    </dependency>
+    <dependency>
+      <groupId>net.snowflake</groupId>
+      <artifactId>snowflake-common</artifactId>
+      <version>5.1.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-core</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-vector</artifactId>
+      <version>${arrow.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
@@ -250,26 +352,9 @@
       <version>${tika.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.avro</groupId>
-      <artifactId>avro</artifactId>
-      <version>1.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jsoup</groupId>
-      <artifactId>jsoup</artifactId>
-      <version>${jsoup.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>azure-storage</artifactId>
-      <version>5.0.0</version>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
@@ -277,105 +362,13 @@
       <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
-      <version>${bouncycastle.version}</version>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>${jsoup.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-sns</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>1.3.6</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-vector</artifactId>
-      <version>${arrow.version}</version>
-      <exclusions>
-        <exclusion>  <!-- Exclude early version of commons-codec to avoid whitesource vulnerability -->
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-        </exclusion>
-        <exclusion> <!-- Exclude earlier version to avoid whitesource vulnerability. -->
-          <groupId>io.netty</groupId>
-          <artifactId>netty-common</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-buffer</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-unsafe</artifactId>
-      <version>${arrow.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-netty</artifactId>
-      <version>${arrow.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>io.netty</groupId> <!-- Exclude earlier version to avoid whitesource vulnerability. -->
-          <artifactId>netty-common</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-buffer</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.google.auth</groupId>
-      <artifactId>google-auth-library-oauth2-http</artifactId>
-      <version>1.5.3</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.cloud</groupId>
-      <artifactId>google-cloud-storage</artifactId>
-      <version>2.6.2</version>
-      <exclusions>
-        <exclusion>  <!-- Exclude sub-sub dependency gson to avoid whitesource vulnerability -->
-          <groupId>com.google.code.gson</groupId>
-          <artifactId>gson</artifactId>
-        </exclusion>
-        <exclusion> <!-- exclude oauth-client to avoid whitesource vulnerability -->
-          <groupId>com.google.oauth-client</groupId>
-          <artifactId>google-oauth-client</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.google.auth</groupId>
-      <artifactId>google-auth-library-credentials</artifactId>
-      <version>1.5.3</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.api-client</groupId>
-      <artifactId>google-api-client</artifactId>
-      <version>${google.api.client.version}</version>
-      <exclusions> <!-- exclude oauth-client to avoid whitesource vulnerability -->
-        <exclusion>
-          <groupId>com.google.oauth-client</groupId>
-          <artifactId>google-oauth-client</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency> <!-- oauth-client is not a direct dependency. It is used by google-cloud-storage and api-client. -->
-      <groupId>com.google.oauth-client</groupId>
-      <artifactId>google-oauth-client</artifactId>
-      <version>1.33.3</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.http-client</groupId>
-      <artifactId>google-http-client</artifactId>
-      <version>${google.http.client.version}</version>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
       <groupId>net.java.dev.jna</groupId>
@@ -389,141 +382,316 @@
       <version>${jna.version}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <!-- used by apache arrow -->
+      <groupId>com.google.flatbuffers</groupId>
+      <artifactId>flatbuffers-java</artifactId>
+      <version>1.12.0</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-format</artifactId>
+      <version>${arrow.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-netty</artifactId>
+      <version>${arrow.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-memory-unsafe</artifactId>
+      <version>${arrow.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.3.6</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-core</artifactId>
+      <version>1.3.6</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-sns</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.mchange</groupId>
+      <artifactId>c3p0</artifactId>
+      <version>0.9.5.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>2.4.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+      <type>jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-dbcp</groupId>
+      <artifactId>commons-dbcp</artifactId>
+      <version>1.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-pool</groupId>
+      <artifactId>commons-pool</artifactId>
+      <version>1.5.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>1.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+      <version>1.10.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <version>2.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>3.5.6</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-inline</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <finalName>${project.artifactId}</finalName>
     <resources>
       <resource>
-        <directory>src/main/resources</directory>
         <filtering>true</filtering>
+        <directory>src/main/resources</directory>
       </resource>
     </resources>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>com.github.ekryd.sortpom</groupId>
+          <artifactId>sortpom-maven-plugin</artifactId>
+          <version>${version.plugin.sortpom}</version>
+        </plugin>
+        <plugin>
+          <groupId>com.github.siom79.japicmp</groupId>
+          <artifactId>japicmp-maven-plugin</artifactId>
+          <version>${version.plugin.japicmp}</version>
+        </plugin>
+        <plugin>
+          <groupId>com.spotify.fmt</groupId>
+          <artifactId>fmt-maven-plugin</artifactId>
+          <version>${version.plugin.fmt}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>${version.plugin.antrun}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${version.plugin.clean}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${version.plugin.compiler}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${version.plugin.dependency}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>${version.plugin.deploy}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${version.plugin.enforcer}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${version.plugin.failsafe}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>${version.plugin.gpg}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>${version.plugin.install}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${version.plugin.jar}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${version.plugin.javadoc}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-project-info-reports-plugin</artifactId>
+          <version>${version.plugin.projectinforeports}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>${version.plugin.shade}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${version.plugin.source}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${version.plugin.surefire}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>buildnumber-maven-plugin</artifactId>
+          <version>${version.plugin.buildnumber}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>${version.plugin.exec}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${version.plugin.jacoco}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-install-plugin</artifactId>
-        <version>3.0.0-M1</version>
+        <groupId>com.github.ekryd.sortpom</groupId>
+        <artifactId>sortpom-maven-plugin</artifactId>
+        <configuration>
+          <createBackupFile>false</createBackupFile>
+          <expandEmptyElements>false</expandEmptyElements>
+          <indentSchemaLocation>true</indentSchemaLocation>
+          <sortDependencies>scope,groupId,artifactId</sortDependencies>
+          <sortDependencyExclusions>groupId,artifactId</sortDependencyExclusions>
+          <sortExecutions>true</sortExecutions>
+          <sortModules>true</sortModules>
+          <sortPlugins>groupId,artifactId</sortPlugins>
+          <sortProperties>true</sortProperties>
+          <verifyFail>stop</verifyFail>
+          <verifyFailOn>strict</verifyFailOn>
+        </configuration>
         <executions>
           <execution>
-            <id>install-tika-core</id>
-            <phase>validate</phase>
             <goals>
-              <goal>install-file</goal>
+              <goal>verify</goal>
             </goals>
-            <configuration>
-              <file>${project.basedir}/dependencies/tika-core-${tika.version}.jar</file>
-              <groupId>org.apache.tika</groupId>
-              <artifactId>tika-core</artifactId>
-              <version>${tika.version}</version>
-              <packaging>jar</packaging>
-              <generatePom>true</generatePom>
-            </configuration>
+            <phase>validate</phase>
           </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.github.siom79.japicmp</groupId>
+        <artifactId>japicmp-maven-plugin</artifactId>
+        <configuration>
+          <parameter>
+            <breakBuildBasedOnSemanticVersioning>true</breakBuildBasedOnSemanticVersioning>
+            <ignoreMissingClasses>true</ignoreMissingClasses>
+            <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>
+            <includes>
+              <include>com.snowflake</include>
+              <include>net.snowflake</include>
+            </includes>
+            <excludes>
+              <exclude>${shadeBase}</exclude>
+            </excludes>
+          </parameter>
+        </configuration>
+        <executions>
           <execution>
-            <id>install-arrow-memory-pom</id>
-            <phase>validate</phase>
+            <id>japicmp</id>
             <goals>
-              <goal>install-file</goal>
+              <goal>cmp</goal>
             </goals>
-            <configuration>
-              <file>${project.basedir}/dependencies/arrow-memory-${arrow.version}.pom</file>
-              <groupId>org.apache.arrow</groupId>
-              <artifactId>arrow-memory</artifactId>
-              <version>${arrow.version}</version>
-              <packaging>pom</packaging>
-              <generatePom>true</generatePom>
-            </configuration>
-          </execution>
-          <execution>
-            <id>install-arrow-memory-core</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <file>${project.basedir}/dependencies/arrow-memory-core-${arrow.version}.jar</file>
-              <groupId>org.apache.arrow</groupId>
-              <artifactId>arrow-memory-core</artifactId>
-              <version>${arrow.version}</version>
-              <packaging>jar</packaging>
-              <generatePom>true</generatePom>
-            </configuration>
-          </execution>
-          <execution>
-            <id>install-arrow-memory-unsafe</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <file>${project.basedir}/dependencies/arrow-memory-unsafe-${arrow.version}.jar</file>
-              <groupId>org.apache.arrow</groupId>
-              <artifactId>arrow-memory-unsafe</artifactId>
-              <version>${arrow.version}</version>
-              <packaging>jar</packaging>
-              <generatePom>true</generatePom>
-            </configuration>
-          </execution>
-          <execution>
-            <id>install-arrow-memory-netty</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <file>${project.basedir}/dependencies/arrow-memory-netty-${arrow.version}.jar</file>
-              <groupId>org.apache.arrow</groupId>
-              <artifactId>arrow-memory-netty</artifactId>
-              <version>${arrow.version}</version>
-              <packaging>jar</packaging>
-              <generatePom>true</generatePom>
-            </configuration>
-          </execution>
-          <execution>
-            <id>install-arrow-format</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <file>${project.basedir}/dependencies/arrow-format-${arrow.version}.jar</file>
-              <groupId>org.apache.arrow</groupId>
-              <artifactId>arrow-format</artifactId>
-              <version>${arrow.version}</version>
-              <packaging>jar</packaging>
-              <generatePom>true</generatePom>
-            </configuration>
-          </execution>
-          <execution>
-            <id>install-arrow-vector</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>install-file</goal>
-            </goals>
-            <configuration>
-              <file>${project.basedir}/dependencies/arrow-vector-${arrow.version}.jar</file>
-              <groupId>org.apache.arrow</groupId>
-              <artifactId>arrow-vector</artifactId>
-              <version>${arrow.version}</version>
-              <packaging>jar</packaging>
-              <generatePom>true</generatePom>
-            </configuration>
+            <phase>verify</phase>
           </execution>
         </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>3.0.0</version>
         <configuration>
           <excludeDefaultDirectories/>
           <filesets>
             <fileset>
               <directory>lib</directory>
-                <includes>
-                  <include>*.jar</include>
-                </includes>
+              <includes>
+                <include>*.jar</include>
+              </includes>
             </fileset>
           </filesets>
         </configuration>
@@ -531,7 +699,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
         <configuration>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
@@ -546,47 +713,130 @@
         <executions>
           <execution>
             <id>default-testCompile</id>
-            <phase>test-compile</phase>
             <goals>
               <goal>testCompile</goal>
             </goals>
-          </execution>                  
+            <phase>test-compile</phase>
+          </execution>
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <version>${jacoco.version}</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-            <id>pre-unit-test</id>
+            <id>analyze</id>
             <goals>
-              <goal>prepare-agent</goal>
+              <goal>analyze-only</goal>
             </goals>
             <configuration>
-              <destFile>target/jacoco-ut.exec</destFile>
+              <failOnWarning>true</failOnWarning>
+              <ignoreNonCompile>true</ignoreNonCompile>
+              <ignoredUnusedDeclaredDependencies>
+                <ignoredUnusedDeclaredDependency>javax.servlet:javax.servlet-api</ignoredUnusedDeclaredDependency>
+              </ignoredUnusedDeclaredDependencies>
             </configuration>
           </execution>
           <execution>
-            <id>post-unit-test</id>
-            <phase>test</phase>
+            <id>install-jar</id>
             <goals>
-              <goal>report</goal>
+              <goal>copy</goal>
             </goals>
+            <phase>install</phase>
             <configuration>
-              <dataFile>target/jacoco-ut.exec</dataFile>
-              <outputDirectory>target/jacoco-ut</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>${project.groupId}</groupId>
+                  <artifactId>${project.artifactId}</artifactId>
+                  <version>${project.version}</version>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>lib</outputDirectory>
             </configuration>
           </execution>
         </executions>
-        <configuration>
-          <skip>${jacoco.skip.instrument}</skip>
-        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>com.google.cloud.tools</groupId>
+            <artifactId>linkage-checker-enforcer-rules</artifactId>
+            <version>1.5.13</version>
+          </dependency>
+          <dependency>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>extra-enforcer-rules</artifactId>
+            <version>1.3</version>
+            <exclusions>
+              <exclusion>
+                <groupId>org.eclipse.aether</groupId>
+                <artifactId>aether-util</artifactId>
+              </exclusion>
+            </exclusions>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>enforce-best-practices</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <banDuplicateClasses>
+                  <findAllDuplicates>true</findAllDuplicates>
+                  <ignoreWhenIdentical>true</ignoreWhenIdentical>
+                  <dependencies>
+                    <dependency>
+                      <artifactId>arrow-memory-unsafe</artifactId>
+                      <ignoreClasses>
+                        <ignoreClass>org.apache.arrow.memory.DefaultAllocationManagerFactory</ignoreClass>
+                      </ignoreClasses>
+                    </dependency>
+                  </dependencies>
+                </banDuplicateClasses>
+                <banDuplicatePomDependencyVersions/>
+                <bannedDependencies/>
+                <dependencyConvergence/>
+                <requireUpperBoundDeps/>
+              </rules>
+            </configuration>
+          </execution>
+          <execution>
+            <id>enforce-maven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>${version.maven}</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+          <execution>
+            <id>enforce-linkage-checker</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <phase>verify</phase>
+            <configuration>
+              <rules>
+                <LinkageCheckerRule implementation="com.google.cloud.tools.dependencies.enforcer.LinkageCheckerRule">
+                  <reportOnlyReachable>true</reportOnlyReachable>
+                  <exclusionFile>linkage-checker-exclusion-rules.xml</exclusionFile>
+                </LinkageCheckerRule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
         <configuration>
           <archive>
             <manifest>
@@ -604,44 +854,8 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>install-jar</id>
-            <phase>install</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>${project.groupId}</groupId>
-                  <artifactId>${project.artifactId}</artifactId>
-                  <version>${project.version}</version>
-                </artifactItem>
-              </artifactItems>
-              <outputDirectory>lib</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>3.0.1</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.1.0</version>
         <configuration>
           <source>8</source>
           <overview>${project.basedir}/src/main/javadoc/overview.html</overview>
@@ -657,287 +871,105 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+          <skip>${jacoco.skip.instrument}</skip>
+        </configuration>
+        <executions>
+          <execution>
+            <id>pre-unit-test</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+            <configuration>
+              <destFile>target/jacoco-ut.exec</destFile>
+            </configuration>
+          </execution>
+          <execution>
+            <id>post-unit-test</id>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <phase>test</phase>
+            <configuration>
+              <dataFile>target/jacoco-ut.exec</dataFile>
+              <outputDirectory>target/jacoco-ut</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
+
   <reporting>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.9</version>
       </plugin>
     </plugins>
   </reporting>
 
   <profiles>
     <profile>
+      <id>check-style</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.spotify.fmt</groupId>
+            <artifactId>fmt-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>self-contained-jar</id>
       <activation>
-         <property>
+        <property>
           <name>!not-self-contained-jar</name>
         </property>
       </activation>
       <build>
         <plugins>
           <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>buildnumber-maven-plugin</artifactId>
-            <version>1.2</version>
-            <executions>
-              <execution>
-                 <phase>package</phase>
-                 <goals>
-                   <goal>create-timestamp</goal>
-                 </goals>
-              </execution>
-           </executions>
-           <configuration>
-             <timestampFormat>yyyyMMddHHmmss</timestampFormat>
-             <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
-             <doCheck>false</doCheck>
-             <revisionOnScmFailure/>
-             <doUpdate>false</doUpdate>
-             <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrementing buildNumber
-                AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrementing build number at the same time -->
-           </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-shade-plugin</artifactId>
-            <version>3.2.4</version>
-            <configuration>
-            </configuration>
-            <executions>
-              <execution>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                   <relocations>
-                     <relocation>
-                       <pattern>net.snowflake.common</pattern>
-                       <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.apache</pattern>
-                       <shadedPattern>${shadeBase}.apache</shadedPattern>
-                       <excludes>
-                         <exclude>org.apache.log4j.*</exclude>
-                       </excludes>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.amazonaws</pattern>
-                       <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>software.amazon.ion</pattern>
-                       <shadedPattern>${shadeBase}.software.amazon.ion</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.microsoft.azure</pattern>
-                       <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.fasterxml</pattern>
-                       <shadedPattern>${shadeBase}.fasterxml</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.google</pattern>
-                       <shadedPattern>${shadeBase}.google</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.geo</pattern>
-                       <shadedPattern>${shadeBase}.google.geo</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.joda</pattern>
-                       <shadedPattern>${shadeBase}.joda</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.yammer</pattern>
-                       <shadedPattern>${shadeBase}.yammer</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>javax.servlet</pattern>
-                       <shadedPattern>${shadeBase}.javax.servlet</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.jsoup</pattern>
-                       <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.bouncycastle</pattern>
-                       <shadedPattern>${shadeBase}.org.bouncycastle</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.nimbusds</pattern>
-                       <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>javax.annotation</pattern>
-                       <shadedPattern>${shadeBase}.javax.annotation</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>net.jcip</pattern>
-                       <shadedPattern>${shadeBase}.net.jcip</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>net.minidev</pattern>
-                       <shadedPattern>${shadeBase}.net.minidev</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.objectweb</pattern>
-                       <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.sun</pattern>
-                       <shadedPattern>${shadeBase}.com.sun</shadedPattern>
-                       <excludes>
-                         <exclude>com.sun.jna.**</exclude>
-                       </excludes>
-                     </relocation>
-                     <relocation>
-                       <pattern>io.netty</pattern>
-                       <shadedPattern>${shadeBase}.io.netty</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.carrotsearch</pattern>
-                       <shadedPattern>${shadeBase}.com.carrotsearch</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.type</pattern>
-                       <shadedPattern>${shadeBase}.google.type</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.rpc</pattern>
-                       <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.iam</pattern>
-                       <shadedPattern>${shadeBase}.google.iam</shadedPattern>
-                     </relocation>
-                      <relocation>
-                       <pattern>io.opencensus</pattern>
-                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.threeten</pattern>
-                       <shadedPattern>${shadeBase}.threeten</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.protobuf</pattern>
-                       <shadedPattern>${shadeBase}.google.protobuf</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.api</pattern>
-                       <shadedPattern>${shadeBase}.google.api</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>io.grpc</pattern>
-                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.longrunning</pattern>
-                       <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.cloud</pattern>
-                       <shadedPattern>${shadeBase}.google.cloud</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.logging</pattern>
-                       <shadedPattern>${shadeBase}.google.logging</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.checkerframework</pattern>
-                       <shadedPattern>${shadeBase}.org.checkerframework</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.codehaus</pattern>
-                       <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
-                     </relocation>                     
-                   </relocations>
-                   <filters>
-                      <filter>
-                         <artifact>*:*</artifact>
-                         <excludes>
-                            <exclude>META-INF/LICENSE*</exclude>
-                            <exclude>META-INF/NOTICE*</exclude>
-                            <exclude>META-INF/DEPENDENCIES</exclude>
-                            <exclude>META-INF/maven/**</exclude>
-                            <exclude>META-INF/services/com.fasterxml.*</exclude>
-                            <exclude>META-INF/*.xml</exclude>
-                            <exclude>META-INF/*.SF</exclude>
-                            <exclude>META-INF/*.DSA</exclude>
-                            <exclude>META-INF/*.RSA</exclude>
-                            <exclude>.netbeans_automatic_build</exclude>
-                            <exclude>git.properties</exclude>
-                            <exclude>arrow-git.properties</exclude>
-                            <exclude>google-http-client.properties</exclude>
-                            <exclude>storage.v1.json</exclude> <!-- This is just a documentation file, not needed-->
-                            <exclude>pipes-fork-server-default-log4j2.xml</exclude>
-                            <exclude>dependencies.properties</exclude>
-                            <exclude>pipes-fork-server-default-log4j2.xml</exclude>
-                         </excludes>
-                      </filter>
-                      <filter>
-                        <artifact>org.apache.arrow:arrow-vector</artifact>
-                        <excludes>
-                          <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
-                          <exclude>codegen/**</exclude>
-                        </excludes>
-                      </filter>
-                      <filter>
-                        <artifact>com.google.guava:guava</artifact>
-                        <includes>
-                          <include>com/google/common/io/**</include>
-                          <include>com/google/common/base/**</include>
-                          <include>com/google/common/hash/**</include>
-                          <include>com/google/common/collect/**</include>
-                          <include>com/google/common/graph/**</include>
-                          <include>com/google/common/math/**</include>
-                          <include>com/google/common/util/concurrent/**</include>
-                        </includes>
-                      </filter>
-                      <filter>
-                        <artifact>commons-logging:commons-logging</artifact>
-                        <excludes>
-                          <exclude>org/apache/commons/logging/impl/AvalonLogger.class</exclude>
-                        </excludes>
-                      </filter>
-                   </filters>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
             <!-- relocate the META-INF/versions files manually due to the maven bug -->
             <!-- https://issues.apache.org/jira/browse/MSHADE-406 -->
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
-            <version>3.1.0</version>
             <executions>
               <execution>
                 <id>repack</id>
-                <phase>package</phase>
                 <goals>
                   <goal>run</goal>
                 </goals>
+                <phase>package</phase>
                 <configuration>
                   <target>
-                    <unzip src="${project.build.directory}/${project.build.finalName}.jar" dest="${project.build.directory}/relocate"/>
+                    <unzip dest="${project.build.directory}/relocate" src="${project.build.directory}/${project.build.finalName}.jar"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
@@ -948,18 +980,265 @@
             </executions>
           </plugin>
           <plugin>
+            <!-- google linkage checker doesn't work well with shaded jar, disable the check in this case for now -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-linkage-checker</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <configuration/>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <phase>package</phase>
+                <configuration>
+                  <relocations>
+                    <relocation>
+                      <pattern>net.snowflake.common</pattern>
+                      <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.apache</pattern>
+                      <shadedPattern>${shadeBase}.apache</shadedPattern>
+                      <excludes>
+                        <exclude>org.apache.log4j.*</exclude>
+                      </excludes>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.amazonaws</pattern>
+                      <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>software.amazon.ion</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.ion</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.microsoft.azure</pattern>
+                      <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.fasterxml</pattern>
+                      <shadedPattern>${shadeBase}.fasterxml</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.google</pattern>
+                      <shadedPattern>${shadeBase}.google</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.geo</pattern>
+                      <shadedPattern>${shadeBase}.google.geo</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.joda</pattern>
+                      <shadedPattern>${shadeBase}.joda</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.yammer</pattern>
+                      <shadedPattern>${shadeBase}.yammer</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>javax.servlet</pattern>
+                      <shadedPattern>${shadeBase}.javax.servlet</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.jsoup</pattern>
+                      <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.bouncycastle</pattern>
+                      <shadedPattern>${shadeBase}.org.bouncycastle</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.nimbusds</pattern>
+                      <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>javax.annotation</pattern>
+                      <shadedPattern>${shadeBase}.javax.annotation</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>net.jcip</pattern>
+                      <shadedPattern>${shadeBase}.net.jcip</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>net.minidev</pattern>
+                      <shadedPattern>${shadeBase}.net.minidev</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.objectweb</pattern>
+                      <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.sun</pattern>
+                      <shadedPattern>${shadeBase}.com.sun</shadedPattern>
+                      <excludes>
+                        <exclude>com.sun.jna.**</exclude>
+                      </excludes>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.netty</pattern>
+                      <shadedPattern>${shadeBase}.io.netty</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.carrotsearch</pattern>
+                      <shadedPattern>${shadeBase}.com.carrotsearch</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.type</pattern>
+                      <shadedPattern>${shadeBase}.google.type</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.rpc</pattern>
+                      <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.iam</pattern>
+                      <shadedPattern>${shadeBase}.google.iam</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.opencensus</pattern>
+                      <shadedPattern>${shadeBase}.opencensus</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.threeten</pattern>
+                      <shadedPattern>${shadeBase}.threeten</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.protobuf</pattern>
+                      <shadedPattern>${shadeBase}.google.protobuf</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.api</pattern>
+                      <shadedPattern>${shadeBase}.google.api</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.grpc</pattern>
+                      <shadedPattern>${shadeBase}.grpc</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.longrunning</pattern>
+                      <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.cloud</pattern>
+                      <shadedPattern>${shadeBase}.google.cloud</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.logging</pattern>
+                      <shadedPattern>${shadeBase}.google.logging</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.checkerframework</pattern>
+                      <shadedPattern>${shadeBase}.org.checkerframework</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.codehaus</pattern>
+                      <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
+                    </relocation>
+                  </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>*:*</artifact>
+                      <excludes>
+                        <exclude>META-INF/LICENSE*</exclude>
+                        <exclude>META-INF/NOTICE*</exclude>
+                        <exclude>META-INF/DEPENDENCIES</exclude>
+                        <exclude>META-INF/maven/**</exclude>
+                        <exclude>META-INF/services/com.fasterxml.*</exclude>
+                        <exclude>META-INF/*.xml</exclude>
+                        <exclude>META-INF/*.SF</exclude>
+                        <exclude>META-INF/*.DSA</exclude>
+                        <exclude>META-INF/*.RSA</exclude>
+                        <exclude>.netbeans_automatic_build</exclude>
+                        <exclude>git.properties</exclude>
+                        <exclude>arrow-git.properties</exclude>
+                        <exclude>google-http-client.properties</exclude>
+                        <exclude>storage.v1.json</exclude>
+                        <!-- This is just a documentation file, not needed-->
+                        <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                        <exclude>dependencies.properties</exclude>
+                        <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>org.apache.arrow:arrow-vector</artifact>
+                      <excludes>
+                        <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
+                        <exclude>codegen/**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>com.google.guava:guava</artifact>
+                      <includes>
+                        <include>com/google/common/io/**</include>
+                        <include>com/google/common/base/**</include>
+                        <include>com/google/common/hash/**</include>
+                        <include>com/google/common/collect/**</include>
+                        <include>com/google/common/graph/**</include>
+                        <include>com/google/common/math/**</include>
+                        <include>com/google/common/util/concurrent/**</include>
+                      </includes>
+                    </filter>
+                    <filter>
+                      <artifact>commons-logging:commons-logging</artifact>
+                      <excludes>
+                        <exclude>org/apache/commons/logging/impl/AvalonLogger.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                  </transformers>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>buildnumber-maven-plugin</artifactId>
+            <configuration>
+              <timestampFormat>yyyyMMddHHmmss</timestampFormat>
+              <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
+              <doCheck>false</doCheck>
+              <revisionOnScmFailure/>
+              <doUpdate>false</doUpdate>
+              <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrementing buildNumber
+                AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrementing build number at the same time -->
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>create-timestamp</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
-            <version>1.6.0</version>
             <executions>
               <execution>
                 <id>check-shaded-content</id>
-                <phase>verify</phase>
                 <goals>
                   <goal>exec</goal>
                 </goals>
+                <phase>verify</phase>
                 <configuration>
-                    <executable>${basedir}/ci/scripts/check_content.sh</executable>
+                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
                 </configuration>
               </execution>
             </executions>
@@ -970,44 +1249,21 @@
     <profile>
       <id>java-9</id>
       <activation>
-        <jdk>9</jdk>
+        <jdk>(9,)</jdk>
       </activation>
       <build>
         <plugins>
           <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <argLine>
-                --illegal-access=warn
-              </argLine>
-            </configuration>
-          </plugin>
-          <plugin>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-              <argLine>
-                --illegal-access=warn
-              </argLine>
+              <argLine>--add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
             </configuration>
           </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>check-style</id>
-      <build>
-        <plugins>
           <plugin>
-            <groupId>com.coveo</groupId>
-            <artifactId>fmt-maven-plugin</artifactId>
-            <version>2.10</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-              </execution>
-            </executions>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <argLine>--add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
+            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -1021,13 +1277,50 @@
       </activation>
       <build>
         <plugins>
+          <!--
+            Downloading
+              1. japicmp
+              2. maven-dependency-lugin analyst
+            in jenkins node would cause http connection failure. Temporarily disable them.
+          -->
+          <plugin>
+            <groupId>com.github.siom79.japicmp</groupId>
+            <artifactId>japicmp-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>japicmp</id>
+                <goals>
+                  <goal>cmp</goal>
+                </goals>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>analyze</id>
+                <goals>
+                  <goal>analyze-only</goal>
+                </goals>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-                <groups>${testCategory}</groups>
+              <groups>${testCategory}</groups>
             </configuration>
             <executions>
+              <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
               <execution>
                 <id>DefaultIT</id>
                 <goals>
@@ -1038,53 +1331,42 @@
                     <exclude>**/DellBoomiCloudIT.java</exclude>
                   </excludes>
                   <systemPropertyVariables>
-                    <net.snowflake.jdbc.loggerImpl>
-                      net.snowflake.client.log.JDK14Logger
-                    </net.snowflake.jdbc.loggerImpl>
-                    <java.util.logging.config.file>
-                      ${basedir}/src/test/resources/logging.properties
-                    </java.util.logging.config.file>
+                    <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
+                    <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
                   </systemPropertyVariables>
                 </configuration>
               </execution>
-              <execution>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
             </executions>
           </plugin>
-          <!-- collect code coverage -->
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>${jacoco.version}</version>
+            <configuration>
+              <skip>${jacoco.skip.instrument}</skip>
+            </configuration>
             <executions>
               <execution>
                 <id>pre-integration-test</id>
-                <phase>pre-integration-test</phase>
                 <goals>
                   <goal>prepare-agent</goal>
                 </goals>
+                <phase>pre-integration-test</phase>
                 <configuration>
                   <destFile>target/jacoco-it.exec</destFile>
                 </configuration>
               </execution>
               <execution>
                 <id>post-integration-test</id>
-                <phase>post-integration-test</phase>
                 <goals>
                   <goal>report</goal>
                 </goals>
+                <phase>post-integration-test</phase>
                 <configuration>
                   <dataFile>target/jacoco-it.exec</dataFile>
                   <outputDirectory>target/jacoco-it</outputDirectory>
                 </configuration>
               </execution>
             </executions>
-            <configuration>
-              <skip>${jacoco.skip.instrument}</skip>
-            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -1103,6 +1385,11 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <executions>
               <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+              <execution>
                 <id>ClientTelemetryIT</id>
                 <goals>
                   <goal>integration-test</goal>
@@ -1113,16 +1400,9 @@
                     <include>**/SFTrustManagerIT.java</include>
                   </includes>
                   <systemPropertyVariables>
-                    <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
-                    </logback.configurationFile>
+                    <logback.configurationFile>${basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
                   </systemPropertyVariables>
                 </configuration>
-              </execution>
-              <execution>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
               </execution>
             </executions>
           </plugin>
@@ -1143,6 +1423,11 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <executions>
               <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+              <execution>
                 <id>DellBoomiIT</id>
                 <goals>
                   <goal>integration-test</goal>
@@ -1150,11 +1435,6 @@
                 <configuration>
                   <test>DellBoomiCloudIT.java</test>
                 </configuration>
-              </execution>
-              <execution>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
               </execution>
             </executions>
           </plugin>
@@ -1175,6 +1455,11 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <executions>
               <execution>
+                <goals>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+              <execution>
                 <id>ClientTelemetryIT</id>
                 <goals>
                   <goal>integration-test</goal>
@@ -1185,16 +1470,9 @@
                     <include>**/SFTrustManagerIT.java</include>
                   </includes>
                   <systemPropertyVariables>
-                    <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
-                    </logback.configurationFile>
+                    <logback.configurationFile>${basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
                   </systemPropertyVariables>
                 </configuration>
-              </execution>
-              <execution>
-                <goals>
-                  <goal>verify</goal>
-                </goals>
               </execution>
             </executions>
           </plugin>
@@ -1214,7 +1492,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-                <groups>${testCategory}</groups>
+              <groups>${testCategory}</groups>
             </configuration>
             <executions>
               <execution>
@@ -1226,59 +1504,53 @@
                     <exclude>**/DellBoomiCloudIT.java</exclude>
                   </excludes>
                   <systemPropertyVariables>
-                    <logback.configurationFile>
-                      ${basedir}/src/test/resources/logback-test.xml
-                    </logback.configurationFile>
-                    <io.netty.tryReflectionSetAccessible>
-                      true
-                    </io.netty.tryReflectionSetAccessible>
+                    <logback.configurationFile>${basedir}/src/test/resources/logback-test.xml</logback.configurationFile>
+                    <io.netty.tryReflectionSetAccessible>true</io.netty.tryReflectionSetAccessible>
                   </systemPropertyVariables>
                 </configuration>
               </execution>
               <execution>
                 <id>verify_travis_it</id>
-                <phase>verify</phase>
                 <goals>
                   <goal>verify</goal>
                 </goals>
+                <phase>verify</phase>
               </execution>
             </executions>
           </plugin>
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>${jacoco.version}</version>
+            <configuration>
+              <skip>${jacoco.skip.instrument}</skip>
+            </configuration>
             <executions>
               <execution>
                 <id>pre-integration-test</id>
-                <phase>pre-integration-test</phase>
                 <goals>
                   <goal>prepare-agent</goal>
                 </goals>
+                <phase>pre-integration-test</phase>
                 <configuration>
                   <destFile>target/jacoco-it.exec</destFile>
                 </configuration>
               </execution>
               <execution>
                 <id>post-integration-test</id>
-                <phase>post-integration-test</phase>
                 <goals>
                   <goal>report</goal>
                 </goals>
+                <phase>post-integration-test</phase>
                 <configuration>
                   <dataFile>target/jacoco-it.exec</dataFile>
                   <outputDirectory>target/jacoco-it</outputDirectory>
                 </configuration>
               </execution>
             </executions>
-            <configuration>
-              <skip>${jacoco.skip.instrument}</skip>
-            </configuration>
           </plugin>
         </plugins>
       </build>
     </profile>
-    <!-- profiles deployed into ossrh stage area -->
     <profile>
       <id>ossrh-deploy</id>
       <activation>
@@ -1289,15 +1561,20 @@
       <build>
         <plugins>
           <plugin>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
             <executions>
               <execution>
-                <phase>deploy</phase>
                 <goals>
                   <goal>sign-and-deploy-file</goal>
                 </goals>
+                <phase>deploy</phase>
                 <configuration>
                   <file>target/${project.artifactId}.jar</file>
                   <repositoryId>ossrh</repositoryId>
@@ -1310,13 +1587,6 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>
-          <!-- skip default deploy plugin if we use gpg plugin to deploy -->
-          <plugin>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
           </plugin>
         </plugins>
       </build>

@@ -54,7 +54,9 @@ public class EventUtil {
     // eventHandler.startFlusher();
   }
 
-  /** @return the shared EventHandler instance */
+  /**
+   * @return the shared EventHandler instance
+   */
   public static EventHandler getEventHandlerInstance() {
     if (eventHandler.get() == null) {
       initEventHandlerInstance(MAX_ENTRIES, FLUSH_PERIOD_MS);

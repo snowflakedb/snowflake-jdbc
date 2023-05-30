@@ -60,7 +60,9 @@ public final class FileBackedOutputStream extends OutputStream {
     }
   }
 
-  /** @return the file holding the data (possibly null). */
+  /**
+   * @return the file holding the data (possibly null).
+   */
   public synchronized File getFile() {
     return file;
   }

@@ -56,7 +56,9 @@ public class S3ObjectMetadata implements StorageObjectMetadata {
     return objectMetadata.getContentEncoding();
   }
 
-  /** @return Returns the encapsulated AWS S3 metadata object */
+  /**
+   * @return Returns the encapsulated AWS S3 metadata object
+   */
   ObjectMetadata getS3ObjectMetadata() {
     return objectMetadata;
   }

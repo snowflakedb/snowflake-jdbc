@@ -97,13 +97,17 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     return 1000;
   }
 
-  /** @return Returns true if encryption is enabled */
+  /**
+   * @return Returns true if encryption is enabled
+   */
   @Override
   public boolean isEncrypting() {
     return encryptionKeySize > 0 && this.stageInfo.getIsClientSideEncrypted();
   }
 
-  /** @return Returns the size of the encryption key */
+  /**
+   * @return Returns the size of the encryption key
+   */
   @Override
   public int getEncryptionKeySize() {
     return encryptionKeySize;

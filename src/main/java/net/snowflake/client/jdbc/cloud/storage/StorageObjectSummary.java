@@ -132,22 +132,30 @@ public class StorageObjectSummary {
     }
   }
 
-  /** @return returns the location of the object */
+  /**
+   * @return returns the location of the object
+   */
   public String getLocation() {
     return location;
   }
 
-  /** @return returns the key property of the object */
+  /**
+   * @return returns the key property of the object
+   */
   public String getKey() {
     return key;
   }
 
-  /** @return returns the MD5 hash of the object */
+  /**
+   * @return returns the MD5 hash of the object
+   */
   public String getMD5() {
     return md5;
   }
 
-  /** @return returns the size property of the object */
+  /**
+   * @return returns the size property of the object
+   */
   public long getSize() {
     return size;
   }

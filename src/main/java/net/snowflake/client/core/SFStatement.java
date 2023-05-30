@@ -615,12 +615,16 @@ public class SFStatement extends SFBaseStatement {
     }
   }
 
-  /** @return conservative prefetch threads before fetching results */
+  /**
+   * @return conservative prefetch threads before fetching results
+   */
   public int getConservativePrefetchThreads() {
     return conservativePrefetchThreads;
   }
 
-  /** @return conservative memory limit before fetching results */
+  /**
+   * @return conservative memory limit before fetching results
+   */
   public long getConservativeMemoryLimit() {
     return conservativeMemoryLimit;
   }

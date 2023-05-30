@@ -170,7 +170,9 @@ public class TelemetryEvent extends JSONObject {
     }
   }
 
-  /** @return the deployment of this event */
+  /**
+   * @return the deployment of this event
+   */
   public String getDeployment() {
     JSONArray tags = (JSONArray) this.get("Tags");
     for (Object tag : tags) {

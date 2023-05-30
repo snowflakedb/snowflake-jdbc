@@ -17,7 +17,9 @@ import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** @author azhan attempts to test the CLIENT_MEMORY_LIMIT working in multi-threading */
+/**
+ * @author azhan attempts to test the CLIENT_MEMORY_LIMIT working in multi-threading
+ */
 @Category(TestCategoryOthers.class)
 public class ClientMemoryLimitParallelIT {
   private static Logger LOGGER =

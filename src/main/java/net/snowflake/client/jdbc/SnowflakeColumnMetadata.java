@@ -6,7 +6,9 @@ package net.snowflake.client.jdbc;
 
 import java.io.Serializable;
 
-/** @author jhuang */
+/**
+ * @author jhuang
+ */
 public class SnowflakeColumnMetadata implements Serializable {
   private static final long serialVersionUID = 1L;
   private String name;
