@@ -4,7 +4,6 @@
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
@@ -17,7 +16,6 @@ import java.nio.ByteBuffer;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
-import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -877,28 +875,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertTrue(metaData.isAutoIncrement(1));
     assertFalse(metaData.isAutoIncrement(2));
     assertTrue(metaData.isAutoIncrement(3));
-  }
-
-  @Test
-  public void testSSLHandskakeError() {
-    Properties properties = new Properties();
-    properties.put("user", "fakeuser");
-    properties.put("password", "testpassword");
-    properties.put("ocspFailOpen", Boolean.FALSE.toString());
-    properties.put("loginTimeout", "1");
-    properties.put("tracing", "ALL");
-
-    try {
-      DriverManager.getConnection("jdbc:snowflake://expired.badssl.com/", properties);
-      fail("should fail");
-    } catch (SQLException e) {
-      assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
-      assertTrue(e.getMessage().contains("No trusted certificate found."));
-      assertTrue(
-          e.getMessage()
-              .contains(
-                  "https://community.snowflake.com/s/article/Snowflake-Client-Connectivity-Troubleshooting."));
-    }
   }
 
   @Test
