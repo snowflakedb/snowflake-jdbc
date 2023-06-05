@@ -406,7 +406,6 @@ public class SFStatement extends SFBaseStatement {
           .setOCSPMode(session.getOCSPMode())
           .setHttpClientSettingsKey(session.getHttpClientKey())
           .setQueryContextDTO(session.isAsyncSession() ? null : session.getQueryContextDTO());
-
       if (bindStagePath != null) {
         stmtInput.setBindValues(null).setBindStage(bindStagePath);
         // use the new SQL format for this query so dates/timestamps are parsed correctly
