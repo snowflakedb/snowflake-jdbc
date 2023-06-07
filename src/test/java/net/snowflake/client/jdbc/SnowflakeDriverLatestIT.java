@@ -1637,8 +1637,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       final String content = "testName: testS3PutInGs";
       String putSystemCall =
           String.format(
-              "call system$it('PUT_FILE_TO_STAGE', '%s', '%s', '%s')",
-              testStageName, fileName, content);
+              "call system$it('PUT_FILE_TO_STAGE', '%s', '%s', '%s', '%s')",
+              testStageName, fileName, content, "false");
       statement.execute(putSystemCall);
 
       // get file using jdbc
