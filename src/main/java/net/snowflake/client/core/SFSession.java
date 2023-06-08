@@ -105,6 +105,9 @@ public class SFSession extends SFBaseSession {
   // The cache of query context sent from Cloud Service.
   private QueryContextCache qcc;
 
+  // Max retries for outgoing http requests.
+  private int maxHttpRetries = 7;
+
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
   @VisibleForTesting
@@ -350,6 +353,12 @@ public class SFSession extends SFBaseSession {
         case PRIVATE_KEY_FILE_PWD:
           if (propertyValue != null) {
             privateKeyPassword = (String) propertyValue;
+          }
+          break;
+
+        case MAX_HTTP_RETRIES:
+          if (propertyValue != null) {
+            maxHttpRetries = (Integer) propertyValue;
           }
           break;
 
@@ -895,6 +904,10 @@ public class SFSession extends SFBaseSession {
 
   public int getInjectClientPause() {
     return injectClientPause;
+  }
+
+  public int getMaxHttpRetries() {
+    return maxHttpRetries;
   }
 
   public void setInjectClientPause(int injectClientPause) {

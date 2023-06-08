@@ -61,8 +61,6 @@ public class StmtUtil {
   // twice as much as our default socket timeout
   static final int SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS = 600000; // 10 min
 
-  static final int MAX_RETRIES = 7; // Default max retries for transient http requests!
-
   static final SFLogger logger = SFLoggerFactory.getLogger(StmtUtil.class);
 
   /** Input for executing a statement on server */
@@ -87,7 +85,7 @@ public class StmtUtil {
     int injectSocketTimeout; // seconds
     int injectClientPause; // seconds
 
-    int maxRetries = MAX_RETRIES;
+    int maxRetries;
 
     AtomicBoolean canceling = null; // canceling flag
     boolean retry;
@@ -234,12 +232,9 @@ public class StmtUtil {
       return this;
     }
 
-    public int getMaxRetries() {
-      return maxRetries;
-    }
-
-    public void setMaxRetries(int maxRetries) {
+    public StmtInput setMaxRetries(int maxRetries) {
       this.maxRetries = maxRetries;
+      return this;
     }
   }
 
@@ -652,7 +647,8 @@ public class StmtUtil {
             .setMediaType(SF_MEDIA_TYPE)
             .setServiceName(session.getServiceName())
             .setOCSPMode(session.getOCSPMode())
-            .setHttpClientSettingsKey(session.getHttpClientKey());
+            .setHttpClientSettingsKey(session.getHttpClientKey())
+            .setMaxRetries(session.getMaxHttpRetries());
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);
 

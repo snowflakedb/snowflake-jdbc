@@ -337,6 +337,7 @@ public class RestRequest {
         String breakRetryEventName = "";
 
         if (retryTimeoutInMilliseconds > 0) {
+          // Check for retry time-out.
           // increment total elapsed due to transient issues
           elapsedMilliForTransientIssues += elapsedMilliForLastCall;
 
@@ -355,7 +356,9 @@ public class RestRequest {
             breakRetryReason = "retry timeout";
             breakRetryEventName = "HttpRequestRetryTimeout";
           }
-        } else if (maxRetries > 0 && retryCount > maxRetries) {
+        }
+        if (maxRetries > 0 && retryCount > maxRetries) {
+          // check for max retries.
           logger.error(
               "Stop retrying as max retries have been reached! max retry count: {}", maxRetries);
           breakRetryReason = "max retries reached";
@@ -363,6 +366,8 @@ public class RestRequest {
         }
 
         if (breakRetryEventName != "" && !breakRetryEventName.isEmpty()) {
+          // If either of network timeout is exhausted or max retries have been reached, stop
+          // retrying!
           TelemetryService.getInstance()
               .logHttpRequestTelemetryEvent(
                   breakRetryEventName,

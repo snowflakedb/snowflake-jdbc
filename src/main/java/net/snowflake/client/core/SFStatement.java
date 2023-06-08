@@ -405,6 +405,7 @@ public class SFStatement extends SFBaseStatement {
           .setServiceName(session.getServiceName())
           .setOCSPMode(session.getOCSPMode())
           .setHttpClientSettingsKey(session.getHttpClientKey())
+          .setMaxRetries(session.getMaxHttpRetries())
           .setQueryContextDTO(session.isAsyncSession() ? null : session.getQueryContextDTO());
       if (bindStagePath != null) {
         stmtInput.setBindValues(null).setBindStage(bindStagePath);
@@ -710,6 +711,7 @@ public class SFStatement extends SFBaseStatement {
         .setSessionToken(session.getSessionToken())
         .setServiceName(session.getServiceName())
         .setOCSPMode(session.getOCSPMode())
+        .setMaxRetries(session.getMaxHttpRetries())
         .setHttpClientSettingsKey(session.getHttpClientKey());
 
     StmtUtil.cancel(stmtInput);
