@@ -358,7 +358,7 @@ public class SnowflakeDriverTest {
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8080/a=b"));
     assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%%"));
     assertFalse(
-            snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%b&proxyPort="));
+        snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%b&proxyPort="));
     assertFalse(snowflakeDriver.acceptsURL("jdbc:mysql://localhost:3306/dbname"));
   }
 
