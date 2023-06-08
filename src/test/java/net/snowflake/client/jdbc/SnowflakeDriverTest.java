@@ -362,10 +362,15 @@ public class SnowflakeDriverTest {
     assertFalse(snowflakeDriver.acceptsURL("jdbc:mysql://localhost:3306/dbname"));
   }
 
-  @Test(expected = SQLException.class)
-  public void testInvalidNullConnect() throws SQLException {
+  @Test
+  public void testInvalidNullConnect() {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
-    snowflakeDriver.connect(null, null);
+    try {
+      snowflakeDriver.connect(/* url= */ null, null);
+      fail();
+    } catch (SQLException ex) {
+      assertEquals("Unable to connect to url of 'null'.", ex.getMessage());
+    }
   }
 
   @Test
@@ -418,5 +423,13 @@ public class SnowflakeDriverTest {
     } catch (Exception ex) {
       assertEquals("Connection string is invalid. Unable to parse.", ex.getMessage());
     }
+  }
+
+  @Test
+  public void testReturnsNullForOtherJdbcConnectString() throws SQLException {
+    SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
+    Properties info = new Properties();
+    String jdbcConnectString = "jdbc:mysql://host:port/database";
+    assertNull(snowflakeDriver.connect(jdbcConnectString, info));
   }
 }
