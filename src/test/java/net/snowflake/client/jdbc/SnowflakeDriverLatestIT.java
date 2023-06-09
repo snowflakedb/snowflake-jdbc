@@ -1456,7 +1456,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     try {
-      connection = getConnection("gcpaccount");
+      // set parameter for presignedUrl upload instead of downscoped token
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
+      connection = getConnection("gcpaccount", paramProperties);
       Statement statement = connection.createStatement();
 
       // create a stage to put the file in
