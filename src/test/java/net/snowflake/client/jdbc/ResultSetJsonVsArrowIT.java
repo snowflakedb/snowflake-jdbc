@@ -209,7 +209,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     Connection con = init();
 
     Statement stmt = con.createStatement();
-    stmt.execute("alter session set feature_structured_types = 'ENABLED;");
+    stmt.execute("alter session set feature_structured_types = 'ENABLED';");
 
     stmt.close();
 
