@@ -1459,6 +1459,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       connection = getConnection("gcpaccount");
       Statement statement = connection.createStatement();
 
+      // set parameter for presignedUrl upload instead of downscoped token
+      statement.execute("alter session set GCS_USE_DOWNSCOPED_CREDENTIAL = false");
+
       // create a stage to put the file in
       statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
