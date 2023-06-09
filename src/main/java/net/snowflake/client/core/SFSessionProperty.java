@@ -149,13 +149,13 @@ public enum SFSessionProperty {
       if (property.getValueType() == Boolean.class && propertyValue instanceof String) {
         return SFLoginInput.getBooleanValue(propertyValue);
       } else if (property.getValueType() == Integer.class && propertyValue instanceof String) {
-        try{
+        try {
           return Integer.valueOf((String) propertyValue);
-        }catch (NumberFormatException e){
+        } catch (NumberFormatException e) {
           throw new SFException(
-                  ErrorCode.INVALID_PARAMETER_VALUE,
-                  propertyValue.getClass().getName(),
-                  property.getValueType().getName());
+              ErrorCode.INVALID_PARAMETER_VALUE,
+              propertyValue.getClass().getName(),
+              property.getValueType().getName());
         }
       }
     }

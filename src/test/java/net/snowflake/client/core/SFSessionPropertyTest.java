@@ -44,13 +44,12 @@ public class SFSessionPropertyTest {
         "user-agent header should contain the suffix ", userAgentHeader, endsWith(customSuffix));
   }
 
-
   @Test
   public void testInvalidMaxRetries() {
-    try{
+    try {
       SFSessionProperty.checkPropertyValue(SFSessionProperty.MAX_HTTP_RETRIES, "invalidValue");
       Assert.fail("testInvalidMaxRetries");
-    }catch (SFException e){
+    } catch (SFException e) {
       assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
     }
   }
@@ -58,8 +57,9 @@ public class SFSessionPropertyTest {
   @Test
   public void testvalidMaxRetries() throws SFException {
     int expectedVal = 10;
-    Object value = SFSessionProperty.checkPropertyValue(SFSessionProperty.MAX_HTTP_RETRIES, expectedVal);
+    Object value =
+        SFSessionProperty.checkPropertyValue(SFSessionProperty.MAX_HTTP_RETRIES, expectedVal);
 
-    assertThat("Integer value should match", (int)value == expectedVal);
+    assertThat("Integer value should match", (int) value == expectedVal);
   }
 }
