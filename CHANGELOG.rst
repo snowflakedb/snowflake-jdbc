@@ -1,3 +1,12 @@
+**JDBC Driver 3.13.33**
+
+- \ 79c845df SNOW-835387 alter parameter to upload using presigned url (#1412)
+- \ f783d684 Test pr 1393 (#1410)
+- \ 013edca1 SNOW-834606 update test (#1408)
+- \ Add troubleshoot msg for ssl errors (#1407)
+- \ 81eb493c SNOW-804145: Java best practice changes for streaming sdk (#1382)
+- \
+
 **JDBC Driver 3.13.32**
 
 
