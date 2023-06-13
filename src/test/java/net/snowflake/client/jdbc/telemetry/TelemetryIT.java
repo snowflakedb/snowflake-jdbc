@@ -247,7 +247,7 @@ public class TelemetryIT extends AbstractDriverIT {
                 String.format("%s:%s", parameters.get("host"), parameters.get("port")),
                 "OAUTH");
     telemetry.refreshToken(oAuthToken);
-    return telemetry;g
+    return telemetry;
   }
 
   // Helper function to set up and get OAuth token
