@@ -1034,7 +1034,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     int scale = 0;
     String[] longCompacts = {
       "10000000000000000000000000000000000000",
-      "12345678901234567890123456789012345678", //pragma: allowlist secret
+      "12345678901234567890123456789012345678", // pragma: allowlist secret
       "99999999999999999999999999999999999999"
     };
     List<BigDecimal> caseList =
