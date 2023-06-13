@@ -209,10 +209,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     Connection con = init();
 
     Statement stmt = con.createStatement();
-    stmt.execute(
-        "alter session set enable_structured_types = true,"
-            + "enable_structured_types_in_xp = true,"
-            + "enable_structured_types_in_cast = true;");
+    stmt.execute("alter session set feature_structured_types = 'ENABLED';");
 
     stmt.close();
 
@@ -1037,7 +1034,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
     int scale = 0;
     String[] longCompacts = {
       "10000000000000000000000000000000000000",
-      "12345678901234567890123456789012345678",
+      "12345678901234567890123456789012345678", //pragma: allowlist secret
       "99999999999999999999999999999999999999"
     };
     List<BigDecimal> caseList =
