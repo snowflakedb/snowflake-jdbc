@@ -74,8 +74,6 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
   @Test
   public void testJDK14LoggerWithBracesInMessage() {
-    String tmpDir = System.getProperty("java.io.tmpdir");
-    System.out.println(tmpDir);
     JDK14Logger logger = new JDK14Logger(JDK14LoggerWithClientLatestIT.class.getName());
     JDK14Logger.setLevel(Level.FINE);
     logger.debug("Returning column: 12: a: Group b) Hi {Hello World War} cant wait");
@@ -84,8 +82,6 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
   @Test
   public void testJDK14LoggerWithQuotesInMessage() {
-    String tmpDir = System.getProperty("java.io.tmpdir");
-    System.out.println(tmpDir);
     JDK14Logger logger = new JDK14Logger(JDK14LoggerWithClientLatestIT.class.getName());
     JDK14Logger.setLevel(Level.FINE);
     logger.debug("Returning column: 12: a: Group b) Hi {Hello 'World' War} cant wait");
