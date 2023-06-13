@@ -212,7 +212,9 @@ public class TelemetryIT extends AbstractDriverIT {
     TelemetryClient telemetry =
         (TelemetryClient)
             TelemetryClient.createSessionlessTelemetry(
-                httpClient, String.format("%s:%s", parameters.get("host"), parameters.get("port")), "KEYPAIR_JWT");
+                httpClient,
+                String.format("%s:%s", parameters.get("host"), parameters.get("port")),
+                "KEYPAIR_JWT");
     telemetry.refreshToken(jwtToken);
     return telemetry;
   }
@@ -241,9 +243,11 @@ public class TelemetryIT extends AbstractDriverIT {
     TelemetryClient telemetry =
         (TelemetryClient)
             TelemetryClient.createSessionlessTelemetry(
-                httpClient, String.format("%s:%s", parameters.get("host"), parameters.get("port")), "OAUTH");
+                httpClient,
+                String.format("%s:%s", parameters.get("host"), parameters.get("port")),
+                "OAUTH");
     telemetry.refreshToken(oAuthToken);
-    return telemetry;
+    return telemetry;g
   }
 
   // Helper function to set up and get OAuth token

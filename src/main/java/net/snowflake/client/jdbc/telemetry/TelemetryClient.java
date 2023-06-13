@@ -97,13 +97,15 @@ public class TelemetryClient implements Telemetry {
    * @param authType authorization type, should be either KEYPAIR_JWY or OAUTH
    * @param flushSize maximum size of telemetry batch before flush
    */
-  private TelemetryClient(CloseableHttpClient httpClient, String serverUrl, String authType, int flushSize) {
+  private TelemetryClient(
+      CloseableHttpClient httpClient, String serverUrl, String authType, int flushSize) {
     this.session = null;
     this.serverUrl = serverUrl;
     this.httpClient = httpClient;
 
     if (!Objects.equals(authType, "KEYPAIR_JWT") && !Objects.equals(authType, "OAUTH")) {
-      throw new IllegalArgumentException("Invalid authType, should be \"KEYPAIR_JWT\" or \"OAUTH\"");
+      throw new IllegalArgumentException(
+          "Invalid authType, should be \"KEYPAIR_JWT\" or \"OAUTH\"");
     }
     this.authType = authType;
 
@@ -341,19 +343,19 @@ public class TelemetryClient implements Telemetry {
         response =
             this.session == null
                 ? HttpUtil.executeGeneralRequest(
-                post,
-                TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
-                0,
-                DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT,
-                0,
-                this.httpClient)
+                    post,
+                    TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
+                    0,
+                    DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT,
+                    0,
+                    this.httpClient)
                 : HttpUtil.executeGeneralRequest(
-                post,
-                TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
-                this.session.getAuthTimeout(),
-                this.session.getHttpClientSocketTimeout(),
-                0,
-                this.session.getHttpClientKey());
+                    post,
+                    TELEMETRY_HTTP_RETRY_TIMEOUT_IN_SEC,
+                    this.session.getAuthTimeout(),
+                    this.session.getHttpClientSocketTimeout(),
+                    0,
+                    this.session.getHttpClientKey());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance
