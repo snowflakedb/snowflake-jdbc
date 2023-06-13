@@ -134,7 +134,12 @@ public class JDK14Logger implements SFLogger {
   private void logInternal(Level level, String msg, Object... arguments) {
     if (jdkLogger.isLoggable(level)) {
       String[] source = findSourceInStack();
-      String message = MessageFormat.format(refactorString(msg), evaluateLambdaArgs(arguments));
+      String message = "";
+      try {
+        message = MessageFormat.format(refactorString(msg), evaluateLambdaArgs(arguments));
+      } catch (IllegalArgumentException e) {
+        message = "Unable to format msg: " + msg;
+      }
       jdkLogger.logp(level, source[0], source[1], SecretDetector.maskSecrets(message));
     }
   }
