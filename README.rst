@@ -100,7 +100,7 @@ Follow the instruction if any error occurs or run this command to fix the format
 
 .. code-block:: bash
 
-    mvn com.coveo:fmt-maven-plugin:format
+    mvn com.spotify.fmt:fmt-maven-plugin:format
 
 You may import the coding style from IntelliJ so that the coding style can be applied on IDE:
 
