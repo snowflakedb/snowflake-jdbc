@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.logging.Level;
 import net.snowflake.client.AbstractDriverIT;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
@@ -69,5 +70,21 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
     Files.delete(configFilePath);
     directory.delete();
+  }
+
+  @Test
+  public void testJDK14LoggerWithBracesInMessage() {
+    JDK14Logger logger = new JDK14Logger(JDK14LoggerWithClientLatestIT.class.getName());
+    JDK14Logger.setLevel(Level.FINE);
+    logger.debug("Returning column: 12: a: Group b) Hi {Hello World War} cant wait");
+    JDK14Logger.setLevel(Level.OFF);
+  }
+
+  @Test
+  public void testJDK14LoggerWithQuotesInMessage() {
+    JDK14Logger logger = new JDK14Logger(JDK14LoggerWithClientLatestIT.class.getName());
+    JDK14Logger.setLevel(Level.FINE);
+    logger.debug("Returning column: 12: a: Group b) Hi {Hello 'World' War} cant wait");
+    JDK14Logger.setLevel(Level.OFF);
   }
 }
