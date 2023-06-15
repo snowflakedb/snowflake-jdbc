@@ -13,6 +13,7 @@ import java.rmi.UnexpectedException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.concurrent.Future;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -57,7 +58,10 @@ public class TelemetryClient implements Telemetry {
   // HTTP client object used to communicate with other machine
   private final CloseableHttpClient httpClient;
 
-  // JWT token
+  // the authorization type speficied in sessionless header
+  private String authType;
+
+  // JWT/OAuth token
   private String token;
 
   private Object locker = new Object();
@@ -90,12 +94,20 @@ public class TelemetryClient implements Telemetry {
    *
    * @param httpClient client object used to communicate with other machine
    * @param serverUrl server url
+   * @param authType authorization type, should be either KEYPAIR_JWY or OAUTH
    * @param flushSize maximum size of telemetry batch before flush
    */
-  private TelemetryClient(CloseableHttpClient httpClient, String serverUrl, int flushSize) {
+  private TelemetryClient(
+      CloseableHttpClient httpClient, String serverUrl, String authType, int flushSize) {
     this.session = null;
     this.serverUrl = serverUrl;
     this.httpClient = httpClient;
+
+    if (!Objects.equals(authType, "KEYPAIR_JWT") && !Objects.equals(authType, "OAUTH")) {
+      throw new IllegalArgumentException(
+          "Invalid authType, should be \"KEYPAIR_JWT\" or \"OAUTH\"");
+    }
+    this.authType = authType;
 
     if (this.serverUrl.endsWith("/")) {
       this.telemetryUrl =
@@ -180,8 +192,8 @@ public class TelemetryClient implements Telemetry {
    * @return a telemetry connector
    */
   public static Telemetry createSessionlessTelemetry(
-      CloseableHttpClient httpClient, String serverUrl) {
-    return createSessionlessTelemetry(httpClient, serverUrl, DEFAULT_FORCE_FLUSH_SIZE);
+      CloseableHttpClient httpClient, String serverUrl, String authType) {
+    return createSessionlessTelemetry(httpClient, serverUrl, authType, DEFAULT_FORCE_FLUSH_SIZE);
   }
 
   /**
@@ -189,12 +201,13 @@ public class TelemetryClient implements Telemetry {
    *
    * @param httpClient client object used to communicate with other machine
    * @param serverUrl server url
+   * @param authType authorization type for sessionless telemetry
    * @param flushSize maximum size of telemetry batch before flush
    * @return a telemetry connector
    */
   public static Telemetry createSessionlessTelemetry(
-      CloseableHttpClient httpClient, String serverUrl, int flushSize) {
-    return new TelemetryClient(httpClient, serverUrl, flushSize);
+      CloseableHttpClient httpClient, String serverUrl, String authType, int flushSize) {
+    return new TelemetryClient(httpClient, serverUrl, authType, flushSize);
   }
 
   /**
@@ -316,7 +329,7 @@ public class TelemetryClient implements Telemetry {
 
       if (this.session == null) {
         post.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.token);
-        post.setHeader("X-Snowflake-Authorization-Token-Type", "KEYPAIR_JWT");
+        post.setHeader("X-Snowflake-Authorization-Token-Type", this.authType);
         post.setHeader(HttpHeaders.ACCEPT, "application/json");
       } else {
         post.setHeader(
@@ -424,9 +437,9 @@ public class TelemetryClient implements Telemetry {
   }
 
   /**
-   * Refresh the JWT token
+   * Refresh the JWT/OAuth token
    *
-   * @param token latest JWT token
+   * @param token latest JWT/OAuth token
    */
   public void refreshToken(String token) {
     this.token = token;

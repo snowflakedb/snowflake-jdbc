@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
@@ -49,8 +50,15 @@ public class TelemetryIT extends AbstractDriverIT {
   @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testSessionlessTelemetry() throws Exception, SFException {
-    testTelemetryInternal(createSessionlessTelemetry());
+  public void testJWTSessionlessTelemetry() throws Exception, SFException {
+    testTelemetryInternal(createJWTSessionlessTelemetry());
+  }
+
+  @Ignore
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testOAuthSessionlessTelemetry() throws Exception, SFException {
+    testTelemetryInternal(createOAuthSessionlessTelemetry());
   }
 
   private void testTelemetryInternal(TelemetryClient telemetry) throws Exception {
@@ -129,8 +137,14 @@ public class TelemetryIT extends AbstractDriverIT {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testDisableSessionlessTelemetry() throws Exception, SFException {
-    testDisableTelemetryInternal(createSessionlessTelemetry());
+  public void testDisableJWTSessionlessTelemetry() throws Exception, SFException {
+    testDisableTelemetryInternal(createJWTSessionlessTelemetry());
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDisableOAuthSessionlessTelemetry() throws Exception, SFException {
+    testDisableTelemetryInternal(createOAuthSessionlessTelemetry());
   }
 
   public void testDisableTelemetryInternal(TelemetryClient telemetry) throws Exception {
@@ -161,8 +175,8 @@ public class TelemetryIT extends AbstractDriverIT {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testClosedSessionlessTelemetry() throws Exception, SFException {
-    TelemetryClient telemetry = createSessionlessTelemetry();
+  public void testClosedJWTSessionlessTelemetry() throws Exception, SFException {
+    TelemetryClient telemetry = createJWTSessionlessTelemetry();
     telemetry.close();
     ObjectNode node = mapper.createObjectNode();
     node.put("type", "query");
@@ -171,8 +185,20 @@ public class TelemetryIT extends AbstractDriverIT {
     Assert.assertFalse(telemetry.sendBatchAsync().get());
   }
 
-  // Helper function to create a sessionless telemetry
-  private TelemetryClient createSessionlessTelemetry()
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testClosedOAuthSessionlessTelemetry() throws Exception, SFException {
+    TelemetryClient telemetry = createOAuthSessionlessTelemetry();
+    telemetry.close();
+    ObjectNode node = mapper.createObjectNode();
+    node.put("type", "query");
+    node.put("query_id", "sdasdasdasdasds");
+    telemetry.addLogToBatch(node, 1234567);
+    Assert.assertFalse(telemetry.sendBatchAsync().get());
+  }
+
+  // Helper function to create a sessionless telemetry using keypair JWT
+  private TelemetryClient createJWTSessionlessTelemetry()
       throws SFException, SQLException, IOException {
     setUpPublicKey();
     String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
@@ -185,7 +211,9 @@ public class TelemetryIT extends AbstractDriverIT {
     TelemetryClient telemetry =
         (TelemetryClient)
             TelemetryClient.createSessionlessTelemetry(
-                httpClient, String.format("%s:%s", parameters.get("host"), parameters.get("port")));
+                httpClient,
+                String.format("%s:%s", parameters.get("host"), parameters.get("port")),
+                "KEYPAIR_JWT");
     telemetry.refreshToken(jwtToken);
     return telemetry;
   }
@@ -203,5 +231,47 @@ public class TelemetryIT extends AbstractDriverIT {
     pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
     statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
     connection.close();
+  }
+
+  // Helper function to create a sessionless telemetry using OAuth
+  private TelemetryClient createOAuthSessionlessTelemetry()
+      throws SFException, SQLException, IOException {
+    String oAuthToken = getOAuthToken();
+    Map<String, String> parameters = getConnectionParameters();
+    CloseableHttpClient httpClient = HttpUtil.buildHttpClient(null, null, false);
+    TelemetryClient telemetry =
+        (TelemetryClient)
+            TelemetryClient.createSessionlessTelemetry(
+                httpClient,
+                String.format("%s:%s", parameters.get("host"), parameters.get("port")),
+                "OAUTH");
+    telemetry.refreshToken(oAuthToken);
+    return telemetry;
+  }
+
+  // Helper function to set up and get OAuth token
+  private String getOAuthToken() throws SQLException {
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute(
+        "create or replace security integration telemetry_oauth_integration\n"
+            + "  type=oauth\n"
+            + "  oauth_client=CUSTOM\n"
+            + "  oauth_client_type=CONFIDENTIAL\n"
+            + "  oauth_redirect_uri='https://localhost.com/oauth'\n"
+            + "  oauth_issue_refresh_tokens=true\n"
+            + "  enabled=true oauth_refresh_token_validity=86400;");
+    String role = parameters.get("role");
+    ResultSet resultSet =
+        statement.executeQuery(
+            "select system$it('create_oauth_access_token', 'TELEMETRY_OAUTH_INTEGRATION', '"
+                + role
+                + "')");
+    resultSet.next();
+    String token = resultSet.getString(1);
+    connection.close();
+    return token;
   }
 }
