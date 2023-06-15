@@ -85,6 +85,8 @@ public class StmtUtil {
     int injectSocketTimeout; // seconds
     int injectClientPause; // seconds
 
+    int maxRetries;
+
     AtomicBoolean canceling = null; // canceling flag
     boolean retry;
     String prevGetResultURL = null; // previous get result URL from ping pong
@@ -229,6 +231,11 @@ public class StmtUtil {
       this.queryContextDTO = queryContext;
       return this;
     }
+
+    public StmtInput setMaxRetries(int maxRetries) {
+      this.maxRetries = maxRetries;
+      return this;
+    }
   }
 
   /** Output for running a statement on server */
@@ -362,7 +369,7 @@ public class StmtUtil {
                 stmtInput.networkTimeoutInMillis / 1000,
                 stmtInput.socketTimeout,
                 0,
-                0,
+                stmtInput.maxRetries,
                 stmtInput.injectSocketTimeout,
                 stmtInput.canceling,
                 true, // include retry parameters
@@ -602,7 +609,7 @@ public class StmtUtil {
           stmtInput.networkTimeoutInMillis / 1000,
           stmtInput.socketTimeout,
           0,
-          0,
+          stmtInput.maxRetries,
           0,
           stmtInput.canceling,
           false, // no retry parameter
@@ -640,7 +647,8 @@ public class StmtUtil {
             .setMediaType(SF_MEDIA_TYPE)
             .setServiceName(session.getServiceName())
             .setOCSPMode(session.getOCSPMode())
-            .setHttpClientSettingsKey(session.getHttpClientKey());
+            .setHttpClientSettingsKey(session.getHttpClientKey())
+            .setMaxRetries(session.getMaxHttpRetries());
 
     String resultAsString = getQueryResult(getResultPath, stmtInput);
 

@@ -656,7 +656,7 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount retry count for the request
+   * @param maxRetries retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param includeRetryParameters whether to include retry parameters in retried requests
@@ -671,7 +671,7 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int retryCount,
+      int maxRetries,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean includeRetryParameters,
@@ -686,7 +686,7 @@ public class HttpUtil {
         retryTimeout,
         authTimeout,
         socketTimeout,
-        retryCount,
+        maxRetries,
         injectSocketTimeout,
         canceling,
         false, // with cookie (do we need cookie?)
@@ -708,7 +708,7 @@ public class HttpUtil {
    * @param retryTimeout retry timeout (in seconds)
    * @param authTimeout authenticator specific timeout (in seconds)
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount retry count for the request
+   * @param maxRetries retry count for the request
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether this request should ignore cookies
@@ -725,7 +725,7 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int retryCount,
+      int maxRetries,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
@@ -754,7 +754,7 @@ public class HttpUtil {
               retryTimeout,
               authTimeout,
               socketTimeout,
-              retryCount,
+              maxRetries,
               injectSocketTimeout,
               canceling,
               withoutCookies,
