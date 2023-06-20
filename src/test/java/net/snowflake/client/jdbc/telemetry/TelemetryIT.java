@@ -252,9 +252,9 @@ public class TelemetryIT extends AbstractDriverIT {
   // Helper function to set up and get OAuth token
   private String getOAuthToken() throws SQLException {
     Map<String, String> parameters = getConnectionParameters();
-    String testUser = parameters.get("user");
     Connection connection = getConnection();
     Statement statement = connection.createStatement();
+    statement.execute("use role accountadmin");
     statement.execute(
         "create or replace security integration telemetry_oauth_integration\n"
             + "  type=oauth\n"
