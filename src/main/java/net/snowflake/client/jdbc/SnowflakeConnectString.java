@@ -135,6 +135,12 @@ public class SnowflakeConnectString implements Serializable {
         // if it's a global url
         parameters.put("ACCOUNT", account);
       }
+
+      if (Strings.isNullOrEmpty(account)) {
+        logger.debug("Connect strings must contain account identifier");
+        return INVALID_CONNECT_STRING;
+      }
+
       // By default, don't allow underscores in host name unless the property is set to true via
       // connection properties.
       boolean allowUnderscoresInHost = false;
