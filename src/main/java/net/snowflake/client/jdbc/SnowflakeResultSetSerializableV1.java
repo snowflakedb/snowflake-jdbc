@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.channels.ClosedByInterruptException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -1107,6 +1108,11 @@ public class SnowflakeResultSetSerializableV1
           firstChunkRowCount += root.getRowCount();
           root.clear();
         }
+      } catch (ClosedByInterruptException cbie) {
+        // SNOW-755756: sometimes while reading from arrow stream, this exception can occur with
+        // null message.
+        // Log an interrupted message instead of throwing this exception.
+        logger.debug("Interrupted when loading Arrow first chunk row count.", cbie);
       } catch (Exception ex) {
         throw new SnowflakeSQLLoggedException(
             possibleSession.orElse(/* session = */ null),
