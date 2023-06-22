@@ -214,14 +214,16 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       sfResultSet.setSession(this.connection.getSFBaseSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
       queryID = sfResultSet.getQueryId();
-      statementMetaData =
-          new SFStatementMetaData(
-              sfResultSet.getMetaData(),
-              sfResultSet.getStatementType(),
-              sfResultSet.getNumberOfBinds(),
-              sfResultSet.isArrayBindSupported(),
-              sfResultSet.getMetaDataOfBinds(),
-              true); // valid metadata
+      if (!statementMetaData.isValidMetaData()) {
+        statementMetaData =
+            new SFStatementMetaData(
+                sfResultSet.getMetaData(),
+                sfResultSet.getStatementType(),
+                sfResultSet.getNumberOfBinds(),
+                sfResultSet.isArrayBindSupported(),
+                sfResultSet.getMetaDataOfBinds(),
+                true); // valid metadata
+      }
     } catch (SFException ex) {
       statementMetaData = SFStatementMetaData.emptyMetaData();
       throw new SnowflakeSQLException(
@@ -273,14 +275,16 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         sfResultSet =
             sfBaseStatement.execute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
-        statementMetaData =
-            new SFStatementMetaData(
-                sfResultSet.getMetaData(),
-                sfResultSet.getStatementType(),
-                sfResultSet.getNumberOfBinds(),
-                sfResultSet.isArrayBindSupported(),
-                sfResultSet.getMetaDataOfBinds(),
-                true); // valid metadata
+        if (!statementMetaData.isValidMetaData()) {
+          statementMetaData =
+              new SFStatementMetaData(
+                  sfResultSet.getMetaData(),
+                  sfResultSet.getStatementType(),
+                  sfResultSet.getNumberOfBinds(),
+                  sfResultSet.isArrayBindSupported(),
+                  sfResultSet.getMetaDataOfBinds(),
+                  true); // valid metadata
+        }
       }
       sfResultSet.setSession(this.connection.getSFBaseSession());
       queryID = sfResultSet.getQueryId();
@@ -335,14 +339,16 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           sfBaseStatement.execute(
               sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE, execTimeData);
       sfResultSet.setSession(this.connection.getSFBaseSession());
-      statementMetaData =
-          new SFStatementMetaData(
-              sfResultSet.getMetaData(),
-              sfResultSet.getStatementType(),
-              sfResultSet.getNumberOfBinds(),
-              sfResultSet.isArrayBindSupported(),
-              sfResultSet.getMetaDataOfBinds(),
-              true); // valid metadata
+      if (!statementMetaData.isValidMetaData()) {
+        statementMetaData =
+            new SFStatementMetaData(
+                sfResultSet.getMetaData(),
+                sfResultSet.getStatementType(),
+                sfResultSet.getNumberOfBinds(),
+                sfResultSet.isArrayBindSupported(),
+                sfResultSet.getMetaDataOfBinds(),
+                true); // valid metadata
+      }
       if (resultSet != null && !resultSet.isClosed()) {
         openResultSets.add(resultSet);
       }

@@ -950,4 +950,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   public boolean isAlreadyDescribed() {
     return this.alreadyDescribed;
   }
+
+  // For testing use only
+  public boolean isArrayBindSupported() {
+    return this.statementMetaData.isArrayBindSupported();
+  }
 }
