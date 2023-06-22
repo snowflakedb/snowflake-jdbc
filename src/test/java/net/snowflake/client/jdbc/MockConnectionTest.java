@@ -531,7 +531,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void addProperty(String propertyName, Object propertyValue) {}
 
     @Override
-    public SFStatementMetaData describe(String sql) {
+    public SFPreparedStatementMetaData describe(String sql) {
       return null;
     }
 

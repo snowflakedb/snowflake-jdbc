@@ -6,7 +6,7 @@ import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import net.snowflake.client.core.MetaDataOfBinds;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFStatementMetaData;
+import net.snowflake.client.core.SFPreparedStatementMetaData;
 
 /**
  * Naive implementation of ParameterMetadata class.
@@ -15,22 +15,23 @@ import net.snowflake.client.core.SFStatementMetaData;
  * describe sql response.
  */
 class SnowflakeParameterMetadata implements ParameterMetaData {
-  private SFStatementMetaData statementMetaData;
+  private SFPreparedStatementMetaData sfPreparedStatementMetaData;
   private SFBaseSession session;
 
-  SnowflakeParameterMetadata(SFStatementMetaData sfStatementMetaData, SFBaseSession session) {
-    this.statementMetaData = sfStatementMetaData;
+  SnowflakeParameterMetadata(
+      SFPreparedStatementMetaData sfStatementMetaData, SFBaseSession session) {
+    this.sfPreparedStatementMetaData = sfStatementMetaData;
     this.session = session;
   }
 
   @Override
   public int getParameterCount() throws SQLException {
-    return statementMetaData.getNumberOfBinds();
+    return sfPreparedStatementMetaData.getNumberOfBinds();
   }
 
   @Override
   public int isNullable(int param) throws SQLException {
-    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    MetaDataOfBinds paramInfo = sfPreparedStatementMetaData.getMetaDataForBindParam(param);
     if (paramInfo.isNullable()) {
       return ParameterMetaData.parameterNullable;
     }
@@ -44,25 +45,25 @@ class SnowflakeParameterMetadata implements ParameterMetaData {
 
   @Override
   public int getPrecision(int param) throws SQLException {
-    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    MetaDataOfBinds paramInfo = sfPreparedStatementMetaData.getMetaDataForBindParam(param);
     return paramInfo.getPrecision();
   }
 
   @Override
   public int getScale(int param) throws SQLException {
-    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    MetaDataOfBinds paramInfo = sfPreparedStatementMetaData.getMetaDataForBindParam(param);
     return paramInfo.getScale();
   }
 
   @Override
   public int getParameterType(int param) throws SQLException {
-    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    MetaDataOfBinds paramInfo = sfPreparedStatementMetaData.getMetaDataForBindParam(param);
     return convertStringToType(paramInfo.getTypeName());
   }
 
   @Override
   public String getParameterTypeName(int param) throws SQLException {
-    MetaDataOfBinds paramInfo = statementMetaData.getMetaDataForBindParam(param);
+    MetaDataOfBinds paramInfo = sfPreparedStatementMetaData.getMetaDataForBindParam(param);
     return paramInfo.getTypeName();
   }
 
