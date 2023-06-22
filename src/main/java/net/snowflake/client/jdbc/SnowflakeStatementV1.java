@@ -61,7 +61,8 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   private String queryID;
 
   /** statement and result metadata from describe phase */
-  protected SFStatementMetaData statementMetaData = SFStatementMetaData.emptyMetaData();
+  protected SFPreparedStatementMetaData preparedStatementMetaData =
+      SFPreparedStatementMetaData.emptyMetaData();
 
   /** Snowflake query IDs from the latest executed batch */
   private List<String> batchQueryIDs = new LinkedList<>();
@@ -214,9 +215,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       sfResultSet.setSession(this.connection.getSFBaseSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
       queryID = sfResultSet.getQueryId();
-      if (!statementMetaData.isValidMetaData()) {
-        statementMetaData =
-            new SFStatementMetaData(
+      if (!preparedStatementMetaData.isValidMetaData()) {
+        preparedStatementMetaData =
+            new SFPreparedStatementMetaData(
                 sfResultSet.getMetaData(),
                 sfResultSet.getStatementType(),
                 sfResultSet.getNumberOfBinds(),
@@ -225,7 +226,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
                 true); // valid metadata
       }
     } catch (SFException ex) {
-      statementMetaData = SFStatementMetaData.emptyMetaData();
+      preparedStatementMetaData = SFPreparedStatementMetaData.emptyMetaData();
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     } finally {
@@ -270,14 +271,14 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         sfResultSet =
             sfBaseStatement.asyncExecute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
-        statementMetaData = SFStatementMetaData.emptyMetaData();
+        preparedStatementMetaData = SFPreparedStatementMetaData.emptyMetaData();
       } else {
         sfResultSet =
             sfBaseStatement.execute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
-        if (!statementMetaData.isValidMetaData()) {
-          statementMetaData =
-              new SFStatementMetaData(
+        if (!preparedStatementMetaData.isValidMetaData()) {
+          preparedStatementMetaData =
+              new SFPreparedStatementMetaData(
                   sfResultSet.getMetaData(),
                   sfResultSet.getStatementType(),
                   sfResultSet.getNumberOfBinds(),
@@ -290,7 +291,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       queryID = sfResultSet.getQueryId();
 
     } catch (SFException ex) {
-      statementMetaData = SFStatementMetaData.emptyMetaData();
+      preparedStatementMetaData = SFPreparedStatementMetaData.emptyMetaData();
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
@@ -339,9 +340,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           sfBaseStatement.execute(
               sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE, execTimeData);
       sfResultSet.setSession(this.connection.getSFBaseSession());
-      if (!statementMetaData.isValidMetaData()) {
-        statementMetaData =
-            new SFStatementMetaData(
+      if (!preparedStatementMetaData.isValidMetaData()) {
+        preparedStatementMetaData =
+            new SFPreparedStatementMetaData(
                 sfResultSet.getMetaData(),
                 sfResultSet.getStatementType(),
                 sfResultSet.getNumberOfBinds(),
@@ -372,7 +373,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       updateCount = NO_UPDATES;
       return true;
     } catch (SFException ex) {
-      statementMetaData = SFStatementMetaData.emptyMetaData();
+      preparedStatementMetaData = SFPreparedStatementMetaData.emptyMetaData();
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }

@@ -6,7 +6,7 @@ import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import net.snowflake.client.core.MetaDataOfBinds;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFStatementMetaData;
+import net.snowflake.client.core.SFPreparedStatementMetaData;
 
 /**
  * Naive implementation of ParameterMetadata class.
@@ -15,10 +15,11 @@ import net.snowflake.client.core.SFStatementMetaData;
  * describe sql response.
  */
 class SnowflakeParameterMetadata implements ParameterMetaData {
-  private SFStatementMetaData statementMetaData;
+  private SFPreparedStatementMetaData statementMetaData;
   private SFBaseSession session;
 
-  SnowflakeParameterMetadata(SFStatementMetaData sfStatementMetaData, SFBaseSession session) {
+  SnowflakeParameterMetadata(
+      SFPreparedStatementMetaData sfStatementMetaData, SFBaseSession session) {
     this.statementMetaData = sfStatementMetaData;
     this.session = session;
   }

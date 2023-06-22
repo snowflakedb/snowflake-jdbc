@@ -329,29 +329,29 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     try (Connection connection = init()) {
       connection
           .createStatement()
-          .execute("create or replace table testStageArrayBind(c1 integer)");
-      try (PreparedStatement prepStatement =
-          connection.prepareStatement("insert into testStageArrayBind values (?)")) {
-        // Assert to begin with that before the describe call, array binding is not supported
-        assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-        assertFalse(
-            prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
-        // Insert enough rows to hit the default binding array threshold
-        for (int i = 0; i < 70000; i++) {
-          prepStatement.setInt(1, i);
-          prepStatement.addBatch();
-        }
-        prepStatement.executeBatch();
-        // After executing the first batch, verify that array bind support is still true
-        assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
-        for (int i = 0; i < 70000; i++) {
-          prepStatement.setInt(1, i);
-          prepStatement.addBatch();
-        }
-        prepStatement.executeBatch();
-        // After executing the second batch, verify that array bind support is still true
-        assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+          .execute("create or replace table testStageArrayBind(c1 integer, c2 string)");
+      PreparedStatement prepStatement =
+          connection.prepareStatement("insert into testStageArrayBind values (?, ?)");
+      // Assert to begin with that before the describe call, array binding is not supported
+      assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+      assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+      // Insert enough rows to hit the default binding array threshold
+      for (int i = 0; i < 35000; i++) {
+        prepStatement.setInt(1, i);
+        prepStatement.setString(2, "test" + i);
+        prepStatement.addBatch();
       }
+      prepStatement.executeBatch();
+      // After executing the first batch, verify that array bind support is still true
+      assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+      for (int i = 0; i < 35000; i++) {
+        prepStatement.setInt(1, i);
+        prepStatement.setString(2, "test" + i);
+        prepStatement.addBatch();
+      }
+      prepStatement.executeBatch();
+      // After executing the second batch, verify that array bind support is still true
+      assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
     }
   }
 }

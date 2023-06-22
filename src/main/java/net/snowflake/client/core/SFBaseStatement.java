@@ -59,7 +59,7 @@ public abstract class SFBaseStatement {
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
-  public abstract SFStatementMetaData describe(String sql) throws SFException, SQLException;
+  public abstract SFPreparedStatementMetaData describe(String sql) throws SFException, SQLException;
 
   /**
    * Executes the given SQL string.
