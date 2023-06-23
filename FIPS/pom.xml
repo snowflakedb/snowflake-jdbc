@@ -318,7 +318,7 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
-      <version>2.13.0</version>
+      <version>2.22.5</version>
       <exclusions>
         <exclusion>  <!-- Exclude sub-sub dependency gson to avoid whitesource vulnerability -->
           <groupId>com.google.code.gson</groupId>
