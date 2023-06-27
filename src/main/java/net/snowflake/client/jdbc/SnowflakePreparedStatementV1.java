@@ -952,7 +952,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   }
 
   @Override
-  public void resultSetHandler(SFBaseResultSet resultSet) throws SQLException {
+  public void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException {
     if (!this.preparedStatementMetaData.isValidMetaData()) {
       this.preparedStatementMetaData =
           new SFPreparedStatementMetaData(

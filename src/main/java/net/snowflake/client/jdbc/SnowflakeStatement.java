@@ -48,5 +48,5 @@ public interface SnowflakeStatement {
    * @param resultSet
    * @throws SQLException
    */
-  void resultSetHandler(SFBaseResultSet resultSet) throws SQLException;
+  void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException;
 }

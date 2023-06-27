@@ -158,7 +158,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   }
 
   @Override
-  public void resultSetHandler(SFBaseResultSet resultSet) throws SQLException {
+  public void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException {
     // No-Op.
   }
 
@@ -216,7 +216,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       sfResultSet.setSession(this.connection.getSFBaseSession());
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
       queryID = sfResultSet.getQueryId();
-      resultSetHandler(sfResultSet);
+      resultSetMetadataHandler(sfResultSet);
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
@@ -266,7 +266,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
         sfResultSet =
             sfBaseStatement.execute(
                 sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE_QUERY, execTimeData);
-        resultSetHandler(sfResultSet);
+        resultSetMetadataHandler(sfResultSet);
       }
       sfResultSet.setSession(this.connection.getSFBaseSession());
       queryID = sfResultSet.getQueryId();
@@ -320,7 +320,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           sfBaseStatement.execute(
               sql, parameterBindings, SFBaseStatement.CallingMethod.EXECUTE, execTimeData);
       sfResultSet.setSession(this.connection.getSFBaseSession());
-      resultSetHandler(sfResultSet);
+      resultSetMetadataHandler(sfResultSet);
       if (resultSet != null && !resultSet.isClosed()) {
         openResultSets.add(resultSet);
       }
