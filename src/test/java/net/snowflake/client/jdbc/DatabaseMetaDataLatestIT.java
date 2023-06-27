@@ -1639,4 +1639,12 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(0, res.getInt("ORDINAL_POSITION"));
     }
   }
+
+  @Test
+  public void testUpdateLocatorsCopyUnsupported() throws SQLException {
+    try (Connection con = getConnection()) {
+      DatabaseMetaData metaData = con.getMetaData();
+      assertFalse(metaData.locatorsUpdateCopy());
+    }
+  }
 }
