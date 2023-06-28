@@ -41,6 +41,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   private final String sql;
 
+  private SFPreparedStatementMetaData preparedStatementMetaData;
+
+  /** statement and result metadata from describe phase */
   private boolean showStatementParameters;
 
   /**
@@ -117,9 +120,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       logger.debug("executeQuery()", false);
     }
     ResultSet rs = executeQueryInternal(sql, false, parameterBindings, execTimeData);
-    if (preparedStatementMetaData.isValidMetaData()) {
-      alreadyDescribed = true;
-    }
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return rs;
@@ -152,9 +152,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         new ExecTimeTelemetryData("long PreparedStatement.executeLargeUpdate()", this.batchID);
     logger.debug("executeLargeUpdate()", false);
     long updates = executeUpdateInternal(sql, parameterBindings, true, execTimeTelemetryData);
-    if (preparedStatementMetaData.isValidMetaData()) {
-      alreadyDescribed = true;
-    }
     return updates;
   }
 
@@ -468,9 +465,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         new ExecTimeTelemetryData("boolean PreparedStatement.execute(String)", this.batchID);
     logger.debug("execute: {}", sql);
     boolean success = executeInternal(sql, parameterBindings, execTimeData);
-    if (preparedStatementMetaData.isValidMetaData()) {
-      alreadyDescribed = true;
-    }
+
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return success;
@@ -954,5 +949,21 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   // For testing use only
   public boolean isArrayBindSupported() {
     return this.preparedStatementMetaData.isArrayBindSupported();
+  }
+
+  @Override
+  public void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException {
+    if (!this.preparedStatementMetaData.isValidMetaData()) {
+      this.preparedStatementMetaData =
+          new SFPreparedStatementMetaData(
+              resultSet.getMetaData(),
+              resultSet.getStatementType(),
+              resultSet.getNumberOfBinds(),
+              resultSet.isArrayBindSupported(),
+              resultSet.getMetaDataOfBinds(),
+              true);
+
+      alreadyDescribed = true;
+    }
   }
 }
