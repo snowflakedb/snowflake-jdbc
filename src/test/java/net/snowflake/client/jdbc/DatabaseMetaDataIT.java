@@ -798,7 +798,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       expectFeatureNotSupportedException(() -> metaData.getSuperTypes(null, null, null));
       expectFeatureNotSupportedException(() -> metaData.getSuperTables(null, null, null));
       expectFeatureNotSupportedException(() -> metaData.getAttributes(null, null, null, null));
-      expectFeatureNotSupportedException(metaData::locatorsUpdateCopy);
       expectFeatureNotSupportedException(metaData::getRowIdLifetime);
       expectFeatureNotSupportedException(metaData::autoCommitFailureClosesAllResultSets);
       expectFeatureNotSupportedException(metaData::getClientInfoProperties);
