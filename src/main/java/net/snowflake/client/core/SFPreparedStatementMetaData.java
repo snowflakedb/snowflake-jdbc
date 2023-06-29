@@ -18,7 +18,7 @@ import net.snowflake.common.core.SqlState;
  * @author jhuang
  *     <p>Created on 1/21/16
  */
-public class SFStatementMetaData {
+public class SFPreparedStatementMetaData {
   // result metadata
   private SFResultSetMetaData resultSetMetaData;
 
@@ -33,7 +33,7 @@ public class SFStatementMetaData {
 
   private final boolean isValidMetaData;
 
-  public SFStatementMetaData(
+  public SFPreparedStatementMetaData(
       SFResultSetMetaData resultSetMetaData,
       SFStatementType statementType,
       int numberOfBinds,
@@ -110,8 +110,8 @@ public class SFStatementMetaData {
    *
    * @return statement metadata
    */
-  public static SFStatementMetaData emptyMetaData() {
-    return new SFStatementMetaData(
+  public static SFPreparedStatementMetaData emptyMetaData() {
+    return new SFPreparedStatementMetaData(
         new SFResultSetMetaData(
             0,
             Collections.<String>emptyList(),

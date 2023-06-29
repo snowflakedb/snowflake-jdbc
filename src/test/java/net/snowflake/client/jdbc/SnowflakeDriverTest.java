@@ -432,4 +432,16 @@ public class SnowflakeDriverTest {
     String jdbcConnectString = "jdbc:mysql://host:port/database";
     assertNull(snowflakeDriver.connect(jdbcConnectString, info));
   }
+
+  @Test
+  public void testConnectWithMissingAccountIdentifier() throws SQLException {
+    SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
+    try {
+      snowflakeDriver.getPropertyInfo("jdbc:snowflake://localhost:443/?&ssl=on", new Properties());
+      fail();
+    } catch (SnowflakeSQLException ex) {
+      assertEquals(
+          "Invalid Connect String: jdbc:snowflake://localhost:443/?&ssl=on.", ex.getMessage());
+    }
+  }
 }

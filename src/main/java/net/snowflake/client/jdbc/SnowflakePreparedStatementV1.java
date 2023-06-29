@@ -41,6 +41,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   private final String sql;
 
+  private SFPreparedStatementMetaData preparedStatementMetaData;
+
+  /** statement and result metadata from describe phase */
   private boolean showStatementParameters;
 
   /**
@@ -80,7 +83,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       throws SQLException {
     super(connection, resultSetType, resultSetConcurrency, resultSetHoldability);
     this.sql = sql;
-    this.statementMetaData = SFStatementMetaData.emptyMetaData();
+    this.preparedStatementMetaData = SFPreparedStatementMetaData.emptyMetaData();
     showStatementParameters = connection.getShowStatementParameters();
   }
 
@@ -93,14 +96,14 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   private void describeSqlIfNotTried() throws SQLException {
     if (!alreadyDescribed) {
       try {
-        this.statementMetaData = sfBaseStatement.describe(sql);
+        this.preparedStatementMetaData = sfBaseStatement.describe(sql);
       } catch (SFException e) {
         throw new SnowflakeSQLLoggedException(connection.getSFBaseSession(), e);
       } catch (SnowflakeSQLException e) {
         if (!errorCodesIgnoredInDescribeMode.contains(e.getErrorCode())) {
           throw e;
         } else {
-          statementMetaData = SFStatementMetaData.emptyMetaData();
+          preparedStatementMetaData = SFPreparedStatementMetaData.emptyMetaData();
         }
       }
       alreadyDescribed = true;
@@ -117,9 +120,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       logger.debug("executeQuery()", false);
     }
     ResultSet rs = executeQueryInternal(sql, false, parameterBindings, execTimeData);
-    if (statementMetaData.isValidMetaData()) {
-      alreadyDescribed = true;
-    }
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return rs;
@@ -152,9 +152,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         new ExecTimeTelemetryData("long PreparedStatement.executeLargeUpdate()", this.batchID);
     logger.debug("executeLargeUpdate()", false);
     long updates = executeUpdateInternal(sql, parameterBindings, true, execTimeTelemetryData);
-    if (statementMetaData.isValidMetaData()) {
-      alreadyDescribed = true;
-    }
     return updates;
   }
 
@@ -468,9 +465,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         new ExecTimeTelemetryData("boolean PreparedStatement.execute(String)", this.batchID);
     logger.debug("execute: {}", sql);
     boolean success = executeInternal(sql, parameterBindings, execTimeData);
-    if (statementMetaData.isValidMetaData()) {
-      alreadyDescribed = true;
-    }
+
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
     return success;
@@ -483,7 +478,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     raiseSQLExceptionIfStatementIsClosed();
 
     describeSqlIfNotTried();
-    if (statementMetaData.isArrayBindSupported()) {
+    if (preparedStatementMetaData.isArrayBindSupported()) {
       for (Map.Entry<String, ParameterBindingDTO> binding : parameterBindings.entrySet()) {
         // get the entry for the bind variable in the batch binding map
         ParameterBindingDTO bindingValueAndType = batchParameterBindings.get(binding.getKey());
@@ -587,7 +582,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     raiseSQLExceptionIfStatementIsClosed();
 
     describeSqlIfNotTried();
-    return new SnowflakeResultSetMetaDataV1(this.statementMetaData.getResultSetMetaData());
+    return new SnowflakeResultSetMetaDataV1(this.preparedStatementMetaData.getResultSetMetaData());
   }
 
   @Override
@@ -676,7 +671,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public ParameterMetaData getParameterMetaData() throws SQLException {
     describeSqlIfNotTried();
-    return new SnowflakeParameterMetadata(statementMetaData, connection.getSFBaseSession());
+    return new SnowflakeParameterMetadata(preparedStatementMetaData, connection.getSFBaseSession());
   }
 
   @Override
@@ -838,7 +833,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     describeSqlIfNotTried();
 
-    if (this.statementMetaData.getStatementType().isGenerateResultSet()) {
+    if (this.preparedStatementMetaData.getStatementType().isGenerateResultSet()) {
       throw new SnowflakeSQLException(
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API, StmtUtil.truncateSQL(sql));
     }
@@ -854,7 +849,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     }
 
     try {
-      if (this.statementMetaData.isArrayBindSupported()) {
+      if (this.preparedStatementMetaData.isArrayBindSupported()) {
         if (batchSize <= 0) {
           if (isLong) {
             logger.debug(
@@ -949,5 +944,26 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   // For testing use only
   public boolean isAlreadyDescribed() {
     return this.alreadyDescribed;
+  }
+
+  // For testing use only
+  public boolean isArrayBindSupported() {
+    return this.preparedStatementMetaData.isArrayBindSupported();
+  }
+
+  @Override
+  public void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException {
+    if (!this.preparedStatementMetaData.isValidMetaData()) {
+      this.preparedStatementMetaData =
+          new SFPreparedStatementMetaData(
+              resultSet.getMetaData(),
+              resultSet.getStatementType(),
+              resultSet.getNumberOfBinds(),
+              resultSet.isArrayBindSupported(),
+              resultSet.getMetaDataOfBinds(),
+              true);
+
+      alreadyDescribed = true;
+    }
   }
 }

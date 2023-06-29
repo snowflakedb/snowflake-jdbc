@@ -5,9 +5,7 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -19,8 +17,10 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * Stream API tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
@@ -30,6 +30,9 @@ import org.junit.experimental.categories.Category;
  */
 @Category(TestCategoryOthers.class)
 public class StreamLatestIT extends BaseJDBCTest {
+
+  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+
   /**
    * Test Upload Stream with atypical stage names
    *
@@ -194,6 +197,53 @@ public class StreamLatestIT extends BaseJDBCTest {
         statement.close();
       }
       closeSQLObjects(statement, connection);
+    }
+  }
+
+  @Test
+  public void testSpecialCharactersInFileName() throws SQLException, IOException {
+    Connection connection = null;
+    Statement statement = null;
+    try {
+      connection = getConnection();
+      statement = connection.createStatement();
+
+      // Create a temporary file with special characters in the name and write to it
+      File specialCharFile = tmpFolder.newFile("(special char@).txt");
+      BufferedWriter bw = new BufferedWriter(new FileWriter(specialCharFile));
+      bw.write("Creating test file for downloadStream test");
+      bw.close();
+
+      String sourceFilePath = specialCharFile.getCanonicalPath();
+      String sourcePathEscaped;
+      if (System.getProperty("file.separator").equals("\\")) {
+        // windows separator needs to be escaped because of quotes
+        sourcePathEscaped = sourceFilePath.replace("\\", "\\\\");
+      } else {
+        sourcePathEscaped = sourceFilePath;
+      }
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE downloadStream_stage");
+      statement.execute(
+          "PUT 'file://" + sourcePathEscaped + "' @~/downloadStream_stage auto_compress=false");
+
+      // download file stream
+      InputStream out =
+          connection
+              .unwrap(SnowflakeConnection.class)
+              .downloadStream("~", "/downloadStream_stage/" + specialCharFile.getName(), false);
+
+      // Read file stream and check the result
+      StringWriter writer = new StringWriter();
+      IOUtils.copy(out, writer, "UTF-8");
+      String output = writer.toString();
+      assertEquals("Creating test file for downloadStream test", output);
+    } finally {
+      if (statement != null) {
+        statement.execute("DROP STAGE IF EXISTS downloadStream_stage");
+        statement.close();
+      }
     }
   }
 }
