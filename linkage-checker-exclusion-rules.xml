@@ -39,6 +39,11 @@
         <Source><Package name="org.apache.tika.config"/></Source>
         <Reason>?</Reason>
     </LinkageError>
+    <LinkageError>
+        <Target><Package name="org.bouncycastle"/></Target>
+        <Source><Package name="org.bouncycastle.pkix"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
     <!--
     <LinkageError>
         <Target><Package name=""/></Target>
