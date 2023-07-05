@@ -81,6 +81,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   // Returns the Max number of retry attempts
   @Override
   public int getMaxRetries() {
+    if (session.getConnectionPropertiesMap().containsKey(SFSessionProperty.PUT_GET_MAX_RETRIES)) {
+      return (int) session.getConnectionPropertiesMap().get(SFSessionProperty.PUT_GET_MAX_RETRIES);
+    }
     return 25;
   }
 

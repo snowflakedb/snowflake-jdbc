@@ -69,7 +69,9 @@ public enum SFSessionProperty {
 
   CLIENT_CONFIG_FILE("client_config_file", false, String.class),
 
-  MAX_HTTP_RETRIES("maxHttpRetries", false, Integer.class);
+  MAX_HTTP_RETRIES("maxHttpRetries", false, Integer.class),
+
+  PUT_GET_MAX_RETRIES("putGetMaxRetries", false, Integer.class);
 
   // property key in string
   private String propertyKey;

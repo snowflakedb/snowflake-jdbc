@@ -40,10 +40,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFSSLConnectionSocketFactory;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -213,6 +210,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   // Returns the Max number of retry attempts
   @Override
   public int getMaxRetries() {
+    if (session.getConnectionPropertiesMap().containsKey(SFSessionProperty.PUT_GET_MAX_RETRIES)) {
+      return (int) session.getConnectionPropertiesMap().get(SFSessionProperty.PUT_GET_MAX_RETRIES);
+    }
     return 25;
   }
 
@@ -330,9 +330,21 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                     })
                 .build();
 
+        logger.debug(
+            "downloading from S3. Remote location: "
+                + remoteStorageLocation
+                + ", stage file path: "
+                + stageFilePath
+                + ", local file: "
+                + localFile);
         Download myDownload = tx.download(remoteStorageLocation, stageFilePath, localFile);
 
         // Pull object metadata from S3
+        logger.debug(
+            "get object metadata from remote location: "
+                + remoteStorageLocation
+                + ", and path: "
+                + stageFilePath);
         ObjectMetadata meta = amazonClient.getObjectMetadata(remoteStorageLocation, stageFilePath);
 
         Map<String, String> metaMap = meta.getUserMetadata();
@@ -694,16 +706,20 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex);
     }
 
+    // Don't retry if max retries has been reached or the error code is 404/400
     if (ex instanceof AmazonClientException) {
-      if (retryCount > s3Client.getMaxRetries() || s3Client.isClientException404(ex)) {
+      logger.debug("AmazonClientException: " + ex.getMessage());
+      if (retryCount > s3Client.getMaxRetries() || s3Client.isClientException400Or404(ex)) {
         String extendedRequestId = "none";
 
         if (ex instanceof AmazonS3Exception) {
           AmazonS3Exception ex1 = (AmazonS3Exception) ex;
+          logger.debug("AmazonS3Exception: " + ex1.getAdditionalDetails());
           extendedRequestId = ex1.getExtendedRequestId();
         }
 
         if (ex instanceof AmazonServiceException) {
+          logger.debug("AmazonServiceException");
           AmazonServiceException ex1 = (AmazonServiceException) ex;
           throw new SnowflakeSQLLoggedException(
               session,
@@ -793,13 +809,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
   }
 
-  /** Checks the status code of the exception to see if it's a 404 */
-  public boolean isClientException404(Exception ex) {
+  /** Checks the status code of the exception to see if it's a 400 or 404 */
+  public boolean isClientException400Or404(Exception ex) {
     if (ex instanceof AmazonServiceException) {
       AmazonServiceException asEx = (AmazonServiceException) (ex);
-      if (asEx.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-        return true;
-      }
+      return asEx.getStatusCode() == HttpStatus.SC_NOT_FOUND
+          || asEx.getStatusCode() == HttpStatus.SC_BAD_REQUEST;
     }
     return false;
   }
