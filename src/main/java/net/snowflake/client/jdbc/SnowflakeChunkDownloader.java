@@ -651,17 +651,18 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           // if the current chunk has not condition change over the timeout (which is rare)
           logger.debug(
               "Thread {} is timeout for waiting #chunk{} to be ready, current"
-                  + "chunk state is: {}, retry={}",
+                  + " chunk state is: {}, retry={}, scrubbedUrl={}",
               Thread.currentThread().getId(),
               nextChunkToConsume,
               currentChunk.getDownloadState(),
-              retry);
+              retry,
+              currentChunk.getScrubbedUrl());
 
           currentChunk.setDownloadState(DownloadState.FAILURE);
           currentChunk.setDownloadError(
               String.format(
-                  "Timeout waiting for the download of #chunk%d" + "(Total chunks: %d) retry=%d",
-                  nextChunkToConsume, this.chunks.size(), retry));
+                  "Timeout waiting for the download of #chunk%d(Total chunks: %d) retry=%d scrubbedUrl=%s",
+                  nextChunkToConsume, this.chunks.size(), retry, currentChunk.getScrubbedUrl()));
           break;
         }
       }
