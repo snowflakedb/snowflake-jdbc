@@ -149,13 +149,13 @@ public class SFStatement extends SFBaseStatement {
    * @throws SFException if result set is null
    */
   @Override
-  public SFStatementMetaData describe(String sql) throws SFException, SQLException {
+  public SFPreparedStatementMetaData describe(String sql) throws SFException, SQLException {
     SFBaseResultSet baseResultSet =
         executeQuery(sql, null, true, false, null, new ExecTimeTelemetryData());
 
     describeJobUUID = baseResultSet.getQueryId();
 
-    return new SFStatementMetaData(
+    return new SFPreparedStatementMetaData(
         baseResultSet.getMetaData(),
         baseResultSet.getStatementType(),
         baseResultSet.getNumberOfBinds(),
