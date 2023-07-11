@@ -67,7 +67,7 @@ public enum SFSessionProperty {
   DISABLE_QUERY_CONTEXT_CACHE("disableQueryContextCache", false, Boolean.class),
   HTAP_OOB_TELEMETRY_ENABLED("htapOOBTelemetryEnabled", false, Boolean.class),
 
-  CLIENT_CONFIG_FILE("clientConfigFile", false, String.class),
+  CLIENT_CONFIG_FILE("client_config_file", false, String.class),
 
   MAX_HTTP_RETRIES("maxHttpRetries", false, Integer.class);
 

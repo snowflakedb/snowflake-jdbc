@@ -26,7 +26,7 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     try {
       Files.write(configFilePath, configJson.getBytes());
       Properties properties = new Properties();
-      properties.put("clientConfigFile", configFilePath.toString());
+      properties.put("client_config_file", configFilePath.toString());
       Connection connection = getConnection(properties);
       connection.createStatement().executeQuery("select 1");
 
@@ -46,7 +46,7 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   public void testJDK14LoggingWithClientConfigInvalidConfigFilePath() throws SQLException {
     Path configFilePath = Paths.get("invalid.json");
     Properties properties = new Properties();
-    properties.put("clientConfigFile", configFilePath.toString());
+    properties.put("client_config_file", configFilePath.toString());
     Connection connection = getConnection(properties);
     connection.createStatement().executeQuery("select 1");
   }
@@ -65,7 +65,7 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
     Files.write(configFilePath, configJson.getBytes());
     Properties properties = new Properties();
-    properties.put("clientConfigFile", configFilePath.toString());
+    properties.put("client_config_file", configFilePath.toString());
     assertThrows(SQLException.class, () -> getConnection(properties));
 
     Files.delete(configFilePath);
