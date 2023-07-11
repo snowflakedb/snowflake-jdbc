@@ -18,8 +18,8 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
-import org.junit.Ignore;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -78,10 +78,10 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
       assertTrue(resultSet.next());
       statement.execute("create or replace stage " + testStageName);
       resultSet =
-              connection
-                      .createStatement()
-                      .executeQuery(
-                              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @" + testStageName);
+          connection
+              .createStatement()
+              .executeQuery(
+                  "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @" + testStageName);
       while (resultSet.next()) {
         assertEquals("UPLOADED", resultSet.getString("status"));
       }

@@ -106,9 +106,9 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
         new AmazonS3Exception("Not found"), overMaxRetry, "upload", sfSession, command);
   }
 
-  @Test(expected = SnowflakeSQLException.class)
+  @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void errorBadRequest() throws SQLException {
+  public void errorBadRequestTokenExpired() throws SQLException {
     AmazonServiceException ex = new AmazonServiceException("Bad Request");
     ex.setServiceName("Amazon S3");
     ex.setStatusCode(400);
@@ -116,8 +116,9 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
     ex.setErrorType(AmazonServiceException.ErrorType.Client);
     Mockito.doReturn(true).when(spyingClient).isClientException400Or404(ex);
     spyingClient.handleStorageException(ex, 0, "download", sfSession, command);
-    // no retry
+    // renew token
     Mockito.verify(spyingClient, Mockito.times(1)).isClientException400Or404(ex);
+    Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
   }
 
   @Test(expected = SnowflakeSQLException.class)

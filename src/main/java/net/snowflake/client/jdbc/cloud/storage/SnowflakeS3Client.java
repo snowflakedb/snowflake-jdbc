@@ -210,7 +210,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   // Returns the Max number of retry attempts
   @Override
   public int getMaxRetries() {
-    if (session.getConnectionPropertiesMap().containsKey(SFSessionProperty.PUT_GET_MAX_RETRIES)) {
+    if (session != null
+        && session
+            .getConnectionPropertiesMap()
+            .containsKey(SFSessionProperty.PUT_GET_MAX_RETRIES)) {
       return (int) session.getConnectionPropertiesMap().get(SFSessionProperty.PUT_GET_MAX_RETRIES);
     }
     return 25;
@@ -330,21 +333,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                     })
                 .build();
 
-        logger.debug(
-            "downloading from S3. Remote location: "
-                + remoteStorageLocation
-                + ", stage file path: "
-                + stageFilePath
-                + ", local file: "
-                + localFile);
         Download myDownload = tx.download(remoteStorageLocation, stageFilePath, localFile);
 
         // Pull object metadata from S3
-        logger.debug(
-            "get object metadata from remote location: "
-                + remoteStorageLocation
-                + ", and path: "
-                + stageFilePath);
         ObjectMetadata meta = amazonClient.getObjectMetadata(remoteStorageLocation, stageFilePath);
 
         Map<String, String> metaMap = meta.getUserMetadata();
@@ -714,24 +705,31 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         if (ex instanceof AmazonS3Exception) {
           AmazonS3Exception ex1 = (AmazonS3Exception) ex;
-          logger.debug("AmazonS3Exception: " + ex1.getAdditionalDetails());
           extendedRequestId = ex1.getExtendedRequestId();
         }
 
         if (ex instanceof AmazonServiceException) {
-          logger.debug("AmazonServiceException");
           AmazonServiceException ex1 = (AmazonServiceException) ex;
-          throw new SnowflakeSQLLoggedException(
-              session,
-              SqlState.SYSTEM_ERROR,
-              ErrorCode.S3_OPERATION_ERROR.getMessageCode(),
-              ex1,
-              operation,
-              ex1.getErrorType().toString(),
-              ex1.getErrorCode(),
-              ex1.getMessage(),
-              ex1.getRequestId(),
-              extendedRequestId);
+
+          // The AWS credentials might have expired when server returns error 400 and
+          // does not return the ExpiredToken error code.
+          // If session is null we cannot renew the token so throw the exception
+          if (ex1.getStatusCode() == HttpStatus.SC_BAD_REQUEST && session != null) {
+            SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
+          } else {
+            throw new SnowflakeSQLLoggedException(
+                session,
+                SqlState.SYSTEM_ERROR,
+                ErrorCode.S3_OPERATION_ERROR.getMessageCode(),
+                ex1,
+                operation,
+                ex1.getErrorType().toString(),
+                ex1.getErrorCode(),
+                ex1.getMessage(),
+                ex1.getRequestId(),
+                extendedRequestId);
+          }
+
         } else {
           throw new SnowflakeSQLLoggedException(
               session,
