@@ -1147,6 +1147,10 @@
                       <pattern>org.codehaus</pattern>
                       <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
                     </relocation>
+                    <relocation>
+                      <pattern>org.slf4j</pattern>
+                      <shadedPattern>${shadeBase}.org.slf4j</shadedPattern>
+                    </relocation>
                   </relocations>
                   <filters>
                     <filter>
