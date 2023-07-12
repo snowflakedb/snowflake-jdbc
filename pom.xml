@@ -1041,6 +1041,10 @@
                       <shadedPattern>${shadeBase}.google.geo</shadedPattern>
                     </relocation>
                     <relocation>
+                      <pattern>google.storage</pattern>
+                      <shadedPattern>${shadeBase}.google.storage</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>org.joda</pattern>
                       <shadedPattern>${shadeBase}.joda</shadedPattern>
                     </relocation>
@@ -1146,6 +1150,26 @@
                     <relocation>
                       <pattern>org.codehaus</pattern>
                       <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.perfmark</pattern>
+                      <shadedPattern>${shadeBase}.io.perfmark</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.conscrypt</pattern>
+                      <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>opencensus</pattern>
+                      <shadedPattern>${shadeBase}.opencensus</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>grpc</pattern>
+                      <shadedPattern>${shadeBase}.grpc</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>android.annotation</pattern>
+                      <shadedPattern>${shadeBase}.android.annotation</shadedPattern>
                     </relocation>
                   </relocations>
                   <filters>
