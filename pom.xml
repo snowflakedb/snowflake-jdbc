@@ -204,6 +204,12 @@
         <version>9.3</version>
       </dependency>
       <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.6</version>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
         <groupId>org.threeten</groupId>
         <artifactId>threetenbp</artifactId>
         <version>1.6.8</version>
@@ -212,12 +218,6 @@
         <groupId>org.tukaani</groupId>
         <artifactId>xz</artifactId>
         <version>1.9</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>2.0.6</version>
-        <scope>provided</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -1150,6 +1150,10 @@
                     <relocation>
                       <pattern>org.codehaus</pattern>
                       <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.slf4j</pattern>
+                      <shadedPattern>${shadeBase}.org.slf4j</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>io.perfmark</pattern>
