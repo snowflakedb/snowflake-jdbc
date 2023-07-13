@@ -318,7 +318,7 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
-      <version>2.13.0</version>
+      <version>2.22.5</version>
       <exclusions>
         <exclusion>  <!-- Exclude sub-sub dependency gson to avoid whitesource vulnerability -->
           <groupId>com.google.code.gson</groupId>
@@ -831,6 +831,10 @@
                        <shadedPattern>${shadeBase}.google.api</shadedPattern>
                      </relocation>
                      <relocation>
+                     <pattern>google.storage</pattern>
+                     <shadedPattern>${shadeBase}.google.storage</shadedPattern>
+                   </relocation>
+                     <relocation>
                        <pattern>io.grpc</pattern>
                        <shadedPattern>${shadeBase}.grpc</shadedPattern>
                      </relocation>
@@ -853,7 +857,27 @@
                      <relocation>
                        <pattern>org.codehaus</pattern>
                        <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
-                     </relocation>                     
+                     </relocation>
+                     <relocation>
+                       <pattern>io.perfmark</pattern>
+                       <shadedPattern>${shadeBase}.io.perfmark</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>org.conscrypt</pattern>
+                       <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>opencensus</pattern>
+                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>grpc</pattern>
+                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
+                     </relocation>
+                     <relocation>
+                       <pattern>android.annotation</pattern>
+                       <shadedPattern>${shadeBase}.android.annotation</shadedPattern>
+                     </relocation>
                    </relocations>
                    <filters>
                       <filter>
