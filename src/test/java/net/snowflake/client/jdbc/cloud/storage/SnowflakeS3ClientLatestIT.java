@@ -7,7 +7,9 @@ import static org.junit.Assert.*;
 
 import com.amazonaws.ClientConfiguration;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.core.SFSession;
@@ -46,5 +48,35 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               info.getUseS3RegionalUrl());
       assertEquals(256, client.getEncryptionKeySize());
     }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testS3ConnectionWithProxyEnvVariablesSet() throws SQLException {
+    Connection connection = null;
+    SnowflakeUtil.systemSetEnv("HTTPS_PROXY", "myproxy:8080");
+    String testStageName = "s3TestStage";
+    try {
+      connection = getConnection("s3testaccount");
+      Statement statement = connection.createStatement();
+      ResultSet resultSet = statement.executeQuery("select 1");
+      assertTrue(resultSet.next());
+
+      statement.execute("create or replace stage " + testStageName);
+      resultSet =
+          connection
+              .createStatement()
+              .executeQuery(
+                  "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @" + testStageName);
+      while (resultSet.next()) {
+        assertEquals("UPLOADED", resultSet.getString("status"));
+      }
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+        connection.close();
+      }
+    }
+    SnowflakeUtil.systemUnsetEnv("HTTPS_PROXY");
   }
 }
