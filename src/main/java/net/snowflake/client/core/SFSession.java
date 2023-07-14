@@ -484,6 +484,15 @@ public class SFSession extends SFBaseSession {
         .setOCSPMode(getOCSPMode())
         .setHttpClientSettingsKey(httpClientSettingsKey);
 
+    // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
+    // The value may still change later when session parameters from the server are read.
+    if (getBooleanValue(
+        connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
+      TelemetryService.enable();
+    } else {
+      TelemetryService.disable();
+    }
+
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
     SFLoginOutput loginOutput =

@@ -2,7 +2,7 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -305,6 +305,58 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       TelemetryService.disableHTAP();
       // Ensure that no telemetry is collected for below select 3 statement
       statement.execute("select 3");
+    }
+  }
+
+  /**
+   * Requires part 2 of SNOW-844477. Make sure CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is true at
+   * account level. Tests connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=true
+   */
+  @Ignore
+  @Test
+  public void testOOBTelemetryEnabled() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", "true");
+    try (Connection con = getConnection(properties)) {
+      Statement statement = con.createStatement();
+      statement.execute("select 1");
+      // Make sure OOB telemetry is enabled
+      assertTrue(TelemetryService.getInstance().isEnabled());
+    }
+  }
+
+  /**
+   * Requires part 2 of SNOW-844477. Make sure CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is false at
+   * account level. Tests connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=false
+   */
+  @Ignore
+  @Test
+  public void testOOBTelemetryDisabled() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", "false");
+    try (Connection con = getConnection(properties)) {
+      Statement statement = con.createStatement();
+      statement.execute("select 1");
+      // Make sure OOB telemetry is disabled
+      assertFalse(TelemetryService.getInstance().isEnabled());
+    }
+  }
+
+  /**
+   * Requires part 2 of SNOW-844477. Make sure CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is true at
+   * account level. Tests connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=false but
+   * CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is enabled on account level
+   */
+  @Ignore
+  @Test
+  public void testOOBTelemetryEnabledOnServerDisabledOnClient() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", "false");
+    try (Connection con = getConnection(properties)) {
+      Statement statement = con.createStatement();
+      statement.execute("select 1");
+      // Make sure OOB telemetry is enabled
+      assertTrue(TelemetryService.getInstance().isEnabled());
     }
   }
 
