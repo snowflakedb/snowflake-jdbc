@@ -418,6 +418,8 @@ public class SessionUtil {
 
     try {
       ClientAuthnDTO authnData = new ClientAuthnDTO();
+      authnData.setInFlightCtx(loginInput.getInFlightCtx());
+
       Map<String, Object> data = new HashMap<>();
       data.put(ClientAuthnParameter.CLIENT_APP_ID.name(), loginInput.getAppId());
 
@@ -584,6 +586,12 @@ public class SessionUtil {
       String json = mapper.writeValueAsString(authnData);
 
       postRequest = new HttpPost(loginURI);
+
+      // Add custom headers before adding common headers
+      Map<String, String> additionalHttpHeaders = loginInput.getAdditionalHttpHeaders();
+      if (additionalHttpHeaders != null) {
+        additionalHttpHeaders.forEach(postRequest::addHeader);
+      }
 
       // attach the login info json body to the post request
       StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
@@ -894,6 +902,12 @@ public class SessionUtil {
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       postRequest = new HttpPost(uriBuilder.build());
+
+      // Add custom headers before adding common headers
+      Map<String, String> additionalHttpHeaders = loginInput.getAdditionalHttpHeaders();
+      if (additionalHttpHeaders != null) {
+        additionalHttpHeaders.forEach(postRequest::addHeader);
+      }
     } catch (URISyntaxException ex) {
       logger.error("Exception when creating http request", ex);
 
@@ -1006,6 +1020,12 @@ public class SessionUtil {
 
       postRequest = new HttpPost(uriBuilder.build());
 
+      // Add custom headers before adding common headers
+      Map<String, String> additionalHttpHeaders = loginInput.getAdditionalHttpHeaders();
+      if (additionalHttpHeaders != null) {
+        additionalHttpHeaders.forEach(postRequest::addHeader);
+      }
+      
       postRequest.setHeader(
           SF_HEADER_AUTHORIZATION,
           SF_HEADER_SNOWFLAKE_AUTHTYPE

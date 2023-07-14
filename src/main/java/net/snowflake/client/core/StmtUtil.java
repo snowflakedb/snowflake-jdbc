@@ -105,6 +105,8 @@ public class StmtUtil {
 
     QueryContextDTO queryContextDTO;
 
+    Map<String, String> additionalHttpHeaders;
+
     StmtInput() {}
 
     public StmtInput setSql(String sql) {
@@ -236,6 +238,11 @@ public class StmtUtil {
       this.maxRetries = maxRetries;
       return this;
     }
+
+    public StmtInput setAdditionalHeaders(Map<String, String> additionalHeaders) {
+        this.additionalHttpHeaders = additionalHeaders;
+        return this;
+    }
   }
 
   /** Output for running a statement on server */
@@ -300,6 +307,9 @@ public class StmtUtil {
         }
 
         httpRequest = new HttpPost(uriBuilder.build());
+        if (stmtInput.additionalHttpHeaders != null) {
+          stmtInput.additionalHttpHeaders.forEach(httpRequest::addHeader);
+        }
 
         /*
          * sequence id is only needed for old query API, when old query API
@@ -590,6 +600,9 @@ public class StmtUtil {
       uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpGet(uriBuilder.build());
+      if (stmtInput.additionalHttpHeaders != null) {
+        stmtInput.additionalHttpHeaders.forEach(httpRequest::addHeader);
+      }
 
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
@@ -691,6 +704,9 @@ public class StmtUtil {
       uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpPost(uriBuilder.build());
+      if (stmtInput.additionalHttpHeaders != null) {
+        stmtInput.additionalHttpHeaders.forEach(httpRequest::addHeader);
+      }
 
       /*
        * The JSON input has two fields: sqlText and requestId

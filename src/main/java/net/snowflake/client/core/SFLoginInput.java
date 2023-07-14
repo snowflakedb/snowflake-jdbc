@@ -47,6 +47,8 @@ public class SFLoginInput {
   private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
   private String privateKeyFilePwd;
+  private String inFlightCtx;
+  private Map<String, String> additionalHttpHeaders;
 
   SFLoginInput() {}
 
@@ -335,6 +337,24 @@ public class SFLoginInput {
 
   SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
     this.httpClientKey = key;
+    return this;
+  }
+
+  String getInFlightCtx() {
+    return inFlightCtx;
+  }
+
+  SFLoginInput setInFlightCtx(String inFlightCtx) {
+    this.inFlightCtx = inFlightCtx;
+    return this;
+  }
+
+  Map<String, String> getAdditionalHttpHeaders() {
+    return additionalHttpHeaders;
+  }
+
+  SFLoginInput setAdditionalHttpHeaders(Map<String, String> additionalHttpHeaders) {
+    this.additionalHttpHeaders = additionalHttpHeaders;
     return this;
   }
 
