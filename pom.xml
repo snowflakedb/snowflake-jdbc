@@ -1003,6 +1003,11 @@
                 </goals>
                 <phase>package</phase>
                 <configuration>
+                  <artifactSet>
+                    <excludes>
+                      <exclude>org.slf4j:slf4j-api</exclude>
+                    </excludes>
+                  </artifactSet>
                   <relocations>
                     <relocation>
                       <pattern>net.snowflake.common</pattern>
