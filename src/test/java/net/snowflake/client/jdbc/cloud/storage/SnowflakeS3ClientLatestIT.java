@@ -16,6 +16,7 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
@@ -50,18 +51,27 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * This is a manual test to confirm that the s3 client builder doesn't read from
+   * https_proxy/http_proxy environment variable.
+   *
+   * <p>Prerequisite: 1. Set HTTPS_PROXY/HTTP_PROXY to a proxy that won't connect i.e.
+   * HTTPS_PROXY=https://myproxy:8080
+   *
+   * <p>2. Connect to S3 host.
+   *
+   * @throws SQLException
+   */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Ignore
   public void testS3ConnectionWithProxyEnvVariablesSet() throws SQLException {
     Connection connection = null;
-    SnowflakeUtil.systemSetEnv("HTTPS_PROXY", "myproxy:8080");
     String testStageName = "s3TestStage";
     try {
-      connection = getConnection("s3testaccount");
+      connection = getConnection();
       Statement statement = connection.createStatement();
       ResultSet resultSet = statement.executeQuery("select 1");
       assertTrue(resultSet.next());
-
       statement.execute("create or replace stage " + testStageName);
       resultSet =
           connection
@@ -77,6 +87,5 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
         connection.close();
       }
     }
-    SnowflakeUtil.systemUnsetEnv("HTTPS_PROXY");
   }
 }
