@@ -3,17 +3,16 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
@@ -28,6 +27,7 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.*;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -809,5 +809,98 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
     sfAgent.setDestFileNameForStreamSource("test_file");
 
     sfAgent.execute();
+  }
+
+  @Test
+  public void testUploadFileWithTildeInFolderName() throws SQLException, IOException {
+    Connection connection = null;
+    Statement statement = null;
+    ResultSet resultSet = null;
+    Writer writer = null;
+    Path topDataDir = null;
+
+    try {
+      topDataDir = Files.createTempDirectory("testPutFileTilde");
+      topDataDir.toFile().deleteOnExit();
+
+      // create sub directory where the name includes ~
+      Path subDir = Files.createDirectories(Paths.get(topDataDir.toString(), "snowflake~"));
+
+      // create a test data
+      File dataFile = new File(subDir.toFile(), "test.txt");
+      writer =
+          new BufferedWriter(
+              new OutputStreamWriter(
+                  Files.newOutputStream(Paths.get(dataFile.getCanonicalPath())),
+                  StandardCharsets.UTF_8));
+      writer.write("1,test1");
+      writer.close();
+
+      connection = getConnection();
+      statement = connection.createStatement();
+      statement.execute("create or replace stage testStage");
+      String sql = String.format("PUT 'file://%s' @testStage", dataFile.getCanonicalPath());
+
+      // Escape backslashes. This must be done by the application.
+      sql = sql.replaceAll("\\\\", "\\\\\\\\");
+      resultSet = statement.executeQuery(sql);
+      while (resultSet.next()) {
+        assertEquals("UPLOADED", resultSet.getString("status"));
+      }
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("drop stage if exists testStage");
+      }
+      closeSQLObjects(resultSet, statement, connection);
+      if (writer != null) {
+        writer.close();
+      }
+      FileUtils.deleteDirectory(topDataDir.toFile());
+    }
+  }
+
+  @Test
+  public void testUploadWithTildeInPath() throws SQLException, IOException {
+    Connection connection = null;
+    Statement statement = null;
+    ResultSet resultSet = null;
+    Writer writer = null;
+    Path subDir = null;
+
+    try {
+
+      String homeDir = systemGetProperty("user.home");
+
+      // create sub directory where the name includes ~
+      subDir = Files.createDirectories(Paths.get(homeDir, "snowflake"));
+
+      // create a test data
+      File dataFile = new File(subDir.toFile(), "test.txt");
+      writer =
+          new BufferedWriter(
+              new OutputStreamWriter(
+                  Files.newOutputStream(Paths.get(dataFile.getCanonicalPath())),
+                  StandardCharsets.UTF_8));
+      writer.write("1,test1");
+      writer.close();
+
+      connection = getConnection();
+      statement = connection.createStatement();
+      statement.execute("create or replace stage testStage");
+
+      resultSet = statement.executeQuery("PUT 'file://~/snowflake/test.txt' @testStage");
+      while (resultSet.next()) {
+        assertEquals("UPLOADED", resultSet.getString("status"));
+      }
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("drop stage if exists testStage");
+      }
+      closeSQLObjects(resultSet, statement, connection);
+      if (writer != null) {
+        writer.close();
+      }
+      FileUtils.deleteDirectory(subDir.toFile());
+    }
   }
 }
