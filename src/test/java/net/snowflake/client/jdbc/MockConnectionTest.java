@@ -711,6 +711,14 @@ public class MockConnectionTest extends BaseJDBCTest {
       return 0;
     }
 
+    /**
+     * @return
+     */
+    @Override
+    public int getMaxHttpRetries() {
+      return 7;
+    }
+
     public SnowflakeConnectString getSnowflakeConnectionString() {
       return null;
     }
