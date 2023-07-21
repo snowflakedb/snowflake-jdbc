@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.google.cloud.storage.StorageException;
@@ -103,6 +104,21 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   public void errorNotFound() throws SQLException {
     spyingClient.handleStorageException(
         new AmazonS3Exception("Not found"), overMaxRetry, "upload", sfSession, command);
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void errorBadRequestTokenExpired() throws SQLException {
+    AmazonServiceException ex = new AmazonServiceException("Bad Request");
+    ex.setServiceName("Amazon S3");
+    ex.setStatusCode(400);
+    ex.setErrorCode("400 Bad Request");
+    ex.setErrorType(AmazonServiceException.ErrorType.Client);
+    Mockito.doReturn(true).when(spyingClient).isClientException400Or404(ex);
+    spyingClient.handleStorageException(ex, 0, "download", sfSession, command);
+    // renew token
+    Mockito.verify(spyingClient, Mockito.times(1)).isClientException400Or404(ex);
+    Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
   }
 
   @Test(expected = SnowflakeSQLException.class)
