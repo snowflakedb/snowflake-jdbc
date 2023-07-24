@@ -53,7 +53,7 @@ public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
         ((SnowflakeResultSetSerializableV1) resultSetSerializable).getChunkHeadersMap();
     sfContext =
         new ChunkDownloadContext(
-            downloader, chunk, qrmk, 0, chunkHeadersMap, 0, 0, 0, sfBaseSession);
+            downloader, chunk, qrmk, 0, chunkHeadersMap, 0, 0, 0, 7, sfBaseSession);
   }
 
   /**
