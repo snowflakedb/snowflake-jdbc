@@ -613,7 +613,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         boolean terminateDownloader = (currentChunk.getDownloadState() == DownloadState.FAILURE);
         // release the unlock always
         currentChunk.getLock().unlock();
-        if (nextChunkToConsume == this.chunks.size()) {
+        if (this.chunks != null && nextChunkToConsume == this.chunks.size()) {
           // make sure to release the last chunk
           releaseCurrentMemoryUsage(nextChunkToConsume - 1, Optional.empty());
         }
@@ -800,16 +800,18 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             Runtime.getRuntime().totalMemory(),
             totalMillisDownloadingChunks.get(),
             totalMillisParsingChunks.get(),
-            chunks.size());
+            chunks != null ? chunks.size() : null);
 
         return new DownloaderMetrics(
             numberMillisWaitingForChunks,
             totalMillisDownloadingChunks.get(),
             totalMillisParsingChunks.get());
       } finally {
-        for (SnowflakeResultChunk chunk : chunks) {
-          // explicitly free each chunk since Arrow chunk may hold direct memory
-          chunk.freeData();
+        if (chunks != null) {
+          for (SnowflakeResultChunk chunk : chunks) {
+            // explicitly free each chunk since Arrow chunk may hold direct memory
+            chunk.freeData();
+          }
         }
         if (queryResultFormat == QueryResultFormat.ARROW) {
           SFArrowResultSet.closeRootAllocator(rootAllocator);
