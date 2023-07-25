@@ -1,3 +1,41 @@
+**JDBC Driver 3.13.34**
+
+- \ ee19422a SNOW-872499: use maxHttpRetries on chunk downloader requests to prevent infinite retries (#1484)
+- \ 0c3991c8 SNOW-854356: Renew S3 token on 400 Bad Request and add putGetMaxRetries property (#1473)
+- \ 99fdcff1 SNOW-836396: InvalidPathException loading client config file on Windows (#1478)
+- \ Get rid of SFL4J logging messages (#1474)
+- \ 15a45aca SNOW-852665: Allow ~ in PUT/GET file path (#1481)
+- \ Issue write permission on the issues for github action (#1477)
+- \ 9b14674c SNOW-837400: set S3 proxy default values to prevent reading from environment variables (#1475)
+- \ 9d625df2 Update README.rst add codecov badge (#1472)
+- \ bbeeed46 Revert SFL4J fix for Arrow best practices (#1471)
+- \ 6a8b926e SNOW-844477: Allow connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED to disable OOB telemetry (#1464)
+- \ 6f05fec3 Added CodeCov executable and SHA256 hash to upload the code coverage … (#1470)
+- \ 977e4593 SNOW-859796 Get rid of SFL4J logging messages (#1465)
+- \ e661cead SNOW-848763 upgrade awssdk to 1.12.501 (#1460)
+- \ Security upgrade com.google.cloud:google-cloud-storage from 2.13.0 to 2.22.5 (#1444)
+- \ Fix for 1 vulnerabilities (#1429)
+- \ Rename connection property name (#1467)
+- \ Security upgrade com.google.guava:guava from 29.0-jre to 32.0.0-jre (#1426)
+- \ Fix for 1 vulnerabilities (#1428)
+- \ 56fbda4a Log scrubbed URL for chunk download timeout (#1456)
+- \ d008dd4b Revert "SNOW-848855: Change SLF4J scope to compile" (#1463)
+- \ 3c6a1e1c SNOW-848855: Change SLF4J scope to compile (#1462)
+- \ b319c932 SNOW-835679: Upgrade bouncy castle to bcprov-jdk18on 1.74 (#1457)
+- \ 76e4efcd SNOW-845270: DownloadStream() does not allow filenames that contains Japanese (#1443)
+- \ Remove un-neccassary SFPreparedStatementMetaData object creation in SnowflakeStatement.java (#1454)
+- \ ab78d977 SNOW-844431: Return false for unsupported  locatorsUpdateCopy() function in SnowflakeDatabaseMetadata.java (#1440)
+- \ 0999313b SNOW-848997 - Fix CLA Assistant  (#1453)
+- \ 2de96160 SNOW-830719 Fix issue with consecutive batch array binding not working (#1439)
+- \ 8f539b70 SNOW-755756: Log ClosedByInterruptException caused by arrowReader.loadNextBatch() (#1425)
+- \ 793bd0da SNOW-844604 Fix Failing TelemetryIT for JDBC in JDBC-3 and the Code Coverage (#1430)
+- \ 4c17e1fc SNOW-823977: Fix NPE when calling driver.getPropertyInfo() (#1427)
+- \ f97c3d41 PRODSEC-2858 fix GHA issue (#1424)
+- \ Prevent Infinite retries! (#1406)
+- \ aa959868 SNOW-352846 OAuth authentication for sessionless telemetry client (#1418)
+- \Update linter command (#1421)
+- \
+
 **JDBC Driver 3.13.33**
 
 - \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
