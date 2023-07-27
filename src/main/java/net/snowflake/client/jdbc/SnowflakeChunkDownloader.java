@@ -636,7 +636,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private void waitForChunkReady(SnowflakeResultChunk currentChunk) throws InterruptedException {
     int retry = 0;
     long startTime = System.currentTimeMillis();
-    while (currentChunk.getDownloadState() != DownloadState.SUCCESS && retry < maxHttpRetries) {
+    while (true) {
       logger.debug(
           "Thread {} is waiting for #chunk{} to be ready, current" + "chunk state is: {}, retry={}",
           Thread.currentThread().getId(),
@@ -644,7 +644,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           currentChunk.getDownloadState(),
           retry);
 
-      if (currentChunk.getDownloadState() != DownloadState.FAILURE) {
+      if (currentChunk.getDownloadState() != DownloadState.FAILURE
+          && currentChunk.getDownloadState() != DownloadState.SUCCESS) {
         // if the state is not failure, we should keep waiting; otherwise, we skip
         // waiting
         if (!currentChunk
@@ -669,6 +670,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         }
       }
 
+      // retry if chunk is not successfully downloaded
       if (currentChunk.getDownloadState() != DownloadState.SUCCESS) {
         retry++;
         // timeout or failed
@@ -714,6 +716,13 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         if (nextChunkToDownload == nextChunkToConsume) {
           nextChunkToDownload = nextChunkToConsume + 1;
         }
+      }
+
+      // exit if chunk has downloaded or we have hit max retry
+      // maxHttpRetries = 0 will retry indefinitely
+      if (currentChunk.getDownloadState() == DownloadState.SUCCESS
+          || (maxHttpRetries > 0 && retry >= maxHttpRetries)) {
+        break;
       }
     }
     if (currentChunk.getDownloadState() == DownloadState.SUCCESS) {
