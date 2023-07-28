@@ -6,6 +6,7 @@ package net.snowflake.client.core;
 
 import static org.mockito.Mockito.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -27,7 +28,8 @@ public class StmtUtilTest extends BaseJDBCTest {
   @Test
   public void testForwardedHeaders() throws Throwable {
     SFLoginInput input = createLoginInput();
-    Map<String, String> additionalHeaders = Map.of("Extra-Snowflake-Header", "present");
+    Map<String, String> additionalHeaders = new HashMap<>();
+    additionalHeaders.put("Extra-Snowflake-Header", "present");
     input.setAdditionalHttpHeaders(additionalHeaders);
 
     try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
@@ -96,7 +98,7 @@ public class StmtUtilTest extends BaseJDBCTest {
     input.setOCSPMode(OCSPMode.FAIL_OPEN);
     input.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
     input.setLoginTimeout(1000);
-    input.setSessionParameters(Map.of());
+    input.setSessionParameters(new HashMap<>());
 
     return input;
   }

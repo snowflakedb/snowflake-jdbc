@@ -119,7 +119,9 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   @Test
   public void testForwardedHeaders() throws Throwable {
     SFLoginInput input = createLoginInput();
-    Map<String, String> additionalHeaders = Map.of("Extra-Snowflake-Header", "present");
+    Map<String, String> additionalHeaders = new HashMap<>();
+    additionalHeaders.put("Extra-Snowflake-Header", "present");
+
     input.setAdditionalHttpHeaders(additionalHeaders);
 
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
@@ -217,7 +219,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     input.setOCSPMode(OCSPMode.FAIL_OPEN);
     input.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
     input.setLoginTimeout(1000);
-    input.setSessionParameters(Map.of());
+    input.setSessionParameters(new HashMap<>());
 
     return input;
   }
