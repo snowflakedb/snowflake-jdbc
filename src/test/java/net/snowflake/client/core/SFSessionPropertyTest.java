@@ -62,4 +62,23 @@ public class SFSessionPropertyTest {
 
     assertThat("Integer value should match", (int) value == expectedVal);
   }
+
+  @Test
+  public void testInvalidPutGetMaxRetries() {
+    try {
+      SFSessionProperty.checkPropertyValue(SFSessionProperty.PUT_GET_MAX_RETRIES, "invalidValue");
+      Assert.fail("testInvalidMaxRetries");
+    } catch (SFException e) {
+      assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
+    }
+  }
+
+  @Test
+  public void testvalidPutGetMaxRetries() throws SFException {
+    int expectedVal = 10;
+    Object value =
+        SFSessionProperty.checkPropertyValue(SFSessionProperty.PUT_GET_MAX_RETRIES, expectedVal);
+
+    assertThat("Integer value should match", (int) value == expectedVal);
+  }
 }

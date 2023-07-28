@@ -122,6 +122,13 @@ public class StorageClientFactory {
     clientConfig.setMaxErrorRetry(S3_TRANSFER_MAX_RETRIES);
     clientConfig.setDisableSocketProxy(HttpUtil.isSocksProxyDisabled());
 
+    // If proxy is set via connection properties or JVM settings these will be overridden later.
+    // This is to prevent the aws client builder from reading proxy environment variables.
+    clientConfig.setProxyHost("");
+    clientConfig.setProxyPort(0);
+    clientConfig.setProxyUsername("");
+    clientConfig.setProxyPassword("");
+
     logger.debug(
         "s3 client configuration: maxConnection={}, connectionTimeout={}, "
             + "socketTimeout={}, maxErrorRetry={}",

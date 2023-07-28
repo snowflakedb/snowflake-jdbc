@@ -864,8 +864,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         localLocation = systemGetProperty("user.home") + localLocation.substring(1);
       }
 
-      // it should not contain any ~ after the above replacement
-      if (localLocation.contains("~")) {
+      // it should not start with any ~ after the above replacement
+      if (localLocation.startsWith("~")) {
         throw new SnowflakeSQLLoggedException(
             session,
             ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(),
@@ -1690,7 +1690,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     for (String path : filePathList) {
       // replace ~ with user home
-      path = path.replace("~", systemGetProperty("user.home"));
+      if (path.startsWith("~")) {
+        path = systemGetProperty("user.home") + path.substring(1);
+      }
 
       // user may also specify files relative to current directory
       // add the current path if that is the case

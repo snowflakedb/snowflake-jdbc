@@ -840,6 +840,8 @@ public abstract class SFBaseSession {
 
   public abstract int getAuthTimeout();
 
+  public abstract int getMaxHttpRetries();
+
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 
   public abstract boolean isAsyncSession();

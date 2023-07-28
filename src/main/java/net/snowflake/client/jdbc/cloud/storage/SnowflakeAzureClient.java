@@ -20,10 +20,7 @@ import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Base64;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -133,6 +130,12 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   // Returns the Max number of retry attempts
   @Override
   public int getMaxRetries() {
+    if (session != null
+        && session
+            .getConnectionPropertiesMap()
+            .containsKey(SFSessionProperty.PUT_GET_MAX_RETRIES)) {
+      return (int) session.getConnectionPropertiesMap().get(SFSessionProperty.PUT_GET_MAX_RETRIES);
+    }
     return 25;
   }
 

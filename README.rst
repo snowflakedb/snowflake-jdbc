@@ -4,6 +4,9 @@ Snowflake JDBC Driver
 .. image:: https://github.com/snowflakedb/snowflake-jdbc/workflows/Build%20and%20Test/badge.svg?branch=master
       :target: https://github.com/snowflakedb/snowflake-jdbc/actions?query=workflow%3A%22Build+and+Test%22+branch%3Amaster
 
+.. image:: https://codecov.io/gh/snowflakedb/snowflake-jdbc/branch/master/graph/badge.svg?token=Mj6uPxk0pV
+     :target: https://codecov.io/gh/snowflakedb/snowflake-jdbc
+
 .. image:: http://img.shields.io/:license-Apache%202-brightgreen.svg
     :target: http://www.apache.org/licenses/LICENSE-2.0.txt
     

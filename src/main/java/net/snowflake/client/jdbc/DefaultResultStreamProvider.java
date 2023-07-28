@@ -132,6 +132,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
             false, // no retry parameters in url
             false, // no request_guid
             true, // retry on HTTP403 for AWS S3
+            true, // no retry on http request
             new ExecTimeTelemetryData());
 
     SnowflakeResultSetSerializableV1.logger.debug(

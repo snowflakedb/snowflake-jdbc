@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc</artifactId>
-  <version>3.13.33</version>
+  <version>3.14.0</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
@@ -207,7 +207,6 @@
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>2.0.6</version>
-        <scope>compile</scope>
       </dependency>
       <dependency>
         <groupId>org.threeten</groupId>
@@ -367,10 +366,6 @@
       <version>${jsoup.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
       <version>${jna.version}</version>
@@ -380,6 +375,11 @@
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna-platform</artifactId>
       <version>${jna.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -836,6 +836,120 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>3.0.0-M1</version>
+        <executions>
+          <execution>
+            <id>install-arrow-format</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>validate</phase>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-format-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-format</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-core</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>validate</phase>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-memory-core-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-core</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-netty</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>validate</phase>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-memory-netty-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-netty</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-arrow-memory-pom</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>validate</phase>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-memory-${arrow.version}.pom</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>pom</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>install-arrow-memory-unsafe</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>validate</phase>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-memory-unsafe-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-memory-unsafe</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>install-arrow-vector</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>validate</phase>
+            <configuration>
+              <file>${project.basedir}/dependencies/arrow-vector-${arrow.version}.jar</file>
+              <groupId>org.apache.arrow</groupId>
+              <artifactId>arrow-vector</artifactId>
+              <version>${arrow.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>install-tika-core</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>validate</phase>
+            <configuration>
+              <file>${project.basedir}/dependencies/tika-core-${tika.version}.jar</file>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-core</artifactId>
+              <version>${tika.version}</version>
+              <packaging>jar</packaging>
+              <generatePom>true</generatePom>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
@@ -1150,10 +1264,6 @@
                     <relocation>
                       <pattern>org.codehaus</pattern>
                       <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>org.slf4j</pattern>
-                      <shadedPattern>${shadeBase}.org.slf4j</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>io.perfmark</pattern>
