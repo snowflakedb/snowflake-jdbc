@@ -126,9 +126,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     input.setAdditionalHttpHeaders(additionalHeaders);
 
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
-    MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class);
-    
-    // Both mocks the call _and_ verifies that the headers are forwarded.
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
+        // Both mocks the call _and_ verifies that the headers are forwarded.
     Verification httpCalledWithHeaders = 
             () ->
                 HttpUtil.executeGeneralRequest(
@@ -162,6 +161,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     // After login, the only invocation to http should have been with the new headers.
     // No calls should have happened without additional headers.
     mockedHttpUtil.verify(only(), httpCalledWithHeaders);
+    }
+    
   }
 
   /**
@@ -176,39 +177,42 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     input.setInFlightCtx(inflightCtx);
 
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
-    MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class);
+
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
+        // Both mocks the call _and_ verifies that the headers are forwarded.
+        Verification httpCalledWithHeaders = 
+                () ->
+                    HttpUtil.executeGeneralRequest(
+                        Mockito.argThat(arg -> {
+                            try {
+                                // This gets tricky because the entity is a string.
+                                // To not fail on JSON parsing changes, we'll verify that the key
+                                // inFlightCtx is present and the random UUID body
+                                HttpEntity entity = ((HttpPost)arg).getEntity();
+                                String body = new String(entity.getContent().readAllBytes());
+                                return body.contains("inFlightCtx") && body.contains(inflightCtx);
+                            } catch (UnsupportedOperationException | IOException e) {
+                            }
+                            return false;
+                        }),
+                        Mockito.anyInt(),
+                        Mockito.anyInt(),
+                        Mockito.anyInt(),
+                        Mockito.anyInt(),
+                        Mockito.nullable(HttpClientSettingsKey.class));
+        mockedHttpUtil
+            .when(httpCalledWithHeaders)
+            .thenReturn(
+                "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}"); 
+
+        SessionUtil.openSession(input, connectionPropertiesMap, "ALL");
+
+        // After login, the only invocation to http should have been with the new headers.
+        // No calls should have happened without additional headers.
+        mockedHttpUtil.verify(only(), httpCalledWithHeaders);
+    }
     
-    // Both mocks the call _and_ verifies that the headers are forwarded.
-    Verification httpCalledWithHeaders = 
-            () ->
-                HttpUtil.executeGeneralRequest(
-                    Mockito.argThat(arg -> {
-                        try {
-                            // This gets tricky because the entity is a string.
-                            // To not fail on JSON parsing changes, we'll verify that the key
-                            // inFlightCtx is present and the random UUID body
-                            HttpEntity entity = ((HttpPost)arg).getEntity();
-                            String body = new String(entity.getContent().readAllBytes());
-                            return body.contains("inFlightCtx") && body.contains(inflightCtx);
-                        } catch (UnsupportedOperationException | IOException e) {
-                        }
-                        return false;
-                    }),
-                    Mockito.anyInt(),
-                    Mockito.anyInt(),
-                    Mockito.anyInt(),
-                    Mockito.anyInt(),
-                    Mockito.nullable(HttpClientSettingsKey.class));
-    mockedHttpUtil
-        .when(httpCalledWithHeaders)
-        .thenReturn(
-            "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}"); 
-
-    SessionUtil.openSession(input, connectionPropertiesMap, "ALL");
-
-    // After login, the only invocation to http should have been with the new headers.
-    // No calls should have happened without additional headers.
-    mockedHttpUtil.verify(only(), httpCalledWithHeaders);
+    
   }
 
   private SFLoginInput createLoginInput() {
