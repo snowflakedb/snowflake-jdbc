@@ -1025,7 +1025,7 @@ public class SessionUtil {
       if (additionalHttpHeaders != null) {
         additionalHttpHeaders.forEach(postRequest::addHeader);
       }
-      
+
       postRequest.setHeader(
           SF_HEADER_AUTHORIZATION,
           SF_HEADER_SNOWFLAKE_AUTHTYPE

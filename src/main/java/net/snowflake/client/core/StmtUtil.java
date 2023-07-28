@@ -240,8 +240,8 @@ public class StmtUtil {
     }
 
     public StmtInput setAdditionalHeaders(Map<String, String> additionalHeaders) {
-        this.additionalHttpHeaders = additionalHeaders;
-        return this;
+      this.additionalHttpHeaders = additionalHeaders;
+      return this;
     }
   }
 
