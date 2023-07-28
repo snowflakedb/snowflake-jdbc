@@ -8,7 +8,9 @@ import static net.snowflake.client.TestUtil.systemGetEnv;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,6 +20,7 @@ import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.ClientAuthnDTO;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -156,7 +159,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
 
       SessionUtil.openSession(input, connectionPropertiesMap, "ALL");
 
-      // After login, the only invocation to http should have been with the new headers.
+      // After login, the only invocation to http should have been with the new
+      // headers.
       // No calls should have happened without additional headers.
       mockedHttpUtil.verify(only(), httpCalledWithHeaders);
     }
@@ -186,7 +190,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                           // To not fail on JSON parsing changes, we'll verify that the key
                           // inFlightCtx is present and the random UUID body
                           HttpEntity entity = ((HttpPost) arg).getEntity();
-                          String body = new String(entity.getContent().readAllBytes());
+                          InputStream is = entity.getContent();
+                          ByteArrayOutputStream out = new ByteArrayOutputStream();
+                          IOUtils.copy(is, out);
+                          String body = new String(out.toByteArray());
                           return body.contains("inFlightCtx") && body.contains(inflightCtx);
                         } catch (UnsupportedOperationException | IOException e) {
                         }
@@ -203,7 +210,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
 
       SessionUtil.openSession(input, connectionPropertiesMap, "ALL");
 
-      // After login, the only invocation to http should have been with the new headers.
+      // After login, the only invocation to http should have been with the new
+      // headers.
       // No calls should have happened without additional headers.
       mockedHttpUtil.verify(only(), httpCalledWithHeaders);
     }
