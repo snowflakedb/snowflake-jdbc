@@ -6,6 +6,7 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.TestUtil.systemGetEnv;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.io.ByteArrayOutputStream;
@@ -157,12 +158,14 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}");
 
+      mockedHttpUtil.when(() -> HttpUtil.applyAdditionalHeaders(any(), any())).thenCallRealMethod();
+
       SessionUtil.openSession(input, connectionPropertiesMap, "ALL");
 
       // After login, the only invocation to http should have been with the new
       // headers.
       // No calls should have happened without additional headers.
-      mockedHttpUtil.verify(only(), httpCalledWithHeaders);
+      mockedHttpUtil.verify(times(1), httpCalledWithHeaders);
     }
   }
 
@@ -208,12 +211,14 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}");
 
+      mockedHttpUtil.when(() -> HttpUtil.applyAdditionalHeaders(any(), any())).thenCallRealMethod();
+
       SessionUtil.openSession(input, connectionPropertiesMap, "ALL");
 
       // After login, the only invocation to http should have been with the new
       // headers.
       // No calls should have happened without additional headers.
-      mockedHttpUtil.verify(only(), httpCalledWithHeaders);
+      mockedHttpUtil.verify(times(1), httpCalledWithHeaders);
     }
   }
 

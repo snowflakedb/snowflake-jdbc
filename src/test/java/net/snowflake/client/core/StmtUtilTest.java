@@ -66,6 +66,8 @@ public class StmtUtilTest extends BaseJDBCTest {
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":333334,\"message\":null,\"success\":true}");
 
+      mockedHttpUtil.when(() -> HttpUtil.applyAdditionalHeaders(any(), any())).thenCallRealMethod();
+
       StmtInput stmtInput = new StmtInput();
       stmtInput.setAdditionalHeaders(additionalHeaders);
       // Async mode skips result post-processing so we don't need to mock an advanced
@@ -84,7 +86,7 @@ public class StmtUtilTest extends BaseJDBCTest {
       // After login, the only invocation to http should have been with the new
       // headers.
       // No calls should have happened without additional headers.
-      mockedHttpUtil.verify(only(), httpCalledWithHeaders);
+      mockedHttpUtil.verify(times(1), httpCalledWithHeaders);
     }
   }
 

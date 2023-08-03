@@ -909,9 +909,8 @@ public class HttpUtil {
    */
   static void applyAdditionalHeaders(
       HttpRequestBase request, Map<String, String> additionalHeaders) {
-    Map<String, String> additionalHttpHeaders = additionalHeaders;
-    if (additionalHttpHeaders != null && !additionalHttpHeaders.isEmpty()) {
-      additionalHttpHeaders.forEach(request::addHeader);
+    if (additionalHeaders != null && !additionalHeaders.isEmpty()) {
+      additionalHeaders.forEach(request::addHeader);
     }
   }
 }
