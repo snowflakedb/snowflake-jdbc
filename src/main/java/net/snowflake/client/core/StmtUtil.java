@@ -307,9 +307,9 @@ public class StmtUtil {
         }
 
         httpRequest = new HttpPost(uriBuilder.build());
-        if (stmtInput.additionalHttpHeaders != null) {
-          stmtInput.additionalHttpHeaders.forEach(httpRequest::addHeader);
-        }
+
+        // Add custom headers before adding common headers
+        HttpUtil.applyAdditionalHeaders(httpRequest, stmtInput.additionalHttpHeaders);
 
         /*
          * sequence id is only needed for old query API, when old query API
@@ -600,9 +600,8 @@ public class StmtUtil {
       uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpGet(uriBuilder.build());
-      if (stmtInput.additionalHttpHeaders != null) {
-        stmtInput.additionalHttpHeaders.forEach(httpRequest::addHeader);
-      }
+      // Add custom headers before adding common headers
+      HttpUtil.applyAdditionalHeaders(httpRequest, stmtInput.additionalHttpHeaders);
 
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
@@ -704,9 +703,8 @@ public class StmtUtil {
       uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpPost(uriBuilder.build());
-      if (stmtInput.additionalHttpHeaders != null) {
-        stmtInput.additionalHttpHeaders.forEach(httpRequest::addHeader);
-      }
+      // Add custom headers before adding common headers
+      HttpUtil.applyAdditionalHeaders(httpRequest, stmtInput.additionalHttpHeaders);
 
       /*
        * The JSON input has two fields: sqlText and requestId

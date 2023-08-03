@@ -899,4 +899,19 @@ public class HttpUtil {
     }
     return returnVal;
   }
+
+  /**
+   * Helper function to attach additional headers to a request if present. This takes a (nullable)
+   * map of headers in <name,value> format and adds them to the incoming request using addHeader.
+   *
+   * @param request The request to add headers to. Must not be null.
+   * @param additionalHeaders The headers to add. May be null.
+   */
+  static void applyAdditionalHeaders(
+      HttpRequestBase request, Map<String, String> additionalHeaders) {
+    Map<String, String> additionalHttpHeaders = additionalHeaders;
+    if (additionalHttpHeaders != null) {
+      additionalHttpHeaders.forEach(request::addHeader);
+    }
+  }
 }
