@@ -18,12 +18,12 @@ abstract class SFInputBase<T extends SFInputBase<T>> {
    * Set additional http headers to apply to the outgoing request. The additional headers cannot be
    * used to replace or overwrite a header in use by the driver.
    *
-   * @param additionalHeaders The new headers to add
+   * @param additionalHttpHeaders The new headers to add
    * @return The input object, for chaining
    */
   @SuppressWarnings("unchecked")
-  public T setAdditionalHeaders(Map<String, String> additionalHeaders) {
-    this.additionalHttpHeaders = additionalHeaders;
+  public T setAdditionalHttpHeaders(Map<String, String> additionalHttpHeaders) {
+    this.additionalHttpHeaders = additionalHttpHeaders;
     return (T) this;
   }
 }

@@ -69,7 +69,7 @@ public class StmtUtilTest extends BaseJDBCTest {
       mockedHttpUtil.when(() -> HttpUtil.applyAdditionalHeaders(any(), any())).thenCallRealMethod();
 
       StmtInput stmtInput = new StmtInput();
-      stmtInput.setAdditionalHeaders(additionalHeaders);
+      stmtInput.setAdditionalHttpHeaders(additionalHeaders);
       // Async mode skips result post-processing so we don't need to mock an advanced
       // response
       stmtInput.setAsync(true);
