@@ -11,7 +11,7 @@ import java.util.Map;
 import net.snowflake.client.jdbc.ErrorCode;
 
 /** A class for holding all information required for login */
-public class SFLoginInput {
+public class SFLoginInput extends SFInputBase<SFLoginInput> {
   private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
   private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
 
@@ -48,7 +48,6 @@ public class SFLoginInput {
   private String privateKeyFile;
   private String privateKeyFilePwd;
   private String inFlightCtx;
-  private Map<String, String> additionalHttpHeaders;
 
   SFLoginInput() {}
 
@@ -346,15 +345,6 @@ public class SFLoginInput {
 
   SFLoginInput setInFlightCtx(String inFlightCtx) {
     this.inFlightCtx = inFlightCtx;
-    return this;
-  }
-
-  Map<String, String> getAdditionalHttpHeaders() {
-    return additionalHttpHeaders;
-  }
-
-  SFLoginInput setAdditionalHttpHeaders(Map<String, String> additionalHttpHeaders) {
-    this.additionalHttpHeaders = additionalHttpHeaders;
     return this;
   }
 

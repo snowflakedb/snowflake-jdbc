@@ -64,7 +64,7 @@ public class StmtUtil {
   static final SFLogger logger = SFLoggerFactory.getLogger(StmtUtil.class);
 
   /** Input for executing a statement on server */
-  static class StmtInput {
+  static class StmtInput extends SFInputBase<StmtInput> {
     String sql;
 
     // default to snowflake (a special json format for snowflake query result
@@ -104,8 +104,6 @@ public class StmtUtil {
     HttpClientSettingsKey httpClientSettingsKey;
 
     QueryContextDTO queryContextDTO;
-
-    Map<String, String> additionalHttpHeaders;
 
     StmtInput() {}
 
@@ -236,11 +234,6 @@ public class StmtUtil {
 
     public StmtInput setMaxRetries(int maxRetries) {
       this.maxRetries = maxRetries;
-      return this;
-    }
-
-    public StmtInput setAdditionalHeaders(Map<String, String> additionalHeaders) {
-      this.additionalHttpHeaders = additionalHeaders;
       return this;
     }
   }

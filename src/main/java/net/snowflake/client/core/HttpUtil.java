@@ -904,6 +904,9 @@ public class HttpUtil {
    * Helper function to attach additional headers to a request if present. This takes a (nullable)
    * map of headers in <name,value> format and adds them to the incoming request using addHeader.
    *
+   * <p>Snowsight uses this to attach headers with additional telemetry information, see
+   * https://snowflakecomputing.atlassian.net/wiki/spaces/EN/pages/2960557006/GS+Communication
+   *
    * @param request The request to add headers to. Must not be null.
    * @param additionalHeaders The headers to add. May be null.
    */
