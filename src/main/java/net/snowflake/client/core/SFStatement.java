@@ -10,7 +10,10 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -111,7 +114,8 @@ public class SFStatement extends SFBaseStatement {
       Map<String, ParameterBindingDTO> parametersBinding,
       boolean describeOnly,
       boolean asyncExec,
-      CallingMethod caller)
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     sanityCheckQuery(sql);
 
@@ -132,7 +136,8 @@ public class SFStatement extends SFBaseStatement {
         describeOnly,
         describeOnly, // internal query if describeOnly is true
         asyncExec,
-        caller);
+        caller,
+        execTimeData);
   }
 
   /**
@@ -144,12 +149,13 @@ public class SFStatement extends SFBaseStatement {
    * @throws SFException if result set is null
    */
   @Override
-  public SFStatementMetaData describe(String sql) throws SFException, SQLException {
-    SFBaseResultSet baseResultSet = executeQuery(sql, null, true, false, null);
+  public SFPreparedStatementMetaData describe(String sql) throws SFException, SQLException {
+    SFBaseResultSet baseResultSet =
+        executeQuery(sql, null, true, false, null, new ExecTimeTelemetryData());
 
     describeJobUUID = baseResultSet.getQueryId();
 
-    return new SFStatementMetaData(
+    return new SFPreparedStatementMetaData(
         baseResultSet.getMetaData(),
         baseResultSet.getStatementType(),
         baseResultSet.getNumberOfBinds(),
@@ -178,7 +184,8 @@ public class SFStatement extends SFBaseStatement {
       boolean describeOnly,
       boolean internal,
       boolean asyncExec,
-      CallingMethod caller)
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     resetState();
 
@@ -190,7 +197,13 @@ public class SFStatement extends SFBaseStatement {
 
     Object result =
         executeHelper(
-            sql, StmtUtil.SF_MEDIA_TYPE, parameterBindings, describeOnly, internal, asyncExec);
+            sql,
+            StmtUtil.SF_MEDIA_TYPE,
+            parameterBindings,
+            describeOnly,
+            internal,
+            asyncExec,
+            execTimeData);
 
     if (result == null) {
       throw new SnowflakeSQLLoggedException(
@@ -211,7 +224,7 @@ public class SFStatement extends SFBaseStatement {
 
     try {
       JsonNode jsonResult = (JsonNode) result;
-      resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult);
+      resultSet = SFResultSetFactory.getResultSet(jsonResult, this, sortResult, execTimeData);
       childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
 
       // if child results are available, skip over this result set and set the
@@ -248,6 +261,7 @@ public class SFStatement extends SFBaseStatement {
     if (asyncExec) {
       session.addQueryToActiveQueryList(resultSet.getQueryId());
     }
+    execTimeData.setQueryId(resultSet.getQueryId());
     return resultSet;
   }
 
@@ -298,7 +312,8 @@ public class SFStatement extends SFBaseStatement {
       Map<String, ParameterBindingDTO> bindValues,
       boolean describeOnly,
       boolean internal,
-      boolean asyncExec)
+      boolean asyncExec,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, SFException {
     ScheduledExecutorService executor = null;
 
@@ -321,7 +336,8 @@ public class SFStatement extends SFBaseStatement {
               SqlState.FEATURE_NOT_SUPPORTED);
         }
 
-        this.requestId = UUID.randomUUID().toString();
+        this.requestId = UUIDUtils.getUUID().toString();
+        execTimeData.setRequestId(requestId);
         this.sequenceId = session.getAndIncrementSequenceId();
 
         this.sqlText = sql;
@@ -333,6 +349,7 @@ public class SFStatement extends SFBaseStatement {
 
       // if there are a large number of bind values, we should upload them to stage
       // instead of passing them in the payload (if enabled)
+      execTimeData.setBindStart();
       int numBinds = BindUploader.arrayBindValueCount(bindValues);
       String bindStagePath = null;
       if (0 < session.getArrayBindStageThreshold()
@@ -388,8 +405,8 @@ public class SFStatement extends SFBaseStatement {
           .setServiceName(session.getServiceName())
           .setOCSPMode(session.getOCSPMode())
           .setHttpClientSettingsKey(session.getHttpClientKey())
-          .setQueryContext(session.isAsyncSession() ? null : session.getQueryContext());
-
+          .setMaxRetries(session.getMaxHttpRetries())
+          .setQueryContextDTO(session.isAsyncSession() ? null : session.getQueryContextDTO());
       if (bindStagePath != null) {
         stmtInput.setBindValues(null).setBindStage(bindStagePath);
         // use the new SQL format for this query so dates/timestamps are parsed correctly
@@ -441,6 +458,7 @@ public class SFStatement extends SFBaseStatement {
           }
         }
       }
+      execTimeData.setBindEnd();
 
       if (canceling.get()) {
         logger.debug("Query cancelled", false);
@@ -461,7 +479,7 @@ public class SFStatement extends SFBaseStatement {
       do {
         sessionRenewed = false;
         try {
-          stmtOutput = StmtUtil.execute(stmtInput);
+          stmtOutput = StmtUtil.execute(stmtInput, execTimeData);
           break;
         } catch (SnowflakeSQLException ex) {
           if (ex.getErrorCode() == Constants.SESSION_EXPIRED_GS_CODE) {
@@ -478,9 +496,9 @@ public class SFStatement extends SFBaseStatement {
             // SNOW-18822: reset session token for the statement
             stmtInput.setSessionToken(session.getSessionToken());
             stmtInput.setRetry(true);
-
             sessionRenewed = true;
-
+            execTimeData.incrementRetryCount();
+            execTimeData.addRetryLocation("renewSession");
             logger.debug("Session got renewed, will retry", false);
           } else {
             throw ex;
@@ -598,12 +616,16 @@ public class SFStatement extends SFBaseStatement {
     }
   }
 
-  /** @return conservative prefetch threads before fetching results */
+  /**
+   * @return conservative prefetch threads before fetching results
+   */
   public int getConservativePrefetchThreads() {
     return conservativePrefetchThreads;
   }
 
-  /** @return conservative memory limit before fetching results */
+  /**
+   * @return conservative memory limit before fetching results
+   */
   public long getConservativeMemoryLimit() {
     return conservativeMemoryLimit;
   }
@@ -647,9 +669,12 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public SFBaseResultSet execute(
-      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      String sql,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    return execute(sql, false, parametersBinding, caller);
+    return execute(sql, false, parametersBinding, caller, execTimeData);
   }
 
   private void reauthenticate() throws SFException, SnowflakeSQLException {
@@ -690,6 +715,7 @@ public class SFStatement extends SFBaseStatement {
         .setSessionToken(session.getSessionToken())
         .setServiceName(session.getServiceName())
         .setOCSPMode(session.getOCSPMode())
+        .setMaxRetries(session.getMaxHttpRetries())
         .setHttpClientSettingsKey(session.getHttpClientKey());
 
     StmtUtil.cancel(stmtInput);
@@ -720,7 +746,8 @@ public class SFStatement extends SFBaseStatement {
       String sql,
       boolean asyncExec,
       Map<String, ParameterBindingDTO> parametersBinding,
-      CallingMethod caller)
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
     TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
     sanityCheckQuery(sql);
@@ -739,7 +766,7 @@ public class SFStatement extends SFBaseStatement {
       executeSetProperty(sql);
       return null;
     }
-    return executeQuery(sql, parametersBinding, false, asyncExec, caller);
+    return executeQuery(sql, parametersBinding, false, asyncExec, caller, execTimeData);
   }
 
   private SFBaseResultSet executeFileTransfer(String sql) throws SQLException, SFException {
@@ -880,7 +907,8 @@ public class SFStatement extends SFBaseStatement {
       JsonNode result = StmtUtil.getQueryResultJSON(nextResult.getId(), session);
       Object sortProperty = session.getSessionPropertyByKey("sort");
       boolean sortResult = sortProperty != null && (Boolean) sortProperty;
-      resultSet = SFResultSetFactory.getResultSet(result, this, sortResult);
+      resultSet =
+          SFResultSetFactory.getResultSet(result, this, sortResult, new ExecTimeTelemetryData());
       // override statement type so we can treat the result set like a result of
       // the original statement called (and not the result scan)
       resultSet.setStatementType(nextResult.getType());
@@ -903,8 +931,11 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public SFBaseResultSet asyncExecute(
-      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      String sql,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException {
-    return execute(sql, true, parametersBinding, caller);
+    return execute(sql, true, parametersBinding, caller, execTimeData);
   }
 }

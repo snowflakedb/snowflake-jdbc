@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.channels.ClosedByInterruptException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -118,6 +119,7 @@ public class SnowflakeResultSetSerializableV1
   int networkTimeoutInMilli;
   int authTimeout;
   int socketTimeout;
+  int maxHttpRetries;
   boolean isResultColumnCaseInsensitive;
   int resultSetType;
   int resultSetConcurrency;
@@ -143,6 +145,7 @@ public class SnowflakeResultSetSerializableV1
   boolean treatNTZAsUTC;
   boolean formatDateWithTimezone;
   boolean useSessionTimezone;
+  int sessionClientMemoryLimit;
 
   // Below fields are transient, they are generated from parameters
   transient TimeZone timeZone;
@@ -193,6 +196,7 @@ public class SnowflakeResultSetSerializableV1
     this.networkTimeoutInMilli = toCopy.networkTimeoutInMilli;
     this.authTimeout = toCopy.authTimeout;
     this.socketTimeout = toCopy.socketTimeout;
+    this.maxHttpRetries = toCopy.maxHttpRetries;
     this.isResultColumnCaseInsensitive = toCopy.isResultColumnCaseInsensitive;
     this.resultSetType = toCopy.resultSetType;
     this.resultSetConcurrency = toCopy.resultSetConcurrency;
@@ -313,6 +317,10 @@ public class SnowflakeResultSetSerializableV1
 
   public int getSocketTimeout() {
     return socketTimeout;
+  }
+
+  public int getMaxHttpRetries() {
+    return maxHttpRetries;
   }
 
   public int getResultPrefetchThreads() {
@@ -553,7 +561,8 @@ public class SnowflakeResultSetSerializableV1
 
     // extract query context and save it in current session
     JsonNode queryContextNode = rootNode.path("data").path("queryContext");
-    String queryContext = queryContextNode.isNull() ? null : queryContextNode.asText();
+    String queryContext = queryContextNode.isNull() ? null : queryContextNode.toString();
+
     if (!sfSession.isAsyncSession()) {
       sfSession.setQueryContext(queryContext);
     }
@@ -561,6 +570,9 @@ public class SnowflakeResultSetSerializableV1
     // extract parameters
     resultSetSerializable.parameters =
         SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
+    if (resultSetSerializable.parameters.isEmpty()) {
+      resultSetSerializable.parameters = sfSession.getCommonParameters();
+    }
 
     // initialize column metadata
     resultSetSerializable.columnCount = rootNode.path("data").path("rowtype").size();
@@ -655,7 +667,8 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.httpClientKey = sfSession.getHttpClientKey();
     resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
-    resultSetSerializable.authTimeout = sfSession.getAuthTimeout();
+    resultSetSerializable.authTimeout = 0;
+    resultSetSerializable.maxHttpRetries = sfSession.getMaxHttpRetries();
     resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
     resultSetSerializable.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
     resultSetSerializable.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();
@@ -855,16 +868,16 @@ public class SnowflakeResultSetSerializableV1
   private static long initMemoryLimit(Map<String, Object> parameters) {
     // default setting
     long memoryLimit = DEFAULT_CLIENT_MEMORY_LIMIT * 1024 * 1024;
+    long maxMemoryToUse = Runtime.getRuntime().maxMemory() * 8 / 10;
     if (parameters.get(CLIENT_MEMORY_LIMIT) != null) {
       // use the settings from the customer
       memoryLimit = (int) parameters.get(CLIENT_MEMORY_LIMIT) * 1024L * 1024L;
-    }
 
-    long maxMemoryToUse = Runtime.getRuntime().maxMemory() * 8 / 10;
-    if ((int) parameters.get(CLIENT_MEMORY_LIMIT) == DEFAULT_CLIENT_MEMORY_LIMIT) {
-      // if the memory limit is the default value and best effort memory is enabled
-      // set the memory limit to 80% of the maximum as the best effort
-      memoryLimit = Math.max(memoryLimit, maxMemoryToUse);
+      if (DEFAULT_CLIENT_MEMORY_LIMIT == (int) parameters.get(CLIENT_MEMORY_LIMIT)) {
+        // if the memory limit is the default value and best effort memory is enabled
+        // set the memory limit to 80% of the maximum as the best effort
+        memoryLimit = Math.max(memoryLimit, maxMemoryToUse);
+      }
     }
 
     // always make sure memoryLimit <= 80% of the maximum
@@ -1102,6 +1115,11 @@ public class SnowflakeResultSetSerializableV1
           firstChunkRowCount += root.getRowCount();
           root.clear();
         }
+      } catch (ClosedByInterruptException cbie) {
+        // SNOW-755756: sometimes while reading from arrow stream, this exception can occur with
+        // null message.
+        // Log an interrupted message instead of throwing this exception.
+        logger.debug("Interrupted when loading Arrow first chunk row count.", cbie);
       } catch (Exception ex) {
         throw new SnowflakeSQLLoggedException(
             possibleSession.orElse(/* session = */ null),

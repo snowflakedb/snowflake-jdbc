@@ -33,15 +33,23 @@ public interface DataConversionContext {
   /** get scale from Snowflake metadata */
   int getScale(int columnIndex);
 
-  /** @return current session */
+  /**
+   * @return current session
+   */
   SFBaseSession getSession();
 
-  /** @return session time zone */
+  /**
+   * @return session time zone
+   */
   TimeZone getTimeZone();
 
-  /** @return whether to honor client time zone for timestamp_ntz */
+  /**
+   * @return whether to honor client time zone for timestamp_ntz
+   */
   boolean getHonorClientTZForTimestampNTZ();
 
-  /** @return result version */
+  /**
+   * @return result version
+   */
   long getResultVersion();
 }

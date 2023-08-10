@@ -9,10 +9,7 @@ import static net.snowflake.client.core.Constants.MB;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
@@ -88,6 +85,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
   private final int socketTimeout;
 
+  private final int maxHttpRetries;
   private long memoryLimit;
 
   // the current memory usage across JVM
@@ -123,7 +121,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final long downloadedConditionTimeoutInSeconds =
       HttpUtil.getDownloadedConditionTimeoutInSeconds();
 
-  private static final int MAX_NUM_OF_RETRY = 10;
   private static final int MAX_RETRY_JITTER = 1000; // milliseconds
 
   // Only controls the max retry number when prefetch runs out of memory
@@ -197,6 +194,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     this.networkTimeoutInMilli = resultSetSerializable.getNetworkTimeoutInMilli();
     this.authTimeout = resultSetSerializable.getAuthTimeout();
     this.socketTimeout = resultSetSerializable.getSocketTimeout();
+    this.maxHttpRetries = resultSetSerializable.getMaxHttpRetries();
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
     logger.debug("qrmk = {}", this.qrmk);
@@ -409,6 +407,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     networkTimeoutInMilli,
                     authTimeout,
                     socketTimeout,
+                    maxHttpRetries,
                     this.session));
         downloaderFutures.put(nextChunkToDownload, downloaderFuture);
         // increment next chunk to download
@@ -637,7 +636,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private void waitForChunkReady(SnowflakeResultChunk currentChunk) throws InterruptedException {
     int retry = 0;
     long startTime = System.currentTimeMillis();
-    while (currentChunk.getDownloadState() != DownloadState.SUCCESS && retry < MAX_NUM_OF_RETRY) {
+    while (true) {
       logger.debug(
           "Thread {} is waiting for #chunk{} to be ready, current" + "chunk state is: {}, retry={}",
           Thread.currentThread().getId(),
@@ -645,7 +644,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           currentChunk.getDownloadState(),
           retry);
 
-      if (currentChunk.getDownloadState() != DownloadState.FAILURE) {
+      if (currentChunk.getDownloadState() != DownloadState.FAILURE
+          && currentChunk.getDownloadState() != DownloadState.SUCCESS) {
         // if the state is not failure, we should keep waiting; otherwise, we skip
         // waiting
         if (!currentChunk
@@ -654,21 +654,23 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           // if the current chunk has not condition change over the timeout (which is rare)
           logger.debug(
               "Thread {} is timeout for waiting #chunk{} to be ready, current"
-                  + "chunk state is: {}, retry={}",
+                  + " chunk state is: {}, retry={}, scrubbedUrl={}",
               Thread.currentThread().getId(),
               nextChunkToConsume,
               currentChunk.getDownloadState(),
-              retry);
+              retry,
+              currentChunk.getScrubbedUrl());
 
           currentChunk.setDownloadState(DownloadState.FAILURE);
           currentChunk.setDownloadError(
               String.format(
-                  "Timeout waiting for the download of #chunk%d" + "(Total chunks: %d) retry=%d",
-                  nextChunkToConsume, this.chunks.size(), retry));
+                  "Timeout waiting for the download of #chunk%d(Total chunks: %d) retry=%d scrubbedUrl=%s",
+                  nextChunkToConsume, this.chunks.size(), retry, currentChunk.getScrubbedUrl()));
           break;
         }
       }
 
+      // retry if chunk is not successfully downloaded
       if (currentChunk.getDownloadState() != DownloadState.SUCCESS) {
         retry++;
         // timeout or failed
@@ -706,6 +708,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     networkTimeoutInMilli,
                     authTimeout,
                     socketTimeout,
+                    maxHttpRetries,
                     session));
         downloaderFutures.put(nextChunkToConsume, downloaderFuture);
         // Only when prefetch fails due to internal memory limitation, nextChunkToDownload
@@ -714,10 +717,17 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           nextChunkToDownload = nextChunkToConsume + 1;
         }
       }
+
+      // exit if chunk has downloaded or we have hit max retry
+      // maxHttpRetries = 0 will retry indefinitely
+      if (currentChunk.getDownloadState() == DownloadState.SUCCESS
+          || (maxHttpRetries > 0 && retry >= maxHttpRetries)) {
+        break;
+      }
     }
     if (currentChunk.getDownloadState() == DownloadState.SUCCESS) {
       logger.debug("ready to consume #chunk{}, succeed retry={}", nextChunkToConsume, retry);
-    } else if (retry >= MAX_NUM_OF_RETRY) {
+    } else if (retry >= maxHttpRetries) {
       // stop retrying and report failure
       currentChunk.setDownloadState(DownloadState.FAILURE);
       currentChunk.setDownloadError(
@@ -861,6 +871,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       final int networkTimeoutInMilli,
       final int authTimeout,
       final int socketTimeout,
+      final int maxHttpRetries,
       final SFBaseSession session) {
     ChunkDownloadContext downloadContext =
         new ChunkDownloadContext(
@@ -872,6 +883,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             networkTimeoutInMilli,
             authTimeout,
             socketTimeout,
+            maxHttpRetries,
             session);
 
     return new Callable<Void>() {
@@ -1035,19 +1047,47 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         jp.startParsing((JsonResultChunk) resultChunk, session);
 
         byte[] buf = new byte[STREAM_BUFFER_SIZE];
+
+        // To be used to copy the leftover buffer data in the case of buffer ending in escape state
+        // during parsing.
+        byte[] prevBuffer = null;
+        ByteBuffer bBuf = null;
         int len;
         logger.debug(
             "Thread {} start to read inputstream for #chunk{}",
             Thread.currentThread().getId(),
             chunkIndex);
         while ((len = jsonInputStream.read(buf)) != -1) {
-          jp.continueParsing(ByteBuffer.wrap(buf, 0, len), session);
+          if (prevBuffer != null) {
+            // if parsing stopped during an escape sequence in jp.continueParsing() and there is
+            // leftover data in the buffer,
+            // prepend the copied data to the next buffer read from the output stream.
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            os.write(prevBuffer);
+            os.write(buf);
+            buf = os.toByteArray();
+            len += prevBuffer.length;
+          }
+          bBuf = ByteBuffer.wrap(buf, 0, len);
+          jp.continueParsing(bBuf, session);
+          if (bBuf.remaining() > 0) {
+            // if there is any data left un-parsed, it will be prepended to the next buffer read.
+            prevBuffer = new byte[bBuf.remaining()];
+            bBuf.get(prevBuffer);
+          } else {
+            prevBuffer = null;
+          }
         }
         logger.debug(
             "Thread {} finish reading inputstream for #chunk{}",
             Thread.currentThread().getId(),
             chunkIndex);
-        jp.endParsing(session);
+        if (prevBuffer != null) {
+          bBuf = ByteBuffer.wrap(prevBuffer);
+        } else {
+          bBuf = ByteBuffer.wrap(new byte[0]);
+        }
+        jp.endParsing(bBuf, session);
       }
     };
   }

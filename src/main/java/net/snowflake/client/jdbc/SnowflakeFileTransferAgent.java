@@ -22,13 +22,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.Base64;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.cloud.storage.*;
@@ -869,8 +864,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         localLocation = systemGetProperty("user.home") + localLocation.substring(1);
       }
 
-      // it should not contain any ~ after the above replacement
-      if (localLocation.contains("~")) {
+      // it should not start with any ~ after the above replacement
+      if (localLocation.startsWith("~")) {
         throw new SnowflakeSQLLoggedException(
             session,
             ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(),
@@ -1144,8 +1139,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               null, // bindValues
               false, // describeOnly
               false, // internal
-              false // async
-              );
+              false, // async
+              new ExecTimeTelemetryData()); // OOB telemetry timing queries
     } catch (SFException ex) {
       throw new SnowflakeSQLException(ex, ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
@@ -1391,6 +1386,16 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   /** Helper to upload data from a stream */
   private void uploadStream() throws SnowflakeSQLException {
     try {
+      FileMetadata fileMetadata = fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM);
+
+      if (fileMetadata.resultStatus == ResultStatus.SKIPPED) {
+        logger.debug(
+            "Skipping {}, status: {}, details: {}",
+            SRC_FILE_NAME_FOR_STREAM,
+            fileMetadata.resultStatus,
+            fileMetadata.errorDetails);
+        return;
+      }
       threadExecutor = SnowflakeUtil.createDefaultExecutorService("sf-stream-upload-worker-", 1);
 
       RemoteStoreFileEncryptionMaterial encMat = encryptionMaterial.get(0);
@@ -1401,7 +1406,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                 getUploadFileCallable(
                     stageInfo,
                     SRC_FILE_NAME_FOR_STREAM,
-                    fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM),
+                    fileMetadata,
                     (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS)
                         ? null
                         : storageFactory.createClient(stageInfo, parallel, encMat, session),
@@ -1685,7 +1690,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     for (String path : filePathList) {
       // replace ~ with user home
-      path = path.replace("~", systemGetProperty("user.home"));
+      if (path.startsWith("~")) {
+        path = systemGetProperty("user.home") + path.substring(1);
+      }
 
       // user may also specify files relative to current directory
       // add the current path if that is the case
@@ -2106,7 +2113,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       throws SQLException, IOException {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
-    String origDestFileName = destFileName;
     if (remoteLocation.path != null && !remoteLocation.path.isEmpty()) {
       destFileName =
           remoteLocation.path + (!remoteLocation.path.endsWith("/") ? "/" : "") + destFileName;

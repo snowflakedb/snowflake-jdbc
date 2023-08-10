@@ -21,13 +21,17 @@ public class S3StorageObjectMetadata implements StorageObjectMetadata {
     this.s3Metadata = s3Metadata;
   }
 
-  /** @return returns a Map/key-value pairs of metadata properties */
+  /**
+   * @return returns a Map/key-value pairs of metadata properties
+   */
   @Override
   public Map<String, String> getUserMetadata() {
     return this.s3Metadata.getUserMetadata();
   }
 
-  /** @return returns the size of object in bytes */
+  /**
+   * @return returns the size of object in bytes
+   */
   @Override
   public long getContentLength() {
     return this.s3Metadata.getContentLength();

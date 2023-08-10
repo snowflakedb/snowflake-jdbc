@@ -16,4 +16,9 @@ public class SnowflakeLoggedFeatureNotSupportedException extends SQLFeatureNotSu
     super();
     sendTelemetryData(null, SqlState.FEATURE_NOT_SUPPORTED, -1, session, this);
   }
+
+  public SnowflakeLoggedFeatureNotSupportedException(SFBaseSession session, String message) {
+    super(message);
+    sendTelemetryData(null, SqlState.FEATURE_NOT_SUPPORTED, -1, session, this);
+  }
 }

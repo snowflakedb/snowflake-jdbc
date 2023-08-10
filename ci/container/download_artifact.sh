@@ -18,7 +18,7 @@ if [[ -z "$GITHUB_ACTIONS" ]] ;then
         # Not Old Driver test
         mkdir -p $LIB_DIR
         pushd $LIB_DIR >& /dev/null
-            base_stage=s3://sfc-jenkins/repository/jdbc/${BRANCH}
+            base_stage=s3://sfc-eng-jenkins/repository/jdbc/${BRANCH}
             export GIT_COMMIT=${GIT_COMMIT:-$(aws s3 cp $base_stage/latest_commit -)}
             source_stage=$base_stage/${GIT_COMMIT}
             echo "[INFO] downloading ${source_stage}/"

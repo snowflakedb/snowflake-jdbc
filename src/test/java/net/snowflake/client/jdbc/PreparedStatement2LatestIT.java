@@ -216,7 +216,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testRemoveExtraDescribeCalls() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     Statement statement = connection.createStatement();
     statement.execute("create or replace table test_uuid_with_bind(c1 number)");
 
@@ -259,7 +259,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testRemoveExtraDescribeCallsSanityCheck() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     PreparedStatement preparedStatement =
         connection.prepareStatement(
             "create or replace table test_uuid_with_bind(c1 number, c2 string)");
@@ -286,9 +286,9 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     // metadata form the executeUpdate
     String queryId4 =
         preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
-    // Assert the query IDs are the same. This will be the case if there is no additional describe
-    // call for getMetadata().
-    assertEquals(queryId3, queryId4);
+    // Assert the query IDs for the 2 identical getMetadata() calls are the same. They should match
+    // since metadata no longer gets overwritten after successive query calls.
+    assertEquals(queryId2, queryId4);
 
     connection.createStatement().execute("drop table if exists test_uuid_with_bind");
     preparedStatement.close();
@@ -297,7 +297,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testAlreadyDescribedMultipleResults() throws SQLException {
-    Connection connection = getConnection();
+    Connection connection = init();
     PreparedStatement prepStatement = connection.prepareStatement(insertSQL);
     bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
     prepStatement.execute();
@@ -316,5 +316,42 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
     rs = prepStatement.executeQuery();
     assertTrue(rs.next());
     assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+  }
+
+  /**
+   * Test that consecutive batch inserts can occur. See SNOW-830719. Fixes regression caused by
+   * SNOW-762522.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testConsecutiveBatchInsertError() throws SQLException {
+    try (Connection connection = init()) {
+      connection
+          .createStatement()
+          .execute("create or replace table testStageArrayBind(c1 integer, c2 string)");
+      PreparedStatement prepStatement =
+          connection.prepareStatement("insert into testStageArrayBind values (?, ?)");
+      // Assert to begin with that before the describe call, array binding is not supported
+      assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+      assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+      // Insert enough rows to hit the default binding array threshold
+      for (int i = 0; i < 35000; i++) {
+        prepStatement.setInt(1, i);
+        prepStatement.setString(2, "test" + i);
+        prepStatement.addBatch();
+      }
+      prepStatement.executeBatch();
+      // After executing the first batch, verify that array bind support is still true
+      assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+      for (int i = 0; i < 35000; i++) {
+        prepStatement.setInt(1, i);
+        prepStatement.setString(2, "test" + i);
+        prepStatement.addBatch();
+      }
+      prepStatement.executeBatch();
+      // After executing the second batch, verify that array bind support is still true
+      assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+    }
   }
 }

@@ -28,9 +28,6 @@ public class ResultUtil {
   public static final int DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS =
       3; // default scale for SFTime fraction seconds
 
-  // Construct a default UTC zone for TIMESTAMPNTZ
-  private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
-
   // Map of default parameter values, used by effectiveParamValue().
   private static final Map<String, Object> defaultParameters;
 

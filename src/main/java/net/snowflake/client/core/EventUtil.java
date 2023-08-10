@@ -6,7 +6,6 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -19,8 +18,8 @@ public class EventUtil {
   public static final String DUMP_SIZE_PROP = "snowflake.max_dump_size";
   public static final String DUMP_SUBDIR = "snowflake_dumps";
 
-  private static final String DUMP_FILE_ID = UUID.randomUUID().toString();
-  private static final String DUMP_PATH_PREFIX =
+  private static final String DUMP_FILE_ID = UUIDUtils.getUUID().toString();
+  private static String DUMP_PATH_PREFIX =
       systemGetProperty(DUMP_PATH_PROP) == null ? "/tmp" : systemGetProperty(DUMP_PATH_PROP);
   private static final long MAX_DUMP_FILE_SIZE_BYTES =
       systemGetProperty(DUMP_SIZE_PROP) == null
@@ -32,6 +31,15 @@ public class EventUtil {
   private static int MAX_ENTRIES = 1000;
 
   private static int FLUSH_PERIOD_MS = 10000;
+
+  /**
+   * Junit is not recognizing the system properties for EventTest, so overriding the value here
+   *
+   * @param value
+   */
+  public static void setDumpPathPrefixForTesting(String value) {
+    DUMP_PATH_PREFIX = value;
+  }
 
   /**
    * Initializes the common eventHandler instance for all sessions/threads
@@ -46,7 +54,9 @@ public class EventUtil {
     // eventHandler.startFlusher();
   }
 
-  /** @return the shared EventHandler instance */
+  /**
+   * @return the shared EventHandler instance
+   */
   public static EventHandler getEventHandlerInstance() {
     if (eventHandler.get() == null) {
       initEventHandlerInstance(MAX_ENTRIES, FLUSH_PERIOD_MS);

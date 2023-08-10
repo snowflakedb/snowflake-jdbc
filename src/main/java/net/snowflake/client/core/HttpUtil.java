@@ -279,11 +279,11 @@ public class HttpUtil {
    * @param key Key to HttpClient hashmap containing OCSP mode and proxy information, could be null
    * @param ocspCacheFile OCSP response cache file. If null, the default OCSP response file will be
    *     used.
-   * @param downloadCompressed Whether the HTTP client should be built requesting no decompression
+   * @param downloadUnCompressed Whether the HTTP client should be built requesting no decompression
    * @return HttpClient object
    */
   public static CloseableHttpClient buildHttpClient(
-      @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadCompressed) {
+      @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadUnCompressed) {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
 
@@ -393,7 +393,7 @@ public class HttpUtil {
         }
       }
       httpClientBuilder.setDefaultRequestConfig(DefaultRequestConfig);
-      if (downloadCompressed) {
+      if (downloadUnCompressed) {
         httpClientBuilder = httpClientBuilder.disableContentCompression();
       }
       return httpClientBuilder.build();
@@ -456,7 +456,8 @@ public class HttpUtil {
    */
   public static CloseableHttpClient initHttpClient(HttpClientSettingsKey key, File ocspCacheFile) {
     updateRoutePlanner(key);
-    return httpClient.computeIfAbsent(key, k -> buildHttpClient(key, ocspCacheFile, false));
+    return httpClient.computeIfAbsent(
+        key, k -> buildHttpClient(key, ocspCacheFile, key.getGzipDisabled()));
   }
 
   /**
@@ -572,7 +573,8 @@ public class HttpUtil {
         false, // no retry parameter
         true, // guid? (do we need this?)
         false, // no retry on HTTP 403
-        getHttpClient(ocspAndProxyKey));
+        getHttpClient(ocspAndProxyKey),
+        new ExecTimeTelemetryData());
   }
 
   /**
@@ -583,7 +585,7 @@ public class HttpUtil {
    * @param authTimeout authenticator specific timeout
    * @param socketTimeout socket timeout (in ms)
    * @param retryCount retry count for the request
-   * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
+   * @param ocspAndProxyAndGzipKey OCSP mode and proxy settings for httpclient
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs
@@ -594,7 +596,7 @@ public class HttpUtil {
       int authTimeout,
       int socketTimeout,
       int retryCount,
-      HttpClientSettingsKey ocspAndProxyKey)
+      HttpClientSettingsKey ocspAndProxyAndGzipKey)
       throws SnowflakeSQLException, IOException {
     return executeRequest(
         httpRequest,
@@ -606,7 +608,8 @@ public class HttpUtil {
         null, // no canceling
         false, // no retry parameter
         false, // no retry on HTTP 403
-        ocspAndProxyKey);
+        ocspAndProxyAndGzipKey,
+        new ExecTimeTelemetryData());
   }
 
   /**
@@ -642,7 +645,8 @@ public class HttpUtil {
         false, // no retry parameter
         true, // include request GUID
         false, // no retry on HTTP 403
-        httpClient);
+        httpClient,
+        new ExecTimeTelemetryData());
   }
 
   /**
@@ -652,7 +656,7 @@ public class HttpUtil {
    * @param retryTimeout retry timeout
    * @param authTimeout authenticator timeout
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount retry count for the request
+   * @param maxRetries retry count for the request
    * @param injectSocketTimeout injecting socket timeout
    * @param canceling canceling?
    * @param includeRetryParameters whether to include retry parameters in retried requests
@@ -667,26 +671,30 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int retryCount,
+      int maxRetries,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean includeRetryParameters,
       boolean retryOnHTTP403,
-      HttpClientSettingsKey ocspAndProxyKey)
+      HttpClientSettingsKey ocspAndProxyKey,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, IOException {
+    boolean ocspEnabled = !(ocspAndProxyKey.getOcspMode().equals(OCSPMode.INSECURE));
+    execTimeData.setOCSPStatus(ocspEnabled);
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
         authTimeout,
         socketTimeout,
-        retryCount,
+        maxRetries,
         injectSocketTimeout,
         canceling,
         false, // with cookie (do we need cookie?)
         includeRetryParameters,
         true, // include request GUID
         retryOnHTTP403,
-        getHttpClient(ocspAndProxyKey));
+        getHttpClient(ocspAndProxyKey),
+        execTimeData);
   }
 
   /**
@@ -700,7 +708,7 @@ public class HttpUtil {
    * @param retryTimeout retry timeout (in seconds)
    * @param authTimeout authenticator specific timeout (in seconds)
    * @param socketTimeout socket timeout (in ms)
-   * @param retryCount retry count for the request
+   * @param maxRetries retry count for the request
    * @param injectSocketTimeout simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether this request should ignore cookies
@@ -717,14 +725,15 @@ public class HttpUtil {
       int retryTimeout,
       int authTimeout,
       int socketTimeout,
-      int retryCount,
+      int maxRetries,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
       boolean includeRequestGuid,
       boolean retryOnHTTP403,
-      CloseableHttpClient httpClient)
+      CloseableHttpClient httpClient,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, IOException {
     // HttpRequest.toString() contains request URI. Scrub any credentials, if
     // present, before logging
@@ -745,13 +754,14 @@ public class HttpUtil {
               retryTimeout,
               authTimeout,
               socketTimeout,
-              retryCount,
+              maxRetries,
               injectSocketTimeout,
               canceling,
               withoutCookies,
               includeRetryParameters,
               includeRequestGuid,
-              retryOnHTTP403);
+              retryOnHTTP403,
+              execTimeData);
 
       if (response == null || response.getStatusLine().getStatusCode() != 200) {
         logger.error("Error executing request: {}", requestInfoScrubbed);
@@ -771,12 +781,13 @@ public class HttpUtil {
                     : "null response"));
       }
 
+      execTimeData.setResponseIOStreamStart();
       writer = new StringWriter();
       try (InputStream ins = response.getEntity().getContent()) {
         IOUtils.copy(ins, writer, "UTF-8");
       }
-
       theString = writer.toString();
+      execTimeData.setResponseIOStreamEnd();
     } finally {
       IOUtils.closeQuietly(writer);
       IOUtils.closeQuietly(response);

@@ -20,10 +20,7 @@ import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Base64;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -133,6 +130,12 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   // Returns the Max number of retry attempts
   @Override
   public int getMaxRetries() {
+    if (session != null
+        && session
+            .getConnectionPropertiesMap()
+            .containsKey(SFSessionProperty.PUT_GET_MAX_RETRIES)) {
+      return (int) session.getConnectionPropertiesMap().get(SFSessionProperty.PUT_GET_MAX_RETRIES);
+    }
     return 25;
   }
 
@@ -149,13 +152,17 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     return 1000;
   }
 
-  /** @return Returns true if encryption is enabled */
+  /**
+   * @return Returns true if encryption is enabled
+   */
   @Override
   public boolean isEncrypting() {
     return encryptionKeySize > 0 && this.stageInfo.getIsClientSideEncrypted();
   }
 
-  /** @return Returns the size of the encryption key */
+  /**
+   * @return Returns the size of the encryption key
+   */
   @Override
   public int getEncryptionKeySize() {
     return encryptionKeySize;

@@ -16,6 +16,8 @@ import java.nio.ByteBuffer;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SessionUtil;
@@ -737,6 +739,192 @@ public class ResultSetLatestIT extends ResultSet0IT {
         statement.execute("drop table if exists MYTABLE1");
         statement.execute("drop table if exists MYCSVTABLE");
       }
+    }
+  }
+
+  /**
+   * Test that new query error message function for checking async query error messages is not
+   * implemented for synchronous queries *
+   */
+  @Test
+  public void testNewFeaturesNotSupported() throws SQLException {
+    Connection con = init();
+    ResultSet rs = con.createStatement().executeQuery("select 1");
+    try {
+      rs.unwrap(SnowflakeResultSet.class).getQueryErrorMessage();
+    } catch (SQLFeatureNotSupportedException ex) {
+      // catch SQLFeatureNotSupportedException
+      assertEquals("This function is only supported for asynchronous queries.", ex.getMessage());
+    }
+    rs.close();
+    con.close();
+  }
+
+  @Test
+  public void testGetObjectJsonResult() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set jdbc_query_result_format ='json'");
+    statement.execute("create or replace table testObj (colA double, colB boolean)");
+
+    PreparedStatement preparedStatement =
+        connection.prepareStatement("insert into testObj values(?, ?)");
+    preparedStatement.setDouble(1, 22.2);
+    preparedStatement.setBoolean(2, true);
+    preparedStatement.executeQuery();
+
+    ResultSet resultSet = statement.executeQuery("select * from testObj");
+    resultSet.next();
+    assertEquals(22.2, resultSet.getObject(1));
+    assertEquals(true, resultSet.getObject(2));
+
+    statement.execute("drop table if exists testObj");
+    statement.close();
+    connection.close();
+  }
+
+  @Test
+  public void testMetadataIsCaseSensitive() throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+
+    String sampleCreateTableWithAllColTypes =
+        "CREATE or replace TABLE case_sensitive ("
+            + "  boolean_col BOOLEAN,"
+            + "  date_col DATE,"
+            + "  time_col TIME,"
+            + "  timestamp_col TIMESTAMP,"
+            + "  timestamp_ltz_col TIMESTAMP_LTZ,"
+            + "  timestamp_ntz_col TIMESTAMP_NTZ,"
+            + "  number_col NUMBER,"
+            + "  float_col FLOAT,"
+            + "  double_col DOUBLE,"
+            + "  binary_col BINARY,"
+            + "  geography_col GEOGRAPHY,"
+            + "  variant_col VARIANT,"
+            + "  object_col1 OBJECT,"
+            + "  array_col1 ARRAY,"
+            + "  text_col1 TEXT,"
+            + "  varchar_col VARCHAR(16777216),"
+            + "  char_col CHAR(16777216)"
+            + ");";
+
+    statement.execute(sampleCreateTableWithAllColTypes);
+    ResultSet rs = statement.executeQuery("select * from case_sensitive");
+    ResultSetMetaData metaData = rs.getMetaData();
+
+    assertFalse(metaData.isCaseSensitive(1)); // BOOLEAN
+    assertFalse(metaData.isCaseSensitive(2)); // DATE
+    assertFalse(metaData.isCaseSensitive(3)); // TIME
+    assertFalse(metaData.isCaseSensitive(4)); // TIMESTAMP
+    assertFalse(metaData.isCaseSensitive(5)); // TIMESTAMP_LTZ
+    assertFalse(metaData.isCaseSensitive(6)); // TIMESTAMP_NTZ
+    assertFalse(metaData.isCaseSensitive(7)); // NUMBER
+    assertFalse(metaData.isCaseSensitive(8)); // FLOAT
+    assertFalse(metaData.isCaseSensitive(9)); // DOUBLE
+    assertFalse(metaData.isCaseSensitive(10)); // BINARY
+
+    assertTrue(metaData.isCaseSensitive(11)); // GEOGRAPHY
+    assertTrue(metaData.isCaseSensitive(12)); // VARIANT
+    assertTrue(metaData.isCaseSensitive(13)); // OBJECT
+    assertTrue(metaData.isCaseSensitive(14)); // ARRAY
+    assertTrue(metaData.isCaseSensitive(15)); // TEXT
+    assertTrue(metaData.isCaseSensitive(16)); // VARCHAR
+    assertTrue(metaData.isCaseSensitive(17)); // CHAR
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAutoIncrementJsonResult() throws SQLException {
+    Properties paramProperties = new Properties();
+    paramProperties.put("ENABLE_FIX_759900", true);
+    Connection connection = init(paramProperties);
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set jdbc_query_result_format ='json'");
+
+    statement.execute(
+        "create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
+    statement.execute("insert into auto_inc(name) values('test1')");
+
+    ResultSet resultSet = statement.executeQuery("select * from auto_inc");
+    resultSet.next();
+
+    ResultSetMetaData metaData = resultSet.getMetaData();
+    assertTrue(metaData.isAutoIncrement(1));
+    assertFalse(metaData.isAutoIncrement(2));
+    assertTrue(metaData.isAutoIncrement(3));
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAutoIncrementArrowResult() throws SQLException {
+    Properties paramProperties = new Properties();
+    paramProperties.put("ENABLE_FIX_759900", true);
+    Connection connection = init(paramProperties);
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set jdbc_query_result_format ='arrow'");
+
+    statement.execute(
+        "create or replace table auto_inc(id int autoincrement, name varchar(10), another_col int autoincrement)");
+    statement.execute("insert into auto_inc(name) values('test1')");
+
+    ResultSet resultSet = statement.executeQuery("select * from auto_inc");
+    resultSet.next();
+
+    ResultSetMetaData metaData = resultSet.getMetaData();
+    assertTrue(metaData.isAutoIncrement(1));
+    assertFalse(metaData.isAutoIncrement(2));
+    assertTrue(metaData.isAutoIncrement(3));
+  }
+
+  @Test
+  public void testGranularTimeFunctionsInSessionTimezone() throws SQLException {
+    Connection connection = null;
+    Statement statement = null;
+    try {
+      connection = getConnection();
+      statement = connection.createStatement();
+      statement.execute("create or replace table testGranularTime(t time)");
+      statement.execute("insert into testGranularTime values ('10:10:10')");
+      ResultSet resultSet = statement.executeQuery("select * from testGranularTime");
+      resultSet.next();
+      assertEquals(Time.valueOf("10:10:10"), resultSet.getTime(1));
+      assertEquals(10, resultSet.getTime(1).getHours());
+      assertEquals(10, resultSet.getTime(1).getMinutes());
+      assertEquals(10, resultSet.getTime(1).getSeconds());
+      resultSet.close();
+    } finally {
+      statement.execute("drop table if exists testGranularTime");
+      statement.close();
+      connection.close();
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGranularTimeFunctionsInUTC() throws SQLException {
+    Connection connection = null;
+    Statement statement = null;
+    TimeZone origTz = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
+    try {
+      connection = getConnection();
+      statement = connection.createStatement();
+      statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
+      statement.execute("create or replace table testGranularTime(t time)");
+      statement.execute("insert into testGranularTime values ('10:10:10')");
+      ResultSet resultSet = statement.executeQuery("select * from testGranularTime");
+      resultSet.next();
+      assertEquals(Time.valueOf("02:10:10"), resultSet.getTime(1));
+      assertEquals(02, resultSet.getTime(1).getHours());
+      assertEquals(10, resultSet.getTime(1).getMinutes());
+      assertEquals(10, resultSet.getTime(1).getSeconds());
+      resultSet.close();
+    } finally {
+      TimeZone.setDefault(origTz);
+      statement.execute("drop table if exists testGranularTime");
+      statement.close();
+      connection.close();
     }
   }
 }

@@ -190,7 +190,7 @@ public class CustomProxyLatestIT {
     props.put("useProxy", true);
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8080");
-    props.put("nonProxyHosts", ".foo.com|.baz.com");
+    props.put("nonProxyHosts", "*.snowflakecomputing.com");
     // Set up the first connection and proxy
     Connection con1 =
         DriverManager.getConnection(

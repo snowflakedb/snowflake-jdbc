@@ -7,6 +7,7 @@ import com.google.common.base.Strings;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.*;
@@ -28,6 +29,10 @@ public class SnowflakeConnectString implements Serializable {
       new SnowflakeConnectString("", "", -1, Collections.emptyMap(), "");
 
   private static final String PREFIX = "jdbc:snowflake://";
+
+  public static boolean hasSupportedPrefix(String url) {
+    return url.startsWith(PREFIX);
+  }
 
   public static SnowflakeConnectString parse(String url, Properties info) {
     if (url == null) {
@@ -130,6 +135,12 @@ public class SnowflakeConnectString implements Serializable {
         // if it's a global url
         parameters.put("ACCOUNT", account);
       }
+
+      if (Strings.isNullOrEmpty(account)) {
+        logger.debug("Connect strings must contain account identifier");
+        return INVALID_CONNECT_STRING;
+      }
+
       // By default, don't allow underscores in host name unless the property is set to true via
       // connection properties.
       boolean allowUnderscoresInHost = false;
@@ -153,6 +164,10 @@ public class SnowflakeConnectString implements Serializable {
       }
 
       return new SnowflakeConnectString(scheme, host, port, parameters, account);
+    } catch (URISyntaxException uriEx) {
+      logger.warn(
+          "Exception thrown while parsing Snowflake connect string. Illegal character in url.");
+      return INVALID_CONNECT_STRING;
     } catch (Exception ex) {
       logger.warn("Exception thrown while parsing Snowflake connect string", ex);
       return INVALID_CONNECT_STRING;

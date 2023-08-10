@@ -68,7 +68,8 @@ public class CoreUtilsMiscellaneousTest {
             "testuser",
             "pw",
             "https",
-            "jdbc");
+            "jdbc",
+            false);
     HttpClientSettingsKey testKey2 =
         new HttpClientSettingsKey(
             OCSPMode.FAIL_OPEN,
@@ -78,9 +79,10 @@ public class CoreUtilsMiscellaneousTest {
             "testuser",
             "pw",
             "https",
-            "jdbc");
+            "jdbc",
+            false);
     // Create an HTTPClientKey with all default settings
-    HttpClientSettingsKey testKey3 = new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED, "jdbc");
+    HttpClientSettingsKey testKey3 = new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED, "jdbc", false);
     // Assert the first 2 test keys are equal
     assertTrue(testKey1.equals(testKey2));
     // Assert that testKey2 has its non proxy hosts updated by the equals function
@@ -100,7 +102,8 @@ public class CoreUtilsMiscellaneousTest {
             "testuser",
             "pw",
             "https",
-            "jdbc");
+            "jdbc",
+            false);
     ClientConfiguration clientConfig = new ClientConfiguration();
     HttpUtil.setProxyForS3(testKey, clientConfig);
     assertEquals(Protocol.HTTPS, clientConfig.getProxyProtocol());
@@ -150,7 +153,8 @@ public class CoreUtilsMiscellaneousTest {
             "testuser",
             "pw",
             "https",
-            "jdbc");
+            "jdbc",
+            false);
     HttpUtil.setProxyForAzure(testKey, op);
     Proxy proxy = op.getProxy();
     assertEquals(Proxy.Type.HTTP, proxy.type());
@@ -185,13 +189,21 @@ public class CoreUtilsMiscellaneousTest {
     HttpUtil.httpClientRoutePlanner = new HashMap<>();
     HttpClientSettingsKey key1 =
         new HttpClientSettingsKey(
-            null, "localhost", 8080, "google.com | baz.com", "testuser", "pw", "https");
+            null,
+            "localhost",
+            8080,
+            "google.com | baz.com",
+            "testuser",
+            "pw",
+            "https",
+            "jdbc",
+            false);
     // Assert there is 1 entry in the hashmap now
     HttpUtil.getHttpClient(key1);
     assertEquals(1, HttpUtil.httpClient.size());
     HttpClientSettingsKey key2 =
         new HttpClientSettingsKey(
-            null, "localhost", 8080, "snowflake.com", "testuser", "pw", "https");
+            null, "localhost", 8080, "snowflake.com", "testuser", "pw", "https", "jdbc", false);
     HttpUtil.getHttpClient(key2);
     // Assert there is still 1 entry because key is re-used when only proxy difference is
     // nonProxyHosts
@@ -200,9 +212,65 @@ public class CoreUtilsMiscellaneousTest {
     assertEquals("snowflake.com", key1.getNonProxyHosts());
     HttpClientSettingsKey key3 =
         new HttpClientSettingsKey(
-            null, "differenthost.com", 8080, "snowflake.com", "testuser", "pw", "https");
+            null,
+            "differenthost.com",
+            8080,
+            "snowflake.com",
+            "testuser",
+            "pw",
+            "https",
+            "jdbc",
+            false);
     // Assert proxy with different host generates new entry in httpClient map
     HttpUtil.getHttpClient(key3);
     assertEquals(2, HttpUtil.httpClient.size());
+  }
+
+  @Test
+  public void testSizeOfHttpClientMapWithGzipAndUserAgentSuffix() {
+    // clear httpClient hashmap before test
+    HttpUtil.httpClient = new HashMap<>();
+    HttpClientSettingsKey key1 =
+        new HttpClientSettingsKey(
+            null,
+            "localhost",
+            8080,
+            "google.com | baz.com",
+            "testuser",
+            "pw",
+            "https",
+            "jdbc",
+            false);
+    // Assert there is 1 entry in the hashmap now
+    HttpUtil.getHttpClient(key1);
+    assertEquals(1, HttpUtil.httpClient.size());
+    HttpClientSettingsKey key2 =
+        new HttpClientSettingsKey(
+            null,
+            "localhost",
+            8080,
+            "google.com | baz.com",
+            "testuser",
+            "pw",
+            "https",
+            "jdbc",
+            true);
+    HttpUtil.getHttpClient(key2);
+    // Assert there are 2 entries because gzip has changed
+    assertEquals(2, HttpUtil.httpClient.size());
+    HttpClientSettingsKey key3 =
+        new HttpClientSettingsKey(
+            null,
+            "localhost",
+            8080,
+            "google.com | baz.com",
+            "testuser",
+            "pw",
+            "https",
+            "odbc",
+            true);
+    HttpUtil.getHttpClient(key3);
+    // Assert there are 3 entries because userAgentSuffix has changed
+    assertEquals(3, HttpUtil.httpClient.size());
   }
 }

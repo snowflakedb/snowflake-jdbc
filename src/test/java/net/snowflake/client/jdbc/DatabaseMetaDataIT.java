@@ -302,7 +302,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           SnowflakeType.isJavaTypeSigned(resultSetMetaData.getColumnType(col)),
           resultSetMetaData.isSigned(col));
       assertFalse(resultSetMetaData.isAutoIncrement(col));
-      assertFalse(resultSetMetaData.isCaseSensitive(col));
       assertFalse(resultSetMetaData.isCurrency(col));
       assertTrue(resultSetMetaData.isReadOnly(col));
       assertTrue(resultSetMetaData.isSearchable(col));
@@ -799,7 +798,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       expectFeatureNotSupportedException(() -> metaData.getSuperTypes(null, null, null));
       expectFeatureNotSupportedException(() -> metaData.getSuperTables(null, null, null));
       expectFeatureNotSupportedException(() -> metaData.getAttributes(null, null, null, null));
-      expectFeatureNotSupportedException(metaData::locatorsUpdateCopy);
       expectFeatureNotSupportedException(metaData::getRowIdLifetime);
       expectFeatureNotSupportedException(metaData::autoCommitFailureClosesAllResultSets);
       expectFeatureNotSupportedException(metaData::getClientInfoProperties);

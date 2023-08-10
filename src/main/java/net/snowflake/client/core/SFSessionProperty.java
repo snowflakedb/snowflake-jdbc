@@ -57,8 +57,21 @@ public enum SFSessionProperty {
   PRIVATE_KEY_FILE_PWD("private_key_file_pwd", false, String.class),
   CLIENT_INFO("snowflakeClientInfo", false, String.class),
   ALLOW_UNDERSCORES_IN_HOST("allowUnderscoresInHost", false, Boolean.class),
+
   // Adds a suffix to the user agent header in the http requests made by the jdbc driver
-  USER_AGENT_SUFFIX("user_agent_suffix", false, String.class);
+  USER_AGENT_SUFFIX("user_agent_suffix", false, String.class),
+
+  CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED(
+      "CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", false, Boolean.class),
+  GZIP_DISABLED("gzipDisabled", false, Boolean.class),
+  DISABLE_QUERY_CONTEXT_CACHE("disableQueryContextCache", false, Boolean.class),
+  HTAP_OOB_TELEMETRY_ENABLED("htapOOBTelemetryEnabled", false, Boolean.class),
+
+  CLIENT_CONFIG_FILE("client_config_file", false, String.class),
+
+  MAX_HTTP_RETRIES("maxHttpRetries", false, Integer.class),
+
+  PUT_GET_MAX_RETRIES("putGetMaxRetries", false, Integer.class);
 
   // property key in string
   private String propertyKey;
@@ -138,7 +151,14 @@ public enum SFSessionProperty {
       if (property.getValueType() == Boolean.class && propertyValue instanceof String) {
         return SFLoginInput.getBooleanValue(propertyValue);
       } else if (property.getValueType() == Integer.class && propertyValue instanceof String) {
-        return Integer.valueOf((String) propertyValue);
+        try {
+          return Integer.valueOf((String) propertyValue);
+        } catch (NumberFormatException e) {
+          throw new SFException(
+              ErrorCode.INVALID_PARAMETER_VALUE,
+              propertyValue.getClass().getName(),
+              property.getValueType().getName());
+        }
       }
     }
 

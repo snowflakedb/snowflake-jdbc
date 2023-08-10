@@ -17,7 +17,9 @@ import net.snowflake.common.core.SqlState;
  * @author lgiakoumakis
  */
 public interface SnowflakeStorageClient {
-  /** @return Returns the Max number of retry attempts */
+  /**
+   * @return Returns the Max number of retry attempts
+   */
   int getMaxRetries();
 
   /**
@@ -28,13 +30,19 @@ public interface SnowflakeStorageClient {
    */
   int getRetryBackoffMaxExponent();
 
-  /** @return Returns the min number of milliseconds to sleep before retry */
+  /**
+   * @return Returns the min number of milliseconds to sleep before retry
+   */
   int getRetryBackoffMin();
 
-  /** @return Returns true if encryption is enabled */
+  /**
+   * @return Returns true if encryption is enabled
+   */
   boolean isEncrypting();
 
-  /** @return Returns the size of the encryption key */
+  /**
+   * @return Returns the size of the encryption key
+   */
   int getEncryptionKeySize();
 
   /**

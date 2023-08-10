@@ -27,9 +27,6 @@ import org.apache.arrow.vector.Float8Vector;
 public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
 
-  // Timezone used for TimestampNTZ
-  private static final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
-
   TimeZone sessionTimeZone;
 
   // Precision of maximum long value in Java (2^63-1). Precision is 19
@@ -427,10 +424,16 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       if (sfTime == null) {
         return null;
       }
-      return new SnowflakeTimeWithTimezone(
-          sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
-          sfTime.getNanosecondsWithinSecond(),
-          resultSetSerializable.getUseSessionTimezone());
+      Time ts =
+          new Time(
+              sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+      if (resultSetSerializable.getUseSessionTimezone()) {
+        ts =
+            SnowflakeUtil.getTimeInSessionTimezone(
+                SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
+                sfTime.getNanosecondsWithinSecond());
+      }
+      return ts;
     } else if (Types.TIMESTAMP == columnType || Types.TIMESTAMP_WITH_TIMEZONE == columnType) {
       Timestamp ts = getTimestamp(columnIndex);
       if (ts == null) {

@@ -54,6 +54,7 @@ public class ChunkDownloadContext {
   private final int networkTimeoutInMilli;
   private final int authTimeout;
   private final int socketTimeout;
+  private final int maxHttpRetries;
   private final SFBaseSession session;
 
   public ChunkDownloadContext(
@@ -65,6 +66,7 @@ public class ChunkDownloadContext {
       int networkTimeoutInMilli,
       int authTimeout,
       int socketTimeout,
+      int maxHttpRetries,
       SFBaseSession session) {
     this.chunkDownloader = chunkDownloader;
     this.resultChunk = resultChunk;
@@ -74,6 +76,7 @@ public class ChunkDownloadContext {
     this.networkTimeoutInMilli = networkTimeoutInMilli;
     this.authTimeout = authTimeout;
     this.socketTimeout = socketTimeout;
+    this.maxHttpRetries = maxHttpRetries;
     this.session = session;
   }
 }

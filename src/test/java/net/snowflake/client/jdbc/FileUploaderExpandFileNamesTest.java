@@ -29,7 +29,11 @@ public class FileUploaderExpandFileNamesTest {
     System.setProperty("user.home", folderName);
 
     String[] locations = {
-      folderName + "/Tes*Fil*A", folderName + "/TestFil?B", "~/TestFileC", "TestFileD"
+      folderName + "/Tes*Fil*A",
+      folderName + "/TestFil?B",
+      "~/TestFileC",
+      "TestFileD",
+      folderName + "/TestFileE~"
     };
 
     Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations);
@@ -38,6 +42,7 @@ public class FileUploaderExpandFileNamesTest {
     assertTrue(files.contains(folderName + "/TestFileB"));
     assertTrue(files.contains(folderName + "/TestFileC"));
     assertTrue(files.contains(folderName + "/TestFileD"));
+    assertTrue(files.contains(folderName + "/TestFileE~"));
   }
 
   @Test

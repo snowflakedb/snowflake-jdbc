@@ -531,20 +531,26 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void addProperty(String propertyName, Object propertyValue) {}
 
     @Override
-    public SFStatementMetaData describe(String sql) {
+    public SFPreparedStatementMetaData describe(String sql) {
       return null;
     }
 
     @Override
     public SFBaseResultSet execute(
-        String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+        String sql,
+        Map<String, ParameterBindingDTO> parametersBinding,
+        CallingMethod caller,
+        ExecTimeTelemetryData execTimeData)
         throws SQLException, SFException {
       return new MockJsonResultSet(mockedResponse, sfSession);
     }
 
     @Override
     public SFBaseResultSet asyncExecute(
-        String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+        String sql,
+        Map<String, ParameterBindingDTO> parametersBinding,
+        CallingMethod caller,
+        ExecTimeTelemetryData execTimeData)
         throws SQLException, SFException {
       return null;
     }
@@ -710,6 +716,14 @@ public class MockConnectionTest extends BaseJDBCTest {
       return 0;
     }
 
+    /**
+     * @return
+     */
+    @Override
+    public int getMaxHttpRetries() {
+      return 7;
+    }
+
     public SnowflakeConnectString getSnowflakeConnectionString() {
       return null;
     }
@@ -717,6 +731,17 @@ public class MockConnectionTest extends BaseJDBCTest {
     @Override
     public boolean isAsyncSession() {
       return false;
+    }
+
+    @Override
+    public void setQueryContext(String queryContext) {
+      // Do nothing. Just for overriding.
+    }
+
+    @Override
+    public QueryContextDTO getQueryContextDTO() {
+      // Do nothing. Just for overriding.
+      return null;
     }
   }
 

@@ -6,9 +6,9 @@ package net.snowflake.client.jdbc;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.*;
+import net.snowflake.client.core.*;
 import net.snowflake.client.core.Event;
 import net.snowflake.client.core.EventUtil;
 import net.snowflake.client.core.HttpUtil;
@@ -55,13 +55,14 @@ public class RestRequest {
       long retryTimeout,
       long authTimeout,
       int socketTimeout,
-      int retryCount,
+      int maxRetries,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
       boolean includeRequestGuid,
-      boolean retryHTTP403)
+      boolean retryHTTP403,
+      ExecTimeTelemetryData execTimeTelemetryData)
       throws SnowflakeSQLException {
     return execute(
         httpClient,
@@ -69,14 +70,15 @@ public class RestRequest {
         retryTimeout,
         authTimeout,
         socketTimeout,
-        retryCount,
+        maxRetries,
         injectSocketTimeout,
         canceling,
         withoutCookies,
         includeRetryParameters,
         includeRequestGuid,
         retryHTTP403,
-        false);
+        false, // noRetry
+        execTimeTelemetryData);
   }
 
   /**
@@ -87,11 +89,12 @@ public class RestRequest {
    * @param retryTimeout : retry timeout (in seconds)
    * @param authTimeout : authenticator specific timeout (in seconds)
    * @param socketTimeout : curl timeout (in ms)
-   * @param retryCount : retry count for the request
+   * @param maxRetries : max retry count for the request
    * @param injectSocketTimeout : simulate socket timeout
    * @param canceling canceling flag
    * @param withoutCookies whether the cookie spec should be set to IGNORE or not
-   * @param includeRetryParameters whether to include retry parameters in retried requests
+   * @param includeRetryParameters whether to include retry parameters in retried requests. Only
+   *     needs to be true for JDBC statement execution (query requests to Snowflake server).
    * @param includeRequestGuid whether to include request_guid parameter
    * @param retryHTTP403 whether to retry on HTTP 403 or not
    * @param noRetry should we disable retry on non-successful http resp code
@@ -105,14 +108,15 @@ public class RestRequest {
       long retryTimeout,
       long authTimeout,
       int socketTimeout,
-      int retryCount,
+      int maxRetries,
       int injectSocketTimeout,
       AtomicBoolean canceling,
       boolean withoutCookies,
       boolean includeRetryParameters,
       boolean includeRequestGuid,
       boolean retryHTTP403,
-      boolean noRetry)
+      boolean noRetry,
+      ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException {
     CloseableHttpResponse response = null;
 
@@ -150,9 +154,14 @@ public class RestRequest {
     // label the reason to break retry
     String breakRetryReason = "";
 
+    String lastStatusCodeForRetry = "";
+
+    int retryCount = 0;
+
     // try request till we get a good response or retry timeout
     while (true) {
       logger.debug("Retry count: {}", retryCount);
+      logger.debug("Attempting request: {}", requestInfoScrubbed);
 
       try {
         // update start time
@@ -183,8 +192,14 @@ public class RestRequest {
          * overhead of looking up in metadata database.
          */
         URIBuilder builder = new URIBuilder(httpRequest.getURI());
+        // If HTAP
+        if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
+            && builder.getPathSegments().contains("query-request")) {
+          builder.setParameter("target", "htap_simulation");
+        }
         if (includeRetryParameters && retryCount > 0) {
           builder.setParameter("retryCount", String.valueOf(retryCount));
+          builder.setParameter("retryReason", lastStatusCodeForRetry);
           builder.setParameter("clientStartTime", String.valueOf(startTime));
         }
 
@@ -199,12 +214,13 @@ public class RestRequest {
 
         if (includeRequestGuid) {
           // Add request_guid for better tracing
-          builder.setParameter(SF_REQUEST_GUID, UUID.randomUUID().toString());
+          builder.setParameter(SF_REQUEST_GUID, UUIDUtils.getUUID().toString());
         }
 
         httpRequest.setURI(builder.build());
-
+        execTimeData.setHttpClientStart();
         response = httpClient.execute(httpRequest);
+        execTimeData.setHttpClientEnd();
       } catch (IllegalStateException ex) {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, then fail immediately and stop retrying.
@@ -217,15 +233,15 @@ public class RestRequest {
           | SSLProtocolException ex) {
         // if an SSL issue occurs like an SSLHandshakeException then fail
         // immediately and stop retrying the requests
-        throw new SnowflakeSQLLoggedException(
-            null, ErrorCode.NETWORK_ERROR, ex, /* session = */ ex.getMessage());
+
+        throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, ex.getMessage());
 
       } catch (Exception ex) {
 
         savedEx = ex;
         // if the request took more than 5 min (socket timeout) log an error
         if ((System.currentTimeMillis() - startTimePerRequest) > 300000) {
-          logger.error(
+          logger.warn(
               "HTTP request took longer than 5 min: {} sec",
               (System.currentTimeMillis() - startTimePerRequest) / 1000);
         }
@@ -311,7 +327,10 @@ public class RestRequest {
           break;
         }
 
+        String breakRetryEventName = "";
+
         if (retryTimeoutInMilliseconds > 0) {
+          // Check for retry time-out.
           // increment total elapsed due to transient issues
           elapsedMilliForTransientIssues += elapsedMilliForLastCall;
 
@@ -328,34 +347,47 @@ public class RestRequest {
                 retryTimeoutInMilliseconds);
 
             breakRetryReason = "retry timeout";
-            TelemetryService.getInstance()
-                .logHttpRequestTelemetryEvent(
-                    "HttpRequestRetryTimeout",
-                    httpRequest,
-                    injectSocketTimeout,
-                    canceling,
-                    withoutCookies,
-                    includeRetryParameters,
-                    includeRequestGuid,
-                    response,
-                    savedEx,
-                    breakRetryReason,
-                    retryTimeout,
-                    retryCount,
-                    SqlState.IO_ERROR,
-                    ErrorCode.NETWORK_ERROR.getMessageCode());
-            // rethrow the timeout exception
-            if (response == null && savedEx != null) {
-              throw new SnowflakeSQLException(
-                  savedEx,
-                  ErrorCode.NETWORK_ERROR,
-                  "Exception encountered for HTTP request: " + savedEx.getMessage());
-            }
-            // no more retry
-            // reset state
-            retryCount = 0;
-            break;
+            breakRetryEventName = "HttpRequestRetryTimeout";
           }
+        }
+        if (maxRetries > 0 && retryCount > maxRetries) {
+          // check for max retries.
+          logger.error(
+              "Stop retrying as max retries have been reached! max retry count: {}", maxRetries);
+          breakRetryReason = "max retries reached";
+          breakRetryEventName = "HttpRequestRetryLimitExceeded";
+        }
+
+        if (breakRetryEventName != "" && !breakRetryEventName.isEmpty()) {
+          // If either of network timeout is exhausted or max retries have been reached, stop
+          // retrying!
+          TelemetryService.getInstance()
+              .logHttpRequestTelemetryEvent(
+                  breakRetryEventName,
+                  httpRequest,
+                  injectSocketTimeout,
+                  canceling,
+                  withoutCookies,
+                  includeRetryParameters,
+                  includeRequestGuid,
+                  response,
+                  savedEx,
+                  breakRetryReason,
+                  retryTimeout,
+                  retryCount,
+                  SqlState.IO_ERROR,
+                  ErrorCode.NETWORK_ERROR.getMessageCode());
+          // rethrow the timeout exception
+          if (response == null && savedEx != null) {
+            throw new SnowflakeSQLException(
+                savedEx,
+                ErrorCode.NETWORK_ERROR,
+                "Exception encountered for HTTP request: " + savedEx.getMessage());
+          }
+          // no more retry
+          // reset state
+          retryCount = 0;
+          break;
         }
 
         // Make sure that any authenticator specific info that needs to be
@@ -379,8 +411,6 @@ public class RestRequest {
           }
         }
 
-        logger.debug("Retrying request: {}", requestInfoScrubbed);
-
         // sleep for backoff - elapsed amount of time
         if (backoffInMilli > elapsedMilliForLastCall) {
           try {
@@ -394,7 +424,8 @@ public class RestRequest {
         }
 
         retryCount++;
-
+        lastStatusCodeForRetry =
+            response == null ? "0" : String.valueOf(response.getStatusLine().getStatusCode());
         // If the request failed with any other retry-able error and auth timeout is reached
         // increase the retry count and throw special exception to renew the token before retrying.
         if (authTimeout > 0) {

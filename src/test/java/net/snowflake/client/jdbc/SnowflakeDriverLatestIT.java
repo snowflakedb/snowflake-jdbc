@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.cloud.storage.StorageException;
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
@@ -22,12 +23,16 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.RunningOnTestaccount;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.cloud.storage.*;
+import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
+import net.snowflake.client.jdbc.cloud.storage.StageInfo;
+import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
+import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -1451,7 +1456,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     try {
-      connection = getConnection("gcpaccount");
+      // set parameter for presignedUrl upload instead of downscoped token
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
+      connection = getConnection("gcpaccount", paramProperties);
       Statement statement = connection.createStatement();
 
       // create a stage to put the file in
@@ -1544,6 +1552,108 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             srcPath, false, destFolderCanonicalPath + "/" + targetFileName, true));
         inputStream.close();
       }
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+        connection.close();
+      }
+    }
+  }
+
+  /**
+   * This tests that when the HTAP optimization parameter ENABLE_SNOW_654741_FOR_TESTING is set to
+   * true and no session parameters or db/schema/wh are returned for select/dml statements, the
+   * parameters and metadata are still accessible after creating a resultset object.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testHTAPOptimizations() throws SQLException {
+    // Set the HTAP test parameter to true
+    try (Connection con = getSnowflakeAdminConnection()) {
+      Statement statement = con.createStatement();
+      statement.execute(
+          "alter account "
+              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+              + " set ENABLE_SNOW_654741_FOR_TESTING=true");
+    }
+    // Create a normal connection and assert that database, schema, and warehouse have expected
+    // values
+    Connection con = getConnection();
+    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
+    assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").equalsIgnoreCase(con.getCatalog()));
+    assertTrue(
+        TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE").equalsIgnoreCase(session.getWarehouse()));
+    Statement statement = con.createStatement();
+    // Set TIMESTAMP_OUTPUT_FORMAT (which is a session parameter) to check its value later
+    statement.execute("alter session set TIMESTAMP_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FFTZH'");
+    statement.execute("create or replace table testtable1 (cola string, colb int)");
+    statement.execute("insert into testtable1 values ('row1', 1), ('row2', 2), ('row3', 3)");
+    ResultSet rs = statement.executeQuery("select * from testtable1");
+    assertEquals(3, getSizeOfResultSet(rs));
+    // Assert database, schema, and warehouse have the same values as before even though the select
+    // statement will
+    // return no parameters or metadata
+    assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
+    assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").equalsIgnoreCase(con.getCatalog()));
+    assertTrue(
+        TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE").equalsIgnoreCase(session.getWarehouse()));
+    // Assert session parameter TIMESTAMP_OUTPUT_FORMAT has the same value as before the select
+    // statement
+    assertEquals(
+        "YYYY-MM-DD HH24:MI:SS.FFTZH",
+        session.getCommonParameters().get("TIMESTAMP_OUTPUT_FORMAT"));
+    // cleanup
+    statement.execute("alter session unset TIMESTAMP_OUTPUT_FORMAT");
+    statement.execute("drop table testtable1");
+    rs.close();
+    statement.close();
+    con.close();
+    // cleanup
+    try (Connection con2 = getSnowflakeAdminConnection()) {
+      statement = con2.createStatement();
+      statement.execute(
+          "alter account "
+              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+              + " unset ENABLE_SNOW_654741_FOR_TESTING");
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testS3PutInGS() throws Throwable {
+    Connection connection = null;
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    try {
+      Properties paramProperties = new Properties();
+      connection = getConnection("s3testaccount", paramProperties);
+      Statement statement = connection.createStatement();
+
+      // create a stage to put the file in
+      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+      // put file using GS system commmand, this is internal GS behavior
+      final String fileName = "testFile.json";
+      final String content = "testName: testS3PutInGs";
+      String putSystemCall =
+          String.format(
+              "call system$it('PUT_FILE_TO_STAGE', '%s', '%s', '%s', '%s')",
+              testStageName, fileName, content, "false");
+      statement.execute(putSystemCall);
+
+      // get file using jdbc
+      String getCall =
+          String.format("GET @%s 'file://%s/'", testStageName, destFolderCanonicalPath);
+      statement.execute(getCall);
+
+      InputStream downloadedFileStream =
+          new FileInputStream(destFolderCanonicalPath + "/" + fileName);
+      String downloadedFile = IOUtils.toString(downloadedFileStream, StandardCharsets.UTF_8);
+      assertTrue(
+          "downloaded content does not equal uploaded content", content.equals(downloadedFile));
     } finally {
       if (connection != null) {
         connection.createStatement().execute("DROP STAGE if exists " + testStageName);

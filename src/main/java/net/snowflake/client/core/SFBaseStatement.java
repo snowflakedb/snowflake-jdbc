@@ -59,7 +59,7 @@ public abstract class SFBaseStatement {
    * @throws SQLException if connection is already closed
    * @throws SFException if result set is null
    */
-  public abstract SFStatementMetaData describe(String sql) throws SFException, SQLException;
+  public abstract SFPreparedStatementMetaData describe(String sql) throws SFException, SQLException;
 
   /**
    * Executes the given SQL string.
@@ -67,13 +67,17 @@ public abstract class SFBaseStatement {
    * @param sql The SQL string to execute, synchronously.
    * @param parametersBinding parameters to bind
    * @param caller the JDBC interface method that called this method, if any
+   * @param execTimeData OOB telemetry object to record timings
    * @return whether there is result set or not
    * @throws SQLException if failed to execute sql
    * @throws SFException exception raised from Snowflake components
    * @throws SQLException if SQL error occurs
    */
   public abstract SFBaseResultSet execute(
-      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      String sql,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException;
 
   /**
@@ -91,7 +95,10 @@ public abstract class SFBaseStatement {
    * @throws SQLException if SQL error occurs
    */
   public abstract SFBaseResultSet asyncExecute(
-      String sql, Map<String, ParameterBindingDTO> parametersBinding, CallingMethod caller)
+      String sql,
+      Map<String, ParameterBindingDTO> parametersBinding,
+      CallingMethod caller,
+      ExecTimeTelemetryData execTimeData)
       throws SQLException, SFException;
 
   /**
@@ -183,6 +190,8 @@ public abstract class SFBaseStatement {
 
   public abstract int getConservativePrefetchThreads();
 
-  /** @return the child query IDs for the multiple statements query. */
+  /**
+   * @return the child query IDs for the multiple statements query.
+   */
   public abstract String[] getChildQueryIds(String queryID) throws SQLException;
 }

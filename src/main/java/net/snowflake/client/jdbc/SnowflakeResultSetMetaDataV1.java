@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -38,7 +39,9 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     this.queryType = type;
   }
 
-  /** @return query id */
+  /**
+   * @return query id
+   */
   public String getQueryID() throws SQLException {
     return this.queryId;
   }
@@ -52,12 +55,16 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     this.queryId = queryId;
   }
 
-  /** @return list of column names */
+  /**
+   * @return list of column names
+   */
   public List<String> getColumnNames() throws SQLException {
     return resultSetMetaData.getColumnNames();
   }
 
-  /** @return index of the column by name, index starts from zero */
+  /**
+   * @return index of the column by name, index starts from zero
+   */
   public int getColumnIndex(String columnName) throws SQLException {
     return resultSetMetaData.getColumnIndex(columnName);
   }
@@ -91,12 +98,33 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public boolean isAutoIncrement(int column) throws SQLException {
-    return false;
+    return resultSetMetaData.getIsAutoIncrement(column);
   }
 
   @Override
   public boolean isCaseSensitive(int column) throws SQLException {
-    return false;
+    int colType = getColumnType(column);
+
+    switch (colType) {
+        // Note: SF types ARRAY, OBJECT, GEOGRAPHY, GEOMETRY are also represented as
+        // VARCHAR.
+      case Types.VARCHAR:
+      case Types.CHAR:
+        return true;
+
+      case Types.INTEGER:
+      case Types.BIGINT:
+      case Types.DECIMAL:
+      case Types.DOUBLE:
+      case Types.BOOLEAN:
+      case Types.TIMESTAMP:
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+      case Types.DATE:
+      case Types.TIME:
+      case Types.BINARY:
+      default:
+        return false;
+    }
   }
 
   @Override

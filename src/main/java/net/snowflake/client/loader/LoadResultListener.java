@@ -7,7 +7,9 @@ package net.snowflake.client.loader;
 /** Callback API for processing errors and statistics of upload operation */
 public interface LoadResultListener {
 
-  /** @return this result listener needs to listen to the provided records */
+  /**
+   * @return this result listener needs to listen to the provided records
+   */
   boolean needSuccessRecords();
 
   /**
@@ -28,13 +30,19 @@ public interface LoadResultListener {
    */
   void addOperationRecordCount(Operation op, int i);
 
-  /** @return whether this result listener needs to listen to error records */
+  /**
+   * @return whether this result listener needs to listen to error records
+   */
   boolean needErrors();
 
-  /** @param error information about error that was encountered */
+  /**
+   * @param error information about error that was encountered
+   */
   void addError(LoadingError error);
 
-  /** @return Whether to throw an exception upon encountering error */
+  /**
+   * @return Whether to throw an exception upon encountering error
+   */
   boolean throwOnError();
 
   /**

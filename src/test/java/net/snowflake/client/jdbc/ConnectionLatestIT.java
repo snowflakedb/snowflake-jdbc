@@ -35,10 +35,7 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
@@ -75,6 +72,20 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       TelemetryService.disable();
     }
     service.resetNumOfRetryToTriggerTelemetry();
+  }
+
+  @Test
+  public void testDisableQueryContextCache() throws SQLException {
+    // Disable QCC via prop
+    Properties props = new Properties();
+    props.put("disableQueryContextCache", "true");
+    Connection con = getConnection(props);
+    Statement statement = con.createStatement();
+    statement.execute("select 1");
+    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    // if QCC disable, this should be null
+    assertNull(session.getQueryContextDTO());
+    con.close();
   }
 
   /**
@@ -224,7 +235,37 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     if (status != QueryStatus.NO_DATA) {
       assertEquals(QueryStatus.FAILED_WITH_ERROR, status);
       assertEquals(2003, status.getErrorCode());
+      assertEquals(
+          "SQL compilation error:\n"
+              + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
+          status.getErrorMessage());
     }
+    statement.close();
+    con.close();
+  }
+
+  @Test
+  public void testGetErrorMessageFromAsyncQuery() throws SQLException {
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    // Create another query that will not be successful (querying table that does not exist)
+    ResultSet rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("bad query!");
+    try {
+      rs1.next();
+    } catch (SQLException ex) {
+      assertEquals(
+          "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
+              + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
+          ex.getMessage());
+      assertEquals(
+          "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
+          rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+    }
+    rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1");
+    rs1.next();
+    // Assert there is no error message when query is successful
+    assertEquals("No error reported", rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+    rs1.close();
     statement.close();
     con.close();
   }
@@ -429,6 +470,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
+    // Adding authenticator type for code coverage purposes
+    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.toString());
     properties.put("ssl", "off");
     int count = TelemetryService.getInstance().getEventCount();
     try {
@@ -487,6 +530,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("loginTimeout", "20");
     properties.put("user", "fakeuser");
     properties.put("password", "fakepassword");
+    // Adding authenticator type for code coverage purposes
+    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.toString());
     try {
       connStart = System.currentTimeMillis();
       Map<String, String> params = getConnectionParameters();
@@ -655,6 +700,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("user", testUser);
     properties.put("ssl", parameters.get("ssl"));
     properties.put("port", parameters.get("port"));
+    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.toString());
     connection = DriverManager.getConnection(uri, properties);
     connection.close();
 

@@ -10,11 +10,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Strings;
 import java.io.*;
 import java.lang.reflect.Field;
+import java.sql.Time;
 import java.sql.Types;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
@@ -28,7 +33,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 
-/** @author jhuang */
+/**
+ * @author jhuang
+ */
 public class SnowflakeUtil {
 
   static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
@@ -70,6 +77,14 @@ public class SnowflakeUtil {
     checkErrorAndThrowExceptionSub(rootNode, false);
   }
 
+  public static long getEpochTimeInMicroSeconds() {
+    Instant timestamp = Instant.now();
+    long micros =
+        TimeUnit.SECONDS.toMicros(timestamp.getEpochSecond())
+            + TimeUnit.NANOSECONDS.toMicros(timestamp.getNano());
+    return micros;
+  }
+
   /**
    * Check the error in the JSON node and generate an exception based on information extracted from
    * the node.
@@ -107,8 +122,7 @@ public class SnowflakeUtil {
         errorCode = ErrorCode.INTERNAL_ERROR.getMessageCode();
         errorMessage = "no_error_code_from_server";
 
-        try {
-          PrintWriter writer = new PrintWriter("output.json", "UTF-8");
+        try (PrintWriter writer = new PrintWriter("output.json", "UTF-8")) {
           writer.print(rootNode.toString());
         } catch (Exception ex) {
           logger.debug("{}", ex);
@@ -259,6 +273,8 @@ public class SnowflakeUtil {
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
 
+    boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
+
     return new SnowflakeColumnMetadata(
         colName,
         colType,
@@ -271,7 +287,8 @@ public class SnowflakeUtil {
         baseType,
         colSrcDatabase,
         colSrcSchema,
-        colSrcTable);
+        colSrcTable,
+        isAutoIncrement);
   }
 
   static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
@@ -388,7 +405,8 @@ public class SnowflakeUtil {
               stype, // fixed
               "", // database
               "", // schema
-              "")); // table
+              "",
+              false)); // isAutoincrement
     }
 
     return rowType;
@@ -592,10 +610,27 @@ public class SnowflakeUtil {
         String proxyPassword = info.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
         String nonProxyHosts = info.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
         String proxyProtocol = info.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
-
+        Boolean gzipDisabled =
+            (info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()).isEmpty()
+                ? false
+                : Boolean.valueOf(
+                    info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey())));
+        // Check for any user agent suffix
+        String userAgentSuffix = "";
+        if (info.containsKey(SFSessionProperty.USER_AGENT_SUFFIX)) {
+          userAgentSuffix = (String) info.get(SFSessionProperty.USER_AGENT_SUFFIX);
+        }
         // create key for proxy properties
         return new HttpClientSettingsKey(
-            mode, proxyHost, proxyPort, nonProxyHosts, proxyUser, proxyPassword, proxyProtocol);
+            mode,
+            proxyHost,
+            proxyPort,
+            nonProxyHosts,
+            proxyUser,
+            proxyPassword,
+            proxyProtocol,
+            userAgentSuffix,
+            gzipDisabled);
       }
     }
     // if no proxy properties, return key with only OCSP mode
@@ -619,5 +654,24 @@ public class SnowflakeUtil {
       returnVal = millis / 1000;
     }
     return returnVal;
+  }
+
+  /**
+   * Get the time value in session timezone instead of UTC calculation done by java.sql.Time.
+   *
+   * @param time time in seconds
+   * @param nanos nanoseconds
+   * @return time in session timezone
+   */
+  public static Time getTimeInSessionTimezone(Long time, int nanos) {
+    LocalDateTime lcd = LocalDateTime.ofEpochSecond(time, nanos, ZoneOffset.UTC);
+    Time ts = Time.valueOf(lcd.toLocalTime());
+    // Time.valueOf() will create the time without the nanoseconds i.e. only hh:mm:ss
+    // Using calendar to add the nanoseconds back to time
+    Calendar c = Calendar.getInstance();
+    c.setTimeInMillis(ts.getTime());
+    c.add(Calendar.MILLISECOND, nanos / 1000000);
+    ts.setTime(c.getTimeInMillis());
+    return ts;
   }
 }

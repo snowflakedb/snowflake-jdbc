@@ -960,6 +960,13 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
     getCommand.append(sourceFileName);
 
+    // special characters and spaces require single quotes around stage name.
+    boolean isSpecialChar = !sourceFileName.matches("^[a-zA-Z0-9_/.]*$");
+    if (isSpecialChar) {
+      getCommand.insert(getCommand.indexOf("@"), "'");
+      getCommand.append("'");
+    }
+
     // this is a fake path, used to form Get query and retrieve stage info,
     // no file will be downloaded to this location
     getCommand.append(" file:///tmp/ /*jdbc download stream*/");

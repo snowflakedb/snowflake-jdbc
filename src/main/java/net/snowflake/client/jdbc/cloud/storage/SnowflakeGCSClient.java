@@ -22,10 +22,7 @@ import java.nio.channels.Channels;
 import java.security.InvalidKeyException;
 import java.util.*;
 import java.util.Map.Entry;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.HttpUtil;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -84,6 +81,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   // Returns the Max number of retry attempts
   @Override
   public int getMaxRetries() {
+    if (session != null
+        && session
+            .getConnectionPropertiesMap()
+            .containsKey(SFSessionProperty.PUT_GET_MAX_RETRIES)) {
+      return (int) session.getConnectionPropertiesMap().get(SFSessionProperty.PUT_GET_MAX_RETRIES);
+    }
     return 25;
   }
 
@@ -100,13 +103,17 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     return 1000;
   }
 
-  /** @return Returns true if encryption is enabled */
+  /**
+   * @return Returns true if encryption is enabled
+   */
   @Override
   public boolean isEncrypting() {
     return encryptionKeySize > 0 && this.stageInfo.getIsClientSideEncrypted();
   }
 
-  /** @return Returns the size of the encryption key */
+  /**
+   * @return Returns the size of the encryption key
+   */
   @Override
   public int getEncryptionKeySize() {
     return encryptionKeySize;
@@ -232,14 +239,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
                   session.getAuthTimeout(),
                   session.getHttpClientSocketTimeout(),
-                  0,
+                  getMaxRetries(),
                   0, // no socket timeout injection
                   null, // no canceling
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true // retry on HTTP 403
-                  );
+                  true, // retry on HTTP 403
+                  new ExecTimeTelemetryData());
 
           logger.debug(
               "Call returned for URL: {}",
@@ -398,14 +405,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                   session.getNetworkTimeoutInMilli() / 1000, // retry timeout
                   session.getAuthTimeout(),
                   session.getHttpClientSocketTimeout(),
-                  0,
+                  getMaxRetries(),
                   0, // no socket timeout injection
                   null, // no canceling
                   false, // no cookie
                   false, // no retry
                   false, // no request_guid
-                  true // retry on HTTP 403
-                  );
+                  true, // retry on HTTP 403
+                  new ExecTimeTelemetryData());
 
           logger.debug(
               "Call returned for URL: {}",
@@ -777,15 +784,15 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               networkTimeoutInMilli / 1000, // retry timeout
               authTimeout, // auth timeout
               httpClientSocketTimeout, // socket timeout in ms
-              0,
+              getMaxRetries(),
               0, // no socket timeout injection
               null, // no canceling
               false, // no cookie
               false, // no url retry query parameters
               false, // no request_guid
               true, // retry on HTTP 403
-              true // disable retry
-              );
+              true, // disable retry
+              new ExecTimeTelemetryData());
 
       logger.debug(
           "Call returned for URL: {}",

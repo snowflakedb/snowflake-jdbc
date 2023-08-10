@@ -5,8 +5,7 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.io.ByteArrayInputStream;
@@ -16,6 +15,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.ClientAuthnDTO;
@@ -190,6 +190,29 @@ public class SessionUtilExternalBrowserTest {
       } catch (SnowflakeSQLException ex) {
         assertThat("Error is expected", ex.getErrorCode(), equalTo(123456));
       }
+    }
+  }
+
+  @Test
+  public void testBuildDefaultHandler() throws URISyntaxException {
+    SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers handler =
+        new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers();
+    URI uri =
+        new URI("https://testaccount.snowflakecomputing.com:443/session/authenticator-request");
+    HttpPost postReq = handler.build(uri);
+    assertEquals(
+        "POST https://testaccount.snowflakecomputing.com:443/session/authenticator-request HTTP/1.1",
+        postReq.toString());
+  }
+
+  @Test
+  public void testInvalidSSOUrl() {
+    SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers handler =
+        new SessionUtilExternalBrowser.DefaultAuthExternalBrowserHandlers();
+    try {
+      handler.openBrowser("file://invalidUrl");
+    } catch (SFException ex) {
+      assertTrue(ex.getMessage().contains("Invalid SSOUrl found"));
     }
   }
 

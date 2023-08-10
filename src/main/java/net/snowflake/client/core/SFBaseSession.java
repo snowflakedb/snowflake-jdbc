@@ -13,11 +13,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SFConnectionHandler;
-import net.snowflake.client.jdbc.SnowflakeConnectString;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -106,7 +102,7 @@ public abstract class SFBaseSession {
   private boolean useRegionalS3EndpointsForPresignedURL = false;
   // Stores other parameters sent by server
   private final Map<String, Object> otherParameters = new HashMap<>();
-  private HttpClientSettingsKey ocspAndProxyKey = null;
+  private HttpClientSettingsKey ocspAndProxyAndGzipKey = null;
   // Default value for memory limit in SFBaseSession
   public static long MEMORY_LIMIT_UNSET = -1;
   // Memory limit for SnowflakeChunkDownloader. This gets set from SFBaseSession for testing
@@ -115,11 +111,13 @@ public abstract class SFBaseSession {
   // name of temporary stage to upload array binds to; null if none has been created yet
   private String arrayBindStage = null;
 
-  // Query context for current session
-  private String queryContext;
+  // Maximum size of the query context cache for current session
+  private int queryContextCacheSize = 5;
 
   // Whether enable returning timestamp with timezone as data type
   private boolean enableReturnTimestampWithTimeZone = true;
+
+  private Map<String, Object> commonParameters;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
@@ -144,6 +142,14 @@ public abstract class SFBaseSession {
     Properties copy = new Properties();
     copy.putAll(this.clientInfo);
     return copy;
+  }
+
+  public void setCommonParameters(Map<String, Object> parameters) {
+    this.commonParameters = parameters;
+  }
+
+  public Map<String, Object> getCommonParameters() {
+    return this.commonParameters;
   }
 
   /**
@@ -311,9 +317,15 @@ public abstract class SFBaseSession {
 
   public HttpClientSettingsKey getHttpClientKey() throws SnowflakeSQLException {
     // if key is already created, return it without making a new one
-    if (ocspAndProxyKey != null) {
-      return ocspAndProxyKey;
+    if (ocspAndProxyAndGzipKey != null) {
+      return ocspAndProxyAndGzipKey;
     }
+
+    Boolean gzipDisabled = false;
+    if (connectionPropertiesMap.containsKey(SFSessionProperty.GZIP_DISABLED)) {
+      gzipDisabled = (Boolean) connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED);
+    }
+
     // if not, create a new key
     boolean useProxy = false;
     if (connectionPropertiesMap.containsKey(SFSessionProperty.USE_PROXY)) {
@@ -340,7 +352,7 @@ public abstract class SFBaseSession {
       String nonProxyHosts =
           (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
       String proxyProtocol = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PROTOCOL);
-      ocspAndProxyKey =
+      ocspAndProxyAndGzipKey =
           new HttpClientSettingsKey(
               getOCSPMode(),
               proxyHost,
@@ -349,9 +361,10 @@ public abstract class SFBaseSession {
               proxyUser,
               proxyPassword,
               proxyProtocol,
-              userAgentSuffix);
+              userAgentSuffix,
+              gzipDisabled);
 
-      return ocspAndProxyKey;
+      return ocspAndProxyAndGzipKey;
     }
     // If JVM proxy parameters are specified, proxies need to go through the JDBC driver's
     // HttpClientSettingsKey logic in order to work properly.
@@ -376,7 +389,9 @@ public abstract class SFBaseSession {
             httpsProxyPort,
             nonProxyHosts,
             noProxy,
-            httpProxyProtocol);
+            httpProxyProtocol,
+            userAgentSuffix,
+            gzipDisabled);
         // There are 2 possible parameters for non proxy hosts that can be combined into 1
         String combinedNonProxyHosts = Strings.isNullOrEmpty(nonProxyHosts) ? "" : nonProxyHosts;
         if (!Strings.isNullOrEmpty(noProxy)) {
@@ -406,7 +421,7 @@ public abstract class SFBaseSession {
             throw new SnowflakeSQLException(
                 ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
           }
-          ocspAndProxyKey =
+          ocspAndProxyAndGzipKey =
               new HttpClientSettingsKey(
                   getOCSPMode(),
                   httpsProxyHost,
@@ -415,7 +430,8 @@ public abstract class SFBaseSession {
                   "", /* user = empty */
                   "", /* password = empty */
                   "https",
-                  userAgentSuffix);
+                  userAgentSuffix,
+                  gzipDisabled);
         } else if (proxyProtocol.equals("http")
             && !Strings.isNullOrEmpty(httpProxyHost)
             && !Strings.isNullOrEmpty(httpProxyPort)) {
@@ -426,7 +442,7 @@ public abstract class SFBaseSession {
             throw new SnowflakeSQLException(
                 ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
           }
-          ocspAndProxyKey =
+          ocspAndProxyAndGzipKey =
               new HttpClientSettingsKey(
                   getOCSPMode(),
                   httpProxyHost,
@@ -435,24 +451,25 @@ public abstract class SFBaseSession {
                   "", /* user = empty */
                   "", /* password = empty */
                   "http",
-                  userAgentSuffix);
-
+                  userAgentSuffix,
+                  gzipDisabled);
         } else {
           // Not enough parameters set to use the proxy.
           logger.debug(
               "http.useProxy={} but valid host and port were not provided. No proxy in use.",
               httpUseProxy);
-          unsetInvalidProxyHostAndPort();
-          ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
+          ocspAndProxyAndGzipKey =
+              new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix, gzipDisabled);
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         unsetInvalidProxyHostAndPort();
-        ocspAndProxyKey = new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix);
+        ocspAndProxyAndGzipKey =
+            new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix, gzipDisabled);
       }
     }
-    return ocspAndProxyKey;
+    return ocspAndProxyAndGzipKey;
   }
 
   public void unsetInvalidProxyHostAndPort() {
@@ -657,6 +674,14 @@ public abstract class SFBaseSession {
     this.clientMemoryLimit = clientMemoryLimit;
   }
 
+  public int getQueryContextCacheSize() {
+    return queryContextCacheSize;
+  }
+
+  public void setQueryContextCacheSize(int queryContextCacheSize) {
+    this.queryContextCacheSize = queryContextCacheSize;
+  }
+
   public int getClientResultChunkSize() {
     return clientResultChunkSize;
   }
@@ -694,7 +719,9 @@ public abstract class SFBaseSession {
   }
 
   public void setDatabase(String database) {
-    this.database = database;
+    if (!Strings.isNullOrEmpty(database)) {
+      this.database = database;
+    }
   }
 
   public String getSchema() {
@@ -702,7 +729,9 @@ public abstract class SFBaseSession {
   }
 
   public void setSchema(String schema) {
-    this.schema = schema;
+    if (!Strings.isNullOrEmpty(schema)) {
+      this.schema = schema;
+    }
   }
 
   public String getRole() {
@@ -718,7 +747,9 @@ public abstract class SFBaseSession {
   }
 
   public void setWarehouse(String warehouse) {
-    this.warehouse = warehouse;
+    if (!Strings.isNullOrEmpty(warehouse)) {
+      this.warehouse = warehouse;
+    }
   }
 
   public void setUseRegionalS3EndpointsForPresignedURL(boolean regionalS3Endpoint) {
@@ -817,17 +848,15 @@ public abstract class SFBaseSession {
 
   public abstract int getAuthTimeout();
 
+  public abstract int getMaxHttpRetries();
+
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 
   public abstract boolean isAsyncSession();
 
-  public String getQueryContext() {
-    return queryContext;
-  }
+  public abstract QueryContextDTO getQueryContextDTO();
 
-  public void setQueryContext(String queryContext) {
-    this.queryContext = queryContext;
-  }
+  public abstract void setQueryContext(String queryContext);
 
   /**
    * If true, JDBC will enable returning TIMESTAMP_WITH_TIMEZONE as column type, otherwise it will

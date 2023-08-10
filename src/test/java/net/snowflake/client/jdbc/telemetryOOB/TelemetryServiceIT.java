@@ -2,12 +2,13 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningNotOnTestaccount;
@@ -275,6 +276,87 @@ public class TelemetryServiceIT extends BaseJDBCTest {
             TelemetryService.getInstance().getClientFailureCount(),
             equalTo(0));
       }
+    }
+  }
+
+  /**
+   * This is a manual test for ensuring that the HTAP OOB telemetry parameter and the telemetry
+   * deployment specification parameters are working properly. Debug through test
+   *
+   * @throws SQLException
+   */
+  @Ignore
+  @Test
+  public void testHTAPTelemetry() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("htapOOBTelemetryEnabled", "true");
+    properties.put("telemetryDeployment", "qa1");
+    // properties.put("useProxy", "true");
+    // properties.put("proxyHost", "localhost");
+    // properties.put("proxyPort", "8181");
+    try (Connection con = getConnection(properties)) {
+      Statement statement = con.createStatement();
+      statement.execute("alter session set CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=false");
+      // Ensure that HTAP telemetry is collected for below select 1 statement
+      statement.execute("select 1");
+      // Ensure that HTAP telemetry is collected for below select 2 statement
+      statement.execute("alter session set CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=true");
+      statement.execute("select 2");
+      TelemetryService.disableHTAP();
+      // Ensure that no telemetry is collected for below select 3 statement
+      statement.execute("select 3");
+    }
+  }
+
+  /**
+   * Requires part 2 of SNOW-844477. Make sure CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is true at
+   * account level. Tests connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=true
+   */
+  @Ignore
+  @Test
+  public void testOOBTelemetryEnabled() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", "true");
+    try (Connection con = getConnection(properties)) {
+      Statement statement = con.createStatement();
+      statement.execute("select 1");
+      // Make sure OOB telemetry is enabled
+      assertTrue(TelemetryService.getInstance().isEnabled());
+    }
+  }
+
+  /**
+   * Requires part 2 of SNOW-844477. Make sure CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is false at
+   * account level. Tests connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=false
+   */
+  @Ignore
+  @Test
+  public void testOOBTelemetryDisabled() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", "false");
+    try (Connection con = getConnection(properties)) {
+      Statement statement = con.createStatement();
+      statement.execute("select 1");
+      // Make sure OOB telemetry is disabled
+      assertFalse(TelemetryService.getInstance().isEnabled());
+    }
+  }
+
+  /**
+   * Requires part 2 of SNOW-844477. Make sure CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is true at
+   * account level. Tests connection property CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED=false but
+   * CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED is enabled on account level
+   */
+  @Ignore
+  @Test
+  public void testOOBTelemetryEnabledOnServerDisabledOnClient() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED", "false");
+    try (Connection con = getConnection(properties)) {
+      Statement statement = con.createStatement();
+      statement.execute("select 1");
+      // Make sure OOB telemetry is enabled
+      assertTrue(TelemetryService.getInstance().isEnabled());
     }
   }
 

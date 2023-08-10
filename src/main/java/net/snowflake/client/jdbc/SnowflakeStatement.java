@@ -7,13 +7,18 @@ package net.snowflake.client.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import net.snowflake.client.core.SFBaseResultSet;
 
 /** This interface defines Snowflake specific APIs for Statement */
 public interface SnowflakeStatement {
-  /** @return the Snowflake query ID of the latest executed query */
+  /**
+   * @return the Snowflake query ID of the latest executed query
+   */
   String getQueryID() throws SQLException;
 
-  /** @return the Snowflake query IDs of the latest executed batch queries */
+  /**
+   * @return the Snowflake query IDs of the latest executed batch queries
+   */
   List<String> getBatchQueryIDs() throws SQLException;
 
   /**
@@ -24,6 +29,8 @@ public interface SnowflakeStatement {
    */
   void setParameter(String name, Object value) throws SQLException;
 
+  void setBatchID(String batchID);
+
   /**
    * Execute SQL query asynchronously
    *
@@ -32,4 +39,14 @@ public interface SnowflakeStatement {
    * @throws SQLException if @link{#executeQueryInternal(String, Map)} throws an exception
    */
   ResultSet executeAsyncQuery(String sql) throws SQLException;
+
+  /**
+   * This method exposes SFBaseResultSet to the sub-classes of SnowflakeStatementV1.java. This is
+   * required as SnowflakeStatementV1 doesn't directly expose ResultSet to the sub-classes making it
+   * challenging to get additional information from the previously executed query.
+   *
+   * @param resultSet
+   * @throws SQLException
+   */
+  void resultSetMetadataHandler(SFBaseResultSet resultSet) throws SQLException;
 }

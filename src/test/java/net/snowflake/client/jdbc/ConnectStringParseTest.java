@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Properties;
 import net.snowflake.client.core.SFSessionProperty;
@@ -57,5 +58,14 @@ public class ConnectStringParseTest {
         cstring.getParameters().get(SFSessionProperty.ACCOUNT.getPropertyKey().toUpperCase()),
         is("abc_test"));
     assertThat(cstring.getHost(), is("abc-test.us-east-1.snowflakecomputing.com"));
+  }
+
+  @Test
+  public void testParseWithIllegalUriCharacters() {
+    Properties info = new Properties();
+    String jdbcConnectString =
+        "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com/?private_key_file=C:\\temp\\rsa_key.p8&private_key_file_pwd=test_password&user=test_user";
+    SnowflakeConnectString cstring = SnowflakeConnectString.parse(jdbcConnectString, info);
+    assertEquals("://:-1", cstring.toString());
   }
 }

@@ -9,9 +9,11 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import org.apache.http.StatusLine;
@@ -50,6 +52,16 @@ public class RestRequestTest {
     return successResponse;
   }
 
+  private CloseableHttpResponse socketTimeoutResponse() throws SocketTimeoutException {
+    StatusLine successStatusLine = mock(StatusLine.class);
+    when(successStatusLine.getStatusCode()).thenThrow(new SocketTimeoutException("Read timed out"));
+
+    CloseableHttpResponse successResponse = mock(CloseableHttpResponse.class);
+    when(successStatusLine.getStatusCode()).thenThrow(new SocketTimeoutException("Read timed out"));
+
+    return successResponse;
+  }
+
   private void execute(
       CloseableHttpClient client,
       String uri,
@@ -58,6 +70,21 @@ public class RestRequestTest {
       int socketTimeout,
       boolean includeRetryParameters,
       boolean noRetry)
+      throws IOException, SnowflakeSQLException {
+
+    this.execute(
+        client, uri, retryTimeout, authTimeout, socketTimeout, includeRetryParameters, noRetry, 0);
+  }
+
+  private void execute(
+      CloseableHttpClient client,
+      String uri,
+      int retryTimeout,
+      int authTimeout,
+      int socketTimeout,
+      boolean includeRetryParameters,
+      boolean noRetry,
+      int maxRetries)
       throws IOException, SnowflakeSQLException {
 
     RequestConfig.Builder builder =
@@ -75,14 +102,15 @@ public class RestRequestTest {
         retryTimeout, // retry timeout
         authTimeout,
         socketTimeout,
-        0,
+        maxRetries,
         0, // inject socket timeout
         new AtomicBoolean(false), // canceling
         false, // without cookie
         includeRetryParameters,
         true,
         true,
-        noRetry);
+        noRetry,
+        new ExecTimeTelemetryData());
   }
 
   @Test
@@ -100,10 +128,12 @@ public class RestRequestTest {
 
                 if (callCount == 0) {
                   assertFalse(params.contains("retryCount="));
+                  assertFalse(params.contains("retryReason="));
                   assertFalse(params.contains("clientStartTime="));
                   assertTrue(params.contains("request_guid="));
                 } else {
                   assertTrue(params.contains("retryCount=" + callCount));
+                  assertTrue(params.contains("retryReason=503"));
                   assertTrue(params.contains("clientStartTime="));
                   assertTrue(params.contains("request_guid="));
                 }
@@ -134,6 +164,7 @@ public class RestRequestTest {
                 String params = arg.getURI().getQuery();
 
                 assertFalse(params.contains("retryCount="));
+                assertFalse(params.contains("retryReason="));
                 assertFalse(params.contains("clientStartTime="));
                 assertTrue(params.contains("request_guid="));
 
@@ -338,6 +369,120 @@ public class RestRequestTest {
               });
 
       execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, true);
+    } finally {
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
+  }
+
+  /**
+   * Test that after socket timeout, retryReason parameter is set for queries and is set to 0 for
+   * null response.
+   *
+   * @throws SnowflakeSQLException
+   * @throws IOException
+   */
+  @Test
+  public void testRetryParametersWithSocketTimeout() throws IOException, SnowflakeSQLException {
+
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
+
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
+                String params = arg.getURI().getQuery();
+
+                if (callCount == 0) {
+                  assertFalse(params.contains("retryCount="));
+                  assertFalse(params.contains("retryReason="));
+                  assertFalse(params.contains("clientStartTime="));
+                  assertTrue(params.contains("request_guid="));
+                } else {
+                  assertTrue(params.contains("retryCount=" + callCount));
+                  assertTrue(params.contains("retryReason=0"));
+                  assertTrue(params.contains("clientStartTime="));
+                  assertTrue(params.contains("request_guid="));
+                }
+
+                callCount += 1;
+                if (callCount >= 2) {
+                  return successResponse();
+                } else {
+                  return socketTimeoutResponse();
+                }
+              }
+            });
+
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false);
+  }
+
+  @Test(expected = SnowflakeSQLException.class)
+  public void testMaxRetriesExceeded() throws IOException, SnowflakeSQLException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
+
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                callCount += 1;
+                if (callCount >= 4) {
+                  return successResponse();
+                } else {
+                  return socketTimeoutResponse();
+                }
+              }
+            });
+
+    try {
+      TelemetryService.disable();
+      execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1);
+      fail("testMaxRetries");
+    } finally {
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
+  }
+
+  @Test
+  public void testMaxRetriesWithSuccessfulResponse() throws IOException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
+
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                callCount += 1;
+                if (callCount >= 3) {
+                  return successResponse();
+                } else {
+                  return socketTimeoutResponse();
+                }
+              }
+            });
+
+    try {
+      TelemetryService.disable();
+      execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 4);
+    } catch (SnowflakeSQLException e) {
+      fail("testMaxRetriesWithSuccessfulResponse");
     } finally {
       if (telemetryEnabled) {
         TelemetryService.enable();

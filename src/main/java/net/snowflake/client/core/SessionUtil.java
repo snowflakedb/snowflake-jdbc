@@ -83,6 +83,7 @@ public class SessionUtil {
   public static final String CLIENT_RESULT_CHUNK_SIZE = "CLIENT_RESULT_CHUNK_SIZE";
   public static final String CLIENT_MEMORY_LIMIT_JVM = "net.snowflake.jdbc.clientMemoryLimit";
   public static final String CLIENT_MEMORY_LIMIT = "CLIENT_MEMORY_LIMIT";
+  public static final String QUERY_CONTEXT_CACHE_SIZE = "QUERY_CONTEXT_CACHE_SIZE";
   public static final String CLIENT_PREFETCH_THREADS_JVM =
       "net.snowflake.jdbc.clientPrefetchThreads";
   public static final String CLIENT_PREFETCH_THREADS = "CLIENT_PREFETCH_THREADS";
@@ -396,7 +397,7 @@ public class SessionUtil {
         loginInput.setAuthTimeout(SessionUtilKeyPair.getTimeout());
       }
 
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       uriBuilder.setPath(SF_PATH_LOGIN_REQUEST);
       loginURI = uriBuilder.build();
@@ -590,6 +591,7 @@ public class SessionUtil {
       postRequest.setEntity(input);
 
       postRequest.addHeader("accept", "application/json");
+      postRequest.addHeader("Accept-Encoding", "");
 
       /*
        * HttpClient should take authorization header from char[] instead of
@@ -889,7 +891,7 @@ public class SessionUtil {
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
       uriBuilder.setPath(SF_PATH_TOKEN_REQUEST);
 
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       postRequest = new HttpPost(uriBuilder.build());
     } catch (URISyntaxException ex) {
@@ -998,7 +1000,7 @@ public class SessionUtil {
       uriBuilder = new URIBuilder(loginInput.getServerUrl());
 
       uriBuilder.addParameter(SF_QUERY_SESSION_DELETE, Boolean.TRUE.toString());
-      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUID.randomUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       uriBuilder.setPath(SF_PATH_SESSION);
 
@@ -1093,11 +1095,17 @@ public class SessionUtil {
       // step 5
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
       if (!isPrefixEqual(postBackUrl, loginInput.getServerUrl())) {
-        logger.debug(
-            "The specified authenticator {} and the destination URL "
-                + "in the SAML assertion {} do not match.",
-            loginInput.getAuthenticator(),
-            postBackUrl);
+        URL idpDestinationUrl = new URL(postBackUrl);
+        URL clientDestinationUrl = new URL(loginInput.getServerUrl());
+        String idpDestinationHostName = idpDestinationUrl.getHost();
+        String clientDestinationHostName = clientDestinationUrl.getHost();
+
+        logger.error(
+            "The Snowflake hostname specified in the client connection {} does not match "
+                + "the destination hostname in the SAML response returned by the IdP: {}",
+            clientDestinationHostName,
+            idpDestinationHostName);
+
         // Session is in process of getting created, so exception constructor takes in null session
         // value
         throw new SnowflakeSQLLoggedException(
@@ -1406,6 +1414,9 @@ public class SessionUtil {
   }
 
   static void updateSfDriverParamValues(Map<String, Object> parameters, SFBaseSession session) {
+    if (parameters != null && !parameters.isEmpty()) {
+      session.setCommonParameters(parameters);
+    }
     for (Map.Entry<String, Object> entry : parameters.entrySet()) {
       logger.debug("processing parameter {}", entry.getKey());
 
@@ -1517,6 +1528,10 @@ public class SessionUtil {
         if (session != null) {
           session.setUseRegionalS3EndpointsForPresignedURL(
               SFLoginInput.getBooleanValue(entry.getValue()));
+        }
+      } else if (QUERY_CONTEXT_CACHE_SIZE.equalsIgnoreCase(entry.getKey())) {
+        if (session != null) {
+          session.setQueryContextCacheSize((int) entry.getValue());
         }
       } else {
         if (session != null) {
