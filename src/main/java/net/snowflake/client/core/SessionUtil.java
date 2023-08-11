@@ -588,7 +588,8 @@ public class SessionUtil {
       postRequest = new HttpPost(loginURI);
 
       // Add custom headers before adding common headers
-      HttpUtil.applyAdditionalHeaders(postRequest, loginInput.getAdditionalHttpHeaders());
+      HttpUtil.applyAdditionalHeadersForSnowsight(
+          postRequest, loginInput.getAdditionalHttpHeadersForSnowsight());
 
       // attach the login info json body to the post request
       StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
@@ -901,7 +902,8 @@ public class SessionUtil {
       postRequest = new HttpPost(uriBuilder.build());
 
       // Add custom headers before adding common headers
-      HttpUtil.applyAdditionalHeaders(postRequest, loginInput.getAdditionalHttpHeaders());
+      HttpUtil.applyAdditionalHeadersForSnowsight(
+          postRequest, loginInput.getAdditionalHttpHeadersForSnowsight());
     } catch (URISyntaxException ex) {
       logger.error("Exception when creating http request", ex);
 
@@ -1015,7 +1017,8 @@ public class SessionUtil {
       postRequest = new HttpPost(uriBuilder.build());
 
       // Add custom headers before adding common headers
-      HttpUtil.applyAdditionalHeaders(postRequest, loginInput.getAdditionalHttpHeaders());
+      HttpUtil.applyAdditionalHeadersForSnowsight(
+          postRequest, loginInput.getAdditionalHttpHeadersForSnowsight());
 
       postRequest.setHeader(
           SF_HEADER_AUTHORIZATION,

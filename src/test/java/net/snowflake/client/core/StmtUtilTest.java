@@ -30,7 +30,7 @@ public class StmtUtilTest extends BaseJDBCTest {
     SFLoginInput input = createLoginInput();
     Map<String, String> additionalHeaders = new HashMap<>();
     additionalHeaders.put("Extra-Snowflake-Header", "present");
-    input.setAdditionalHttpHeaders(additionalHeaders);
+    input.setAdditionalHttpHeadersForSnowsight(additionalHeaders);
 
     try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
       // Both mocks the call _and_ verifies that the headers are forwarded.
@@ -66,10 +66,12 @@ public class StmtUtilTest extends BaseJDBCTest {
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":333334,\"message\":null,\"success\":true}");
 
-      mockedHttpUtil.when(() -> HttpUtil.applyAdditionalHeaders(any(), any())).thenCallRealMethod();
+      mockedHttpUtil
+          .when(() -> HttpUtil.applyAdditionalHeadersForSnowsight(any(), any()))
+          .thenCallRealMethod();
 
       StmtInput stmtInput = new StmtInput();
-      stmtInput.setAdditionalHttpHeaders(additionalHeaders);
+      stmtInput.setAdditionalHttpHeadersForSnowsight(additionalHeaders);
       // Async mode skips result post-processing so we don't need to mock an advanced
       // response
       stmtInput.setAsync(true);

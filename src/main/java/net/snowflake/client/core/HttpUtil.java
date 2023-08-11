@@ -910,7 +910,7 @@ public class HttpUtil {
    * @param request The request to add headers to. Must not be null.
    * @param additionalHeaders The headers to add. May be null.
    */
-  static void applyAdditionalHeaders(
+  static void applyAdditionalHeadersForSnowsight(
       HttpRequestBase request, Map<String, String> additionalHeaders) {
     if (additionalHeaders != null && !additionalHeaders.isEmpty()) {
       additionalHeaders.forEach(request::addHeader);

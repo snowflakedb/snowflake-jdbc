@@ -64,7 +64,7 @@ public class StmtUtil {
   static final SFLogger logger = SFLoggerFactory.getLogger(StmtUtil.class);
 
   /** Input for executing a statement on server */
-  static class StmtInput extends SFInputBase<StmtInput> {
+  static class StmtInput {
     String sql;
 
     // default to snowflake (a special json format for snowflake query result
@@ -104,6 +104,8 @@ public class StmtUtil {
     HttpClientSettingsKey httpClientSettingsKey;
 
     QueryContextDTO queryContextDTO;
+
+    Map<String, String> additionalHttpHeadersForSnowsight;
 
     StmtInput() {}
 
@@ -236,6 +238,26 @@ public class StmtUtil {
       this.maxRetries = maxRetries;
       return this;
     }
+
+    /**
+     * Set additional http headers to apply to the outgoing request. The additional headers cannot
+     * be used to replace or overwrite a header in use by the driver. These will be applied to the
+     * outgoing request. Primarily used by Snowsight, as described in {@link
+     * HttpUtil#applyAdditionalHeadersForSnowsight(org.apache.http.client.methods.HttpRequestBase,
+     * Map)}
+     *
+     * @param additionalHttpHeaders The new headers to add
+     * @return The input object, for chaining
+     * @see
+     *     HttpUtil#applyAdditionalHeadersForSnowsight(org.apache.http.client.methods.HttpRequestBase,
+     *     Map)
+     */
+    @SuppressWarnings("unchecked")
+    public StmtInput setAdditionalHttpHeadersForSnowsight(
+        Map<String, String> additionalHttpHeaders) {
+      this.additionalHttpHeadersForSnowsight = additionalHttpHeaders;
+      return this;
+    }
   }
 
   /** Output for running a statement on server */
@@ -302,7 +324,8 @@ public class StmtUtil {
         httpRequest = new HttpPost(uriBuilder.build());
 
         // Add custom headers before adding common headers
-        HttpUtil.applyAdditionalHeaders(httpRequest, stmtInput.additionalHttpHeaders);
+        HttpUtil.applyAdditionalHeadersForSnowsight(
+            httpRequest, stmtInput.additionalHttpHeadersForSnowsight);
 
         /*
          * sequence id is only needed for old query API, when old query API
@@ -594,7 +617,8 @@ public class StmtUtil {
 
       httpRequest = new HttpGet(uriBuilder.build());
       // Add custom headers before adding common headers
-      HttpUtil.applyAdditionalHeaders(httpRequest, stmtInput.additionalHttpHeaders);
+      HttpUtil.applyAdditionalHeadersForSnowsight(
+          httpRequest, stmtInput.additionalHttpHeadersForSnowsight);
 
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
@@ -697,7 +721,8 @@ public class StmtUtil {
 
       httpRequest = new HttpPost(uriBuilder.build());
       // Add custom headers before adding common headers
-      HttpUtil.applyAdditionalHeaders(httpRequest, stmtInput.additionalHttpHeaders);
+      HttpUtil.applyAdditionalHeadersForSnowsight(
+          httpRequest, stmtInput.additionalHttpHeadersForSnowsight);
 
       /*
        * The JSON input has two fields: sqlText and requestId

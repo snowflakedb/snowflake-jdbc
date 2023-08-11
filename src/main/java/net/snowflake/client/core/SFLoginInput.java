@@ -11,7 +11,7 @@ import java.util.Map;
 import net.snowflake.client.jdbc.ErrorCode;
 
 /** A class for holding all information required for login */
-public class SFLoginInput extends SFInputBase<SFLoginInput> {
+public class SFLoginInput {
   private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
   private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
 
@@ -47,7 +47,10 @@ public class SFLoginInput extends SFInputBase<SFLoginInput> {
   private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
   private String privateKeyFilePwd;
-  private String inFlightCtx; // Used for Snowsight account activation
+  private String inFlightCtx; // Opaque string sent for Snowsight account activation
+
+  // Additional headers to add for Snowsight.
+  Map<String, String> additionalHttpHeadersForSnowsight;
 
   SFLoginInput() {}
 
@@ -339,12 +342,37 @@ public class SFLoginInput extends SFInputBase<SFLoginInput> {
     return this;
   }
 
+  // Opaque string sent for Snowsight account activation
   String getInFlightCtx() {
     return inFlightCtx;
   }
 
+  // Opaque string sent for Snowsight account activation
   SFLoginInput setInFlightCtx(String inFlightCtx) {
     this.inFlightCtx = inFlightCtx;
+    return this;
+  }
+
+  Map<String, String> getAdditionalHttpHeadersForSnowsight() {
+    return additionalHttpHeadersForSnowsight;
+  }
+
+  /**
+   * Set additional http headers to apply to the outgoing request. The additional headers cannot be
+   * used to replace or overwrite a header in use by the driver. These will be applied to the
+   * outgoing request. Primarily used by Snowsight, as described in {@link
+   * HttpUtil#applyAdditionalHeadersForSnowsight(org.apache.http.client.methods.HttpRequestBase,
+   * Map)}
+   *
+   * @param additionalHttpHeaders The new headers to add
+   * @return The input object, for chaining
+   * @see
+   *     HttpUtil#applyAdditionalHeadersForSnowsight(org.apache.http.client.methods.HttpRequestBase,
+   *     Map)
+   */
+  public SFLoginInput setAdditionalHttpHeadersForSnowsight(
+      Map<String, String> additionalHttpHeaders) {
+    this.additionalHttpHeadersForSnowsight = additionalHttpHeaders;
     return this;
   }
 

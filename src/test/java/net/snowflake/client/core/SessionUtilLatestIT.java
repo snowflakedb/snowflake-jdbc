@@ -126,7 +126,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     Map<String, String> additionalHeaders = new HashMap<>();
     additionalHeaders.put("Extra-Snowflake-Header", "present");
 
-    input.setAdditionalHttpHeaders(additionalHeaders);
+    input.setAdditionalHttpHeadersForSnowsight(additionalHeaders);
 
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
     try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
@@ -158,7 +158,9 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}");
 
-      mockedHttpUtil.when(() -> HttpUtil.applyAdditionalHeaders(any(), any())).thenCallRealMethod();
+      mockedHttpUtil
+          .when(() -> HttpUtil.applyAdditionalHeadersForSnowsight(any(), any()))
+          .thenCallRealMethod();
 
       SessionUtil.openSession(input, connectionPropertiesMap, "ALL");
 
@@ -211,7 +213,9 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .when(httpCalledWithHeaders)
           .thenReturn("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}");
 
-      mockedHttpUtil.when(() -> HttpUtil.applyAdditionalHeaders(any(), any())).thenCallRealMethod();
+      mockedHttpUtil
+          .when(() -> HttpUtil.applyAdditionalHeadersForSnowsight(any(), any()))
+          .thenCallRealMethod();
 
       SessionUtil.openSession(input, connectionPropertiesMap, "ALL");
 
