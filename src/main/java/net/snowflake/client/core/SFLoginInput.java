@@ -47,7 +47,7 @@ public class SFLoginInput extends SFInputBase<SFLoginInput> {
   private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
   private String privateKeyFilePwd;
-  private String inFlightCtx;
+  private String inFlightCtx; // Used for Snowsight account activation
 
   SFLoginInput() {}
 
