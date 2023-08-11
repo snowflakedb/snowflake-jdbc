@@ -4,19 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.Constants.GB;
-import static net.snowflake.client.core.Constants.MB;
-import static net.snowflake.client.core.SessionUtil.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.channels.ClosedByInterruptException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
@@ -28,6 +17,18 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.channels.ClosedByInterruptException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+
+import static net.snowflake.client.core.Constants.GB;
+import static net.snowflake.client.core.Constants.MB;
+import static net.snowflake.client.core.SessionUtil.*;
 
 /**
  * This object is an intermediate object between result JSON from GS and ResultSet. Originally, it
@@ -572,6 +573,7 @@ public class SnowflakeResultSetSerializableV1
         SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
     if (resultSetSerializable.parameters.isEmpty()) {
       resultSetSerializable.parameters = sfSession.getCommonParameters();
+      resultSetSerializable.setStatemementLevelParameters(sfStatement.getStatementParameters());
     }
 
     // initialize column metadata
@@ -885,6 +887,18 @@ public class SnowflakeResultSetSerializableV1
 
     logger.debug("Set allowed memory usage to {} bytes", memoryLimit);
     return memoryLimit;
+  }
+
+  /**
+   * If statement parameter values are available, set those values in the resultset list of
+   * parameters so they overwrite the session-level cached parameter values.
+   *
+   * @param stmtParamsMap
+   */
+  private void setStatemementLevelParameters(Map<String, Object> stmtParamsMap) {
+    for (Map.Entry<String, Object> entry : stmtParamsMap.entrySet()) {
+      this.parameters.put(entry.getKey(), entry.getValue());
+    }
   }
 
   /**
