@@ -17,7 +17,6 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
-// import net.snowflake.client.core.*;
 
 /** SFAsyncResultSet implementation */
 class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
