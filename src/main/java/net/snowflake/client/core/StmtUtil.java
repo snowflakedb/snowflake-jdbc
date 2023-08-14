@@ -105,6 +105,8 @@ public class StmtUtil {
 
     QueryContextDTO queryContextDTO;
 
+    Map<String, String> additionalHttpHeadersForSnowsight;
+
     StmtInput() {}
 
     public StmtInput setSql(String sql) {
@@ -236,6 +238,26 @@ public class StmtUtil {
       this.maxRetries = maxRetries;
       return this;
     }
+
+    /**
+     * Set additional http headers to apply to the outgoing request. The additional headers cannot
+     * be used to replace or overwrite a header in use by the driver. These will be applied to the
+     * outgoing request. Primarily used by Snowsight, as described in {@link
+     * HttpUtil#applyAdditionalHeadersForSnowsight(org.apache.http.client.methods.HttpRequestBase,
+     * Map)}
+     *
+     * @param additionalHttpHeaders The new headers to add
+     * @return The input object, for chaining
+     * @see
+     *     HttpUtil#applyAdditionalHeadersForSnowsight(org.apache.http.client.methods.HttpRequestBase,
+     *     Map)
+     */
+    @SuppressWarnings("unchecked")
+    public StmtInput setAdditionalHttpHeadersForSnowsight(
+        Map<String, String> additionalHttpHeaders) {
+      this.additionalHttpHeadersForSnowsight = additionalHttpHeaders;
+      return this;
+    }
   }
 
   /** Output for running a statement on server */
@@ -300,6 +322,10 @@ public class StmtUtil {
         }
 
         httpRequest = new HttpPost(uriBuilder.build());
+
+        // Add custom headers before adding common headers
+        HttpUtil.applyAdditionalHeadersForSnowsight(
+            httpRequest, stmtInput.additionalHttpHeadersForSnowsight);
 
         /*
          * sequence id is only needed for old query API, when old query API
@@ -590,6 +616,9 @@ public class StmtUtil {
       uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpGet(uriBuilder.build());
+      // Add custom headers before adding common headers
+      HttpUtil.applyAdditionalHeadersForSnowsight(
+          httpRequest, stmtInput.additionalHttpHeadersForSnowsight);
 
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
@@ -691,6 +720,9 @@ public class StmtUtil {
       uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpPost(uriBuilder.build());
+      // Add custom headers before adding common headers
+      HttpUtil.applyAdditionalHeadersForSnowsight(
+          httpRequest, stmtInput.additionalHttpHeadersForSnowsight);
 
       /*
        * The JSON input has two fields: sqlText and requestId
