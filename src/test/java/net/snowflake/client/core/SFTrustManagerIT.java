@@ -112,7 +112,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     }
   }
 
-  /** OCSP tests for the Snowflake and AWS S3 HTTPS connections using the server cache. */
+  /** OCSP tests for the Snowflake and AWS S3 HTTPS c  onnections using the server cache. */
   @Test
   public void testOcspWithServerCache() throws Throwable {
     System.setProperty(
