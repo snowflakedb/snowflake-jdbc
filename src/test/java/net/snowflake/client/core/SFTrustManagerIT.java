@@ -41,7 +41,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     "sfc-dev1-regression.s3.amazonaws.com",
     "sfc-ds2-customer-stage.s3.amazonaws.com",
     "snowflake.okta.com",
-    "sfcdev1.blob.core.windows.net"
+    "sfcdev2.blob.core.windows.net"
   };
 
   private boolean defaultState;
@@ -112,7 +112,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     }
   }
 
-  /** OCSP tests for the Snowflake and AWS S3 HTTPS c  onnections using the server cache. */
+  /** OCSP tests for the Snowflake and AWS S3 HTTPS connections using the server cache. */
   @Test
   public void testOcspWithServerCache() throws Throwable {
     System.setProperty(
