@@ -572,6 +572,7 @@ public class SnowflakeResultSetSerializableV1
         SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
     if (resultSetSerializable.parameters.isEmpty()) {
       resultSetSerializable.parameters = sfSession.getCommonParameters();
+      resultSetSerializable.setStatemementLevelParameters(sfStatement.getStatementParameters());
     }
 
     // initialize column metadata
@@ -885,6 +886,18 @@ public class SnowflakeResultSetSerializableV1
 
     logger.debug("Set allowed memory usage to {} bytes", memoryLimit);
     return memoryLimit;
+  }
+
+  /**
+   * If statement parameter values are available, set those values in the resultset list of
+   * parameters so they overwrite the session-level cached parameter values.
+   *
+   * @param stmtParamsMap
+   */
+  private void setStatemementLevelParameters(Map<String, Object> stmtParamsMap) {
+    for (Map.Entry<String, Object> entry : stmtParamsMap.entrySet()) {
+      this.parameters.put(entry.getKey(), entry.getValue());
+    }
   }
 
   /**

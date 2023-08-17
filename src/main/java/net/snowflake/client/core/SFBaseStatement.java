@@ -50,6 +50,10 @@ public abstract class SFBaseStatement {
     }
   }
 
+  public Map<String, Object> getStatementParameters() {
+    return statementParametersMap;
+  }
+
   /**
    * Describe a statement. This is invoked when prepareStatement() occurs. SFStatementMetadata
    * should be returned by this action, which contains metadata such as the schema of the result.
