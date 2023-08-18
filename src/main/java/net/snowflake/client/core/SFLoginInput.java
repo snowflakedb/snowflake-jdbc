@@ -47,6 +47,10 @@ public class SFLoginInput {
   private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
   private String privateKeyFilePwd;
+  private String inFlightCtx; // Opaque string sent for Snowsight account activation
+
+  // Additional headers to add for Snowsight.
+  Map<String, String> additionalHttpHeadersForSnowsight;
 
   SFLoginInput() {}
 
@@ -335,6 +339,40 @@ public class SFLoginInput {
 
   SFLoginInput setHttpClientSettingsKey(HttpClientSettingsKey key) {
     this.httpClientKey = key;
+    return this;
+  }
+
+  // Opaque string sent for Snowsight account activation
+  String getInFlightCtx() {
+    return inFlightCtx;
+  }
+
+  // Opaque string sent for Snowsight account activation
+  SFLoginInput setInFlightCtx(String inFlightCtx) {
+    this.inFlightCtx = inFlightCtx;
+    return this;
+  }
+
+  Map<String, String> getAdditionalHttpHeadersForSnowsight() {
+    return additionalHttpHeadersForSnowsight;
+  }
+
+  /**
+   * Set additional http headers to apply to the outgoing request. The additional headers cannot be
+   * used to replace or overwrite a header in use by the driver. These will be applied to the
+   * outgoing request. Primarily used by Snowsight, as described in {@link
+   * HttpUtil#applyAdditionalHeadersForSnowsight(org.apache.http.client.methods.HttpRequestBase,
+   * Map)}
+   *
+   * @param additionalHttpHeaders The new headers to add
+   * @return The input object, for chaining
+   * @see
+   *     HttpUtil#applyAdditionalHeadersForSnowsight(org.apache.http.client.methods.HttpRequestBase,
+   *     Map)
+   */
+  public SFLoginInput setAdditionalHttpHeadersForSnowsight(
+      Map<String, String> additionalHttpHeaders) {
+    this.additionalHttpHeadersForSnowsight = additionalHttpHeaders;
     return this;
   }
 

@@ -1621,6 +1621,63 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * This tests that statement parameters are still used correctly when the HTAP optimization of
+   * removing all parameters is enabled.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testHTAPStatementParameterCaching() throws SQLException {
+    // Set the HTAP test parameter to true
+    try (Connection con = getSnowflakeAdminConnection()) {
+      Statement statement = con.createStatement();
+      statement.execute(
+          "alter account "
+              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+              + " set ENABLE_SNOW_654741_FOR_TESTING=true");
+    }
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    // Set up a test table with time, date, and timestamp values
+    statement.execute("create or replace table timetable (t1 time, t2 timestamp, t3 date)");
+    statement.execute(
+        "insert into timetable values ('13:53:11', '2023-08-17 13:53:33', '2023-08-17')");
+    // Set statement- level parameters that will affect the output (set output format params)
+    statement
+        .unwrap(SnowflakeStatement.class)
+        .setParameter("TIME_OUTPUT_FORMAT", "HH12:MI:SS.FF AM");
+    statement.unwrap(SnowflakeStatement.class).setParameter("DATE_OUTPUT_FORMAT", "DD-MON-YYYY");
+    statement
+        .unwrap(SnowflakeStatement.class)
+        .setParameter("TIMESTAMP_OUTPUT_FORMAT", "YYYY-MM-DD\"T\"HH24:MI:SS");
+    ResultSet resultSet = statement.executeQuery("select * from timetable");
+    resultSet.next();
+    // Assert that the values match the format of the specified statement parameter output format
+    // values
+    assertEquals("01:53:11.000000000 PM", resultSet.getString(1));
+    assertEquals("2023-08-17T13:53:33", resultSet.getString(2));
+    assertEquals("17-Aug-2023", resultSet.getString(3));
+    // Set a different statement parameter value for DATE_OUTPUT_FORMAT
+    statement.unwrap(SnowflakeStatement.class).setParameter("DATE_OUTPUT_FORMAT", "MM/DD/YYYY");
+    resultSet = statement.executeQuery("select * from timetable");
+    resultSet.next();
+    // Verify it matches the new statement parameter specified output format
+    assertEquals("08/17/2023", resultSet.getString(3));
+    statement.execute("drop table timetable if exists");
+    statement.close();
+    con.close();
+    // cleanup
+    try (Connection con2 = getSnowflakeAdminConnection()) {
+      statement = con2.createStatement();
+      statement.execute(
+          "alter account "
+              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+              + " unset ENABLE_SNOW_654741_FOR_TESTING");
+    }
+  }
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testS3PutInGS() throws Throwable {

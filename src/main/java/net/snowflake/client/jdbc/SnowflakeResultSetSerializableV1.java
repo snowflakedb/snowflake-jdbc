@@ -119,6 +119,7 @@ public class SnowflakeResultSetSerializableV1
   int networkTimeoutInMilli;
   int authTimeout;
   int socketTimeout;
+  int maxHttpRetries;
   boolean isResultColumnCaseInsensitive;
   int resultSetType;
   int resultSetConcurrency;
@@ -195,6 +196,7 @@ public class SnowflakeResultSetSerializableV1
     this.networkTimeoutInMilli = toCopy.networkTimeoutInMilli;
     this.authTimeout = toCopy.authTimeout;
     this.socketTimeout = toCopy.socketTimeout;
+    this.maxHttpRetries = toCopy.maxHttpRetries;
     this.isResultColumnCaseInsensitive = toCopy.isResultColumnCaseInsensitive;
     this.resultSetType = toCopy.resultSetType;
     this.resultSetConcurrency = toCopy.resultSetConcurrency;
@@ -315,6 +317,10 @@ public class SnowflakeResultSetSerializableV1
 
   public int getSocketTimeout() {
     return socketTimeout;
+  }
+
+  public int getMaxHttpRetries() {
+    return maxHttpRetries;
   }
 
   public int getResultPrefetchThreads() {
@@ -566,6 +572,7 @@ public class SnowflakeResultSetSerializableV1
         SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
     if (resultSetSerializable.parameters.isEmpty()) {
       resultSetSerializable.parameters = sfSession.getCommonParameters();
+      resultSetSerializable.setStatemementLevelParameters(sfStatement.getStatementParameters());
     }
 
     // initialize column metadata
@@ -662,6 +669,7 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
     resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
     resultSetSerializable.authTimeout = 0;
+    resultSetSerializable.maxHttpRetries = sfSession.getMaxHttpRetries();
     resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
     resultSetSerializable.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
     resultSetSerializable.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();
@@ -878,6 +886,18 @@ public class SnowflakeResultSetSerializableV1
 
     logger.debug("Set allowed memory usage to {} bytes", memoryLimit);
     return memoryLimit;
+  }
+
+  /**
+   * If statement parameter values are available, set those values in the resultset list of
+   * parameters so they overwrite the session-level cached parameter values.
+   *
+   * @param stmtParamsMap
+   */
+  private void setStatemementLevelParameters(Map<String, Object> stmtParamsMap) {
+    for (Map.Entry<String, Object> entry : stmtParamsMap.entrySet()) {
+      this.parameters.put(entry.getKey(), entry.getValue());
+    }
   }
 
   /**

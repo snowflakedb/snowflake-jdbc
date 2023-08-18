@@ -85,6 +85,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
 
   private final int socketTimeout;
 
+  private final int maxHttpRetries;
   private long memoryLimit;
 
   // the current memory usage across JVM
@@ -120,7 +121,6 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private static final long downloadedConditionTimeoutInSeconds =
       HttpUtil.getDownloadedConditionTimeoutInSeconds();
 
-  private static final int MAX_NUM_OF_RETRY = 10;
   private static final int MAX_RETRY_JITTER = 1000; // milliseconds
 
   // Only controls the max retry number when prefetch runs out of memory
@@ -194,6 +194,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
     this.networkTimeoutInMilli = resultSetSerializable.getNetworkTimeoutInMilli();
     this.authTimeout = resultSetSerializable.getAuthTimeout();
     this.socketTimeout = resultSetSerializable.getSocketTimeout();
+    this.maxHttpRetries = resultSetSerializable.getMaxHttpRetries();
     this.prefetchSlots = resultSetSerializable.getResultPrefetchThreads() * 2;
     this.queryResultFormat = resultSetSerializable.getQueryResultFormat();
     logger.debug("qrmk = {}", this.qrmk);
@@ -406,6 +407,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     networkTimeoutInMilli,
                     authTimeout,
                     socketTimeout,
+                    maxHttpRetries,
                     this.session));
         downloaderFutures.put(nextChunkToDownload, downloaderFuture);
         // increment next chunk to download
@@ -634,7 +636,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
   private void waitForChunkReady(SnowflakeResultChunk currentChunk) throws InterruptedException {
     int retry = 0;
     long startTime = System.currentTimeMillis();
-    while (currentChunk.getDownloadState() != DownloadState.SUCCESS && retry < MAX_NUM_OF_RETRY) {
+    while (true) {
       logger.debug(
           "Thread {} is waiting for #chunk{} to be ready, current" + "chunk state is: {}, retry={}",
           Thread.currentThread().getId(),
@@ -642,7 +644,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           currentChunk.getDownloadState(),
           retry);
 
-      if (currentChunk.getDownloadState() != DownloadState.FAILURE) {
+      if (currentChunk.getDownloadState() != DownloadState.FAILURE
+          && currentChunk.getDownloadState() != DownloadState.SUCCESS) {
         // if the state is not failure, we should keep waiting; otherwise, we skip
         // waiting
         if (!currentChunk
@@ -667,6 +670,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
         }
       }
 
+      // retry if chunk is not successfully downloaded
       if (currentChunk.getDownloadState() != DownloadState.SUCCESS) {
         retry++;
         // timeout or failed
@@ -704,6 +708,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
                     networkTimeoutInMilli,
                     authTimeout,
                     socketTimeout,
+                    maxHttpRetries,
                     session));
         downloaderFutures.put(nextChunkToConsume, downloaderFuture);
         // Only when prefetch fails due to internal memory limitation, nextChunkToDownload
@@ -712,10 +717,17 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
           nextChunkToDownload = nextChunkToConsume + 1;
         }
       }
+
+      // exit if chunk has downloaded or we have hit max retry
+      // maxHttpRetries = 0 will retry indefinitely
+      if (currentChunk.getDownloadState() == DownloadState.SUCCESS
+          || (maxHttpRetries > 0 && retry >= maxHttpRetries)) {
+        break;
+      }
     }
     if (currentChunk.getDownloadState() == DownloadState.SUCCESS) {
       logger.debug("ready to consume #chunk{}, succeed retry={}", nextChunkToConsume, retry);
-    } else if (retry >= MAX_NUM_OF_RETRY) {
+    } else if (retry >= maxHttpRetries) {
       // stop retrying and report failure
       currentChunk.setDownloadState(DownloadState.FAILURE);
       currentChunk.setDownloadError(
@@ -859,6 +871,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
       final int networkTimeoutInMilli,
       final int authTimeout,
       final int socketTimeout,
+      final int maxHttpRetries,
       final SFBaseSession session) {
     ChunkDownloadContext downloadContext =
         new ChunkDownloadContext(
@@ -870,6 +883,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             networkTimeoutInMilli,
             authTimeout,
             socketTimeout,
+            maxHttpRetries,
             session);
 
     return new Callable<Void>() {

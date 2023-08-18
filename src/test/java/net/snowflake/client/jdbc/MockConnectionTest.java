@@ -671,6 +671,11 @@ public class MockConnectionTest extends BaseJDBCTest {
     public void close() {}
 
     @Override
+    public QueryStatus getQueryStatus(String queryID) {
+      return null;
+    }
+
+    @Override
     public Telemetry getTelemetryClient() {
       return new Telemetry() {
         @Override
@@ -709,6 +714,14 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     public int getAuthTimeout() {
       return 0;
+    }
+
+    /**
+     * @return
+     */
+    @Override
+    public int getMaxHttpRetries() {
+      return 7;
     }
 
     public SnowflakeConnectString getSnowflakeConnectionString() {

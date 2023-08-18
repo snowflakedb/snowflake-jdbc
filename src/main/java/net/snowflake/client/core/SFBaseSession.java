@@ -9,6 +9,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.google.common.base.Strings;
 import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -794,6 +795,13 @@ public abstract class SFBaseSession {
   public abstract boolean isSafeToClose();
 
   /**
+   * @param queryID query ID of the query whose status is being investigated
+   * @return enum of type QueryStatus indicating the query's status
+   * @throws SQLException
+   */
+  public abstract QueryStatus getQueryStatus(String queryID) throws SQLException;
+
+  /**
    * Validates the connection properties used by this session, and returns a list of missing
    * properties.
    */
@@ -839,6 +847,8 @@ public abstract class SFBaseSession {
   public abstract int getNetworkTimeoutInMilli();
 
   public abstract int getAuthTimeout();
+
+  public abstract int getMaxHttpRetries();
 
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 
