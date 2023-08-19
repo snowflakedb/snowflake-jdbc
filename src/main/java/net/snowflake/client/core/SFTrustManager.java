@@ -1115,16 +1115,30 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       telemetryData.setOcspReq(ocspReqDerBase64);
 
       URL url;
+      String path = "";
       if (!ocspCacheServer.new_endpoint_enabled) {
         String urlEncodedOCSPReq = URLUtil.urlEncode(ocspReqDerBase64);
         if (SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN != null) {
           URL ocspUrl = new URL(ocspUrlStr);
-          url =
-              new URL(
-                  String.format(
-                      SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
-                      ocspUrl.getHost(),
-                      urlEncodedOCSPReq));
+          if (!Strings.isNullOrEmpty(ocspUrl.getPath())) {
+            path = ocspUrl.getPath();
+          }
+          if (ocspUrl.getPort() > 0) {
+            url =
+                new URL(
+                    String.format(
+                        SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
+                        ocspUrl.getHost() + ":" + ocspUrl.getPort() + path,
+                        urlEncodedOCSPReq));
+          } else {
+            url =
+                new URL(
+                    String.format(
+                        SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
+                        ocspUrl.getHost() + path,
+                        urlEncodedOCSPReq));
+          }
+
         } else {
           url = new URL(String.format("%s/%s", ocspUrlStr, urlEncodedOCSPReq));
         }

@@ -1665,7 +1665,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     resultSet.next();
     // Verify it matches the new statement parameter specified output format
     assertEquals("08/17/2023", resultSet.getString(3));
-    statement.execute("drop table timetable if exists");
+    statement.execute("drop table if exists timetable");
     statement.close();
     con.close();
     // cleanup
