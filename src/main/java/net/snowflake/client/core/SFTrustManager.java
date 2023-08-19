@@ -1128,7 +1128,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
                 new URL(
                     String.format(
                         SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN,
-                        ocspUrl.getHost() + ":" + ocspUrl.getPort() + ocspUrl.getPath(),
+                        ocspUrl.getHost() + ":" + ocspUrl.getPort() + path,
                         urlEncodedOCSPReq));
           } else {
             url =
