@@ -1,6 +1,6 @@
 **JDBC Driver 3.14.1**
 
-- \ 3bffa143 SNOW-872558: add path to private link OCSP retry url (#1495) c97a5dec SNOW-880860 Cache statement parameter values for HTAP change (#1492) e3fb3b9a SNOW-538588 refactor to support async in stored proc (#1324) dd300190 SNOW-862760: Add additionalHeader support (#1490)
+- \||Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
 
 **JDBC Driver 3.14.0**
 
