@@ -1409,18 +1409,18 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getTables(
-      String originalCatalog,
-      String originalSchemaPattern,
-      final String tableNamePattern,
-      final String[] types)
-      throws SQLException {
+          String originalCatalog,
+          String originalSchemaPattern,
+          final String tableNamePattern,
+          final String[] types)
+          throws SQLException {
     logger.debug(
-        "public ResultSet getTables(String catalog={}, String "
-            + "schemaPattern={}, String tableNamePattern={}, String[] types={})",
-        originalCatalog,
-        originalSchemaPattern,
-        tableNamePattern,
-        (ArgSupplier) () -> Arrays.toString(types));
+            "public ResultSet getTables(String catalog={}, String "
+                    + "schemaPattern={}, String tableNamePattern={}, String[] types={})",
+            originalCatalog,
+            originalSchemaPattern,
+            tableNamePattern,
+            (ArgSupplier) () -> Arrays.toString(types));
 
     raiseSQLExceptionIfConnectionIsClosed();
 
@@ -1459,9 +1459,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     String showTablesCommand = null;
     final boolean viewOnly =
-        inputValidTableTypes.size() == 1 && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
+            inputValidTableTypes.size() == 1 && "VIEW".equalsIgnoreCase(inputValidTableTypes.get(0));
     final boolean tableOnly =
-        inputValidTableTypes.size() == 1 && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
+            inputValidTableTypes.size() == 1 && "TABLE".equalsIgnoreCase(inputValidTableTypes.get(0));
     if (viewOnly) {
       showTablesCommand = "show /* JDBC:DatabaseMetaData.getTables() */ views";
     } else if (tableOnly) {
@@ -1472,9 +1472,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     // only add pattern if it is not empty and not matching all character.
     if (tableNamePattern != null
-        && !tableNamePattern.isEmpty()
-        && !tableNamePattern.trim().equals("%")
-        && !tableNamePattern.trim().equals(".*")) {
+            && !tableNamePattern.isEmpty()
+            && !tableNamePattern.trim().equals("%")
+            && !tableNamePattern.trim().equals(".*")) {
       showTablesCommand += " like '" + escapeSingleQuoteForLikeCommand(tableNamePattern) + "'";
     }
 
@@ -1498,63 +1498,96 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
 
+    showTablesCommand += " limit 1";
     logger.debug("sql command to get table metadata: {}", showTablesCommand);
 
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showTablesCommand, GET_TABLES);
     sendInBandTelemetryMetadataMetrics(
-        resultSet,
-        "getTables",
-        originalCatalog,
-        originalSchemaPattern,
-        tableNamePattern,
-        Arrays.toString(types));
+            resultSet,
+            "getTables",
+            originalCatalog,
+            originalSchemaPattern,
+            tableNamePattern,
+            Arrays.toString(types));
 
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLES, resultSet, statement) {
+
+      // maintain last table which was returned to use this information for next pagination call
+      String lastTable = null;
+
       @Override
       public boolean next() throws SQLException {
         logger.debug("public boolean next()", false);
         incrementRow();
 
-        // iterate throw the show table result until we find an entry
-        // that matches the table name
+        // get the next table
         while (showObjectResultSet.next()) {
-          String tableName = showObjectResultSet.getString(2);
-
-          String dbName;
-          String schemaName;
-          String kind;
-          String comment;
-
-          if (viewOnly) {
-            dbName = showObjectResultSet.getString(4);
-            schemaName = showObjectResultSet.getString(5);
-            kind = "VIEW";
-            comment = showObjectResultSet.getString(7);
-          } else {
-            dbName = showObjectResultSet.getString(3);
-            schemaName = showObjectResultSet.getString(4);
-            kind = showObjectResultSet.getString(5);
-            comment = showObjectResultSet.getString(6);
-          }
-
-          if ((compiledTablePattern == null || compiledTablePattern.matcher(tableName).matches())
-              && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.matcher(schemaName).matches())) {
-            nextRow[0] = dbName;
-            nextRow[1] = schemaName;
-            nextRow[2] = tableName;
-            nextRow[3] = kind;
-            nextRow[4] = comment;
-            nextRow[5] = null;
-            nextRow[6] = null;
-            nextRow[7] = null;
-            nextRow[8] = null;
-            nextRow[9] = null;
-            return true;
-          }
+          if (createRow()) return true;
         }
 
-        close(); // close
+        // if no more results are found, now trigger pagination call
+        // Note: In actuality, instead of show tables command, a pagination call with a token will be invoked here.
+        // For now, a show command is invoked.
+        ResultSet resultSet1 = executeAndReturnEmptyResultIfNotFound(statement, "show /* JDBC:DatabaseMetaData.getTables() */ tables in schema \"JDBC_DB1\".\"JDBC_SCHEMA11\" limit 1 from '" + lastTable + "'", GET_TABLES);
+        sendInBandTelemetryMetadataMetrics(
+                resultSet1,
+                "getTables",
+                originalCatalog,
+                originalSchemaPattern,
+                tableNamePattern,
+                Arrays.toString(types));
+        this.showObjectResultSet = resultSet1;
+
+        // get first result from pagination call and return it as a part of next()
+        boolean foundAnyObject = false;
+        while (showObjectResultSet.next()) {
+          foundAnyObject = true;
+          if (createRow()) return true;
+        }
+
+        // if no results are found out of pagination, that means all objects are found. Close the ResultSet and show is done.
+        if (!foundAnyObject) {
+          close();
+          return false;
+        }
+        return true;
+      }
+
+      private boolean createRow() throws SQLException {
+        String tableName = showObjectResultSet.getString(2);
+
+        String dbName;
+        String schemaName;
+        String kind;
+        String comment;
+
+        if (viewOnly) {
+          dbName = showObjectResultSet.getString(4);
+          schemaName = showObjectResultSet.getString(5);
+          kind = "VIEW";
+          comment = showObjectResultSet.getString(7);
+        } else {
+          dbName = showObjectResultSet.getString(3);
+          schemaName = showObjectResultSet.getString(4);
+          kind = showObjectResultSet.getString(5);
+          comment = showObjectResultSet.getString(6);
+        }
+
+        if ((compiledTablePattern == null || compiledTablePattern.matcher(tableName).matches())
+                && (compiledSchemaPattern == null
+                || compiledSchemaPattern.matcher(schemaName).matches())) {
+          nextRow[0] = dbName;
+          nextRow[1] = schemaName;
+          nextRow[2] = lastTable = tableName;
+          nextRow[3] = kind;
+          nextRow[4] = comment;
+          nextRow[5] = null;
+          nextRow[6] = null;
+          nextRow[7] = null;
+          nextRow[8] = null;
+          nextRow[9] = null;
+          return true;
+        }
         return false;
       }
     };
