@@ -1498,6 +1498,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
 
+    // adding this just for POC purpose.
     showTablesCommand += " limit 1";
     logger.debug("sql command to get table metadata: {}", showTablesCommand);
 
