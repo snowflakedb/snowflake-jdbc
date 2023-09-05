@@ -786,6 +786,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
     try {
+      statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
       statement.execute("CREATE OR REPLACE STAGE wildcard_stage");
       assertTrue(
           "Failed to put a file",
@@ -873,6 +874,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         copyContentFrom(largeTempFile2, largeTempFile);
       }
 
+      statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
+
       // create a stage to put the file in
       statement.execute("CREATE OR REPLACE STAGE largefile_stage");
       assertTrue(
@@ -952,6 +955,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         statement = connection.createStatement();
 
+        statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
+
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE testing_stage");
         assertTrue(
@@ -1011,6 +1016,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // load file test
         // create a unique data file name by using current timestamp in millis
         try {
+          statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
           // test external table load
           statement.execute("CREATE OR REPLACE TABLE testLoadToLocalFS(a number)");
 
@@ -2957,6 +2963,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
         try {
+          statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
           statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
           assertTrue(
@@ -3020,6 +3027,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         try {
           statement.execute("alter session set ENABLE_UNENCRYPTED_INTERNAL_STAGES=true");
+          statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
           statement.execute(
               "CREATE OR REPLACE STAGE testPutGet_unencstage encryption=(TYPE='SNOWFLAKE_SSE')");
 
