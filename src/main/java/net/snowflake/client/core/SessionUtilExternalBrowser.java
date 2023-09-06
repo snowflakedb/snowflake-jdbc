@@ -63,19 +63,29 @@ public class SessionUtilExternalBrowser {
         }
         if (java.awt.Desktop.isDesktopSupported()) {
           URI uri = new URI(ssoUrl);
-          java.awt.Desktop.getDesktop().browse(uri);
-        } else {
-          Runtime runtime = Runtime.getRuntime();
-          Constants.OS os = Constants.getOS();
-          if (os == Constants.OS.MAC) {
-            runtime.exec("open " + ssoUrl);
-          } else {
-            // linux?
-            runtime.exec("xdg-open " + ssoUrl);
+          try {
+            java.awt.Desktop.getDesktop().browse(uri);
           }
+          catch (UnsupportedOperationException e) {
+            openBrowserOSFallback(ssoUrl);
+          }
+        } else {
+          openBrowserOSFallback(ssoUrl);
         }
       } catch (URISyntaxException | IOException ex) {
         throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
+      }
+    }
+
+    private void openBrowserOSFallback(String ssoUrl) throws IOException {
+      Runtime runtime = Runtime.getRuntime();
+      Constants.OS os = Constants.getOS();
+  
+      if (os == Constants.OS.MAC) {
+        runtime.exec("open " + ssoUrl);
+      } else {
+        // linux?
+        runtime.exec("xdg-open " + ssoUrl);
       }
     }
 
