@@ -1033,6 +1033,18 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       }
     }
 
+    boolean useS3RegionalUrl;
+    if (stageInfo.getStageType() == StageInfo.StageType.S3) {
+      // This node's value is set if PUT is used without Session. (For Snowpipe Streaming, we rely
+      // on a response from a server to have this field set to use S3RegionalURL)
+      JsonNode useS3RegionalURLNode =
+          jsonNode.path("data").path("stageInfo").path("useS3RegionalUrl");
+      if (!useS3RegionalURLNode.isMissingNode()) {
+        useS3RegionalUrl = useS3RegionalURLNode.asBoolean(false);
+        stageInfo.setUseS3RegionalUrl(useS3RegionalUrl);
+      }
+    }
+
     return stageInfo;
   }
   /**

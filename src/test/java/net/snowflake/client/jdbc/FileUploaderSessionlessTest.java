@@ -71,6 +71,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
     Assert.assertEquals("null", stageInfo.getEndPoint());
     Assert.assertEquals(null, stageInfo.getStorageAccount());
     Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    Assert.assertEquals(true, stageInfo.getUseS3RegionalUrl());
   }
 
   @Test

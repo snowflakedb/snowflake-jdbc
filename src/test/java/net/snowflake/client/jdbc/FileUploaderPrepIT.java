@@ -120,6 +120,7 @@ abstract class FileUploaderPrepIT extends BaseJDBCTest {
           + "      \"region\": \"us-west-2\",\n"
           + "      \"storageAccount\": null,\n"
           + "      \"isClientSideEncrypted\": true,\n"
+          + "      \"useS3RegionalUrl\": true,\n"
           + "      \"creds\": {\n"
           + "        \"AWS_KEY_ID\": \"EXAMPLE_AWS_KEY_ID\",\n"
           + "        \"AWS_SECRET_KEY\": \"EXAMPLE_AWS_SECRET_KEY\",\n"
