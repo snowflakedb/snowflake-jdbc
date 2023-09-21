@@ -929,20 +929,15 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
   }
 
+  /**
+   * Construct Stage Info object from JsonNode.
+   *
+   * @param jsonNode JsonNode to use serialize into StageInfo Object
+   * @param session can be null.
+   * @return StageInfo constructed from JsonNode and session params.
+   * @throws SnowflakeSQLException
+   */
   static StageInfo getStageInfo(JsonNode jsonNode, SFSession session) throws SnowflakeSQLException {
-
-    StageInfo stageInfo = getStageInfo(jsonNode);
-
-    // Update StageInfo to reflect use of S3 regional URL.
-    // This is required for connecting to S3 over privatelink when the
-    // target stage is in us-east-1
-    if (stageInfo.getStageType() == StageInfo.StageType.S3)
-      stageInfo.setUseS3RegionalUrl(session.getUseRegionalS3EndpointsForPresignedURL());
-
-    return stageInfo;
-  }
-
-  static StageInfo getStageInfo(JsonNode jsonNode) throws SnowflakeSQLException {
 
     // more parameters common to upload/download
     String stageLocation = jsonNode.path("data").path("stageInfo").path("location").asText();
@@ -1033,15 +1028,21 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       }
     }
 
-    boolean useS3RegionalUrl;
     if (stageInfo.getStageType() == StageInfo.StageType.S3) {
-      // This node's value is set if PUT is used without Session. (For Snowpipe Streaming, we rely
-      // on a response from a server to have this field set to use S3RegionalURL)
-      JsonNode useS3RegionalURLNode =
-          jsonNode.path("data").path("stageInfo").path("useS3RegionalUrl");
-      if (!useS3RegionalURLNode.isMissingNode()) {
-        useS3RegionalUrl = useS3RegionalURLNode.asBoolean(false);
-        stageInfo.setUseS3RegionalUrl(useS3RegionalUrl);
+      if (session == null) {
+        // This node's value is set if PUT is used without Session. (For Snowpipe Streaming, we rely
+        // on a response from a server to have this field set to use S3RegionalURL)
+        JsonNode useS3RegionalURLNode =
+            jsonNode.path("data").path("stageInfo").path("useS3RegionalUrl");
+        if (!useS3RegionalURLNode.isMissingNode()) {
+          boolean useS3RegionalUrl = useS3RegionalURLNode.asBoolean(false);
+          stageInfo.setUseS3RegionalUrl(useS3RegionalUrl);
+        }
+      } else {
+        // Update StageInfo to reflect use of S3 regional URL.
+        // This is required for connecting to S3 over privatelink when the
+        // target stage is in us-east-1
+        stageInfo.setUseS3RegionalUrl(session.getUseRegionalS3EndpointsForPresignedURL());
       }
     }
 
@@ -1241,6 +1242,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    *
    * <p>NOTE: It only supports PUT on S3/AZURE/GCS (i.e. NOT LOCAL_FS)
    *
+   * <p>It also assumes there is no active SFSession
+   *
    * @param jsonNode JSON doc returned by GS from PUT call
    * @return The file transfer metadatas for to-be-transferred files.
    * @throws SnowflakeSQLException if any error occurs
@@ -1284,7 +1287,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     final Set<String> sourceFiles = expandFileNames(srcLocations);
 
-    StageInfo stageInfo = getStageInfo(jsonNode);
+    StageInfo stageInfo = getStageInfo(jsonNode, null /*SFSession*/);
 
     List<SnowflakeFileTransferMetadata> result = new ArrayList<>();
     if (stageInfo.getStageType() != StageInfo.StageType.GCS
