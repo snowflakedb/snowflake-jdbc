@@ -56,7 +56,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
 
   @Test
   public void testGetS3StageData() throws Exception {
-    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3JsonNode);
+    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3JsonNode, null);
     Map<String, String> expectedCreds = new HashMap<>();
     expectedCreds.put("AWS_ID", "EXAMPLE_AWS_ID");
     expectedCreds.put("AWS_KEY", "EXAMPLE_AWS_KEY");
@@ -71,11 +71,13 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
     Assert.assertEquals("null", stageInfo.getEndPoint());
     Assert.assertEquals(null, stageInfo.getStorageAccount());
     Assert.assertEquals(true, stageInfo.getIsClientSideEncrypted());
+    Assert.assertEquals(true, stageInfo.getUseS3RegionalUrl());
   }
 
   @Test
   public void testGetS3StageDataWithStageEndpoint() throws Exception {
-    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3StageEndpointJsonNode);
+    StageInfo stageInfo =
+        SnowflakeFileTransferAgent.getStageInfo(exampleS3StageEndpointJsonNode, null);
     Map<String, String> expectedCreds = new HashMap<>();
     expectedCreds.put("AWS_ID", "EXAMPLE_AWS_ID");
     expectedCreds.put("AWS_KEY", "EXAMPLE_AWS_KEY");
@@ -94,7 +96,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
 
   @Test
   public void testGetAzureStageData() throws Exception {
-    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleAzureJsonNode);
+    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleAzureJsonNode, null);
     Map<String, String> expectedCreds = new HashMap<>();
     expectedCreds.put("AZURE_SAS_TOKEN", "EXAMPLE_AZURE_SAS_TOKEN");
 
@@ -109,7 +111,7 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
 
   @Test
   public void testGetGCSStageData() throws Exception {
-    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleGCSJsonNode);
+    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleGCSJsonNode, null);
     Map<String, String> expectedCreds = new HashMap<>();
 
     Assert.assertEquals(StageInfo.StageType.GCS, stageInfo.getStageType());
