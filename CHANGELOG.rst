@@ -1,9 +1,6 @@
 **JDBC Driver 3.14.2**
 
-- \ 14c13183 SNOW-913746 Honor useS3RegionalUrl from JsonNode in getStageInfo (#1514)
-- \ d157bd53 Change the session parameter to run tests as is before with old driver (#1507)
-- \ 1e92087b SNOW-780605: Better handle resource closing in testHTAPOptimizations (#1500)
-- \
+- \||Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
 
 **JDBC Driver 3.14.1**
 
