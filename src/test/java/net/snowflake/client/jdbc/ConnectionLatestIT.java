@@ -4,8 +4,8 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.BAD_REQUEST_GS_CODE;
+import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
