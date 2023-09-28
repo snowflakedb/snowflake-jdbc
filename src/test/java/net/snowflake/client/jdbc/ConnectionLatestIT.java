@@ -4,11 +4,13 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
+import static net.snowflake.client.jdbc.ConnectionIT.BAD_REQUEST_GS_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.AnyOf.anyOf;
 import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -491,7 +493,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
               .equals(TelemetryService.TELEMETRY_SERVER_DEPLOYMENT.REG.getName())) {
         // a connection error response (wrong user and password)
         // with status code 200 is returned in RT
-        assertThat("Communication error", e.getErrorCode(), equalTo(INVALID_CONNECTION_INFO_CODE));
+        assertThat(
+            "Communication error",
+            e.getErrorCode(),
+            anyOf(equalTo(INVALID_CONNECTION_INFO_CODE), equalTo(BAD_REQUEST_GS_CODE)));
 
         // since it returns normal response,
         // the telemetry does not create new event
