@@ -49,6 +49,8 @@ public class SFLoginInput {
   private String privateKeyFilePwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
 
+  private boolean disableConsoleLogin = true;
+
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
 
@@ -60,6 +62,15 @@ public class SFLoginInput {
 
   SFLoginInput setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;
+    return this;
+  }
+
+  public boolean getDisableConsoleLogin() {
+    return disableConsoleLogin;
+  }
+
+  SFLoginInput setDisableConsoleLogin(boolean disableConsoleLogin) {
+    this.disableConsoleLogin = disableConsoleLogin;
     return this;
   }
 

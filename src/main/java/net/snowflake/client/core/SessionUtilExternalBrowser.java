@@ -215,6 +215,22 @@ public class SessionUtilExternalBrowser {
     }
   }
 
+  private String getConsoleLoginUrl(int port) throws SFException {
+    try {
+      String serverUrl = loginInput.getServerUrl();
+      String consoleLoginUrl = serverUrl;
+      consoleLoginUrl += SessionUtil.SF_PATH_CONSOLE_LOGIN_REQUEST;
+      consoleLoginUrl += "?login_name=" + loginInput.getUserName();
+      consoleLoginUrl += "&client_port=" + port;
+
+      logger.debug("console login url: {}", consoleLoginUrl);
+
+      return consoleLoginUrl;
+    } catch (Exception ex) {
+      throw new SFException(ex, ErrorCode.INTERNAL_ERROR, ex.getMessage());
+    }
+  }
+
   /**
    * Authenticate
    *
@@ -227,13 +243,26 @@ public class SessionUtilExternalBrowser {
       // main procedure
       int port = this.getLocalPort(ssocket);
       logger.debug("Listening localhost:{}", port);
-      String ssoUrl = getSSOUrl(port);
-      this.handlers.output(
-          "Initiating login request with your identity provider. A "
-              + "browser window should have opened for you to complete the "
-              + "login. If you can't see it, check existing browser windows, "
-              + "or your OS settings. Press CTRL+C to abort and try again...");
-      this.handlers.openBrowser(ssoUrl);
+
+      if (loginInput.getDisableConsoleLogin()) {
+        // Access GS to get SSO URL
+        String ssoUrl = getSSOUrl(port);
+        this.handlers.output(
+            "Initiating login request with your identity provider. A "
+                + "browser window should have opened for you to complete the "
+                + "login. If you can't see it, check existing browser windows, "
+                + "or your OS settings. Press CTRL+C to abort and try again...");
+        this.handlers.openBrowser(ssoUrl);
+      } else {
+        // Multiple SAML way to do authentication via console login
+        String consoleLoginUrl = getConsoleLoginUrl(port);
+        this.handlers.output(
+            "Initiating login request with your identity provider(s). A "
+                + "browser window should have opened for you to complete the "
+                + "login. If you can't see it, check existing browser windows, "
+                + "or your OS settings. Press CTRL+C to abort and try again...");
+        this.handlers.openBrowser(consoleLoginUrl);
+      }
 
       while (true) {
         Socket socket = ssocket.accept(); // start accepting the request

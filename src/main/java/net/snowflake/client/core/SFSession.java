@@ -489,7 +489,12 @@ public class SFSession extends SFBaseSession {
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
         .setServiceName(getServiceName())
         .setOCSPMode(getOCSPMode())
-        .setHttpClientSettingsKey(httpClientSettingsKey);
+        .setHttpClientSettingsKey(httpClientSettingsKey)
+        .setDisableConsoleLogin(
+            connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN) != null
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN))
+                : true);
 
     // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
     // The value may still change later when session parameters from the server are read.
