@@ -221,8 +221,8 @@ public class SessionUtilExternalBrowser {
 
       URIBuilder consoleLoginUriBuilder = new URIBuilder(serverUrl);
       consoleLoginUriBuilder.setPath(SessionUtil.SF_PATH_CONSOLE_LOGIN_REQUEST);
-      consoleLoginUriBuilder.addParameter("login_name",loginInput.getUserName());
-      consoleLoginUriBuilder.addParameter("client_port",Integer.toString(port));
+      consoleLoginUriBuilder.addParameter("login_name", loginInput.getUserName());
+      consoleLoginUriBuilder.addParameter("client_port", Integer.toString(port));
 
       String consoleLoginUrl = consoleLoginUriBuilder.build().toURL().toString();
 
