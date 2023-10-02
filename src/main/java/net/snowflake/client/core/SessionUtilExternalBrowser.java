@@ -218,10 +218,13 @@ public class SessionUtilExternalBrowser {
   private String getConsoleLoginUrl(int port) throws SFException {
     try {
       String serverUrl = loginInput.getServerUrl();
-      String consoleLoginUrl = serverUrl;
-      consoleLoginUrl += SessionUtil.SF_PATH_CONSOLE_LOGIN_REQUEST;
-      consoleLoginUrl += "?login_name=" + loginInput.getUserName();
-      consoleLoginUrl += "&client_port=" + port;
+
+      URIBuilder consoleLoginUriBuilder = new URIBuilder(serverUrl);
+      consoleLoginUriBuilder.setPath(SessionUtil.SF_PATH_CONSOLE_LOGIN_REQUEST);
+      consoleLoginUriBuilder.addParameter("login_name",loginInput.getUserName());
+      consoleLoginUriBuilder.addParameter("client_port",Integer.toString(port));
+
+      String consoleLoginUrl = consoleLoginUriBuilder.build().toURL().toString();
 
       logger.debug("console login url: {}", consoleLoginUrl);
 
