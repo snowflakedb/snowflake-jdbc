@@ -631,7 +631,9 @@ public class SFStatement extends SFBaseStatement {
   }
 
   /**
-   * Return an array of child query ID for the given query ID.
+   * Return an array of child
+   *
+   * query ID for the given query ID.
    *
    * <p>If the given query ID is for a multiple statements query, it returns an array of its child
    * statements, otherwise, it returns an array to include the given query ID.
