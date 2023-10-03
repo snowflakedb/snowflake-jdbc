@@ -2088,7 +2088,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           break;
       }
     } catch (Exception ex) {
-      logger.error("Exception encountered during file upload: ", ex.getMessage());
+      logger.error("Exception encountered during file upload: ", ex);
       throw ex;
     } finally {
       if (fileBackedOutputStream != null) {
