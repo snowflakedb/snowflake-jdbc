@@ -537,6 +537,85 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   /**
+   * Tests PUT disable test
+   *
+   * @throws Throwable
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPutDisable() throws Throwable {
+    Connection connection = null;
+    Statement statement = null;
+
+    // create a file
+    File file = tmpFolder.newFile("testfile99.csv");
+    BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+    bw.write("This content won't be uploaded as PUT is disabled.");
+    bw.close();
+
+    String sourceFilePathOriginal = file.getCanonicalPath();
+
+    Properties paramProperties = new Properties();
+    paramProperties.put("enablePutGet", false);
+
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    for (int i = 0; i < accounts.size(); i++) {
+      try {
+        connection = getConnection(accounts.get(i), paramProperties);
+
+        statement = connection.createStatement();
+
+        statement.execute("PUT file://" + sourceFilePathOriginal + " @testPutGet_disable_stage");
+
+        assertTrue("Shouldn't come here", false);
+      } catch (Exception ex) {
+        // Expected
+        assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
+      } finally {
+        statement.close();
+      }
+    }
+  }
+
+  /**
+   * Tests GET disable test
+   *
+   * @throws Throwable
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testGetDisable() throws Throwable {
+    Connection connection = null;
+    Statement statement = null;
+
+    // create a folder
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+
+    Properties paramProperties = new Properties();
+    paramProperties.put("enablePutGet", false);
+
+    List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
+    for (int i = 0; i < accounts.size(); i++) {
+      try {
+        connection = getConnection(accounts.get(i), paramProperties);
+
+        statement = connection.createStatement();
+
+        statement.execute(
+            "GET @testPutGet_disable_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
+
+        assertTrue("Shouldn't come here", false);
+      } catch (Exception ex) {
+        // Expected
+        assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
+      } finally {
+        statement.close();
+      }
+    }
+  }
+
+  /**
    * Test NULL in LIMIT and OFFSET with Snow-76376 enabled this should be handled as without LIMIT
    * and OFFSET
    */
