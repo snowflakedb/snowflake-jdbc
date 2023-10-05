@@ -700,7 +700,7 @@ public abstract class SFBaseSession {
     return enablePutGet;
   }
 
-  public boolean putEnablePutGet(boolean enablePutGet) {
+  public boolean setEnablePutGet(boolean enablePutGet) {
     return this.enablePutGet = enablePutGet;
   }
 
