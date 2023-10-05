@@ -365,7 +365,7 @@ public class SFSession extends SFBaseSession {
 
         case ENABLE_PUT_GET:
           if (propertyValue != null) {
-            putEnablePutGet(getBooleanValue(propertyValue));
+            setEnablePutGet(getBooleanValue(propertyValue));
           }
           break;
 
