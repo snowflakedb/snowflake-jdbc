@@ -121,7 +121,7 @@ public abstract class SFBaseSession {
   private boolean jdbcEnablePutGet = true;
 
   // Connection string setting
-  protected boolean enablePutGet = true;
+  private boolean enablePutGet = true;
 
   private Map<String, Object> commonParameters;
 
@@ -698,6 +698,10 @@ public abstract class SFBaseSession {
 
   public boolean getEnablePutGet() {
     return enablePutGet;
+  }
+
+  public boolean putEnablePutGet(boolean enablePutGet) {
+    return this.enablePutGet = enablePutGet;
   }
 
   public int getClientResultChunkSize() {
