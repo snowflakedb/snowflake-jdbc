@@ -117,6 +117,12 @@ public abstract class SFBaseSession {
   // Whether enable returning timestamp with timezone as data type
   private boolean enableReturnTimestampWithTimeZone = true;
 
+  // Server side value
+  private boolean jdbcEnablePutGet = true;
+
+  // Connection string setting
+  private boolean enablePutGet = true;
+
   private Map<String, Object> commonParameters;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
@@ -680,6 +686,22 @@ public abstract class SFBaseSession {
 
   public void setQueryContextCacheSize(int queryContextCacheSize) {
     this.queryContextCacheSize = queryContextCacheSize;
+  }
+
+  public boolean getJdbcEnablePutGet() {
+    return jdbcEnablePutGet;
+  }
+
+  public void setJdbcEnablePutGet(boolean jdbcEnablePutGet) {
+    this.jdbcEnablePutGet = jdbcEnablePutGet;
+  }
+
+  public boolean getEnablePutGet() {
+    return enablePutGet;
+  }
+
+  public boolean putEnablePutGet(boolean enablePutGet) {
+    return this.enablePutGet = enablePutGet;
   }
 
   public int getClientResultChunkSize() {

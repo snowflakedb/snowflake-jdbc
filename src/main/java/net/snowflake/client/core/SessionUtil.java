@@ -84,6 +84,7 @@ public class SessionUtil {
   public static final String CLIENT_MEMORY_LIMIT_JVM = "net.snowflake.jdbc.clientMemoryLimit";
   public static final String CLIENT_MEMORY_LIMIT = "CLIENT_MEMORY_LIMIT";
   public static final String QUERY_CONTEXT_CACHE_SIZE = "QUERY_CONTEXT_CACHE_SIZE";
+  public static final String JDBC_ENABLE_PUT_GET = "JDBC_ENABLE_PUT_GET";
   public static final String CLIENT_PREFETCH_THREADS_JVM =
       "net.snowflake.jdbc.clientPrefetchThreads";
   public static final String CLIENT_PREFETCH_THREADS = "CLIENT_PREFETCH_THREADS";
@@ -1546,6 +1547,10 @@ public class SessionUtil {
       } else if (QUERY_CONTEXT_CACHE_SIZE.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session.setQueryContextCacheSize((int) entry.getValue());
+        }
+      } else if (JDBC_ENABLE_PUT_GET.equalsIgnoreCase(entry.getKey())) {
+        if (session != null) {
+          session.setJdbcEnablePutGet(SFLoginInput.getBooleanValue(entry.getValue()));
         }
       } else {
         if (session != null) {

@@ -123,6 +123,13 @@ public class SFStatement extends SFBaseStatement {
 
     // snowflake specific client side commands
     if (isFileTransfer(trimmedSql)) {
+      // Server side value or Connection string value is false then disable the PUT/GET command
+      if ((session != null && !(session.getJdbcEnablePutGet() && session.getEnablePutGet()))) {
+        // PUT/GET command disabled either on server side or in the client connection string
+        logger.debug("Executing file transfer locally is disabled: {}", sql);
+        throw new SnowflakeSQLException("File transfers have been disabled.");
+      }
+
       // PUT/GET command
       logger.debug("Executing file transfer locally: {}", sql);
 
