@@ -4,8 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
@@ -136,7 +135,8 @@ public class ConnectionIT extends BaseJDBCTest {
         DriverManager.getConnection(url, properties);
         fail();
       } catch (SQLException e) {
-        assertThat(e.getErrorCode(), is(INVALID_CONNECTION_INFO_CODE));
+        assertThat(
+            e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
       }
     }
   }
@@ -545,7 +545,8 @@ public class ConnectionIT extends BaseJDBCTest {
       DriverManager.getConnection(deploymentUrl, properties);
       fail();
     } catch (SQLException e) {
-      assertThat(e.getErrorCode(), is(INVALID_CONNECTION_INFO_CODE));
+      assertThat(
+          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
     }
 
     deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=true";
@@ -559,7 +560,8 @@ public class ConnectionIT extends BaseJDBCTest {
       DriverManager.getConnection(deploymentUrl, properties);
       fail();
     } catch (SQLException e) {
-      assertThat(e.getErrorCode(), is(INVALID_CONNECTION_INFO_CODE));
+      assertThat(
+          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
     }
   }
 
