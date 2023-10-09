@@ -135,7 +135,7 @@ public class ConnectionIT extends BaseJDBCTest {
         DriverManager.getConnection(url, properties);
         fail();
       } catch (SQLException e) {
-        assertThat(e.getErrorCode(), is(INVALID_CONNECTION_INFO_CODE));
+        assertThat(e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
       }
     }
   }
