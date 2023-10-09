@@ -135,7 +135,8 @@ public class ConnectionIT extends BaseJDBCTest {
         DriverManager.getConnection(url, properties);
         fail();
       } catch (SQLException e) {
-        assertThat(e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
+        assertThat(
+            e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
       }
     }
   }
@@ -544,7 +545,8 @@ public class ConnectionIT extends BaseJDBCTest {
       DriverManager.getConnection(deploymentUrl, properties);
       fail();
     } catch (SQLException e) {
-      assertThat(e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
+      assertThat(
+          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
     }
 
     deploymentUrl = "jdbc:snowflake://sfcsupport.snowflakecomputing.com?insecureMode=true";
@@ -558,7 +560,8 @@ public class ConnectionIT extends BaseJDBCTest {
       DriverManager.getConnection(deploymentUrl, properties);
       fail();
     } catch (SQLException e) {
-      assertThat(e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
+      assertThat(
+          e.getErrorCode(), anyOf(is(INVALID_CONNECTION_INFO_CODE), is(BAD_REQUEST_GS_CODE)));
     }
   }
 
