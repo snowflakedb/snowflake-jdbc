@@ -219,8 +219,7 @@ public class TelemetryIT extends AbstractDriverIT {
     TelemetryClient telemetry =
         (TelemetryClient)
             TelemetryClient.createSessionlessTelemetry(
-                httpClient,
-                String.format("%s:%s", parameters.get("host"), parameters.get("port")));
+                httpClient, String.format("%s:%s", parameters.get("host"), parameters.get("port")));
     telemetry.refreshToken(jwtToken);
     return telemetry;
   }
