@@ -192,6 +192,20 @@ public class TelemetryClient implements Telemetry {
    * @return a telemetry connector
    */
   public static Telemetry createSessionlessTelemetry(
+      CloseableHttpClient httpClient, String serverUrl) {
+	// By default, use KEYPAIR_JWT as the auth type
+    return createSessionlessTelemetry(httpClient, serverUrl, "KEYPAIR_JWT", DEFAULT_FORCE_FLUSH_SIZE);
+  }
+
+  /**
+   * Initialize the sessionless telemetry connector
+   *
+   * @param httpClient client object used to communicate with other machine
+   * @param serverUrl server url
+   * @param authType authorization type for sessionless telemetry
+   * @return a telemetry connector
+   */
+  public static Telemetry createSessionlessTelemetry(
       CloseableHttpClient httpClient, String serverUrl, String authType) {
     return createSessionlessTelemetry(httpClient, serverUrl, authType, DEFAULT_FORCE_FLUSH_SIZE);
   }
