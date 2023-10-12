@@ -185,7 +185,7 @@ public class TelemetryClient implements Telemetry {
   }
 
   /**
-   * Initialize the sessionless telemetry connector
+   * Initialize the sessionless telemetry connector using KEYPAIR_JWT as the default auth type
    *
    * @param httpClient client object used to communicate with other machine
    * @param serverUrl server url
