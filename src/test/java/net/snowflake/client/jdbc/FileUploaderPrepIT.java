@@ -148,7 +148,7 @@ abstract class FileUploaderPrepIT extends BaseJDBCTest {
           + "      \"location\": \"EXAMPLE_LOCATION/\",\n"
           + "      \"path\": \"EXAMPLE_PATH/\",\n"
           + "      \"region\": \"westus\",\n"
-          + "      \"storageAccount\": \"sfcdevstage\",\n"
+          + "      \"storageAccount\": \"sfcdev2stage\",\n"
           + "      \"isClientSideEncrypted\": true,\n"
           + "      \"creds\": {\n"
           + "        \"AZURE_SAS_TOKEN\": \"EXAMPLE_AZURE_SAS_TOKEN\"\n"
