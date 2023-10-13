@@ -50,6 +50,13 @@ public class TelemetryIT extends AbstractDriverIT {
   @Ignore
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testSessionlessTelemetry() throws Exception, SFException {
+    testTelemetryInternal(createSessionlessTelemetry());
+  }
+
+  @Ignore
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testJWTSessionlessTelemetry() throws Exception, SFException {
     testTelemetryInternal(createJWTSessionlessTelemetry());
   }
@@ -195,6 +202,26 @@ public class TelemetryIT extends AbstractDriverIT {
     node.put("query_id", "sdasdasdasdasds");
     telemetry.addLogToBatch(node, 1234567);
     Assert.assertFalse(telemetry.sendBatchAsync().get());
+  }
+
+  // Helper function to create a sessionless telemetry
+  // using createSessionlessTelemetry(CloseableHttpClient httpClient, String serverUrl)
+  private TelemetryClient createSessionlessTelemetry()
+      throws SFException, SQLException, IOException {
+    setUpPublicKey();
+    String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
+    Map<String, String> parameters = getConnectionParameters();
+    String jwtToken =
+        SessionUtil.generateJWTToken(
+            null, privateKeyLocation, null, parameters.get("account"), parameters.get("user"));
+
+    CloseableHttpClient httpClient = HttpUtil.buildHttpClient(null, null, false);
+    TelemetryClient telemetry =
+        (TelemetryClient)
+            TelemetryClient.createSessionlessTelemetry(
+                httpClient, String.format("%s:%s", parameters.get("host"), parameters.get("port")));
+    telemetry.refreshToken(jwtToken);
+    return telemetry;
   }
 
   // Helper function to create a sessionless telemetry using keypair JWT
