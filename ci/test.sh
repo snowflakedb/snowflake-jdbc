@@ -2,9 +2,6 @@
 #
 # Test JDBC
 #
-
-echo JAVA_HOME=$JAVA_HOME
-
 set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 JDBC_ROOT="$(cd "${THIS_DIR}/.." && pwd)"

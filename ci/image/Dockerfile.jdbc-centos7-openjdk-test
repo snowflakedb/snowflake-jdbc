@@ -63,7 +63,7 @@ FROM jdbc-centos7-openjdk-base AS jdbc-centos7-openjdk-yum
 # Java
 RUN yum -y install $JDK_PACKAGE
 
-RUN echo export JAVA_HOME=$(dirname $(dirname $(readlink $(readlink $(which javac))))) >> /home/user/.bashrc
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME='$(dirname $(dirname $(readlink $(readlink $(which javac)))))
 
 RUN cd /root && \
     mvn -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
@@ -79,8 +79,8 @@ FROM jdbc-centos7-openjdk-base AS jdbc-centos7-openjdk17
 RUN curl -o - https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz | tar xfz - -C /opt && \
     ln -s /opt/jdk-17.0.2 /opt/jdk-17
 
-RUN echo export JAVA_HOME=/opt/jdk-17 >> /home/user/.bashrc
-RUN echo export PATH=\$JAVA_HOME/bin:\$PATH >> /home/user/.bashrc
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME=/opt/jdk-17'
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export PATH=$JAVA_HOME/bin:$PATH'
 
 RUN export JAVA_HOME=/opt/jdk-17 && \
     cd /root && \
