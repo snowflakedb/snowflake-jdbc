@@ -416,6 +416,17 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         "server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>",
         info[0].description);
 
+    // Test with null URL and no properties. ServerURL is needed.
+    url = null;
+    props = new Properties();
+    driver = DriverManager.getDriver("jdbc:snowflake://snowflake.reg.local:8082");
+    info = driver.getPropertyInfo(url, props);
+    assertEquals(1, info.length);
+    assertEquals("serverURL", info[0].name);
+    assertEquals(
+        "server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>",
+        info[0].description);
+
     // Test with URL that requires username and password.
     url = "jdbc:snowflake://snowflake.reg.local:8082";
     info = driver.getPropertyInfo(url, props);
