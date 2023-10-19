@@ -277,16 +277,7 @@ public class CoreUtilsMiscellaneousTest {
   @Test
   public void testNullAndEmptyProxySettingsForS3() {
     HttpClientSettingsKey testKey =
-        new HttpClientSettingsKey(
-            OCSPMode.FAIL_OPEN,
-            null,
-            443,
-            null,
-            null,
-            null,
-            "",
-            "",
-            false);
+        new HttpClientSettingsKey(OCSPMode.FAIL_OPEN, null, 443, null, null, null, "", "", false);
     ClientConfiguration clientConfig = new ClientConfiguration();
     HttpUtil.setProxyForS3(testKey, clientConfig);
     assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
