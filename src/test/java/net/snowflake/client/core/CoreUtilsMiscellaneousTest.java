@@ -273,4 +273,18 @@ public class CoreUtilsMiscellaneousTest {
     // Assert there are 3 entries because userAgentSuffix has changed
     assertEquals(3, HttpUtil.httpClient.size());
   }
+
+  @Test
+  public void testNullAndEmptyProxySettingsForS3() {
+    HttpClientSettingsKey testKey =
+        new HttpClientSettingsKey(OCSPMode.FAIL_OPEN, null, 443, null, null, null, "", "", false);
+    ClientConfiguration clientConfig = new ClientConfiguration();
+    HttpUtil.setProxyForS3(testKey, clientConfig);
+    assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
+    assertEquals("", clientConfig.getProxyHost());
+    assertEquals(443, clientConfig.getProxyPort());
+    assertEquals("", clientConfig.getNonProxyHosts());
+    assertNull(clientConfig.getProxyUsername());
+    assertNull(clientConfig.getProxyPassword());
+  }
 }
