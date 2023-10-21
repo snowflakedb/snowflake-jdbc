@@ -28,6 +28,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.StringEntity;
 
+import java.security.SecureRandom;
+
 /**
  * SAML 2.0 Compliant service/application federated authentication 1. Query GS to obtain IDP SSO url
  * 2. Listen a localhost port to accept Saml response 3. Open a browser in the backend so that the
@@ -217,12 +219,14 @@ public class SessionUtilExternalBrowser {
 
   private String getConsoleLoginUrl(int port) throws SFException {
     try {
+      String proofKey = generateProofKey();
       String serverUrl = loginInput.getServerUrl();
 
       URIBuilder consoleLoginUriBuilder = new URIBuilder(serverUrl);
       consoleLoginUriBuilder.setPath(SessionUtil.SF_PATH_CONSOLE_LOGIN_REQUEST);
       consoleLoginUriBuilder.addParameter("login_name", loginInput.getUserName());
-      consoleLoginUriBuilder.addParameter("client_port", Integer.toString(port));
+      consoleLoginUriBuilder.addParameter("browser_mode_redirect_port", Integer.toString(port));
+      consoleLoginUriBuilder.addParameter("proof_key", proofKey);
 
       String consoleLoginUrl = consoleLoginUriBuilder.build().toURL().toString();
 
@@ -232,6 +236,13 @@ public class SessionUtilExternalBrowser {
     } catch (Exception ex) {
       throw new SFException(ex, ErrorCode.INTERNAL_ERROR, ex.getMessage());
     }
+  }
+
+  private String generateProofKey() {
+    SecureRandom secureRandom = new SecureRandom();
+    byte[] randomness = new byte[32];
+    secureRandom.nextBytes(randomness);
+    return Base64.getEncoder().encodeToString(randomness);
   }
 
   /**
