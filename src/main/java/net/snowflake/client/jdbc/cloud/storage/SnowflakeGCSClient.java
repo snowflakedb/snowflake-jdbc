@@ -142,6 +142,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
       throws StorageProviderException {
     try {
+      logger.debug("Listing objects in the bucket {} with prefix {}", remoteStorageLocation, prefix);
       Page<Blob> blobs = this.gcsClient.list(remoteStorageLocation, BlobListOption.prefix(prefix));
       return new StorageObjectSummaryCollection(blobs);
     } catch (Exception e) {
@@ -645,7 +646,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     int retryCount = 0;
     do {
       try {
-        logger.debug("Starting upload", false);
+        logger.debug("Starting upload with downscope token", false);
 
         uploadWithDownScopedToken(
             remoteStorageLocation,
@@ -710,6 +711,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String contentEncoding,
       Map<String, String> metadata,
       InputStream content) {
+    logger.debug("Uploading file {} to bucket {}", destFileName, remoteStorageLocation);
     BlobId blobId = BlobId.of(remoteStorageLocation, destFileName);
     BlobInfo blobInfo =
         BlobInfo.newBuilder(blobId)
