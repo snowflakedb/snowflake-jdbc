@@ -99,8 +99,6 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
   protected void initialize(SnowflakeConnectString conStr, String appID, String appVersion)
       throws SQLException {
-    logger.debug(
-        "Trying to establish session, JDBC driver version: {}", SnowflakeDriver.implementVersion);
     TelemetryService.getInstance().updateContext(conStr);
 
     try {
@@ -108,6 +106,8 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       initSessionProperties(conStr, appID, appVersion);
       setClientConfig();
       initLogger();
+      logger.debug(
+              "Trying to establish session, JDBC driver version: {} : {}", SnowflakeDriver.getImplementationTitle(), SnowflakeDriver.implementVersion);
       if (!skipOpen) {
         sfSession.open();
       }
