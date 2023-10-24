@@ -152,7 +152,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)
       throws StorageProviderException {
     try {
-      logger.debug("Listing objects in the bucket {} with prefix {}", remoteStorageLocation, prefix);
+      logger.debug(
+          "Listing objects in the bucket {} with prefix {}", remoteStorageLocation, prefix);
       Page<Blob> blobs = this.gcsClient.list(remoteStorageLocation, BlobListOption.prefix(prefix));
       return new StorageObjectSummaryCollection(blobs);
     } catch (Exception e) {
