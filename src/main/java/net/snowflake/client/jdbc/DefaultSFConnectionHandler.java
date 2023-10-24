@@ -107,7 +107,9 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       setClientConfig();
       initLogger();
       logger.debug(
-              "Trying to establish session, JDBC driver version: {} : {}", SnowflakeDriver.getImplementationTitle(), SnowflakeDriver.implementVersion);
+          "Trying to establish session, JDBC driver version: {} : {}",
+          SnowflakeDriver.getImplementationTitle(),
+          SnowflakeDriver.implementVersion);
       if (!skipOpen) {
         sfSession.open();
       }
