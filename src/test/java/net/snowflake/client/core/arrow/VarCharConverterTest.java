@@ -107,4 +107,23 @@ public class VarCharConverterTest extends BaseConverterTest {
 
     vector.close();
   }
+
+  @Test
+  public void testGetDate() throws SFException {
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "FIXED");
+
+    FieldType fieldType =
+            new FieldType(true, Types.MinorType.VARCHAR.getType(), null, customFieldMeta);
+
+    VarCharVector vector = new VarCharVector("col_one", fieldType, allocator);
+    vector.setNull(0);
+    vector.setSafe(1, "abc".getBytes(StandardCharsets.UTF_8));
+
+    ArrowVectorConverter converter = new VarCharConverter(vector, 0, this);
+    assertThat(null, is(converter.toDate(0, null, false)));
+    TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toDate(1, null, false));
+
+    vector.close();
+  }
 }

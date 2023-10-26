@@ -5,6 +5,9 @@ package net.snowflake.client.core.arrow;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.sql.Date;
+import java.util.TimeZone;
+
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -141,6 +144,18 @@ public class VarCharConverter extends AbstractArrowVectorConverter {
       throw new SFException(
           ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
           SnowflakeUtil.BOOLEAN_STR, str);
+    }
+  }
+
+  @Override
+  public Date toDate(int index, TimeZone jvmTz, boolean useDateFormat) throws SFException {
+    if (isNull(index))
+    {
+      return null;
+    } else {
+      throw new SFException(
+              ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
+              SnowflakeUtil.DATE_STR, "");
     }
   }
 }
