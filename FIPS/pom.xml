@@ -811,10 +811,6 @@
                        <shadedPattern>${shadeBase}.google.iam</shadedPattern>
                      </relocation>
                      <relocation>
-                       <pattern>storage</pattern>
-                       <shadedPattern>${shadeBase}.storage</shadedPattern>
-                     </relocation>
-                      <relocation>
                        <pattern>io.opencensus</pattern>
                        <shadedPattern>${shadeBase}.opencensus</shadedPattern>
                      </relocation>

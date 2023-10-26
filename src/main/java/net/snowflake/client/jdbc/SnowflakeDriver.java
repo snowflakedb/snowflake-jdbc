@@ -146,6 +146,16 @@ public class SnowflakeDriver implements Driver {
   }
 
   /**
+   * Utility method to verify if the standard or fips snowflake-jdbc driver is being used.
+   *
+   * @return
+   */
+  public static String getImplementationTitle() {
+    Package pkg = Package.getPackage("net.snowflake.client.jdbc");
+    return pkg.getImplementationTitle();
+  }
+
+  /**
    * Checks whether a given url is in a valid format.
    *
    * <p>The current uri format is: jdbc:snowflake://[host[:port]]
