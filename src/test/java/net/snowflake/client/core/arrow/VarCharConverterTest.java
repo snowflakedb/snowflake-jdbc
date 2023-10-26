@@ -10,13 +10,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.sql.Date;
+import java.util.*;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
 import org.apache.arrow.memory.BufferAllocator;
@@ -118,11 +113,16 @@ public class VarCharConverterTest extends BaseConverterTest {
 
     VarCharVector vector = new VarCharVector("col_one", fieldType, allocator);
     vector.setNull(0);
-    vector.setSafe(1, "abc".getBytes(StandardCharsets.UTF_8));
+    vector.setSafe(1, "2023-10-26".getBytes(StandardCharsets.UTF_8));
+    vector.setSafe(2, "abc".getBytes(StandardCharsets.UTF_8));
 
     ArrowVectorConverter converter = new VarCharConverter(vector, 0, this);
+    Date expectedDate = new Date(123, 9, 26);
+    Date actualDate = converter.toDate(1, TimeZone.getDefault(), false);
+
     assertThat(null, is(converter.toDate(0, null, false)));
-    TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toDate(1, null, false));
+    assertThat(actualDate, is(expectedDate));
+    TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toDate(2, null, false));
 
     vector.close();
   }
