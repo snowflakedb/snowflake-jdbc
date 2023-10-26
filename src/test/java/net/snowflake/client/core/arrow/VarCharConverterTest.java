@@ -114,7 +114,7 @@ public class VarCharConverterTest extends BaseConverterTest {
     customFieldMeta.put("logicalType", "FIXED");
 
     FieldType fieldType =
-            new FieldType(true, Types.MinorType.VARCHAR.getType(), null, customFieldMeta);
+        new FieldType(true, Types.MinorType.VARCHAR.getType(), null, customFieldMeta);
 
     VarCharVector vector = new VarCharVector("col_one", fieldType, allocator);
     vector.setNull(0);
