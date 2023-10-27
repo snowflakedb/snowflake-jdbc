@@ -899,6 +899,10 @@
                             <exclude>META-INF/DEPENDENCIES</exclude>
                             <exclude>META-INF/maven/**</exclude>
                             <exclude>META-INF/services/com.fasterxml.*</exclude>
+                            <!-- jackson became a multi-release JAR since 2.15.x -->
+                            <!-- will need to exclude META-INF/versions/17 and META-INF/versions/19 until we move to newer Java versions -->
+                            <exclude>META-INF/versions/17/**</exclude>
+                            <exclude>META-INF/versions/19/**</exclude>
                             <exclude>META-INF/*.xml</exclude>
                             <exclude>META-INF/*.SF</exclude>
                             <exclude>META-INF/*.DSA</exclude>
