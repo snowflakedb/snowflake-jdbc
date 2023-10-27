@@ -157,9 +157,10 @@ public class SnowflakeDriver implements Driver {
 
   /**
    * Utility method to get the complete jar name with version.
+   *
    * @return
    */
-  public static String getJdbcJarname(){
+  public static String getJdbcJarname() {
     return String.format("%s-%s", getImplementationTitle(), implementVersion);
   }
 
