@@ -552,6 +552,8 @@ public class SessionUtil {
         clientEnv.put(SFSessionProperty.TRACING.getPropertyKey(), tracingLevel);
       }
 
+      clientEnv.put("JDBC_JAR_NAME", SnowflakeDriver.getJdbcJarname());
+
       data.put(ClientAuthnParameter.CLIENT_ENVIRONMENT.name(), clientEnv);
 
       // Initialize the session parameters
