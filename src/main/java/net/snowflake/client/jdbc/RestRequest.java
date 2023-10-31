@@ -435,7 +435,8 @@ public class RestRequest {
             }
             if (retryTimeoutInMilliseconds > 0
                 && (elapsedMilliForTransientIssues + backoffInMilli) > retryTimeoutInMilliseconds) {
-              // If the timeout will be reached before the next backoff, just use the remaining time.
+              // If the timeout will be reached before the next backoff, just use the remaining
+              // time.
               backoffInMilli =
                   Math.min(
                       backoffInMilli, retryTimeoutInMilliseconds - elapsedMilliForTransientIssues);
