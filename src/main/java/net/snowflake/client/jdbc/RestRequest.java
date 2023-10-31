@@ -42,6 +42,9 @@ public class RestRequest {
   // min backoff in milli before we retry due to transient issues
   private static final long minBackoffInMilli = 1000;
 
+  // min backoff in milli for login/auth requests before we retry
+  private static final long minLoginBackoffInMilli = 4000;
+
   // max backoff in milli before we retry due to transient issues
   // we double the backoff after each retry till we reach the max backoff
   private static final long maxBackoffInMilli = 16000;
@@ -132,6 +135,9 @@ public class RestRequest {
     // when there are transient network/GS issues.
     long startTimePerRequest = startTime;
 
+    // Used to indicate that this is a login/auth request and will be using the new retry strategy.
+    boolean isLoginRequest = SessionUtil.isLoginRequest(httpRequest);
+
     // total elapsed time due to transient issues.
     long elapsedMilliForTransientIssues = 0;
 
@@ -139,7 +145,12 @@ public class RestRequest {
     long retryTimeoutInMilliseconds = retryTimeout * 1000;
 
     // amount of time to wait for backing off before retry
-    long backoffInMilli = minBackoffInMilli;
+    long backoffInMilli;
+    if (isLoginRequest) {
+      backoffInMilli = minLoginBackoffInMilli;
+    } else {
+      backoffInMilli = minBackoffInMilli;
+    }
 
     // auth timeout (ms)
     long authTimeoutInMilli = authTimeout * 1000;
@@ -417,7 +428,18 @@ public class RestRequest {
             logger.debug("sleeping in {}(ms)", backoffInMilli);
             Thread.sleep(backoffInMilli);
             elapsedMilliForTransientIssues += backoffInMilli;
-            backoffInMilli = backoff.nextSleepTime(backoffInMilli);
+            if (isLoginRequest) {
+              backoffInMilli = backoff.getJitterForLogin(backoffInMilli);
+            } else {
+              backoffInMilli = backoff.nextSleepTime(backoffInMilli);
+            }
+            if (retryTimeoutInMilliseconds > 0
+                && (elapsedMilliForTransientIssues + backoffInMilli) > retryTimeoutInMilliseconds) {
+              // If the timeout will be reached before the next backoff, just use the remaining time.
+              backoffInMilli =
+                  Math.min(
+                      backoffInMilli, retryTimeoutInMilliseconds - elapsedMilliForTransientIssues);
+            }
           } catch (InterruptedException ex1) {
             logger.debug("Backoff sleep before retrying login got interrupted", false);
           }

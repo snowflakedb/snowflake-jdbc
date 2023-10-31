@@ -70,9 +70,9 @@ public class SFSession extends SFBaseSession {
    * Amount of seconds a user is willing to tolerate for establishing the connection with database.
    * In our case, it means the first login request to get authorization token.
    *
-   * <p>Default:60 seconds
+   * <p>Default:300 seconds
    */
-  private int loginTimeout = 60;
+  private int loginTimeout = 300;
   /**
    * Amount of milliseconds a user is willing to tolerate for network related issues (e.g. HTTP
    * 503/504) or database transient issues (e.g. GS not responding)
