@@ -22,13 +22,12 @@ public class DecorrelatedJitterBackoff {
   }
 
   public long getJitterForLogin(long currentTime) {
-    int mulitplicationFactor = chooseRandom(-1, 1);
-    long jitter = (long) (mulitplicationFactor * currentTime * 0.5);
+    double multiplicationFactor = chooseRandom(-1, 1);
+    long jitter = (long) (multiplicationFactor * currentTime * 0.5);
     return jitter;
   }
 
-  private int chooseRandom(int min, int max) {
-    Random random = new Random();
-    return random.nextInt(max - min) + min;
+  private double chooseRandom(int min, int max) {
+    return min + (Math.random() * (max - min));
   }
 }

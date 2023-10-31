@@ -602,8 +602,8 @@ public class SessionUtil {
           postRequest, loginInput.getAdditionalHttpHeadersForSnowsight());
 
       // Add headers for driver name and version
-      postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, SF_DRIVER_NAME);
-      postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, SF_DRIVER_VERSION);
+      postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
+      postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
 
       // attach the login info json body to the post request
       StringEntity input = new StringEntity(json, StandardCharsets.UTF_8);
@@ -914,6 +914,10 @@ public class SessionUtil {
       uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       postRequest = new HttpPost(uriBuilder.build());
+
+      // Add headers for driver name and version
+      postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
+      postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
 
       // Add custom headers before adding common headers
       HttpUtil.applyAdditionalHeadersForSnowsight(
@@ -1271,6 +1275,10 @@ public class SessionUtil {
       HttpPost postRequest = new HttpPost(fedUrlUri);
       postRequest.setEntity(input);
       postRequest.addHeader("accept", "application/json");
+
+      // Add headers for driver name and version
+      postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
+      postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
 
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
