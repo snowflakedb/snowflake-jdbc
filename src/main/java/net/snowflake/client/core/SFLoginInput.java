@@ -25,7 +25,7 @@ public class SFLoginInput {
   private String oktaUserName;
   private String accountName;
   private int loginTimeout = -1; // default is invalid
-  private int retryTimeout = 0;
+  private int retryTimeout = 300;
   private int authTimeout = 0;
   private String userName;
   private String password;
@@ -140,8 +140,14 @@ public class SFLoginInput {
     return loginTimeout;
   }
 
+  // We want to choose the smaller of the two values between retryTimeout and loginTimeout for the
+  // new retry strategy.
   SFLoginInput setLoginTimeout(int loginTimeout) {
-    this.loginTimeout = loginTimeout;
+    if (loginTimeout > retryTimeout) {
+      this.loginTimeout = retryTimeout;
+    } else {
+      this.loginTimeout = loginTimeout;
+    }
     return this;
   }
 

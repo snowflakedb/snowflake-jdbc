@@ -103,7 +103,7 @@ public class SessionUtilTest {
         uriBuilder.setPath(testCase);
         URI uri = uriBuilder.build();
         HttpPost postRequest = new HttpPost(uri);
-        assertTrue(SessionUtil.isLoginRequest(postRequest));
+        assertTrue(SessionUtil.isNewRetryStrategyRequest(postRequest));
       } catch (URISyntaxException e) {
         throw new RuntimeException(e);
       }
@@ -121,7 +121,7 @@ public class SessionUtilTest {
         uriBuilder.setPath(testCase);
         URI uri = uriBuilder.build();
         HttpPost postRequest = new HttpPost(uri);
-        assertFalse(SessionUtil.isLoginRequest(postRequest));
+        assertFalse(SessionUtil.isNewRetryStrategyRequest(postRequest));
       } catch (URISyntaxException e) {
         throw new RuntimeException(e);
       }

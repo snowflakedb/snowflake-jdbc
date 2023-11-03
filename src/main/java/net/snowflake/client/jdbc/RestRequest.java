@@ -133,7 +133,7 @@ public class RestRequest {
     long startTimePerRequest = startTime;
 
     // Used to indicate that this is a login/auth request and will be using the new retry strategy.
-    boolean isLoginRequest = SessionUtil.isLoginRequest(httpRequest);
+    boolean isLoginRequest = SessionUtil.isNewRetryStrategyRequest(httpRequest);
 
     // total elapsed time due to transient issues.
     long elapsedMilliForTransientIssues = 0;
@@ -426,7 +426,7 @@ public class RestRequest {
                   (long)
                       backoff.chooseRandom(
                           jitteredBackoffInMilli + backoffInMilli,
-                          Math.pow(retryCount, 2) + jitteredBackoffInMilli);
+                          Math.pow(2, retryCount) + jitteredBackoffInMilli);
             } else {
               backoffInMilli = backoff.nextSleepTime(backoffInMilli);
             }

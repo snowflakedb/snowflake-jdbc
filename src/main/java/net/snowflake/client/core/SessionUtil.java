@@ -619,12 +619,7 @@ public class SessionUtil {
 
       String theString = null;
 
-      // We want to choose the smaller of the two values between retryTimeout and loginTimeout
       int leftRetryTimeout = loginInput.getLoginTimeout();
-      if (leftRetryTimeout > loginInput.getRetryTimeout()) {
-        leftRetryTimeout = loginInput.getRetryTimeout();
-      }
-
       int leftsocketTimeout = loginInput.getSocketTimeout();
       int retryCount = 0;
 
@@ -958,16 +953,10 @@ public class SessionUtil {
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
           (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
 
-      // We want to choose the smaller of the two values between retryTimeout and loginTimeout
-      int loginRetryTimeout = loginInput.getLoginTimeout();
-      if (loginRetryTimeout > loginInput.getRetryTimeout()) {
-        loginRetryTimeout = loginInput.getRetryTimeout();
-      }
-
       String theString =
           HttpUtil.executeGeneralRequest(
               postRequest,
-              loginRetryTimeout,
+              loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
               0,
@@ -1288,16 +1277,10 @@ public class SessionUtil {
       postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
       postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
 
-      // We want to choose the smaller of the two values between retryTimeout and loginTimeout
-      int loginRetryTimeout = loginInput.getLoginTimeout();
-      if (loginRetryTimeout > loginInput.getRetryTimeout()) {
-        loginRetryTimeout = loginInput.getRetryTimeout();
-      }
-
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
               postRequest,
-              loginRetryTimeout,
+              loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
               0,
@@ -1656,7 +1639,7 @@ public class SessionUtil {
    * @param request the post request
    * @return true if this is a login/auth request, false otherwise
    */
-  public static boolean isLoginRequest(HttpRequestBase request) {
+  public static boolean isNewRetryStrategyRequest(HttpRequestBase request) {
     URI requestURI = request.getURI();
     String requestPath = requestURI.getPath();
     if (requestPath != null) {
