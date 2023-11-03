@@ -143,7 +143,7 @@ public class SFLoginInput {
   // We want to choose the smaller of the two values between retryTimeout and loginTimeout for the
   // new retry strategy.
   SFLoginInput setLoginTimeout(int loginTimeout) {
-    if (loginTimeout > retryTimeout) {
+    if (loginTimeout > retryTimeout && retryTimeout != 0) {
       this.loginTimeout = retryTimeout;
     } else {
       this.loginTimeout = loginTimeout;
