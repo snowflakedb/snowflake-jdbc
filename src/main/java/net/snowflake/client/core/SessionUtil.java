@@ -117,10 +117,6 @@ public class SessionUtil {
 
   public static final String SF_HEADER_CLIENT_APP_VERSION = "CLIENT_APP_VERSION";
 
-  private static final String SF_DRIVER_NAME = "Snowflake";
-
-  private static final String SF_DRIVER_VERSION = SnowflakeDriver.implementVersion;
-
   private static final String ID_TOKEN_AUTHENTICATOR = "ID_TOKEN";
 
   private static final String NO_QUERY_ID = "";
@@ -962,10 +958,16 @@ public class SessionUtil {
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
           (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
 
+      // We want to choose the smaller of the two values between retryTimeout and loginTimeout
+      int loginRetryTimeout = loginInput.getLoginTimeout();
+      if (loginRetryTimeout > loginInput.getRetryTimeout()) {
+        loginRetryTimeout = loginInput.getRetryTimeout();
+      }
+
       String theString =
           HttpUtil.executeGeneralRequest(
               postRequest,
-              loginInput.getLoginTimeout(),
+              loginRetryTimeout,
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
               0,
@@ -1286,10 +1288,16 @@ public class SessionUtil {
       postRequest.addHeader(SF_HEADER_CLIENT_APP_ID, loginInput.getAppId());
       postRequest.addHeader(SF_HEADER_CLIENT_APP_VERSION, loginInput.getAppVersion());
 
+      // We want to choose the smaller of the two values between retryTimeout and loginTimeout
+      int loginRetryTimeout = loginInput.getLoginTimeout();
+      if (loginRetryTimeout > loginInput.getRetryTimeout()) {
+        loginRetryTimeout = loginInput.getRetryTimeout();
+      }
+
       final String gsResponse =
           HttpUtil.executeGeneralRequest(
               postRequest,
-              loginInput.getLoginTimeout(),
+              loginRetryTimeout,
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
               0,

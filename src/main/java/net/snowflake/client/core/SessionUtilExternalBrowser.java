@@ -181,10 +181,16 @@ public class SessionUtilExternalBrowser {
 
       postRequest.addHeader("accept", "application/json");
 
+      // We want to choose the smaller of the two values between retryTimeout and loginTimeout
+      int loginRetryTimeout = loginInput.getLoginTimeout();
+      if (loginRetryTimeout > loginInput.getRetryTimeout()) {
+        loginRetryTimeout = loginInput.getRetryTimeout();
+      }
+
       String theString =
           HttpUtil.executeGeneralRequest(
               postRequest,
-              loginInput.getLoginTimeout(),
+              loginRetryTimeout,
               loginInput.getAuthTimeout(),
               loginInput.getSocketTimeout(),
               0,
