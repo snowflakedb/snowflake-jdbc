@@ -379,7 +379,7 @@ public class SFSession extends SFBaseSession {
         case RETRY_TIMEOUT:
           if (propertyValue != null) {
             int timeoutValue = (Integer) propertyValue;
-            if (timeoutValue >= 300) {
+            if (timeoutValue >= 300 || timeoutValue == 0) {
               retryTimeout = timeoutValue;
             }
           }
