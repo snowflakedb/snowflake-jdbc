@@ -622,7 +622,13 @@ public class SessionUtil {
       setServiceNameHeader(loginInput, postRequest);
 
       String theString = null;
+
+      // We want to choose the smaller of the two values between retryTimeout and loginTimeout
       int leftRetryTimeout = loginInput.getLoginTimeout();
+      if (leftRetryTimeout > loginInput.getRetryTimeout()) {
+        leftRetryTimeout = loginInput.getRetryTimeout();
+      }
+
       int leftsocketTimeout = loginInput.getSocketTimeout();
       int retryCount = 0;
 

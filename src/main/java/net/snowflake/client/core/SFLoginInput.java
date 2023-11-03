@@ -25,6 +25,7 @@ public class SFLoginInput {
   private String oktaUserName;
   private String accountName;
   private int loginTimeout = -1; // default is invalid
+  private int retryTimeout = 0;
   private int authTimeout = 0;
   private String userName;
   private String password;
@@ -141,6 +142,15 @@ public class SFLoginInput {
 
   SFLoginInput setLoginTimeout(int loginTimeout) {
     this.loginTimeout = loginTimeout;
+    return this;
+  }
+
+  int getRetryTimeout() {
+    return retryTimeout;
+  }
+
+  SFLoginInput setRetryTimeout(int retryTimeout) {
+    this.retryTimeout = retryTimeout;
     return this;
   }
 

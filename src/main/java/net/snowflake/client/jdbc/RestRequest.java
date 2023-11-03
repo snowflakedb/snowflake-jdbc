@@ -42,9 +42,6 @@ public class RestRequest {
   // min backoff in milli before we retry due to transient issues
   private static final long minBackoffInMilli = 1000;
 
-  // min backoff in milli for login/auth requests before we retry
-  private static final long minLoginBackoffInMilli = 4000;
-
   // max backoff in milli before we retry due to transient issues
   // we double the backoff after each retry till we reach the max backoff
   private static final long maxBackoffInMilli = 16000;
@@ -145,12 +142,7 @@ public class RestRequest {
     long retryTimeoutInMilliseconds = retryTimeout * 1000;
 
     // amount of time to wait for backing off before retry
-    long backoffInMilli;
-    if (isLoginRequest) {
-      backoffInMilli = minLoginBackoffInMilli;
-    } else {
-      backoffInMilli = minBackoffInMilli;
-    }
+    long backoffInMilli = minBackoffInMilli;
 
     // auth timeout (ms)
     long authTimeoutInMilli = authTimeout * 1000;
@@ -429,7 +421,12 @@ public class RestRequest {
             Thread.sleep(backoffInMilli);
             elapsedMilliForTransientIssues += backoffInMilli;
             if (isLoginRequest) {
-              backoffInMilli = backoff.getJitterForLogin(backoffInMilli);
+              long jitteredBackoffInMilli = backoff.getJitterForLogin(backoffInMilli);
+              backoffInMilli =
+                  (long)
+                      backoff.chooseRandom(
+                          jitteredBackoffInMilli + backoffInMilli,
+                          Math.pow(retryCount, 2) + jitteredBackoffInMilli);
             } else {
               backoffInMilli = backoff.nextSleepTime(backoffInMilli);
             }

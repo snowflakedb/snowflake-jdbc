@@ -108,6 +108,13 @@ public class SFSession extends SFBaseSession {
   // Max retries for outgoing http requests.
   private int maxHttpRetries = 7;
 
+  /**
+   * Retry timeout in seconds. Cannot be less than 300.
+   *
+   * <p>Default: 300
+   */
+  private int retryTimeout = 300;
+
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
   @VisibleForTesting
@@ -369,6 +376,15 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case RETRY_TIMEOUT:
+          if (propertyValue != null) {
+            int timeoutValue = (Integer) propertyValue;
+            if (timeoutValue >= 300) {
+              retryTimeout = timeoutValue;
+            }
+          }
+          break;
+
         default:
           break;
       }
@@ -405,7 +421,7 @@ public class SFSession extends SFBaseSession {
         "input: server={}, account={}, user={}, password={}, role={}, database={}, schema={},"
             + " warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={},"
             + " passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={},"
-            + " application={}, app_id={}, app_version={}, login_timeout={}, network_timeout={},"
+            + " application={}, app_id={}, app_version={}, login_timeout={}, retry_timeout={}, network_timeout={},"
             + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}."
             + " session_parameters: client_store_temporary_credential={}, gzip_disabled={}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
@@ -433,6 +449,7 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.APP_ID),
         connectionPropertiesMap.get(SFSessionProperty.APP_VERSION),
         connectionPropertiesMap.get(SFSessionProperty.LOGIN_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.RETRY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.NETWORK_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.TRACING),
@@ -471,6 +488,7 @@ public class SFSession extends SFBaseSession {
         .setOKTAUserName((String) connectionPropertiesMap.get(SFSessionProperty.OKTA_USERNAME))
         .setAccountName((String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))
         .setLoginTimeout(loginTimeout)
+        .setRetryTimeout(retryTimeout)
         .setAuthTimeout(authTimeout)
         .setUserName((String) connectionPropertiesMap.get(SFSessionProperty.USER))
         .setPassword((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
@@ -652,6 +670,7 @@ public class SFSession extends SFBaseSession {
         .setIdToken(idToken)
         .setMfaToken(mfaToken)
         .setLoginTimeout(loginTimeout)
+        .setRetryTimeout(retryTimeout)
         .setDatabaseName(getDatabase())
         .setSchemaName(getSchema())
         .setRole(getRole())
@@ -696,6 +715,7 @@ public class SFSession extends SFBaseSession {
         .setServerUrl(getServerUrl())
         .setSessionToken(sessionToken)
         .setLoginTimeout(loginTimeout)
+        .setRetryTimeout(retryTimeout)
         .setOCSPMode(getOCSPMode())
         .setHttpClientSettingsKey(getHttpClientKey());
 

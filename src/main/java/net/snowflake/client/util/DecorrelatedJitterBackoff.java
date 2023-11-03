@@ -26,7 +26,7 @@ public class DecorrelatedJitterBackoff {
     return jitter;
   }
 
-  private double chooseRandom(int min, int max) {
+  public double chooseRandom(double min, double max) {
     return min + (Math.random() * (max - min));
   }
 }
