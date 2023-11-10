@@ -76,7 +76,7 @@ jobs:
         steps:
             - uses: actions/checkout@v1
             - name: Upload coverage reports
-            - uses: codecov/codecov-action@v3
+              uses: codecov/codecov-action@v3
               with:
                 token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
                 fail_ci_if_error: true
