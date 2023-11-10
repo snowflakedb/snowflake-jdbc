@@ -71,10 +71,11 @@ jobs:
                 is_old_driver: ${{ matrix.is_old_driver }}
               run: ./ci/test.sh
     upload-codecov-report:
+        name: Upload coverage reports to Codecov
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
-            - name: Upload coverage reports to Codecov
+            - name: Upload coverage reports
             - uses: codecov/codecov-action@v3
               with:
                 token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
