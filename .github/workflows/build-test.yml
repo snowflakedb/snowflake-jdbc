@@ -70,3 +70,14 @@ jobs:
                 JDBC_TEST_CATEGORY: ${{ matrix.category }}
                 is_old_driver: ${{ matrix.is_old_driver }}
               run: ./ci/test.sh
+    upload-codecov-report:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v1
+            - name: Upload coverage reports to Codecov
+            - uses: codecov/codecov-action@v3
+              with:
+                token: ${{ secrets.CODE_COV_UPLOAD_TOKEN }}
+                fail_ci_if_error: true
+                files: ./it_codecov.xml,./ut_codecov.xml
+                verbose: true
