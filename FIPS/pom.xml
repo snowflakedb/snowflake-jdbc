@@ -5,7 +5,7 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-base</artifactId>
-    <version>3.14.2</version>
+    <version>3.14.3</version>
     <relativePath>../base_pom.xml</relativePath>
   </parent>
 
@@ -39,38 +39,6 @@
     <url>http://127.0.0.1/websvn/dummy</url>
   </scm>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>10.0.1</arrow.version>
-    <slf4j.version>1.7.36</slf4j.version>
-    <jsoup.version>1.15.3</jsoup.version>
-    <tika.version>2.4.1</tika.version>
-    <jackson.version>2.14.2</jackson.version>
-    <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
-    <httpclient.version>4.5.11</httpclient.version>
-    <jacoco.version>0.8.4</jacoco.version>
-    <jacoco.skip.instrument>true</jacoco.skip.instrument>
-    <awssdk.version>1.12.501</awssdk.version>
-    <google.api.client.version>1.33.2</google.api.client.version>
-    <google.http.client.version>1.43.2</google.http.client.version>
-    <jna.version>5.13.0</jna.version>
-    <mockito.version>3.5.6</mockito.version>
-    <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
-    <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
-  </properties>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.amazonaws</groupId>
-        <artifactId>aws-java-sdk-bom</artifactId>
-        <version>${awssdk.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>org.bouncycastle</groupId>
@@ -217,7 +185,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>${version.plugin.clean}</version>
         <configuration>
           <excludeDefaultDirectories/>
           <filesets>
@@ -233,7 +201,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.0</version>
+        <version>${version.plugin.compiler}</version>
         <configuration>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
@@ -258,7 +226,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>${jacoco.version}</version>
+        <version>${version.plugin.jacoco}</version>
         <executions>
           <execution>
             <id>pre-unit-test</id>
@@ -288,7 +256,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
+        <version>${version.plugin.jar}</version>
         <configuration>
           <archive>
             <manifest>
@@ -330,7 +298,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>3.0.1</version>
+        <version>${version.plugin.source}</version>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -343,7 +311,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>${version.plugin.javadoc}</version>
         <configuration>
           <source>8</source>
         </configuration>
@@ -359,7 +327,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>1.6.0</version>
+        <version>${version.plugin.exec}</version>
         <executions>
           <execution>
             <id>check-shaded-content</id>
@@ -380,7 +348,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.9</version>
+        <version>${version.plugin.projectinforeports}</version>
       </plugin>
     </plugins>
   </reporting>
@@ -398,7 +366,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>buildnumber-maven-plugin</artifactId>
-            <version>1.2</version>
+            <version>${version.plugin.buildnumber}</version>
             <executions>
               <execution>
                  <phase>package</phase>
@@ -420,7 +388,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
-            <version>3.2.1</version>
+            <version>${version.plugin.shade}</version>
             <configuration>
             </configuration>
             <executions>
@@ -662,7 +630,7 @@
           <plugin>
             <groupId>com.coveo</groupId>
             <artifactId>fmt-maven-plugin</artifactId>
-            <version>2.10</version>
+            <version>${version.plugin.fmt}</version>
             <executions>
               <execution>
                 <goals>
@@ -729,7 +697,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>${version.plugin.gpg}</version>
             <executions>
               <execution>
                 <phase>deploy</phase>

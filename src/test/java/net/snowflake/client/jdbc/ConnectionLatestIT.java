@@ -554,7 +554,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
       conEnd = System.currentTimeMillis();
-      assertThat("Login time out not taking effective", conEnd - connStart < 60000);
+      assertThat("Login time out not taking effective", conEnd - connStart < 300000);
 
       Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
       if (TelemetryService.getInstance().isDeploymentEnabled()) {
@@ -595,7 +595,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           equalTo(ErrorCode.NETWORK_ERROR.getMessageCode()));
 
       conEnd = System.currentTimeMillis();
-      assertThat("Login time out not taking effective", conEnd - connStart < 60000);
+      assertThat("Login time out not taking effective", conEnd - connStart < 300000);
       Thread.sleep(WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS);
       if (TelemetryService.getInstance().isDeploymentEnabled()) {
         assertThat(

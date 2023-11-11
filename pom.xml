@@ -6,7 +6,7 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-base</artifactId>
-    <version>3.14.2</version>
+    <version>3.14.3</version>
     <relativePath>base_pom.xml</relativePath>
   </parent>
 
@@ -20,6 +20,10 @@
     <connection>scm:git:https://github.com/snowflakedb/snowflake-jdbc.git</connection>
     <url>https://github.com/snowflakedb/snowflake-jdbc</url>
   </scm>
+
+  <properties>
+    <bouncycastle.version>1.74</bouncycastle.version>
+  </properties>
 
   <dependencies>
     <dependency>

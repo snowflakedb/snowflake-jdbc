@@ -29,12 +29,22 @@ import org.mockito.stubbing.Answer;
 /** RestRequest unit tests. */
 public class RestRequestTest {
 
-  static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
+  static final int DEFAULT_CONNECTION_TIMEOUT = 300000;
   static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
 
   private CloseableHttpResponse retryResponse() {
     StatusLine retryStatusLine = mock(StatusLine.class);
     when(retryStatusLine.getStatusCode()).thenReturn(503);
+
+    CloseableHttpResponse retryResponse = mock(CloseableHttpResponse.class);
+    when(retryResponse.getStatusLine()).thenReturn(retryStatusLine);
+
+    return retryResponse;
+  }
+
+  private CloseableHttpResponse retryLoginResponse() {
+    StatusLine retryStatusLine = mock(StatusLine.class);
+    when(retryStatusLine.getStatusCode()).thenReturn(429);
 
     CloseableHttpResponse retryResponse = mock(CloseableHttpResponse.class);
     when(retryResponse.getStatusLine()).thenReturn(retryStatusLine);
@@ -447,6 +457,74 @@ public class RestRequestTest {
     try {
       TelemetryService.disable();
       execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1);
+      fail("testMaxRetries");
+    } finally {
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
+  }
+
+  @Test(expected = SnowflakeSQLException.class)
+  public void testLoginMaxRetries() throws IOException, SnowflakeSQLException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
+
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                callCount += 1;
+                if (callCount >= 4) {
+                  return retryLoginResponse();
+                } else {
+                  return socketTimeoutResponse();
+                }
+              }
+            });
+
+    try {
+      TelemetryService.disable();
+      execute(client, "/session/v1/login-request", 0, 0, 0, true, false, 1);
+      fail("testMaxRetries");
+    } finally {
+      if (telemetryEnabled) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+    }
+  }
+
+  @Test(expected = SnowflakeSQLException.class)
+  public void testLoginTimeout() throws IOException, SnowflakeSQLException {
+    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
+
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
+                callCount += 1;
+                if (callCount >= 4) {
+                  return retryLoginResponse();
+                } else {
+                  return socketTimeoutResponse();
+                }
+              }
+            });
+
+    try {
+      TelemetryService.disable();
+      execute(client, "/session/v1/login-request", 1, 0, 0, true, false, 10);
       fail("testMaxRetries");
     } finally {
       if (telemetryEnabled) {

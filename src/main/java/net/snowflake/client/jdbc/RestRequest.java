@@ -132,6 +132,9 @@ public class RestRequest {
     // when there are transient network/GS issues.
     long startTimePerRequest = startTime;
 
+    // Used to indicate that this is a login/auth request and will be using the new retry strategy.
+    boolean isLoginRequest = SessionUtil.isNewRetryStrategyRequest(httpRequest);
+
     // total elapsed time due to transient issues.
     long elapsedMilliForTransientIssues = 0;
 
@@ -417,7 +420,24 @@ public class RestRequest {
             logger.debug("sleeping in {}(ms)", backoffInMilli);
             Thread.sleep(backoffInMilli);
             elapsedMilliForTransientIssues += backoffInMilli;
-            backoffInMilli = backoff.nextSleepTime(backoffInMilli);
+            if (isLoginRequest) {
+              long jitteredBackoffInMilli = backoff.getJitterForLogin(backoffInMilli);
+              backoffInMilli =
+                  (long)
+                      backoff.chooseRandom(
+                          jitteredBackoffInMilli + backoffInMilli,
+                          Math.pow(2, retryCount) + jitteredBackoffInMilli);
+            } else {
+              backoffInMilli = backoff.nextSleepTime(backoffInMilli);
+            }
+            if (retryTimeoutInMilliseconds > 0
+                && (elapsedMilliForTransientIssues + backoffInMilli) > retryTimeoutInMilliseconds) {
+              // If the timeout will be reached before the next backoff, just use the remaining
+              // time.
+              backoffInMilli =
+                  Math.min(
+                      backoffInMilli, retryTimeoutInMilliseconds - elapsedMilliForTransientIssues);
+            }
           } catch (InterruptedException ex1) {
             logger.debug("Backoff sleep before retrying login got interrupted", false);
           }

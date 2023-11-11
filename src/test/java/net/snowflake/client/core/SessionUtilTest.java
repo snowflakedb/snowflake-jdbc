@@ -5,12 +5,18 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import com.fasterxml.jackson.databind.node.BooleanNode;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.snowflake.client.jdbc.MockConnectionTest;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
 import org.junit.Test;
 
 public class SessionUtilTest {
@@ -82,5 +88,43 @@ public class SessionUtilTest {
         HttpUtil.convertSystemPropertyToIntValue(
             HttpUtil.JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY,
             HttpUtil.DEFAULT_MAX_CONNECTIONS_PER_ROUTE));
+  }
+
+  @Test
+  public void testIsLoginRequest() {
+    List<String> testCases = new ArrayList<String>();
+    testCases.add("/session/v1/login-request");
+    testCases.add("/session/token-request");
+    testCases.add("/session/authenticator-request");
+
+    for (String testCase : testCases) {
+      try {
+        URIBuilder uriBuilder = new URIBuilder("https://test.snowflakecomputing.com");
+        uriBuilder.setPath(testCase);
+        URI uri = uriBuilder.build();
+        HttpPost postRequest = new HttpPost(uri);
+        assertTrue(SessionUtil.isNewRetryStrategyRequest(postRequest));
+      } catch (URISyntaxException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  @Test
+  public void testIsLoginRequestInvalidURIPath() {
+    List<String> testCases = new ArrayList<String>();
+    testCases.add("/session/not-a-real-path");
+
+    for (String testCase : testCases) {
+      try {
+        URIBuilder uriBuilder = new URIBuilder("https://test.snowflakecomputing.com");
+        uriBuilder.setPath(testCase);
+        URI uri = uriBuilder.build();
+        HttpPost postRequest = new HttpPost(uri);
+        assertFalse(SessionUtil.isNewRetryStrategyRequest(postRequest));
+      } catch (URISyntaxException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 }

@@ -23,7 +23,7 @@ public class SnowflakeDriver implements Driver {
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
-  public static String implementVersion = "3.14.2";
+  public static String implementVersion = "3.14.3";
 
   static int majorVersion = 0;
   static int minorVersion = 0;
@@ -153,6 +153,15 @@ public class SnowflakeDriver implements Driver {
   public static String getImplementationTitle() {
     Package pkg = Package.getPackage("net.snowflake.client.jdbc");
     return pkg.getImplementationTitle();
+  }
+
+  /**
+   * Utility method to get the complete jar name with version.
+   *
+   * @return
+   */
+  public static String getJdbcJarname() {
+    return String.format("%s-%s", getImplementationTitle(), implementVersion);
   }
 
   /**
