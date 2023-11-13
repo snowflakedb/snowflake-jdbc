@@ -223,8 +223,9 @@ public class SnowflakeUtil {
         break;
 
       case OBJECT:
-        colType = Types.VARCHAR;
-        extColTypeName = "OBJECT";
+        colType = Types.STRUCT;
+        //TODO : structuredType
+        extColTypeName = "STRUCT";
         break;
 
       case VARIANT:

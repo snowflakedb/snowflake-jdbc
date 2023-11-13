@@ -7,11 +7,10 @@ package net.snowflake.client.core;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
+import java.sql.*;
 import java.util.TimeZone;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
@@ -22,6 +21,8 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.Float8Vector;
+
+import javax.sql.rowset.serial.SQLInputImpl;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
@@ -44,11 +45,23 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
    */
   protected abstract Object getObjectInternal(int columnIndex) throws SFException;
 
+//  public <T extends SQLData> getObject(int columnIndex) throws SFException {
+//    // check metaData
+//    int type = resultSetMetaData.getColumnType(columnIndex);
+//
+////    if (typeCanBeConvertToT)
+//
+//    T t = new T();
+//    t.readSQL(new SQLInput());
+//
+//
+//
+//  }
   public Object getObject(int columnIndex) throws SFException {
 
     int type = resultSetMetaData.getColumnType(columnIndex);
 
-    Object obj = getObjectInternal(columnIndex);
+    Object obj = getObjectInternal(columnIndex); //JsonNode
     if (obj == null) {
       return null;
     }
@@ -86,9 +99,16 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       case Types.BOOLEAN:
         return getBoolean(columnIndex);
 
+      case Types.STRUCT:
+        return getSqlInput((JsonNode) obj);
+
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
     }
+  }
+
+  private Object getSqlInput(JsonNode input) {
+    return new JsonSqlInput(input);
   }
 
   /**

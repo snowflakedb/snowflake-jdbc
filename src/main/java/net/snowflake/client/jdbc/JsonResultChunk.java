@@ -4,20 +4,29 @@
 
 package net.snowflake.client.jdbc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 public class JsonResultChunk extends SnowflakeResultChunk {
   private static final SFLogger logger = SFLoggerFactory.getLogger(JsonResultChunk.class);
+
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   private ResultChunkData data;
 
@@ -32,15 +41,30 @@ public class JsonResultChunk extends SnowflakeResultChunk {
     this.session = session;
   }
 
-  public static Object extractCell(JsonNode resultData, int rowIdx, int colIdx) {
+  public static Object extractCell(JsonNode resultData, int rowIdx, int colIdx, SFResultSetMetaData resultSetMetaData) {
     JsonNode currentRow = resultData.get(rowIdx);
 
     JsonNode colNode = currentRow.get(colIdx);
 
     if (colNode.isTextual()) {
-      return colNode.asText();
+      try {
+        if (resultSetMetaData.getColumnType(colIdx + 1) == Types.STRUCT) {
+          return OBJECT_MAPPER.readTree(colNode.textValue());
+        } else {
+          return colNode.asText();
+        }
+      } //TODO structuredType clear exceptions
+      catch (SFException e) {
+        throw new RuntimeException(e);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
     } else if (colNode.isNumber()) {
       return colNode.numberValue();
+    }
+    // TODO: structuredType - need response with json but not as String
+      else if (colNode.isObject()) {
+      return colNode;
     } else if (colNode.isNull()) {
       return null;
     }
