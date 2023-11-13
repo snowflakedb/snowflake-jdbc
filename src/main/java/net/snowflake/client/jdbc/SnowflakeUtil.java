@@ -611,10 +611,11 @@ public class SnowflakeUtil {
         String nonProxyHosts = info.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
         String proxyProtocol = info.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
         Boolean gzipDisabled =
-            (info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()).isEmpty()
+            (!info.containsKey(SFSessionProperty.GZIP_DISABLED.getPropertyKey())
+                    || info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()).isEmpty())
                 ? false
                 : Boolean.valueOf(
-                    info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey())));
+                    info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()));
         // Check for any user agent suffix
         String userAgentSuffix = "";
         if (info.containsKey(SFSessionProperty.USER_AGENT_SUFFIX)) {
