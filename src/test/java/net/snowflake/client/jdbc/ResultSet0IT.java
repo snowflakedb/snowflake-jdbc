@@ -54,7 +54,7 @@ public class ResultSet0IT extends BaseJDBCTest {
     return conn;
   }
 
-//  @Before
+  @Before
   public void setUp() throws SQLException {
     Connection con = init();
 
