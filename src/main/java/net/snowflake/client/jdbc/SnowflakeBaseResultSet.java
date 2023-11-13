@@ -19,6 +19,8 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
+import javax.sql.rowset.serial.SQLInputImpl;
+
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
@@ -1319,15 +1321,26 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   // @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    if (SQLData.class.isAssignableFrom(type)) {
+      try {
+        SQLData instance = (SQLData) type.newInstance();
+        SQLInput sqlInput = (SQLInput) getObject(columnIndex);
+        instance.readSQL(sqlInput, null);
+        return (T) instance;
+      } //TODO structuredType clean exceptions
+       catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      return (T) getObject(columnIndex);
+    }
   }
 
   // @Override
   public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(String columnLabel,Class<T> type)", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    return getObject(findColumn(columnLabel), type);
+//    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @SuppressWarnings("unchecked")

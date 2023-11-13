@@ -49,6 +49,38 @@ public class ResultSetIT extends ResultSet0IT {
     connection.close();
   }
 
+  public static class TestClass implements SQLData{
+
+    private String x;
+    @Override
+    public String getSQLTypeName() throws SQLException {
+      return null;
+    }
+
+    @Override
+    public void readSQL(SQLInput stream, String typeName) throws SQLException {
+      x = stream.readString();
+    }
+
+    @Override
+    public void writeSQL(SQLOutput stream) throws SQLException {
+
+    }
+  }
+
+  @Test
+  public void testMapJson() throws SQLException {
+
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select {'x':'a'}::OBJECT(x VARCHAR)");
+    resultSet.next();
+    TestClass object = resultSet.getObject(1, TestClass.class);
+    assertEquals("a", object.x);
+    statement.close();
+    connection.close();
+  }
+
   @Test
   public void testGetColumnClassNameForBinary() throws Throwable {
     Connection connection = init();
