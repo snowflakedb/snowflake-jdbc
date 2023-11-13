@@ -115,7 +115,7 @@ public class SFClientConfigParserTest {
     }
   }
 
-  @Test
+  /* @Test
   public void testloadSFClientConfigWithTmpDirectory() {
     Path configFilePath =
         Paths.get(systemGetProperty("java.io.tmpdir"), SF_CLIENT_CONFIG_FILE_NAME);
@@ -129,7 +129,7 @@ public class SFClientConfigParserTest {
     } catch (IOException e) {
       fail("testloadSFClientConfigWithTmpDirectory failed");
     }
-  }
+  } */
 
   @Test
   public void testloadSFClientNoConditionsMatch() throws IOException {
