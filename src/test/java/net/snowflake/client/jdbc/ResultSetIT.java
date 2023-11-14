@@ -82,6 +82,22 @@ public class ResultSetIT extends ResultSet0IT {
   }
 
   @Test
+  public void testMapJsonFromChunks() throws SQLException {
+
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select {'x':'a'}::OBJECT(x VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
+    int i = 0;
+    while (resultSet.next()) {
+      System.out.println(i++);
+      TestClass object = resultSet.getObject(1, TestClass.class);
+      assertEquals("a", object.x);
+    }
+    statement.close();
+    connection.close();
+  }
+
+  @Test
   public void testGetColumnClassNameForBinary() throws Throwable {
     Connection connection = init();
     Statement statement = connection.createStatement();

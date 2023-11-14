@@ -26,8 +26,6 @@ import net.snowflake.common.core.SqlState;
 public class JsonResultChunk extends SnowflakeResultChunk {
   private static final SFLogger logger = SFLoggerFactory.getLogger(JsonResultChunk.class);
 
-  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
-
   private ResultChunkData data;
 
   private int currentRow;
@@ -47,18 +45,7 @@ public class JsonResultChunk extends SnowflakeResultChunk {
     JsonNode colNode = currentRow.get(colIdx);
 
     if (colNode.isTextual()) {
-      try {
-        if (resultSetMetaData.getColumnType(colIdx + 1) == Types.STRUCT) {
-          return OBJECT_MAPPER.readTree(colNode.textValue());
-        } else {
-          return colNode.asText();
-        }
-      } //TODO structuredType clear exceptions
-      catch (SFException e) {
-        throw new RuntimeException(e);
-      } catch (JsonProcessingException e) {
-        throw new RuntimeException(e);
-      }
+      return colNode.textValue();
     } else if (colNode.isNumber()) {
       return colNode.numberValue();
     }
@@ -68,7 +55,7 @@ public class JsonResultChunk extends SnowflakeResultChunk {
     } else if (colNode.isNull()) {
       return null;
     }
-    throw new RuntimeException("Unknow json type");
+    throw new RuntimeException("Unknown json type");
   }
 
   public void tryReuse(ResultChunkDataCache cache) {

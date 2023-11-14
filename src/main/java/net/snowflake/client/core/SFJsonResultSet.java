@@ -10,7 +10,10 @@ import java.nio.ByteBuffer;
 import java.sql.*;
 import java.util.TimeZone;
 
+import com.amazonaws.jmespath.ObjectMapperSingleton;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
@@ -27,6 +30,7 @@ import javax.sql.rowset.serial.SQLInputImpl;
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(); // TODO structuredType is it proper init?
 
   TimeZone sessionTimeZone;
 
@@ -100,15 +104,20 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBoolean(columnIndex);
 
       case Types.STRUCT:
-        return getSqlInput((JsonNode) obj);
+        return getSqlInput((String) obj);
 
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
     }
   }
 
-  private Object getSqlInput(JsonNode input) {
-    return new JsonSqlInput(input);
+  private Object getSqlInput(String input) {
+    try {
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
+      return new JsonSqlInput(jsonNode);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
