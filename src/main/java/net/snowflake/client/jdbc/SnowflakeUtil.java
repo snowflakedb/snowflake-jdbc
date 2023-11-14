@@ -224,7 +224,7 @@ public class SnowflakeUtil {
 
       case OBJECT:
         colType = Types.STRUCT;
-        //TODO : structuredType
+        // TODO : structuredType
         extColTypeName = "STRUCT";
         break;
 

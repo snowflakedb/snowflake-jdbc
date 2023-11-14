@@ -310,7 +310,8 @@ public class SFResultSet extends SFJsonResultSet {
       retValue = firstChunkSortedRowSet[currentChunkRowIndex][internalColumnIndex];
     } else if (firstChunkRowset != null) {
       retValue =
-          JsonResultChunk.extractCell(firstChunkRowset, currentChunkRowIndex, internalColumnIndex, resultSetMetaData);
+          JsonResultChunk.extractCell(
+              firstChunkRowset, currentChunkRowIndex, internalColumnIndex, resultSetMetaData);
     } else if (currentChunk != null) {
       // StructuredType should return JsonNode too
       retValue = currentChunk.getCell(currentChunkRowIndex, internalColumnIndex);
@@ -319,7 +320,7 @@ public class SFResultSet extends SFJsonResultSet {
     }
     wasNull = retValue == null;
 
-    //TODO structuredType must be JsonNode instance
+    // TODO structuredType must be JsonNode instance
     return retValue;
   }
 

@@ -4,20 +4,14 @@
 
 package net.snowflake.client.jdbc;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -39,7 +33,8 @@ public class JsonResultChunk extends SnowflakeResultChunk {
     this.session = session;
   }
 
-  public static Object extractCell(JsonNode resultData, int rowIdx, int colIdx, SFResultSetMetaData resultSetMetaData) {
+  public static Object extractCell(
+      JsonNode resultData, int rowIdx, int colIdx, SFResultSetMetaData resultSetMetaData) {
     JsonNode currentRow = resultData.get(rowIdx);
 
     JsonNode colNode = currentRow.get(colIdx);
@@ -50,7 +45,7 @@ public class JsonResultChunk extends SnowflakeResultChunk {
       return colNode.numberValue();
     }
     // TODO: structuredType - need response with json but not as String
-      else if (colNode.isObject()) {
+    else if (colNode.isObject()) {
       return colNode;
     } else if (colNode.isNull()) {
       return null;

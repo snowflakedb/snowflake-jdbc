@@ -48,7 +48,7 @@ public enum SnowflakeType {
   }
 
   public static JavaDataType getJavaType(SnowflakeType type) {
-    //TODO structuredType
+    // TODO structuredType
     switch (type) {
       case TEXT:
         return JavaDataType.JAVA_STRING;
