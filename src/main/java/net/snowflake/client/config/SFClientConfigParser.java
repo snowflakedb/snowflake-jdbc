@@ -50,13 +50,6 @@ public class SFClientConfigParser {
             Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME).toString();
         if (Files.exists(Paths.get(userHomeFilePath))) {
           derivedConfigFilePath = userHomeFilePath;
-        } else {
-          // 5. Read SF_CLIENT_CONFIG_FILE_NAME if it is present in tmpdir.
-          String tmpFilePath =
-              Paths.get(systemGetProperty("java.io.tmpdir"), SF_CLIENT_CONFIG_FILE_NAME).toString();
-          if (Files.exists(Paths.get(tmpFilePath))) {
-            derivedConfigFilePath = tmpFilePath;
-          }
         }
       }
     }
