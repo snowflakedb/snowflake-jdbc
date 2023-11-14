@@ -319,7 +319,7 @@ public class SFResultSet extends SFJsonResultSet {
     }
     wasNull = retValue == null;
 
-    //TODO must be JsonNode instance
+    //TODO structuredType must be JsonNode instance
     return retValue;
   }
 
