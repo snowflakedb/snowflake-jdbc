@@ -19,8 +19,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
-import javax.sql.rowset.serial.SQLInputImpl;
-
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
@@ -1327,8 +1325,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLInput sqlInput = (SQLInput) getObject(columnIndex);
         instance.readSQL(sqlInput, null);
         return (T) instance;
-      } //TODO structuredType clean exceptions
-       catch (Exception e) {
+      } // TODO structuredType clean exceptions
+      catch (Exception e) {
         throw new RuntimeException(e);
       }
     } else {
@@ -1340,7 +1338,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(String columnLabel,Class<T> type)", false);
     return getObject(findColumn(columnLabel), type);
-//    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    //    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @SuppressWarnings("unchecked")

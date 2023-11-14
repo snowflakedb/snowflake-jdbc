@@ -49,9 +49,10 @@ public class ResultSetIT extends ResultSet0IT {
     connection.close();
   }
 
-  public static class TestClass implements SQLData{
+  public static class TestClass implements SQLData {
 
     private String x;
+
     @Override
     public String getSQLTypeName() throws SQLException {
       return null;
@@ -63,9 +64,7 @@ public class ResultSetIT extends ResultSet0IT {
     }
 
     @Override
-    public void writeSQL(SQLOutput stream) throws SQLException {
-
-    }
+    public void writeSQL(SQLOutput stream) throws SQLException {}
   }
 
   @Test
@@ -86,7 +85,9 @@ public class ResultSetIT extends ResultSet0IT {
 
     Connection connection = init();
     Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select {'x':'a'}::OBJECT(x VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
+    ResultSet resultSet =
+        statement.executeQuery(
+            "select {'x':'a'}::OBJECT(x VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
     int i = 0;
     while (resultSet.next()) {
       System.out.println(i++);
