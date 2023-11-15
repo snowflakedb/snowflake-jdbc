@@ -17,6 +17,7 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.Test;
 
 public class CoreUtilsMiscellaneousTest {
@@ -272,6 +273,72 @@ public class CoreUtilsMiscellaneousTest {
     HttpUtil.getHttpClient(key3);
     // Assert there are 3 entries because userAgentSuffix has changed
     assertEquals(3, HttpUtil.httpClient.size());
+  }
+
+  @Test
+  public void testConvertProxyPropertiesToHttpClientKey() throws SnowflakeSQLException {
+    OCSPMode mode = OCSPMode.FAIL_OPEN;
+    Properties props = new Properties();
+    HttpClientSettingsKey expectedNoProxy = new HttpClientSettingsKey(mode);
+
+    // Test for null proxy properties
+    HttpClientSettingsKey settingsKey =
+        SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
+    assertTrue(expectedNoProxy.equals(settingsKey));
+
+    // Set useProxy to false so proxy properties will not be set
+    props.put("useProxy", "false");
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "8084");
+    settingsKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
+    assertTrue(expectedNoProxy.equals(settingsKey));
+
+    // Test without gzip_disabled
+    props.put("useProxy", "true");
+    props.put("proxyHost", "localhost");
+    props.put("proxyPort", "8084");
+    props.put("proxyUser", "testuser");
+    props.put("proxyPassword", "pw");
+    props.put("nonProxyHosts", "baz.com | foo.com");
+    props.put("proxyProtocol", "http");
+    props.put("user_agent_suffix", "jdbc");
+    settingsKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
+    HttpClientSettingsKey expectedWithProxy =
+        new HttpClientSettingsKey(
+            OCSPMode.FAIL_OPEN,
+            "localhost",
+            8084,
+            "baz.com | foo.com",
+            "testuser",
+            "pw",
+            "http",
+            "jdbc",
+            Boolean.valueOf(false));
+    assertTrue(expectedWithProxy.equals(settingsKey));
+
+    // Test with gzip_disabled
+    props.put("gzipDisabled", "true");
+    settingsKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
+    expectedWithProxy =
+        new HttpClientSettingsKey(
+            OCSPMode.FAIL_OPEN,
+            "localhost",
+            8084,
+            "baz.com | foo.com",
+            "testuser",
+            "pw",
+            "http",
+            "jdbc",
+            Boolean.valueOf(true));
+    assertTrue(expectedWithProxy.equals(settingsKey));
+
+    // Test that exception is thrown when port number is invalid
+    props.put("proxyPort", "invalidnumber");
+    try {
+      settingsKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
+    } catch (SnowflakeSQLException e) {
+      assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
+    }
   }
 
   @Test
