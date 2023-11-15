@@ -12,7 +12,6 @@ import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -33,24 +32,19 @@ public class JsonResultChunk extends SnowflakeResultChunk {
     this.session = session;
   }
 
-  public static Object extractCell(
-      JsonNode resultData, int rowIdx, int colIdx, SFResultSetMetaData resultSetMetaData) {
+  public static Object extractCell(JsonNode resultData, int rowIdx, int colIdx) {
     JsonNode currentRow = resultData.get(rowIdx);
 
     JsonNode colNode = currentRow.get(colIdx);
 
     if (colNode.isTextual()) {
-      return colNode.textValue();
+      return colNode.asText();
     } else if (colNode.isNumber()) {
       return colNode.numberValue();
-    }
-    // TODO: structuredType - need response with json but not as String
-    else if (colNode.isObject()) {
-      return colNode;
     } else if (colNode.isNull()) {
       return null;
     }
-    throw new RuntimeException("Unknown json type");
+    throw new RuntimeException("Unknow json type");
   }
 
   public void tryReuse(ResultChunkDataCache cache) {

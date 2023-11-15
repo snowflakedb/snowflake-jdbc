@@ -619,8 +619,7 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     protected Object getObjectInternal(int columnIndex) {
-      return JsonResultChunk.extractCell(
-          resultJson, currentRowIdx, columnIndex - 1, resultSetMetaData);
+      return JsonResultChunk.extractCell(resultJson, currentRowIdx, columnIndex - 1);
     }
 
     @Override

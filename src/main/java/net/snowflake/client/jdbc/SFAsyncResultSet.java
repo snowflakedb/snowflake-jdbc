@@ -304,8 +304,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
 
   public Object getObject(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    return resultSetForNext.getObject(
-        columnIndex); // TODO structuredType does it work out of the box?
+    return resultSetForNext.getObject(columnIndex);
   }
 
   public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
