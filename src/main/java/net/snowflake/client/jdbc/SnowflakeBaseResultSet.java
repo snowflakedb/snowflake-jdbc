@@ -10,11 +10,11 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.sql.Date;
+import java.util.*;
+import java.util.function.Supplier;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -1320,25 +1320,31 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (SQLData.class.isAssignableFrom(type)) {
-      try {
-        SQLData instance = (SQLData) type.newInstance();
-        SQLInput sqlInput = (SQLInput) getObject(columnIndex);
-        instance.readSQL(sqlInput, null);
-        return (T) instance;
-      } // TODO structuredType clean exceptions
-      catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+      Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
+      SQLData instance =
+          typeFactory
+              .map(Supplier::get)
+              .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
+      SQLInput sqlInput = (SQLInput) getObject(columnIndex);
+      instance.readSQL(sqlInput, null);
+      return (T) instance;
     } else {
       return (T) getObject(columnIndex);
     }
   }
 
-  // @Override
+  private SQLData createUsingReflection(Class<? extends SQLData> type) {
+    try {
+      return type.newInstance();
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(String columnLabel,Class<T> type)", false);
     return getObject(findColumn(columnLabel), type);
-    //    throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @SuppressWarnings("unchecked")

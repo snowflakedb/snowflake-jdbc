@@ -217,6 +217,7 @@ public class SnowflakeUtil {
         extColTypeName = "BOOLEAN";
         break;
 
+        // TODO structuredType fill for Array and Map
       case ARRAY:
         colType = Types.VARCHAR;
         extColTypeName = "ARRAY";
@@ -224,8 +225,7 @@ public class SnowflakeUtil {
 
       case OBJECT:
         colType = Types.STRUCT;
-        // TODO : structuredType
-        extColTypeName = "STRUCT";
+        extColTypeName = "OBJECT";
         break;
 
       case VARIANT:

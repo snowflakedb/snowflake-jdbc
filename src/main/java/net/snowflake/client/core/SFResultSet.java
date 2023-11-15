@@ -306,21 +306,16 @@ public class SFResultSet extends SFJsonResultSet {
     final int internalColumnIndex = columnIndex - 1;
     Object retValue;
     if (sortResult) {
-      // StructuredType should return JsonNode too
       retValue = firstChunkSortedRowSet[currentChunkRowIndex][internalColumnIndex];
     } else if (firstChunkRowset != null) {
       retValue =
-          JsonResultChunk.extractCell(
-              firstChunkRowset, currentChunkRowIndex, internalColumnIndex, resultSetMetaData);
+          JsonResultChunk.extractCell(firstChunkRowset, currentChunkRowIndex, internalColumnIndex);
     } else if (currentChunk != null) {
-      // StructuredType should return JsonNode too
       retValue = currentChunk.getCell(currentChunkRowIndex, internalColumnIndex);
     } else {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
     }
     wasNull = retValue == null;
-
-    // TODO structuredType must be JsonNode instance
     return retValue;
   }
 
@@ -332,7 +327,7 @@ public class SFResultSet extends SFJsonResultSet {
       firstChunkSortedRowSet[rowIdx] = new Object[columnCount];
       for (int colIdx = 0; colIdx < columnCount; colIdx++) {
         firstChunkSortedRowSet[rowIdx][colIdx] =
-            JsonResultChunk.extractCell(firstChunkRowset, rowIdx, colIdx, resultSetMetaData);
+            JsonResultChunk.extractCell(firstChunkRowset, rowIdx, colIdx);
       }
     }
 

@@ -479,7 +479,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(timeZone);
     Object obj = converter.toObject(index);
-    // TODO structuredType clean this up
+    return handleObjectType(columnIndex, obj);
+  }
+
+  private Object handleObjectType(int columnIndex, Object obj) throws SFException {
     if (resultSetMetaData.getColumnType(columnIndex) == Types.STRUCT) {
       try {
         JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);

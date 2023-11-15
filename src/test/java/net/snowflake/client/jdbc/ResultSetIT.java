@@ -17,6 +17,7 @@ import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -68,8 +69,21 @@ public class ResultSetIT extends ResultSet0IT {
   }
 
   @Test
-  public void testMapJson() throws SQLException {
+  public void testMapStructToObjectWithFactory() throws SQLException {
+    testMapJson(true);
+  }
 
+  @Test
+  public void testMapStructToObjectWithReflection() throws SQLException {
+    testMapJson(false);
+  }
+
+  private void testMapJson(boolean registerFactory) throws SQLException {
+    if (registerFactory) {
+      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
+    } else {
+      SnowflakeObjectTypeFactories.unregister(TestClass.class);
+    }
     Connection connection = init();
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery("select {'x':'a'}::OBJECT(x VARCHAR)");
@@ -81,7 +95,7 @@ public class ResultSetIT extends ResultSet0IT {
   }
 
   @Test
-  public void testMapJsonFromChunks() throws SQLException {
+  public void testMapStructsFromChunks() throws SQLException {
 
     Connection connection = init();
     Statement statement = connection.createStatement();
@@ -90,7 +104,6 @@ public class ResultSetIT extends ResultSet0IT {
             "select {'x':'a'}::OBJECT(x VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
     int i = 0;
     while (resultSet.next()) {
-      System.out.println(i++);
       TestClass object = resultSet.getObject(1, TestClass.class);
       assertEquals("a", object.x);
     }
