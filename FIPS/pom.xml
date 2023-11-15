@@ -974,6 +974,46 @@
       </build>
     </profile>
     <profile>
+      <id>java-9</id>
+      <activation>
+        <jdk>(9,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <argLine>
+                --add-opens=java.base/java.io=ALL-UNNAMED
+                --add-opens=java.base/java.nio=ALL-UNNAMED
+                --add-opens=java.base/java.lang=ALL-UNNAMED
+                --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                --add-opens=java.base/java.util=ALL-UNNAMED
+                --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                --add-exports=java.base/sun.security.internal.spec=ALL-UNNAMED
+                --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+              </argLine>
+            </configuration>
+          </plugin>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <argLine>
+                --add-opens=java.base/java.io=ALL-UNNAMED
+                --add-opens=java.base/java.nio=ALL-UNNAMED
+                --add-opens=java.base/java.lang=ALL-UNNAMED
+                --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                --add-opens=java.base/java.util=ALL-UNNAMED
+                --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                --add-exports=java.base/sun.security.internal.spec=ALL-UNNAMED
+                --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+              </argLine>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>jenkinsIT</id>
       <activation>
         <property>

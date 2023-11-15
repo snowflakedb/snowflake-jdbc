@@ -23,6 +23,7 @@ import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SFTrustManager;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -392,6 +393,8 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
 
   /** Test Certificate Expired. Will fail in both FAIL_OPEN and FAIL_CLOSED. */
   @Test
+  @Ignore("Issuer of root CA expired")
+  // https://support.sectigo.com/articles/Knowledge/Sectigo-AddTrust-External-CA-Root-Expiring-May-30-2020
   public void testExpiredCert() {
     try {
       DriverManager.getConnection(

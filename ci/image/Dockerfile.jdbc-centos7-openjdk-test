@@ -1,0 +1,91 @@
+FROM centos:7 AS jdbc-centos7-openjdk-base
+ARG JDK_PACKAGE
+
+# update OS
+RUN yum -y update && \
+    yum -y install epel-release && \
+    yum -y install centos-release-scl
+
+# install Development tools
+RUN yum -y groupinstall "Development Tools" && \
+    yum -y install zlib-devel which
+
+# git
+RUN curl -o - https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.26.0.tar.gz | tar xfz - && \
+    cd git-2.26.0 && \
+    ./configure --prefix=/opt/git && make && make install && \
+    ln -s /opt/git/bin/git /usr/local/bin/git
+
+# python
+RUN yum -y install rh-python36
+COPY scripts/python3.6.sh /usr/local/bin/python3.6
+COPY scripts/python3.6.sh /usr/local/bin/python3
+RUN chmod a+x /usr/local/bin/python3.6 /usr/local/bin/python3
+COPY scripts/pip.sh /usr/local/bin/pip
+RUN chmod a+x /usr/local/bin/pip
+RUN pip install -U pip
+RUN pip install -U snowflake-connector-python
+
+# aws
+RUN pip install -U awscli
+COPY scripts/aws.sh /usr/local/bin/aws
+RUN chmod a+x /usr/local/bin/aws
+
+# zstd
+RUN yum -y install zstd
+
+# jq
+RUN yum -y install jq
+
+# gosu
+RUN curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/1.11/gosu-amd64"
+RUN chmod +x /usr/local/bin/gosu
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Maven
+RUN curl -o - https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz | tar xfz - -C /opt && \
+    ln -s /opt/apache-maven-3.6.3/bin/mvn /usr/local/bin/mvn
+
+# workspace
+RUN mkdir -p /home/user && \
+    chmod 777 /home/user
+WORKDIR /home/user
+
+COPY pom.xml /root
+COPY dependencies /root/dependencies
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+###### OpenJDK from yum
+FROM jdbc-centos7-openjdk-base AS jdbc-centos7-openjdk-yum
+
+# Java
+RUN yum -y install $JDK_PACKAGE
+
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME='$(dirname $(dirname $(readlink $(readlink $(which javac)))))
+
+RUN cd /root && \
+    mvn -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+        -Dnot-self-contained-jar \
+        --batch-mode --fail-never compile && \
+    mv $HOME/.m2 /home/user && \
+    chmod -R 777 /home/user/.m2
+
+###### OpenJDK 17 from archive (not available in yum)
+FROM jdbc-centos7-openjdk-base AS jdbc-centos7-openjdk17
+
+# Java
+RUN curl -o - https://download.java.net/java/GA/jdk17.0.2/dfd4a8d0985749f896bed50d7138ee7f/8/GPL/openjdk-17.0.2_linux-x64_bin.tar.gz | tar xfz - -C /opt && \
+    ln -s /opt/jdk-17.0.2 /opt/jdk-17
+
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME=/opt/jdk-17'
+RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export PATH=$JAVA_HOME/bin:$PATH'
+
+RUN export JAVA_HOME=/opt/jdk-17 && \
+    cd /root && \
+    mvn -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+        -Dnot-self-contained-jar \
+        --batch-mode --fail-never compile && \
+    mv $HOME/.m2 /home/user && \
+    chmod -R 777 /home/user/.m2
