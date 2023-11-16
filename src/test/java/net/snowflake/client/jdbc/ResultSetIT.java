@@ -3,9 +3,15 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.structs.SFSqlData;
+import net.snowflake.client.core.structs.SFSqlInput;
+import net.snowflake.client.core.structs.SFSqlOutput;
+import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,12 +20,10 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
@@ -50,22 +54,19 @@ public class ResultSetIT extends ResultSet0IT {
     connection.close();
   }
 
-  public static class TestClass implements SQLData {
+  public static class TestClass implements SFSqlData {
 
     private String x;
 
     @Override
-    public String getSQLTypeName() throws SQLException {
-      return null;
+    public void readSql(SFSqlInput sqlInput) throws SQLException {
+      x = sqlInput.readString("x");
     }
 
     @Override
-    public void readSQL(SQLInput stream, String typeName) throws SQLException {
-      x = stream.readString();
+    public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
+      sqlOutput.writeString("x", x);
     }
-
-    @Override
-    public void writeSQL(SQLOutput stream) throws SQLException {}
   }
 
   @Test
