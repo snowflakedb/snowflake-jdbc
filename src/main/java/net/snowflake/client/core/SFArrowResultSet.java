@@ -3,18 +3,9 @@
  */
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.StmtUtil.eventHandler;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.sql.*;
-import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
@@ -28,6 +19,16 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.*;
+import java.util.TimeZone;
+
+import static net.snowflake.client.core.StmtUtil.eventHandler;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
@@ -488,7 +489,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
         return new JsonSqlInput(jsonNode);
       } catch (JsonProcessingException e) {
-        throw new RuntimeException(e);
+        throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
       }
     }
     return obj;
