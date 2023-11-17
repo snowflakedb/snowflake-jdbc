@@ -10,6 +10,11 @@ import java.util.Iterator;
 
 public class JsonSqlInput implements SQLInput {
 
+//  TODO extractedType maybe getObject should return raw input then it won't be needed
+  public JsonNode getInput() {
+    return input;
+  }
+
   private final JsonNode input;
   private final Iterator<JsonNode> elements;
 

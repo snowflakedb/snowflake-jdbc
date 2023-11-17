@@ -219,7 +219,7 @@ public class SnowflakeUtil {
 
         // TODO structuredType fill for Array and Map
       case ARRAY:
-        colType = Types.VARCHAR;
+        colType = Types.ARRAY;
         extColTypeName = "ARRAY";
         break;
 
