@@ -1,11 +1,11 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import net.snowflake.client.core.structs.SFSqlInput;
+import java.sql.*;
 
 import java.sql.SQLException;
 
-public class JsonSqlInput implements SFSqlInput {
+public class JsonSqlInput implements SqlInput {
   private final JsonNode input;
 
   public JsonSqlInput(JsonNode input) {

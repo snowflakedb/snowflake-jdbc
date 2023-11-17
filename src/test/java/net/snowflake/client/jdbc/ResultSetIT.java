@@ -76,7 +76,12 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testMapStructToObjectWithReflection() throws SQLException {
+    testMapJson(true);
     testMapJson(false);
+    testMapArray(true);
+    testMapArray(false);
+    testReturnAsMap(true);
+    testReturnAsMap(false);
   }
 
   private void testMapJson(boolean registerFactory) throws SQLException {
@@ -91,6 +96,40 @@ public class ResultSetIT extends ResultSet0IT {
     resultSet.next();
     TestClass object = resultSet.getObject(1, TestClass.class);
     assertEquals("a", object.x);
+    statement.close();
+    connection.close();
+  }
+  private void testMapArray(boolean registerFactory) throws SQLException {
+    if (registerFactory) {
+      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
+    } else {
+      SnowflakeObjectTypeFactories.unregister(TestClass.class);
+    }
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select [{'x':'aaa'},{'x': 'bbb'}]::ARRAY(OBJECT(x varchar))");
+    resultSet.next();
+    List<TestClass> objects = resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1,  TestClass.class);
+    assertEquals(objects.get(0).x, "aaa");
+    assertEquals(objects.get(1).x, "bbb");
+    statement.close();
+    connection.close();
+  }
+
+  private void testReturnAsMap(boolean registerFactory) throws SQLException {
+    if (registerFactory) {
+      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
+    } else {
+      SnowflakeObjectTypeFactories.unregister(TestClass.class);
+    }
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select {'x':{'x':'one'},'y':{'x':'two'},'z':{'x':'three'}}::MAP(VARCHAR, OBJECT(x VARCHAR));");
+    resultSet.next();
+    Map<String, TestClass> map = resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1,  TestClass.class);
+    assertEquals(map.get("x").x, "one");
+    assertEquals(map.get("y").x, "two");
+    assertEquals(map.get("z").x, "three");
     statement.close();
     connection.close();
   }
