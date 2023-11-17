@@ -20,6 +20,7 @@ import java.net.URL;
 import java.sql.Date;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -1363,6 +1364,26 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
               }
               return (T) instance;
             }).collect(Collectors.toList());
+  }
+
+  public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
+    Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
+    List<SQLInput> sqlInputs = (List<SQLInput>) getObject(columnIndex);
+    T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, sqlInputs.size());
+    AtomicInteger counter = new AtomicInteger(0);
+    sqlInputs.stream()
+            .forEach(i -> {
+              SQLData instance = typeFactory
+                      .map(Supplier::get)
+                      .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
+              try {
+                instance.readSQL(i, null);
+              } catch (SQLException e) {
+                throw new RuntimeException(e);
+              }
+              arr[counter.getAndIncrement()] = (T) instance;
+            });
+    return arr;
   }
 
   public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
