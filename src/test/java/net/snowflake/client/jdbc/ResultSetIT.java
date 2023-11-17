@@ -24,6 +24,11 @@ import java.util.Properties;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /** Test ResultSet */
 @Category(TestCategoryResultSet.class)
@@ -50,103 +55,6 @@ public class ResultSetIT extends ResultSet0IT {
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
     assertEquals(1, resultSet.findColumn("COLA"));
-    statement.close();
-    connection.close();
-  }
-
-  public static class TestClass implements SFSqlData {
-
-    private String x;
-
-    @Override
-    public void readSql(SFSqlInput sqlInput) throws SQLException {
-      x = sqlInput.readString("x");
-    }
-
-    @Override
-    public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
-      sqlOutput.writeString("x", x);
-    }
-  }
-
-  @Test
-  public void testMapStructToObjectWithFactory() throws SQLException {
-    testMapJson(true);
-  }
-
-  @Test
-  public void testMapStructToObjectWithReflection() throws SQLException {
-    testMapJson(true);
-    testMapJson(false);
-    testMapArray(true);
-    testMapArray(false);
-    testReturnAsMap(true);
-    testReturnAsMap(false);
-  }
-
-  private void testMapJson(boolean registerFactory) throws SQLException {
-    if (registerFactory) {
-      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
-    } else {
-      SnowflakeObjectTypeFactories.unregister(TestClass.class);
-    }
-    Connection connection = init();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select {'x':'a'}::OBJECT(x VARCHAR)");
-    resultSet.next();
-    TestClass object = resultSet.getObject(1, TestClass.class);
-    assertEquals("a", object.x);
-    statement.close();
-    connection.close();
-  }
-  private void testMapArray(boolean registerFactory) throws SQLException {
-    if (registerFactory) {
-      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
-    } else {
-      SnowflakeObjectTypeFactories.unregister(TestClass.class);
-    }
-    Connection connection = init();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select [{'x':'aaa'},{'x': 'bbb'}]::ARRAY(OBJECT(x varchar))");
-    resultSet.next();
-    List<TestClass> objects = resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1,  TestClass.class);
-    assertEquals(objects.get(0).x, "aaa");
-    assertEquals(objects.get(1).x, "bbb");
-    statement.close();
-    connection.close();
-  }
-
-  private void testReturnAsMap(boolean registerFactory) throws SQLException {
-    if (registerFactory) {
-      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
-    } else {
-      SnowflakeObjectTypeFactories.unregister(TestClass.class);
-    }
-    Connection connection = init();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select {'x':{'x':'one'},'y':{'x':'two'},'z':{'x':'three'}}::MAP(VARCHAR, OBJECT(x VARCHAR));");
-    resultSet.next();
-    Map<String, TestClass> map = resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1,  TestClass.class);
-    assertEquals(map.get("x").x, "one");
-    assertEquals(map.get("y").x, "two");
-    assertEquals(map.get("z").x, "three");
-    statement.close();
-    connection.close();
-  }
-
-  @Test
-  public void testMapStructsFromChunks() throws SQLException {
-
-    Connection connection = init();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet =
-        statement.executeQuery(
-            "select {'x':'a'}::OBJECT(x VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
-    int i = 0;
-    while (resultSet.next()) {
-      TestClass object = resultSet.getObject(1, TestClass.class);
-      assertEquals("a", object.x);
-    }
     statement.close();
     connection.close();
   }
