@@ -69,6 +69,22 @@ public class ResultSetIT extends ResultSet0IT {
     }
   }
 
+  public static class AllTypesClass implements SFSqlData {
+
+    private String string;
+    private Boolean bool;
+
+    @Override
+    public void readSql(SFSqlInput sqlInput) throws SQLException {
+      string = sqlInput.readString("string");
+      bool = sqlInput.readBoolean("bool");
+    }
+
+    @Override
+    public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
+    }
+  }
+
   @Test
   public void testMapStructToObjectWithFactory() throws SQLException {
     testMapJson(true);
@@ -91,6 +107,26 @@ public class ResultSetIT extends ResultSet0IT {
     resultSet.next();
     SimpleClass object = resultSet.getObject(1, SimpleClass.class);
     assertEquals("a", object.string);
+    statement.close();
+    connection.close();
+  }
+
+  @Test
+  public void testMapAllTypesOfFields() throws SQLException {
+    SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select {" +
+        "'string': 'a', " +
+        "'bool': true" +
+        "}::OBJECT(" +
+        "string VARCHAR, " +
+        "bool BOOLEAN" +
+        ")");
+    resultSet.next();
+    AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
+    assertEquals("a", object.string);
+    assertTrue(object.bool);
     statement.close();
     connection.close();
   }
