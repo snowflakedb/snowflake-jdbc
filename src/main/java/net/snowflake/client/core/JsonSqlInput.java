@@ -8,6 +8,10 @@ import net.snowflake.client.core.structs.SFSqlInput;
 import java.sql.SQLException;
 
 public class JsonSqlInput implements SFSqlInput {
+  public JsonNode getInput() {
+    return input;
+  }
+
   private final JsonNode input;
 
   public JsonSqlInput(JsonNode input) {

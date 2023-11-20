@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.structs.SFSqlData;
+import net.snowflake.client.core.structs.SFSqlDataCreationHelper;
 import net.snowflake.client.core.structs.SFSqlInput;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.log.SFLogger;
