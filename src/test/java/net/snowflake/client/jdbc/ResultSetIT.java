@@ -73,11 +73,13 @@ public class ResultSetIT extends ResultSet0IT {
 
     private String string;
     private Boolean bool;
+    private SimpleClass simpleClass;
 
     @Override
     public void readSql(SFSqlInput sqlInput) throws SQLException {
       string = sqlInput.readString("string");
       bool = sqlInput.readBoolean("bool");
+      simpleClass = sqlInput.readObject("simpleClass", SimpleClass.class);
     }
 
     @Override
@@ -118,15 +120,18 @@ public class ResultSetIT extends ResultSet0IT {
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery("select {" +
         "'string': 'a', " +
-        "'bool': true" +
+        "'bool': true, " +
+        "'simpleClass': {'string': 'b'}" +
         "}::OBJECT(" +
         "string VARCHAR, " +
-        "bool BOOLEAN" +
+        "bool BOOLEAN, " +
+        "simpleClass OBJECT(string VARCHAR)" +
         ")");
     resultSet.next();
     AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
     assertEquals("a", object.string);
     assertTrue(object.bool);
+    assertEquals("b", object.simpleClass.string);
     statement.close();
     connection.close();
   }

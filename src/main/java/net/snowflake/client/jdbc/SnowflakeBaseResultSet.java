@@ -6,8 +6,8 @@ package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.structs.SFSqlData;
+import net.snowflake.client.core.structs.SFSqlDataCreationHelper;
 import net.snowflake.client.core.structs.SFSqlInput;
-import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -17,10 +17,11 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Date;
 import java.sql.*;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
 
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
@@ -1323,24 +1324,12 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (SFSqlData.class.isAssignableFrom(type)) {
-      Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
-      SFSqlData instance =
-          typeFactory
-              .map(Supplier::get)
-              .orElseGet(() -> createUsingReflection((Class<SFSqlData>) type));
+      T instance = SFSqlDataCreationHelper.create(type);
       SFSqlInput sqlInput = (SFSqlInput) getObject(columnIndex);
-      instance.readSql(sqlInput);
-      return (T) instance;
+      ((SFSqlData) instance).readSql(sqlInput);
+      return instance;
     } else {
       return (T) getObject(columnIndex);
-    }
-  }
-
-  private SFSqlData createUsingReflection(Class<? extends SFSqlData> type) {
-    try {
-      return type.newInstance();
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new RuntimeException(e);
     }
   }
 
