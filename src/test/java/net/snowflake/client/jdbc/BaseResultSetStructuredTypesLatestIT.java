@@ -54,12 +54,24 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
   public static class AllTypesClass implements SFSqlData {
 
     private String string;
+    private Byte b;
+    private Short s;
+    private Integer i;
+    private Long l;
+    private Float f;
+    private Double d;
     private Boolean bool;
     private SimpleClass simpleClass;
 
     @Override
     public void readSql(SFSqlInput sqlInput) throws SQLException {
       string = sqlInput.readString("string");
+      b = sqlInput.readByte("b");
+      s = sqlInput.readShort("s");
+      i = sqlInput.readInt("i");
+      l = sqlInput.readLong("l");
+      f = sqlInput.readFloat("f");
+      d = sqlInput.readDouble("d");
       bool = sqlInput.readBoolean("bool");
       simpleClass = sqlInput.readObject("simpleClass", SimpleClass.class);
     }
@@ -141,16 +153,34 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery("select {" +
         "'string': 'a', " +
+        "'b': 1, " +
+        "'s': 2, " +
+        "'i': 3, " +
+        "'l': 4, " +
+        "'f': 1.1, " +
+        "'d': 2.2, " +
         "'bool': true, " +
         "'simpleClass': {'string': 'b'}" +
         "}::OBJECT(" +
         "string VARCHAR, " +
+        "b TINYINT, " +
+        "s SMALLINT, " +
+        "i INTEGER, " +
+        "l BIGINT, " +
+        "f FLOAT, " +
+        "d DOUBLE, " +
         "bool BOOLEAN, " +
         "simpleClass OBJECT(string VARCHAR)" +
         ")");
     resultSet.next();
     AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
     assertEquals("a", object.string);
+    assertEquals(1, (long) object.b);
+    assertEquals(2, (long) object.s);
+    assertEquals(3, (long) object.i);
+    assertEquals(4, (long) object.l);
+    assertEquals(1.1, (double) object.f, 0.01);
+    assertEquals(2.2, (double) object.d, 0.01);
     assertTrue(object.bool);
     assertEquals("b", object.simpleClass.string);
     statement.close();
