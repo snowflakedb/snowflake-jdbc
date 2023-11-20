@@ -993,6 +993,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     statement.close();
     connection.close();
   }
+
   private void testMapArrayAsList(boolean registerFactory) throws SQLException {
     if (registerFactory) {
       SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
