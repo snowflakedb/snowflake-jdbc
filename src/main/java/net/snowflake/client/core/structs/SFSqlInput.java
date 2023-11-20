@@ -6,6 +6,12 @@ import java.util.Map;
 
 public interface SFSqlInput {
   String readString(String fieldName) throws SQLException;
+  Byte readByte(String fieldName);
+  Short readShort(String fieldName);
+  Integer readInt(String fieldName);
+  Long readLong(String fieldName);
+  Float readFloat(String fieldName);
+  Double readDouble(String fieldName);
   Boolean readBoolean(String fieldName) throws SQLException;
   <T extends SFSqlData> T readObject(String fieldName, Class<T> type) throws SQLException;
   <T extends SFSqlData> List<T> readList(String fieldName, Class<T> type) throws SQLException;
