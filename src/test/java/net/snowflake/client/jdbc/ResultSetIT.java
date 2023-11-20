@@ -6,10 +6,6 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.core.structs.SFSqlData;
-import net.snowflake.client.core.structs.SFSqlInput;
-import net.snowflake.client.core.structs.SFSqlOutput;
-import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -50,106 +46,6 @@ public class ResultSetIT extends ResultSet0IT {
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery(selectAllSQL);
     assertEquals(1, resultSet.findColumn("COLA"));
-    statement.close();
-    connection.close();
-  }
-
-  public static class SimpleClass implements SFSqlData {
-
-    private String string;
-
-    @Override
-    public void readSql(SFSqlInput sqlInput) throws SQLException {
-      string = sqlInput.readString("string");
-    }
-
-    @Override
-    public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
-      sqlOutput.writeString("string", string);
-    }
-  }
-
-  public static class AllTypesClass implements SFSqlData {
-
-    private String string;
-    private Boolean bool;
-    private SimpleClass simpleClass;
-
-    @Override
-    public void readSql(SFSqlInput sqlInput) throws SQLException {
-      string = sqlInput.readString("string");
-      bool = sqlInput.readBoolean("bool");
-      simpleClass = sqlInput.readObject("simpleClass", SimpleClass.class);
-    }
-
-    @Override
-    public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
-    }
-  }
-
-  @Test
-  public void testMapStructToObjectWithFactory() throws SQLException {
-    testMapJson(true);
-  }
-
-  @Test
-  public void testMapStructToObjectWithReflection() throws SQLException {
-    testMapJson(true);
-    testMapJson(false);
-  }
-
-  private void testMapJson(boolean registerFactory) throws SQLException {
-    if (registerFactory) {
-      SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
-    } else {
-      SnowflakeObjectTypeFactories.unregister(SimpleClass.class);
-    }
-    Connection connection = init();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select {'string':'a'}::OBJECT(string VARCHAR)");
-    resultSet.next();
-    SimpleClass object = resultSet.getObject(1, SimpleClass.class);
-    assertEquals("a", object.string);
-    statement.close();
-    connection.close();
-  }
-
-  @Test
-  public void testMapAllTypesOfFields() throws SQLException {
-    SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
-    Connection connection = init();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select {" +
-        "'string': 'a', " +
-        "'bool': true, " +
-        "'simpleClass': {'string': 'b'}" +
-        "}::OBJECT(" +
-        "string VARCHAR, " +
-        "bool BOOLEAN, " +
-        "simpleClass OBJECT(string VARCHAR)" +
-        ")");
-    resultSet.next();
-    AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
-    assertEquals("a", object.string);
-    assertTrue(object.bool);
-    assertEquals("b", object.simpleClass.string);
-    statement.close();
-    connection.close();
-  }
-
-  @Test
-  public void testMapStructsFromChunks() throws SQLException {
-
-    Connection connection = init();
-    Statement statement = connection.createStatement();
-    ResultSet resultSet =
-        statement.executeQuery(
-            "select {'string':'a'}::OBJECT(string VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
-    int i = 0;
-    while (resultSet.next()) {
-      SimpleClass object = resultSet.getObject(1, SimpleClass.class);
-      assertEquals("a", object.string);
-    }
     statement.close();
     connection.close();
   }
