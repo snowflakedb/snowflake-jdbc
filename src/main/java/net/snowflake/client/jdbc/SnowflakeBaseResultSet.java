@@ -20,8 +20,15 @@ import java.net.URL;
 import java.sql.Date;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.snowflake.client.core.JsonSqlInput;
+import net.snowflake.client.core.ObjectMapperFactory;
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
@@ -35,6 +42,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   protected Map<String, Object> parameters = new HashMap<>();
   private int fetchSize = 0;
   protected SFBaseSession session = null;
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   SnowflakeBaseResultSet(Statement statement) throws SQLException {
     this.statement = statement;
@@ -1334,6 +1342,68 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     } else {
       return (T) getObject(columnIndex);
     }
+  }
+
+  public <T> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
+    Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
+    List<SFSqlInput> sqlInputs = (List<SFSqlInput>) getObject(columnIndex);
+    return sqlInputs.stream()
+            .map(i -> {
+              SFSqlData instance = typeFactory
+                      .map(Supplier::get)
+                      .orElseGet(() -> createUsingReflection((Class<SFSqlData>) type));
+              try {
+                instance.readSql(i);
+              } catch (SQLException e) {
+                throw new RuntimeException(e);
+              }
+              return (T) instance;
+            }).collect(Collectors.toList());
+  }
+
+  public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
+    Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
+    List<SFSqlInput> sqlInputs = (List<SFSqlInput>) getObject(columnIndex);
+    T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, sqlInputs.size());
+    AtomicInteger counter = new AtomicInteger(0);
+    sqlInputs.stream()
+            .forEach(i -> {
+              SFSqlData instance = typeFactory
+                      .map(Supplier::get)
+                      .orElseGet(() -> createUsingReflection((Class<SFSqlData>) type));
+              try {
+                instance.readSql(i);
+              } catch (SQLException e) {
+                throw new RuntimeException(e);
+              }
+              arr[counter.getAndIncrement()] = (T) instance;
+            });
+    return arr;
+  }
+
+  public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
+    Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
+//    TODO: structuredType how to get raw json object not as SqlInput
+    JsonNode jsonNode = ((JsonSqlInput) getObject(columnIndex)).getInput();
+    Map<String, Object> map = OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {
+    });
+    Map<String, T> collect = map.entrySet().stream().map(e -> {
+              SFSqlData instance = typeFactory
+                      .map(Supplier::get)
+                      .orElseGet(() -> createUsingReflection((Class<SFSqlData>) type));
+              try {
+                SFSqlInput sqlInput = new JsonSqlInput(jsonNode.get(e.getKey()));
+                instance.readSql(sqlInput);
+              } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+              }
+              return new AbstractMap.SimpleEntry<>(e.getKey(), (T) instance);
+            })
+            .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    Map.Entry::getValue
+            ));
+    return collect;
   }
 
   private SFSqlData createUsingReflection(Class<? extends SFSqlData> type) {

@@ -21,6 +21,10 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.structs.SFSqlData;
+import net.snowflake.client.core.structs.SFSqlInput;
+import net.snowflake.client.core.structs.SFSqlOutput;
+import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.telemetry.*;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
@@ -927,4 +931,163 @@ public class ResultSetLatestIT extends ResultSet0IT {
       connection.close();
     }
   }
+
+  public static class TestClass implements SFSqlData {
+
+    private String x;
+    private String y;
+
+    @Override
+    public void readSql(SFSqlInput sqlInput) throws SQLException {
+      x = sqlInput.readString("x");
+      y = sqlInput.readString("y");
+    }
+
+    @Override
+    public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
+      sqlOutput.writeString("x", x);
+      sqlOutput.writeString("y", y);
+    }
+  }
+
+  @Test
+  public void testMapStructToObjectWithFactory() throws SQLException {
+    testMapJson(true);
+  }
+
+  @Test
+  public void testMapStructToObjectWithReflection() throws SQLException {
+    testMapJson(true);
+    testMapJson(false);
+    testMapMoreStructs(false);
+  }
+  @Test
+  public void testMapArrayToListWithReflection() throws SQLException {
+    testMapArrayAsList(true);
+    testMapArrayAsList(false);
+  }
+
+  @Test
+  public void testMapArrayWithReflection() throws SQLException {
+    testMapArray(true);
+    testMapArray(false);
+  }
+
+  @Test
+  public void testMapMapWithReflection() throws SQLException {
+    testReturnAsMap(true);
+    testReturnAsMap(false);
+  }
+
+  private void testMapJson(boolean registerFactory) throws SQLException {
+    if (registerFactory) {
+      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
+    } else {
+      SnowflakeObjectTypeFactories.unregister(TestClass.class);
+    }
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select {'x':'a', 'y':'abc'}::OBJECT(x VARCHAR, y varchar)");
+    resultSet.next();
+    TestClass object = resultSet.getObject(1, TestClass.class);
+    assertEquals("a", object.x);
+    assertEquals("abc", object.y);
+    statement.close();
+    connection.close();
+  }
+
+  private void testMapArrayAsList(boolean registerFactory) throws SQLException {
+    if (registerFactory) {
+      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
+    } else {
+      SnowflakeObjectTypeFactories.unregister(TestClass.class);
+    }
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select [{'x':'aaa', 'y':'abc'},{'x': 'bbb', 'y':'abc'}]::ARRAY(OBJECT(x varchar, y varchar))");
+    resultSet.next();
+    List<TestClass> objects = resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1,  TestClass.class);
+    assertEquals(objects.get(0).x, "aaa");
+    assertEquals(objects.get(0).y, "abc");
+    assertEquals(objects.get(1).x, "bbb");
+    assertEquals(objects.get(1).y, "abc");
+    statement.close();
+    connection.close();
+  }
+  private void testMapArray(boolean registerFactory) throws SQLException {
+    if (registerFactory) {
+      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
+    } else {
+      SnowflakeObjectTypeFactories.unregister(TestClass.class);
+    }
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select [{'x':'aaa', 'y':'abc'},{'x': 'bbb', 'y':'abc'}]::ARRAY(OBJECT(x varchar, y varchar))");
+    resultSet.next();
+    TestClass[] objects = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1,  TestClass.class);
+    assertEquals(objects[0].x, "aaa");
+    assertEquals(objects[0].y, "abc");
+    assertEquals(objects[1].x, "bbb");
+    assertEquals(objects[1].y, "abc");
+
+    statement.close();
+    connection.close();
+  }
+
+  private void testMapMoreStructs(boolean registerFactory) throws SQLException {
+    if (registerFactory) {
+      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
+    } else {
+      SnowflakeObjectTypeFactories.unregister(TestClass.class);
+    }
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select struct from structs");
+    resultSet.next();
+    TestClass object = resultSet.getObject(1, TestClass.class);
+    assertEquals("abc", object.x);
+    assertEquals("def", object.y);
+    resultSet.next();
+    object = resultSet.getObject(1, TestClass.class);
+    assertEquals("abc", object.x);
+    assertEquals("def", object.y);
+    statement.close();
+    connection.close();
+  }
+
+  private void testReturnAsMap(boolean registerFactory) throws SQLException {
+    if (registerFactory) {
+      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
+    } else {
+      SnowflakeObjectTypeFactories.unregister(TestClass.class);
+    }
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select {'x':{'x':'one', 'y':'abc'},'y':{'x':'two', 'y':'abc'},'z':{'x':'three', 'y':'abc'}}::MAP(VARCHAR, OBJECT(x VARCHAR, y VARCHAR));");
+    resultSet.next();
+    Map<String, TestClass> map = resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1,  TestClass.class);
+    assertEquals(map.get("x").x, "one");
+    assertEquals(map.get("y").x, "two");
+    assertEquals(map.get("z").x, "three");
+    statement.close();
+    connection.close();
+  }
+
+  @Test
+  public void testMapStructsFromChunks() throws SQLException {
+
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet =
+            statement.executeQuery(
+                    "select {'x':'a', 'y':'abc'}::OBJECT(x VARCHAR, y VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
+    int i = 0;
+    while (resultSet.next()) {
+      TestClass object = resultSet.getObject(1, TestClass.class);
+      assertEquals("a", object.x);
+    }
+    statement.close();
+    connection.close();
+  }
+
 }

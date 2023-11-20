@@ -362,6 +362,73 @@ public class BindingDataIT extends AbstractDriverIT {
     statement.execute("drop table if exists test_bind_date");
     connection.close();
   }
+//  public static class TestClass implements SQLData {
+//
+//    private String x;
+//    private String y;
+//
+//    public TestClass(String x, String y) {
+//      this.x = x;
+//      this.y = y;
+//    }
+//
+//    public String getX() {
+//      return x;
+//    }
+//
+//    public void setX(String x) {
+//      this.x = x;
+//    }
+//
+//    public String getY() {
+//      return y;
+//    }
+//
+//    public void setY(String y) {
+//      this.y = y;
+//    }
+//
+//    @Override
+//    public String getSQLTypeName() throws SQLException {
+//      return null;
+//    }
+//
+//    @Override
+//    public void readSQL(SQLInput stream, String typeName) throws SQLException {
+//      x = stream.readString();
+//      y = stream.readString();
+//    }
+//
+//    @Override
+//    public void writeSQL(SQLOutput stream) throws SQLException {}
+//  }
+
+//  @Theory
+//  public void testBindStruct() throws SQLException {
+//    TestClass testClass = new TestClass("ABC", "DEF");
+//
+//    Connection connection = getConnection();
+//    Statement statement = connection.createStatement();
+//    statement.execute("CREATE or replace TABLE structs_test (struct OBJECT(x VARCHAR, y VARCHAR))");
+//
+//    PreparedStatement preparedStatement =
+////        connection.prepareStatement("insert into test_bind_date values (?)");
+//        connection.prepareStatement("INSERT INTO structs_test (struct) SELECT (?)");
+//    preparedStatement.setObject(1, testClass);
+//    preparedStatement.executeUpdate();
+//
+//    preparedStatement = connection.prepareStatement("select * from structs_test");
+//
+//    ResultSet resultSet = preparedStatement.executeQuery();
+//    assertThat(resultSet.next(), is(true));
+////    assertThat(resultSet.getDate("C1"), is(dateValue));
+//
+//    resultSet.close();
+//    preparedStatement.close();
+//
+////    statement.execute("drop table if exists structs_test");
+//    connection.close();
+//  }
 
   @Theory
   public void testBindObjectWithScaleZero(int intValue) throws SQLException {

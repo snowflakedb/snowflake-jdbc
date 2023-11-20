@@ -106,11 +106,13 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     int colType = getColumnType(column);
 
     switch (colType) {
-        // TODO structuredType fill for Array and Map
+
         // Note: SF types ARRAY, OBJECT, GEOMETRY are also represented as VARCHAR.
       case Types.VARCHAR:
       case Types.CHAR:
       case Types.STRUCT:
+        // TODO structuredType confirm that ARRAY is case sensitive
+      case Types.ARRAY:
         return true;
 
       case Types.INTEGER:
