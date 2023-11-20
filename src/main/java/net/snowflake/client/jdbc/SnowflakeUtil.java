@@ -217,13 +217,14 @@ public class SnowflakeUtil {
         extColTypeName = "BOOLEAN";
         break;
 
+        // TODO structuredType fill for Array and Map
       case ARRAY:
-        colType = Types.VARCHAR;
+        colType = Types.ARRAY;
         extColTypeName = "ARRAY";
         break;
 
       case OBJECT:
-        colType = Types.VARCHAR;
+        colType = Types.STRUCT;
         extColTypeName = "OBJECT";
         break;
 

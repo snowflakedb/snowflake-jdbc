@@ -403,6 +403,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setTime(parameterIndex, (Time) x);
     } else if (targetSqlType == Types.TIMESTAMP) {
       setTimestamp(parameterIndex, (Timestamp) x);
+    } else if (targetSqlType == Types.STRUCT) {
+      ParameterBindingDTO binding = new ParameterBindingDTO(SnowflakeUtil.javaTypeToSFTypeString(targetSqlType, connection.getSFBaseSession()), x);
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
     } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
         || targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
       setTimestampWithType(parameterIndex, (Timestamp) x, targetSqlType);
@@ -450,6 +453,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setBoolean(parameterIndex, (Boolean) x);
     } else if (x instanceof byte[]) {
       setBytes(parameterIndex, (byte[]) x);
+    } else if (x instanceof SQLData) {
+      setObject(parameterIndex, x, Types.STRUCT);
     } else {
       throw new SnowflakeSQLLoggedException(
           connection.getSFBaseSession(),

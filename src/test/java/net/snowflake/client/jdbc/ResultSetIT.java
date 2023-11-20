@@ -13,7 +13,8 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
-import java.util.Properties;
+import java.util.*;
+
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
