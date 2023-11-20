@@ -4,4 +4,5 @@ import java.sql.SQLException;
 
 public interface SFSqlInput {
   String readString(String fieldName) throws SQLException;
+  Boolean readBoolean(String fieldName) throws SQLException;
 }

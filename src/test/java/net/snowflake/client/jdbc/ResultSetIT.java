@@ -54,18 +54,34 @@ public class ResultSetIT extends ResultSet0IT {
     connection.close();
   }
 
-  public static class TestClass implements SFSqlData {
+  public static class SimpleClass implements SFSqlData {
 
-    private String x;
+    private String string;
 
     @Override
     public void readSql(SFSqlInput sqlInput) throws SQLException {
-      x = sqlInput.readString("x");
+      string = sqlInput.readString("string");
     }
 
     @Override
     public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
-      sqlOutput.writeString("x", x);
+      sqlOutput.writeString("string", string);
+    }
+  }
+
+  public static class AllTypesClass implements SFSqlData {
+
+    private String string;
+    private Boolean bool;
+
+    @Override
+    public void readSql(SFSqlInput sqlInput) throws SQLException {
+      string = sqlInput.readString("string");
+      bool = sqlInput.readBoolean("bool");
+    }
+
+    @Override
+    public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
     }
   }
 
@@ -76,21 +92,42 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testMapStructToObjectWithReflection() throws SQLException {
+    testMapJson(true);
     testMapJson(false);
   }
 
   private void testMapJson(boolean registerFactory) throws SQLException {
     if (registerFactory) {
-      SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
+      SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     } else {
-      SnowflakeObjectTypeFactories.unregister(TestClass.class);
+      SnowflakeObjectTypeFactories.unregister(SimpleClass.class);
     }
     Connection connection = init();
     Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select {'x':'a'}::OBJECT(x VARCHAR)");
+    ResultSet resultSet = statement.executeQuery("select {'string':'a'}::OBJECT(string VARCHAR)");
     resultSet.next();
-    TestClass object = resultSet.getObject(1, TestClass.class);
-    assertEquals("a", object.x);
+    SimpleClass object = resultSet.getObject(1, SimpleClass.class);
+    assertEquals("a", object.string);
+    statement.close();
+    connection.close();
+  }
+
+  @Test
+  public void testMapAllTypesOfFields() throws SQLException {
+    SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select {" +
+        "'string': 'a', " +
+        "'bool': true" +
+        "}::OBJECT(" +
+        "string VARCHAR, " +
+        "bool BOOLEAN" +
+        ")");
+    resultSet.next();
+    AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
+    assertEquals("a", object.string);
+    assertTrue(object.bool);
     statement.close();
     connection.close();
   }
@@ -102,11 +139,11 @@ public class ResultSetIT extends ResultSet0IT {
     Statement statement = connection.createStatement();
     ResultSet resultSet =
         statement.executeQuery(
-            "select {'x':'a'}::OBJECT(x VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
+            "select {'string':'a'}::OBJECT(string VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
     int i = 0;
     while (resultSet.next()) {
-      TestClass object = resultSet.getObject(1, TestClass.class);
-      assertEquals("a", object.x);
+      SimpleClass object = resultSet.getObject(1, SimpleClass.class);
+      assertEquals("a", object.string);
     }
     statement.close();
     connection.close();
