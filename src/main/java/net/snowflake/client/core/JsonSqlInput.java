@@ -16,4 +16,9 @@ public class JsonSqlInput implements SqlInput {
   public String readString(String fieldName) throws SQLException {
     return input.get(fieldName).textValue();
   }
+
+  @Override
+  public Boolean readBoolean(String fieldName) throws SQLException {
+    return input.get(fieldName).booleanValue();
+  }
 }
