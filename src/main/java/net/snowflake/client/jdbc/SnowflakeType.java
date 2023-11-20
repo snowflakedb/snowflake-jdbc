@@ -420,6 +420,9 @@ public enum SnowflakeType {
       case Types.BOOLEAN:
         return BOOLEAN;
 
+      case Types.STRUCT:
+        return OBJECT;
+
       case Types.NULL:
         return ANY;
 
