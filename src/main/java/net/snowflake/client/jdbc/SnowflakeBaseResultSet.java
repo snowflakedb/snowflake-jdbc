@@ -1331,14 +1331,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (SFSqlData.class.isAssignableFrom(type)) {
-      Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
-      SFSqlData instance =
-          typeFactory
-              .map(Supplier::get)
-              .orElseGet(() -> createUsingReflection((Class<SFSqlData>) type));
+      T instance = SFSqlDataCreationHelper.create(type);
       SFSqlInput sqlInput = (SFSqlInput) getObject(columnIndex);
-      instance.readSql(sqlInput);
-      return (T) instance;
+      ((SFSqlData) instance).readSql(sqlInput);
+      return instance;
     } else {
       return (T) getObject(columnIndex);
     }
