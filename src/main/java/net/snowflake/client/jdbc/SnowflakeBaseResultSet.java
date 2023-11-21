@@ -1341,39 +1341,35 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     }
   }
 
-  public <T> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
+  public <T extends SFSqlData> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
     Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
     List<SFSqlInput> sqlInputs = (List<SFSqlInput>) getObject(columnIndex);
     return sqlInputs.stream()
             .map(i -> {
-              SFSqlData instance = typeFactory
-                      .map(Supplier::get)
-                      .orElseGet(() -> createUsingReflection((Class<SFSqlData>) type));
               try {
+                T instance = SFSqlDataCreationHelper.create(type);
                 instance.readSql(i);
+                return (T) instance;
               } catch (SQLException e) {
                 throw new RuntimeException(e);
               }
-              return (T) instance;
             }).collect(Collectors.toList());
   }
 
-  public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
+  public <T extends SFSqlData> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
     Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
     List<SFSqlInput> sqlInputs = (List<SFSqlInput>) getObject(columnIndex);
     T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, sqlInputs.size());
     AtomicInteger counter = new AtomicInteger(0);
     sqlInputs.stream()
             .forEach(i -> {
-              SFSqlData instance = typeFactory
-                      .map(Supplier::get)
-                      .orElseGet(() -> createUsingReflection((Class<SFSqlData>) type));
               try {
+                T instance = SFSqlDataCreationHelper.create(type);
                 instance.readSql(i);
+                arr[counter.getAndIncrement()] = (T) instance;
               } catch (SQLException e) {
                 throw new RuntimeException(e);
               }
-              arr[counter.getAndIncrement()] = (T) instance;
             });
     return arr;
   }

@@ -67,6 +67,27 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
     }
   }
 
+  public static class AllStructuredTypesClass implements SFSqlData {
+
+    private SimpleClass simpleClass;
+    private List<SimpleClass> simpleClassList;
+    private SimpleClass[] simpleClassArray;
+    private Map<String, SimpleClass> simpleClassesMap;
+
+
+    @Override
+    public void readSql(SFSqlInput sqlInput) throws SQLException {
+      simpleClass = sqlInput.readObject("simpleClass", SimpleClass.class);
+      simpleClassList = sqlInput.readList("simpleClassList", SimpleClass.class);
+      simpleClassArray = sqlInput.readArray("simpleClassArray", SimpleClass.class);
+      simpleClassesMap = sqlInput.readMap("simpleClassMap", String.class, SimpleClass.class);
+    }
+
+    @Override
+    public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
+    }
+  }
+
   @Test
   public void testMapStructToObjectWithFactory() throws SQLException {
     testMapJson(true);
@@ -112,6 +133,34 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
     assertEquals("a", object.string);
     assertTrue(object.bool);
     assertEquals("b", object.simpleClass.string);
+    statement.close();
+    connection.close();
+  }
+  @Test
+  public void testMapAllStructuredTypes() throws SQLException {
+    SnowflakeObjectTypeFactories.register(AllStructuredTypesClass.class, AllStructuredTypesClass::new);
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select {" +
+        "'simpleClass': {'string': 'b'}, " +
+        "'simpleClassList': [{'string': 'c'}, {'string': 'd'}] ," +
+        "'simpleClassArray': [{'string': 'c1'}, {'string': 'd1'}] ," +
+        "'simpleClassMap': {'x':{'string':'e'},'y':{'string':'f'}}" +
+        "}::OBJECT(" +
+        "simpleClass OBJECT(string VARCHAR), " +
+        "simpleClassList ARRAY(OBJECT(string VARCHAR)), " +
+        "simpleClassArray ARRAY(OBJECT(string VARCHAR)), " +
+        "simpleClassMap MAP(VARCHAR, OBJECT(string VARCHAR))" +
+        ")");
+    resultSet.next();
+    AllStructuredTypesClass object = resultSet.getObject(1, AllStructuredTypesClass.class);
+    assertEquals("b", object.simpleClass.string);
+    assertEquals("c", (object.simpleClassList.get(0)).string);
+    assertEquals("d", (object.simpleClassList.get(1)).string);
+    assertEquals("c1", (object.simpleClassArray[0]).string);
+    assertEquals("d1", (object.simpleClassArray[1]).string);
+    assertEquals("e", (object.simpleClassesMap.get("x")).string);
+    assertEquals("f", (object.simpleClassesMap.get("y")).string);
     statement.close();
     connection.close();
   }
