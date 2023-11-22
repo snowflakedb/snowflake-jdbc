@@ -13,6 +13,7 @@ import java.sql.*;
 import java.sql.Date;
 import java.util.*;
 import net.snowflake.client.core.*;
+import net.snowflake.client.core.structs.SFSqlData;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.VariableTypeArray;
@@ -453,8 +454,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setBoolean(parameterIndex, (Boolean) x);
     } else if (x instanceof byte[]) {
       setBytes(parameterIndex, (byte[]) x);
-    } else if (x instanceof SQLData) {
-      setObject(parameterIndex, x, Types.STRUCT);
+    } else if (x instanceof SFSqlData) {
+      JsonSqlOutput sqlOutput = new JsonSqlOutput();
+      ((SFSqlData) x).writeSql(sqlOutput);
+      setString(parameterIndex, sqlOutput.getJsonString());
     } else {
       throw new SnowflakeSQLLoggedException(
           connection.getSFBaseSession(),

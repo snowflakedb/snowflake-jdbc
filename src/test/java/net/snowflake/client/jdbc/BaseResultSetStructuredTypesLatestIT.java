@@ -8,10 +8,7 @@ import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +34,11 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
   public static class SimpleClass implements SFSqlData {
 
     private String string;
+
+    public SimpleClass(String string) {
+      this.string = string;
+    }
+    public SimpleClass() {}
 
     @Override
     public void readSql(SFSqlInput sqlInput) throws SQLException {
@@ -64,6 +66,7 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
 
     @Override
     public void writeSql(SFSqlOutput sqlOutput) throws SQLException {
+
     }
   }
 
@@ -110,6 +113,23 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
     resultSet.next();
     SimpleClass object = resultSet.getObject(1, SimpleClass.class);
     assertEquals("a", object.string);
+    statement.close();
+    connection.close();
+  }
+  @Test
+  public void testInsert() throws SQLException {
+    testInsertObject();
+  }
+  private void testInsertObject() throws SQLException {
+
+    Connection connection = init();
+    PreparedStatement statement = connection.prepareStatement("INSERT INTO structs2 (struct) SELECT parse_json(?) :: OBJECT(string VARCHAR) ");
+
+    SimpleClass simpleClass = new SimpleClass("AAAAA");
+
+    statement.setObject(1, simpleClass);
+    statement.execute();
+//assert
     statement.close();
     connection.close();
   }
@@ -167,7 +187,6 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
 
   @Test
   public void testMapStructsFromChunks() throws SQLException {
-
     Connection connection = init();
     Statement statement = connection.createStatement();
     ResultSet resultSet =
