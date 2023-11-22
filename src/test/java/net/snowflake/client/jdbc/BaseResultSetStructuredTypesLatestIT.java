@@ -141,7 +141,10 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
 
     statement.setObject(1, simpleClass);
     statement.execute();
-//assert
+    ResultSet resultSet = statement.executeQuery("select struct from structs2");
+    resultSet.next();
+    SimpleClass object = resultSet.getObject(1, SimpleClass.class);
+    assertEquals("AAAAA", object.string);
     statement.close();
     connection.close();
   }
@@ -267,7 +270,7 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
     Statement statement = connection.createStatement();
     ResultSet resultSet = statement.executeQuery("select {'x':{'string':'one'},'y':{'string':'two'}}::MAP(VARCHAR, OBJECT(string VARCHAR))");
     resultSet.next();
-    Map<String, SimpleClass> map = resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1,  SimpleClass.class);
+    Map<String, SimpleClass> map = resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, String.class, SimpleClass.class);
     assertEquals(map.get("x").string, "one");
     assertEquals(map.get("y").string, "two");
     statement.close();

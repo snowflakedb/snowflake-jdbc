@@ -18,7 +18,7 @@ public interface SnowflakeResultSet {
 
   <T extends SFSqlData> T[] getArray(int columnIndex, Class<T> type) throws SQLException;
 
-  <T extends SFSqlData> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException;
+  <K, T extends SFSqlData> Map<K, T> getMap(int columnIndex, Class<K> keyType, Class<T> type) throws SQLException;
 
   /**
    * @return the Snowflake query ID of the query which generated this result set
