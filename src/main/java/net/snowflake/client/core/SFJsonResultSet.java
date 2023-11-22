@@ -28,14 +28,11 @@ import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.Float8Vector;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.ByteBuffer;
+import java.sql.Array;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.TimeZone;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
@@ -112,7 +109,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
-  private Object getArrayOfSqlInput(String input) throws SFException {
+  private Array getArrayOfSqlInput(String input) throws SFException {
     try {
       List<JsonSqlInput> result = new ArrayList<>();
       ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
@@ -120,7 +117,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       while (nodeElements.hasNext()) {
         result.add(new JsonSqlInput((JsonNode) nodeElements.next()));
       }
-      return result;
+      return new SQLInputArray(result);
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }
