@@ -5,9 +5,8 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.structs.SFSqlData;
-import net.snowflake.client.core.structs.SFSqlDataCreationHelper;
-import net.snowflake.client.core.structs.SFSqlInput;
+import net.snowflake.client.core.SQLInputArray;
+import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -30,6 +29,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
+
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
   static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
@@ -820,8 +820,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public Array getArray(int columnIndex) throws SQLException {
     logger.debug("public Array getArray(int columnIndex)", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    return (Array) getObject(columnIndex);
   }
 
   @Override
@@ -1328,44 +1327,49 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
-  // @Override
+  @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
-    if (SFSqlData.class.isAssignableFrom(type)) {
-      T instance = SFSqlDataCreationHelper.create(type);
-      SFSqlInput sqlInput = (SFSqlInput) getObject(columnIndex);
-      ((SFSqlData) instance).readSql(sqlInput);
+    if (SQLData.class.isAssignableFrom(type)) {
+      T instance = SQLDataCreationHelper.create(type);
+      SQLInput sqlInput = (SQLInput) getObject(columnIndex);
+      ((SQLData) instance).readSQL(sqlInput, null);
       return instance;
+    } else if (SQLData[].class.isAssignableFrom(type)) {
+      Class<?> INTERNAL_TYPE = type.getComponentType();
+      List<SQLInput> sqlInputs = (List<SQLInput>) ((SQLInputArray) getObject(columnIndex)).getElements();
+      Object[] arr = (Object[]) java.lang.reflect.Array.newInstance(INTERNAL_TYPE, sqlInputs.size());
+      AtomicInteger counter = new AtomicInteger(0);
+      sqlInputs.stream()
+              .forEach(i -> {
+                try {
+                  SQLData instance = (SQLData) INTERNAL_TYPE.newInstance();
+                  instance.readSQL(i, null);
+                  arr[counter.getAndIncrement()] = instance;
+                } catch (SQLException e) {
+                  throw new RuntimeException(e);
+                } catch (InstantiationException e) {
+                  throw new RuntimeException(e);
+                } catch (IllegalAccessException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+      return (T) arr;
     } else {
       return (T) getObject(columnIndex);
     }
   }
 
-  public <T extends SFSqlData> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
-    Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
-    List<SFSqlInput> sqlInputs = (List<SFSqlInput>) getObject(columnIndex);
-    return sqlInputs.stream()
-            .map(i -> {
-              try {
-                T instance = SFSqlDataCreationHelper.create(type);
-                instance.readSql(i);
-                return (T) instance;
-              } catch (SQLException e) {
-                throw new RuntimeException(e);
-              }
-            }).collect(Collectors.toList());
-  }
-
-  public <T extends SFSqlData> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
-    Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
-    List<SFSqlInput> sqlInputs = (List<SFSqlInput>) getObject(columnIndex);
+  public <T extends SQLData> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
+    Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
+    List<SQLInput> sqlInputs = (List<SQLInput>) ((SQLInputArray) getObject(columnIndex)).getElements();
     T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, sqlInputs.size());
     AtomicInteger counter = new AtomicInteger(0);
     sqlInputs.stream()
             .forEach(i -> {
               try {
-                T instance = SFSqlDataCreationHelper.create(type);
-                instance.readSql(i);
+                T instance = SQLDataCreationHelper.create(type);
+                instance.readSQL(i, null);
                 arr[counter.getAndIncrement()] = (T) instance;
               } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -1374,19 +1378,19 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     return arr;
   }
 
-  public <K, T extends SFSqlData> Map<K, T> getMap(int columnIndex, Class<K> keyType, Class<T> type) throws SQLException {
-    Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
+  public <K, T extends SQLData> Map<K, T> getMap(int columnIndex, Class<K> keyType, Class<T> type) throws SQLException {
+    Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
 //    TODO: structuredType how to get raw json object not as SqlInput
     JsonNode jsonNode = ((JsonSqlInput) getObject(columnIndex)).getInput();
     Map<String, Object> map = OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {
     });
     Map<K, T> collect = map.entrySet().stream().map(e -> {
-              SFSqlData instance = typeFactory
+              SQLData instance = typeFactory
                       .map(Supplier::get)
-                      .orElseGet(() -> createUsingReflection((Class<SFSqlData>) type));
+                      .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
               try {
-                SFSqlInput sqlInput = new JsonSqlInput(jsonNode.get(e.getKey()));
-                instance.readSql(sqlInput);
+                SQLInput sqlInput = new JsonSqlInput(jsonNode.get(e.getKey()));
+                instance.readSQL(sqlInput, null);
               } catch (SQLException ex) {
                 throw new RuntimeException(ex);
               }
@@ -1399,7 +1403,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     return collect;
   }
 
-  private SFSqlData createUsingReflection(Class<? extends SFSqlData> type) {
+  private SQLData createUsingReflection(Class<? extends SQLData> type) {
     try {
       return type.newInstance();
     } catch (InstantiationException | IllegalAccessException e) {

@@ -4,21 +4,21 @@
 
 package net.snowflake.client.jdbc;
 
+import java.sql.SQLData;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 import net.snowflake.client.core.QueryStatus;
-import net.snowflake.client.core.structs.SFSqlData;
 
 /** This interface defines Snowflake specific APIs for ResultSet */
 public interface SnowflakeResultSet {
 
-  <T extends SFSqlData> List<T> getList(int columnIndex, Class<T> type) throws SQLException;
-
-  <T extends SFSqlData> T[] getArray(int columnIndex, Class<T> type) throws SQLException;
-
-  <K, T extends SFSqlData> Map<K, T> getMap(int columnIndex, Class<K> keyType, Class<T> type) throws SQLException;
+//  <T extends SQLData> List<T> getList(int columnIndex, Class<T> type) throws SQLException;
+//
+//  <T extends SQLData> T[] getArray(int columnIndex, Class<T> type) throws SQLException;
+//
+  <K, T extends SQLData> Map<K, T> getMap(int columnIndex, Class<K> keyType, Class<T> type) throws SQLException;
 
   /**
    * @return the Snowflake query ID of the query which generated this result set
