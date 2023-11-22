@@ -1374,13 +1374,13 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     return arr;
   }
 
-  public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
+  public <K, T extends SFSqlData> Map<K, T> getMap(int columnIndex, Class<K> keyType, Class<T> type) throws SQLException {
     Optional<Supplier<SFSqlData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
 //    TODO: structuredType how to get raw json object not as SqlInput
     JsonNode jsonNode = ((JsonSqlInput) getObject(columnIndex)).getInput();
     Map<String, Object> map = OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {
     });
-    Map<String, T> collect = map.entrySet().stream().map(e -> {
+    Map<K, T> collect = map.entrySet().stream().map(e -> {
               SFSqlData instance = typeFactory
                       .map(Supplier::get)
                       .orElseGet(() -> createUsingReflection((Class<SFSqlData>) type));
@@ -1390,7 +1390,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
               } catch (SQLException ex) {
                 throw new RuntimeException(ex);
               }
-              return new AbstractMap.SimpleEntry<>(e.getKey(), (T) instance);
+              return new AbstractMap.SimpleEntry<>((K)e.getKey(), (T) instance);
             })
             .collect(Collectors.toMap(
                     Map.Entry::getKey,
