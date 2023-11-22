@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.sql.*;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -168,5 +170,69 @@ public abstract class BaseResultSetStructuredTypesLatestIT {
     statement.close();
     connection.close();
   }
+
+
+  @Test
+  public void testMapArray() throws SQLException {
+    testMapArrayWithClientMapping();
+    testMapArrayByCustomInterface();
+    testMapArrayByGetObject();
+  }
+
+  private void testMapArrayWithClientMapping() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select [{'string':'aaa'},{'string': 'bbb'}]::ARRAY(OBJECT(string varchar))");
+    resultSet.next();
+    Array array = resultSet.getArray(1);
+    List<SQLInput> inputs = ((List<SQLInput>)array.getArray());
+    SimpleClass[] objects = new SimpleClass[inputs.size()];
+    AtomicInteger counter = new AtomicInteger(0);
+    inputs.stream().forEach(sqlInput ->{
+      SimpleClass sc = new SimpleClass();
+      try {
+        sc.readSQL(sqlInput, null);
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+      objects[counter.getAndIncrement()] = sc;
+    });
+
+    assertEquals(objects[0].string, "aaa");
+    assertEquals(objects[1].string, "bbb");
+
+    statement.close();
+    connection.close();
+  }
+  private void testMapArrayByCustomInterface() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select [{'string':'aaa'},{'string': 'bbb'}]::ARRAY(OBJECT(string varchar))");
+    resultSet.next();
+    SimpleClass[] objects = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1,  SimpleClass.class);
+    assertEquals(objects[0].string, "aaa");
+    assertEquals(objects[1].string, "bbb");
+
+    statement.close();
+    connection.close();
+  }
+
+  private void testMapArrayByGetObject() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("select [{'string':'aaa'},{'string': 'bbb'}]::ARRAY(OBJECT(string varchar))");
+    resultSet.next();
+    SimpleClass[] objects = resultSet.getObject(1, SimpleClass[].class);
+
+    assertEquals(objects[0].string, "aaa");
+    assertEquals(objects[1].string, "bbb");
+
+    statement.close();
+    connection.close();
+  }
+
 
 }
