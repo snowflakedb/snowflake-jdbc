@@ -225,4 +225,16 @@ public class StatementLatestIT extends BaseJDBCTest {
       }
     }
   }
+
+  @Test // SNOW-647217
+  public void testSchemaWith255CharactersDoesNotCauseException() throws SQLException {
+    String schemaName = "a" + SnowflakeUtil.randomAlphaNumeric(254);
+    try (Connection con = getConnection()) {
+      try (Statement stmt = con.createStatement()) {
+        stmt.execute("create schema " + schemaName);
+        stmt.execute("use schema " + schemaName);
+        stmt.execute("drop schema " + schemaName);
+      }
+    }
+  }
 }
