@@ -4,9 +4,9 @@
 
   <parent>
     <groupId>net.snowflake</groupId>
-    <artifactId>snowflake-jdbc-base</artifactId>
+    <artifactId>snowflake-jdbc-parent</artifactId>
     <version>3.14.3</version>
-    <relativePath>../base_pom.xml</relativePath>
+    <relativePath>../parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
@@ -43,14 +43,10 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bc-fips</artifactId>
-      <version>1.0.2.4</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-fips</artifactId>
-      <version>1.0.5</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -73,7 +69,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
-        <version>3.0.0-M1</version>
+        <version>${version.plugin.install}</version>
         <executions>
           <execution>
             <id>install-tika-core</id>
@@ -217,6 +213,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <version>${version.plugin.surefire}</version>
         <configuration>
           <excludes>
             <exclude>**/*SFTrustManagerTest.java</exclude>
@@ -275,6 +272,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
+        <version>${version.plugin.dependency}</version>
         <executions>
           <execution>
             <id>install-jar</id>
@@ -568,14 +566,14 @@
                             <exclude>META-INF/DEPENDENCIES</exclude>
                             <exclude>META-INF/maven/**</exclude>
                             <exclude>META-INF/services/com.fasterxml.*</exclude>
-                            <exclude>META-INF/*.xml</exclude>
-                            <exclude>META-INF/*.SF</exclude>
-                            <exclude>META-INF/*.DSA</exclude>
-                            <exclude>META-INF/*.RSA</exclude>
                             <!-- jackson became a multi-release JAR since 2.15.x -->
                             <!-- will need to exclude META-INF/versions/17 and META-INF/versions/19 until we move to newer Java versions -->
                             <exclude>META-INF/versions/17/**</exclude>
                             <exclude>META-INF/versions/19/**</exclude>
+                            <exclude>META-INF/*.xml</exclude>
+                            <exclude>META-INF/*.SF</exclude>
+                            <exclude>META-INF/*.DSA</exclude>
+                            <exclude>META-INF/*.RSA</exclude>
                             <exclude>.netbeans_automatic_build</exclude>
                             <exclude>git.properties</exclude>
                             <exclude>arrow-git.properties</exclude>
@@ -651,6 +649,7 @@
         <plugins>
           <plugin>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <version>${version.plugin.failsafe}</version>
             <configuration>
               <argLine>
                 --add-opens=java.base/java.io=ALL-UNNAMED
@@ -694,6 +693,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <version>${version.plugin.failsafe}</version>
             <executions>
               <execution>
                 <id>DefaultIT</id>

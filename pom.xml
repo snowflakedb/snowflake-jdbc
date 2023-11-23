@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>net.snowflake</groupId>
-    <artifactId>snowflake-jdbc-base</artifactId>
+    <artifactId>snowflake-jdbc-parent</artifactId>
     <version>3.14.3</version>
-    <relativePath>base_pom.xml</relativePath>
+    <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc</artifactId>
@@ -21,20 +21,14 @@
     <url>https://github.com/snowflakedb/snowflake-jdbc</url>
   </scm>
 
-  <properties>
-    <bouncycastle.version>1.74</bouncycastle.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk18on</artifactId>
-      <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk18on</artifactId>
-      <version>${bouncycastle.version}</version>
     </dependency>
   </dependencies>
 
@@ -364,7 +358,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
-        <version>3.0.0-M1</version>
         <executions>
           <execution>
             <id>install-arrow-format</id>
