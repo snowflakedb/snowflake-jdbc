@@ -35,8 +35,9 @@ jobs:
         name: ${{ matrix.cloud }} JDBC ${{ matrix.category }} on ${{ matrix.image }}
         runs-on: ubuntu-latest
         strategy:
+            fail-fast: false
             matrix:
-                image: [ 'jdbc-centos6-default' ]
+                image: [ 'jdbc-centos6-default', 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
                 cloud: [ 'AWS' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
         steps:
@@ -54,6 +55,7 @@ jobs:
         name: Old JDBC ${{ matrix.category }} on ${{ matrix.image }}
         runs-on: ubuntu-latest
         strategy:
+            fail-fast: false
             matrix:
                 image: [ 'jdbc-centos6-default' ]
                 cloud: [ 'AWS' ]

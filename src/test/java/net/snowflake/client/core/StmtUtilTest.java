@@ -88,7 +88,7 @@ public class StmtUtilTest extends BaseJDBCTest {
       // After login, the only invocation to http should have been with the new
       // headers.
       // No calls should have happened without additional headers.
-      mockedHttpUtil.verify(times(1), httpCalledWithHeaders);
+      mockedHttpUtil.verify(httpCalledWithHeaders, times(1));
     }
   }
 

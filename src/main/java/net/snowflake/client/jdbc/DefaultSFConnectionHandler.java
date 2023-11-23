@@ -150,7 +150,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
           (String) connectionPropertiesMap.getOrDefault(SFSessionProperty.TRACING, null);
 
       Level logLevel = null;
-      String logPattern = "%t/snowflake_jdbc%u.log"; // default pattern.
+      String logPattern = "%h/snowflake_jdbc%u.log"; // default pattern.
       SFClientConfig sfClientConfig = sfSession.getSfClientConfig();
 
       if (sfClientConfig != null) {

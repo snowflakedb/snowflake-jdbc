@@ -610,16 +610,15 @@ public class SnowflakeUtil {
         String proxyPassword = info.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
         String nonProxyHosts = info.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
         String proxyProtocol = info.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
+        String userAgentSuffix =
+            info.getProperty(SFSessionProperty.USER_AGENT_SUFFIX.getPropertyKey());
         Boolean gzipDisabled =
-            (info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()).isEmpty()
+            Strings.isNullOrEmpty(
+                    info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()))
                 ? false
                 : Boolean.valueOf(
-                    info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey())));
-        // Check for any user agent suffix
-        String userAgentSuffix = "";
-        if (info.containsKey(SFSessionProperty.USER_AGENT_SUFFIX)) {
-          userAgentSuffix = (String) info.get(SFSessionProperty.USER_AGENT_SUFFIX);
-        }
+                    info.getProperty(SFSessionProperty.GZIP_DISABLED.getPropertyKey()));
+
         // create key for proxy properties
         return new HttpClientSettingsKey(
             mode,

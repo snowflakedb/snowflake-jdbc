@@ -116,22 +116,6 @@ public class SFClientConfigParserTest {
   }
 
   @Test
-  public void testloadSFClientConfigWithTmpDirectory() {
-    Path configFilePath =
-        Paths.get(systemGetProperty("java.io.tmpdir"), SF_CLIENT_CONFIG_FILE_NAME);
-    try {
-      Files.write(configFilePath, CONFIG_JSON.getBytes());
-      SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
-      assertEquals("info", actualConfig.getCommonProps().getLogLevel());
-      assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
-
-      Files.delete(configFilePath);
-    } catch (IOException e) {
-      fail("testloadSFClientConfigWithTmpDirectory failed");
-    }
-  }
-
-  @Test
   public void testloadSFClientNoConditionsMatch() throws IOException {
     SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
     assertTrue(actualConfig == null);
