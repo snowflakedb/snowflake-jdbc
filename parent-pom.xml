@@ -20,8 +20,8 @@
     <awssdk.version>1.12.501</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
     <bouncycastle.version>1.74</bouncycastle.version>
-    <bouncycastle.bc-fips.version>1.0.2.4</bouncycastle.bc-fips.version>
-    <bouncycastle.bcpkix.fips.version>1.0.5</bouncycastle.bcpkix.fips.version>
+    <bouncycastle.bcfips.version>1.0.2.4</bouncycastle.bcfips.version>
+    <bouncycastle.bcpkixfips.version>1.0.5</bouncycastle.bcpkixfips.version>
     <classworlds.version>1.1</classworlds.version>
     <checkerframework.version>3.33.0</checkerframework.version>
     <commons.cli.version>1.2</commons.cli.version>
@@ -437,14 +437,14 @@
         <!-- for FIPS JAR -->
         <groupId>org.bouncycastle</groupId>
         <artifactId>bc-fips</artifactId>
-        <version>${bouncycastle.bc-fips.version}</version>
+        <version>${bouncycastle.bcfips.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
         <!-- for FIPS JAR -->
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcpkix-fips</artifactId>
-        <version>${bouncycastle.bcpkix.fips.version}</version>
+        <version>${bouncycastle.bcpkixfips.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
