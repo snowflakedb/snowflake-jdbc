@@ -380,11 +380,6 @@
         <scope>runtime</scope>
       </dependency>
       <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-buffer</artifactId>
-        <scope>runtime</scope>
-      </dependency>
-      <dependency>
         <groupId>org.apache.arrow</groupId>
         <artifactId>arrow-format</artifactId>
         <version>${arrow.version}</version>
@@ -565,6 +560,16 @@
     <dependency>
       <groupId>net.minidev</groupId>
       <artifactId>json-smart</artifactId>
+    </dependency>
+    <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+    <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>net.snowflake</groupId>
