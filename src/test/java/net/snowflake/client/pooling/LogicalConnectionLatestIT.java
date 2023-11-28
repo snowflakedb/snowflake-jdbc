@@ -4,7 +4,6 @@
 package net.snowflake.client.pooling;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.*;
 import java.util.Collections;
@@ -28,16 +27,17 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     Connection logicalConnection = pooledConnection.getConnection();
-    Statement statement =
+    try (Statement statement =
         logicalConnection.createStatement(
             ResultSet.TYPE_FORWARD_ONLY,
             ResultSet.CONCUR_READ_ONLY,
-            ResultSet.CLOSE_CURSORS_AT_COMMIT);
-    ResultSet resultSet = statement.executeQuery("show parameters");
-    assertTrue(resultSet.next());
-    assertFalse(logicalConnection.isClosed());
-    assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, logicalConnection.getHoldability());
-    statement.close();
+            ResultSet.CLOSE_CURSORS_AT_COMMIT)) {
+      try (ResultSet resultSet = statement.executeQuery("show parameters")) {
+        assertTrue(resultSet.next());
+        assertFalse(logicalConnection.isClosed());
+        assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, logicalConnection.getHoldability());
+      }
+    }
     logicalConnection.close();
     assertTrue(logicalConnection.isClosed());
     pooledConnection.close();
@@ -154,27 +154,32 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
       logicalConnection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
       assertEquals(2, logicalConnection.getTransactionIsolation());
 
-      Statement statement = logicalConnection.createStatement();
-      statement.executeUpdate("create or replace table test_transaction (colA int, colB string)");
-      // start a transaction
-      statement.executeUpdate("insert into test_transaction values (1, 'abc')");
+      try (Statement statement = logicalConnection.createStatement()) {
+        statement.executeUpdate("create or replace table test_transaction (colA int, colB string)");
+        // start a transaction
+        statement.executeUpdate("insert into test_transaction values (1, 'abc')");
 
-      // commit
-      logicalConnection.commit();
-      ResultSet resultSet = statement.executeQuery("select count(*) from test_transaction");
-      assertTrue(resultSet.next());
-      assertEquals(1, resultSet.getInt(1));
-      resultSet.close();
+        // commit
+        logicalConnection.commit();
+        try (ResultSet resultSet =
+            statement.executeQuery("select count(*) from test_transaction")) {
+          assertTrue(resultSet.next());
+          assertEquals(1, resultSet.getInt(1));
+        }
 
-      // rollback
-      statement.executeUpdate("delete from test_transaction");
-      logicalConnection.rollback();
-      resultSet = statement.executeQuery("select count(*) from test_transaction");
-      assertTrue(resultSet.next());
-      assertEquals(1, resultSet.getInt(1));
-
-      statement.execute("drop table if exists test_transaction");
-      resultSet.close();
+        // rollback
+        statement.executeUpdate("delete from test_transaction");
+        logicalConnection.rollback();
+        try (ResultSet resultSet =
+            statement.executeQuery("select count(*) from test_transaction")) {
+          assertTrue(resultSet.next());
+          assertEquals(1, resultSet.getInt(1));
+        }
+      } finally {
+        try (Statement statement = logicalConnection.createStatement()) {
+          statement.execute("drop table if exists test_transaction");
+        }
+      }
     }
     pooledConnection.close();
   }
@@ -212,20 +217,20 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       try (Statement statement = logicalConnection.createStatement()) {
-        statement.execute("use database " + logicalConnection.getCatalog());
-        statement.execute("use schema " + logicalConnection.getSchema());
         statement.execute("create or replace table test_prep (colA int, colB varchar)");
         try (PreparedStatement preparedStatement =
             logicalConnection.prepareStatement("insert into test_prep values (?, ?)")) {
           preparedStatement.setInt(1, 25);
           preparedStatement.setString(2, "hello world");
           preparedStatement.execute();
-          ResultSet resultSet = statement.executeQuery("select * from test_prep");
           int count = 0;
-          while (resultSet.next()) {
-            count++;
+          try (ResultSet resultSet = statement.executeQuery("select * from test_prep")) {
+            while (resultSet.next()) {
+              count++;
+            }
           }
           assertEquals(1, count);
+        } finally {
           statement.execute("drop table if exists test_prep");
         }
       }
@@ -241,15 +246,20 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       String schema = logicalConnection.getSchema();
       // get the current schema
-      ResultSet rst = logicalConnection.createStatement().executeQuery("select current_schema()");
-      assertTrue(rst.next());
-      assertEquals(schema, rst.getString(1));
+      try (ResultSet rst =
+          logicalConnection.createStatement().executeQuery("select current_schema()")) {
+        assertTrue(rst.next());
+        assertEquals(schema, rst.getString(1));
+      }
 
       logicalConnection.setSchema("PUBLIC");
+
       // get the current schema
-      rst = logicalConnection.createStatement().executeQuery("select current_schema()");
-      assertTrue(rst.next());
-      assertEquals("PUBLIC", rst.getString(1));
+      try (ResultSet rst =
+          logicalConnection.createStatement().executeQuery("select current_schema()")) {
+        assertTrue(rst.next());
+        assertEquals("PUBLIC", rst.getString(1));
+      }
     }
     pooledConnection.close();
   }
@@ -268,40 +278,44 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
-      Statement statement = logicalConnection.createStatement();
-      statement.execute(procedure);
+      try (Statement statement = logicalConnection.createStatement()) {
+        statement.execute(procedure);
 
-      CallableStatement callableStatement = logicalConnection.prepareCall("call output_message(?)");
-      callableStatement.setString(1, "hello world");
-      ResultSet resultSet = callableStatement.executeQuery();
-      resultSet.next();
-      assertEquals("hello world", resultSet.getString(1));
+        try (CallableStatement callableStatement =
+            logicalConnection.prepareCall("call output_message(?)")) {
+          callableStatement.setString(1, "hello world");
+          try (ResultSet resultSet = callableStatement.executeQuery()) {
+            resultSet.next();
+            assertEquals("hello world", resultSet.getString(1));
+          }
+        }
 
-      callableStatement =
-          logicalConnection.prepareCall(
-              "call output_message('hello world')",
-              ResultSet.TYPE_FORWARD_ONLY,
-              ResultSet.CONCUR_READ_ONLY);
-      resultSet = callableStatement.executeQuery();
-      resultSet.next();
-      assertEquals("hello world", resultSet.getString(1));
-      assertEquals(1003, callableStatement.getResultSetType());
-      assertEquals(1007, callableStatement.getResultSetConcurrency());
+        try (CallableStatement callableStatement =
+            logicalConnection.prepareCall(
+                "call output_message('hello world')",
+                ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY)) {
+          try (ResultSet resultSet = callableStatement.executeQuery()) {
+            resultSet.next();
+            assertEquals("hello world", resultSet.getString(1));
+            assertEquals(1003, callableStatement.getResultSetType());
+            assertEquals(1007, callableStatement.getResultSetConcurrency());
+          }
+        }
 
-      callableStatement =
-          logicalConnection.prepareCall(
-              "call output_message('hello world')",
-              ResultSet.TYPE_FORWARD_ONLY,
-              ResultSet.CONCUR_READ_ONLY,
-              ResultSet.CLOSE_CURSORS_AT_COMMIT);
-      resultSet = callableStatement.executeQuery();
-      resultSet.next();
-      assertEquals(2, callableStatement.getResultSetHoldability());
-
-      statement.execute("drop procedure if exists output_message(varchar)");
-      statement.close();
-      resultSet.close();
-      callableStatement.close();
+        try (CallableStatement callableStatement =
+            logicalConnection.prepareCall(
+                "call output_message('hello world')",
+                ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY,
+                ResultSet.CLOSE_CURSORS_AT_COMMIT)) {
+          try (ResultSet resultSet = callableStatement.executeQuery()) {
+            resultSet.next();
+            assertEquals(2, callableStatement.getResultSetHoldability());
+          }
+        }
+        statement.execute("drop procedure if exists output_message(varchar)");
+      }
     }
   }
 
@@ -311,20 +325,25 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     poolDataSource = setProperties(poolDataSource);
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
-      Statement statement = logicalConnection.createStatement();
-      statement.execute("create or replace table test_clob (colA text)");
+      try (Statement statement = logicalConnection.createStatement()) {
+        statement.execute("create or replace table test_clob (colA text)");
+      }
 
-      Clob clob = logicalConnection.createClob();
-      clob.setString(1, "hello world");
-      PreparedStatement preparedStatement =
-          logicalConnection.prepareStatement("insert into test_clob values (?)");
-      preparedStatement.setClob(1, clob);
-      preparedStatement.execute();
+      try (PreparedStatement preparedStatement =
+          logicalConnection.prepareStatement("insert into test_clob values (?)")) {
+        Clob clob = logicalConnection.createClob();
+        clob.setString(1, "hello world");
+        preparedStatement.setClob(1, clob);
+        preparedStatement.execute();
+      }
 
-      statement.execute("select * from test_clob");
-      ResultSet resultSet = statement.getResultSet();
-      resultSet.next();
-      assertEquals("hello world", resultSet.getString("COLA"));
+      try (Statement statement = logicalConnection.createStatement()) {
+        statement.execute("select * from test_clob");
+        try (ResultSet resultSet = statement.getResultSet()) {
+          resultSet.next();
+          assertEquals("hello world", resultSet.getString("COLA"));
+        }
+      }
     }
   }
 
