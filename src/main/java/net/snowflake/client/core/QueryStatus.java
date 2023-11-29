@@ -1,23 +1,44 @@
 package net.snowflake.client.core;
 
+import java.util.Arrays;
+import java.util.List;
+
 /** Copied from QueryDTO.java in Global Services. */
-public enum QueryStatus {
-  RUNNING(0, "RUNNING"),
-  ABORTING(1, "ABORTING"),
-  SUCCESS(2, "SUCCESS"),
-  FAILED_WITH_ERROR(3, "FAILED_WITH_ERROR"),
-  ABORTED(4, "ABORTED"),
-  QUEUED(5, "QUEUED"),
-  FAILED_WITH_INCIDENT(6, "FAILED_WITH_INCIDENT"),
-  DISCONNECTED(7, "DISCONNECTED"),
-  RESUMING_WAREHOUSE(8, "RESUMING_WAREHOUSE"),
+public class QueryStatus {
+  public static final QueryStatus RUNNING = new QueryStatus(0, "RUNNING");
+  public static final QueryStatus ABORTING = new QueryStatus(1, "ABORTING");
+  public static final QueryStatus SUCCESS = new QueryStatus(2, "SUCCESS");
+  public static final QueryStatus FAILED_WITH_ERROR = new QueryStatus(3, "FAILED_WITH_ERROR");
+  public static final QueryStatus ABORTED = new QueryStatus(4, "ABORTED");
+  public static final QueryStatus QUEUED = new QueryStatus(5, "QUEUED");
+  public static final QueryStatus FAILED_WITH_INCIDENT = new QueryStatus(6, "FAILED_WITH_INCIDENT");
+  public static final QueryStatus DISCONNECTED = new QueryStatus(7, "DISCONNECTED");
+  public static final QueryStatus RESUMING_WAREHOUSE = new QueryStatus(8, "RESUMING_WAREHOUSE");
   // purposeful typo. Is present in QueryDTO.java.
-  QUEUED_REPAIRING_WAREHOUSE(9, "QUEUED_REPARING_WAREHOUSE"),
-  RESTARTED(10, "RESTARTED"),
+  public static final QueryStatus QUEUED_REPAIRING_WAREHOUSE =
+      new QueryStatus(9, "QUEUED_REPARING_WAREHOUSE");
+  public static final QueryStatus RESTARTED = new QueryStatus(10, "RESTARTED");
 
   /** The state when a statement is waiting on a lock on resource held by another statement. */
-  BLOCKED(11, "BLOCKED"),
-  NO_DATA(12, "NO_DATA");
+  public static final QueryStatus BLOCKED = new QueryStatus(11, "BLOCKED");
+
+  public static final QueryStatus NO_DATA = new QueryStatus(12, "NO_DATA");
+
+  private static final List<QueryStatus> allStatuses =
+      Arrays.asList(
+          RUNNING,
+          ABORTING,
+          SUCCESS,
+          FAILED_WITH_ERROR,
+          ABORTED,
+          QUEUED,
+          FAILED_WITH_INCIDENT,
+          DISCONNECTED,
+          RESUMING_WAREHOUSE,
+          QUEUED_REPAIRING_WAREHOUSE,
+          RESTARTED,
+          BLOCKED,
+          NO_DATA);
 
   private final int value;
   private final String description;
@@ -83,13 +104,29 @@ public enum QueryStatus {
 
   public static QueryStatus getStatusFromString(String description) {
     if (description != null) {
-      for (QueryStatus st : QueryStatus.values()) {
-        if (description.equalsIgnoreCase(st.getDescription())) {
-          return st;
-        }
-      }
-      return QueryStatus.NO_DATA;
+      return allStatuses.stream()
+          .filter(queryStatus -> queryStatus.description.equals(description))
+          .findFirst()
+          .map(queryStatus -> new QueryStatus(queryStatus.value, queryStatus.description))
+          .orElse(new QueryStatus(NO_DATA.value, NO_DATA.description));
     }
     return null;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof QueryStatus)) {
+      return false;
+    }
+    QueryStatus another = (QueryStatus) obj;
+    return value == another.value && description.equals(another.description);
+  }
+
+  @Override
+  public int hashCode() {
+    return value;
   }
 }
