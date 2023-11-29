@@ -12,10 +12,12 @@ public class SFChildResult {
     this.type = type;
   }
 
+  // For Snowflake internal use
   public String getId() {
     return id;
   }
 
+  // For Snowflake internal use
   public SFStatementType getType() {
     return type;
   }
