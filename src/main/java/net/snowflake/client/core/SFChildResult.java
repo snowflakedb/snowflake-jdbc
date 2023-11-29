@@ -12,11 +12,11 @@ public class SFChildResult {
     this.type = type;
   }
 
-  String getId() {
+  public String getId() {
     return id;
   }
 
-  SFStatementType getType() {
+  public SFStatementType getType() {
     return type;
   }
 }
