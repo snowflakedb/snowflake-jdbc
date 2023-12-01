@@ -18,8 +18,9 @@ import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 
-/** SFAsyncResultSet implementation */
-class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
+/** SFAsyncResultSet implementation. Note: For Snowflake internal use */
+public class SFAsyncResultSet extends SnowflakeBaseResultSet
+    implements SnowflakeResultSet, ResultSet {
   private final SFBaseResultSet sfBaseResultSet;
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;

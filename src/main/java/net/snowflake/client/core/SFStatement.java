@@ -238,7 +238,7 @@ public class SFStatement extends SFBaseStatement {
       // current result to the first child's result.
       // we still construct the first result set for its side effects.
       if (!childResults.isEmpty()) {
-        SFStatementType type = childResults.get(0).type;
+        SFStatementType type = childResults.get(0).getType();
 
         // ensure first query type matches the calling JDBC method, if exists
         if (caller == CallingMethod.EXECUTE_QUERY && !type.isGenerateResultSet()) {
@@ -661,7 +661,7 @@ public class SFStatement extends SFBaseStatement {
       List<SFChildResult> childResults = ResultUtil.getChildResults(session, requestId, jsonResult);
       List<String> resultList = new ArrayList<>();
       for (int i = 0; i < childResults.size(); i++) {
-        resultList.add(childResults.get(i).id);
+        resultList.add(childResults.get(i).getId());
       }
       if (resultList.isEmpty()) {
         resultList.add(queryID);
