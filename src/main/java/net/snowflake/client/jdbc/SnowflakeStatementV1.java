@@ -207,7 +207,6 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API,
           StmtUtil.truncateSQL(sql));
     }
-
     SFBaseResultSet sfResultSet;
     try {
       sfResultSet =
@@ -217,7 +216,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       updateCount = ResultUtil.calculateUpdateCount(sfResultSet);
       queryID = sfResultSet.getQueryId();
       resultSetMetadataHandler(sfResultSet);
+    } catch (SnowflakeSQLException ex) {
+      setQueryIdWhenValidOrNull(ex.getQueryId());
+      throw ex;
     } catch (SFException ex) {
+      setQueryIdWhenValidOrNull(ex.getQueryId());
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     } finally {
@@ -235,6 +238,14 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     }
 
     return updateCount;
+  }
+
+  private void setQueryIdWhenValidOrNull(String queryId) {
+    if (QueryIdValidator.isValid(queryId)) {
+      this.queryID = queryId;
+    } else {
+      this.queryID = null;
+    }
   }
 
   /**
@@ -271,7 +282,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       sfResultSet.setSession(this.connection.getSFBaseSession());
       queryID = sfResultSet.getQueryId();
 
+    } catch (SnowflakeSQLException ex) {
+      setQueryIdWhenValidOrNull(ex.getQueryId());
+      throw ex;
     } catch (SFException ex) {
+      setQueryIdWhenValidOrNull(ex.getQueryId());
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
@@ -343,7 +358,11 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
 
       updateCount = NO_UPDATES;
       return true;
+    } catch (SnowflakeSQLException ex) {
+      setQueryIdWhenValidOrNull(ex.getQueryId());
+      throw ex;
     } catch (SFException ex) {
+      setQueryIdWhenValidOrNull(ex.getQueryId());
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
@@ -353,7 +372,6 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
    * @return the query ID of the latest executed query
    */
   public String getQueryID() {
-    // return the queryID for the query executed last time
     return queryID;
   }
 

@@ -12,7 +12,8 @@ import net.snowflake.client.core.SFBaseResultSet;
 /** This interface defines Snowflake specific APIs for Statement */
 public interface SnowflakeStatement {
   /**
-   * @return the Snowflake query ID of the latest executed query
+   * @return the Snowflake query ID of the latest executed query (even failed one) or null when the
+   *     last query ID is not available
    */
   String getQueryID() throws SQLException;
 

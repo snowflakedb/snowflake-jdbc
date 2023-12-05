@@ -25,9 +25,9 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -150,27 +150,72 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void putStatementNullQueryID() throws Throwable {
+  public void putGetStatementsHaveQueryID() throws Throwable {
     Connection con = getConnection();
     Statement statement = con.createStatement();
     String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+    SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
+    String createStageQueryId = snowflakeStatement.getQueryID();
+    TestUtil.assertValidQueryId(createStageQueryId);
     String putStatement = "PUT file://" + sourceFilePath + " @testPutGet_stage";
-    ResultSet resultSet =
-        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(putStatement);
-    String queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    assertTrue(
-        Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID));
+    ResultSet resultSet = snowflakeStatement.executeAsyncQuery(putStatement);
+    String statementPutQueryId = snowflakeStatement.getQueryID();
+    TestUtil.assertValidQueryId(statementPutQueryId);
+    assertNotEquals(
+        "create query id is override by put query id", createStageQueryId, statementPutQueryId);
+    String resultSetPutQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    TestUtil.assertValidQueryId(resultSetPutQueryId);
+    assertEquals(resultSetPutQueryId, statementPutQueryId);
     resultSet =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery(
-                "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
-    queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    assertTrue(
-        Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID));
+        snowflakeStatement.executeAsyncQuery(
+            "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
+    String statementGetQueryId = snowflakeStatement.getQueryID();
+    String resultSetGetQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    TestUtil.assertValidQueryId(resultSetGetQueryId);
+    assertNotEquals(
+        "put and get query id should be different", resultSetGetQueryId, resultSetPutQueryId);
+    assertEquals(resultSetGetQueryId, statementGetQueryId);
+  }
+
+  /** Added in > 3.14.4 */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void putGetStatementsHaveQueryIDEvenWhenFail() throws Throwable {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+      File destFolder = tmpFolder.newFolder();
+      String destFolderCanonicalPath = destFolder.getCanonicalPath();
+      SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
+      try {
+        statement.executeQuery("PUT file://" + sourceFilePath + " @not_existing_state");
+        fail("PUT statement should fail");
+      } catch (Exception __) {
+        TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+      }
+      String putQueryId = snowflakeStatement.getQueryID();
+      try {
+        statement.executeQuery(
+            "GET @not_existing_state 'file://" + destFolderCanonicalPath + "' parallel=8");
+        fail("GET statement should fail");
+      } catch (Exception __) {
+        TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+      }
+      String getQueryId = snowflakeStatement.getQueryID();
+      assertNotEquals("put and get query id should be different", putQueryId, getQueryId);
+      String stageName = "stage_" + SnowflakeUtil.randomAlphaNumeric(10);
+      statement.execute("CREATE OR REPLACE STAGE " + stageName);
+      TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+      try {
+        statement.executeQuery("PUT file://not_existing_file @" + stageName);
+        fail("PUT statement should fail");
+      } catch (Exception __) {
+        assertNull(snowflakeStatement.getQueryID());
+      }
+    }
   }
 
   @Test

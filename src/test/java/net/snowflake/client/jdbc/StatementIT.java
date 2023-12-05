@@ -624,4 +624,13 @@ public class StatementIT extends BaseJDBCTest {
       }
     }
   }
+
+  @Test
+  public void testQueryIdIsNullOnFreshStatement() throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement stmt = con.createStatement()) {
+        assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+      }
+    }
+  }
 }
