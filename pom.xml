@@ -6,11 +6,12 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.14.3</version>
+    <version>3.14.4</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc</artifactId>
+  <version>3.14.4</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc</name>
