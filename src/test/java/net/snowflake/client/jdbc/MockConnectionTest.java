@@ -676,6 +676,11 @@ public class MockConnectionTest extends BaseJDBCTest {
     }
 
     @Override
+    public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
+      return null;
+    }
+
+    @Override
     public Telemetry getTelemetryClient() {
       return new Telemetry() {
         @Override

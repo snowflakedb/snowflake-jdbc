@@ -10,6 +10,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -649,8 +650,8 @@ public class SFStatement extends SFBaseStatement {
    */
   @Override
   public String[] getChildQueryIds(String queryID) throws SQLException {
-    QueryStatus qs = session.getQueryStatus(queryID);
-    if (QueryStatus.isStillRunning(qs)) {
+    QueryStatusV2 qs = session.getQueryStatusV2(queryID);
+    if (qs.isStillRunning()) {
       throw new SQLException(
           "Status of query associated with resultSet is "
               + qs.getDescription()
