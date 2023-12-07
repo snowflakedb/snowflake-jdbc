@@ -219,7 +219,7 @@ public class SessionUtilExternalBrowser {
 
   private String getConsoleLoginUrl(int port) throws SFException {
     try {
-      String proofKey = generateProofKey();
+      proofKey = generateProofKey();
       String serverUrl = loginInput.getServerUrl();
 
       URIBuilder consoleLoginUriBuilder = new URIBuilder(serverUrl);
