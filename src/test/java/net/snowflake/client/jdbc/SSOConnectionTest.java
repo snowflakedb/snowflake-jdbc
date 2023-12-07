@@ -288,6 +288,7 @@ public class SSOConnectionTest {
         .thenReturn(ClientAuthnDTO.AuthenticatorType.EXTERNALBROWSER.name());
     when(loginInput.getAccountName()).thenReturn("testaccount");
     when(loginInput.getUserName()).thenReturn("testuser");
+    when(loginInput.getDisableConsoleLogin()).thenReturn(true);
     return loginInput;
   }
 

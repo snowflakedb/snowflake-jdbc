@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -215,6 +216,34 @@ public class SessionUtilExternalBrowser {
     }
   }
 
+  private String getConsoleLoginUrl(int port) throws SFException {
+    try {
+      proofKey = generateProofKey();
+      String serverUrl = loginInput.getServerUrl();
+
+      URIBuilder consoleLoginUriBuilder = new URIBuilder(serverUrl);
+      consoleLoginUriBuilder.setPath(SessionUtil.SF_PATH_CONSOLE_LOGIN_REQUEST);
+      consoleLoginUriBuilder.addParameter("login_name", loginInput.getUserName());
+      consoleLoginUriBuilder.addParameter("browser_mode_redirect_port", Integer.toString(port));
+      consoleLoginUriBuilder.addParameter("proof_key", proofKey);
+
+      String consoleLoginUrl = consoleLoginUriBuilder.build().toURL().toString();
+
+      logger.debug("console login url: {}", consoleLoginUrl);
+
+      return consoleLoginUrl;
+    } catch (Exception ex) {
+      throw new SFException(ex, ErrorCode.INTERNAL_ERROR, ex.getMessage());
+    }
+  }
+
+  private String generateProofKey() {
+    SecureRandom secureRandom = new SecureRandom();
+    byte[] randomness = new byte[32];
+    secureRandom.nextBytes(randomness);
+    return Base64.getEncoder().encodeToString(randomness);
+  }
+
   /**
    * Authenticate
    *
@@ -227,13 +256,26 @@ public class SessionUtilExternalBrowser {
       // main procedure
       int port = this.getLocalPort(ssocket);
       logger.debug("Listening localhost:{}", port);
-      String ssoUrl = getSSOUrl(port);
-      this.handlers.output(
-          "Initiating login request with your identity provider. A "
-              + "browser window should have opened for you to complete the "
-              + "login. If you can't see it, check existing browser windows, "
-              + "or your OS settings. Press CTRL+C to abort and try again...");
-      this.handlers.openBrowser(ssoUrl);
+
+      if (loginInput.getDisableConsoleLogin()) {
+        // Access GS to get SSO URL
+        String ssoUrl = getSSOUrl(port);
+        this.handlers.output(
+            "Initiating login request with your identity provider. A "
+                + "browser window should have opened for you to complete the "
+                + "login. If you can't see it, check existing browser windows, "
+                + "or your OS settings. Press CTRL+C to abort and try again...");
+        this.handlers.openBrowser(ssoUrl);
+      } else {
+        // Multiple SAML way to do authentication via console login
+        String consoleLoginUrl = getConsoleLoginUrl(port);
+        this.handlers.output(
+            "Initiating login request with your identity provider(s). A "
+                + "browser window should have opened for you to complete the "
+                + "login. If you can't see it, check existing browser windows, "
+                + "or your OS settings. Press CTRL+C to abort and try again...");
+        this.handlers.openBrowser(consoleLoginUrl);
+      }
 
       while (true) {
         Socket socket = ssocket.accept(); // start accepting the request
