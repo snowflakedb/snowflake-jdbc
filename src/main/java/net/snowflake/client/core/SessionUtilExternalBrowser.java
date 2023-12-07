@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -27,8 +28,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.StringEntity;
-
-import java.security.SecureRandom;
 
 /**
  * SAML 2.0 Compliant service/application federated authentication 1. Query GS to obtain IDP SSO url
