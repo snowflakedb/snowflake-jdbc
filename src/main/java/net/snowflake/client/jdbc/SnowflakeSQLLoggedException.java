@@ -232,6 +232,12 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(null, SQLState, vendorCode, session, this);
   }
 
+  public SnowflakeSQLLoggedException(
+      String queryId, SFBaseSession session, int vendorCode, String SQLState) {
+    super(queryId, SQLState, vendorCode);
+    sendTelemetryData(queryId, SQLState, vendorCode, session, this);
+  }
+
   public SnowflakeSQLLoggedException(SFBaseSession session, String SQLState, String reason) {
     super(reason, SQLState);
     sendTelemetryData(null, SQLState, -1, session, this);
@@ -239,40 +245,45 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
 
   public SnowflakeSQLLoggedException(
       SFBaseSession session, int vendorCode, String SQLState, Object... params) {
-    super(SQLState, vendorCode, params);
-    String reason =
-        errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
-    sendTelemetryData(null, SQLState, vendorCode, session, this);
+    this(null, session, vendorCode, SQLState, params);
+  }
+
+  public SnowflakeSQLLoggedException(
+      String queryId, SFBaseSession session, int vendorCode, String SQLState, Object... params) {
+    super(queryId, SQLState, vendorCode, params);
+    sendTelemetryData(queryId, SQLState, vendorCode, session, this);
   }
 
   public SnowflakeSQLLoggedException(
       SFBaseSession session, ErrorCode errorCode, Throwable ex, Object... params) {
     super(ex, errorCode, params);
-    // add telemetry
     sendTelemetryData(null, errorCode.getSqlState(), errorCode.getMessageCode(), session, this);
   }
 
   public SnowflakeSQLLoggedException(
       SFBaseSession session, String SQLState, int vendorCode, Throwable ex, Object... params) {
     super(ex, SQLState, vendorCode, params);
-    // add telemetry
-    String reason =
-        errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params);
     sendTelemetryData(null, SQLState, vendorCode, session, this);
+  }
+
+  public SnowflakeSQLLoggedException(
+      String queryId,
+      SFBaseSession session,
+      String SQLState,
+      int vendorCode,
+      Throwable ex,
+      Object... params) {
+    super(queryId, ex, SQLState, vendorCode, params);
+    sendTelemetryData(queryId, SQLState, vendorCode, session, this);
   }
 
   public SnowflakeSQLLoggedException(SFBaseSession session, ErrorCode errorCode, Object... params) {
     super(errorCode, params);
-    // add telemetry
-    String reason =
-        errorResourceBundleManager.getLocalizedMessage(
-            String.valueOf(errorCode.getMessageCode()), params);
     sendTelemetryData(null, null, -1, session, this);
   }
 
   public SnowflakeSQLLoggedException(SFBaseSession session, SFException e) {
     super(e);
-    // add telemetry
     sendTelemetryData(null, null, -1, session, this);
   }
 

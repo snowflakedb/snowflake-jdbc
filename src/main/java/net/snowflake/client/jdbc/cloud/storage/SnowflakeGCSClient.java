@@ -199,6 +199,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
    * @param presignedUrl Credential to use for download
+   * @param queryId last query id
    * @throws SnowflakeSQLException download failure
    */
   @Override
@@ -211,7 +212,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String remoteStorageLocation,
       String stageFilePath,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     int retryCount = 0;
     String localFilePath = localLocation + localFileSep + destFileName;
@@ -271,7 +273,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                       .getName()
                       .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
                     AbstractMap.SimpleEntry<String, String> encryptionData =
-                        parseEncryptionData(header.getValue());
+                        parseEncryptionData(header.getValue(), queryId);
 
                     key = encryptionData.getKey();
                     iv = encryptionData.getValue();
@@ -282,14 +284,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               logger.debug("Download successful", false);
             } catch (IOException ex) {
               logger.debug("Download unsuccessful {}", ex);
-              handleStorageException(ex, ++retryCount, "download", session, command);
+              handleStorageException(ex, ++retryCount, "download", session, command, queryId);
             }
           } else {
             Exception ex =
                 new HttpResponseException(
                     response.getStatusLine().getStatusCode(),
                     EntityUtils.toString(response.getEntity()));
-            handleStorageException(ex, ++retryCount, "download", session, command);
+            handleStorageException(ex, ++retryCount, "download", session, command, queryId);
           }
         } else {
           BlobId blobId = BlobId.of(remoteStorageLocation, stageFilePath);
@@ -311,7 +313,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           if (isEncrypting()) {
             if (userDefinedMetadata != null) {
               AbstractMap.SimpleEntry<String, String> encryptionData =
-                  parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP));
+                  parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP), queryId);
 
               key = encryptionData.getKey();
               iv = encryptionData.getValue();
@@ -325,6 +327,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             && this.getEncryptionKeySize() <= 256) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
+                queryId,
                 session,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 SqlState.INTERNAL_ERROR,
@@ -337,6 +340,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           } catch (Exception ex) {
             logger.error("Error decrypting file", ex);
             throw new SnowflakeSQLLoggedException(
+                queryId,
                 session,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 SqlState.INTERNAL_ERROR,
@@ -346,11 +350,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         return;
       } catch (Exception ex) {
         logger.debug("Download unsuccessful {}", ex);
-        handleStorageException(ex, ++retryCount, "download", session, command);
+        handleStorageException(ex, ++retryCount, "download", session, command, queryId);
       }
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
+        queryId,
         session,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
@@ -367,6 +372,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
    * @param presignedUrl Signed credential for download
+   * @param queryId last query id
    * @return input file stream
    * @throws SnowflakeSQLException when download failure
    */
@@ -378,7 +384,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String remoteStorageLocation,
       String stageFilePath,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     int retryCount = 0;
     InputStream inputStream = null;
@@ -429,7 +436,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                       .getName()
                       .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
                     AbstractMap.SimpleEntry<String, String> encryptionData =
-                        parseEncryptionData(header.getValue());
+                        parseEncryptionData(header.getValue(), queryId);
 
                     key = encryptionData.getKey();
                     iv = encryptionData.getValue();
@@ -440,14 +447,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               logger.debug("Download successful", false);
             } catch (IOException ex) {
               logger.debug("Download unsuccessful {}", ex);
-              handleStorageException(ex, ++retryCount, "download", session, command);
+              handleStorageException(ex, ++retryCount, "download", session, command, queryId);
             }
           } else {
             Exception ex =
                 new HttpResponseException(
                     response.getStatusLine().getStatusCode(),
                     EntityUtils.toString(response.getEntity()));
-            handleStorageException(ex, ++retryCount, "download", session, command);
+            handleStorageException(ex, ++retryCount, "download", session, command, queryId);
           }
         } else {
           BlobId blobId = BlobId.of(remoteStorageLocation, stageFilePath);
@@ -463,7 +470,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             // Get the user-defined BLOB metadata
             Map<String, String> userDefinedMetadata = blob.getMetadata();
             AbstractMap.SimpleEntry<String, String> encryptionData =
-                parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP));
+                parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP), queryId);
 
             key = encryptionData.getKey();
             iv = encryptionData.getValue();
@@ -473,6 +480,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLException(
+                queryId,
                 SqlState.INTERNAL_ERROR,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 "File metadata incomplete");
@@ -487,6 +495,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           } catch (Exception ex) {
             logger.error("Error decrypting file", ex);
             throw new SnowflakeSQLLoggedException(
+                queryId,
                 session,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 SqlState.INTERNAL_ERROR,
@@ -495,11 +504,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         }
       } catch (Exception ex) {
         logger.debug("Download unsuccessful {}", ex);
-        handleStorageException(ex, ++retryCount, "download", session, command);
+        handleStorageException(ex, ++retryCount, "download", session, command, queryId);
       }
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
+        queryId,
         session,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
@@ -521,6 +531,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * @param meta object meta data
    * @param stageRegion region name where the stage persists
    * @param presignedUrl presigned URL for upload. Used by GCP.
+   * @param queryId last query id
    * @throws SnowflakeSQLException if upload failed
    */
   @Override
@@ -536,7 +547,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       FileBackedOutputStream fileBackedOutputStream,
       StorageObjectMetadata meta,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     final List<FileInputStream> toClose = new ArrayList<>();
     long originalContentLength = meta.getContentLength();
@@ -549,7 +561,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             meta,
             originalContentLength,
             fileBackedOutputStream,
-            toClose);
+            toClose,
+            queryId);
 
     if (!(meta instanceof CommonObjectMetadata)) {
       throw new IllegalArgumentException("Unexpected metadata object type");
@@ -575,7 +588,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           meta.getUserMetadata(),
           uploadStreamInfo.left,
           presignedUrl,
-          ocspModeAndProxyKey);
+          ocspModeAndProxyKey,
+          queryId);
       logger.debug("Upload successfully with presigned url");
     }
 
@@ -600,6 +614,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * @param meta object meta data
    * @param stageRegion region name where the stage persists
    * @param presignedUrl Credential used for upload of a file
+   * @param queryId last query id
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   @Override
@@ -615,7 +630,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       FileBackedOutputStream fileBackedOutputStream,
       StorageObjectMetadata meta,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     final List<FileInputStream> toClose = new ArrayList<>();
     long originalContentLength = meta.getContentLength();
@@ -628,7 +644,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             meta,
             originalContentLength,
             fileBackedOutputStream,
-            toClose);
+            toClose,
+            queryId);
 
     if (!(meta instanceof CommonObjectMetadata)) {
       throw new IllegalArgumentException("Unexpected metadata object type");
@@ -644,7 +661,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           meta.getUserMetadata(),
           uploadStreamInfo.left,
           presignedUrl,
-          session.getHttpClientKey());
+          session.getHttpClientKey(),
+          queryId);
       logger.debug("Upload successful", false);
 
       // close any open streams in the "toClose" list and return
@@ -673,10 +691,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
         return;
       } catch (Exception ex) {
-        handleStorageException(ex, ++retryCount, "upload", session, command);
+        handleStorageException(ex, ++retryCount, "upload", session, command, queryId);
 
         if (uploadFromStream && fileBackedOutputStream == null) {
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
@@ -693,7 +712,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
                 meta,
                 originalContentLength,
                 fileBackedOutputStream,
-                toClose);
+                toClose,
+                queryId);
       }
 
     } while (retryCount <= getMaxRetries());
@@ -701,6 +721,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
 
     throw new SnowflakeSQLLoggedException(
+        queryId,
         session,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
@@ -752,7 +773,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       Map<String, String> metadata,
       InputStream content,
       String presignedUrl,
-      HttpClientSettingsKey ocspAndProxyKey)
+      HttpClientSettingsKey ocspAndProxyKey,
+      String queryId)
       throws SnowflakeSQLException {
     try {
       URIBuilder uriBuilder = new URIBuilder(presignedUrl);
@@ -806,16 +828,18 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             new HttpResponseException(
                 response.getStatusLine().getStatusCode(),
                 EntityUtils.toString(response.getEntity()));
-        handleStorageException(ex, 0, "upload", session, null);
+        handleStorageException(ex, 0, "upload", session, null, queryId);
       }
     } catch (URISyntaxException e) {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
           "Unexpected: upload presigned URL invalid");
     } catch (Exception e) {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
@@ -845,7 +869,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       StorageObjectMetadata meta,
       long originalContentLength,
       FileBackedOutputStream fileBackedOutputStream,
-      List<FileInputStream> toClose)
+      List<FileInputStream> toClose,
+      String queryId)
       throws SnowflakeSQLException {
     logger.debug(
         "createUploadStream({}, {}, {}, {}, {}, {})",
@@ -877,6 +902,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         } catch (Exception ex) {
           logger.error("Failed to encrypt input", ex);
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -900,6 +926,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     } catch (FileNotFoundException ex) {
       logger.error("Failed to open input file", ex);
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -909,6 +936,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     } catch (IOException ex) {
       logger.error("Failed to open input stream", ex);
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -922,19 +950,24 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   @Override
   public void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSession session, String command)
+      Exception ex,
+      int retryCount,
+      String operation,
+      SFSession session,
+      String command,
+      String queryId)
       throws SnowflakeSQLException {
     // no need to retry if it is invalid key exception
     if (ex.getCause() instanceof InvalidKeyException) {
       // Most likely cause is that the unlimited strength policy files are not installed
       // Log the error and throw a message that explains the cause
-      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
+      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex, queryId);
     }
 
     // If there is no space left in the download location, java.io.IOException is thrown.
     // Don't retry.
     if (SnowflakeUtil.getRootCause(ex) instanceof IOException) {
-      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex);
+      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex, queryId);
     }
 
     if (ex instanceof StorageException) {
@@ -946,6 +979,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       // If we have exceeded the max number of retries, propagate the error
       if (retryCount > getMaxRetries()) {
         throw new SnowflakeSQLLoggedException(
+            queryId,
             session,
             SqlState.SYSTEM_ERROR,
             ErrorCode.GCP_SERVICE_ERROR.getMessageCode(),
@@ -984,7 +1018,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             SnowflakeFileTransferAgent.renewExpiredToken(session, command, this);
           } else {
             throw new SnowflakeSQLException(
-                se.getMessage(), CLOUD_STORAGE_CREDENTIALS_EXPIRED, "GCS credentials have expired");
+                queryId,
+                se.getMessage(),
+                CLOUD_STORAGE_CREDENTIALS_EXPIRED,
+                "GCS credentials have expired");
           }
         }
       }
@@ -992,6 +1029,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
       if (retryCount > getMaxRetries()) {
         throw new SnowflakeSQLLoggedException(
+            queryId,
             session,
             SqlState.SYSTEM_ERROR,
             ErrorCode.IO_ERROR.getMessageCode(),
@@ -1006,6 +1044,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       }
     } else {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.SYSTEM_ERROR,
           ErrorCode.IO_ERROR.getMessageCode(),
@@ -1059,8 +1098,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    * Takes the json string in the encryptiondata metadata field of the encrypted
    * blob and parses out the key and iv. Returns the pair as key = key, iv = value.
    */
-  private AbstractMap.SimpleEntry<String, String> parseEncryptionData(String jsonEncryptionData)
-      throws SnowflakeSQLException {
+  private AbstractMap.SimpleEntry<String, String> parseEncryptionData(
+      String jsonEncryptionData, String queryId) throws SnowflakeSQLException {
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     JsonFactory factory = mapper.getFactory();
     try {
@@ -1073,6 +1112,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       return new AbstractMap.SimpleEntry<>(key, iv);
     } catch (Exception ex) {
       throw new SnowflakeSQLException(
+          queryId,
           ex,
           SqlState.SYSTEM_ERROR,
           ErrorCode.IO_ERROR.getMessageCode(),
@@ -1140,6 +1180,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
         if (encryptionKeySize != 128 && encryptionKeySize != 192 && encryptionKeySize != 256) {
           throw new SnowflakeSQLException(
+              QueryIdHelper.queryIdFromEncMatOr(encMat, null),
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
               "unsupported key size",

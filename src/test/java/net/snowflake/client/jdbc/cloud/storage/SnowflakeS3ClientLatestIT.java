@@ -158,12 +158,14 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
 
       // Should retry one time, then throw error
       try {
-        spy.handleStorageException(new InterruptedException(), 0, "download", sfSession, command);
+        spy.handleStorageException(
+            new InterruptedException(), 0, "download", sfSession, command, null);
       } catch (Exception e) {
         Assert.fail("Should not have exception here");
       }
       Mockito.verify(spy, Mockito.never()).renew(Mockito.anyMap());
-      spy.handleStorageException(new InterruptedException(), 1, "download", sfSession, command);
+      spy.handleStorageException(
+          new InterruptedException(), 1, "download", sfSession, command, null);
     }
   }
 }

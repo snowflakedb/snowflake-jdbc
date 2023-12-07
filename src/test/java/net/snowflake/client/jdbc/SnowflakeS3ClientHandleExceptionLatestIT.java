@@ -75,7 +75,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   public void errorRenewExpired() throws SQLException, InterruptedException {
     AmazonS3Exception ex = new AmazonS3Exception("unauthenticated");
     ex.setErrorCode(EXPIRED_AWS_TOKEN_ERROR_CODE);
-    spyingClient.handleStorageException(ex, 0, "upload", sfSession, command);
+    spyingClient.handleStorageException(ex, 0, "upload", sfSession, command, null);
     Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
 
     // Unauthenticated, backoff with interrupt, renew is called
@@ -86,7 +86,8 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
               @Override
               public void run() {
                 try {
-                  spyingClient.handleStorageException(ex, maxRetry, "upload", sfSession, command);
+                  spyingClient.handleStorageException(
+                      ex, maxRetry, "upload", sfSession, command, null);
                 } catch (SnowflakeSQLException e) {
                   exceptionContainer[0] = e;
                 }
@@ -103,7 +104,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void errorNotFound() throws SQLException {
     spyingClient.handleStorageException(
-        new AmazonS3Exception("Not found"), overMaxRetry, "upload", sfSession, command);
+        new AmazonS3Exception("Not found"), overMaxRetry, "upload", sfSession, command, null);
   }
 
   @Test
@@ -115,7 +116,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
     ex.setErrorCode("400 Bad Request");
     ex.setErrorType(AmazonServiceException.ErrorType.Client);
     Mockito.doReturn(true).when(spyingClient).isClientException400Or404(ex);
-    spyingClient.handleStorageException(ex, 0, "download", sfSession, command);
+    spyingClient.handleStorageException(ex, 0, "download", sfSession, command, null);
     // renew token
     Mockito.verify(spyingClient, Mockito.times(1)).isClientException400Or404(ex);
     Mockito.verify(spyingClient, Mockito.times(1)).renew(Mockito.anyMap());
@@ -129,7 +130,8 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
         overMaxRetry,
         "upload",
         sfSession,
-        command);
+        command,
+        null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
@@ -137,7 +139,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   public void errorInvalidKey() throws SQLException {
     // Unauthenticated, renew is called.
     spyingClient.handleStorageException(
-        new Exception(new InvalidKeyException()), 0, "upload", sfSession, command);
+        new Exception(new InvalidKeyException()), 0, "upload", sfSession, command, null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
@@ -146,13 +148,13 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
     // Can still retry, no error thrown
     try {
       spyingClient.handleStorageException(
-          new InterruptedException(), 0, "upload", sfSession, command);
+          new InterruptedException(), 0, "upload", sfSession, command, null);
     } catch (Exception e) {
       Assert.fail("Should not have exception here");
     }
     Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
     spyingClient.handleStorageException(
-        new InterruptedException(), 26, "upload", sfSession, command);
+        new InterruptedException(), 26, "upload", sfSession, command, null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
@@ -161,19 +163,19 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
     // Can still retry, no error thrown
     try {
       spyingClient.handleStorageException(
-          new SocketTimeoutException(), 0, "upload", sfSession, command);
+          new SocketTimeoutException(), 0, "upload", sfSession, command, null);
     } catch (Exception e) {
       Assert.fail("Should not have exception here");
     }
     Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
     spyingClient.handleStorageException(
-        new SocketTimeoutException(), 26, "upload", sfSession, command);
+        new SocketTimeoutException(), 26, "upload", sfSession, command, null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void errorUnknownException() throws SQLException {
-    spyingClient.handleStorageException(new Exception(), 0, "upload", sfSession, command);
+    spyingClient.handleStorageException(new Exception(), 0, "upload", sfSession, command, null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
@@ -182,7 +184,7 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
     // Unauthenticated, renew is called.
     AmazonS3Exception ex = new AmazonS3Exception("unauthenticated");
     ex.setErrorCode(EXPIRED_AWS_TOKEN_ERROR_CODE);
-    spyingClient.handleStorageException(ex, 0, "upload", null, command);
+    spyingClient.handleStorageException(ex, 0, "upload", null, command, null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
@@ -200,7 +202,8 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
         0,
         "download",
         null,
-        getCommand);
+        getCommand,
+        null);
   }
 
   @After

@@ -1529,7 +1529,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             client.getMaxRetries(),
             "download",
             null,
-            command);
+            command,
+            null);
       } finally {
         if (connection != null) {
           connection.createStatement().execute("DROP STAGE if exists testPutGet_stage");

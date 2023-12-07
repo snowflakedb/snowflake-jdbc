@@ -248,9 +248,10 @@ public class StatementLatestIT extends BaseJDBCTest {
         try {
           stmt.execute("use database not_existing_database");
           fail("Statement should fail with exception");
-        } catch (Exception __) {
+        } catch (SnowflakeSQLException e) {
           String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
           TestUtil.assertValidQueryId(queryID);
+          assertEquals(queryID, e.getQueryId());
         }
       }
     }
@@ -265,9 +266,10 @@ public class StatementLatestIT extends BaseJDBCTest {
         try {
           stmt.executeUpdate("update not_existing_table set a = 1 where id = 42");
           fail("Statement should fail with exception");
-        } catch (Exception __) {
+        } catch (SnowflakeSQLException e) {
           String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
           TestUtil.assertValidQueryId(queryID);
+          assertEquals(queryID, e.getQueryId());
         }
       }
     }
@@ -282,9 +284,10 @@ public class StatementLatestIT extends BaseJDBCTest {
         try {
           stmt.executeQuery("select * from not_existing_table");
           fail("Statement should fail with exception");
-        } catch (Exception __) {
+        } catch (SnowflakeSQLException e) {
           String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
           TestUtil.assertValidQueryId(queryID);
+          assertEquals(queryID, e.getQueryId());
         }
       }
     }
