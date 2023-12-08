@@ -11,7 +11,6 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.regex.Pattern;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
@@ -75,7 +74,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
     super(statement);
     this.sfBaseResultSet = null;
     queryID.trim();
-    if (!Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID)) {
+    if (!QueryIdValidator.isValid(queryID)) {
       throw new SQLException(
           "The provided query ID " + queryID + " is invalid.", SqlState.INVALID_PARAMETER_VALUE);
     }
