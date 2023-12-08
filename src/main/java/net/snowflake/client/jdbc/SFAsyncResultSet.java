@@ -27,6 +27,7 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
   private SFBaseSession session;
   private Statement extraStatement;
   private QueryStatus lastQueriedStatus = NO_DATA;
+  private QueryStatusV2 lastQueriedStatusV2 = QueryStatusV2.empty();
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -99,15 +100,32 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
     if (this.lastQueriedStatus == QueryStatus.SUCCESS) {
       return this.lastQueriedStatus;
     }
-    this.lastQueriedStatus = session.getQueryStatus(this.queryID);
     // if query has completed successfully, cache its success status to avoid unnecessary future
     // server calls
+    this.lastQueriedStatus = session.getQueryStatus(this.queryID);
     return this.lastQueriedStatus;
   }
 
   @Override
   public String getQueryErrorMessage() throws SQLException {
     return this.lastQueriedStatus.getErrorMessage();
+  }
+
+  @Override
+  public QueryStatusV2 getStatusV2() throws SQLException {
+    if (session == null) {
+      throw new SQLException("Session not set");
+    }
+    if (this.queryID == null) {
+      throw new SQLException("QueryID unknown");
+    }
+    if (this.lastQueriedStatusV2.isSuccess()) {
+      return this.lastQueriedStatusV2;
+    }
+    this.lastQueriedStatusV2 = session.getQueryStatusV2(this.queryID);
+    // if query has completed successfully, cache its metadata to avoid unnecessary future server
+    // calls
+    return this.lastQueriedStatusV2;
   }
 
   /**

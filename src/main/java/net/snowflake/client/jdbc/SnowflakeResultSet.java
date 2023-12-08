@@ -38,6 +38,18 @@ public interface SnowflakeResultSet {
   String getQueryErrorMessage() throws SQLException;
 
   /**
+   * This function retrieves the status of an asynchronous query. An empty ResultSet object has
+   * already been returned, but the query may still be running. This function can be used to query
+   * whether it is possible to retrieve results from the ResultSet already.
+   *
+   * <p><code>status.isSuccess()</code> means that results can be retrieved.
+   *
+   * @return an instance containing query metadata
+   * @throws SQLException
+   */
+  QueryStatusV2 getStatusV2() throws SQLException;
+
+  /**
    * Get a list of ResultSetSerializables for the ResultSet in order to parallel processing
    *
    * @param maxSizeInBytes The expected max data size wrapped in the ResultSetSerializables object.

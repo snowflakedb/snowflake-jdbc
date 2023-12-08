@@ -57,6 +57,18 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * @throws SQLFeatureNotSupportedException
    */
   @Override
+  public QueryStatusV2 getStatusV2() throws SQLException {
+    throw new SnowflakeLoggedFeatureNotSupportedException(
+        session, "This function is only supported for asynchronous queries.");
+  }
+
+  /**
+   * This function is not supported for synchronous queries
+   *
+   * @return no return value; exception is always thrown
+   * @throws SQLFeatureNotSupportedException
+   */
+  @Override
   public String getQueryErrorMessage() throws SQLException {
     throw new SnowflakeLoggedFeatureNotSupportedException(
         session, "This function is only supported for asynchronous queries.");
