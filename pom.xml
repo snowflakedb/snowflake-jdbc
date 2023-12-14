@@ -579,6 +579,179 @@
       </build>
     </profile>
     <profile>
+      <id>thin-jar</id>
+      <activation>
+        <property>
+          <name>thin-jar</name>
+        </property>
+      </activation>
+      <build>
+        <finalName>${project.artifactId}-thin</finalName>
+        <plugins>
+          <plugin>
+            <!-- relocate the META-INF/versions files manually due to the maven bug -->
+            <!-- https://issues.apache.org/jira/browse/MSHADE-406 -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>repack</id>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <phase>package</phase>
+                <configuration>
+                  <target>
+                    <unzip dest="${project.build.directory}/relocate" src="${project.build.directory}/${project.build.finalName}.jar"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
+                    <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <!-- google linkage checker doesn't work well with shaded jar, disable the check in this case for now -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-linkage-checker</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <configuration/>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <phase>package</phase>
+                <configuration>
+                  <artifactSet>
+                    <includes>
+                      <include>net.snowflake:snowflake-common</include>
+                      <include>org.apache.arrow:*</include>
+                      <include>org.apache.tika:tika-core</include>
+                      <include>io.netty:*</include>
+                    </includes>
+                  </artifactSet>
+                  <relocations>
+                    <!-- We list only packages that we need to include form dependencies + snowflake-common-->
+                    <relocation>
+                      <pattern>net.snowflake.common</pattern>
+                      <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.apache.arrow</pattern>
+                      <shadedPattern>${shadeBase}.apache.arrow</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.apache.tika</pattern>
+                      <shadedPattern>${shadeBase}.apache.tika</shadedPattern>
+                    </relocation>
+                    <!-- io.netty are dependencies for arrow and arrow packages have some of the io.netty classes internally -->
+                    <relocation>
+                      <pattern>io.netty</pattern>
+                      <shadedPattern>${shadeBase}.io.netty</shadedPattern>
+                    </relocation>
+                  </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>*:*</artifact>
+                      <excludes>
+                        <exclude>META-INF/LICENSE*</exclude>
+                        <exclude>META-INF/NOTICE*</exclude>
+                        <exclude>META-INF/DEPENDENCIES</exclude>
+                        <exclude>META-INF/maven/**</exclude>
+                        <exclude>META-INF/services/com.fasterxml.*</exclude>
+                        <exclude>META-INF/*.xml</exclude>
+                        <exclude>META-INF/*.SF</exclude>
+                        <exclude>META-INF/*.DSA</exclude>
+                        <exclude>META-INF/*.RSA</exclude>
+                        <exclude>.netbeans_automatic_build</exclude>
+                        <exclude>git.properties</exclude>
+                        <exclude>arrow-git.properties</exclude>
+                        <exclude>google-http-client.properties</exclude>
+                        <exclude>storage.v1.json</exclude>
+                        <!-- This is just a documentation file, not needed-->
+                        <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                        <exclude>dependencies.properties</exclude>
+                        <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>org.apache.arrow:arrow-vector</artifact>
+                      <excludes>
+                        <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
+                        <exclude>codegen/**</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                  </transformers>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>buildnumber-maven-plugin</artifactId>
+            <configuration>
+              <timestampFormat>yyyyMMddHHmmss</timestampFormat>
+              <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
+              <doCheck>false</doCheck>
+              <revisionOnScmFailure/>
+              <doUpdate>false</doUpdate>
+              <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrementing buildNumber
+                AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrementing build number at the same time -->
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>create-timestamp</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>check-shaded-content</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
+                  <arguments>
+                    <argument>-thin</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>self-contained-jar</id>
       <activation>
         <property>
@@ -1163,12 +1336,12 @@
                 </goals>
                 <phase>deploy</phase>
                 <configuration>
-                  <file>target/${project.artifactId}.jar</file>
+                  <file>target/${project.build.finalName}.jar</file>
                   <repositoryId>ossrh</repositoryId>
                   <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
                   <pomFile>generated_public_pom.xml</pomFile>
-                  <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
-                  <sources>target/${project.artifactId}-sources.jar</sources>
+                  <javadoc>target/${project.build.finalName}-javadoc.jar</javadoc>
+                  <sources>target/${project.build.finalName}-sources.jar</sources>
                   <keyname>${env.GPG_KEY_ID}</keyname>
                   <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
                 </configuration>
