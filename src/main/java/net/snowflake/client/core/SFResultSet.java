@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
 import net.snowflake.client.core.BasicEvent.QueryState;
+import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
@@ -125,6 +126,21 @@ public class SFResultSet extends SFJsonResultSet {
       Telemetry telemetryClient,
       boolean sortResult)
       throws SQLException {
+    super(
+        resultSetSerializable.getTimeZone(),
+        new Converters(
+            resultSetSerializable.getTimeZone(),
+            resultSetSerializable.getResultVersion(),
+            resultSetSerializable.isHonorClientTZForTimestampNTZ(),
+            resultSetSerializable.getTreatNTZAsUTC(),
+            resultSetSerializable.getUseSessionTimezone(),
+            resultSetSerializable.getFormatDateWithTimeZone(),
+            resultSetSerializable.getBinaryFormatter(),
+            resultSetSerializable.getDateFormatter(),
+            resultSetSerializable.getTimeFormatter(),
+            resultSetSerializable.getTimestampNTZFormatter(),
+            resultSetSerializable.getTimestampLTZFormatter(),
+            resultSetSerializable.getTimestampTZFormatter()));
     this.resultSetSerializable = resultSetSerializable;
     this.columnCount = 0;
     this.sortResult = sortResult;
@@ -145,7 +161,6 @@ public class SFResultSet extends SFJsonResultSet {
     this.timestampTZFormatter = resultSetSerializable.getTimestampTZFormatter();
     this.dateFormatter = resultSetSerializable.getDateFormatter();
     this.timeFormatter = resultSetSerializable.getTimeFormatter();
-    this.sessionTimeZone = resultSetSerializable.getTimeZone();
     this.honorClientTZForTimestampNTZ = resultSetSerializable.isHonorClientTZForTimestampNTZ();
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
     this.resultVersion = resultSetSerializable.getResultVersion();

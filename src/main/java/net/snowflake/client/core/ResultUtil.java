@@ -165,7 +165,6 @@ public class ResultUtil {
    *     "123.456 1440". Here 123.456 is the * number of seconds since epoch and 1440 is the
    *     timezone index.
    * @param sessionTZ session timezone
-   * @param session session object
    * @return converted snowflake timestamp object
    * @throws SFException if timestampStr is an invalid timestamp
    */
@@ -174,8 +173,7 @@ public class ResultUtil {
       int scale,
       int internalColumnType,
       long resultVersion,
-      TimeZone sessionTZ,
-      SFBaseSession session)
+      TimeZone sessionTZ)
       throws SFException {
     logger.debug("public Timestamp getTimestamp(int columnIndex)", false);
 
@@ -212,11 +210,10 @@ public class ResultUtil {
    *
    * @param obj time object
    * @param scale time scale
-   * @param session session object
    * @return snowflake time object
    * @throws SFException if time is invalid
    */
-  public static SFTime getSFTime(String obj, int scale, SFBaseSession session) throws SFException {
+  public static SFTime getSFTime(String obj, int scale) throws SFException {
     try {
       return TimeUtil.getSFTime(obj, scale);
     } catch (IllegalArgumentException ex) {
@@ -256,7 +253,6 @@ public class ResultUtil {
    * @param timestampNTZFormatter snowflake timestamp ntz format
    * @param timestampLTZFormatter snowflake timestamp ltz format
    * @param timestampTZFormatter snowflake timestamp tz format
-   * @param session session object
    * @return timestamp in string in desired format
    * @throws SFException timestamp format is missing
    */
@@ -266,8 +262,7 @@ public class ResultUtil {
       int scale,
       SnowflakeDateTimeFormat timestampNTZFormatter,
       SnowflakeDateTimeFormat timestampLTZFormatter,
-      SnowflakeDateTimeFormat timestampTZFormatter,
-      SFBaseSession session)
+      SnowflakeDateTimeFormat timestampTZFormatter)
       throws SFException {
     // Derive the timestamp formatter to use
     SnowflakeDateTimeFormat formatter;

@@ -175,8 +175,7 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
                 oldScale,
                 SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
                 getResultVersion(),
-                getTimeZone(),
-                getSession());
+                getTimeZone());
         Timestamp oldTs = sfTimestamp.getTimestamp();
         oldTs = ResultUtil.adjustTimestamp(oldTs);
         Date oldDate = new Date((oldTs).getTime());
@@ -186,8 +185,7 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
                 oldScale,
                 SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
                 getResultVersion(),
-                getTimeZone(),
-                getSession());
+                getTimeZone());
         String timestampStr =
             ResultUtil.getSFTimestampAsString(
                 sfTS,
@@ -195,8 +193,7 @@ public class ThreeFieldStructToTimestampTZConverterTest extends BaseConverterTes
                 oldScale,
                 getTimestampNTZFormatter(),
                 getTimestampLTZFormatter(),
-                getTimestampTZFormatter(),
-                getSession());
+                getTimestampTZFormatter());
         Time oldTime = new Time(oldTs.getTime());
         assertThat(oldDate, is(date));
         assertThat(oldTs, is(ts));

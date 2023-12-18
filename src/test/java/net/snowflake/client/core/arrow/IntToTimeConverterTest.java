@@ -4,24 +4,17 @@
 
 package net.snowflake.client.core.arrow;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.sql.Time;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.IntVector;
@@ -98,7 +91,7 @@ public class IntToTimeConverterTest extends BaseConverterTest {
       Object obj = converter.toObject(j);
       Time oldTime =
           new Time(
-              ResultUtil.getSFTime(testTimesJson[i], scale, new SFSession())
+              ResultUtil.getSFTime(testTimesJson[i], scale)
                   .getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
       if (strVal != null) {
         assertFalse(converter.isNull(j));
