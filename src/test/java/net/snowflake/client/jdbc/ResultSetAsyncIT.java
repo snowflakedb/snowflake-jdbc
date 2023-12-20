@@ -218,7 +218,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     Clob clob = connection.createClob();
     clob.setString(1, "hello world");
     Statement statement = connection.createStatement();
-    // TODO structureType - add to test when WRITE is ready
+    // TODO structuredType - add to test when WRITE is ready
     statement.execute(
         "create or replace table test_get(colA integer, colB number, colC number, colD string, colE double, colF float, colG boolean, colH text, colI binary(3), colJ number(38,9), colK int, colL date, colM time, colN timestamp_ltz)");
 
