@@ -3,7 +3,19 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.nio.ByteBuffer;
+import java.sql.*;
+import java.util.*;
+import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
@@ -14,19 +26,6 @@ import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.RoundingMode;
-import java.nio.ByteBuffer;
-import java.sql.*;
-import java.util.*;
-import java.util.regex.Pattern;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
 
 /**
  * ResultSet integration tests for the latest JDBC driver. This doesn't work for the oldest

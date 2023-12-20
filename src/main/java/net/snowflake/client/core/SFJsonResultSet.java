@@ -10,12 +10,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.TimeZone;
-
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.log.ArgSupplier;
@@ -26,12 +25,6 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.Float8Vector;
-
-import java.sql.Array;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.sql.Types;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
@@ -100,25 +93,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       case Types.STRUCT:
         return getSqlInput((String) obj);
 
-      case Types.ARRAY:
-        return getArrayOfSqlInput((String) obj);
-
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
-    }
-  }
-
-  private Array getArrayOfSqlInput(String input) throws SFException {
-    try {
-      List<JsonSqlInput> result = new ArrayList<>();
-      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
-      Iterator nodeElements = arrayNode.elements();
-      while (nodeElements.hasNext()) {
-        result.add(new JsonSqlInput((JsonNode) nodeElements.next()));
-      }
-      return new SQLInputArray(result);
-    } catch (JsonProcessingException e) {
-      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 

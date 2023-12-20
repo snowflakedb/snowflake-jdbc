@@ -1,8 +1,6 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import net.snowflake.client.core.structs.SQLDataCreationHelper;
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -10,7 +8,9 @@ import java.net.URL;
 import java.sql.*;
 import java.sql.Date;
 import java.util.Iterator;
+import net.snowflake.client.core.structs.SQLDataCreationHelper;
 
+// TODO structuredType use json converters
 public class JsonSqlInput implements SQLInput {
   public JsonNode getInput() {
     return input;
@@ -18,7 +18,8 @@ public class JsonSqlInput implements SQLInput {
 
   private final JsonNode input;
 
-  private Iterator<JsonNode> elements;
+  private final Iterator<JsonNode> elements;
+
   public JsonSqlInput(JsonNode input) {
     this.input = input;
     this.elements = input.elements();
@@ -159,11 +160,6 @@ public class JsonSqlInput implements SQLInput {
     return null;
   }
 
-//  @Override
-//  public Boolean readBoolean() throws SQLException {
-//    return input.elements().next().booleanValue();
-//  }
-
   @Override
   public <T> T readObject(Class<T> type) throws SQLException {
     JsonNode jsonNode = elements.next();
@@ -171,51 +167,4 @@ public class JsonSqlInput implements SQLInput {
     instance.readSQL(new JsonSqlInput(jsonNode), null);
     return (T) instance;
   }
-
-//  public <T extends SQLData> List<T> readList(Class<T> type) throws SQLException {
-//    List<T> resultList = new ArrayList<>();
-//      ArrayNode arrayNode = (ArrayNode) input.elements().next();
-//      Iterator nodeElements = arrayNode.elements();
-//      while (nodeElements.hasNext()) {
-//        T instance = SQLDataCreationHelper.create(type);
-//        instance.readSQL(new JsonSqlInput((JsonNode) nodeElements.next()), null);
-//        resultList.add(instance);
-//      }
-//      return resultList;
-//  }
-//
-//  public <T extends SQLData> T[] readArray(Class<T> type) throws SQLException {
-//    ArrayNode arrayNode = (ArrayNode) input.elements().next();
-//    T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, arrayNode.size());
-//    AtomicInteger counter = new AtomicInteger(0);
-//    Iterator nodeElements = arrayNode.elements();
-//    while (nodeElements.hasNext()) {
-//      T instance = SQLDataCreationHelper.create(type);
-//      instance.readSQL(new JsonSqlInput((JsonNode) nodeElements.next()), null);
-//      arr[counter.getAndIncrement()] = (T) instance;
-//    }
-//    return arr;
-//  }
-//
-//  @Override
-//  public <K, T extends SQLData> Map<K, T> readMap(Class<K> keyType, Class<T> type) throws SQLException {
-//    ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
-//    JsonNode jsonNode = input.elements().next();
-//    Map<Object, Object> map = OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<Object, Object>>() {});
-//    Map<K, T> collect = map.entrySet().stream().map(e -> {
-//              try {
-//                T instance = SQLDataCreationHelper.create(type);
-//                SQLInput sqlInput = new JsonSqlInput(jsonNode.get(e.getKey().toString()));
-//                instance.readSQL(sqlInput, null);
-//                return new AbstractMap.SimpleEntry<>((K)e.getKey(), (T) instance);
-//              } catch (SQLException ex) {
-//                throw new RuntimeException(ex);
-//              }
-//            })
-//            .collect(Collectors.toMap(
-//                    Map.Entry::getKey,
-//                    Map.Entry::getValue
-//            ));
-//    return collect;
-//  }
 }

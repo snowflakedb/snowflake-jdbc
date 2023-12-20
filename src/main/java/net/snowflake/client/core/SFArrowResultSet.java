@@ -3,10 +3,18 @@
  */
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.StmtUtil.eventHandler;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.*;
+import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
@@ -20,19 +28,6 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.TimeZone;
-
-import static net.snowflake.client.core.StmtUtil.eventHandler;
-import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
@@ -496,24 +491,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       } catch (JsonProcessingException e) {
         throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
       }
-    } else if (columnType == Types.ARRAY) {
-      return getArrayOfSqlInput((String) obj);
     }
     return obj;
-  }
-
-  private Object getArrayOfSqlInput(String input) throws SFException {
-    try {
-      List<JsonSqlInput> result = new ArrayList<>();
-      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
-      Iterator nodeElements = arrayNode.elements();
-      while (nodeElements.hasNext()) {
-        result.add(new JsonSqlInput((JsonNode) nodeElements.next()));
-      }
-      return result;
-    } catch (JsonProcessingException e) {
-      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
-    }
   }
 
   @Override
