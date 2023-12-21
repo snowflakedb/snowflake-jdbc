@@ -6,6 +6,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.TimeZone;
 import net.snowflake.client.core.ResultUtil;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.*;
@@ -19,15 +20,18 @@ public class DateTimeConverter {
   private final boolean treatNTZAsUTC;
   private final boolean useSessionTimezone;
   private final boolean formatDateWithTimeZone;
+  private final SFBaseSession session;
 
   public DateTimeConverter(
       TimeZone sessionTimeZone,
+      SFBaseSession session,
       long resultVersion,
       boolean honorClientTZForTimestampNTZ,
       boolean treatNTZAsUTC,
       boolean useSessionTimezone,
       boolean formatDateWithTimeZone) {
     this.sessionTimeZone = sessionTimeZone;
+    this.session = session;
     this.resultVersion = resultVersion;
     this.honorClientTZForTimestampNTZ = honorClientTZForTimestampNTZ;
     this.treatNTZAsUTC = treatNTZAsUTC;
@@ -46,7 +50,7 @@ public class DateTimeConverter {
       }
       SFTimestamp sfTS =
           ResultUtil.getSFTimestamp(
-              obj.toString(), scale, columnSubType, resultVersion, sessionTimeZone);
+              obj.toString(), scale, columnSubType, resultVersion, sessionTimeZone, session);
 
       Timestamp res = sfTS.getTimestamp();
       if (res == null) {
@@ -90,7 +94,7 @@ public class DateTimeConverter {
         return null;
       }
       if (useSessionTimezone) {
-        SFTime sfTime = ResultUtil.getSFTime(obj.toString(), scale);
+        SFTime sfTime = ResultUtil.getSFTime(obj.toString(), scale, session);
         return new SnowflakeTimestampWithTimezone(
             sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS),
             sfTime.getNanosecondsWithinSecond(),
@@ -109,7 +113,7 @@ public class DateTimeConverter {
       return null;
     }
     if (Types.TIME == columnType) {
-      SFTime sfTime = ResultUtil.getSFTime(obj.toString(), scale);
+      SFTime sfTime = ResultUtil.getSFTime(obj.toString(), scale, session);
       Time ts =
           new Time(
               sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));

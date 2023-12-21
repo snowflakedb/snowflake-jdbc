@@ -130,6 +130,7 @@ public class SFResultSet extends SFJsonResultSet {
         resultSetSerializable.getTimeZone(),
         new Converters(
             resultSetSerializable.getTimeZone(),
+            new SFSession(),
             resultSetSerializable.getResultVersion(),
             resultSetSerializable.isHonorClientTZForTimestampNTZ(),
             resultSetSerializable.getTreatNTZAsUTC(),

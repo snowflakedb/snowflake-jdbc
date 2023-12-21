@@ -610,7 +610,19 @@ public class MockConnectionTest extends BaseJDBCTest {
       super(
           defaultTimeZone,
           new Converters(
-              defaultTimeZone, 1, true, false, false, false, null, null, null, null, null, null));
+              defaultTimeZone,
+              new SFSession(),
+              1,
+              true,
+              false,
+              false,
+              false,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null));
       setSession(sfSession);
       this.resultJson = mockedJsonResponse.path("data").path("rowset");
       this.resultSetMetaData = MockConnectionTest.getRSMDFromResponse(mockedJsonResponse, session);

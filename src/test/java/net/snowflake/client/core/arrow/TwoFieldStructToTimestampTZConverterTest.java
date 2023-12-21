@@ -147,7 +147,8 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
                 oldScale,
                 SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
                 getResultVersion(),
-                getTimeZone());
+                getTimeZone(),
+                getSession());
         Timestamp oldTs = sfTimestamp.getTimestamp();
         oldTs = ResultUtil.adjustTimestamp(oldTs);
         Date oldDate = new Date((oldTs).getTime());
@@ -157,7 +158,8 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
                 oldScale,
                 SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ,
                 getResultVersion(),
-                getTimeZone());
+                getTimeZone(),
+                getSession());
         String timestampStr =
             ResultUtil.getSFTimestampAsString(
                 sfTS,
@@ -165,7 +167,8 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
                 oldScale,
                 getTimestampNTZFormatter(),
                 getTimestampLTZFormatter(),
-                getTimestampTZFormatter());
+                getTimestampTZFormatter(),
+                getSession());
         Time oldTime = new Time(oldTs.getTime());
         assertThat(oldDate, is(date));
         assertThat(oldTs, is(ts));

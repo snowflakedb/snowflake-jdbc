@@ -23,11 +23,13 @@ public class BooleanConverterTest {
     assertThat(booleanConverter.getBoolean(1, Types.TINYINT), equalTo(true));
     assertThat(booleanConverter.getBoolean(1, Types.BIGINT), equalTo(true));
     assertThat(booleanConverter.getBoolean(1, Types.BIT), equalTo(true));
+    assertThat(booleanConverter.getBoolean(1, Types.DECIMAL), equalTo(true));
     assertThat(booleanConverter.getBoolean(0, Types.INTEGER), equalTo(false));
     assertThat(booleanConverter.getBoolean(0, Types.SMALLINT), equalTo(false));
     assertThat(booleanConverter.getBoolean(0, Types.TINYINT), equalTo(false));
     assertThat(booleanConverter.getBoolean(0, Types.BIGINT), equalTo(false));
     assertThat(booleanConverter.getBoolean(0, Types.BIT), equalTo(false));
+    assertThat(booleanConverter.getBoolean(0, Types.DECIMAL), equalTo(false));
   }
 
   @Test

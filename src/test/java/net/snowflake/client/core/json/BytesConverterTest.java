@@ -1,29 +1,20 @@
 package net.snowflake.client.core.json;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.mockito.Mockito.mock;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.Types;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
+import net.snowflake.client.core.SFSession;
 import org.apache.arrow.vector.Float8Vector;
-import org.junit.Before;
 import org.junit.Test;
 
 public class BytesConverterTest {
-  private final SnowflakeResultSetSerializableV1 resultSetSerializableV1 =
-      mock(SnowflakeResultSetSerializableV1.class);
-  private Converters converters;
-  private BytesConverter bytesConverter;
-
-  @Before
-  public void init() {
-    converters =
-        new Converters(null, 0, false, false, false, false, null, null, null, null, null, null);
-    bytesConverter = new BytesConverter(converters);
-  }
+  private final Converters converters =
+      new Converters(
+          null, new SFSession(), 0, false, false, false, false, null, null, null, null, null, null);
+  private final BytesConverter bytesConverter = new BytesConverter(converters);
 
   @Test
   public void testConvertFloatingPointToBytes() throws SFException {

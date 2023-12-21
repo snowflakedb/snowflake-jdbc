@@ -1,6 +1,7 @@
 package net.snowflake.client.core.json;
 
 import java.util.TimeZone;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
@@ -13,6 +14,7 @@ public class Converters {
 
   public Converters(
       TimeZone sessionTimeZone,
+      SFBaseSession session,
       long resultVersion,
       boolean honorClientTZForTimestampNTZ,
       boolean treatNTZAsUTC,
@@ -29,6 +31,7 @@ public class Converters {
     dateTimeConverter =
         new DateTimeConverter(
             sessionTimeZone,
+            session,
             resultVersion,
             honorClientTZForTimestampNTZ,
             treatNTZAsUTC,
@@ -45,6 +48,7 @@ public class Converters {
             timestampLTZFormatter,
             timestampTZFormatter,
             resultVersion,
+            session,
             this);
   }
 

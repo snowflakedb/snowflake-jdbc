@@ -33,6 +33,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
         null,
         new Converters(
             null,
+            new SFSession(),
             0,
             false,
             false,

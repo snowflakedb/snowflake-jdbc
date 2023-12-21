@@ -244,7 +244,8 @@ public class SFResultSetMetaData {
                 9,
                 timestampNTZFormatter,
                 timestampLTZFormatter,
-                timestampTZFormatter);
+                timestampTZFormatter,
+                session);
         timestampNTZStringLength = tsNTZStr.length();
       }
       if (timestampLTZFormatter != null) {
@@ -255,7 +256,8 @@ public class SFResultSetMetaData {
                 9,
                 timestampNTZFormatter,
                 timestampLTZFormatter,
-                timestampTZFormatter);
+                timestampTZFormatter,
+                session);
         timestampLTZStringLength = tsLTZStr.length();
       }
       if (timestampTZFormatter != null) {
@@ -266,7 +268,8 @@ public class SFResultSetMetaData {
                 9,
                 timestampNTZFormatter,
                 timestampLTZFormatter,
-                timestampTZFormatter);
+                timestampTZFormatter,
+                session);
         timestampTZStringLength = tsTZStr.length();
       }
 

@@ -21,7 +21,8 @@ public class BooleanConverter {
         || columnType == Types.BIGINT
         || columnType == Types.BIT
         || columnType == Types.VARCHAR
-        || columnType == Types.CHAR) {
+        || columnType == Types.CHAR
+        || columnType == Types.DECIMAL) {
       String type = obj.toString();
       if ("1".equals(type) || Boolean.TRUE.toString().equalsIgnoreCase(type)) {
         return true;

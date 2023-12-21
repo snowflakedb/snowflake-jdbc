@@ -7,6 +7,7 @@ import java.sql.Types;
 import java.time.ZoneId;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFBinaryFormat;
@@ -36,6 +37,7 @@ public class StringConverterTest {
     converters =
         new Converters(
             honoluluTimeZone,
+            new SFSession(),
             1,
             false,
             false,

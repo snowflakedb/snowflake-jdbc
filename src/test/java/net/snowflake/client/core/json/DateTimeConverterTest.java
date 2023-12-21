@@ -13,6 +13,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.Test;
 
@@ -21,11 +22,11 @@ public class DateTimeConverterTest {
       TimeZone.getTimeZone(ZoneId.of("Pacific/Honolulu")); // session time zone
   private final TimeZone nuukTimeZone = TimeZone.getTimeZone(ZoneId.of("America/Nuuk"));
   private final DateTimeConverter dateTimeConverter =
-      new DateTimeConverter(honoluluTimeZone, 1, true, false, false, false);
+      new DateTimeConverter(honoluluTimeZone, new SFSession(), 1, true, false, false, false);
   private final DateTimeConverter dateTimeConverterWithUseSessionTimeZone =
-      new DateTimeConverter(honoluluTimeZone, 1, true, false, true, false);
+      new DateTimeConverter(honoluluTimeZone, new SFSession(), 1, true, false, true, false);
   private final DateTimeConverter dateTimeConverterWithTreatNTZAsUTC =
-      new DateTimeConverter(honoluluTimeZone, 1, true, true, false, false);
+      new DateTimeConverter(honoluluTimeZone, new SFSession(), 1, true, true, false, false);
 
   @Test
   public void testGetVariousTypesWhenNullObjectGiven() throws SFException {

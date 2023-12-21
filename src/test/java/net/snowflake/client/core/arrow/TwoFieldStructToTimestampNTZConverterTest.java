@@ -179,7 +179,8 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
                 oldScale,
                 java.sql.Types.TIMESTAMP,
                 getResultVersion(),
-                getTimeZone());
+                getTimeZone(),
+                getSession());
         Timestamp oldTs = sfTimestamp.getTimestamp();
         if (getHonorClientTZForTimestampNTZ()) {
           // Note: honorClientTZForTimestampNTZ is used except getString()
@@ -193,7 +194,8 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
                 oldScale,
                 java.sql.Types.TIMESTAMP,
                 getResultVersion(),
-                getTimeZone());
+                getTimeZone(),
+                getSession());
         String timestampStr =
             ResultUtil.getSFTimestampAsString(
                 sfTS,
@@ -201,7 +203,8 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
                 oldScale,
                 getTimestampNTZFormatter(),
                 getTimestampLTZFormatter(),
-                getTimestampTZFormatter());
+                getTimestampTZFormatter(),
+                getSession());
         Date oldDate = new Date((oldTs).getTime());
         Time oldTime = new Time(oldTs.getTime());
         assertThat(oldTs, is(ts));

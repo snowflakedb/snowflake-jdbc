@@ -15,6 +15,7 @@ import java.util.*;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSession;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.IntVector;
@@ -91,7 +92,7 @@ public class IntToTimeConverterTest extends BaseConverterTest {
       Object obj = converter.toObject(j);
       Time oldTime =
           new Time(
-              ResultUtil.getSFTime(testTimesJson[i], scale)
+              ResultUtil.getSFTime(testTimesJson[i], scale, new SFSession())
                   .getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
       if (strVal != null) {
         assertFalse(converter.isNull(j));
