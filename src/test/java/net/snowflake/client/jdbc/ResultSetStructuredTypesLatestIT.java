@@ -1,8 +1,8 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
@@ -58,7 +58,14 @@ public class ResultSetStructuredTypesLatestIT {
     private Long l;
     private Float f;
     private Double d;
+    private BigDecimal bd;
     private Boolean bool;
+    private Timestamp timestampLtz;
+    private Timestamp timestampNtz;
+    private Timestamp timestampTz;
+    private Date date;
+    private Time time;
+    private byte[] binary;
     private SimpleClass simpleClass;
 
     @Override
@@ -75,7 +82,14 @@ public class ResultSetStructuredTypesLatestIT {
       l = sqlInput.readLong();
       f = sqlInput.readFloat();
       d = sqlInput.readDouble();
+      bd = sqlInput.readBigDecimal();
       bool = sqlInput.readBoolean();
+      timestampLtz = sqlInput.readTimestamp();
+      timestampNtz = sqlInput.readTimestamp();
+      timestampTz = sqlInput.readTimestamp();
+      date = sqlInput.readDate();
+      time = sqlInput.readTime();
+      binary = sqlInput.readBytes();
       simpleClass = sqlInput.readObject(SimpleClass.class);
     }
 
@@ -124,7 +138,14 @@ public class ResultSetStructuredTypesLatestIT {
                 + "'l': 4, "
                 + "'f': 1.1, "
                 + "'d': 2.2, "
+                + "'bd': 3.3, "
                 + "'bool': true, "
+                + "'timestamp_ltz': '2021-12-22 09:43:43'::TIMESTAMP_LTZ, "
+                + "'timestamp_ntz': '2021-12-23 09:43:43'::TIMESTAMP_NTZ, "
+                + "'timestamp_tz': '2021-12-24 09:43:43 +0800'::TIMESTAMP_TZ, "
+                + "'date': '2023-12-24'::DATE, "
+                + "'time': '12:34:56'::TIME, "
+                + "'binary': TO_BINARY('616263', 'HEX'), "
                 + "'simpleClass': {'string': 'b'}"
                 + "}::OBJECT("
                 + "string VARCHAR, "
@@ -134,7 +155,14 @@ public class ResultSetStructuredTypesLatestIT {
                 + "l BIGINT, "
                 + "f FLOAT, "
                 + "d DOUBLE, "
+                + "bd DOUBLE, "
                 + "bool BOOLEAN, "
+                + "timestamp_ltz TIMESTAMP_LTZ, "
+                + "timestamp_ntz TIMESTAMP_NTZ, "
+                + "timestamp_tz TIMESTAMP_TZ, "
+                + "date DATE, "
+                + "time TIME, "
+                + "binary BINARY, "
                 + "simpleClass OBJECT(string VARCHAR)"
                 + ")");
     resultSet.next();
@@ -146,6 +174,13 @@ public class ResultSetStructuredTypesLatestIT {
     assertEquals(4, (long) object.l);
     assertEquals(1.1, (double) object.f, 0.01);
     assertEquals(2.2, (double) object.d, 0.01);
+    assertEquals(BigDecimal.valueOf(3.3), object.bd);
+    assertEquals(null, object.timestampLtz);
+    assertEquals(null, object.timestampNtz);
+    assertEquals(null, object.timestampTz);
+    assertEquals(null, object.date);
+    assertEquals(null, object.time);
+    assertArrayEquals(new byte[0], object.binary);
     assertTrue(object.bool);
     assertEquals("b", object.simpleClass.string);
     statement.close();

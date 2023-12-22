@@ -487,7 +487,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (columnType == Types.STRUCT) {
       try {
         JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
-        return new JsonSqlInput(jsonNode);
+        return new JsonSqlInput(jsonNode, session);
       } catch (JsonProcessingException e) {
         throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
       }
