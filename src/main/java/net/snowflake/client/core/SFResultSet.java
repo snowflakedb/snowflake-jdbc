@@ -124,11 +124,8 @@ public class SFResultSet extends SFJsonResultSet {
    * @param resultSetSerializable data returned in query response
    * @param telemetryClient telemetryClient
    * @param sortResult should sorting take place
-   * @deprecated use {@link #SFResultSet(SnowflakeResultSetSerializableV1, SFBaseSession, Telemetry,
-   *     boolean)} instead
    * @throws SQLException
    */
-  @Deprecated
   public SFResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
       Telemetry telemetryClient,
