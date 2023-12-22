@@ -6,23 +6,18 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.sql.Date;
 import java.util.Iterator;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
+import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 
 // TODO structuredType use json converters
 public class JsonSqlInput implements SQLInput {
-  public JsonNode getInput() {
-    return input;
-  }
-
-  private final JsonNode input;
-
   private final Iterator<JsonNode> elements;
+  private final SFBaseSession session;
 
-  public JsonSqlInput(JsonNode input) {
-    this.input = input;
+  public JsonSqlInput(JsonNode input, SFBaseSession session) {
     this.elements = input.elements();
+    this.session = session;
   }
 
   @Override
@@ -67,104 +62,113 @@ public class JsonSqlInput implements SQLInput {
 
   @Override
   public BigDecimal readBigDecimal() throws SQLException {
-    return null;
+    return elements.next().decimalValue();
   }
 
   @Override
   public byte[] readBytes() throws SQLException {
+    // TODO structuredType use converters, currently only invoking `next` to move iterator forward
+    elements.next();
     return new byte[0];
   }
 
   @Override
   public Date readDate() throws SQLException {
+    // TODO structuredType use converters, currently only invoking `next` to move iterator forward
+    elements.next();
     return null;
   }
 
   @Override
   public Time readTime() throws SQLException {
+    // TODO structuredType use converters, currently only invoking `next` to move iterator forward
+    elements.next();
     return null;
   }
 
   @Override
   public Timestamp readTimestamp() throws SQLException {
+    // TODO structuredType use converters, currently only invoking `next` to move iterator forward
+    elements.next();
     return null;
   }
 
   @Override
   public Reader readCharacterStream() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readCharacterStream");
   }
 
   @Override
   public InputStream readAsciiStream() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readAsciiStream");
   }
 
   @Override
   public InputStream readBinaryStream() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readBinaryStream");
   }
 
   @Override
   public Object readObject() throws SQLException {
-    return input.elements().next();
+    // TODO structuredType return map
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readCharacterStream");
   }
 
   @Override
   public Ref readRef() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readRef");
   }
 
   @Override
   public Blob readBlob() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readBlob");
   }
 
   @Override
   public Clob readClob() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readClob");
   }
 
   @Override
   public Array readArray() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readArray");
   }
 
   @Override
   public boolean wasNull() throws SQLException {
-    return false;
+    return false; // nulls are not allowed in structure types
   }
 
   @Override
   public URL readURL() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readCharacterStream");
   }
 
   @Override
   public NClob readNClob() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readNClob");
   }
 
   @Override
   public String readNString() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readNString");
   }
 
   @Override
   public SQLXML readSQLXML() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readSQLXML");
   }
 
   @Override
   public RowId readRowId() throws SQLException {
-    return null;
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readRowId");
   }
 
   @Override
   public <T> T readObject(Class<T> type) throws SQLException {
     JsonNode jsonNode = elements.next();
     SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-    instance.readSQL(new JsonSqlInput(jsonNode), null);
+    instance.readSQL(new JsonSqlInput(jsonNode, session), null);
     return (T) instance;
   }
 }
