@@ -88,7 +88,11 @@ public class SFResultSet extends SFJsonResultSet {
       SFBaseStatement statement,
       boolean sortResult)
       throws SQLException {
-    this(resultSetSerializable, statement.getSFBaseSession().getTelemetryClient(), sortResult);
+    this(
+        resultSetSerializable,
+        statement.getSFBaseSession(),
+        statement.getSFBaseSession().getTelemetryClient(),
+        sortResult);
 
     this.statement = statement;
     SFBaseSession session = statement.getSFBaseSession();
@@ -119,10 +123,33 @@ public class SFResultSet extends SFJsonResultSet {
    *
    * @param resultSetSerializable data returned in query response
    * @param telemetryClient telemetryClient
+   * @param sortResult should sorting take place
+   * @deprecated use {@link #SFResultSet(SnowflakeResultSetSerializableV1, SFBaseSession, Telemetry,
+   *     boolean)} instead
+   * @throws SQLException
+   */
+  @Deprecated
+  public SFResultSet(
+      SnowflakeResultSetSerializableV1 resultSetSerializable,
+      Telemetry telemetryClient,
+      boolean sortResult)
+      throws SQLException {
+    this(resultSetSerializable, new SFSession(), telemetryClient, sortResult);
+  }
+
+  /**
+   * This is a minimum initialization for SFResultSet. Mainly used for testing purpose. However,
+   * real prod constructor will call this constructor as well
+   *
+   * @param resultSetSerializable data returned in query response
+   * @param session snowflake session
+   * @param telemetryClient telemetryClient
+   * @param sortResult should sorting take place
    * @throws SQLException
    */
   public SFResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
+      SFBaseSession session,
       Telemetry telemetryClient,
       boolean sortResult)
       throws SQLException {
@@ -130,7 +157,7 @@ public class SFResultSet extends SFJsonResultSet {
         resultSetSerializable.getTimeZone(),
         new Converters(
             resultSetSerializable.getTimeZone(),
-            new SFSession(),
+            session,
             resultSetSerializable.getResultVersion(),
             resultSetSerializable.isHonorClientTZForTimestampNTZ(),
             resultSetSerializable.getTreatNTZAsUTC(),
