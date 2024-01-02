@@ -9,7 +9,11 @@ import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeDateWithTimezone;
+import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
+import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 
