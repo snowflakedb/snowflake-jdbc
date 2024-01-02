@@ -51,18 +51,24 @@ public class SnowflakeSQLException extends SQLException {
         queryId);
   }
 
-  public SnowflakeSQLException(String reason, String SQLState) {
-    super(reason, SQLState);
+  public SnowflakeSQLException(String reason, String sqlState) {
+    super(reason, sqlState);
     // log user error from GS at fine level
-    logger.debug("Snowflake exception: {}, sqlState:{}", reason, SQLState);
+    logger.debug("Snowflake exception: {}, sqlState:{}", reason, sqlState);
   }
 
+  /** use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, int)} */
+  @Deprecated
   public SnowflakeSQLException(String sqlState, int vendorCode) {
+    this((String) null, sqlState, vendorCode);
+  }
+
+  public SnowflakeSQLException(String queryId, String sqlState, int vendorCode) {
     super(
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode)),
         sqlState,
         vendorCode);
-
+    this.queryId = queryId;
     logger.debug(
         "Snowflake exception: {}, sqlState:{}, vendorCode:{}",
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode)),
@@ -70,12 +76,18 @@ public class SnowflakeSQLException extends SQLException {
         vendorCode);
   }
 
+  /** use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, int, Object...)} */
+  @Deprecated
   public SnowflakeSQLException(String sqlState, int vendorCode, Object... params) {
+    this((String) null, sqlState, vendorCode, params);
+  }
+
+  public SnowflakeSQLException(String queryId, String sqlState, int vendorCode, Object... params) {
     super(
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params),
         sqlState,
         vendorCode);
-
+    this.queryId = queryId;
     logger.debug(
         "Snowflake exception: {}, sqlState:{}, vendorCode:{}",
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params),
@@ -100,12 +112,23 @@ public class SnowflakeSQLException extends SQLException {
     this(ex, errorCode.getSqlState(), errorCode.getMessageCode(), params);
   }
 
+  /**
+   * @deprecated use {@link SnowflakeSQLException#SnowflakeSQLException(String, Throwable, String,
+   *     int, Object...)}
+   */
+  @Deprecated
   public SnowflakeSQLException(Throwable ex, String sqlState, int vendorCode, Object... params) {
+    this(null, ex, sqlState, vendorCode, params);
+  }
+
+  public SnowflakeSQLException(
+      String queryId, Throwable ex, String sqlState, int vendorCode, Object... params) {
     super(
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params),
         sqlState,
         vendorCode,
         ex);
+    this.queryId = queryId;
 
     logger.debug(
         "Snowflake exception: "
@@ -119,6 +142,15 @@ public class SnowflakeSQLException extends SQLException {
             String.valueOf(errorCode.getMessageCode()), params),
         errorCode.getSqlState(),
         errorCode.getMessageCode());
+  }
+
+  public SnowflakeSQLException(String queryId, ErrorCode errorCode, Object... params) {
+    super(
+        errorResourceBundleManager.getLocalizedMessage(
+            String.valueOf(errorCode.getMessageCode()), params),
+        errorCode.getSqlState(),
+        errorCode.getMessageCode());
+    this.queryId = queryId;
   }
 
   public SnowflakeSQLException(

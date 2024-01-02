@@ -108,6 +108,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
         if (encryptionKeySize != 128 && encryptionKeySize != 192 && encryptionKeySize != 256) {
           throw new SnowflakeSQLLoggedException(
+              QueryIdHelper.queryIdFromEncMatOr(encMat, null),
               session,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
               SqlState.INTERNAL_ERROR,
@@ -272,6 +273,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
    * @param presignedUrl Unused in Azure
+   * @param queryId last query id
    * @throws SnowflakeSQLException download failure
    */
   @Override
@@ -284,7 +286,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       String remoteStorageLocation,
       String stageFilePath,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     int retryCount = 0;
     do {
@@ -305,7 +308,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         // Get the user-defined BLOB metadata
         Map<String, String> userDefinedMetadata = blob.getMetadata();
         AbstractMap.SimpleEntry<String, String> encryptionData =
-            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP));
+            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
         String key = encryptionData.getKey();
         String iv = encryptionData.getValue();
@@ -313,6 +316,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
+                queryId,
                 session,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 SqlState.INTERNAL_ERROR,
@@ -331,11 +335,12 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
       } catch (Exception ex) {
         logger.debug("Download unsuccessful {}", ex);
-        handleAzureException(ex, ++retryCount, "download", session, command, this);
+        handleAzureException(ex, ++retryCount, "download", session, command, this, queryId);
       }
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
+        queryId,
         session,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
@@ -352,6 +357,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
    * @param presignedUrl Unused in Azure
+   * @param queryId last query id
    * @return input file stream
    * @throws SnowflakeSQLException when download failure
    */
@@ -363,7 +369,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       String remoteStorageLocation,
       String stageFilePath,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     int retryCount = 0;
 
@@ -378,7 +385,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         Map<String, String> userDefinedMetadata = blob.getMetadata();
 
         AbstractMap.SimpleEntry<String, String> encryptionData =
-            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP));
+            parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
         String key = encryptionData.getKey();
 
@@ -387,6 +394,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
+                queryId,
                 session,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 SqlState.INTERNAL_ERROR,
@@ -408,11 +416,12 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
       } catch (Exception ex) {
         logger.debug("Downloading unsuccessful {}", ex);
-        handleAzureException(ex, ++retryCount, "download", session, command, this);
+        handleAzureException(ex, ++retryCount, "download", session, command, this, queryId);
       }
     } while (retryCount < getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
+        queryId,
         session,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
@@ -434,6 +443,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    * @param meta object meta data
    * @param stageRegion region name where the stage persists
    * @param presignedUrl Unused in Azure
+   * @param queryId last query id
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   @Override
@@ -449,7 +459,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       FileBackedOutputStream fileBackedOutputStream,
       StorageObjectMetadata meta,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     final List<FileInputStream> toClose = new ArrayList<>();
     long originalContentLength = meta.getContentLength();
@@ -462,7 +473,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             meta,
             originalContentLength,
             fileBackedOutputStream,
-            toClose);
+            toClose,
+            queryId);
 
     if (!(meta instanceof CommonObjectMetadata)) {
       throw new IllegalArgumentException("Unexpected metadata object type");
@@ -497,10 +509,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
         return;
       } catch (Exception ex) {
-        handleAzureException(ex, ++retryCount, "upload", session, command, this);
+        handleAzureException(ex, ++retryCount, "upload", session, command, this, queryId);
 
         if (uploadFromStream && fileBackedOutputStream == null) {
           throw new SnowflakeSQLException(
+              queryId,
               ex,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
@@ -516,7 +529,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
                 meta,
                 originalContentLength,
                 fileBackedOutputStream,
-                toClose);
+                toClose,
+                queryId);
       }
 
     } while (retryCount <= getMaxRetries());
@@ -524,6 +538,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
 
     throw new SnowflakeSQLException(
+        queryId,
         SqlState.INTERNAL_ERROR,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         "Unexpected: upload unsuccessful without exception!");
@@ -538,13 +553,19 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    *     exception was raised, for example "upload"
    * @param session the current SFSession object used by the client
    * @param command the command attempted at the time of the exception
+   * @param queryId last query id
    * @throws SnowflakeSQLException exceptions not handled
    */
   @Override
   public void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSession session, String command)
+      Exception ex,
+      int retryCount,
+      String operation,
+      SFSession session,
+      String command,
+      String queryId)
       throws SnowflakeSQLException {
-    handleAzureException(ex, retryCount, operation, session, command, this);
+    handleAzureException(ex, retryCount, operation, session, command, this, queryId);
   }
 
   private SFPair<InputStream, Boolean> createUploadStream(
@@ -554,7 +575,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       StorageObjectMetadata meta,
       long originalContentLength,
       FileBackedOutputStream fileBackedOutputStream,
-      List<FileInputStream> toClose)
+      List<FileInputStream> toClose,
+      String queryId)
       throws SnowflakeSQLException {
     logger.debug(
         "createUploadStream({}, {}, {}, {}, {}, {})",
@@ -586,6 +608,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         } catch (Exception ex) {
           logger.error("Failed to encrypt input", ex);
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -609,6 +632,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     } catch (FileNotFoundException ex) {
       logger.error("Failed to open input file", ex);
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -618,6 +642,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     } catch (IOException ex) {
       logger.error("Failed to open input stream", ex);
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -648,20 +673,21 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       String operation,
       SFSession session,
       String command,
-      SnowflakeAzureClient azClient)
+      SnowflakeAzureClient azClient,
+      String queryId)
       throws SnowflakeSQLException {
 
     // no need to retry if it is invalid key exception
     if (ex.getCause() instanceof InvalidKeyException) {
       // Most likely cause is that the unlimited strength policy files are not installed
       // Log the error and throw a message that explains the cause
-      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
+      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex, queryId);
     }
 
     // If there is no space left in the download location, java.io.IOException is thrown.
     // Don't retry.
     if (SnowflakeUtil.getRootCause(ex) instanceof IOException) {
-      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex);
+      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex, queryId);
     }
 
     if (ex instanceof StorageException) {
@@ -675,6 +701,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         } else {
           // If session is null we cannot renew the token so throw the ExpiredToken exception
           throw new SnowflakeSQLException(
+              queryId,
               se.getErrorCode(),
               CLOUD_STORAGE_CREDENTIALS_EXPIRED,
               "Azure credentials may have expired");
@@ -685,6 +712,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       if (retryCount > azClient.getMaxRetries()
           || ((StorageException) ex).getHttpStatusCode() == 404) {
         throw new SnowflakeSQLLoggedException(
+            queryId,
             session,
             SqlState.SYSTEM_ERROR,
             ErrorCode.AZURE_SERVICE_ERROR.getMessageCode(),
@@ -728,6 +756,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
         if (retryCount > azClient.getMaxRetries()) {
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
@@ -742,6 +771,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         }
       } else {
         throw new SnowflakeSQLLoggedException(
+            queryId,
             session,
             SqlState.SYSTEM_ERROR,
             ErrorCode.IO_ERROR.getMessageCode(),
@@ -822,7 +852,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    * Takes the json string in the encryptiondata metadata field of the encrypted
    * blob and parses out the key and iv. Returns the pair as key = key, iv = value.
    */
-  private SimpleEntry<String, String> parseEncryptionData(String jsonEncryptionData)
+  private SimpleEntry<String, String> parseEncryptionData(String jsonEncryptionData, String queryId)
       throws SnowflakeSQLException {
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     JsonFactory factory = mapper.getFactory();
@@ -836,6 +866,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       return new SimpleEntry<String, String>(key, iv);
     } catch (Exception ex) {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.SYSTEM_ERROR,
           ErrorCode.IO_ERROR.getMessageCode(),

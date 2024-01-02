@@ -194,16 +194,18 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try {
         statement.executeQuery("PUT file://" + sourceFilePath + " @not_existing_state");
         fail("PUT statement should fail");
-      } catch (Exception __) {
+      } catch (SnowflakeSQLException e) {
         TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
       }
       String putQueryId = snowflakeStatement.getQueryID();
       try {
         statement.executeQuery(
             "GET @not_existing_state 'file://" + destFolderCanonicalPath + "' parallel=8");
         fail("GET statement should fail");
-      } catch (Exception __) {
+      } catch (SnowflakeSQLException e) {
         TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
       }
       String getQueryId = snowflakeStatement.getQueryID();
       assertNotEquals("put and get query id should be different", putQueryId, getQueryId);
@@ -213,8 +215,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try {
         statement.executeQuery("PUT file://not_existing_file @" + stageName);
         fail("PUT statement should fail");
-      } catch (Exception __) {
-        assertNull(snowflakeStatement.getQueryID());
+      } catch (SnowflakeSQLException e) {
+        TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
+        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
       }
     }
   }

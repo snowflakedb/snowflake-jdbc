@@ -174,6 +174,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 .withClientConfiguration(clientConfig);
       } else {
         throw new SnowflakeSQLLoggedException(
+            QueryIdHelper.queryIdFromEncMatOr(encMat, null),
             session,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
@@ -294,6 +295,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
    * @param presignedUrl Not used in S3
+   * @param queryId last query id
    * @throws SnowflakeSQLException if download failed without an exception
    * @throws SnowflakeSQLException if failed to decrypt downloaded file
    * @throws SnowflakeSQLException if file metadata is incomplete
@@ -308,7 +310,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String remoteStorageLocation,
       String stageFilePath,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     TransferManager tx = null;
     int retryCount = 0;
@@ -347,6 +350,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
+                queryId,
                 session,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 SqlState.INTERNAL_ERROR,
@@ -365,7 +369,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         return;
 
       } catch (Exception ex) {
-        handleS3Exception(ex, ++retryCount, "download", session, command, this);
+        handleS3Exception(ex, ++retryCount, "download", session, command, this, queryId);
 
       } finally {
         if (tx != null) {
@@ -375,6 +379,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
+        queryId,
         session,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
@@ -391,6 +396,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    * @param stageFilePath stage file path
    * @param stageRegion region name where the stage persists
    * @param presignedUrl Not used in S3
+   * @param queryId last query id
    * @return input file stream
    * @throws SnowflakeSQLException when download failure
    */
@@ -402,7 +408,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String remoteStorageLocation,
       String stageFilePath,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     int retryCount = 0;
     do {
@@ -421,6 +428,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
+                queryId,
                 session,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 SqlState.INTERNAL_ERROR,
@@ -439,11 +447,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           return stream;
         }
       } catch (Exception ex) {
-        handleS3Exception(ex, ++retryCount, "download", session, command, this);
+        handleS3Exception(ex, ++retryCount, "download", session, command, this, queryId);
       }
     } while (retryCount <= getMaxRetries());
 
     throw new SnowflakeSQLLoggedException(
+        queryId,
         session,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
@@ -465,6 +474,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
    * @param meta object meta data
    * @param stageRegion region name where the stage persists
    * @param presignedUrl Not used in S3
+   * @param queryId last query id
    * @throws SnowflakeSQLException if upload failed even after retry
    */
   @Override
@@ -480,7 +490,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       FileBackedOutputStream fileBackedOutputStream,
       StorageObjectMetadata meta,
       String stageRegion,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SnowflakeSQLException {
     final long originalContentLength = meta.getContentLength();
     final List<FileInputStream> toClose = new ArrayList<>();
@@ -492,7 +503,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             fileBackedOutputStream,
             ((S3ObjectMetadata) meta).getS3ObjectMetadata(),
             originalContentLength,
-            toClose);
+            toClose,
+            queryId);
 
     ObjectMetadata s3Meta;
     if (meta instanceof S3ObjectMetadata) {
@@ -548,9 +560,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         return;
       } catch (Exception ex) {
 
-        handleS3Exception(ex, ++retryCount, "upload", session, command, this);
+        handleS3Exception(ex, ++retryCount, "upload", session, command, this, queryId);
         if (uploadFromStream && fileBackedOutputStream == null) {
           throw new SnowflakeSQLException(
+              queryId,
               ex,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
@@ -566,7 +579,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
                 fileBackedOutputStream,
                 s3Meta,
                 originalContentLength,
-                toClose);
+                toClose,
+                queryId);
       } finally {
         if (tx != null) {
           tx.shutdownNow(false);
@@ -577,6 +591,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
 
     throw new SnowflakeSQLLoggedException(
+        queryId,
         session,
         ErrorCode.INTERNAL_ERROR.getMessageCode(),
         SqlState.INTERNAL_ERROR,
@@ -590,7 +605,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       FileBackedOutputStream fileBackedOutputStream,
       ObjectMetadata meta,
       long originalContentLength,
-      List<FileInputStream> toClose)
+      List<FileInputStream> toClose,
+      String queryId)
       throws SnowflakeSQLException {
     logger.debug(
         "createUploadStream({}, {}, {}, {}, {}, {}, {}) " + "keySize={}",
@@ -623,6 +639,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       } catch (Exception ex) {
         logger.error("Failed to encrypt input", ex);
         throw new SnowflakeSQLLoggedException(
+            queryId,
             session,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -649,6 +666,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       } catch (FileNotFoundException ex) {
         logger.error("Failed to open input file", ex);
         throw new SnowflakeSQLLoggedException(
+            queryId,
             session,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -658,6 +676,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       } catch (IOException ex) {
         logger.error("Failed to open input stream", ex);
         throw new SnowflakeSQLLoggedException(
+            queryId,
             session,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -671,9 +690,14 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
   @Override
   public void handleStorageException(
-      Exception ex, int retryCount, String operation, SFSession session, String command)
+      Exception ex,
+      int retryCount,
+      String operation,
+      SFSession session,
+      String command,
+      String queryId)
       throws SnowflakeSQLException {
-    handleS3Exception(ex, retryCount, operation, session, command, this);
+    handleS3Exception(ex, retryCount, operation, session, command, this, queryId);
   }
 
   private static void handleS3Exception(
@@ -682,19 +706,20 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String operation,
       SFSession session,
       String command,
-      SnowflakeS3Client s3Client)
+      SnowflakeS3Client s3Client,
+      String queryId)
       throws SnowflakeSQLException {
     // no need to retry if it is invalid key exception
     if (ex.getCause() instanceof InvalidKeyException) {
       // Most likely cause is that the unlimited strength policy files are not installed
       // Log the error and throw a message that explains the cause
-      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex);
+      SnowflakeFileTransferAgent.throwJCEMissingError(operation, ex, queryId);
     }
 
     // If there is no space left in the download location, java.io.IOException is thrown.
     // Don't retry.
     if (SnowflakeUtil.getRootCause(ex) instanceof IOException) {
-      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex);
+      SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex, queryId);
     }
 
     // Don't retry if max retries has been reached or the error code is 404/400
@@ -718,6 +743,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
             SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
           } else {
             throw new SnowflakeSQLLoggedException(
+                queryId,
                 session,
                 SqlState.SYSTEM_ERROR,
                 ErrorCode.S3_OPERATION_ERROR.getMessageCode(),
@@ -732,6 +758,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         } else {
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               SqlState.SYSTEM_ERROR,
               ErrorCode.AWS_CLIENT_ERROR.getMessageCode(),
@@ -772,6 +799,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
               SnowflakeFileTransferAgent.renewExpiredToken(session, command, s3Client);
             } else {
               throw new SnowflakeSQLException(
+                  queryId,
                   s3ex.getErrorCode(),
                   CLOUD_STORAGE_CREDENTIALS_EXPIRED,
                   "S3 credentials have expired");
@@ -784,6 +812,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
           || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
         if (retryCount > s3Client.getMaxRetries()) {
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               SqlState.SYSTEM_ERROR,
               ErrorCode.IO_ERROR.getMessageCode(),
@@ -798,6 +827,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         }
       } else {
         throw new SnowflakeSQLLoggedException(
+            queryId,
             session,
             SqlState.SYSTEM_ERROR,
             ErrorCode.IO_ERROR.getMessageCode(),

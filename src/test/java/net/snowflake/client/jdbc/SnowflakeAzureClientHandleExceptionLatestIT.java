@@ -65,7 +65,8 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
         0,
         "upload",
         sfSession,
-        command);
+        command,
+        null);
     Mockito.verify(spyingClient, Mockito.times(2)).renew(Mockito.anyMap());
 
     // Unauthenticated, backoff with interrupt, renew is called
@@ -86,7 +87,8 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
                       maxRetry,
                       "upload",
                       sfSession,
-                      command);
+                      command,
+                      null);
                 } catch (SnowflakeSQLException e) {
                   exceptionContainer[0] = e;
                 }
@@ -108,7 +110,8 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
         overMaxRetry,
         "upload",
         sfSession,
-        command);
+        command,
+        null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
@@ -120,14 +123,15 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
         0,
         "upload",
         null,
-        command);
+        command,
+        null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void errorInvalidKey() throws SQLException {
     spyingClient.handleStorageException(
-        new Exception(new InvalidKeyException()), 0, "upload", sfSession, command);
+        new Exception(new InvalidKeyException()), 0, "upload", sfSession, command, null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
@@ -136,13 +140,13 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
     // Can still retry, no error thrown
     try {
       spyingClient.handleStorageException(
-          new InterruptedException(), 0, "upload", sfSession, command);
+          new InterruptedException(), 0, "upload", sfSession, command, null);
     } catch (Exception e) {
       Assert.fail("Should not have exception here");
     }
     Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
     spyingClient.handleStorageException(
-        new InterruptedException(), 26, "upload", sfSession, command);
+        new InterruptedException(), 26, "upload", sfSession, command, null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
@@ -151,19 +155,19 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
     // Can still retry, no error thrown
     try {
       spyingClient.handleStorageException(
-          new SocketTimeoutException(), 0, "upload", sfSession, command);
+          new SocketTimeoutException(), 0, "upload", sfSession, command, null);
     } catch (Exception e) {
       Assert.fail("Should not have exception here");
     }
     Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
     spyingClient.handleStorageException(
-        new SocketTimeoutException(), 26, "upload", sfSession, command);
+        new SocketTimeoutException(), 26, "upload", sfSession, command, null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void errorUnknownException() throws SQLException {
-    spyingClient.handleStorageException(new Exception(), 0, "upload", sfSession, command);
+    spyingClient.handleStorageException(new Exception(), 0, "upload", sfSession, command, null);
   }
 
   @Test(expected = SnowflakeSQLException.class)
@@ -181,7 +185,8 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
         0,
         "download",
         null,
-        getCommand);
+        getCommand,
+        null);
   }
 
   @After
