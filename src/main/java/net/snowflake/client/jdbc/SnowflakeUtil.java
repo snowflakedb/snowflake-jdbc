@@ -7,6 +7,7 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import java.io.*;
 import java.lang.reflect.Field;
@@ -20,10 +21,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFSessionProperty;
+
+import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -147,102 +146,114 @@ public class SnowflakeUtil {
   public static SnowflakeColumnMetadata extractColumnMetadata(
       JsonNode colNode, boolean jdbcTreatDecimalAsInt, SFBaseSession session)
       throws SnowflakeSQLException {
-    String colName = colNode.path("name").asText();
-    String internalColTypeName = colNode.path("type").asText();
-    boolean nullable = colNode.path("nullable").asBoolean();
-    int precision = colNode.path("precision").asInt();
-    int scale = colNode.path("scale").asInt();
-    int length = colNode.path("length").asInt();
-    boolean fixed = colNode.path("fixed").asBoolean();
-    String extColTypeName;
+      String colName = colNode.path("name").asText();
+      String internalColTypeName = colNode.path("type").asText();
+      boolean nullable = colNode.path("nullable").asBoolean();
+      int precision = colNode.path("precision").asInt();
+      int scale = colNode.path("scale").asInt();
+      int length = colNode.path("length").asInt();
+      boolean fixed = colNode.path("fixed").asBoolean();
+      JsonNode udtOutputType = colNode.path("outputType");
 
-    int colType;
+      ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, udtOutputType, session);
 
+      String colSrcDatabase = colNode.path("database").asText();
+      String colSrcSchema = colNode.path("schema").asText();
+      String colSrcTable = colNode.path("table").asText();
+      MetadataField[] fieldsMetadata = new MetadataField[0];
+      if (!colNode.path("fields").isEmpty()) {
+          ArrayNode arrayNode = (ArrayNode) colNode.path("fields");
+          fieldsMetadata = createFieldsMetadata(arrayNode);
+      }
+
+      boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
+
+      return new SnowflakeColumnMetadata(
+              colName,
+              columnTypeInfo.getColumnType(),
+              nullable,
+              length,
+              precision,
+              scale,
+              columnTypeInfo.getExtColTypeName(),
+              fixed,
+              columnTypeInfo.getSnowflakeType(),
+              fieldsMetadata,
+              colSrcDatabase,
+              colSrcSchema,
+              colSrcTable,
+              isAutoIncrement);
+  }
+
+static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtOutputType, SFBaseSession session) throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
+    ColumnTypeInfo columnTypeInfo = null;
 
     switch (baseType) {
       case TEXT:
-        colType = Types.VARCHAR;
-        extColTypeName = "VARCHAR";
+        columnTypeInfo = new ColumnTypeInfo(Types.VARCHAR, "VARCHAR", baseType);
         break;
-
       case CHAR:
-        colType = Types.CHAR;
-        extColTypeName = "CHAR";
+        columnTypeInfo = new ColumnTypeInfo(Types.CHAR, "CHAR", baseType);
         break;
-
       case INTEGER:
-        colType = Types.INTEGER;
-        extColTypeName = "INTEGER";
+        columnTypeInfo = new ColumnTypeInfo(Types.INTEGER, "INTEGER", baseType);
         break;
-
       case FIXED:
-        colType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
-        extColTypeName = "NUMBER";
+        columnTypeInfo = new ColumnTypeInfo(Types.CHAR, "CHAR", baseType);
         break;
 
       case REAL:
-        colType = Types.DOUBLE;
-        extColTypeName = "DOUBLE";
+        columnTypeInfo = new ColumnTypeInfo(Types.DOUBLE, "DOUBLE", baseType);
         break;
 
       case TIMESTAMP:
       case TIMESTAMP_LTZ:
-        colType = EXTRA_TYPES_TIMESTAMP_LTZ;
-        extColTypeName = "TIMESTAMPLTZ";
+        columnTypeInfo = new ColumnTypeInfo(EXTRA_TYPES_TIMESTAMP_LTZ, "TIMESTAMPLTZ", baseType);
         break;
 
       case TIMESTAMP_NTZ:
-        colType = Types.TIMESTAMP;
-        extColTypeName = "TIMESTAMPNTZ";
+        columnTypeInfo = new ColumnTypeInfo(Types.TIMESTAMP, "TIMESTAMPNTZ", baseType);
         break;
 
       case TIMESTAMP_TZ:
-        colType = EXTRA_TYPES_TIMESTAMP_TZ;
-        extColTypeName = "TIMESTAMPTZ";
+        columnTypeInfo = new ColumnTypeInfo(EXTRA_TYPES_TIMESTAMP_TZ, "TIMESTAMPTZ", baseType);
         break;
 
       case DATE:
-        colType = Types.DATE;
-        extColTypeName = "DATE";
+        columnTypeInfo = new ColumnTypeInfo(Types.DATE, "DATE", baseType);
         break;
 
       case TIME:
-        colType = Types.TIME;
-        extColTypeName = "TIME";
+        columnTypeInfo = new ColumnTypeInfo(Types.TIME, "TIME", baseType);
         break;
 
       case BOOLEAN:
-        colType = Types.BOOLEAN;
-        extColTypeName = "BOOLEAN";
+        columnTypeInfo = new ColumnTypeInfo(Types.BOOLEAN, "BOOLEAN", baseType);
         break;
 
-        // TODO structuredType fill for Array and Map
+      // TODO structuredType fill for Array and Map
       case ARRAY:
-        colType = Types.ARRAY;
-        extColTypeName = "ARRAY";
+        columnTypeInfo = new ColumnTypeInfo(Types.ARRAY, "ARRAY", baseType);
         break;
 
       case OBJECT:
-        colType = Types.STRUCT;
-        extColTypeName = "OBJECT";
+        columnTypeInfo = new ColumnTypeInfo(Types.STRUCT, "OBJECT", baseType);
         break;
 
       case VARIANT:
-        colType = Types.VARCHAR;
-        extColTypeName = "VARIANT";
+        columnTypeInfo = new ColumnTypeInfo(Types.VARCHAR, "VARIANT", baseType);
         break;
 
       case BINARY:
-        colType = Types.BINARY;
-        extColTypeName = "BINARY";
+        columnTypeInfo = new ColumnTypeInfo(Types.BINARY, "BINARY", baseType);
         break;
 
       case GEOGRAPHY:
       case GEOMETRY:
-        colType = Types.VARCHAR;
-        extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
-        JsonNode udtOutputType = colNode.path("outputType");
+         int colType = Types.VARCHAR;
+        String extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
+
         if (!udtOutputType.isMissingNode()) {
           SnowflakeType outputType = SnowflakeType.fromString(udtOutputType.asText());
           switch (outputType) {
@@ -254,42 +265,41 @@ public class SnowflakeUtil {
               colType = Types.BINARY;
           }
         }
+        columnTypeInfo = new ColumnTypeInfo(colType, extColTypeName, baseType);
         break;
 
       default:
         throw new SnowflakeSQLLoggedException(
-            session,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            SqlState.INTERNAL_ERROR,
-            "Unknown column type: " + internalColTypeName);
+                new SFSession(), //TODO
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
+                "Unknown column type: " + internalColTypeName);
     }
-
-    JsonNode extColTypeNameNode = colNode.path("extTypeName");
-    if (!extColTypeNameNode.isMissingNode()
-        && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
-      extColTypeName = extColTypeNameNode.asText();
+    return columnTypeInfo;
+  }
+  static MetadataField[] createFieldsMetadata(ArrayNode fieldsJson) throws SnowflakeSQLLoggedException {
+//    TODO: verify that jsonFileds is not empty array
+    MetadataField[] fields = new MetadataField[fieldsJson.size()];
+    int fieldCounter = 0;
+    for (JsonNode node :  fieldsJson) {
+        String colName = node.path("name").asText();
+        int scale = node.path("scale").asInt();
+        int precision = node.path("precision").asInt();
+        String internalColTypeName = node.path("type").asText();
+        boolean nullable = node.path("nullable").asBoolean();
+        int length = node.path("length").asInt();
+        boolean fixed = node.path("fixed").asBoolean();
+        MetadataField[] internalFields = new MetadataField[0];
+        if (!node.path("fields").isEmpty()) {
+            ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
+            internalFields = createFieldsMetadata(internalFieldsJson);
+        }
+        JsonNode outputType = node.path("outputType");
+        ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, outputType, null);
+        fields[fieldCounter++] = new MetadataField(colName, columnTypeInfo.getExtColTypeName(), columnTypeInfo.getColumnType(),
+                nullable, length, precision, scale, fixed, columnTypeInfo.getSnowflakeType(), internalFields);
     }
-
-    String colSrcDatabase = colNode.path("database").asText();
-    String colSrcSchema = colNode.path("schema").asText();
-    String colSrcTable = colNode.path("table").asText();
-
-    boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
-
-    return new SnowflakeColumnMetadata(
-        colName,
-        colType,
-        nullable,
-        length,
-        precision,
-        scale,
-        extColTypeName,
-        fixed,
-        baseType,
-        colSrcDatabase,
-        colSrcSchema,
-        colSrcTable,
-        isAutoIncrement);
+    return fields;
   }
 
   static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
@@ -404,6 +414,7 @@ public class SnowflakeUtil {
               typeName, // type name
               true,
               stype, // fixed
+              new MetadataField[]{}, //TODO Structured type fields
               "", // database
               "", // schema
               "",
