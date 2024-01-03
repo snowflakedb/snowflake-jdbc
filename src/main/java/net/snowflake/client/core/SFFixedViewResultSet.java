@@ -6,16 +6,19 @@ package net.snowflake.client.core;
 
 import java.sql.SQLException;
 import java.util.List;
+import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.SFBaseFileTransferAgent.CommandType;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SqlState;
 
 /**
  * Fixed view result set. This class iterates through any fixed view implementation and return the
  * objects as rows
  */
+// Works only for strings, numbers, etc, does not work for timestamps, dates, times etc.
 public class SFFixedViewResultSet extends SFJsonResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFFixedViewResultSet.class);
 
@@ -26,6 +29,22 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
 
   public SFFixedViewResultSet(SnowflakeFixedView fixedView, CommandType commandType, String queryID)
       throws SnowflakeSQLException {
+    super(
+        null,
+        new Converters(
+            null,
+            new SFSession(),
+            0,
+            false,
+            false,
+            false,
+            false,
+            SFBinaryFormat.BASE64,
+            null,
+            null,
+            null,
+            null,
+            null));
     this.fixedView = fixedView;
     this.commandType = commandType;
     this.queryID = queryID;

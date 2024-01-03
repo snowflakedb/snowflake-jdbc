@@ -5,7 +5,10 @@ package net.snowflake.client;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+import java.util.regex.Pattern;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -13,6 +16,10 @@ import org.junit.Assert;
 
 public class TestUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(TestUtil.class);
+
+  private static final Pattern QUERY_ID_REGEX =
+      Pattern.compile("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}");
+
   /**
    * Util function to assert a piece will throw exception and assert on the error code
    *
@@ -55,5 +62,11 @@ public class TestUtil {
           ex.getMessage());
     }
     return null;
+  }
+
+  public static void assertValidQueryId(String queryId) {
+    assertNotNull(queryId);
+    assertTrue(
+        "Expecting " + queryId + " is a valid UUID", QUERY_ID_REGEX.matcher(queryId).matches());
   }
 }

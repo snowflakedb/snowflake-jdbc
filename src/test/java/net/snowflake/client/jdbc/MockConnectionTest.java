@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.*;
+import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
@@ -598,6 +599,7 @@ public class MockConnectionTest extends BaseJDBCTest {
   }
 
   private static class MockJsonResultSet extends SFJsonResultSet {
+    private static final TimeZone defaultTimeZone = TimeZone.getTimeZone("America/Los_Angeles");
 
     JsonNode resultJson;
     int currentRowIdx = -1;
@@ -605,6 +607,22 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     public MockJsonResultSet(JsonNode mockedJsonResponse, MockSnowflakeSFSession sfSession)
         throws SnowflakeSQLException {
+      super(
+          defaultTimeZone,
+          new Converters(
+              defaultTimeZone,
+              new SFSession(),
+              1,
+              true,
+              false,
+              false,
+              false,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null));
       setSession(sfSession);
       this.resultJson = mockedJsonResponse.path("data").path("rowset");
       this.resultSetMetaData = MockConnectionTest.getRSMDFromResponse(mockedJsonResponse, session);
@@ -672,6 +690,11 @@ public class MockConnectionTest extends BaseJDBCTest {
 
     @Override
     public QueryStatus getQueryStatus(String queryID) {
+      return null;
+    }
+
+    @Override
+    public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
       return null;
     }
 

@@ -13,7 +13,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.common.core.SqlState;
 import org.junit.Test;
@@ -71,10 +71,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     assertEquals("COLB", colNames.get(1));
     assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
     assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
-    assertTrue(
-        Pattern.matches(
-            "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
-            secretMetaData.getQueryID()));
+    TestUtil.assertValidQueryId(secretMetaData.getQueryID());
     assertEquals(
         secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
     resultSet.close();
@@ -118,10 +115,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     assertEquals("COLB", colNames.get(1));
     assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
     assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
-    assertTrue(
-        Pattern.matches(
-            "[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}",
-            secretMetaData.getQueryID()));
+    TestUtil.assertValidQueryId(secretMetaData.getQueryID());
     assertEquals(
         secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
 

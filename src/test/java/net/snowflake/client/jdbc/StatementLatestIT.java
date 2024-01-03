@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
@@ -222,6 +223,72 @@ public class StatementLatestIT extends BaseJDBCTest {
         pstatement.executeBatch();
 
         stmt.execute("drop table if exists mytab");
+      }
+    }
+  }
+
+  @Test // SNOW-647217
+  public void testSchemaWith255CharactersDoesNotCauseException() throws SQLException {
+    String schemaName = "a" + SnowflakeUtil.randomAlphaNumeric(254);
+    try (Connection con = getConnection()) {
+      try (Statement stmt = con.createStatement()) {
+        stmt.execute("create schema " + schemaName);
+        stmt.execute("use schema " + schemaName);
+        stmt.execute("drop schema " + schemaName);
+      }
+    }
+  }
+
+  /** Added in > 3.14.4 */
+  @Test
+  public void testQueryIdIsSetOnFailedQueryExecute() throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement stmt = con.createStatement()) {
+        assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+        try {
+          stmt.execute("use database not_existing_database");
+          fail("Statement should fail with exception");
+        } catch (SnowflakeSQLException e) {
+          String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
+          TestUtil.assertValidQueryId(queryID);
+          assertEquals(queryID, e.getQueryId());
+        }
+      }
+    }
+  }
+
+  /** Added in > 3.14.4 */
+  @Test
+  public void testQueryIdIsSetOnFailedExecuteUpdate() throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement stmt = con.createStatement()) {
+        assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+        try {
+          stmt.executeUpdate("update not_existing_table set a = 1 where id = 42");
+          fail("Statement should fail with exception");
+        } catch (SnowflakeSQLException e) {
+          String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
+          TestUtil.assertValidQueryId(queryID);
+          assertEquals(queryID, e.getQueryId());
+        }
+      }
+    }
+  }
+
+  /** Added in > 3.14.4 */
+  @Test
+  public void testQueryIdIsSetOnFailedExecuteQuery() throws SQLException {
+    try (Connection con = getConnection()) {
+      try (Statement stmt = con.createStatement()) {
+        assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+        try {
+          stmt.executeQuery("select * from not_existing_table");
+          fail("Statement should fail with exception");
+        } catch (SnowflakeSQLException e) {
+          String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
+          TestUtil.assertValidQueryId(queryID);
+          assertEquals(queryID, e.getQueryId());
+        }
       }
     }
   }

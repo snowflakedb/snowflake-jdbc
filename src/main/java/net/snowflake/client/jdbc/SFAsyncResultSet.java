@@ -11,15 +11,15 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.regex.Pattern;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 
-/** SFAsyncResultSet implementation */
-class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResultSet, ResultSet {
+/** SFAsyncResultSet implementation. Note: For Snowflake internal use */
+public class SFAsyncResultSet extends SnowflakeBaseResultSet
+    implements SnowflakeResultSet, ResultSet {
   private final SFBaseResultSet sfBaseResultSet;
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;
@@ -27,6 +27,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
   private SFBaseSession session;
   private Statement extraStatement;
   private QueryStatus lastQueriedStatus = NO_DATA;
+  private QueryStatusV2 lastQueriedStatusV2 = QueryStatusV2.empty();
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -74,7 +75,7 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     super(statement);
     this.sfBaseResultSet = null;
     queryID.trim();
-    if (!Pattern.matches("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}", queryID)) {
+    if (!QueryIdValidator.isValid(queryID)) {
       throw new SQLException(
           "The provided query ID " + queryID + " is invalid.", SqlState.INVALID_PARAMETER_VALUE);
     }
@@ -99,15 +100,32 @@ class SFAsyncResultSet extends SnowflakeBaseResultSet implements SnowflakeResult
     if (this.lastQueriedStatus == QueryStatus.SUCCESS) {
       return this.lastQueriedStatus;
     }
-    this.lastQueriedStatus = session.getQueryStatus(this.queryID);
     // if query has completed successfully, cache its success status to avoid unnecessary future
     // server calls
+    this.lastQueriedStatus = session.getQueryStatus(this.queryID);
     return this.lastQueriedStatus;
   }
 
   @Override
   public String getQueryErrorMessage() throws SQLException {
     return this.lastQueriedStatus.getErrorMessage();
+  }
+
+  @Override
+  public QueryStatusV2 getStatusV2() throws SQLException {
+    if (session == null) {
+      throw new SQLException("Session not set");
+    }
+    if (this.queryID == null) {
+      throw new SQLException("QueryID unknown");
+    }
+    if (this.lastQueriedStatusV2.isSuccess()) {
+      return this.lastQueriedStatusV2;
+    }
+    this.lastQueriedStatusV2 = session.getQueryStatusV2(this.queryID);
+    // if query has completed successfully, cache its metadata to avoid unnecessary future server
+    // calls
+    return this.lastQueriedStatusV2;
   }
 
   /**

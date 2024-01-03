@@ -3,20 +3,22 @@ package net.snowflake.client.core;
 /** Data class to wrap information about child job results */
 public class SFChildResult {
   // query id of child query, to look up child result
-  String id;
+  private final String id;
   // statement type of child query, to properly interpret result
-  SFStatementType type;
+  private final SFStatementType type;
 
   public SFChildResult(String id, SFStatementType type) {
     this.id = id;
     this.type = type;
   }
 
-  String getId() {
+  // For Snowflake internal use
+  public String getId() {
     return id;
   }
 
-  SFStatementType getType() {
+  // For Snowflake internal use
+  public SFStatementType getType() {
     return type;
   }
 }

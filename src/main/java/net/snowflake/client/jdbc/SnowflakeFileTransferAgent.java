@@ -87,7 +87,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   private String localLocation;
 
   // Query ID of PUT or GET statement
-  private String queryID = "";
+  private String queryID = null;
 
   // default parallelism
   private int parallel = DEFAULT_PARALLEL;
@@ -295,7 +295,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @throws SnowflakeSQLException if encountered exception when compressing
    */
   private static InputStreamWithMetadata compressStreamWithGZIP(
-      InputStream inputStream, SFBaseSession session) throws SnowflakeSQLException {
+      InputStream inputStream, SFBaseSession session, String queryId) throws SnowflakeSQLException {
     FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
     try {
@@ -335,6 +335,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       logger.error("Exception compressing input stream", ex);
 
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -353,7 +354,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   @Deprecated
   private static InputStreamWithMetadata compressStreamWithGZIPNoDigest(
-      InputStream inputStream, SFBaseSession session) throws SnowflakeSQLException {
+      InputStream inputStream, SFBaseSession session, String queryId) throws SnowflakeSQLException {
     try {
       FileBackedOutputStream tempStream = new FileBackedOutputStream(MAX_BUFFER_SIZE, true);
 
@@ -383,6 +384,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       logger.error("Exception compressing input stream", ex);
 
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -425,6 +427,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    *
    * <p>The callable does compression if needed and upload the result to the table's staging area.
    *
+   * @deprecated use {@link #getUploadFileCallable(StageInfo, String, FileMetadata,
+   *     SnowflakeStorageClient, SFSession, String, InputStream, boolean, int, File,
+   *     RemoteStoreFileEncryptionMaterial, String)}
    * @param stage information about the stage
    * @param srcFilePath source file path
    * @param metadata file metadata
@@ -438,6 +443,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param encMat not null if encryption is required
    * @return a callable that uploading file to the remote store
    */
+  @Deprecated
   public static Callable<Void> getUploadFileCallable(
       final StageInfo stage,
       final String srcFilePath,
@@ -450,6 +456,53 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       final int parallel,
       final File srcFile,
       final RemoteStoreFileEncryptionMaterial encMat) {
+    return getUploadFileCallable(
+        stage,
+        srcFilePath,
+        metadata,
+        client,
+        session,
+        command,
+        inputStream,
+        sourceFromStream,
+        parallel,
+        srcFile,
+        encMat,
+        null);
+  }
+
+  /**
+   * A callable that can be executed in a separate thread using executor service.
+   *
+   * <p>The callable does compression if needed and upload the result to the table's staging area.
+   *
+   * @param stage information about the stage
+   * @param srcFilePath source file path
+   * @param metadata file metadata
+   * @param client client object used to communicate with c3
+   * @param session session object
+   * @param command command string
+   * @param inputStream null if upload source is file
+   * @param sourceFromStream whether upload source is file or stream
+   * @param parallel number of threads for parallel uploading
+   * @param srcFile source file name
+   * @param encMat not null if encryption is required
+   * @param queryId last executed query id (for forwarding in possible exceptions)
+   * @return a callable that uploading file to the remote store
+   */
+  public static Callable<Void> getUploadFileCallable(
+      final StageInfo stage,
+      final String srcFilePath,
+      final FileMetadata metadata,
+      final SnowflakeStorageClient client,
+      final SFSession session,
+      final String command,
+      final InputStream inputStream,
+      final boolean sourceFromStream,
+      final int parallel,
+      final File srcFile,
+      final RemoteStoreFileEncryptionMaterial encMat,
+      final String queryId) {
     return new Callable<Void>() {
       public Void call() throws Exception {
 
@@ -484,6 +537,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // this shouldn't happen
         if (metadata == null) {
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
               SqlState.INTERNAL_ERROR,
@@ -507,8 +561,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           if (metadata.requireCompress) {
             InputStreamWithMetadata compressedSizeAndStream =
                 (encMat == null
-                    ? compressStreamWithGZIPNoDigest(uploadStream, session)
-                    : compressStreamWithGZIP(uploadStream, session));
+                    ? compressStreamWithGZIPNoDigest(uploadStream, session, queryId)
+                    : compressStreamWithGZIP(uploadStream, session, queryId));
 
             fileBackedOutputStream = compressedSizeAndStream.fileBackedOutputStream;
 
@@ -572,7 +626,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                   destFileName,
                   uploadStream,
                   fileBackedOutputStream,
-                  session);
+                  session,
+                  queryId);
               break;
 
             case S3:
@@ -594,7 +649,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                   (fileToUpload == null),
                   encMat,
                   null,
-                  null);
+                  null,
+                  queryId);
               metadata.isEncrypted = encMat != null;
               break;
           }
@@ -640,6 +696,52 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    *
    * <p>The callable download files from a stage location to a local location
    *
+   * @deprecated use {@link #getDownloadFileCallable(StageInfo, String, String, Map,
+   *     SnowflakeStorageClient, SFSession, String, int, RemoteStoreFileEncryptionMaterial, String,
+   *     String)}
+   * @param stage stage information
+   * @param srcFilePath path that stores the downloaded file
+   * @param localLocation local location
+   * @param fileMetadataMap file metadata map
+   * @param client remote store client
+   * @param session session object
+   * @param command command string
+   * @param encMat remote store encryption material
+   * @param parallel number of parallel threads for downloading
+   * @param presignedUrl Presigned URL for file download
+   * @return a callable responsible for downloading files
+   */
+  @Deprecated
+  public static Callable<Void> getDownloadFileCallable(
+      final StageInfo stage,
+      final String srcFilePath,
+      final String localLocation,
+      final Map<String, FileMetadata> fileMetadataMap,
+      final SnowflakeStorageClient client,
+      final SFSession session,
+      final String command,
+      final int parallel,
+      final RemoteStoreFileEncryptionMaterial encMat,
+      final String presignedUrl) {
+    return getDownloadFileCallable(
+        stage,
+        srcFilePath,
+        localLocation,
+        fileMetadataMap,
+        client,
+        session,
+        command,
+        parallel,
+        encMat,
+        presignedUrl,
+        null);
+  }
+
+  /**
+   * A callable that can be executed in a separate thread using executor service.
+   *
+   * <p>The callable download files from a stage location to a local location
+   *
    * @param stage stage information
    * @param srcFilePath path that stores the downloaded file
    * @param localLocation local location
@@ -662,7 +764,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       final String command,
       final int parallel,
       final RemoteStoreFileEncryptionMaterial encMat,
-      final String presignedUrl) {
+      final String presignedUrl,
+      final String queryId) {
     return new Callable<Void>() {
       public Void call() throws Exception {
 
@@ -676,6 +779,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // this shouldn't happen
         if (metadata == null) {
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
               SqlState.INTERNAL_ERROR,
@@ -695,7 +799,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           switch (stage.getStageType()) {
             case LOCAL_FS:
               pullFileFromLocal(
-                  stage.getLocation(), srcFilePath, localLocation, destFileName, session);
+                  stage.getLocation(), srcFilePath, localLocation, destFileName, session, queryId);
               break;
 
             case AZURE:
@@ -711,7 +815,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                   command,
                   parallel,
                   encMat,
-                  presignedUrl);
+                  presignedUrl,
+                  queryId);
               metadata.isEncrypted = encMat != null;
               break;
           }
@@ -800,6 +905,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       initPresignedUrls(commandType, jsonNode);
     } catch (Exception ex) {
       throw new SnowflakeSQLException(
+          queryID,
           ex,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -826,7 +932,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         localFilePathFromGS = src_locations[0];
       }
 
-      sourceFiles = expandFileNames(src_locations);
+      sourceFiles = expandFileNames(src_locations, queryID);
 
       autoCompress = jsonNode.path("data").path("autoCompress").asBoolean(true);
 
@@ -867,6 +973,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       // it should not start with any ~ after the above replacement
       if (localLocation.startsWith("~")) {
         throw new SnowflakeSQLLoggedException(
+            queryID,
             session,
             ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(),
             SqlState.IO_ERROR,
@@ -890,6 +997,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       // local location should be a directory
       if ((new File(localLocation)).isFile()) {
         throw new SnowflakeSQLLoggedException(
+            queryID,
             session,
             ErrorCode.PATH_NOT_DIRECTORY.getMessageCode(),
             SqlState.IO_ERROR,
@@ -938,6 +1046,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @throws SnowflakeSQLException
    */
   static StageInfo getStageInfo(JsonNode jsonNode, SFSession session) throws SnowflakeSQLException {
+    String queryId = jsonNode.path("data").path("queryId").asText();
 
     // more parameters common to upload/download
     String stageLocation = jsonNode.path("data").path("stageInfo").path("location").asText();
@@ -1005,7 +1114,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       }
     }
 
-    Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
+    Map<?, ?> stageCredentials = extractStageCreds(jsonNode, queryId);
 
     StageInfo stageInfo =
         StageInfo.createStageInfo(
@@ -1048,6 +1157,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     return stageInfo;
   }
+
   /**
    * A helper method to verify if the local file path from GS matches what's parsed locally. This is
    * for security purpose as documented in SNOW-15153.
@@ -1061,6 +1171,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     if (!localFilePath.isEmpty() && !localFilePath.equals(localFilePathFromGS)) {
       throw new SnowflakeSQLLoggedException(
+          queryID,
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
@@ -1155,7 +1266,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               false, // async
               new ExecTimeTelemetryData()); // OOB telemetry timing queries
     } catch (SFException ex) {
-      throw new SnowflakeSQLException(ex, ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+      throw new SnowflakeSQLException(
+          ex.getQueryId(), ex, ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
 
     JsonNode jsonNode = (JsonNode) result;
@@ -1169,7 +1281,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param rootNode JSON doc returned by GS
    * @throws SnowflakeSQLException Will be thrown if we fail to parse the stage credentials
    */
-  private static Map<?, ?> extractStageCreds(JsonNode rootNode) throws SnowflakeSQLException {
+  private static Map<?, ?> extractStageCreds(JsonNode rootNode, String queryId)
+      throws SnowflakeSQLException {
     JsonNode credsNode = rootNode.path("data").path("stageInfo").path("creds");
     Map<?, ?> stageCredentials = null;
 
@@ -1180,6 +1293,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     } catch (Exception ex) {
       throw new SnowflakeSQLException(
+          queryId,
           ex,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -1207,6 +1321,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         && stageInfo.getStageType() != StageInfo.StageType.AZURE
         && stageInfo.getStageType() != StageInfo.StageType.S3) {
       throw new SnowflakeSQLLoggedException(
+          queryID,
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
@@ -1215,6 +1330,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     if (commandType != CommandType.UPLOAD) {
       throw new SnowflakeSQLLoggedException(
+          queryID,
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
@@ -1250,19 +1366,37 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    */
   public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(JsonNode jsonNode)
       throws SnowflakeSQLException {
+    return getFileTransferMetadatas(jsonNode, null);
+  }
+
+  /**
+   * This is API function to parse the File Transfer Metadatas from a supplied PUT call response.
+   *
+   * <p>NOTE: It only supports PUT on S3/AZURE/GCS (i.e. NOT LOCAL_FS)
+   *
+   * <p>It also assumes there is no active SFSession
+   *
+   * @param jsonNode JSON doc returned by GS from PUT call
+   * @param queryId String last executed query id if available
+   * @return The file transfer metadatas for to-be-transferred files.
+   * @throws SnowflakeSQLException if any error occurs
+   */
+  public static List<SnowflakeFileTransferMetadata> getFileTransferMetadatas(
+      JsonNode jsonNode, String queryId) throws SnowflakeSQLException {
     CommandType commandType =
         !jsonNode.path("data").path("command").isMissingNode()
             ? CommandType.valueOf(jsonNode.path("data").path("command").asText())
             : CommandType.UPLOAD;
     if (commandType != CommandType.UPLOAD) {
       throw new SnowflakeSQLException(
-          ErrorCode.INTERNAL_ERROR, "This API only supports PUT commands");
+          queryId, ErrorCode.INTERNAL_ERROR, "This API only supports PUT commands");
     }
 
     JsonNode locationsNode = jsonNode.path("data").path("src_locations");
 
     if (!locationsNode.isArray()) {
-      throw new SnowflakeSQLException(ErrorCode.INTERNAL_ERROR, "src_locations must be an array");
+      throw new SnowflakeSQLException(
+          queryId, ErrorCode.INTERNAL_ERROR, "src_locations must be an array");
     }
 
     final String[] srcLocations;
@@ -1271,13 +1405,16 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       srcLocations = mapper.readValue(locationsNode.toString(), String[].class);
     } catch (Exception ex) {
       throw new SnowflakeSQLException(
-          ErrorCode.INTERNAL_ERROR, "Failed to parse the locations due to: " + ex.getMessage());
+          queryId,
+          ErrorCode.INTERNAL_ERROR,
+          "Failed to parse the locations due to: " + ex.getMessage());
     }
 
     try {
       encryptionMaterial = getEncryptionMaterial(commandType, jsonNode);
     } catch (Exception ex) {
       throw new SnowflakeSQLException(
+          queryId,
           ErrorCode.INTERNAL_ERROR,
           "Failed to parse encryptionMaterial due to: " + ex.getMessage());
     }
@@ -1285,7 +1422,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     // For UPLOAD we expect encryptionMaterial to have length 1
     assert encryptionMaterial.size() == 1;
 
-    final Set<String> sourceFiles = expandFileNames(srcLocations);
+    final Set<String> sourceFiles = expandFileNames(srcLocations, queryId);
 
     StageInfo stageInfo = getStageInfo(jsonNode, null /*SFSession*/);
 
@@ -1294,6 +1431,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         && stageInfo.getStageType() != StageInfo.StageType.AZURE
         && stageInfo.getStageType() != StageInfo.StageType.S3) {
       throw new SnowflakeSQLException(
+          queryId,
           ErrorCode.INTERNAL_ERROR,
           "This API only supports S3/AZURE/GCS, received=" + stageInfo.getStageType());
     }
@@ -1431,10 +1569,11 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                     true,
                     parallel,
                     null,
-                    encMat));
+                    encMat,
+                    queryID));
       } else if (commandType == CommandType.DOWNLOAD) {
         throw new SnowflakeSQLLoggedException(
-            session, ErrorCode.INTERNAL_ERROR.getMessageCode(), SqlState.INTERNAL_ERROR);
+            queryID, session, ErrorCode.INTERNAL_ERROR.getMessageCode(), SqlState.INTERNAL_ERROR);
       }
 
       threadExecutor.shutdown();
@@ -1451,10 +1590,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         uploadTask.get();
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
-            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+            queryID, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       } catch (ExecutionException ex) {
         throw new SnowflakeSQLException(
-            ex.getCause(), SqlState.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getMessageCode());
+            queryID,
+            ex.getCause(),
+            SqlState.INTERNAL_ERROR,
+            ErrorCode.INTERNAL_ERROR.getMessageCode());
       }
       logger.debug("Done with uploading from a stream");
     } finally {
@@ -1472,6 +1614,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       logger.error("downloadStream function doesn't support local file system", false);
 
       throw new SnowflakeSQLException(
+          queryID,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           session,
@@ -1498,7 +1641,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             remoteLocation.location,
             stageFilePath,
             stageInfo.getRegion(),
-            presignedUrl);
+            presignedUrl,
+            queryID);
   }
 
   /** Helper to download files from remote */
@@ -1535,7 +1679,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                 command,
                 parallel,
                 encMat,
-                presignedUrl));
+                presignedUrl,
+                queryID));
 
         logger.debug("submitted download job for: {}", srcFile);
       }
@@ -1547,7 +1692,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
-            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+            queryID, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       }
       logger.debug("Done with downloading");
     } finally {
@@ -1630,7 +1775,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                 false,
                 (parallel > 1 ? 1 : this.parallel),
                 srcFileObj,
-                encryptionMaterial.get(0)));
+                encryptionMaterial.get(0),
+                queryID));
 
         logger.debug("submitted copy job for: {}", srcFile);
       }
@@ -1643,7 +1789,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         threadExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
       } catch (InterruptedException ex) {
         throw new SnowflakeSQLLoggedException(
-            session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+            queryID, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
       }
       logger.debug("Done with uploading");
 
@@ -1692,7 +1838,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @return a set of file names that is matched
    * @throws SnowflakeSQLException if cannot find the file
    */
-  static Set<String> expandFileNames(String[] filePathList) throws SnowflakeSQLException {
+  static Set<String> expandFileNames(String[] filePathList, String queryId)
+      throws SnowflakeSQLException {
     Set<String> result = new HashSet<String>();
 
     // a location to file pattern map so that we only need to list the
@@ -1773,6 +1920,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         }
       } catch (Exception ex) {
         throw new SnowflakeSQLException(
+            queryId,
             ex,
             SqlState.DATA_EXCEPTION,
             ErrorCode.FAIL_LIST_FILES.getMessageCode(),
@@ -1800,7 +1948,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       String destFileName,
       InputStream inputStream,
       FileBackedOutputStream fileBackedOutStr,
-      SFBaseSession session)
+      SFBaseSession session,
+      String queryId)
       throws SQLException {
 
     // replace ~ with user home
@@ -1821,6 +1970,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       FileUtils.copyInputStreamToFile(inputStream, destFile);
     } catch (Exception ex) {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -1836,7 +1986,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       String filePath,
       String destLocation,
       String destFileName,
-      SFBaseSession session)
+      SFBaseSession session,
+      String queryId)
       throws SQLException {
     try {
       logger.debug(
@@ -1851,6 +2002,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       FileUtils.copyFileToDirectory(srcFile, new File(destLocation));
     } catch (Exception ex) {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -1877,7 +2029,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       boolean uploadFromStream,
       RemoteStoreFileEncryptionMaterial encMat,
       String streamingIngestClientName,
-      String streamingIngestClientKey)
+      String streamingIngestClientKey,
+      String queryId)
       throws SQLException, IOException {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
@@ -1936,7 +2089,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           fileBackedOutStr,
           meta,
           stage.getRegion(),
-          presignedUrl);
+          presignedUrl,
+          queryId);
     } finally {
       if (uploadFromStream && inputStream != null) {
         inputStream.close();
@@ -1994,8 +2148,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       if (requireCompress) {
         InputStreamWithMetadata compressedSizeAndStream =
             (encMat == null
-                ? compressStreamWithGZIPNoDigest(uploadStream, /* session = */ null)
-                : compressStreamWithGZIP(uploadStream, /* session = */ null));
+                ? compressStreamWithGZIPNoDigest(uploadStream, /* session= */ null, null)
+                : compressStreamWithGZIP(uploadStream, /* session= */ null, encMat.getQueryId()));
 
         fileBackedOutputStream = compressedSizeAndStream.fileBackedOutputStream;
 
@@ -2031,13 +2185,14 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           uploadSize);
 
       SnowflakeStorageClient initialClient =
-          storageFactory.createClient(stageInfo, 1, encMat, /*session = */ null);
+          storageFactory.createClient(stageInfo, 1, encMat, /* session= */ null);
 
       // Normal flow will never hit here. This is only for testing purposes
       if (isInjectedFileTransferExceptionEnabled()) {
         throw (Exception) SnowflakeFileTransferAgent.injectedFileTransferException;
       }
 
+      String queryId = encMat != null && encMat.getQueryId() != null ? encMat.getQueryId() : null;
       switch (stageInfo.getStageType()) {
         case S3:
         case AZURE:
@@ -2057,7 +2212,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               (fileToUpload == null),
               encMat,
               streamingIngestClientName,
-              streamingIngestClientKey);
+              streamingIngestClientKey,
+              queryId);
           break;
         case GCS:
           // If the down-scoped token is used to upload file, one metadata may be used to upload
@@ -2084,7 +2240,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               encMat,
               metadata.getPresignedUrl(),
               streamingIngestClientName,
-              streamingIngestClientKey);
+              streamingIngestClientKey,
+              queryId);
           break;
       }
     } catch (Exception ex) {
@@ -2124,7 +2281,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       RemoteStoreFileEncryptionMaterial encMat,
       String presignedUrl,
       String streamingIngestClientName,
-      String streamingIngestClientKey)
+      String streamingIngestClientKey,
+      String queryId)
       throws SQLException, IOException {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
@@ -2169,7 +2327,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           fileBackedOutStr,
           meta,
           stage.getRegion(),
-          presignedUrl);
+          presignedUrl,
+          queryId);
     } finally {
       if (uploadFromStream && inputStream != null) {
         inputStream.close();
@@ -2192,7 +2351,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       throws SnowflakeSQLException {
     SFStatement statement = new SFStatement(session);
     JsonNode jsonNode = parseCommandInGS(statement, command);
-    Map<?, ?> stageCredentials = extractStageCreds(jsonNode);
+    String queryId = jsonNode.path("data").path("queryId").asText();
+    Map<?, ?> stageCredentials = extractStageCreds(jsonNode, queryId);
 
     // renew client with the fresh token
     logger.debug("Renewing expired access token");
@@ -2209,7 +2369,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       String command,
       int parallel,
       RemoteStoreFileEncryptionMaterial encMat,
-      String presignedUrl)
+      String presignedUrl,
+      String queryId)
       throws SQLException {
     remoteLocation remoteLocation = extractLocationAndPath(stage.getLocation());
 
@@ -2236,7 +2397,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         remoteLocation.location,
         stageFilePath,
         stage.getRegion(),
-        presignedUrl);
+        presignedUrl,
+        queryId);
   }
 
   /**
@@ -2339,7 +2501,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                 (Exception)
                     ex.getCause(); // Cause of StorageProviderException is always an Exception
           }
-          storageClient.handleStorageException(ex, ++retryCount, "listObjects", session, command);
+          storageClient.handleStorageException(
+              ex, ++retryCount, "listObjects", session, command, queryID);
           continue;
         }
 
@@ -2359,7 +2522,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                     ex.getCause(); // Cause of StorageProviderException is always an Exception
           }
           storageClient.handleStorageException(
-              ex, ++retryCount, "compareRemoteFiles", session, command);
+              ex, ++retryCount, "compareRemoteFiles", session, command, queryID);
         }
       } while (retryCount <= storageClient.getMaxRetries());
     } else if (stageInfo.getStageType() == StageInfo.StageType.LOCAL_FS) {
@@ -2418,7 +2581,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           if (fileMetadataMap.get(mappedSrcFile).requireCompress) {
             logger.debug("Compressing stream for digest check");
 
-            InputStreamWithMetadata res = compressStreamWithGZIP(localFileStream, session);
+            InputStreamWithMetadata res = compressStreamWithGZIP(localFileStream, session, queryID);
             fileBackedOutputStreams.add(res.fileBackedOutputStream);
 
             localFileStream = res.fileBackedOutputStream.asByteSource().openStream();
@@ -2429,6 +2592,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           fileBackedOutputStreams.add(res.fileBackedOutputStream);
         } catch (IOException | NoSuchAlgorithmException ex) {
           throw new SnowflakeSQLLoggedException(
+              queryID,
               session,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -2459,6 +2623,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
         } catch (IOException | NoSuchAlgorithmException ex) {
           throw new SnowflakeSQLLoggedException(
+              queryID,
               session,
               SqlState.INTERNAL_ERROR,
               ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -2600,7 +2765,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           if (fileMetadataMap.get(mappedSrcFile).requireCompress) {
             logger.debug("Compressing stream for digest check");
 
-            InputStreamWithMetadata res = compressStreamWithGZIP(fileStream, session);
+            InputStreamWithMetadata res = compressStreamWithGZIP(fileStream, session, queryID);
 
             fileStream = res.fileBackedOutputStream.asByteSource().openStream();
             fileBackedOutputStreams.add(res.fileBackedOutputStream);
@@ -2655,6 +2820,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         }
       } catch (IOException | NoSuchAlgorithmException ex) {
         throw new SnowflakeSQLLoggedException(
+            queryID,
             session,
             SqlState.INTERNAL_ERROR,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -2713,6 +2879,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             logger.debug("File doesn't exist: {}", sourceFile);
 
             throw new SnowflakeSQLLoggedException(
+                queryID,
                 session,
                 ErrorCode.FILE_NOT_FOUND.getMessageCode(),
                 SqlState.DATA_EXCEPTION,
@@ -2721,6 +2888,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             logger.debug("Not a file, but directory: {}", sourceFile);
 
             throw new SnowflakeSQLLoggedException(
+                queryID,
                 session,
                 ErrorCode.FILE_IS_DIRECTORY.getMessageCode(),
                 SqlState.DATA_EXCEPTION,
@@ -2786,6 +2954,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           FileCompressionType.lookupByMimeSubType(sourceCompression.toLowerCase());
       if (!foundCompType.isPresent()) {
         throw new SnowflakeSQLLoggedException(
+            queryID,
             session,
             ErrorCode.COMPRESSION_TYPE_NOT_KNOWN.getMessageCode(),
             SqlState.FEATURE_NOT_SUPPORTED,
@@ -2795,6 +2964,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       if (!userSpecifiedSourceCompression.isSupported()) {
         throw new SnowflakeSQLLoggedException(
+            queryID,
             session,
             ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
             SqlState.FEATURE_NOT_SUPPORTED,
@@ -2880,6 +3050,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             } else {
               // error if not supported
               throw new SnowflakeSQLLoggedException(
+                  queryID,
                   session,
                   ErrorCode.COMPRESSION_TYPE_NOT_SUPPORTED.getMessageCode(),
                   SqlState.FEATURE_NOT_SUPPORTED,
@@ -3073,14 +3244,29 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     return commandType;
   }
 
-  /*
-   * Handles an InvalidKeyException which indicates that the JCE component
-   * is not installed properly
+  /**
+   * Handles an InvalidKeyException which indicates that the JCE component is not installed properly
+   *
+   * @deprecated use {@link #throwJCEMissingError(String, Exception, String)}
    * @param operation a string indicating the operation type, e.g. upload/download
    * @param ex The exception to be handled
-   * @throws throws the error as a SnowflakeSQLException
+   * @throws SnowflakeSQLException throws the error as a SnowflakeSQLException
    */
+  @Deprecated
   public static void throwJCEMissingError(String operation, Exception ex)
+      throws SnowflakeSQLException {
+    throwJCEMissingError(operation, ex, null);
+  }
+
+  /**
+   * Handles an InvalidKeyException which indicates that the JCE component is not installed properly
+   *
+   * @param operation a string indicating the operation type, e.g. upload/download
+   * @param ex The exception to be handled
+   * @param queryId last query id if available
+   * @throws SnowflakeSQLException throws the error as a SnowflakeSQLException
+   */
+  public static void throwJCEMissingError(String operation, Exception ex, String queryId)
       throws SnowflakeSQLException {
     // Most likely cause: Unlimited strength policy files not installed
     String msg =
@@ -3101,7 +3287,28 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       logger.error(msg);
     }
     throw new SnowflakeSQLException(
-        ex, SqlState.SYSTEM_ERROR, ErrorCode.AWS_CLIENT_ERROR.getMessageCode(), operation, msg);
+        queryId,
+        ex,
+        SqlState.SYSTEM_ERROR,
+        ErrorCode.AWS_CLIENT_ERROR.getMessageCode(),
+        operation,
+        msg);
+  }
+
+  /**
+   * For handling IOException: No space left on device when attempting to download a file to a
+   * location where there is not enough space. We don't want to retry on this exception.
+   *
+   * @deprecated use {@link #throwNoSpaceLeftError(SFSession, String, Exception, String)}
+   * @param session the current session
+   * @param operation the operation i.e. GET
+   * @param ex the exception caught
+   * @throws SnowflakeSQLLoggedException
+   */
+  @Deprecated
+  public static void throwNoSpaceLeftError(SFSession session, String operation, Exception ex)
+      throws SnowflakeSQLLoggedException {
+    throwNoSpaceLeftError(session, operation, ex, null);
   }
 
   /**
@@ -3113,11 +3320,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param ex the exception caught
    * @throws SnowflakeSQLLoggedException
    */
-  public static void throwNoSpaceLeftError(SFSession session, String operation, Exception ex)
+  public static void throwNoSpaceLeftError(
+      SFSession session, String operation, Exception ex, String queryId)
       throws SnowflakeSQLLoggedException {
     String exMessage = SnowflakeUtil.getRootCause(ex).getMessage();
     if (exMessage != null && exMessage.equals(NO_SPACE_LEFT_ON_DEVICE_ERR)) {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           SqlState.SYSTEM_ERROR,
           ErrorCode.IO_ERROR.getMessageCode(),

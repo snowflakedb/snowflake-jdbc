@@ -37,7 +37,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                image: [ 'jdbc-centos6-default', 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
+                image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
                 cloud: [ 'AWS' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
         steps:
@@ -57,7 +57,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                image: [ 'jdbc-centos6-default' ]
+                image: [ 'jdbc-centos7-openjdk8' ]
                 cloud: [ 'AWS' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader']
                 is_old_driver: ['true']

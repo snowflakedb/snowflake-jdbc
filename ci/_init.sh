@@ -20,7 +20,6 @@ export DRIVER_NAME=jdbc
 TEST_IMAGE_VERSION=1
 
 declare -A TEST_IMAGE_NAMES=(
-    [$DRIVER_NAME-centos6-default]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos6-default-test:$TEST_IMAGE_VERSION
     [$DRIVER_NAME-centos7-openjdk8]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos7-openjdk8-test:$TEST_IMAGE_VERSION
     [$DRIVER_NAME-centos7-openjdk11]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos7-openjdk11-test:$TEST_IMAGE_VERSION
     [$DRIVER_NAME-centos7-openjdk17]=$DOCKER_REGISTRY_NAME/client-$DRIVER_NAME-centos7-openjdk17-test:$TEST_IMAGE_VERSION
@@ -28,7 +27,6 @@ declare -A TEST_IMAGE_NAMES=(
 export TEST_IMAGE_NAMES
 
 declare -A TEST_IMAGE_DOCKERFILES=(
-    [$DRIVER_NAME-centos6-default]=jdbc-centos6-default-test
     [$DRIVER_NAME-centos7-openjdk8]=jdbc-centos7-openjdk-test
     [$DRIVER_NAME-centos7-openjdk11]=jdbc-centos7-openjdk-test
     [$DRIVER_NAME-centos7-openjdk17]=jdbc-centos7-openjdk-test

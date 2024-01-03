@@ -164,13 +164,7 @@ public class SFSession extends SFBaseSession {
     activeAsyncQueries.add(queryID);
   }
 
-  /**
-   * @param queryID query ID of the query whose status is being investigated
-   * @return enum of type QueryStatus indicating the query's status
-   * @throws SQLException
-   */
-  @Override
-  public QueryStatus getQueryStatus(String queryID) throws SQLException {
+  private JsonNode getQueryMetadata(String queryID) throws SQLException {
     // create the URL to check the query monitoring endpoint
     String statusUrl = "";
     String sessionUrl = getUrl();
@@ -245,7 +239,18 @@ public class SFSession extends SFBaseSession {
         }
       }
     } while (sessionRenewed);
-    JsonNode queryNode = jsonNode.path("data").path("queries");
+    return jsonNode.path("data").path("queries");
+  }
+
+  /**
+   * @param queryID query ID of the query whose status is being investigated
+   * @return enum of type QueryStatus indicating the query's status
+   * @throws SQLException
+   * @deprecated the returned enum is error-prone, use {@link #getQueryStatusV2} instead
+   */
+  @Deprecated
+  public QueryStatus getQueryStatus(String queryID) throws SQLException {
+    JsonNode queryNode = getQueryMetadata(queryID);
     String queryStatus = "";
     String errorMessage = "";
     int errorCode = 0;
@@ -279,6 +284,54 @@ public class SFSession extends SFBaseSession {
       result.setErrorMessage("No error reported");
     }
     if (!isStillRunning(result)) {
+      activeAsyncQueries.remove(queryID);
+    }
+    return result;
+  }
+
+  /**
+   * @param queryID query ID of the query whose status is being investigated
+   * @return a QueryStatusV2 instance indicating the query's status
+   * @throws SQLException
+   */
+  public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
+    JsonNode queryNode = getQueryMetadata(queryID);
+    logger.debug("Query status: {}", queryNode.asText());
+    if (queryNode.isEmpty()) {
+      return QueryStatusV2.empty();
+    }
+    JsonNode node = queryNode.get(0);
+    long endTime = node.path("endTime").asLong(0);
+    int errorCode = node.path("errorCode").asInt(0);
+    String errorMessage = node.path("errorMessage").asText("No error reported");
+    String id = node.path("id").asText("");
+    String name = node.path("status").asText("");
+    long sessionId = node.path("sessionId").asLong(0);
+    String sqlText = node.path("sqlText").asText("");
+    long startTime = node.path("startTime").asLong(0);
+    String state = node.path("state").asText("");
+    int totalDuration = node.path("totalDuration").asInt(0);
+    String warehouseExternalSize = node.path("warehouseExternalSize").asText(null);
+    int warehouseId = node.path("warehouseId").asInt(0);
+    String warehouseName = node.path("warehouseName").asText(null);
+    String warehouseServerType = node.path("warehouseServerType").asText(null);
+    QueryStatusV2 result =
+        new QueryStatusV2(
+            endTime,
+            errorCode,
+            errorMessage,
+            id,
+            name,
+            sessionId,
+            sqlText,
+            startTime,
+            state,
+            totalDuration,
+            warehouseExternalSize,
+            warehouseId,
+            warehouseName,
+            warehouseServerType);
+    if (!result.isStillRunning()) {
       activeAsyncQueries.remove(queryID);
     }
     return result;
@@ -507,7 +560,12 @@ public class SFSession extends SFBaseSession {
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
         .setServiceName(getServiceName())
         .setOCSPMode(getOCSPMode())
-        .setHttpClientSettingsKey(httpClientSettingsKey);
+        .setHttpClientSettingsKey(httpClientSettingsKey)
+        .setDisableConsoleLogin(
+            connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN) != null
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN))
+                : true);
 
     // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
     // The value may still change later when session parameters from the server are read.

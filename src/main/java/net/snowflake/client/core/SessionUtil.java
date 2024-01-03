@@ -55,6 +55,7 @@ public class SessionUtil {
   private static final String SF_PATH_LOGIN_REQUEST = "/session/v1/login-request";
   private static final String SF_PATH_TOKEN_REQUEST = "/session/token-request";
   public static final String SF_PATH_AUTHENTICATOR_REQUEST = "/session/authenticator-request";
+  public static final String SF_PATH_CONSOLE_LOGIN_REQUEST = "/console/login";
 
   public static final String SF_QUERY_SESSION_DELETE = "delete";
 

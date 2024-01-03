@@ -819,9 +819,18 @@ public abstract class SFBaseSession {
   /**
    * @param queryID query ID of the query whose status is being investigated
    * @return enum of type QueryStatus indicating the query's status
+   * @deprecated Use {@link #getQueryStatusV2(String)}
    * @throws SQLException
    */
+  @Deprecated
   public abstract QueryStatus getQueryStatus(String queryID) throws SQLException;
+
+  /**
+   * @param queryID query ID of the query whose status is being investigated
+   * @return QueryStatusV2 indicating the query's status
+   * @throws SQLException
+   */
+  public abstract QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException;
 
   /**
    * Validates the connection properties used by this session, and returns a list of missing

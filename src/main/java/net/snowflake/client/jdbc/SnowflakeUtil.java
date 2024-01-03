@@ -155,7 +155,8 @@ public class SnowflakeUtil {
       boolean fixed = colNode.path("fixed").asBoolean();
       JsonNode udtOutputType = colNode.path("outputType");
 
-      ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, udtOutputType, session);
+      boolean fixedNmuberAsInt = jdbcTreatDecimalAsInt && scale == 0;
+      ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, fixedNmuberAsInt, udtOutputType, session);
 
       String colSrcDatabase = colNode.path("database").asText();
       String colSrcSchema = colNode.path("schema").asText();
@@ -163,7 +164,7 @@ public class SnowflakeUtil {
       MetadataField[] fieldsMetadata = new MetadataField[0];
       if (!colNode.path("fields").isEmpty()) {
           ArrayNode arrayNode = (ArrayNode) colNode.path("fields");
-          fieldsMetadata = createFieldsMetadata(arrayNode);
+          fieldsMetadata = createFieldsMetadata(arrayNode, jdbcTreatDecimalAsInt);
       }
 
       boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
@@ -185,7 +186,7 @@ public class SnowflakeUtil {
               isAutoIncrement);
   }
 
-static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtOutputType, SFBaseSession session) throws SnowflakeSQLLoggedException {
+static ColumnTypeInfo getSnowflakeType(String internalColTypeName, boolean fixedNmuberAsInt, JsonNode udtOutputType, SFBaseSession session) throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
     ColumnTypeInfo columnTypeInfo = null;
 
@@ -200,7 +201,8 @@ static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtO
         columnTypeInfo = new ColumnTypeInfo(Types.INTEGER, "INTEGER", baseType);
         break;
       case FIXED:
-        columnTypeInfo = new ColumnTypeInfo(Types.CHAR, "CHAR", baseType);
+        int type = fixedNmuberAsInt ? Types.BIGINT : Types.DECIMAL;
+        columnTypeInfo = new ColumnTypeInfo(type, "NUMBER", baseType);
         break;
 
       case REAL:
@@ -277,8 +279,8 @@ static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtO
     }
     return columnTypeInfo;
   }
-  static MetadataField[] createFieldsMetadata(ArrayNode fieldsJson) throws SnowflakeSQLLoggedException {
-//    TODO: verify that jsonFileds is not empty array
+  static MetadataField[] createFieldsMetadata(ArrayNode fieldsJson, boolean jdbcTreatDecimalAsInt) throws SnowflakeSQLLoggedException {
+//   TODO: verify that jsonFileds is not empty array
     MetadataField[] fields = new MetadataField[fieldsJson.size()];
     int fieldCounter = 0;
     for (JsonNode node :  fieldsJson) {
@@ -292,10 +294,11 @@ static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtO
         MetadataField[] internalFields = new MetadataField[0];
         if (!node.path("fields").isEmpty()) {
             ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
-            internalFields = createFieldsMetadata(internalFieldsJson);
+            internalFields = createFieldsMetadata(internalFieldsJson, jdbcTreatDecimalAsInt);
         }
         JsonNode outputType = node.path("outputType");
-        ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, outputType, null);
+        boolean fixedNmuberAsInt = jdbcTreatDecimalAsInt && scale == 0;
+        ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, fixedNmuberAsInt, outputType, null);
         fields[fieldCounter++] = new MetadataField(colName, columnTypeInfo.getExtColTypeName(), columnTypeInfo.getColumnType(),
                 nullable, length, precision, scale, fixed, columnTypeInfo.getSnowflakeType(), internalFields);
     }

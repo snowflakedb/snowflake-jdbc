@@ -36,7 +36,7 @@ public class FileUploaderExpandFileNamesTest {
       folderName + "/TestFileE~"
     };
 
-    Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations);
+    Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations, null);
 
     assertTrue(files.contains(folderName + "/TestFileA"));
     assertTrue(files.contains(folderName + "/TestFileB"));
@@ -52,7 +52,7 @@ public class FileUploaderExpandFileNamesTest {
     String[] locations = {"/Tes*Fil*A", "/TestFil?B", "~/TestFileC", "TestFileD"};
 
     try {
-      SnowflakeFileTransferAgent.expandFileNames(locations);
+      SnowflakeFileTransferAgent.expandFileNames(locations, null);
     } catch (SnowflakeSQLException err) {
       Assert.assertEquals(200007, err.getErrorCode());
       Assert.assertEquals("22000", err.getSQLState());
