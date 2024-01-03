@@ -104,7 +104,7 @@ for c in "${CATEGORY[@]}"; do
             -Djacoco.skip.instrument=false \
             -DtestCategory=net.snowflake.client.category.$c \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-            -Dnot-self-contained-jar \
+            -Dnot-self-contained-jar $ADDITIONAL_MAVEN_PROFILE \
             verify \
             --batch-mode --show-version
     fi

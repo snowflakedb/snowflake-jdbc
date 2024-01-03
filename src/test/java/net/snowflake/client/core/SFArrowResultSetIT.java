@@ -17,6 +17,8 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.*;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.SkipOnThinJar;
 import net.snowflake.client.category.TestCategoryArrow;
 import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
@@ -41,9 +43,16 @@ import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryArrow.class)
 public class SFArrowResultSetIT {
+
+  /** Necessary to conditional ignore tests */
+  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+
   private Random random = new Random();
 
-  /** allocator for arrow */
+  /**
+   * allocator for arrow RootAllocator is shaded so it cannot be overridden when testing thin or fat
+   * jar
+   */
   protected BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
 
   /** temporary folder to store result files */
@@ -51,6 +60,7 @@ public class SFArrowResultSetIT {
 
   /** Test the case that all results are returned in first chunk */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
   public void testNoOfflineData() throws Throwable {
     List<Field> fieldList = new ArrayList<>();
     Map<String, String> customFieldMeta = new HashMap<>();
@@ -112,6 +122,7 @@ public class SFArrowResultSetIT {
 
   /** Testing the case that all data comes from chunk downloader */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
   public void testOnlyOfflineData() throws Throwable {
     final int colCount = 2;
     final int chunkCount = 10;
@@ -161,6 +172,7 @@ public class SFArrowResultSetIT {
 
   /** Testing the case that all data comes from chunk downloader */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
   public void testFirstResponseAndOfflineData() throws Throwable {
     final int colCount = 2;
     final int chunkCount = 10;
@@ -553,6 +565,7 @@ public class SFArrowResultSetIT {
 
   /** Test that first chunk containing struct vectors (used for timestamps) can be sorted */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
   public void testSortedResultChunkWithStructVectors() throws Throwable {
     Connection con = getConnection();
     Statement statement = con.createStatement();
@@ -622,6 +635,7 @@ public class SFArrowResultSetIT {
 
   /** Test that the first chunk can be sorted */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
   public void testSortedResultChunk() throws Throwable {
     Connection con = getConnection();
     Statement statement = con.createStatement();
