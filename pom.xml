@@ -10,17 +10,22 @@
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
-  <artifactId>snowflake-jdbc</artifactId>
+  <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
+  <artifactId>${artifactId}</artifactId>
   <version>3.14.4</version>
   <packaging>jar</packaging>
 
-  <name>snowflake-jdbc</name>
+  <name>${artifactId}</name>
   <url>https://github.com/snowflakedb/snowflake-jdbc</url>
 
   <scm>
     <connection>scm:git:https://github.com/snowflakedb/snowflake-jdbc.git</connection>
     <url>https://github.com/snowflakedb/snowflake-jdbc</url>
   </scm>
+
+  <properties>
+    <artifactId>snowflake-jdbc</artifactId>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -585,9 +590,25 @@
           <name>thin-jar</name>
         </property>
       </activation>
+      <properties>
+        <artifactId>snowflake-jdbc-thin</artifactId>
+      </properties>
       <build>
-        <finalName>${project.artifactId}-thin</finalName>
         <plugins>
+          <plugin>
+            <!-- we don't want to run japicmp for thin-jar until we release it for the first time -->
+            <groupId>com.github.siom79.japicmp</groupId>
+            <artifactId>japicmp-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>japicmp</id>
+                <goals>
+                  <goal>cmp</goal>
+                </goals>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <!-- relocate the META-INF/versions files manually due to the maven bug -->
             <!-- https://issues.apache.org/jira/browse/MSHADE-406 -->
@@ -1336,12 +1357,12 @@
                 </goals>
                 <phase>deploy</phase>
                 <configuration>
-                  <file>target/${project.build.finalName}.jar</file>
+                  <file>target/${project.artifactId}.jar</file>
                   <repositoryId>ossrh</repositoryId>
                   <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
                   <pomFile>generated_public_pom.xml</pomFile>
-                  <javadoc>target/${project.build.finalName}-javadoc.jar</javadoc>
-                  <sources>target/${project.build.finalName}-sources.jar</sources>
+                  <javadoc>target/${project.artifactId}-javadoc.jar</javadoc>
+                  <sources>target/${project.artifactId}-sources.jar</sources>
                   <keyname>${env.GPG_KEY_ID}</keyname>
                   <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
                 </configuration>
