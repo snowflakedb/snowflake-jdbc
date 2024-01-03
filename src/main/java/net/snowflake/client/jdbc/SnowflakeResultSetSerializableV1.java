@@ -1087,7 +1087,9 @@ public class SnowflakeResultSetSerializableV1
         }
       case JSON:
         {
-          sfBaseResultSet = new SFResultSet(this, telemetryClient, sortResult);
+          sfBaseResultSet =
+              new SFResultSet(
+                  this, getSession().orElse(new SFSession()), telemetryClient, sortResult);
           break;
         }
       default:
