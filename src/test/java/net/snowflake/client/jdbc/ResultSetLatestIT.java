@@ -15,6 +15,7 @@ import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -166,9 +167,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * Metadata API metric collection. The old driver didn't collect metrics.
    *
    * @throws SQLException arises if any exception occurs
+   * @throws ExecutionException arises if error occurred when sending telemetry events
+   * @throws InterruptedException arises if error occurred when sending telemetry events
    */
   @Test
-  public void testMetadataAPIMetricCollection() throws SQLException {
+  public void testMetadataAPIMetricCollection()
+      throws SQLException, ExecutionException, InterruptedException {
     Connection con = init();
     Telemetry telemetry =
         con.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
@@ -195,7 +199,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
     assertNull(parameterValues.get("specific_name_pattern").textValue());
 
     // send data to clear log for next test
-    telemetry.sendBatchAsync();
+    telemetry.sendBatchAsync().get();
+    assertEquals(0, ((TelemetryClient) telemetry).logBuffer().size());
 
     String catalog = con.getCatalog();
     String schema = con.getSchema();
