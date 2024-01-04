@@ -280,7 +280,7 @@ static ColumnTypeInfo getSnowflakeType(String internalColTypeName, boolean fixed
     return columnTypeInfo;
   }
   static MetadataField[] createFieldsMetadata(ArrayNode fieldsJson, boolean jdbcTreatDecimalAsInt) throws SnowflakeSQLLoggedException {
-//   TODO: verify that jsonFileds is not empty array
+//   TODO: verify that json fileds is not empty array
     MetadataField[] fields = new MetadataField[fieldsJson.size()];
     int fieldCounter = 0;
     for (JsonNode node :  fieldsJson) {
