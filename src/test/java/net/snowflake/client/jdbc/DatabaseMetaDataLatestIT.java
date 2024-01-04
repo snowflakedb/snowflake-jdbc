@@ -981,20 +981,25 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   @Test
   public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeys() throws SQLException {
     try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
-      String database = con.getCatalog();
-      statement.execute("create or replace schema TEST_SCHEMA");
-      statement.execute("use schema TEST_SCHEMA");
-      statement.execute("create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
-      statement.execute(
-          "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
-      DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getPrimaryKeys(database, "TEST\\_SCHEMA", null);
-      assertEquals(1, getSizeOfResultSet(rs));
-      rs = metaData.getImportedKeys(database, "TEST\\_SCHEMA", null);
-      assertEquals(1, getSizeOfResultSet(rs));
-      rs.close();
-      statement.close();
+      try (Statement statement = con.createStatement()) {
+        String database = con.getCatalog();
+        String customSchema = "TEST_SCHEMA_" + SnowflakeUtil.randomAlphaNumeric(5);
+        String escapedSchema = customSchema.replace("_", "\\_");
+
+        statement.execute("create or replace schema " + customSchema);
+        statement.execute("use schema " + customSchema);
+        statement.execute("create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
+        statement.execute(
+            "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
+        DatabaseMetaData metaData = con.getMetaData();
+        try (ResultSet rs = metaData.getPrimaryKeys(database, escapedSchema, null)) {
+          assertEquals(1, getSizeOfResultSet(rs));
+        }
+        try (ResultSet rs = metaData.getImportedKeys(database, escapedSchema, null)) {
+          assertEquals(1, getSizeOfResultSet(rs));
+        }
+        statement.execute("DROP SCHEMA " + customSchema);
+      }
     }
   }
 
