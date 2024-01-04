@@ -80,8 +80,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       String schema = connection.getSchema();
       DatabaseMetaData databaseMetaData = connection.getMetaData();
 
+      String customSchema = "TEST_CTX_" + SnowflakeUtil.randomAlphaNumeric(5);
+
       // create tables within current schema.
-      connection.createStatement().execute("create or replace schema TEST_CTX");
+      connection.createStatement().execute("create or replace schema " + customSchema);
       connection
           .createStatement()
           .execute(
@@ -115,8 +117,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
               "create or replace table CTX_TBL_F (colA string, colB decimal, "
                   + "colC number, colD int, colE timestamp, colF string, colG number);");
 
-      // this should only return TEST_CTX schema and tables
-      connection.createStatement().execute("use schema TEST_CTX");
+      // this should only return `customSchema` schema and tables
+      connection.createStatement().execute("use schema " + customSchema);
 
       ResultSet resultSet = databaseMetaData.getSchemas(null, null);
       assertEquals(1, getSizeOfResultSet(resultSet));
@@ -165,6 +167,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
       resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
       assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+
+      connection.createStatement().execute("drop schema " + customSchema);
     }
   }
 
