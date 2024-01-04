@@ -5,11 +5,12 @@ import static org.junit.Assert.*;
 import java.math.BigDecimal;
 import java.sql.*;
 import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.category.TestCategoryResultSetStructuredTypes;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-@Category(TestCategoryResultSet.class)
+@Category(TestCategoryResultSetStructuredTypes.class)
 public class ResultSetStructuredTypesLatestIT {
   private final String queryResultFormat;
 
