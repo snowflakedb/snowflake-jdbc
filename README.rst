@@ -120,6 +120,9 @@ To build a thin jar run command:
 
     mvn clean verify -Dthin-jar -Dnot-self-contained-jar
 
+- `thin-jar` enables thin jar profile
+- `not-self-contained-jar` turns off fat jar profile (enabled by default)
+
 Tests
 =====
 
