@@ -12,12 +12,18 @@ import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 
 // TODO structuredType use json converters
 public class JsonSqlInput implements SQLInput {
+  private final JsonNode input;
   private final Iterator<JsonNode> elements;
   private final SFBaseSession session;
 
   public JsonSqlInput(JsonNode input, SFBaseSession session) {
+    this.input = input;
     this.elements = input.elements();
     this.session = session;
+  }
+
+  public JsonNode getInput() {
+    return input;
   }
 
   @Override

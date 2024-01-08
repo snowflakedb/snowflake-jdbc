@@ -101,27 +101,27 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       case Types.STRUCT:
         return getSqlInput((String) obj);
 
-      case Types.ARRAY:
-        return getArrayOfSqlInput((String) obj);
+//      case Types.ARRAY:
+//        return getArrayOfSqlInput((String) obj);
 
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
     }
   }
 
-  private Array getArrayOfSqlInput(String input) throws SFException {
-    try {
-      List<JsonSqlInput> result = new ArrayList<>();
-      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
-      Iterator nodeElements = arrayNode.elements();
-      while (nodeElements.hasNext()) {
-        result.add(new JsonSqlInput((JsonNode) nodeElements.next()));
-      }
-      return new SQLInputArray(result);
-    } catch (JsonProcessingException e) {
-      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
-    }
-  }
+//  private Array getArrayOfSqlInput(String input) throws SFException {
+//    try {
+//      List<JsonSqlInput> result = new ArrayList<>();
+//      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
+//      Iterator nodeElements = arrayNode.elements();
+//      while (nodeElements.hasNext()) {
+//        result.add(new JsonSqlInput((JsonNode) nodeElements.next()));
+//      }
+//      return new SQLInputArray(result);
+//    } catch (JsonProcessingException e) {
+//      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+//    }
+//  }
 
   private Object getSqlInput(String input) throws SFException {
     try {

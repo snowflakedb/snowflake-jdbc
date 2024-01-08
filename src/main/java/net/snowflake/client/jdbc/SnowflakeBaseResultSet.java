@@ -5,9 +5,6 @@
 package net.snowflake.client.jdbc;
 
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.structs.SFSqlData;
-import net.snowflake.client.core.structs.SFSqlDataCreationHelper;
-import net.snowflake.client.core.structs.SFSqlInput;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -29,11 +26,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
 
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
@@ -1398,7 +1390,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                       .map(Supplier::get)
                       .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
               try {
-                SQLInput sqlInput = new JsonSqlInput(jsonNode.get(e.getKey()));
+                SQLInput sqlInput = new JsonSqlInput(jsonNode.get(e.getKey()), session);
                 instance.readSQL(sqlInput, null);
               } catch (SQLException ex) {
                 throw new RuntimeException(ex);
