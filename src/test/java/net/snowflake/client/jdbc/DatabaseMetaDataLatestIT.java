@@ -914,9 +914,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         "create or replace table \"TEST\\1\\_1\" (\"C%1\" integer,\"C\\1\\\\11\" integer)");
     statement.execute("INSERT INTO \"TEST\\1\\_1\" (\"C%1\",\"C\\1\\\\11\") VALUES (0,0)");
     // test getColumns with escaped special characters in schema and table name
-    statement.execute("create or replace schema \"SPECIAL%_\\SCHEMA\"");
+    String specialSchemaSuffix = SnowflakeUtil.randomAlphaNumeric(5);
+    String specialSchema = "\"SPECIAL%_\\SCHEMA" + specialSchemaSuffix + "\"";
+    statement.execute("create or replace schema " + specialSchema);
     statement.execute(
-        "create or replace table \"SPECIAL%_\\SCHEMA\".\"TEST_1_1\" ( \"RNUM\" integer not null, "
+        "create or replace table "
+            + specialSchema
+            + ".\"TEST_1_1\" ( \"RNUM\" integer not null, "
             + "\"C21\" integer,"
             + "\"C11\" integer,\"C%1\" integer,\"C\\1\\\\11\" integer , primary key (\"RNUM\"))");
     statement.execute(
@@ -940,7 +944,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertFalse(resultSet.next());
 
     String escapedTable2 = "TEST" + escapeChar + "_1" + escapeChar + "_1";
-    String escapedSchema = "SPECIAL%" + escapeChar + "_" + escapeChar + "\\SCHEMA";
+    String escapedSchema =
+        "SPECIAL%" + escapeChar + "_" + escapeChar + "\\SCHEMA" + specialSchemaSuffix;
     resultSet = metaData.getColumns(database, escapedSchema, escapedTable2, null);
     assertTrue(resultSet.next());
     assertEquals("RNUM", resultSet.getString("COLUMN_NAME"));
@@ -976,6 +981,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     resultSet = metaData.getColumns(database, schema, "special" + escapeChar + "%table", null);
     assertTrue(resultSet.next());
     assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
+
+    statement.execute("drop schema " + specialSchema);
   }
 
   @Test
