@@ -16,6 +16,7 @@ import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFBaseSession;
 import org.junit.Ignore;
@@ -69,106 +70,90 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   /**
    * Tests for getFunctions
    *
-   * @throws SQLException arises if any error occurs
+   * @throws Exception arises if any error occurs
    */
   @Test
-  public void testUseConnectionCtx() throws SQLException {
-    try (Connection connection = getConnection()) {
-      connection
-          .createStatement()
-          .execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
+  public void testUseConnectionCtx() throws Exception {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
       String schema = connection.getSchema();
-      DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-      String customSchema = "TEST_CTX_" + SnowflakeUtil.randomAlphaNumeric(5);
+      TestUtil.withRandomSchema(
+          statement,
+          customSchema -> {
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
+            // create tables within current schema.
+            statement.execute(
+                "create or replace table CTX_TBL_A (colA string, colB decimal, "
+                    + "colC number PRIMARY KEY);");
+            statement.execute(
+                "create or replace table CTX_TBL_B (colA string, colB decimal, "
+                    + "colC number FOREIGN KEY REFERENCES CTX_TBL_A (colC));");
+            statement.execute(
+                "create or replace table CTX_TBL_C (colA string, colB decimal, "
+                    + "colC number, colD int, colE timestamp, colF string, colG number);");
+            // now create more tables under current schema
+            statement.execute("use schema " + schema);
+            statement.execute(
+                "create or replace table CTX_TBL_D (colA string, colB decimal, "
+                    + "colC number PRIMARY KEY);");
+            statement.execute(
+                "create or replace table CTX_TBL_E (colA string, colB decimal, "
+                    + "colC number FOREIGN KEY REFERENCES CTX_TBL_D (colC));");
+            statement.execute(
+                "create or replace table CTX_TBL_F (colA string, colB decimal, "
+                    + "colC number, colD int, colE timestamp, colF string, colG number);");
 
-      // create tables within current schema.
-      connection.createStatement().execute("create or replace schema " + customSchema);
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_A (colA string, colB decimal, "
-                  + "colC number PRIMARY KEY);");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_B (colA string, colB decimal, "
-                  + "colC number FOREIGN KEY REFERENCES CTX_TBL_A (colC));");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_C (colA string, colB decimal, "
-                  + "colC number, colD int, colE timestamp, colF string, colG number);");
-      // now create more tables under current schema
-      connection.createStatement().execute("use schema " + schema);
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_D (colA string, colB decimal, "
-                  + "colC number PRIMARY KEY);");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_E (colA string, colB decimal, "
-                  + "colC number FOREIGN KEY REFERENCES CTX_TBL_D (colC));");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table CTX_TBL_F (colA string, colB decimal, "
-                  + "colC number, colD int, colE timestamp, colF string, colG number);");
+            // this should only return `customSchema` schema and tables
+            statement.execute("use schema " + customSchema);
 
-      // this should only return `customSchema` schema and tables
-      connection.createStatement().execute("use schema " + customSchema);
+            ResultSet resultSet = databaseMetaData.getSchemas(null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
 
-      ResultSet resultSet = databaseMetaData.getSchemas(null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
+            resultSet = databaseMetaData.getTables(null, null, null, null);
+            assertEquals(3, getSizeOfResultSet(resultSet));
 
-      resultSet = databaseMetaData.getTables(null, null, null, null);
-      assertEquals(3, getSizeOfResultSet(resultSet));
+            resultSet = databaseMetaData.getColumns(null, null, null, null);
+            assertEquals(13, getSizeOfResultSet(resultSet));
 
-      resultSet = databaseMetaData.getColumns(null, null, null, null);
-      assertEquals(13, getSizeOfResultSet(resultSet));
+            resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
 
-      resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
+            resultSet = databaseMetaData.getImportedKeys(null, null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
 
-      resultSet = databaseMetaData.getImportedKeys(null, null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
+            resultSet = databaseMetaData.getExportedKeys(null, null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
 
-      resultSet = databaseMetaData.getExportedKeys(null, null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
+            resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
 
-      resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
-      assertEquals(1, getSizeOfResultSet(resultSet));
+            // Now compare results to setting client metadata to false.
+            statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=false");
+            databaseMetaData = connection.getMetaData();
 
-      // Now compare results to setting client metadata to false.
-      connection
-          .createStatement()
-          .execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=false");
-      databaseMetaData = connection.getMetaData();
+            resultSet = databaseMetaData.getSchemas(null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
-      resultSet = databaseMetaData.getSchemas(null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            resultSet = databaseMetaData.getTables(null, null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
 
-      resultSet = databaseMetaData.getTables(null, null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
+            resultSet = databaseMetaData.getColumns(null, null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
 
-      resultSet = databaseMetaData.getColumns(null, null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
+            resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
-      resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            resultSet = databaseMetaData.getImportedKeys(null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
-      resultSet = databaseMetaData.getImportedKeys(null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            resultSet = databaseMetaData.getExportedKeys(null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
-      resultSet = databaseMetaData.getExportedKeys(null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-
-      resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
-      assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-
-      connection.createStatement().execute("drop schema " + customSchema);
+            resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+          });
     }
   }
 
@@ -176,38 +161,43 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * This tests the ability to have quotes inside a schema or database. This fixes a bug where
    * double-quoted function arguments like schemas, databases, etc were returning empty resultsets.
    *
-   * @throws SQLException
+   * @throws Exception
    */
   @Test
-  public void testDoubleQuotedDatabaseAndSchema() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+  public void testDoubleQuotedDatabaseAndSchema() throws Exception {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       String database = con.getCatalog();
       // To query the schema and table, we can use a normal java escaped quote. Wildcards are also
       // escaped here
-      String querySchema = "TEST\\_SCHEMA\\_\"WITH\\_QUOTES\"";
+      String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
+      String querySchema = "TEST\\_SCHEMA\\_\"WITH\\_QUOTES" + schemaRandomPart + "\"";
       String queryTable = "TESTTABLE\\_\"WITH\\_QUOTES\"";
       // Create the schema and table. With SQL commands, double quotes must be escaped with another
       // quote
-      statement.execute("create or replace schema \"TEST_SCHEMA_\"\"WITH_QUOTES\"\"\"");
-      statement.execute(
-          "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (AMOUNT number,"
-              + " \"COL_\"\"QUOTED\"\"\" string)");
-      DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getTables(database, querySchema, queryTable, null);
-      // Assert 1 row returned for the testtable_"with_quotes"
-      assertEquals(1, getSizeOfResultSet(rs));
-      rs = metaData.getColumns(database, querySchema, queryTable, null);
-      // Assert 2 rows returned for the 2 rows in testtable_"with_quotes"
-      assertEquals(2, getSizeOfResultSet(rs));
-      rs = metaData.getColumns(database, querySchema, queryTable, "COL\\_\"QUOTED\"");
-      // Assert 1 row returned for the column col_"quoted"
-      assertEquals(1, getSizeOfResultSet(rs));
-      rs = metaData.getSchemas(database, querySchema);
-      // Assert 1 row returned for the schema test_schema_"with_quotes"
-      assertEquals(1, getSizeOfResultSet(rs));
-      rs.close();
-      statement.close();
+      String schemaName = "\"TEST_SCHEMA_\"\"WITH_QUOTES" + schemaRandomPart + "\"\"\"";
+      TestUtil.withSchema(
+          statement,
+          schemaName,
+          () -> {
+            statement.execute(
+                "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (AMOUNT number,"
+                    + " \"COL_\"\"QUOTED\"\"\" string)");
+            DatabaseMetaData metaData = con.getMetaData();
+            ResultSet rs = metaData.getTables(database, querySchema, queryTable, null);
+            // Assert 1 row returned for the testtable_"with_quotes"
+            assertEquals(1, getSizeOfResultSet(rs));
+            rs = metaData.getColumns(database, querySchema, queryTable, null);
+            // Assert 2 rows returned for the 2 rows in testtable_"with_quotes"
+            assertEquals(2, getSizeOfResultSet(rs));
+            rs = metaData.getColumns(database, querySchema, queryTable, "COL\\_\"QUOTED\"");
+            // Assert 1 row returned for the column col_"quoted"
+            assertEquals(1, getSizeOfResultSet(rs));
+            rs = metaData.getSchemas(database, querySchema);
+            // Assert 1 row returned for the schema test_schema_"with_quotes"
+            assertEquals(1, getSizeOfResultSet(rs));
+            rs.close();
+          });
     }
   }
 
@@ -902,104 +892,116 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testHandlingSpecialChars() throws SQLException {
-    Connection connection = getConnection();
-    String database = connection.getCatalog();
-    String schema = connection.getSchema();
-    DatabaseMetaData metaData = connection.getMetaData();
-    Statement statement = connection.createStatement();
-    String escapeChar = metaData.getSearchStringEscape();
-    // test getColumns with escaped special characters in table name
-    statement.execute(
-        "create or replace table \"TEST\\1\\_1\" (\"C%1\" integer,\"C\\1\\\\11\" integer)");
-    statement.execute("INSERT INTO \"TEST\\1\\_1\" (\"C%1\",\"C\\1\\\\11\") VALUES (0,0)");
-    // test getColumns with escaped special characters in schema and table name
-    statement.execute("create or replace schema \"SPECIAL%_\\SCHEMA\"");
-    statement.execute(
-        "create or replace table \"SPECIAL%_\\SCHEMA\".\"TEST_1_1\" ( \"RNUM\" integer not null, "
-            + "\"C21\" integer,"
-            + "\"C11\" integer,\"C%1\" integer,\"C\\1\\\\11\" integer , primary key (\"RNUM\"))");
-    statement.execute(
-        "INSERT INTO \"TEST_1_1\" (RNUM,C21,C11,\"C%1\",\"C\\1\\\\11\") VALUES (0,0,0,0,0)");
-    String escapedTable1 = "TEST" + escapeChar + "\\1" + escapeChar + "\\" + escapeChar + "_1";
-    ResultSet resultSet = metaData.getColumns(database, schema, escapedTable1, null);
-    assertTrue(resultSet.next());
-    assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
-    assertTrue(resultSet.next());
-    assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
-    assertFalse(resultSet.next());
+  public void testHandlingSpecialChars() throws Exception {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      DatabaseMetaData metaData = connection.getMetaData();
+      String escapeChar = metaData.getSearchStringEscape();
+      // test getColumns with escaped special characters in table name
+      statement.execute(
+          "create or replace table \"TEST\\1\\_1\" (\"C%1\" integer,\"C\\1\\\\11\" integer)");
+      statement.execute("INSERT INTO \"TEST\\1\\_1\" (\"C%1\",\"C\\1\\\\11\") VALUES (0,0)");
+      // test getColumns with escaped special characters in schema and table name
+      String specialSchemaSuffix = SnowflakeUtil.randomAlphaNumeric(5);
+      String specialSchema = "\"SPECIAL%_\\SCHEMA" + specialSchemaSuffix + "\"";
+      TestUtil.withSchema(
+          statement,
+          specialSchema,
+          () -> {
+            statement.execute(
+                "create or replace table "
+                    + specialSchema
+                    + ".\"TEST_1_1\" ( \"RNUM\" integer not null, "
+                    + "\"C21\" integer,"
+                    + "\"C11\" integer,\"C%1\" integer,\"C\\1\\\\11\" integer , primary key (\"RNUM\"))");
+            statement.execute(
+                "INSERT INTO \"TEST_1_1\" (RNUM,C21,C11,\"C%1\",\"C\\1\\\\11\") VALUES (0,0,0,0,0)");
+            String escapedTable1 =
+                "TEST" + escapeChar + "\\1" + escapeChar + "\\" + escapeChar + "_1";
+            ResultSet resultSet = metaData.getColumns(database, schema, escapedTable1, null);
+            assertTrue(resultSet.next());
+            assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
+            assertTrue(resultSet.next());
+            assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
+            assertFalse(resultSet.next());
 
-    // Underscore can match to any character, so check that table comes back when underscore is not
-    // escaped.
-    String partiallyEscapedTable1 = "TEST" + escapeChar + "\\1" + escapeChar + "\\_1";
-    resultSet = metaData.getColumns(database, schema, partiallyEscapedTable1, null);
-    assertTrue(resultSet.next());
-    assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
-    assertTrue(resultSet.next());
-    assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
-    assertFalse(resultSet.next());
+            // Underscore can match to any character, so check that table comes back when underscore
+            // is not escaped.
+            String partiallyEscapedTable1 = "TEST" + escapeChar + "\\1" + escapeChar + "\\_1";
+            resultSet = metaData.getColumns(database, schema, partiallyEscapedTable1, null);
+            assertTrue(resultSet.next());
+            assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
+            assertTrue(resultSet.next());
+            assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
+            assertFalse(resultSet.next());
 
-    String escapedTable2 = "TEST" + escapeChar + "_1" + escapeChar + "_1";
-    String escapedSchema = "SPECIAL%" + escapeChar + "_" + escapeChar + "\\SCHEMA";
-    resultSet = metaData.getColumns(database, escapedSchema, escapedTable2, null);
-    assertTrue(resultSet.next());
-    assertEquals("RNUM", resultSet.getString("COLUMN_NAME"));
-    assertTrue(resultSet.next());
-    assertEquals("C21", resultSet.getString("COLUMN_NAME"));
-    assertTrue(resultSet.next());
-    assertEquals("C11", resultSet.getString("COLUMN_NAME"));
-    assertTrue(resultSet.next());
-    assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
-    assertTrue(resultSet.next());
-    assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
-    assertFalse(resultSet.next());
+            String escapedTable2 = "TEST" + escapeChar + "_1" + escapeChar + "_1";
+            String escapedSchema =
+                "SPECIAL%" + escapeChar + "_" + escapeChar + "\\SCHEMA" + specialSchemaSuffix;
+            resultSet = metaData.getColumns(database, escapedSchema, escapedTable2, null);
+            assertTrue(resultSet.next());
+            assertEquals("RNUM", resultSet.getString("COLUMN_NAME"));
+            assertTrue(resultSet.next());
+            assertEquals("C21", resultSet.getString("COLUMN_NAME"));
+            assertTrue(resultSet.next());
+            assertEquals("C11", resultSet.getString("COLUMN_NAME"));
+            assertTrue(resultSet.next());
+            assertEquals("C%1", resultSet.getString("COLUMN_NAME"));
+            assertTrue(resultSet.next());
+            assertEquals("C\\1\\\\11", resultSet.getString("COLUMN_NAME"));
+            assertFalse(resultSet.next());
+          });
 
-    // test getTables with real special characters and escaped special characters. Unescaped _
-    // should allow both
-    // tables to be returned, while escaped _ should match up to the _ in both table names.
-    statement.execute("create or replace table " + schema + ".\"TABLE_A\" (colA string)");
-    statement.execute("create or replace table " + schema + ".\"TABLE_B\" (colB number)");
-    String escapedTable = "TABLE" + escapeChar + "__";
-    resultSet = metaData.getColumns(database, schema, escapedTable, null);
-    assertTrue(resultSet.next());
-    assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
-    assertTrue(resultSet.next());
-    assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
-    assertFalse(resultSet.next());
+      // test getTables with real special characters and escaped special characters. Unescaped
+      // _
+      // should allow both
+      // tables to be returned, while escaped _ should match up to the _ in both table names.
+      statement.execute("create or replace table " + schema + ".\"TABLE_A\" (colA string)");
+      statement.execute("create or replace table " + schema + ".\"TABLE_B\" (colB number)");
+      String escapedTable = "TABLE" + escapeChar + "__";
+      ResultSet resultSet = metaData.getColumns(database, schema, escapedTable, null);
+      assertTrue(resultSet.next());
+      assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
+      assertTrue(resultSet.next());
+      assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
+      assertFalse(resultSet.next());
 
-    resultSet = metaData.getColumns(database, schema, escapedTable, "COLB");
-    assertTrue(resultSet.next());
-    assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
-    assertFalse(resultSet.next());
+      resultSet = metaData.getColumns(database, schema, escapedTable, "COLB");
+      assertTrue(resultSet.next());
+      assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
+      assertFalse(resultSet.next());
 
-    statement.execute("create or replace table " + schema + ".\"special%table\" (colA string)");
-    resultSet = metaData.getColumns(database, schema, "special" + escapeChar + "%table", null);
-    assertTrue(resultSet.next());
-    assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
+      statement.execute("create or replace table " + schema + ".\"special%table\" (colA string)");
+      resultSet = metaData.getColumns(database, schema, "special" + escapeChar + "%table", null);
+      assertTrue(resultSet.next());
+      assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
+    }
   }
 
   @Test
-  public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeys() throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement statement = con.createStatement()) {
-        String database = con.getCatalog();
-        String customSchema = "TEST_SCHEMA_" + SnowflakeUtil.randomAlphaNumeric(5);
-        String escapedSchema = customSchema.replace("_", "\\_");
-
-        statement.execute("create or replace schema " + customSchema);
-        statement.execute("use schema " + customSchema);
-        statement.execute("create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
-        statement.execute(
-            "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
-        DatabaseMetaData metaData = con.getMetaData();
-        try (ResultSet rs = metaData.getPrimaryKeys(database, escapedSchema, null)) {
-          assertEquals(1, getSizeOfResultSet(rs));
-        }
-        try (ResultSet rs = metaData.getImportedKeys(database, escapedSchema, null)) {
-          assertEquals(1, getSizeOfResultSet(rs));
-        }
-        statement.execute("DROP SCHEMA " + customSchema);
-      }
+  public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeys() throws Exception {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      String database = con.getCatalog();
+      TestUtil.withRandomSchema(
+          statement,
+          customSchema -> {
+            String escapedSchema = customSchema.replace("_", "\\_");
+            statement.execute("use schema " + customSchema);
+            statement.execute(
+                "create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
+            statement.execute(
+                "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
+            DatabaseMetaData metaData = con.getMetaData();
+            try (ResultSet rs = metaData.getPrimaryKeys(database, escapedSchema, null)) {
+              assertEquals(1, getSizeOfResultSet(rs));
+            }
+            try (ResultSet rs = metaData.getImportedKeys(database, escapedSchema, null)) {
+              assertEquals(1, getSizeOfResultSet(rs));
+            }
+          });
     }
   }
 
