@@ -948,6 +948,8 @@ public class SnowflakeResultSetSerializableV1
         (this.chunkFileCount > 0)
             ? new SnowflakeChunkDownloader(this)
             : new SnowflakeChunkDownloader.NoOpChunkDownloader();
+
+    this.possibleSession = Optional.empty(); // we don't have session object during deserializing
   }
 
   /**
