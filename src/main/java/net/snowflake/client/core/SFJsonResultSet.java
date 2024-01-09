@@ -4,6 +4,9 @@
 
 package net.snowflake.client.core;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
@@ -26,6 +29,7 @@ import org.apache.arrow.vector.Float8Vector;
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   TimeZone sessionTimeZone;
 
@@ -86,8 +90,20 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       case Types.BOOLEAN:
         return getBoolean(columnIndex);
 
+      case Types.STRUCT:
+        return getSqlInput((String) obj);
+
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
+    }
+  }
+
+  private Object getSqlInput(String input) throws SFException {
+    try {
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
+      return new JsonSqlInput(jsonNode, session);
+    } catch (JsonProcessingException e) {
+      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 

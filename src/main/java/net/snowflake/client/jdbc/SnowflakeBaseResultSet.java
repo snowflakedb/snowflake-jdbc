@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
@@ -14,7 +15,9 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -32,6 +35,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   protected Map<String, Object> parameters = new HashMap<>();
   private int fetchSize = 0;
   protected SFBaseSession session = null;
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   SnowflakeBaseResultSet(Statement statement) throws SQLException {
     this.statement = statement;
@@ -1316,18 +1320,23 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
-  // @Override
+  @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    if (SQLData.class.isAssignableFrom(type)) {
+      T instance = SQLDataCreationHelper.create(type);
+      SQLInput sqlInput = (SQLInput) getObject(columnIndex);
+      ((SQLData) instance).readSQL(sqlInput, null);
+      return instance;
+    } else {
+      return (T) getObject(columnIndex);
+    }
   }
 
-  // @Override
+  @Override
   public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(String columnLabel,Class<T> type)", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    return getObject(findColumn(columnLabel), type);
   }
 
   @SuppressWarnings("unchecked")

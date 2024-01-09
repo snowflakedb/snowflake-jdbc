@@ -450,6 +450,10 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setBoolean(parameterIndex, (Boolean) x);
     } else if (x instanceof byte[]) {
       setBytes(parameterIndex, (byte[]) x);
+//    } else if (x instanceof SQLData) {
+//      JsonSQLOutput sqlOutput = new JsonSQLOutput();
+//      ((SQLData) x).writeSql(sqlOutput);
+//      setString(parameterIndex, sqlOutput.getJsonString());
     } else {
       throw new SnowflakeSQLLoggedException(
           connection.getSFBaseSession(),
