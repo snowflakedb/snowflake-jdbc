@@ -57,6 +57,7 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
         -e JOB_NAME \
         -e BUILD_NUMBER \
         -e JDBC_TEST_CATEGORY \
+        -e ADDITIONAL_MAVEN_PROFILE \
         -e is_old_driver \
         --add-host=snowflake.reg.local:${IP_ADDR} \
         --add-host=s3testaccount.reg.local:${IP_ADDR} \
