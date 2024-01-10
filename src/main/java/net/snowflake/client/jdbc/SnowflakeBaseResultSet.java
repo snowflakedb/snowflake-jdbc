@@ -4,28 +4,27 @@
 
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SqlState;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Date;
 import java.sql.*;
+import java.sql.Date;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.common.core.SqlState;
 
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
@@ -1346,8 +1345,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
     List<SQLInput> sqlInputs = (List<SQLInput>) getObject(columnIndex);
     return sqlInputs.stream()
-            .map(i -> {
-              SQLData instance = typeFactory
+        .map(
+            i -> {
+              SQLData instance =
+                  typeFactory
                       .map(Supplier::get)
                       .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
               try {
@@ -1356,7 +1357,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                 throw new RuntimeException(e);
               }
               return (T) instance;
-            }).collect(Collectors.toList());
+            })
+        .collect(Collectors.toList());
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
@@ -1365,8 +1367,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, sqlInputs.size());
     AtomicInteger counter = new AtomicInteger(0);
     sqlInputs.stream()
-            .forEach(i -> {
-              SQLData instance = typeFactory
+        .forEach(
+            i -> {
+              SQLData instance =
+                  typeFactory
                       .map(Supplier::get)
                       .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
               try {
@@ -1381,26 +1385,27 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
     Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
-//    TODO: structuredType how to get raw json object not as SqlInput
+    //    TODO: structuredType how to get raw json object not as SqlInput
     JsonNode jsonNode = ((JsonSqlInput) getObject(columnIndex)).getInput();
-    Map<String, Object> map = OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {
-    });
-    Map<String, T> collect = map.entrySet().stream().map(e -> {
-              SQLData instance = typeFactory
-                      .map(Supplier::get)
-                      .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
-              try {
-                SQLInput sqlInput = new JsonSqlInput(jsonNode.get(e.getKey()), session);
-                instance.readSQL(sqlInput, null);
-              } catch (SQLException ex) {
-                throw new RuntimeException(ex);
-              }
-              return new AbstractMap.SimpleEntry<>(e.getKey(), (T) instance);
-            })
-            .collect(Collectors.toMap(
-                    Map.Entry::getKey,
-                    Map.Entry::getValue
-            ));
+    Map<String, Object> map =
+        OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+    Map<String, T> collect =
+        map.entrySet().stream()
+            .map(
+                e -> {
+                  SQLData instance =
+                      typeFactory
+                          .map(Supplier::get)
+                          .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
+                  try {
+                    SQLInput sqlInput = new JsonSqlInput(jsonNode.get(e.getKey()), session);
+                    instance.readSQL(sqlInput, null);
+                  } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                  }
+                  return new AbstractMap.SimpleEntry<>(e.getKey(), (T) instance);
+                })
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     return collect;
   }
 

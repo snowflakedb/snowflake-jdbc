@@ -21,7 +21,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -146,46 +145,48 @@ public class SnowflakeUtil {
   public static SnowflakeColumnMetadata extractColumnMetadata(
       JsonNode colNode, boolean jdbcTreatDecimalAsInt, SFBaseSession session)
       throws SnowflakeSQLException {
-      String colName = colNode.path("name").asText();
-      String internalColTypeName = colNode.path("type").asText();
-      boolean nullable = colNode.path("nullable").asBoolean();
-      int precision = colNode.path("precision").asInt();
-      int scale = colNode.path("scale").asInt();
-      int length = colNode.path("length").asInt();
-      boolean fixed = colNode.path("fixed").asBoolean();
-      JsonNode udtOutputType = colNode.path("outputType");
+    String colName = colNode.path("name").asText();
+    String internalColTypeName = colNode.path("type").asText();
+    boolean nullable = colNode.path("nullable").asBoolean();
+    int precision = colNode.path("precision").asInt();
+    int scale = colNode.path("scale").asInt();
+    int length = colNode.path("length").asInt();
+    boolean fixed = colNode.path("fixed").asBoolean();
+    JsonNode udtOutputType = colNode.path("outputType");
 
-      ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, udtOutputType, session);
+    ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, udtOutputType, session);
 
-      String colSrcDatabase = colNode.path("database").asText();
-      String colSrcSchema = colNode.path("schema").asText();
-      String colSrcTable = colNode.path("table").asText();
-      MetadataField[] fieldsMetadata = new MetadataField[0];
-      if (!colNode.path("fields").isEmpty()) {
-          ArrayNode arrayNode = (ArrayNode) colNode.path("fields");
-          fieldsMetadata = createFieldsMetadata(arrayNode);
-      }
+    String colSrcDatabase = colNode.path("database").asText();
+    String colSrcSchema = colNode.path("schema").asText();
+    String colSrcTable = colNode.path("table").asText();
+    MetadataField[] fieldsMetadata = new MetadataField[0];
+    if (!colNode.path("fields").isEmpty()) {
+      ArrayNode arrayNode = (ArrayNode) colNode.path("fields");
+      fieldsMetadata = createFieldsMetadata(arrayNode);
+    }
 
-      boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
+    boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
 
-      return new SnowflakeColumnMetadata(
-              colName,
-              columnTypeInfo.getColumnType(),
-              nullable,
-              length,
-              precision,
-              scale,
-              columnTypeInfo.getExtColTypeName(),
-              fixed,
-              columnTypeInfo.getSnowflakeType(),
-              fieldsMetadata,
-              colSrcDatabase,
-              colSrcSchema,
-              colSrcTable,
-              isAutoIncrement);
+    return new SnowflakeColumnMetadata(
+        colName,
+        columnTypeInfo.getColumnType(),
+        nullable,
+        length,
+        precision,
+        scale,
+        columnTypeInfo.getExtColTypeName(),
+        fixed,
+        columnTypeInfo.getSnowflakeType(),
+        fieldsMetadata,
+        colSrcDatabase,
+        colSrcSchema,
+        colSrcTable,
+        isAutoIncrement);
   }
 
-static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtOutputType, SFBaseSession session) throws SnowflakeSQLLoggedException {
+  static ColumnTypeInfo getSnowflakeType(
+      String internalColTypeName, JsonNode udtOutputType, SFBaseSession session)
+      throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
     ColumnTypeInfo columnTypeInfo = null;
 
@@ -232,7 +233,7 @@ static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtO
         columnTypeInfo = new ColumnTypeInfo(Types.BOOLEAN, "BOOLEAN", baseType);
         break;
 
-      // TODO structuredType fill for Array and Map
+        // TODO structuredType fill for Array and Map
       case ARRAY:
         columnTypeInfo = new ColumnTypeInfo(Types.ARRAY, "ARRAY", baseType);
         break;
@@ -251,7 +252,7 @@ static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtO
 
       case GEOGRAPHY:
       case GEOMETRY:
-         int colType = Types.VARCHAR;
+        int colType = Types.VARCHAR;
         String extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
 
         if (!udtOutputType.isMissingNode()) {
@@ -270,34 +271,46 @@ static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtO
 
       default:
         throw new SnowflakeSQLLoggedException(
-                new SFSession(), //TODO
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "Unknown column type: " + internalColTypeName);
+            new SFSession(), // TODO
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            SqlState.INTERNAL_ERROR,
+            "Unknown column type: " + internalColTypeName);
     }
     return columnTypeInfo;
   }
-  static MetadataField[] createFieldsMetadata(ArrayNode fieldsJson) throws SnowflakeSQLLoggedException {
-//    TODO: verify that jsonFileds is not empty array
+
+  static MetadataField[] createFieldsMetadata(ArrayNode fieldsJson)
+      throws SnowflakeSQLLoggedException {
+    //    TODO: verify that jsonFileds is not empty array
     MetadataField[] fields = new MetadataField[fieldsJson.size()];
     int fieldCounter = 0;
-    for (JsonNode node :  fieldsJson) {
-        String colName = node.path("name").asText();
-        int scale = node.path("scale").asInt();
-        int precision = node.path("precision").asInt();
-        String internalColTypeName = node.path("type").asText();
-        boolean nullable = node.path("nullable").asBoolean();
-        int length = node.path("length").asInt();
-        boolean fixed = node.path("fixed").asBoolean();
-        MetadataField[] internalFields = new MetadataField[0];
-        if (!node.path("fields").isEmpty()) {
-            ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
-            internalFields = createFieldsMetadata(internalFieldsJson);
-        }
-        JsonNode outputType = node.path("outputType");
-        ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, outputType, null);
-        fields[fieldCounter++] = new MetadataField(colName, columnTypeInfo.getExtColTypeName(), columnTypeInfo.getColumnType(),
-                nullable, length, precision, scale, fixed, columnTypeInfo.getSnowflakeType(), internalFields);
+    for (JsonNode node : fieldsJson) {
+      String colName = node.path("name").asText();
+      int scale = node.path("scale").asInt();
+      int precision = node.path("precision").asInt();
+      String internalColTypeName = node.path("type").asText();
+      boolean nullable = node.path("nullable").asBoolean();
+      int length = node.path("length").asInt();
+      boolean fixed = node.path("fixed").asBoolean();
+      MetadataField[] internalFields = new MetadataField[0];
+      if (!node.path("fields").isEmpty()) {
+        ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
+        internalFields = createFieldsMetadata(internalFieldsJson);
+      }
+      JsonNode outputType = node.path("outputType");
+      ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, outputType, null);
+      fields[fieldCounter++] =
+          new MetadataField(
+              colName,
+              columnTypeInfo.getExtColTypeName(),
+              columnTypeInfo.getColumnType(),
+              nullable,
+              length,
+              precision,
+              scale,
+              fixed,
+              columnTypeInfo.getSnowflakeType(),
+              internalFields);
     }
     return fields;
   }
@@ -414,7 +427,7 @@ static ColumnTypeInfo getSnowflakeType(String internalColTypeName, JsonNode udtO
               typeName, // type name
               true,
               stype, // fixed
-              new MetadataField[]{}, //TODO Structured type fields
+              new MetadataField[] {}, // TODO Structured type fields
               "", // database
               "", // schema
               "",

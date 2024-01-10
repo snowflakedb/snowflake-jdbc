@@ -4,112 +4,122 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MetadataField {
 
-    public MetadataField() {
-    }
+  public MetadataField() {}
 
-    private String name;
-    private String typeName;
-    private int type;
-    private boolean nullable;
-    @JsonProperty("byteLength")
-    private int length;
-    private int precision;
-    private int scale;
-    private boolean fixed;
-    private SnowflakeType base;
-    private MetadataField[] fields;
+  private String name;
+  private String typeName;
+  private int type;
+  private boolean nullable;
 
-    public MetadataField(String name, String typeName, int type, boolean nullable, int length, int precision,
-                         int scale, boolean fixed, SnowflakeType base, MetadataField[] fields) {
-        this.name = name;
-        this.typeName = typeName;
-        this.type = type;
-        this.nullable = nullable;
-        this.length = length;
-        this.precision = precision;
-        this.scale = scale;
-        this.fixed = fixed;
-        this.base = base;
-        this.fields = fields;
-    }
+  @JsonProperty("byteLength")
+  private int length;
 
-    public String getName() {
-        return name;
-    }
+  private int precision;
+  private int scale;
+  private boolean fixed;
+  private SnowflakeType base;
+  private MetadataField[] fields;
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public MetadataField(
+      String name,
+      String typeName,
+      int type,
+      boolean nullable,
+      int length,
+      int precision,
+      int scale,
+      boolean fixed,
+      SnowflakeType base,
+      MetadataField[] fields) {
+    this.name = name;
+    this.typeName = typeName;
+    this.type = type;
+    this.nullable = nullable;
+    this.length = length;
+    this.precision = precision;
+    this.scale = scale;
+    this.fixed = fixed;
+    this.base = base;
+    this.fields = fields;
+  }
 
-    public String getTypeName() {
-        return typeName;
-    }
+  public String getName() {
+    return name;
+  }
 
-    public void setTypeName(String typeName) {
-        this.typeName = typeName;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    public int getType() {
-        return type;
-    }
+  public String getTypeName() {
+    return typeName;
+  }
 
-    public void setType(int type) {
-        this.type = type;
-    }
+  public void setTypeName(String typeName) {
+    this.typeName = typeName;
+  }
 
-    public boolean isNullable() {
-        return nullable;
-    }
+  public int getType() {
+    return type;
+  }
 
-    public void setNullable(boolean nullable) {
-        this.nullable = nullable;
-    }
+  public void setType(int type) {
+    this.type = type;
+  }
 
-    public int getLength() {
-        return length;
-    }
+  public boolean isNullable() {
+    return nullable;
+  }
 
-    public void setLength(int length) {
-        this.length = length;
-    }
+  public void setNullable(boolean nullable) {
+    this.nullable = nullable;
+  }
 
-    public int getPrecision() {
-        return precision;
-    }
+  public int getLength() {
+    return length;
+  }
 
-    public void setPrecision(int precision) {
-        this.precision = precision;
-    }
+  public void setLength(int length) {
+    this.length = length;
+  }
 
-    public int getScale() {
-        return scale;
-    }
+  public int getPrecision() {
+    return precision;
+  }
 
-    public void setScale(int scale) {
-        this.scale = scale;
-    }
+  public void setPrecision(int precision) {
+    this.precision = precision;
+  }
 
-    public boolean isFixed() {
-        return fixed;
-    }
+  public int getScale() {
+    return scale;
+  }
 
-    public void setFixed(boolean fixed) {
-        this.fixed = fixed;
-    }
+  public void setScale(int scale) {
+    this.scale = scale;
+  }
 
-    public SnowflakeType getBase() {
-        return base;
-    }
+  public boolean isFixed() {
+    return fixed;
+  }
 
-    public void setBase(SnowflakeType base) {
-        this.base = base;
-    }
+  public void setFixed(boolean fixed) {
+    this.fixed = fixed;
+  }
 
-    public MetadataField[] getFields() {
-        return fields;
-    }
+  public SnowflakeType getBase() {
+    return base;
+  }
 
-    public void setFields(MetadataField[] fields) {
-        this.fields = fields;
-    }
+  public void setBase(SnowflakeType base) {
+    this.base = base;
+  }
+
+  public MetadataField[] getFields() {
+    return fields;
+  }
+
+  public void setFields(MetadataField[] fields) {
+    this.fields = fields;
+  }
 }

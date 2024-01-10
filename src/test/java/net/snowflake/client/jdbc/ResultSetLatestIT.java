@@ -957,6 +957,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     testMapJson(false);
     testMapMoreStructs(false);
   }
+
   @Test
   public void testMapArrayToListWithReflection() throws SQLException {
     testMapArrayAsList(true);
@@ -983,7 +984,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
     Connection connection = init();
     Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select {'x':'a', 'y':'abc'}::OBJECT(x VARCHAR, y varchar)");
+    ResultSet resultSet =
+        statement.executeQuery("select {'x':'a', 'y':'abc'}::OBJECT(x VARCHAR, y varchar)");
     resultSet.next();
     TestClass object = resultSet.getObject(1, TestClass.class);
     assertEquals("a", object.x);
@@ -999,14 +1001,18 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
     Connection connection = init();
     Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select [{'x':'aaa', 'y':'abc'},{'x': 'bbb', 'y':'abc'}]::ARRAY(OBJECT(x varchar, y varchar))");
+    ResultSet resultSet =
+        statement.executeQuery(
+            "select [{'x':'aaa', 'y':'abc'},{'x': 'bbb', 'y':'abc'}]::ARRAY(OBJECT(x varchar, y varchar))");
     resultSet.next();
-    List<TestClass> objects = resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1,  TestClass.class);
+    List<TestClass> objects =
+        resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1, TestClass.class);
     assertEquals(objects.get(0).x, "aaa");
     assertEquals(objects.get(1).x, "bbb");
     statement.close();
     connection.close();
   }
+
   private void testMapArray(boolean registerFactory) throws SQLException {
     if (registerFactory) {
       SnowflakeObjectTypeFactories.register(TestClass.class, TestClass::new);
@@ -1015,9 +1021,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
     Connection connection = init();
     Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select [{'x':'aaa', 'y':'abc'},{'x': 'bbb', 'y':'abc'}]::ARRAY(OBJECT(x varchar, y varchar))");
+    ResultSet resultSet =
+        statement.executeQuery(
+            "select [{'x':'aaa', 'y':'abc'},{'x': 'bbb', 'y':'abc'}]::ARRAY(OBJECT(x varchar, y varchar))");
     resultSet.next();
-    TestClass[] objects = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1,  TestClass.class);
+    TestClass[] objects =
+        resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, TestClass.class);
     assertEquals(objects[0].x, "aaa");
     assertEquals(objects[1].x, "bbb");
     statement.close();
@@ -1053,9 +1062,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
     Connection connection = init();
     Statement statement = connection.createStatement();
-    ResultSet resultSet = statement.executeQuery("select {'x':{'x':'one', 'y':'abc'},'y':{'x':'two', 'y':'abc'},'z':{'x':'three', 'y':'abc'}}::MAP(VARCHAR, OBJECT(x VARCHAR, y VARCHAR));");
+    ResultSet resultSet =
+        statement.executeQuery(
+            "select {'x':{'x':'one', 'y':'abc'},'y':{'x':'two', 'y':'abc'},'z':{'x':'three', 'y':'abc'}}::MAP(VARCHAR, OBJECT(x VARCHAR, y VARCHAR));");
     resultSet.next();
-    Map<String, TestClass> map = resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1,  TestClass.class);
+    Map<String, TestClass> map =
+        resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, TestClass.class);
     assertEquals(map.get("x").x, "one");
     assertEquals(map.get("y").x, "two");
     assertEquals(map.get("z").x, "three");
@@ -1069,8 +1081,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
     Connection connection = init();
     Statement statement = connection.createStatement();
     ResultSet resultSet =
-            statement.executeQuery(
-                    "select {'x':'a', 'y':'abc'}::OBJECT(x VARCHAR, y VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
+        statement.executeQuery(
+            "select {'x':'a', 'y':'abc'}::OBJECT(x VARCHAR, y VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))");
     int i = 0;
     while (resultSet.next()) {
       TestClass object = resultSet.getObject(1, TestClass.class);
@@ -1079,5 +1091,4 @@ public class ResultSetLatestIT extends ResultSet0IT {
     statement.close();
     connection.close();
   }
-
 }

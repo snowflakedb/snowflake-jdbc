@@ -9,22 +9,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.TimeZone;
-
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
-import java.sql.Array;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.TimeZone;
+import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
@@ -93,27 +86,27 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       case Types.STRUCT:
         return getSqlInput((String) obj);
 
-//      case Types.ARRAY:
-//        return getArrayOfSqlInput((String) obj);
+        //      case Types.ARRAY:
+        //        return getArrayOfSqlInput((String) obj);
 
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
     }
   }
 
-//  private Array getArrayOfSqlInput(String input) throws SFException {
-//    try {
-//      List<JsonSqlInput> result = new ArrayList<>();
-//      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
-//      Iterator nodeElements = arrayNode.elements();
-//      while (nodeElements.hasNext()) {
-//        result.add(new JsonSqlInput((JsonNode) nodeElements.next()));
-//      }
-//      return new SQLInputArray(result);
-//    } catch (JsonProcessingException e) {
-//      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
-//    }
-//  }
+  //  private Array getArrayOfSqlInput(String input) throws SFException {
+  //    try {
+  //      List<JsonSqlInput> result = new ArrayList<>();
+  //      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
+  //      Iterator nodeElements = arrayNode.elements();
+  //      while (nodeElements.hasNext()) {
+  //        result.add(new JsonSqlInput((JsonNode) nodeElements.next()));
+  //      }
+  //      return new SQLInputArray(result);
+  //    } catch (JsonProcessingException e) {
+  //      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+  //    }
+  //  }
 
   private Object getSqlInput(String input) throws SFException {
     try {
