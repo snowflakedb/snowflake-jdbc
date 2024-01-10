@@ -948,6 +948,8 @@ public class SnowflakeResultSetSerializableV1
         (this.chunkFileCount > 0)
             ? new SnowflakeChunkDownloader(this)
             : new SnowflakeChunkDownloader.NoOpChunkDownloader();
+
+    this.possibleSession = Optional.empty(); // we don't have session object during deserializing
   }
 
   /**
@@ -1087,7 +1089,9 @@ public class SnowflakeResultSetSerializableV1
         }
       case JSON:
         {
-          sfBaseResultSet = new SFResultSet(this, telemetryClient, sortResult);
+          sfBaseResultSet =
+              new SFResultSet(
+                  this, getSession().orElse(new SFSession()), telemetryClient, sortResult);
           break;
         }
       default:
