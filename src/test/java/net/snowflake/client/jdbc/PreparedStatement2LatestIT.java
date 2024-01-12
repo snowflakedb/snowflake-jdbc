@@ -354,4 +354,24 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
       assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
     }
   }
+
+  @Test
+  public void testToString() throws SQLException {
+    try (Connection connection = init()) {
+      PreparedStatement prepStatement =
+          connection.prepareStatement("select current_version() --testing toString()");
+
+      // Query ID is going to be null since we didn't execute the statement yet
+      assertEquals(
+          "select current_version() --testing toString() - Query ID: null",
+          prepStatement.toString());
+
+      prepStatement.executeQuery();
+      assertTrue(
+          prepStatement
+              .toString()
+              .matches(
+                  "select current_version\\(\\) --testing toString\\(\\) - Query ID: (\\d|\\w)+(-(\\d|\\w)+)+$"));
+    }
+  }
 }
