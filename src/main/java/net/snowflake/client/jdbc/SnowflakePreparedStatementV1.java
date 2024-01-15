@@ -966,4 +966,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       alreadyDescribed = true;
     }
   }
+
+  public String toString() {
+    return (this.sql != null) ? this.sql + " - Query ID: " + this.getQueryID() : super.toString();
+  }
 }
