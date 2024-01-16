@@ -8,9 +8,8 @@ import java.io.PushbackInputStream;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.core.ExecTimeTelemetryData;
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
@@ -19,7 +18,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
 
 public class DefaultResultStreamProvider implements ResultStreamProvider {
   // SSE-C algorithm header
@@ -118,7 +116,9 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     int authTimeout = context.getAuthTimeout();
     int socketTimeout = context.getSocketTimeout();
 
-    HttpResponse response = HttpUtil.getHttpResponseForS3Request(oscpAndProxyKey, httpRequest, networkTimeout, authTimeout, socketTimeout);
+    HttpResponse response =
+        HttpUtil.getHttpResponseForS3Request(
+            oscpAndProxyKey, httpRequest, networkTimeout, authTimeout, socketTimeout);
 
     SnowflakeResultSetSerializableV1.logger.debug(
         "Thread {} Call #chunk{} returned for URL: {}, response={}",
