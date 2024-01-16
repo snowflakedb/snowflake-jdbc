@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
@@ -112,28 +113,12 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
         context.getChunkIndex(),
         context.getResultChunk().getScrubbedUrl());
 
-    // TODO move this s3 request to HttpUtil class. In theory, upper layer
-    // TODO does not need to know about http client
-    CloseableHttpClient httpClient =
-        HttpUtil.getHttpClient(context.getChunkDownloader().getHttpClientSettingsKey());
+    HttpClientSettingsKey oscpAndProxyKey = context.getChunkDownloader().getHttpClientSettingsKey();
+    int networkTimeout = context.getNetworkTimeoutInMilli();
+    int authTimeout = context.getAuthTimeout();
+    int socketTimeout = context.getSocketTimeout();
 
-    // fetch the result chunk
-    HttpResponse response =
-        RestRequest.execute(
-            httpClient,
-            httpRequest,
-            context.getNetworkTimeoutInMilli() / 1000, // retry timeout
-            context.getAuthTimeout(),
-            context.getSocketTimeout(),
-            0,
-            0, // no socket timeout injection
-            null, // no canceling
-            false, // no cookie
-            false, // no retry parameters in url
-            false, // no request_guid
-            true, // retry on HTTP403 for AWS S3
-            true, // no retry on http request
-            new ExecTimeTelemetryData());
+    HttpResponse response = HttpUtil.getHttpResponseForS3Request(oscpAndProxyKey, httpRequest, networkTimeout, authTimeout, socketTimeout);
 
     SnowflakeResultSetSerializableV1.logger.debug(
         "Thread {} Call #chunk{} returned for URL: {}, response={}",
