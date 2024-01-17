@@ -90,7 +90,7 @@ public class TelemetryService {
     numOfRetryToTriggerTelemetry = num;
   }
 
-  private TELEMETRY_SERVER_DEPLOYMENT serverDeployment;
+  private TELEMETRY_SERVER_DEPLOYMENT serverDeployment = TELEMETRY_SERVER_DEPLOYMENT.PROD;
 
   /**
    * control enable/disable the whole service: disabled service will skip added events and uploading
