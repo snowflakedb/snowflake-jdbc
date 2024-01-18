@@ -39,7 +39,7 @@ jobs:
           if git diff --quiet -- "${{ secrets.VERSION_FILE_PATH }}"; then
             echo "No changes in jdbc commit. Skipping commit."
           else
-            BRANCH_NAME=gh-action-$(date +'%Y%m%d%H%M%S') 
+            BRANCH_NAME=gh-action-update-jdbc-latest-commit-$(date +'%Y%m%d%H%M%S') 
             git checkout -b $BRANCH_NAME
             git config --local user.email "${{ secrets.SNOWFLAKE_EMAIL }}"
             git config --local user.name "${{ secrets.SNOWFLAKE_GITHUB_USER }}"
