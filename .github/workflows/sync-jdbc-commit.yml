@@ -1,0 +1,53 @@
+name: Sync snowflake-jdbc commit
+
+# Change this to 24 hour cadence after testing.
+on:
+  workflow_dispatch:
+
+jobs:
+  sync-jdbc-commit:
+    runs-on: ubuntu-latest
+   
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Generate commit file
+        run: |
+          COMMIT_HASH=$(git rev-parse HEAD)
+          echo "Current Commit Hash: $COMMIT_HASH"
+
+          # Create a new file with the commit hash
+          echo "$COMMIT_HASH" > jdbc_version.txt
+
+
+      - name: Checkout snowflakedb
+        uses: actions/checkout@v2
+        with:
+          repository: snowflakedb/snowflake
+          ref: main
+          token: ${{ secrets.SNOWFLAKE_GITHUB_TOKEN }}
+          path: snowflakedb
+      
+      - name: Copy jdbc_version.txt to snowflake repo
+        run: |
+          cp jdbc_version.txt snowflakedb/${{ secrets.VERSION_FILE_PATH }}
+
+      - name: Commit and Push Changes
+        run: |
+          cd snowflakedb
+          if git diff --quiet -- "${{ secrets.VERSION_FILE_PATH }}"; then
+            echo "No changes in jdbc commit. Skipping commit."
+          else
+            BRANCH_NAME=gh-action-$(date +'%Y%m%d%H%M%S') 
+            git checkout -b $BRANCH_NAME
+            git config --local user.email "${{ secrets.SNOWFLAKE_EMAIL }}"
+            git config --local user.name "${{ secrets.SNOWFLAKE_GITHUB_USER }}"
+            git add . -f
+            git commit -m "Add current commit hash"
+            git push origin $BRANCH_NAME
+            gh pr create -B main -H $BRANCH_NAME --title 'Update jdbc latest commit' --body 'Created by github action. Please don't update this PR manually.'
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.SNOWFLAKE_GITHUB_TOKEN }}
+
