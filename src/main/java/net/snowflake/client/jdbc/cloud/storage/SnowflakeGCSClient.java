@@ -575,7 +575,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           destFileName,
           meta.getContentEncoding(),
           meta.getUserMetadata(),
-          uploadStreamInfo.left);
+          uploadStreamInfo.left,
+          queryId);
       logger.debug("Upload successfully with downscoped token");
     } else {
       logger.debug("Starting upload with presigned url");
@@ -682,7 +683,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             destFileName,
             meta.getContentEncoding(),
             meta.getUserMetadata(),
-            uploadStreamInfo.left);
+            uploadStreamInfo.left,
+            queryId);
 
         logger.debug("Upload successful", false);
 
@@ -742,7 +744,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       String destFileName,
       String contentEncoding,
       Map<String, String> metadata,
-      InputStream content) {
+      InputStream content,
+      String queryId)
+      throws SnowflakeSQLException {
     logger.debug("Uploading file {} to bucket {}", destFileName, remoteStorageLocation);
     BlobId blobId = BlobId.of(remoteStorageLocation, destFileName);
     BlobInfo blobInfo =
@@ -751,7 +755,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             .setMetadata(metadata)
             .build();
 
-    gcsClient.create(blobInfo, content);
+    try {
+      gcsClient.create(blobInfo, content);
+    } catch (Exception e) {
+      handleStorageException(e, 0, "upload", session, queryId);
+      throw e;
+    }
   }
 
   /**
