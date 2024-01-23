@@ -35,6 +35,8 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   @Before
   public void setUp() {
     TelemetryService service = TelemetryService.getInstance();
+    Map<String, String> connectionParams = getConnectionParameters();
+    connectionParams.put("TELEMETRYDEPLOYMENT", "K8TEST");
     service.updateContextForIT(getConnectionParameters());
     defaultState = service.isEnabled();
     service.enable();
@@ -53,7 +55,6 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   @SuppressWarnings("divzero")
-  @Ignore
   @Test
   public void testCreateException() {
     TelemetryService service = TelemetryService.getInstance();

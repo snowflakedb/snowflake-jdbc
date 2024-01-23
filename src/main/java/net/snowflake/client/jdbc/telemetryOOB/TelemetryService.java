@@ -56,7 +56,8 @@ public class TelemetryService {
               TELEMETRY_SERVER_DEPLOYMENT.REG.name,
               TELEMETRY_SERVER_DEPLOYMENT.QA1.name,
               TELEMETRY_SERVER_DEPLOYMENT.PREPROD3.name,
-              TELEMETRY_SERVER_DEPLOYMENT.PROD.name));
+              TELEMETRY_SERVER_DEPLOYMENT.PROD.name,
+              TELEMETRY_SERVER_DEPLOYMENT.K8TEST.name));
 
   // connection string for current connection
   private String connStr = "";
@@ -175,6 +176,8 @@ public class TelemetryService {
 
   private TELEMETRY_SERVER_DEPLOYMENT manuallyConfigureDeployment(String dep) {
     switch (dep) {
+      case "K8TEST":
+        return TELEMETRY_SERVER_DEPLOYMENT.K8TEST;
       case "REG":
         return TELEMETRY_SERVER_DEPLOYMENT.REG;
       case "DEV":
@@ -253,7 +256,11 @@ public class TelemetryService {
         "kyTKLWpEZSaJnrzTZ63I96QXZHKsgfqbaGmAaIWf"), // pragma: allowlist secret
     PROD(
         "https://client-telemetry.snowflakecomputing.com/enqueue",
-        "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX"); // pragma: allowlist secret
+        "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX"), // pragma: allowlist secret
+
+    K8TEST(
+        "https://client-telemetry.ordevmisc1.us-west-2.aws-dev.app.snowflake.com/enqueue",
+            "");
 
     private final String url;
 
@@ -272,7 +279,8 @@ public class TelemetryService {
     REG("reg", TELEMETRY_API.SFCDEV),
     QA1("qa1", TELEMETRY_API.SFCDEV),
     PREPROD3("preprod3", TELEMETRY_API.SFCDEV),
-    PROD("prod", TELEMETRY_API.PROD);
+    PROD("prod", TELEMETRY_API.PROD),
+    K8TEST("k8test", TELEMETRY_API.K8TEST);
 
     private String name;
     private String url;
