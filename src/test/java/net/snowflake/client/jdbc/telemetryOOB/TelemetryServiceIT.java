@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.util.*;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
