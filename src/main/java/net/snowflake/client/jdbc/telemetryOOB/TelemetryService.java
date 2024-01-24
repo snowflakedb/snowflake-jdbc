@@ -43,7 +43,8 @@ public class TelemetryService {
 
   // Global parameters:
   private static final String TELEMETRY_SERVER_URL_PATTERN =
-      "https://(sfcdev\\.|sfctest\\.|)?client-telemetry\\.[a-z0-9\\.\\-]*snowflake[computing]?\\" + ".com/enqueue";
+      "https://(sfcdev\\.|sfctest\\.|)?client-telemetry\\.[a-z0-9\\.\\-]*snowflake[computing]?\\"
+          + ".com/enqueue";
 
   /**
    * control which deployments are enabled: the service skips all events for the disabled
@@ -258,9 +259,7 @@ public class TelemetryService {
         "https://client-telemetry.snowflakecomputing.com/enqueue",
         "wLpEKqnLOW9tGNwTjab5N611YQApOb3t9xOnE1rX"), // pragma: allowlist secret
 
-    K8TEST(
-        "https://client-telemetry.ordevmisc1.us-west-2.aws-dev.app.snowflake.com/enqueue",
-            "");
+    K8TEST("https://client-telemetry.ordevmisc1.us-west-2.aws-dev.app.snowflake.com/enqueue", "");
 
     private final String url;
 
