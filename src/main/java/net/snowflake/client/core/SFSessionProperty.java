@@ -76,7 +76,9 @@ public enum SFSessionProperty {
 
   PUT_GET_MAX_RETRIES("putGetMaxRetries", false, Integer.class),
 
-  RETRY_TIMEOUT("retryTimeout", false, Integer.class);
+  RETRY_TIMEOUT("retryTimeout", false, Integer.class),
+
+  MAX_JSON_STRING_LENGTH("maxJsonStringLength", false, Integer.class);
 
   // property key in string
   private String propertyKey;

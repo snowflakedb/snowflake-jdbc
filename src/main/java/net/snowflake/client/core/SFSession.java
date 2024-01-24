@@ -7,6 +7,7 @@ package net.snowflake.client.core;
 import static net.snowflake.client.core.QueryStatus.*;
 import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -39,7 +40,6 @@ public class SFSession extends SFBaseSession {
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
   public static final String SF_HEADER_TOKEN_TAG = "Token";
   static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
-  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
   private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
   // temporarily have this variable to avoid hardcode.
@@ -189,7 +189,7 @@ public class SFSession extends SFBaseSession {
         response =
             HttpUtil.executeGeneralRequest(
                 get, loginTimeout, authTimeout, httpClientSocketTimeout, 0, getHttpClientKey());
-        jsonNode = OBJECT_MAPPER.readTree(response);
+        jsonNode = mapper.readTree(response);
       } catch (Exception e) {
         throw new SnowflakeSQLLoggedException(
             this, e.getMessage(), "No response or invalid response from GET request. Error: {}");
@@ -435,6 +435,21 @@ public class SFSession extends SFBaseSession {
             if (timeoutValue >= 300 || timeoutValue == 0) {
               retryTimeout = timeoutValue;
             }
+          }
+          break;
+
+        case MAX_JSON_STRING_LENGTH:
+          if (propertyValue != null) {
+            int maxJsonStringLength = (Integer) propertyValue;
+
+            // Update the max string length used in ObjectMapperFactory
+            ObjectMapperFactory.setMaxJsonStringLength(maxJsonStringLength);
+
+            // Update the max string length of the instantiated mapper in this class
+            mapper
+                .getFactory()
+                .setStreamReadConstraints(
+                    StreamReadConstraints.builder().maxStringLength(maxJsonStringLength).build());
           }
           break;
 

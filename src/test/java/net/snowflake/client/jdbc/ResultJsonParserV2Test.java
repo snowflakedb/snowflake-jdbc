@@ -5,11 +5,17 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import org.apache.commons.text.StringEscapeUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 /** This is the unit tests for ResultJsonParserV2 */
@@ -222,5 +228,42 @@ public class ResultJsonParserV2Test {
       sb.append(" "); // Space every two characters to make it easier to read visually
     }
     return sb.toString().toUpperCase();
+  }
+
+  @Test
+  public void testObjectMapperWithLargeJsonString() throws Exception {
+    try {
+      // test with base64 encoded 16M string
+      ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+      JsonNode jsonNode = mapper.readTree(generateBase64EncodedJsonString(16 * 1024 * 1024));
+      Assert.assertNotNull(jsonNode);
+      jsonNode = null;
+
+      // test with base64 encoded 32M string
+      ObjectMapperFactory.setMaxJsonStringLength(45000000);
+      mapper = ObjectMapperFactory.getObjectMapper();
+      jsonNode = mapper.readTree(generateBase64EncodedJsonString(32 * 1024 * 1024));
+      Assert.assertNotNull(jsonNode);
+    } catch (Exception ex) {
+      fail("failed to parse the large JSON string. err: " + ex.getMessage());
+    }
+  }
+
+  private String generateBase64EncodedJsonString(int numChar) {
+    StringBuilder sb = new StringBuilder();
+    StringBuilder a = new StringBuilder();
+
+    // create string with the specified size
+    for (int i = 0; i < numChar; i++) {
+      a.append("a");
+    }
+
+    // encode the string and put it into a JSON formatted string
+    sb.append("[\"").append(encodeStringToBase64(a.toString())).append("\"]");
+    return sb.toString();
+  }
+
+  private String encodeStringToBase64(String stringToBeEncoded) {
+    return Base64.getEncoder().encodeToString(stringToBeEncoded.getBytes(StandardCharsets.UTF_8));
   }
 }
