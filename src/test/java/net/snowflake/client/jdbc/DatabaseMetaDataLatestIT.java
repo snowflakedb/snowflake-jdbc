@@ -171,11 +171,20 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       // To query the schema and table, we can use a normal java escaped quote. Wildcards are also
       // escaped here
       String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
-      String querySchema = "TEST\\_SCHEMA\\_\"WITH\\_QUOTES" + schemaRandomPart + "\"";
+      String querySchema =
+          TestUtil.ESCAPED_GENERATED_SCHEMA_PREFIX
+              + "TEST\\_SCHEMA\\_\"WITH\\_QUOTES"
+              + schemaRandomPart
+              + "\"";
       String queryTable = "TESTTABLE\\_\"WITH\\_QUOTES\"";
       // Create the schema and table. With SQL commands, double quotes must be escaped with another
       // quote
-      String schemaName = "\"TEST_SCHEMA_\"\"WITH_QUOTES" + schemaRandomPart + "\"\"\"";
+      String schemaName =
+          "\""
+              + TestUtil.GENERATED_SCHEMA_PREFIX
+              + "TEST_SCHEMA_\"\"WITH_QUOTES"
+              + schemaRandomPart
+              + "\"\"\"";
       TestUtil.withSchema(
           statement,
           schemaName,
@@ -367,24 +376,26 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testGetProcedureColumnsWildcards() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       String database = con.getCatalog();
-      String schema1 = "SCH1";
-      String schema2 = "SCH2";
+      String schemaPrefix =
+          TestUtil.GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
+      String schema1 = schemaPrefix + "SCH1";
+      String schema2 = schemaPrefix + "SCH2";
       // Create 2 schemas, each with the same stored procedure declared in them
       statement.execute("create or replace schema " + schema1);
       statement.execute(TEST_PROC);
       statement.execute("create or replace schema " + schema2);
       statement.execute(TEST_PROC);
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getProcedureColumns(database, "SCH_", "TESTPROC", "PARAM1");
-      // Assert 4 rows returned for the param PARAM1 that's present in each of the 2 identical
-      // stored procs in different schemas. A result row is returned for each procedure, making the
-      // total rowcount 4
-      assertEquals(4, getSizeOfResultSet(rs));
-      rs.close();
-      statement.close();
+      try (ResultSet rs =
+          metaData.getProcedureColumns(database, schemaPrefix + "SCH_", "TESTPROC", "PARAM1")) {
+        // Assert 4 rows returned for the param PARAM1 that's present in each of the 2 identical
+        // stored procs in different schemas. A result row is returned for each procedure, making
+        // the total rowcount 4
+        assertEquals(4, getSizeOfResultSet(rs));
+      }
     }
   }
 
@@ -453,7 +464,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetColumnsNullable() throws Throwable {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection(); ) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
@@ -484,8 +495,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     String altdb = "ALTERNATEDB";
     String altschema1 = "ALTERNATESCHEMA1";
     String altschema2 = "ALTERNATESCHEMA2";
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String catalog = connection.getCatalog();
       String schema = connection.getSchema();
       statement.execute("create or replace database " + altdb);
@@ -905,7 +916,12 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       statement.execute("INSERT INTO \"TEST\\1\\_1\" (\"C%1\",\"C\\1\\\\11\") VALUES (0,0)");
       // test getColumns with escaped special characters in schema and table name
       String specialSchemaSuffix = SnowflakeUtil.randomAlphaNumeric(5);
-      String specialSchema = "\"SPECIAL%_\\SCHEMA" + specialSchemaSuffix + "\"";
+      String specialSchema =
+          "\""
+              + TestUtil.GENERATED_SCHEMA_PREFIX
+              + "SPECIAL%_\\SCHEMA"
+              + specialSchemaSuffix
+              + "\"";
       TestUtil.withSchema(
           statement,
           specialSchema,
@@ -939,7 +955,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
             String escapedTable2 = "TEST" + escapeChar + "_1" + escapeChar + "_1";
             String escapedSchema =
-                "SPECIAL%" + escapeChar + "_" + escapeChar + "\\SCHEMA" + specialSchemaSuffix;
+                TestUtil.ESCAPED_GENERATED_SCHEMA_PREFIX
+                    + "SPECIAL%"
+                    + escapeChar
+                    + "_"
+                    + escapeChar
+                    + "\\SCHEMA"
+                    + specialSchemaSuffix;
             resultSet = metaData.getColumns(database, escapedSchema, escapedTable2, null);
             assertTrue(resultSet.next());
             assertEquals("RNUM", resultSet.getString("COLUMN_NAME"));

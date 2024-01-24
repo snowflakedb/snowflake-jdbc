@@ -7,6 +7,7 @@ import static java.sql.DatabaseMetaData.procedureReturnsResult;
 import static java.sql.ResultSetMetaData.columnNullableUnknown;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.*;
 
 import com.google.common.base.Strings;
@@ -139,41 +140,50 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
     // CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = false
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
+      String currentSchema = connection.getSchema();
       assertEquals("schema", metaData.getSchemaTerm());
-      ResultSet resultSet = metaData.getSchemas();
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_SCHEMAS);
-
       Set<String> schemas = new HashSet<>();
-      while (resultSet.next()) {
-        schemas.add(resultSet.getString(1));
+      try (ResultSet resultSet = metaData.getSchemas()) {
+        verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_SCHEMAS);
+        while (resultSet.next()) {
+          String schema = resultSet.getString(1);
+          if (currentSchema.equals(schema) || !TestUtil.isSchemaGeneratedInTests(schema)) {
+            schemas.add(schema);
+          }
+        }
       }
-      resultSet.close();
-      assertThat(schemas.size(), greaterThanOrEqualTo(1)); // one or more schemas
+      assertThat(schemas.size(), greaterThanOrEqualTo(1));
 
       Set<String> schemasInDb = new HashSet<>();
-      resultSet = metaData.getSchemas(connection.getCatalog(), "%");
-      while (resultSet.next()) {
-        schemasInDb.add(resultSet.getString(1));
+      try (ResultSet resultSet = metaData.getSchemas(connection.getCatalog(), "%")) {
+        while (resultSet.next()) {
+          String schema = resultSet.getString(1);
+          if (currentSchema.equals(schema) || !TestUtil.isSchemaGeneratedInTests(schema)) {
+            schemasInDb.add(schema);
+          }
+        }
       }
-      assertThat(schemasInDb.size(), greaterThanOrEqualTo(1)); // one or more schemas
+      assertThat(schemasInDb.size(), greaterThanOrEqualTo(1));
       assertThat(schemas.size(), greaterThanOrEqualTo(schemasInDb.size()));
-      assertTrue(schemas.containsAll(schemasInDb));
-      assertTrue(schemas.contains(connection.getSchema()));
+      schemasInDb.forEach(schemaInDb -> assertThat(schemas, hasItem(schemaInDb)));
+      assertTrue(schemas.contains(currentSchema));
+      assertTrue(schemasInDb.contains(currentSchema));
     }
 
     // CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = true
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
 
       DatabaseMetaData metaData = connection.getMetaData();
       assertEquals("schema", metaData.getSchemaTerm());
-      ResultSet resultSet = metaData.getSchemas();
-      Set<String> schemas = new HashSet<>();
-      while (resultSet.next()) {
-        schemas.add(resultSet.getString(1));
+      try (ResultSet resultSet = metaData.getSchemas()) {
+        Set<String> schemas = new HashSet<>();
+        while (resultSet.next()) {
+          schemas.add(resultSet.getString(1));
+        }
+        assertThat(schemas.size(), equalTo(1));
       }
-      assertThat(schemas.size(), equalTo(1)); // more than 1 schema
     }
   }
 
