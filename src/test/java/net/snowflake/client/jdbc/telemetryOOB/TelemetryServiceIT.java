@@ -38,7 +38,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     TelemetryService service = TelemetryService.getInstance();
     Map<String, String> connectionParams = getConnectionParameters();
     connectionParams.put("TELEMETRYDEPLOYMENT", "K8TEST");
-    service.updateContextForIT(getConnectionParameters());
+    service.updateContextForIT(connectionParams);
     defaultState = service.isEnabled();
     service.enable();
   }
