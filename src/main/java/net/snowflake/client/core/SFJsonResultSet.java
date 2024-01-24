@@ -8,11 +8,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
-import java.sql.*;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Arrays;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -84,7 +84,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBoolean(columnIndex);
 
       case Types.STRUCT:
-        return getSqlInput((String) obj);
+        return getSqlInput((String) obj, columnIndex);
 
         //      case Types.ARRAY:
         //        return getArrayOfSqlInput((String) obj);
@@ -108,10 +108,14 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   //    }
   //  }
 
-  private Object getSqlInput(String input) throws SFException {
+  private Object getSqlInput(String input, int columnIndex) throws SFException {
     try {
       JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
-      return new JsonSqlInput(jsonNode, session);
+      return new JsonSqlInput(
+          jsonNode,
+          session,
+          converters,
+          Arrays.asList(resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields()));
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }

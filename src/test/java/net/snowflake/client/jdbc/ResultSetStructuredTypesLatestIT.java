@@ -4,7 +4,12 @@ import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.TimeZone;
 import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.SFSqlInput;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,6 +68,7 @@ public class ResultSetStructuredTypesLatestIT {
     private Timestamp timestampLtz;
     private Timestamp timestampNtz;
     private Timestamp timestampTz;
+    private Timestamp timestampLtzInSpecificTz;
     private Date date;
     private Time time;
     private byte[] binary;
@@ -87,6 +93,8 @@ public class ResultSetStructuredTypesLatestIT {
       timestampLtz = sqlInput.readTimestamp();
       timestampNtz = sqlInput.readTimestamp();
       timestampTz = sqlInput.readTimestamp();
+      timestampLtzInSpecificTz =
+          SFSqlInput.unwrap(sqlInput).readTimestamp(TimeZone.getTimeZone("Pacific/Honolulu"));
       date = sqlInput.readDate();
       time = sqlInput.readTime();
       binary = sqlInput.readBytes();
@@ -128,6 +136,7 @@ public class ResultSetStructuredTypesLatestIT {
     SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
     Connection connection = init();
     Statement statement = connection.createStatement();
+    statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
     ResultSet resultSet =
         statement.executeQuery(
             "select {"
@@ -140,9 +149,10 @@ public class ResultSetStructuredTypesLatestIT {
                 + "'d': 2.2, "
                 + "'bd': 3.3, "
                 + "'bool': true, "
-                + "'timestamp_ltz': '2021-12-22 09:43:43'::TIMESTAMP_LTZ, "
-                + "'timestamp_ntz': '2021-12-23 09:43:43'::TIMESTAMP_NTZ, "
-                + "'timestamp_tz': '2021-12-24 09:43:43 +0800'::TIMESTAMP_TZ, "
+                + "'timestamp_ltz': '2021-12-22 09:43:44'::TIMESTAMP_LTZ, "
+                + "'timestamp_ntz': '2021-12-23 09:44:44'::TIMESTAMP_NTZ, "
+                + "'timestamp_tz': '2021-12-24 09:45:45 +0800'::TIMESTAMP_TZ, "
+                + "'timestamp_ltz_in_specific_tz': '2021-12-25 09:46:46'::TIMESTAMP_TZ, "
                 + "'date': '2023-12-24'::DATE, "
                 + "'time': '12:34:56'::TIME, "
                 + "'binary': TO_BINARY('616263', 'HEX'), "
@@ -160,6 +170,7 @@ public class ResultSetStructuredTypesLatestIT {
                 + "timestamp_ltz TIMESTAMP_LTZ, "
                 + "timestamp_ntz TIMESTAMP_NTZ, "
                 + "timestamp_tz TIMESTAMP_TZ, "
+                + "timestamp_ltz_in_specific_tz TIMESTAMP_LTZ, "
                 + "date DATE, "
                 + "time TIME, "
                 + "binary BINARY, "
@@ -175,12 +186,16 @@ public class ResultSetStructuredTypesLatestIT {
     assertEquals(1.1, (double) object.f, 0.01);
     assertEquals(2.2, (double) object.d, 0.01);
     assertEquals(BigDecimal.valueOf(3.3), object.bd);
-    assertEquals(null, object.timestampLtz);
-    assertEquals(null, object.timestampNtz);
-    assertEquals(null, object.timestampTz);
-    assertEquals(null, object.date);
-    assertEquals(null, object.time);
-    assertArrayEquals(new byte[0], object.binary);
+    assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.timestampLtz);
+    assertEquals(
+        Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 10, 44, 44)), object.timestampNtz);
+    assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 2, 45, 45)), object.timestampTz);
+    assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), object.date);
+    assertEquals(Time.valueOf(LocalTime.of(12, 34, 56)), object.time);
+    assertEquals(
+        Timestamp.valueOf(LocalDateTime.of(2021, 12, 25, 9, 46, 46)),
+        object.timestampLtzInSpecificTz);
+    assertArrayEquals(new byte[] {'a', 'b', 'c'}, object.binary);
     assertTrue(object.bool);
     assertEquals("b", object.simpleClass.string);
     statement.close();

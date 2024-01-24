@@ -13,7 +13,6 @@ import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.experimental.categories.Category;
 
 /** Result set test base class. */
@@ -54,7 +53,7 @@ public class ResultSet0IT extends BaseJDBCTest {
     return conn;
   }
 
-  @Before
+  //  @Before
   public void setUp() throws SQLException {
     Connection con = init();
 

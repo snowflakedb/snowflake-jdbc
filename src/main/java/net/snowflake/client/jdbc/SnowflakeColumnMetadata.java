@@ -126,6 +126,10 @@ public class SnowflakeColumnMetadata implements Serializable {
     return this.base;
   }
 
+  public MetadataField[] getFields() {
+    return fields;
+  }
+
   public String getColumnSrcTable() {
     return this.columnSrcTable;
   }

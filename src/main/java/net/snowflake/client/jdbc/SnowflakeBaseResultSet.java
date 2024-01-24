@@ -1398,7 +1398,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                           .map(Supplier::get)
                           .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
                   try {
-                    SQLInput sqlInput = new JsonSqlInput(jsonNode.get(e.getKey()), session);
+                    SQLInput sqlInput =
+                        new JsonSqlInput(
+                            jsonNode.get(e.getKey()), session, null, null); // TODO structuredType
                     instance.readSQL(sqlInput, null);
                   } catch (SQLException ex) {
                     throw new RuntimeException(ex);

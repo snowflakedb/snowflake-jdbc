@@ -214,6 +214,7 @@ public class SnowflakeUtil {
         break;
 
       case TIMESTAMP_NTZ:
+        // if the column type is changed to EXTRA_TYPES_TIMESTAMP_NTZ, update also JsonSqlInput
         columnTypeInfo = new ColumnTypeInfo(Types.TIMESTAMP, "TIMESTAMPNTZ", baseType);
         break;
 

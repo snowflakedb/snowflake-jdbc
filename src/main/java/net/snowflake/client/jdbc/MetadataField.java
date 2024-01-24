@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MetadataField {
 
-  public MetadataField() {}
-
   private String name;
   private String typeName;
   private int type;
