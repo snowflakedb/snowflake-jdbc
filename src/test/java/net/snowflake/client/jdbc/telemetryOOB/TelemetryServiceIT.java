@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -35,7 +36,9 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   @Before
   public void setUp() {
     TelemetryService service = TelemetryService.getInstance();
-    service.updateContextForIT(getConnectionParameters());
+    Map<String, String> connectionParams = getConnectionParameters();
+    connectionParams.put("TELEMETRYDEPLOYMENT", "K8TEST");
+    service.updateContextForIT(connectionParams);
     defaultState = service.isEnabled();
     service.enable();
   }
@@ -53,7 +56,6 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   @SuppressWarnings("divzero")
-  @Ignore
   @Test
   public void testCreateException() {
     TelemetryService service = TelemetryService.getInstance();
