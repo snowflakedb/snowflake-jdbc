@@ -1141,4 +1141,45 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       assertFalse(snowflakeConnection.getSfSession().isAsyncSession());
     }
   }
+
+  @Test
+  public void testDefaultMaxJsonStringLength() throws SQLException {
+    int expectedDefaultMaxJsonStringLength = 23_000_000;
+    Properties props = new Properties();
+    Connection con = getConnection(props);
+    Statement statement = con.createStatement();
+    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertEquals(
+        expectedDefaultMaxJsonStringLength, session.getMaxJsonStringLengthFromObjectMapper());
+    statement.close();
+    con.close();
+  }
+
+  @Test
+  public void testValidMaxJsonStringLength() throws SQLException {
+    int expectedMaxJsonStringLength = 123_456_789;
+    Properties props = new Properties();
+    props.put("maxJsonStringLength", expectedMaxJsonStringLength);
+    Connection con = getConnection(props);
+    Statement statement = con.createStatement();
+    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    assertEquals(expectedMaxJsonStringLength, session.getMaxJsonStringLengthFromObjectMapper());
+    statement.close();
+    con.close();
+  }
+
+  @Test
+  public void testInvalidMaxJsonStringLength() throws SQLException {
+    String expectedMaxJsonStringLength = "123_456_789";
+    Properties props = new Properties();
+    props.put("maxJsonStringLength", expectedMaxJsonStringLength);
+    try {
+      getConnection(props);
+    } catch (Exception ex) {
+      assertTrue(
+          ex.getMessage()
+              .contains(
+                  "Invalid parameter value java.lang.String for parameter type java.lang.Integer"));
+    }
+  }
 }

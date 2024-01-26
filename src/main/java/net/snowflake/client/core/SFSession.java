@@ -7,7 +7,6 @@ package net.snowflake.client.core;
 import static net.snowflake.client.core.QueryStatus.*;
 import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 
-import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -46,11 +45,11 @@ public class SFSession extends SFBaseSession {
   // Need to be removed when a better way to organize session parameter is introduced.
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
-  private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final int MAX_SESSION_PARAMETERS = 1000;
   public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
   private final AtomicInteger sequenceId = new AtomicInteger(0);
   private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
+  private static ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
   private Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
@@ -446,10 +445,7 @@ public class SFSession extends SFBaseSession {
             ObjectMapperFactory.setMaxJsonStringLength(maxJsonStringLength);
 
             // Update the max string length of the instantiated mapper in this class
-            mapper
-                .getFactory()
-                .setStreamReadConstraints(
-                    StreamReadConstraints.builder().maxStringLength(maxJsonStringLength).build());
+            mapper = ObjectMapperFactory.getObjectMapper();
           }
           break;
 
@@ -1214,5 +1210,14 @@ public class SFSession extends SFBaseSession {
 
   public void setSfClientConfig(SFClientConfig sfClientConfig) {
     this.sfClientConfig = sfClientConfig;
+  }
+
+  /**
+   * Get the max string length set in the current ObjectMapper object.
+   *
+   * @return the max string length.
+   */
+  public int getMaxJsonStringLengthFromObjectMapper() {
+    return mapper.getFactory().streamReadConstraints().getMaxStringLength();
   }
 }

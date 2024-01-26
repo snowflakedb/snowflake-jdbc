@@ -5,13 +5,15 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import org.apache.commons.text.StringEscapeUtils;
@@ -232,35 +234,34 @@ public class ResultJsonParserV2Test {
 
   @Test
   public void testObjectMapperWithLargeJsonString() throws Exception {
-    try {
-      // test with base64 encoded 16M string
-      ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
-      JsonNode jsonNode = mapper.readTree(generateBase64EncodedJsonString(16 * 1024 * 1024));
-      Assert.assertNotNull(jsonNode);
-      jsonNode = null;
+    ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
-      // test with base64 encoded 32M string
-      ObjectMapperFactory.setMaxJsonStringLength(45000000);
+    // Test with different string sizes and maxJsonStringLength values
+    Map<Integer, Integer> testCases = new HashMap<Integer, Integer>();
+    testCases.put(16 * 1024 * 1024, 23_000_000); // 16MB
+    testCases.put(32 * 1024 * 1024, 45_000_000); // 32MB
+    testCases.put(64 * 1024 * 1024, 90_000_000); // 64MB
+    testCases.put(128 * 1024 * 1024, 180_000_000); // 128MB
+
+    for (Entry<Integer, Integer> test : testCases.entrySet()) {
+      ObjectMapperFactory.setMaxJsonStringLength(test.getValue());
       mapper = ObjectMapperFactory.getObjectMapper();
-      jsonNode = mapper.readTree(generateBase64EncodedJsonString(32 * 1024 * 1024));
+      JsonNode jsonNode = mapper.readTree(generateBase64EncodedJsonString(test.getKey()));
       Assert.assertNotNull(jsonNode);
-    } catch (Exception ex) {
-      fail("failed to parse the large JSON string. err: " + ex.getMessage());
+
+      // reset mapper to default max string length
+      ObjectMapperFactory.setMaxJsonStringLength(ObjectMapperFactory.DEFAULT_MAX_JSON_STRING_LEN);
+      mapper = ObjectMapperFactory.getObjectMapper();
     }
   }
 
   private String generateBase64EncodedJsonString(int numChar) {
-    StringBuilder sb = new StringBuilder();
-    StringBuilder a = new StringBuilder();
-
-    // create string with the specified size
-    for (int i = 0; i < numChar; i++) {
-      a.append("a");
-    }
+    StringBuilder jsonStr = new StringBuilder();
+    String largeStr = SnowflakeUtil.randomAlphaNumeric(numChar);
 
     // encode the string and put it into a JSON formatted string
-    sb.append("[\"").append(encodeStringToBase64(a.toString())).append("\"]");
-    return sb.toString();
+    jsonStr.append("[\"").append(encodeStringToBase64(largeStr)).append("\"]");
+    return jsonStr.toString();
   }
 
   private String encodeStringToBase64(String stringToBeEncoded) {

@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class ObjectMapperFactory {
   // Snowflake allows up to 16M string size and returns base64 encoded value that makes it up to 23M
-  private static final int DEFAULT_MAX_JSON_STRING_LEN = 23_000_000;
+  public static final int DEFAULT_MAX_JSON_STRING_LEN = 23_000_000;
   private static int maxJsonStringLength = DEFAULT_MAX_JSON_STRING_LEN;
 
   public static ObjectMapper getObjectMapper() {
@@ -18,7 +18,6 @@ public class ObjectMapperFactory {
     mapper.configure(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS, false);
     mapper.configure(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS, false);
 
-    // The max string length updated in setJsonMaxStringLen will be used here
     mapper
         .getFactory()
         .setStreamReadConstraints(
@@ -26,8 +25,12 @@ public class ObjectMapperFactory {
     return mapper;
   }
 
-  // Update the max string length value used in StreamReadConstraints.
-  // Only need to set this once when parsing the maxJsonStringLength setting.
+  /**
+   * Update the max string length used in StreamReadConstraints. Only need to set this once when
+   * parsing the maxJsonStringLength setting.
+   *
+   * @param maxJsonStringLength the max string length
+   */
   public static void setMaxJsonStringLength(int maxJsonStringLength) {
     ObjectMapperFactory.maxJsonStringLength = maxJsonStringLength;
   }
