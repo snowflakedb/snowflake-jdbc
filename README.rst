@@ -25,7 +25,7 @@ Installation
 
 Maven
 -----
-Add following code block as a dependency
+Add following dependency for fat-jar
 
 .. code-block:: xml
 
@@ -35,6 +35,25 @@ Add following code block as a dependency
       <version>{version}</version>
     </dependency>
 
+or for FIPS compliant fat-jar
+
+.. code-block:: xml
+
+    <dependency>
+      <groupId>net.snowflake</groupId>
+      <artifactId>snowflake-jdbc-fips</artifactId>
+      <version>{version}</version>
+    </dependency>
+
+or for experimental thin-jar
+
+.. code-block:: xml
+
+    <dependency>
+      <groupId>net.snowflake</groupId>
+      <artifactId>snowflake-jdbc-thin</artifactId>
+      <version>{version}</version>
+    </dependency>
 
 Build from Source Code 
 ----------------------
@@ -44,11 +63,33 @@ Build from Source Code
 
     git clone https://github.com/snowflakedb/snowflake-jdbc.git
 
-2. Build the driver by running:
+2. Build the fat-jar and install it in local maven repository by running:
 
 .. code-block:: bash
 
-    mvn install
+    ./mvnw clean verify
+    ./mvnw org.apache.maven.plugins:maven-install-plugin:3.1.1:install-file -Dfile=target/snowflake-jdbc.jar -DpomFile=./public_pom.xml
+
+3. Build the FIPS compliant fat-jar and install it in local maven repository by running:
+
+.. code-block:: bash
+
+    cd FIPS
+    ../mvnw clean verify
+    ../mvnw org.apache.maven.plugins:maven-install-plugin:3.1.1:install-file -Dfile=target/snowflake-jdbc-fips.jar -DpomFile=./public_pom.xml
+    cd -
+
+4. Build the experimental thin-jar and install it in local maven repository by running:
+
+.. code-block:: bash
+
+    ./mvnw clean verify -Dnot-self-contained-jar -Dthin-jar
+    ./mvnw org.apache.maven.plugins:maven-install-plugin:3.1.1:install-file -Dfile=target/snowflake-jdbc-thin.jar -DpomFile=./thin_public_pom.xml -Dnot-self-contained-jar -Dthin-jar
+
+- ``thin-jar`` enables thin jar profile
+- ``not-self-contained-jar`` turns off fat jar profile (enabled by default)
+
+5. **Note that the built dependencies are installed with version 1.0-SNAPSHOT**
 
 Usage
 =====
@@ -110,18 +151,6 @@ You may import the coding style from IntelliJ so that the coding style can be ap
 - In the **File** -> **Settings/Plugins**, and install `google-java-format` plugin.
 - Enable `google-java-format` for the JDBC project.
 - In the source code window, select **Code** -> **Reformat** to apply the coding style.
-
-Thin Jar
-========
-
-To build a thin jar run command:
-
-.. code-block:: bash
-
-    mvn clean verify -Dthin-jar -Dnot-self-contained-jar
-
-- `thin-jar` enables thin jar profile
-- `not-self-contained-jar` turns off fat jar profile (enabled by default)
 
 Tests
 =====
