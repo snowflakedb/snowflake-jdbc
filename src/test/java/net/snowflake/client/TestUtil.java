@@ -22,6 +22,20 @@ public class TestUtil {
   private static final Pattern QUERY_ID_REGEX =
       Pattern.compile("[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}");
 
+  public static final String GENERATED_SCHEMA_PREFIX = "GENERATED_";
+  public static final String ESCAPED_GENERATED_SCHEMA_PREFIX =
+      GENERATED_SCHEMA_PREFIX.replaceAll("_", "\\\\_");
+  private static final String GITHUB_SCHEMA_PREFIX =
+      "GITHUB_"; // created by JDBC CI jobs before tests
+  private static final String GITHUB_JOB_SCHEMA_PREFIX =
+      "GH_JOB_"; // created by other drivers e.g. Python driver
+
+  public static boolean isSchemaGeneratedInTests(String schema) {
+    return schema.startsWith(TestUtil.GITHUB_SCHEMA_PREFIX)
+        || schema.startsWith(TestUtil.GITHUB_JOB_SCHEMA_PREFIX)
+        || schema.startsWith(TestUtil.GENERATED_SCHEMA_PREFIX);
+  }
+
   /**
    * Util function to assert a piece will throw exception and assert on the error code
    *
@@ -99,7 +113,8 @@ public class TestUtil {
    */
   public static void withRandomSchema(Statement statement, ThrowingConsumer<String> action)
       throws Exception {
-    String customSchema = "TEST_SCHEMA_" + SnowflakeUtil.randomAlphaNumeric(5);
+    String customSchema =
+        GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
     try {
       statement.execute("CREATE OR REPLACE SCHEMA " + customSchema);
       action.call(customSchema);
