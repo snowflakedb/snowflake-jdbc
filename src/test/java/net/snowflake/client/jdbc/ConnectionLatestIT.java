@@ -76,6 +76,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       TelemetryService.disable();
     }
     service.resetNumOfRetryToTriggerTelemetry();
+
+    // reset maxJsonStringLength to the default value
+    ObjectMapperFactory.setMaxJsonStringLength(ObjectMapperFactory.DEFAULT_MAX_JSON_STRING_LEN);
   }
 
   @Test
