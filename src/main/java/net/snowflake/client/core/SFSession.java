@@ -114,6 +114,9 @@ public class SFSession extends SFBaseSession {
    */
   private int retryTimeout = 300;
 
+  // Max string length for JSON.
+  private int maxJsonStringLength = ObjectMapperFactory.DEFAULT_MAX_JSON_STRING_LEN;
+
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
   @VisibleForTesting
@@ -439,7 +442,7 @@ public class SFSession extends SFBaseSession {
 
         case MAX_JSON_STRING_LENGTH:
           if (propertyValue != null) {
-            int maxJsonStringLength = (Integer) propertyValue;
+            maxJsonStringLength = (Integer) propertyValue;
 
             // Update the max string length used in ObjectMapperFactory
             ObjectMapperFactory.setMaxJsonStringLength(maxJsonStringLength);
@@ -1210,6 +1213,24 @@ public class SFSession extends SFBaseSession {
 
   public void setSfClientConfig(SFClientConfig sfClientConfig) {
     this.sfClientConfig = sfClientConfig;
+  }
+
+  /**
+   * @return the max string length for parsing a JSON string.
+   */
+  public int getMaxJsonStringLength() {
+    return maxJsonStringLength;
+  }
+
+  /**
+   * Set the max string length for a JSON string in the current ObjectMapper object.
+   *
+   * @param maxJsonStringLength the max string length to set.
+   */
+  public void setMaxJsonStringLength(int maxJsonStringLength) {
+    this.maxJsonStringLength = maxJsonStringLength;
+    ObjectMapperFactory.setMaxJsonStringLength(maxJsonStringLength);
+    mapper = ObjectMapperFactory.getObjectMapper();
   }
 
   /**
