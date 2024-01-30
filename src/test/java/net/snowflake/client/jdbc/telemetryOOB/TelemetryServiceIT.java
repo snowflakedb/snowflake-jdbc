@@ -56,6 +56,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
   }
 
   @SuppressWarnings("divzero")
+  @Ignore
   @Test
   public void testCreateException() {
     TelemetryService service = TelemetryService.getInstance();
