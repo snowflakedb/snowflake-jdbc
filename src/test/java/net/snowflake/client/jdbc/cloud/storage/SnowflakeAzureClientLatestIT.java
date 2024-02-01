@@ -9,7 +9,10 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Test;
 

@@ -8,7 +8,13 @@ import static net.snowflake.client.core.QueryStatus.NO_DATA;
 
 import com.google.api.client.util.Strings;
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.core.QueryStatus;

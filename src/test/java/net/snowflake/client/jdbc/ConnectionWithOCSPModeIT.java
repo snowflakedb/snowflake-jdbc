@@ -4,10 +4,13 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.ErrorCode.NETWORK_ERROR;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import java.net.SocketTimeoutException;
 import java.security.cert.CertificateExpiredException;
