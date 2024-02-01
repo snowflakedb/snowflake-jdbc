@@ -70,6 +70,11 @@
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${version.plugin.checkstyle}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
           <version>${version.plugin.clean}</version>
         </plugin>
@@ -574,9 +579,37 @@
             <artifactId>fmt-maven-plugin</artifactId>
             <executions>
               <execution>
+                <id>fmt</id>
                 <goals>
                   <goal>check</goal>
                 </goals>
+                <phase>validate</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <configuration>
+              <checkstyleRules>
+                <module name="Checker">
+                  <module name="TreeWalker">
+                    <module name="AvoidStarImport"/>
+                  </module>
+                </module>
+              </checkstyleRules>
+              <consoleOutput>true</consoleOutput>
+              <failsOnError>true</failsOnError>
+              <includeTestSourceDirectory>true</includeTestSourceDirectory>
+              <violationSeverity>warning</violationSeverity>
+            </configuration>
+            <executions>
+              <execution>
+                <id>checkstyle</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
               </execution>
             </executions>
           </plugin>

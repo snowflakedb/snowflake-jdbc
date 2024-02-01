@@ -79,6 +79,7 @@
     <version.maven>3.6.3</version.maven>
     <version.plugin.antrun>3.1.0</version.plugin.antrun>
     <version.plugin.buildnumber>3.0.0</version.plugin.buildnumber>
+    <version.plugin.checkstyle>3.3.1</version.plugin.checkstyle>
     <version.plugin.clean>3.2.0</version.plugin.clean>
     <version.plugin.compiler>3.11.0</version.plugin.compiler>
     <version.plugin.dependency>3.5.0</version.plugin.dependency>
