@@ -256,6 +256,15 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
   }
+  public Array getArray(int columnIndex) throws SQLException {
+    raiseSQLExceptionIfResultSetIsClosed();
+    try {
+      return sfBaseResultSet.getArray(columnIndex);
+    } catch (SFException ex) {
+      throw new SnowflakeSQLException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
+  }
 
   public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();

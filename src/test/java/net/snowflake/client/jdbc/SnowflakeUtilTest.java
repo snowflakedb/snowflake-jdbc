@@ -16,6 +16,8 @@ import net.snowflake.client.core.ObjectMapperFactory;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.sql.Types;
+
 @Category(TestCategoryCore.class)
 public class SnowflakeUtilTest extends BaseJDBCTest {
 
@@ -45,11 +47,11 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
 
   private static SnowflakeColumnMetadata createExpectedMetadata(
       JsonNode rootNode, JsonNode fieldOne, JsonNode fieldTwo) throws SnowflakeSQLLoggedException {
-    ColumnTypeInfo columnTypeInfo = getSnowflakeType(rootNode.path("type").asText(), null, null);
+    ColumnTypeInfo columnTypeInfo = getSnowflakeType(rootNode.path("type").asText(), null, null, 0);
     ColumnTypeInfo columnTypeInfoNodeOne =
-        getSnowflakeType(fieldOne.path("type").asText(), null, null);
+        getSnowflakeType(fieldOne.path("type").asText(), null, null, Types.BIGINT);
     ColumnTypeInfo columnTypeInfoNodeTwo =
-        getSnowflakeType(fieldTwo.path("type").asText(), null, null);
+        getSnowflakeType(fieldTwo.path("type").asText(), null, null, Types.DECIMAL );
     SnowflakeColumnMetadata expectedColumnMetadata =
         new SnowflakeColumnMetadata(
             rootNode.path("name").asText(),
@@ -61,8 +63,8 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
             columnTypeInfo.getExtColTypeName(),
             false,
             columnTypeInfo.getSnowflakeType(),
-            new MetadataField[] {
-              new MetadataField(
+            new FieldMetadata[] {
+              new FieldMetadata(
                   fieldOne.path("name").asText(),
                   fieldOne.path("type").asText(),
                   columnTypeInfoNodeOne.getColumnType(),
@@ -73,7 +75,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
                   fieldOne.path("fixed").asBoolean(),
                   columnTypeInfoNodeOne.getSnowflakeType(),
                   null),
-              new MetadataField(
+              new FieldMetadata(
                   fieldTwo.path("name").asText(),
                   fieldTwo.path("type").asText(),
                   columnTypeInfoNodeTwo.getColumnType(),

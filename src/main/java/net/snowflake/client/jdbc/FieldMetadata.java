@@ -2,23 +2,21 @@ package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class MetadataField {
+public class FieldMetadata {
 
   private String name;
   private String typeName;
   private int type;
   private boolean nullable;
-
   @JsonProperty("byteLength")
   private int length;
-
   private int precision;
   private int scale;
   private boolean fixed;
   private SnowflakeType base;
-  private MetadataField[] fields;
+  private FieldMetadata[] fields;
 
-  public MetadataField(
+  public FieldMetadata(
       String name,
       String typeName,
       int type,
@@ -28,7 +26,7 @@ public class MetadataField {
       int scale,
       boolean fixed,
       SnowflakeType base,
-      MetadataField[] fields) {
+      FieldMetadata[] fields) {
     this.name = name;
     this.typeName = typeName;
     this.type = type;
@@ -113,11 +111,26 @@ public class MetadataField {
     this.base = base;
   }
 
-  public MetadataField[] getFields() {
+  public FieldMetadata[] getFields() {
     return fields;
   }
 
-  public void setFields(MetadataField[] fields) {
+  public void setFields(FieldMetadata[] fields) {
     this.fields = fields;
+  }
+
+  public String toString() {
+    StringBuilder sBuilder = new StringBuilder();
+
+    sBuilder.append("name=").append(name);
+    sBuilder.append(",typeName=").append(typeName);
+    sBuilder.append(",type=").append(type);
+    sBuilder.append(",nullable=").append(nullable);
+    sBuilder.append(",length=").append(length);
+    sBuilder.append(",precision=").append(precision);
+    sBuilder.append(",scale=").append(scale);
+    sBuilder.append(",fixed=").append(fixed);
+
+    return sBuilder.toString();
   }
 }

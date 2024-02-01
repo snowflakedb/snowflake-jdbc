@@ -1324,7 +1324,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
-  // @Override
+   @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (SQLData.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type)) {
@@ -1344,6 +1344,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   public <T> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
     Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
     List<SQLInput> sqlInputs = (List<SQLInput>) getObject(columnIndex);
+//    List<SQLInput> sqlInputs = (List<SQLInput>) getArray(columnIndex);
     return sqlInputs.stream()
         .map(
             i -> {

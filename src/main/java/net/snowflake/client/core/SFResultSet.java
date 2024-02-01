@@ -4,11 +4,13 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.SFResultSetFactory.getResultSet;
 import static net.snowflake.client.core.StmtUtil.eventHandler;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Comparator;
 import net.snowflake.client.core.BasicEvent.QueryState;
@@ -440,6 +442,11 @@ public class SFResultSet extends SFJsonResultSet {
   public SFStatementType getStatementType() {
     return statementType;
   }
+
+//  @Override
+//  public Statement getStatement() {
+//    return resultSetSerializable.getResultSet().getStatement();
+//  }
 
   @Override
   public void setStatementType(SFStatementType statementType) {

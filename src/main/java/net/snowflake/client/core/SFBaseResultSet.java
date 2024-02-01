@@ -5,10 +5,8 @@
 package net.snowflake.client.core;
 
 import java.math.BigDecimal;
+import java.sql.*;
 import java.sql.Date;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.util.*;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
@@ -87,12 +85,14 @@ public abstract class SFBaseResultSet {
   public abstract Date getDate(int columnIndex, TimeZone tz) throws SFException;
 
   public abstract Object getObject(int columnIndex) throws SFException;
+  public abstract Array getArray(int columnIndex) throws SFException;
 
   public abstract BigDecimal getBigDecimal(int columnIndex) throws SFException;
 
   public abstract BigDecimal getBigDecimal(int columnIndex, int scale) throws SFException;
 
   public abstract SFStatementType getStatementType();
+  public abstract Statement getStatement() throws SQLException;
 
   // this is useful to override the initial statement type if it is incorrect
   // (e.g. result scan yields a query type, but the results are from a DML statement)

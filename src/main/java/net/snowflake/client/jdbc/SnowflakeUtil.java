@@ -154,15 +154,16 @@ public class SnowflakeUtil {
     boolean fixed = colNode.path("fixed").asBoolean();
     JsonNode udtOutputType = colNode.path("outputType");
 
-    ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, udtOutputType, session);
+    int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
+    ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, udtOutputType, session, fixedColType);
 
     String colSrcDatabase = colNode.path("database").asText();
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
-    MetadataField[] fieldsMetadata = new MetadataField[0];
+    FieldMetadata[] fieldsMetadata = new FieldMetadata[0];
     if (!colNode.path("fields").isEmpty()) {
       ArrayNode arrayNode = (ArrayNode) colNode.path("fields");
-      fieldsMetadata = createFieldsMetadata(arrayNode);
+      fieldsMetadata = createFieldsMetadata(arrayNode, fixedColType);
     }
 
     boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
@@ -185,7 +186,7 @@ public class SnowflakeUtil {
   }
 
   static ColumnTypeInfo getSnowflakeType(
-      String internalColTypeName, JsonNode udtOutputType, SFBaseSession session)
+          String internalColTypeName, JsonNode udtOutputType, SFBaseSession session, int fixedColType)
       throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
     ColumnTypeInfo columnTypeInfo = null;
@@ -201,7 +202,7 @@ public class SnowflakeUtil {
         columnTypeInfo = new ColumnTypeInfo(Types.INTEGER, "INTEGER", baseType);
         break;
       case FIXED:
-        columnTypeInfo = new ColumnTypeInfo(Types.CHAR, "CHAR", baseType);
+        columnTypeInfo = new ColumnTypeInfo(fixedColType, "NUMBER", baseType);
         break;
 
       case REAL:
@@ -280,12 +281,13 @@ public class SnowflakeUtil {
     return columnTypeInfo;
   }
 
-  static MetadataField[] createFieldsMetadata(ArrayNode fieldsJson)
+  static FieldMetadata[] createFieldsMetadata(ArrayNode fieldsJson, int fixedColType)
       throws SnowflakeSQLLoggedException {
     //    TODO: verify that jsonFileds is not empty array
-    MetadataField[] fields = new MetadataField[fieldsJson.size()];
+    FieldMetadata[] fields = new FieldMetadata[fieldsJson.size()];
     int fieldCounter = 0;
     for (JsonNode node : fieldsJson) {
+      System.out.println("node:" + node);
       String colName = node.path("name").asText();
       int scale = node.path("scale").asInt();
       int precision = node.path("precision").asInt();
@@ -293,15 +295,15 @@ public class SnowflakeUtil {
       boolean nullable = node.path("nullable").asBoolean();
       int length = node.path("length").asInt();
       boolean fixed = node.path("fixed").asBoolean();
-      MetadataField[] internalFields = new MetadataField[0];
+      FieldMetadata[] internalFields = new FieldMetadata[0];
       if (!node.path("fields").isEmpty()) {
         ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
-        internalFields = createFieldsMetadata(internalFieldsJson);
+        internalFields = createFieldsMetadata(internalFieldsJson, fixedColType);
       }
       JsonNode outputType = node.path("outputType");
-      ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, outputType, null);
+      ColumnTypeInfo columnTypeInfo = getSnowflakeType(internalColTypeName, outputType, null, fixedColType);
       fields[fieldCounter++] =
-          new MetadataField(
+          new FieldMetadata(
               colName,
               columnTypeInfo.getExtColTypeName(),
               columnTypeInfo.getColumnType(),
@@ -428,7 +430,7 @@ public class SnowflakeUtil {
               typeName, // type name
               true,
               stype, // fixed
-              new MetadataField[] {}, // TODO Structured type fields
+              new FieldMetadata[] {}, // TODO Structured type fields
               "", // database
               "", // schema
               "",

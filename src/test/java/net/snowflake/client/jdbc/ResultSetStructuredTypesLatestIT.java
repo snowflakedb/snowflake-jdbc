@@ -7,6 +7,8 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.SFSqlInput;
@@ -214,6 +216,124 @@ public class ResultSetStructuredTypesLatestIT {
       SimpleClass object = resultSet.getObject(1, SimpleClass.class);
       assertEquals("a", object.string);
     }
+    statement.close();
+    connection.close();
+  }
+
+  @Test
+  public void testMapArrays() throws SQLException {
+    testMapIntegerArray(true);
+    testMapVarcharArray(true);
+    testMapDatesArray(true);
+    testMapBinaryArray(true);
+    testMapTimeArray(true);
+    testMapTimestampArray(true);
+    testMapBooleanArray(true);
+    testMapStructArray(true);
+    testMapArrayOfArrays(true);
+  }
+
+  private void testMapIntegerArray(boolean registerFactory) throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(INTEGER)");
+    resultSet.next();
+    Long[] resultArray = (Long[])resultSet.getArray(1).getArray();
+    assertEquals(resultArray[0], Long.valueOf(10));
+    assertEquals(resultArray[1], Long.valueOf(20));
+    assertEquals(resultArray[2], Long.valueOf(30));
+    statement.close();
+    connection.close();
+  }
+
+  private void testMapVarcharArray(boolean registerFactory) throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("SELECT ARRAY_CONSTRUCT('10', '20','30')::ARRAY(VARCHAR)");
+    resultSet.next();
+    String[] resultArray = (String[]) resultSet.getArray(1).getArray();
+    assertEquals(resultArray[0], "10");
+    assertEquals(resultArray[1],"20");
+    assertEquals(resultArray[2], "30");
+    statement.close();
+    connection.close();
+  }
+
+  private void testMapDatesArray(boolean registerFactory) throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("SELECT ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD'))::ARRAY(DATE)");
+    resultSet.next();
+    Date[] resultArray = (Date[]) resultSet.getArray(1).getArray();
+    assertEquals(resultArray[0], Date.valueOf(LocalDate.of(2023, 12, 24)));
+    assertEquals(resultArray[1], Date.valueOf(LocalDate.of(2023, 12, 25)));
+    statement.close();
+    connection.close();
+  }
+  private void testMapTimeArray(boolean registerFactory) throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("SELECT ARRAY_CONSTRUCT(to_time('15:39:20.123'), to_time('15:39:20.123'))::ARRAY(TIME)");
+    resultSet.next();
+    Time[] resultArray = (Time[]) resultSet.getArray(1).getArray();
+    assertEquals(resultArray[0], Time.valueOf(LocalTime.of(15, 39, 20)));
+    assertEquals(resultArray[1], Time.valueOf(LocalTime.of(15, 39, 20)));
+    statement.close();
+    connection.close();
+  }
+  private void testMapTimestampArray(boolean registerFactory) throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("SELECT ARRAY_CONSTRUCT(TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), TO_TIMESTAMP_NTZ('2021-12-24 09:55:55'))::ARRAY(TIMESTAMP)");
+    resultSet.next();
+    Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
+    assertEquals(resultArray[0], Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 10, 44, 44)));
+    assertEquals(resultArray[1], Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 10, 55, 55)));
+    //TODO test timestamps LTZ and TZ
+    statement.close();
+    connection.close();
+  }
+  private void testMapBooleanArray(boolean registerFactory) throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("SELECT ARRAY_CONSTRUCT(true,false)::ARRAY(BOOLEAN)");
+    resultSet.next();
+    Boolean[] resultArray = (Boolean[]) resultSet.getArray(1).getArray();
+    assertEquals(resultArray[0], true);
+    assertEquals(resultArray[1], false);
+    statement.close();
+    connection.close();
+  }
+  private void testMapBinaryArray(boolean registerFactory) throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("SELECT ARRAY_CONSTRUCT(TO_BINARY('616263', 'HEX'),TO_BINARY('616263', 'HEX'))::ARRAY(BINARY)");
+    resultSet.next();
+    Object[] resultArray = (Object[]) resultSet.getArray(1).getArray();
+    assertArrayEquals((byte[]) resultArray[0], new byte[] {'a', 'b', 'c'});
+    assertArrayEquals((byte[]) resultArray[1], new byte[] {'a', 'b', 'c'});
+    statement.close();
+    connection.close();
+  }
+  private void testMapStructArray(boolean registerFactory) throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("SELECT ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2} )::ARRAY(OBJECT(x VARCHAR, y Integer))");
+    resultSet.next();
+    Map[] resultArray = (Map[]) resultSet.getArray(1).getArray();
+    assertEquals(resultArray[0].toString(), "{x=abc, y=1}");
+    assertEquals(resultArray[1].toString(), "{x=def, y=2}");
+    statement.close();
+    connection.close();
+  }
+  private void testMapArrayOfArrays(boolean registerFactory) throws SQLException {
+    Connection connection = init();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet = statement.executeQuery("SELECT ARRAY_CONSTRUCT(ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2}) )::ARRAY(ARRAY(OBJECT(x VARCHAR, y Integer)))");
+    resultSet.next();
+    HashMap[][] resultArray =   (HashMap[][])resultSet.getArray(1).getArray();
+    assertEquals(resultArray[0][0].toString(), "{x=abc, y=1}");
+    assertEquals(resultArray[0][1].toString(), "{x=def, y=2}");
     statement.close();
     connection.close();
   }

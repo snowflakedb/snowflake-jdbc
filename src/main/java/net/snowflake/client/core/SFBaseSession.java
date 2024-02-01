@@ -8,6 +8,8 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.google.common.base.Strings;
+
+import java.sql.Array;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.*;

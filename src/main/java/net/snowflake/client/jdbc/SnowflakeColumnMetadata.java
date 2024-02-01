@@ -20,7 +20,7 @@ public class SnowflakeColumnMetadata implements Serializable {
   private int scale;
   private boolean fixed;
   private SnowflakeType base;
-  private MetadataField[] fields;
+  private FieldMetadata[] fields;
   private String columnSrcTable;
   private String columnSrcSchema;
   private String columnSrcDatabase;
@@ -37,7 +37,7 @@ public class SnowflakeColumnMetadata implements Serializable {
       String typeName,
       boolean fixed,
       SnowflakeType base,
-      MetadataField[] fields,
+      FieldMetadata[] fields,
       String columnSrcDatabase,
       String columnSrcSchema,
       String columnSrcTable,
@@ -126,8 +126,12 @@ public class SnowflakeColumnMetadata implements Serializable {
     return this.base;
   }
 
-  public MetadataField[] getFields() {
+  public FieldMetadata[] getFields() {
     return fields;
+  }
+  public FieldMetadata getField(int fieldIdx) {
+    //todo check field exists
+    return fields[fieldIdx-1];
   }
 
   public String getColumnSrcTable() {

@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
-import net.snowflake.client.jdbc.MetadataField;
+import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.util.ThrowingCallable;
@@ -28,11 +28,11 @@ public class JsonSqlInput implements SFSqlInput {
   private final Iterator<JsonNode> elements;
   private final SFBaseSession session;
   private final Converters converters;
-  private final List<MetadataField> fields;
+  private final List<FieldMetadata> fields;
   private int currentIndex = 0;
 
   public JsonSqlInput(
-      JsonNode input, SFBaseSession session, Converters converters, List<MetadataField> fields) {
+      JsonNode input, SFBaseSession session, Converters converters, List<FieldMetadata> fields) {
     this.input = input;
     this.elements = input.elements();
     this.session = session;
@@ -152,6 +152,7 @@ public class JsonSqlInput implements SFSqlInput {
           int columnSubType = fieldMetadata.getType();
           TimeZone tz = TimeZone.getDefault(); // TODO structuredType how to get timezone?
           int scale = fieldMetadata.getScale();
+//          TODO: can we move this to DateConverter ?
           SnowflakeDateTimeFormat formatter =
               SnowflakeDateTimeFormat.fromSqlFormat(
                   (String) session.getCommonParameters().get("DATE_OUTPUT_FORMAT"));
@@ -314,7 +315,7 @@ public class JsonSqlInput implements SFSqlInput {
   }
 
   private <T> T withNextValue(
-      ThrowingTriFunction<Object, JsonNode, MetadataField, T, SQLException> action)
+      ThrowingTriFunction<Object, JsonNode, FieldMetadata, T, SQLException> action)
       throws SQLException {
     JsonNode jsonNode = elements.next();
     Object value = getValue(jsonNode);

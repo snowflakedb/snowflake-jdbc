@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.*;
@@ -138,6 +139,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
       return SFStatementType.PUT;
     }
   }
+
 
   @Override
   public void setStatementType(SFStatementType statementType) throws SQLException {

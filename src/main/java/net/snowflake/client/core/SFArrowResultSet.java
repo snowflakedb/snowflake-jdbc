@@ -481,6 +481,17 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     Object obj = converter.toObject(index);
     return handleObjectType(columnIndex, obj);
   }
+  @Override
+  public Array getArray(int columnIndex) throws SFException {
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
+    int index = currentChunkIterator.getCurrentRowInRecordBatch();
+    wasNull = converter.isNull(index);
+    converter.setTreatNTZAsUTC(treatNTZAsUTC);
+    converter.setUseSessionTimezone(useSessionTimezone);
+    converter.setSessionTimeZone(timeZone);
+    Object obj = converter.toObject(index);
+    return null;
+  }
 
   private Object handleObjectType(int columnIndex, Object obj) throws SFException {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
@@ -573,6 +584,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   @Override
   public SFStatementType getStatementType() {
     return statementType;
+  }
+
+  @Override
+  public Statement getStatement() throws SQLException {
+    return resultSetSerializable.getResultSet().getStatement();
   }
 
   @Override
