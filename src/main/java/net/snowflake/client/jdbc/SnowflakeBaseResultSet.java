@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -1330,18 +1331,35 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
-  // @Override
+  @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    if (SQLData.class.isAssignableFrom(type)) {
+      Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
+      SQLData instance =
+          typeFactory
+              .map(Supplier::get)
+              .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
+      SQLInput sqlInput = (SQLInput) getObject(columnIndex);
+      instance.readSQL(sqlInput, null);
+      return (T) instance;
+    } else {
+      return (T) getObject(columnIndex);
+    }
   }
 
-  // @Override
+  private SQLData createUsingReflection(Class<? extends SQLData> type) {
+    try {
+      return type.newInstance();
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(String columnLabel,Class<T> type)", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    return getObject(findColumn(columnLabel), type);
   }
 
   @SuppressWarnings("unchecked")

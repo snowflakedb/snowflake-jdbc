@@ -52,6 +52,7 @@ public enum SnowflakeType {
   }
 
   public static JavaDataType getJavaType(SnowflakeType type) {
+    // TODO structuredType fill for Array and Map
     switch (type) {
       case TEXT:
         return JavaDataType.JAVA_STRING;
@@ -75,11 +76,10 @@ public enum SnowflakeType {
       case ARRAY:
       case VARIANT:
         return JavaDataType.JAVA_STRING;
-      case OBJECT:
-        return JavaDataType.JAVA_STRING;
       case BINARY:
         return JavaDataType.JAVA_BYTES;
       case ANY:
+      case OBJECT:
         return JavaDataType.JAVA_OBJECT;
       default:
         // Those are not supported, but no reason to panic
@@ -423,6 +423,9 @@ public enum SnowflakeType {
 
       case Types.BOOLEAN:
         return BOOLEAN;
+
+      case Types.STRUCT:
+        return OBJECT;
 
       case Types.NULL:
         return ANY;

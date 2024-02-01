@@ -6,14 +6,14 @@ package net.snowflake.client.core;
 import static net.snowflake.client.core.StmtUtil.eventHandler;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.sql.Date;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.jdbc.ArrowResultChunk;
@@ -35,7 +35,8 @@ import org.apache.arrow.memory.RootAllocator;
 
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFArrowResultSet.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFArrowResultSet.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   /** iterator over current arrow result chunk */
   private ArrowChunkIterator currentChunkIterator;
@@ -481,7 +482,21 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setTreatNTZAsUTC(treatNTZAsUTC);
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(timeZone);
-    return converter.toObject(index);
+    Object obj = converter.toObject(index);
+    return handleObjectType(columnIndex, obj);
+  }
+
+  private Object handleObjectType(int columnIndex, Object obj) throws SFException {
+    int columnType = resultSetMetaData.getColumnType(columnIndex);
+    if (columnType == Types.STRUCT) {
+      try {
+        JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
+        return new JsonSqlInput(jsonNode, session, null, null); // TODO structuredType
+      } catch (JsonProcessingException e) {
+        throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+      }
+    }
+    return obj;
   }
 
   @Override

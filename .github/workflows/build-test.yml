@@ -39,7 +39,7 @@ jobs:
             matrix:
                 image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
                 cloud: [ 'AWS' ]
-                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips', 'TestCategoryResultSetStructuredTypes']
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
             - uses: actions/checkout@v1

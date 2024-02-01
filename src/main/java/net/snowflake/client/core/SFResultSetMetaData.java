@@ -48,6 +48,7 @@ public class SFResultSetMetaData {
 
   private List<Integer> columnDisplaySizes;
 
+  private final List<SnowflakeColumnMetadata> columnMetadata;
   private String queryId;
 
   private Map<String, Integer> columnNamePositionMap = new HashMap<>();
@@ -95,6 +96,7 @@ public class SFResultSetMetaData {
     this.columnTypeNames = columnTypeNames;
     this.columnTypes = columnTypes;
     this.session = session;
+    columnMetadata = null; // TODO structuredType
   }
 
   public SFResultSetMetaData(
@@ -128,6 +130,7 @@ public class SFResultSetMetaData {
       SnowflakeDateTimeFormat dateFormatter,
       SnowflakeDateTimeFormat timeFormatter) {
     this.columnCount = columnMetadata.size();
+    this.columnMetadata = columnMetadata;
     this.queryId = queryId;
     this.timestampNTZFormatter = timestampNTZFormatter;
     this.timestampLTZFormatter = timestampLTZFormatter;
@@ -354,22 +357,7 @@ public class SFResultSetMetaData {
   }
 
   public int getColumnType(int column) throws SFException {
-    int internalColumnType = getInternalColumnType(column);
-
-    int externalColumnType = internalColumnType;
-
-    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
-      externalColumnType = Types.TIMESTAMP;
-    }
-    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-      externalColumnType =
-          session == null
-              ? Types.TIMESTAMP_WITH_TIMEZONE
-              : session.getEnableReturnTimestampWithTimeZone()
-                  ? Types.TIMESTAMP_WITH_TIMEZONE
-                  : Types.TIMESTAMP;
-    }
-    return externalColumnType;
+    return ColumnTypeHelper.getColumnType(getInternalColumnType(column), session);
   }
 
   public int getInternalColumnType(int column) throws SFException {
@@ -484,5 +472,9 @@ public class SFResultSetMetaData {
 
   public List<Boolean> getIsAutoIncrementList() {
     return isAutoIncrementList;
+  }
+
+  public List<SnowflakeColumnMetadata> getColumnMetadata() {
+    return columnMetadata;
   }
 }
