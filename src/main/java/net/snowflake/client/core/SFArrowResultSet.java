@@ -490,6 +490,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(timeZone);
     Object obj = converter.toObject(index);
+//    TODO: handleArray
     return null;
   }
 
@@ -587,8 +588,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   @Override
+//  TODO: to remove
   public Statement getStatement() throws SQLException {
-    return resultSetSerializable.getResultSet().getStatement();
+    return null;
   }
 
   @Override

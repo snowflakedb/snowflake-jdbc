@@ -108,26 +108,26 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
-    private Array getArrayOfSqlInput(String input) throws SFException {
-      try {
-        List<JsonSqlInput> result = new ArrayList<>();
-        ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
-        Iterator nodeElements = arrayNode.elements();
-        while (nodeElements.hasNext()) {
-          result.add(new JsonSqlInput((JsonNode) nodeElements.next(),
-                  session,
-                  converters,
-                  Arrays.asList(resultSetMetaData.getColumnMetadata().get(0).getFields())));
-        }
-        return new SQLInputArray(result);
-      } catch (JsonProcessingException e) {
-        throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
-      }
-    }
-
-  Predicate<String> consumer = (str) -> {
-    return str.equals("yes");
-  };
+//    private Array getArrayOfSqlInput(String input) throws SFException {
+//      try {
+//        List<JsonSqlInput> result = new ArrayList<>();
+//        ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
+//        Iterator nodeElements = arrayNode.elements();
+//        while (nodeElements.hasNext()) {
+//          result.add(new JsonSqlInput((JsonNode) nodeElements.next(),
+//                  session,
+//                  converters,
+//                  Arrays.asList(resultSetMetaData.getColumnMetadata().get(0).getFields())));
+//        }
+//        return new SQLInputArray(result);
+//      } catch (JsonProcessingException e) {
+//        throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+//      }
+//    }
+//
+//  Predicate<String> consumer = (str) -> {
+//    return str.equals("yes");
+//  };
 
 
       @FunctionalInterface
