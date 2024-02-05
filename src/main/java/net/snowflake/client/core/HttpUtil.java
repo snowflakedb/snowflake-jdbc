@@ -123,7 +123,7 @@ public class HttpUtil {
    */
   public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
     if (key != null && key.usesProxy()) {
-      clientConfig.setProxyProtocol(key.getProxyProtocol());
+      clientConfig.setProxyProtocol(toAwsProtocol(key.getProxyProtocol()));
       clientConfig.setProxyHost(key.getProxyHost());
       clientConfig.setProxyPort(key.getProxyPort());
       clientConfig.setNonProxyHosts(key.getNonProxyHosts());
@@ -132,6 +132,17 @@ public class HttpUtil {
         clientConfig.setProxyUsername(key.getProxyUser());
         clientConfig.setProxyPassword(key.getProxyPassword());
       }
+    }
+  }
+
+  private static Protocol toAwsProtocol(HttpProtocol protocol) {
+    switch (protocol) {
+      case HTTP:
+        return Protocol.HTTP;
+      case HTTPS:
+        return Protocol.HTTPS;
+      default:
+        throw new IllegalArgumentException("Unknown protocol: " + protocol);
     }
   }
 
@@ -379,7 +390,7 @@ public class HttpUtil {
                     new SnowflakeMutableProxyRoutePlanner(
                         key.getProxyHost(),
                         key.getProxyPort(),
-                        key.getProxyProtocol(),
+                        toAwsProtocol(key.getProxyProtocol()),
                         key.getNonProxyHosts()));
         httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
         if (!Strings.isNullOrEmpty(key.getProxyUser())
