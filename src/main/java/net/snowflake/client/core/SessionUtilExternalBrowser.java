@@ -187,7 +187,7 @@ public class SessionUtilExternalBrowser {
               postRequest,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
-              loginInput.getSocketTimeout(),
+              loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
 

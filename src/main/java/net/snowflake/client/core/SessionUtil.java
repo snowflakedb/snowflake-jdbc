@@ -354,7 +354,7 @@ public class SessionUtil {
     int databaseMinorVersion = 0;
     String newClientForUpgrade;
     int healthCheckInterval = DEFAULT_HEALTH_CHECK_INTERVAL;
-    int httpClientSocketTimeout = loginInput.getSocketTimeout();
+    int httpClientSocketTimeout = loginInput.getSocketTimeoutInMillis();
     final ClientAuthnDTO.AuthenticatorType authenticatorType = getAuthenticator(loginInput);
     Map<String, Object> commonParams;
 
@@ -623,7 +623,7 @@ public class SessionUtil {
       String theString = null;
 
       int leftRetryTimeout = loginInput.getLoginTimeout();
-      int leftsocketTimeout = loginInput.getSocketTimeout();
+      int leftsocketTimeout = loginInput.getSocketTimeoutInMillis();
       int retryCount = 0;
 
       while (true) {
@@ -664,7 +664,7 @@ public class SessionUtil {
               // auth timeout within socket timeout is thrown without backoff,
               // and we need to update time remained in socket timeout here to control the
               // the actual socket timeout from customer setting.
-              if (loginInput.getSocketTimeout() > 0) {
+              if (loginInput.getSocketTimeoutInMillis() > 0) {
                 if (ex.issocketTimeoutNoBackoff()) {
                   if (leftsocketTimeout > elapsedSeconds) {
                     leftsocketTimeout -= elapsedSeconds;
@@ -673,7 +673,7 @@ public class SessionUtil {
                   }
                 } else {
                   // reset curl timeout for retry with backoff.
-                  leftsocketTimeout = loginInput.getSocketTimeout();
+                  leftsocketTimeout = loginInput.getSocketTimeoutInMillis();
                 }
               }
 
@@ -782,11 +782,11 @@ public class SessionUtil {
       if (healthCheckIntervalFromGS > 0 && healthCheckIntervalFromGS != healthCheckInterval) {
         // add health check interval to socket timeout
         httpClientSocketTimeout =
-            loginInput.getSocketTimeout() + (healthCheckIntervalFromGS * 1000);
+            loginInput.getSocketTimeoutInMillis() + (healthCheckIntervalFromGS * 1000);
 
         final RequestConfig requestConfig =
             RequestConfig.copy(HttpUtil.getRequestConfigWithoutCookies())
-                .setConnectTimeout(loginInput.getConnectionTimeout())
+                .setConnectTimeout((int) loginInput.getConnectionTimeout().toMillis())
                 .setSocketTimeout(httpClientSocketTimeout)
                 .build();
 
@@ -961,7 +961,7 @@ public class SessionUtil {
               postRequest,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
-              loginInput.getSocketTimeout(),
+              loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
 
@@ -1054,7 +1054,7 @@ public class SessionUtil {
               postRequest,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
-              loginInput.getSocketTimeout(),
+              loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
 
@@ -1120,7 +1120,7 @@ public class SessionUtil {
               httpGet,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
-              loginInput.getSocketTimeout(),
+              loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
 
@@ -1194,7 +1194,7 @@ public class SessionUtil {
               postRequest,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
-              loginInput.getSocketTimeout(),
+              loginInput.getSocketTimeoutInMillis(),
               0,
               0,
               null,
@@ -1285,7 +1285,7 @@ public class SessionUtil {
               postRequest,
               loginInput.getLoginTimeout(),
               loginInput.getAuthTimeout(),
-              loginInput.getSocketTimeout(),
+              loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
       logger.debug("authenticator-request response: {}", gsResponse);
