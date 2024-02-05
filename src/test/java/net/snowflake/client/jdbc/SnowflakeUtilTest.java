@@ -64,7 +64,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
             new FieldMetadata[] {
               new FieldMetadata(
                   fieldOne.path("name").asText(),
-                  fieldOne.path("type").asText(),
+                  columnTypeInfoNodeOne.getExtColTypeName(),
                   columnTypeInfoNodeOne.getColumnType(),
                   fieldOne.path("nullable").asBoolean(),
                   fieldOne.path("length").asInt(),
@@ -72,18 +72,18 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
                   fieldOne.path("scale").asInt(),
                   fieldOne.path("fixed").asBoolean(),
                   columnTypeInfoNodeOne.getSnowflakeType(),
-                  null),
+                  new FieldMetadata[0]),
               new FieldMetadata(
                   fieldTwo.path("name").asText(),
-                  fieldTwo.path("type").asText(),
+                  columnTypeInfoNodeTwo.getExtColTypeName(),
                   columnTypeInfoNodeTwo.getColumnType(),
                   fieldTwo.path("nullable").asBoolean(),
                   fieldTwo.path("length").asInt(),
                   fieldTwo.path("precision").asInt(),
                   fieldTwo.path("scale").asInt(),
                   fieldTwo.path("fixed").asBoolean(),
-                  columnTypeInfoNodeOne.getSnowflakeType(),
-                  null)
+                  columnTypeInfoNodeTwo.getSnowflakeType(),
+                  new FieldMetadata[0])
             },
             rootNode.path("database").asText(),
             rootNode.path("schema").asText(),
