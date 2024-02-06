@@ -518,7 +518,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   private Object handleObjectType(int columnIndex, Object obj) throws SFException {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
-    if (columnType == Types.STRUCT) {
+    if (columnType == Types.STRUCT
+        && Boolean.valueOf(System.getProperty("STRUCTURED_TYPE_ENABLED"))) {
       try {
         JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
         return new JsonSqlInput(

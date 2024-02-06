@@ -7,13 +7,15 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryStructuredType;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-@Category(TestCategoryResultSet.class)
-public class ResultSetStructuredTypesLatestIT {
+@Category(TestCategoryStructuredType.class)
+public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   private final String queryResultFormat;
 
   public ResultSetStructuredTypesLatestIT() {
@@ -27,6 +29,8 @@ public class ResultSetStructuredTypesLatestIT {
   public Connection init() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     Statement stmt = conn.createStatement();
+    stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
+    stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
     stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     stmt.close();
     return conn;
@@ -100,12 +104,16 @@ public class ResultSetStructuredTypesLatestIT {
     public void writeSQL(SQLOutput stream) throws SQLException {}
   }
 
+  // TODO Structured types feature exists only on QA environments
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapStructToObjectWithFactory() throws SQLException {
     testMapJson(true);
   }
 
+  // TODO Structured types feature exists only on QA environments
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapStructToObjectWithReflection() throws SQLException {
     testMapJson(false);
   }
@@ -126,7 +134,9 @@ public class ResultSetStructuredTypesLatestIT {
     connection.close();
   }
 
+  // TODO Structured types feature exists only on QA environments
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapAllTypesOfFields() throws SQLException {
     SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
     Connection connection = init();
@@ -192,7 +202,9 @@ public class ResultSetStructuredTypesLatestIT {
     connection.close();
   }
 
+  // TODO Structured types feature exists only on QA environments
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapStructsFromChunks() throws SQLException {
     Connection connection = init();
     Statement statement = connection.createStatement();
