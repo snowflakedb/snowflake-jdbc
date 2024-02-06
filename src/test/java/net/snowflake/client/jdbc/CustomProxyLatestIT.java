@@ -596,7 +596,7 @@ public class CustomProxyLatestIT {
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
     HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
-    assertEquals(HttpProtocol.HTTP, clientSettingsKey.getProxyProtocol());
+    assertEquals(HttpProtocol.HTTP, clientSettingsKey.getProxyHttpProtocol());
     con.close();
   }
 
@@ -622,7 +622,7 @@ public class CustomProxyLatestIT {
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
     HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
-    assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyProtocol());
+    assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
     con.close();
   }
 
@@ -647,7 +647,7 @@ public class CustomProxyLatestIT {
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
     HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
-    assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyProtocol());
+    assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
     con.close();
   }
 

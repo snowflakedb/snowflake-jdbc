@@ -524,7 +524,7 @@ public class SFSession extends SFBaseSession {
         httpClientSettingsKey.getProxyUser(),
         !Strings.isNullOrEmpty(httpClientSettingsKey.getProxyPassword()) ? "***" : "(empty)",
         httpClientSettingsKey.getNonProxyHosts(),
-        httpClientSettingsKey.getProxyProtocol());
+        httpClientSettingsKey.getProxyHttpProtocol());
 
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();
