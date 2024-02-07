@@ -7,14 +7,12 @@ package net.snowflake.client.core;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.PrivateKey;
+import java.time.Duration;
 import java.util.Map;
 import net.snowflake.client.jdbc.ErrorCode;
 
 /** A class for holding all information required for login */
 public class SFLoginInput {
-  private static int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 60000; // millisec
-  private static int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
-
   private String serverUrl;
   private String databaseName;
   private String schemaName;
@@ -32,8 +30,8 @@ public class SFLoginInput {
   private boolean passcodeInPassword;
   private String passcode;
   private String token;
-  private int connectionTimeout = DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT;
-  private int socketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT;
+  private Duration connectionTimeout = HttpUtil.getConnectionTimeout();
+  private Duration socketTimeout = HttpUtil.getSocketTimeout();
   private String appId;
   private String appVersion;
   private String sessionToken;
@@ -216,20 +214,20 @@ public class SFLoginInput {
     return this;
   }
 
-  int getConnectionTimeout() {
+  Duration getConnectionTimeout() {
     return connectionTimeout;
   }
 
-  SFLoginInput setConnectionTimeout(int connectionTimeout) {
+  SFLoginInput setConnectionTimeout(Duration connectionTimeout) {
     this.connectionTimeout = connectionTimeout;
     return this;
   }
 
-  int getSocketTimeout() {
-    return socketTimeout;
+  int getSocketTimeoutInMillis() {
+    return (int) socketTimeout.toMillis();
   }
 
-  SFLoginInput setSocketTimeout(int socketTimeout) {
+  SFLoginInput setSocketTimeout(Duration socketTimeout) {
     this.socketTimeout = socketTimeout;
     return this;
   }

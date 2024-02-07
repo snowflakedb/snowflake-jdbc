@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core;
 
+import java.time.Duration;
 import java.util.Map;
 
 /** Login output information including session tokens, database versions */
@@ -16,7 +17,7 @@ public class SFLoginOutput {
   private String databaseVersion;
   private int databaseMajorVersion;
   private int databaseMinorVersion;
-  private int httpClientSocketTimeout;
+  private Duration httpClientSocketTimeout;
   private String sessionDatabase;
   private String sessionSchema;
   private String sessionRole;
@@ -50,7 +51,7 @@ public class SFLoginOutput {
     this.databaseVersion = databaseVersion;
     this.databaseMajorVersion = databaseMajorVersion;
     this.databaseMinorVersion = databaseMinorVersion;
-    this.httpClientSocketTimeout = httpClientSocketTimeout;
+    this.httpClientSocketTimeout = Duration.ofMillis(httpClientSocketTimeout);
     this.sessionDatabase = sessionDatabase;
     this.sessionSchema = sessionSchema;
     this.sessionRole = sessionRole;
@@ -106,7 +107,7 @@ public class SFLoginOutput {
     return databaseMinorVersion;
   }
 
-  int getHttpClientSocketTimeout() {
+  Duration getHttpClientSocketTimeout() {
     return httpClientSocketTimeout;
   }
 
