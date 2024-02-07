@@ -45,11 +45,11 @@ public class SFSession extends SFBaseSession {
   // Need to be removed when a better way to organize session parameter is introduced.
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
+  private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final int MAX_SESSION_PARAMETERS = 1000;
   public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
   private final AtomicInteger sequenceId = new AtomicInteger(0);
   private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
-  private static ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
   private Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
@@ -113,9 +113,6 @@ public class SFSession extends SFBaseSession {
    * <p>Default: 300
    */
   private int retryTimeout = 300;
-
-  // Max string length for JSON.
-  private int maxJsonStringLength = ObjectMapperFactory.DEFAULT_MAX_JSON_STRING_LEN;
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
@@ -437,18 +434,6 @@ public class SFSession extends SFBaseSession {
             if (timeoutValue >= 300 || timeoutValue == 0) {
               retryTimeout = timeoutValue;
             }
-          }
-          break;
-
-        case MAX_JSON_STRING_LENGTH:
-          if (propertyValue != null) {
-            maxJsonStringLength = (Integer) propertyValue;
-
-            // Update the max string length used in ObjectMapperFactory
-            ObjectMapperFactory.setMaxJsonStringLength(maxJsonStringLength);
-
-            // Update the max string length of the instantiated mapper in this class
-            mapper = ObjectMapperFactory.getObjectMapper();
           }
           break;
 
@@ -1213,32 +1198,5 @@ public class SFSession extends SFBaseSession {
 
   public void setSfClientConfig(SFClientConfig sfClientConfig) {
     this.sfClientConfig = sfClientConfig;
-  }
-
-  /**
-   * @return the max string length for parsing a JSON string.
-   */
-  public int getMaxJsonStringLength() {
-    return maxJsonStringLength;
-  }
-
-  /**
-   * Set the max string length for a JSON string in the current ObjectMapper object.
-   *
-   * @param maxJsonStringLength the max string length to set.
-   */
-  public void setMaxJsonStringLength(int maxJsonStringLength) {
-    this.maxJsonStringLength = maxJsonStringLength;
-    ObjectMapperFactory.setMaxJsonStringLength(maxJsonStringLength);
-    mapper = ObjectMapperFactory.getObjectMapper();
-  }
-
-  /**
-   * Get the max string length set in the current ObjectMapper object.
-   *
-   * @return the max string length.
-   */
-  public int getMaxJsonStringLengthFromObjectMapper() {
-    return mapper.getFactory().streamReadConstraints().getMaxStringLength();
   }
 }

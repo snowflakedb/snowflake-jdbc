@@ -246,12 +246,6 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       sfSession.addSFSessionProperty(property.getKey(), property.getValue());
     }
 
-    // If maxJsonStringLength is not specified in the connection string, make sure
-    // ObjectMapperFactory is using the default value.
-    if (sfSession.getMaxJsonStringLength() != sfSession.getMaxJsonStringLengthFromObjectMapper()) {
-      sfSession.setMaxJsonStringLength(ObjectMapperFactory.DEFAULT_MAX_JSON_STRING_LEN);
-    }
-
     // populate app id and version
     sfSession.addProperty(SFSessionProperty.APP_ID, appID);
     sfSession.addProperty(SFSessionProperty.APP_VERSION, appVersion);
