@@ -76,7 +76,6 @@ timestamps {
         'RT-LanguageJDBC2-PC' : "Test JDBC 2 - $jdk",
         'RT-LanguageJDBC3-PC' : "Test JDBC 3 - $jdk",
         'RT-LanguageJDBC4-PC' : "Test JDBC 4 - $jdk",
-        'RT-LanguageJDBC-CodeCoverage-PC' : "CodeCoverage JDBC - $jdk"
       ].collect { jobToRun, runName ->
         return new JdbcJobDefinition(
           jdk: jdk,

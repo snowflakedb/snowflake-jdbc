@@ -20,6 +20,7 @@ import java.net.Proxy;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -59,23 +60,27 @@ import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
 
 public class HttpUtil {
-  static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 
   static final int DEFAULT_MAX_CONNECTIONS = 300;
   static final int DEFAULT_MAX_CONNECTIONS_PER_ROUTE = 300;
-  static final int DEFAULT_CONNECTION_TIMEOUT = 60000;
-  static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // ms
+  private static final int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS = 60000;
+  static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS = 300000; // ms
   static final int DEFAULT_TTL = 60; // secs
   static final int DEFAULT_IDLE_CONNECTION_TIMEOUT = 5; // secs
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
   public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
+  static final String JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY =
+      "net.snowflake.jdbc.http_client_connection_timeout_in_ms";
+  static final String JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY =
+      "net.snowflake.jdbc.http_client_socket_timeout_in_ms";
   public static final String JDBC_MAX_CONNECTIONS_PROPERTY = "net.snowflake.jdbc.max_connections";
   public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
       "net.snowflake.jdbc.max_connections_per_route";
 
   /**
-   * The unique httpClient shared by all connections. This will benefit long- lived clients. Key =
+   * The unique httpClient shared by all connections. This will benefit long-lived clients. Key =
    * proxy host + proxy port + nonProxyHosts, Value = Map of [OCSPMode, HttpClient]
    */
   public static Map<HttpClientSettingsKey, CloseableHttpClient> httpClient =
@@ -100,6 +105,20 @@ public class HttpUtil {
   private static RequestConfig DefaultRequestConfig = null;
 
   private static boolean socksProxyDisabled = false;
+
+  @SnowflakeJdbcInternalApi
+  public static Duration getConnectionTimeout() {
+    return Duration.ofMillis(
+        convertSystemPropertyToIntValue(
+            JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY, DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS));
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static Duration getSocketTimeout() {
+    return Duration.ofMillis(
+        convertSystemPropertyToIntValue(
+            JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY, DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS));
+  }
 
   public static long getDownloadedConditionTimeoutInSeconds() {
     return DEFAULT_DOWNLOADED_CONDITION_TIMEOUT;
@@ -286,9 +305,14 @@ public class HttpUtil {
       @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadUnCompressed) {
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
-
     int timeToLive = convertSystemPropertyToIntValue(JDBC_TTL, DEFAULT_TTL);
     logger.debug("time to live in connection pooling manager: {}", timeToLive);
+    long connectTimeout = getConnectionTimeout().toMillis();
+    long socketTimeout = getSocketTimeout().toMillis();
+    logger.debug(
+        "Connect timeout is {} ms and socket timeout is {} for connection pooling manager",
+        connectTimeout,
+        socketTimeout);
 
     // Set proxy settings for DefaultRequestConfig. If current proxy settings are the same as for
     // the last request, keep the current DefaultRequestConfig. If not, build a new
@@ -306,9 +330,9 @@ public class HttpUtil {
     if (noDefaultRequestConfig || !DefaultRequestConfig.getProxy().equals(proxy)) {
       RequestConfig.Builder builder =
           RequestConfig.custom()
-              .setConnectTimeout(DEFAULT_CONNECTION_TIMEOUT)
-              .setConnectionRequestTimeout(DEFAULT_CONNECTION_TIMEOUT)
-              .setSocketTimeout(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT);
+              .setConnectTimeout((int) connectTimeout)
+              .setConnectionRequestTimeout((int) connectTimeout)
+              .setSocketTimeout((int) socketTimeout);
       // only set the proxy settings if they are not null
       // but no value has been specified for nonProxyHosts
       // the route planner will determine whether to use a proxy based on nonProxyHosts value.

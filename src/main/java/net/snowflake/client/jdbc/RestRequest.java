@@ -242,7 +242,8 @@ public class RestRequest {
 
         savedEx = ex;
         // if the request took more than 5 min (socket timeout) log an error
-        if ((System.currentTimeMillis() - startTimePerRequest) > 300000) {
+        if ((System.currentTimeMillis() - startTimePerRequest)
+            > HttpUtil.getSocketTimeout().toMillis()) {
           logger.warn(
               "HTTP request took longer than 5 min: {} sec",
               (System.currentTimeMillis() - startTimePerRequest) / 1000);
