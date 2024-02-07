@@ -443,6 +443,8 @@ public enum SnowflakeType {
     switch (type) {
       case Types.VARCHAR:
       case Types.CHAR:
+      case Types.STRUCT:
+      case Types.ARRAY:
         return String.class.getName();
 
       case Types.BINARY:

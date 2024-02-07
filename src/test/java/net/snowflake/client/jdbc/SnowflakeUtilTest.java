@@ -46,11 +46,12 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
 
   private static SnowflakeColumnMetadata createExpectedMetadata(
       JsonNode rootNode, JsonNode fieldOne, JsonNode fieldTwo) throws SnowflakeSQLLoggedException {
-    ColumnTypeInfo columnTypeInfo = getSnowflakeType(rootNode.path("type").asText(), null, null, 0);
+    ColumnTypeInfo columnTypeInfo =
+        getSnowflakeType(rootNode.path("type").asText(), null, null, null, 0);
     ColumnTypeInfo columnTypeInfoNodeOne =
-        getSnowflakeType(fieldOne.path("type").asText(), null, null, Types.BIGINT);
+        getSnowflakeType(fieldOne.path("type").asText(), null, null, null, Types.BIGINT);
     ColumnTypeInfo columnTypeInfoNodeTwo =
-        getSnowflakeType(fieldTwo.path("type").asText(), null, null, Types.DECIMAL);
+        getSnowflakeType(fieldTwo.path("type").asText(), null, null, null, Types.DECIMAL);
     SnowflakeColumnMetadata expectedColumnMetadata =
         new SnowflakeColumnMetadata(
             rootNode.path("name").asText(),
