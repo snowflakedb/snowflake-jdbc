@@ -163,10 +163,16 @@ public class SnowflakeUtil {
     int length = colNode.path("length").asInt();
     boolean fixed = colNode.path("fixed").asBoolean();
     JsonNode udtOutputType = colNode.path("outputType");
+    JsonNode extColTypeNameNode = colNode.path("extTypeName");
+    String extColTypeName = null;
+    if (!extColTypeNameNode.isMissingNode()
+        && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
+      extColTypeName = extColTypeNameNode.asText();
+    }
 
     int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
     ColumnTypeInfo columnTypeInfo =
-        getSnowflakeType(internalColTypeName, udtOutputType, session, fixedColType);
+        getSnowflakeType(internalColTypeName, extColTypeName, udtOutputType, session, fixedColType);
 
     String colSrcDatabase = colNode.path("database").asText();
     String colSrcSchema = colNode.path("schema").asText();
@@ -197,76 +203,98 @@ public class SnowflakeUtil {
   }
 
   static ColumnTypeInfo getSnowflakeType(
-      String internalColTypeName, JsonNode udtOutputType, SFBaseSession session, int fixedColType)
+      String internalColTypeName,
+      String extColTypeName,
+      JsonNode udtOutputType,
+      SFBaseSession session,
+      int fixedColType)
       throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
     ColumnTypeInfo columnTypeInfo = null;
 
     switch (baseType) {
       case TEXT:
-        columnTypeInfo = new ColumnTypeInfo(Types.VARCHAR, "VARCHAR", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "VARCHAR"), baseType);
         break;
       case CHAR:
-        columnTypeInfo = new ColumnTypeInfo(Types.CHAR, "CHAR", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.CHAR, defaultIfNull(extColTypeName, "CHAR"), baseType);
         break;
       case INTEGER:
-        columnTypeInfo = new ColumnTypeInfo(Types.INTEGER, "INTEGER", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.INTEGER, defaultIfNull(extColTypeName, "INTEGER"), baseType);
         break;
       case FIXED:
-        columnTypeInfo = new ColumnTypeInfo(fixedColType, "NUMBER", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(fixedColType, defaultIfNull(extColTypeName, "NUMBER"), baseType);
         break;
 
       case REAL:
-        columnTypeInfo = new ColumnTypeInfo(Types.DOUBLE, "DOUBLE", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.DOUBLE, defaultIfNull(extColTypeName, "DOUBLE"), baseType);
         break;
 
       case TIMESTAMP:
       case TIMESTAMP_LTZ:
-        columnTypeInfo = new ColumnTypeInfo(EXTRA_TYPES_TIMESTAMP_LTZ, "TIMESTAMPLTZ", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                EXTRA_TYPES_TIMESTAMP_LTZ, defaultIfNull(extColTypeName, "TIMESTAMPLTZ"), baseType);
         break;
 
       case TIMESTAMP_NTZ:
         // if the column type is changed to EXTRA_TYPES_TIMESTAMP_NTZ, update also JsonSqlInput
-        columnTypeInfo = new ColumnTypeInfo(Types.TIMESTAMP, "TIMESTAMPNTZ", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                Types.TIMESTAMP, defaultIfNull(extColTypeName, "TIMESTAMPNTZ"), baseType);
         break;
 
       case TIMESTAMP_TZ:
-        columnTypeInfo = new ColumnTypeInfo(EXTRA_TYPES_TIMESTAMP_TZ, "TIMESTAMPTZ", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                EXTRA_TYPES_TIMESTAMP_TZ, defaultIfNull(extColTypeName, "TIMESTAMPTZ"), baseType);
         break;
 
       case DATE:
-        columnTypeInfo = new ColumnTypeInfo(Types.DATE, "DATE", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.DATE, defaultIfNull(extColTypeName, "DATE"), baseType);
         break;
 
       case TIME:
-        columnTypeInfo = new ColumnTypeInfo(Types.TIME, "TIME", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.TIME, defaultIfNull(extColTypeName, "TIME"), baseType);
         break;
 
       case BOOLEAN:
-        columnTypeInfo = new ColumnTypeInfo(Types.BOOLEAN, "BOOLEAN", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.BOOLEAN, defaultIfNull(extColTypeName, "BOOLEAN"), baseType);
         break;
 
         // TODO structuredType fill for Array and Map
       case ARRAY:
-        columnTypeInfo = new ColumnTypeInfo(Types.ARRAY, "ARRAY", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
 
       case OBJECT:
-        columnTypeInfo = new ColumnTypeInfo(Types.STRUCT, "OBJECT", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.STRUCT, defaultIfNull(extColTypeName, "OBJECT"), baseType);
         break;
 
       case VARIANT:
-        columnTypeInfo = new ColumnTypeInfo(Types.VARCHAR, "VARIANT", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "VARIANT"), baseType);
         break;
 
       case BINARY:
-        columnTypeInfo = new ColumnTypeInfo(Types.BINARY, "BINARY", baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.BINARY, defaultIfNull(extColTypeName, "BINARY"), baseType);
         break;
 
       case GEOGRAPHY:
       case GEOMETRY:
         int colType = Types.VARCHAR;
-        String extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
+        extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
 
         if (!udtOutputType.isMissingNode()) {
           SnowflakeType outputType = SnowflakeType.fromString(udtOutputType.asText());
@@ -289,7 +317,12 @@ public class SnowflakeUtil {
             SqlState.INTERNAL_ERROR,
             "Unknown column type: " + internalColTypeName);
     }
+
     return columnTypeInfo;
+  }
+
+  private static String defaultIfNull(String extColTypeName, String defaultValue) {
+    return Optional.ofNullable(extColTypeName).orElse(defaultValue);
   }
 
   static FieldMetadata[] createFieldsMetadata(ArrayNode fieldsJson, int fixedColType)
@@ -311,8 +344,14 @@ public class SnowflakeUtil {
         internalFields = createFieldsMetadata(internalFieldsJson, fixedColType);
       }
       JsonNode outputType = node.path("outputType");
+      JsonNode extColTypeNameNode = node.path("extTypeName");
+      String extColTypeName = null;
+      if (!extColTypeNameNode.isMissingNode()
+          && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
+        extColTypeName = extColTypeNameNode.asText();
+      }
       ColumnTypeInfo columnTypeInfo =
-          getSnowflakeType(internalColTypeName, outputType, null, fixedColType);
+          getSnowflakeType(internalColTypeName, extColTypeName, outputType, null, fixedColType);
       fields[fieldCounter++] =
           new FieldMetadata(
               colName,
