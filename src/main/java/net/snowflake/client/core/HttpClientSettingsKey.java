@@ -123,7 +123,7 @@ public class HttpClientSettingsKey implements Serializable {
   }
 
   /** Be careful of using this! Should only be called when password is later masked. */
-  String getProxyPassword() {
+  public String getProxyPassword() {
     return this.proxyPassword;
   }
 
