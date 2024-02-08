@@ -330,7 +330,7 @@ public class HttpUtil {
                     new SnowflakeMutableProxyRoutePlanner(
                         key.getProxyHost(),
                         key.getProxyPort(),
-                        key.getProxyProtocol(),
+                        key.getProxyHttpProtocol(),
                         key.getNonProxyHosts()));
         httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
         if (!Strings.isNullOrEmpty(key.getProxyUser())

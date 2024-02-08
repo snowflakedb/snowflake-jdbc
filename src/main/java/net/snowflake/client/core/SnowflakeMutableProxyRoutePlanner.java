@@ -24,11 +24,23 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
   private String host;
   private int proxyPort;
   private String nonProxyHosts;
-  private Protocol protocol;
+  private HttpProtocol protocol;
 
+  /**
+   * @deprecated use SnowflakeMutableProxyRoutePlanner(String host, int proxyPort, HttpProtocol protocol, String nonProxyHosts)
+   */
   public SnowflakeMutableProxyRoutePlanner(
       String host, int proxyPort, Protocol proxyProtocol, String nonProxyHosts) {
     proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, proxyProtocol, nonProxyHosts);
+    this.host = host;
+    this.proxyPort = proxyPort;
+    this.nonProxyHosts = nonProxyHosts;
+    this.protocol = toSnowflakeProtocol(proxyProtocol);
+  }
+
+  public SnowflakeMutableProxyRoutePlanner(
+          String host, int proxyPort, HttpProtocol proxyProtocol, String nonProxyHosts) {
+    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, toAwsProtocol(proxyProtocol), nonProxyHosts);
     this.host = host;
     this.proxyPort = proxyPort;
     this.nonProxyHosts = nonProxyHosts;
@@ -37,7 +49,7 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
 
   public void setNonProxyHosts(String nonProxyHosts) {
     this.nonProxyHosts = nonProxyHosts;
-    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, protocol, nonProxyHosts);
+    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, toAwsProtocol(protocol), nonProxyHosts);
   }
 
   public String getNonProxyHosts() {
@@ -48,5 +60,13 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
   public HttpRoute determineRoute(HttpHost target, HttpRequest request, HttpContext context)
       throws HttpException {
     return proxyRoutePlanner.determineRoute(target, request, context);
+  }
+
+  private Protocol toAwsProtocol(HttpProtocol protocol) {
+    return protocol == HttpProtocol.HTTP ? Protocol.HTTP : Protocol.HTTPS;
+  }
+
+  private HttpProtocol toSnowflakeProtocol(Protocol protocol) {
+      return protocol == Protocol.HTTP ? HttpProtocol.HTTP : HttpProtocol.HTTPS;
   }
 }
