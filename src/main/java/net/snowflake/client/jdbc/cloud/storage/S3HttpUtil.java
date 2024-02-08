@@ -4,6 +4,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.google.common.base.Strings;
 import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpProtocol;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -19,7 +20,7 @@ public class S3HttpUtil {
      */
     public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
         if (key != null && key.usesProxy()) {
-            clientConfig.setProxyProtocol(key.getProxyProtocol());
+            clientConfig.setProxyProtocol(key.getProxyHttpProtocol() == HttpProtocol.HTTPS ? Protocol.HTTPS : Protocol.HTTP);
             clientConfig.setProxyHost(key.getProxyHost());
             clientConfig.setProxyPort(key.getProxyPort());
             clientConfig.setNonProxyHosts(key.getNonProxyHosts());
