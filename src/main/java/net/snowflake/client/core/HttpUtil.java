@@ -38,14 +38,12 @@ import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
@@ -917,43 +915,5 @@ public class HttpUtil {
     if (additionalHeaders != null && !additionalHeaders.isEmpty()) {
       additionalHeaders.forEach(request::addHeader);
     }
-  }
-
-  /**
-   * This method was moved from DefaultResultStreamProvider to take advantage of the HTTP
-   * connection pool manager initialized by HttpUtil
-   * @param oscpAndProxyKey OCSP mode and proxy settings for httpclient
-   * @param httpRequest HttpRequest
-   * @param networkTimeout network timeout
-   * @param authTimeout authenticator specific timeout
-   * @param socketTimeout socket timeout (in ms)
-   * @return
-   * @throws SnowflakeSQLException
-   */
-  public static HttpResponse getHttpResponseForS3Request(
-          HttpClientSettingsKey oscpAndProxyKey,
-          HttpGet httpRequest,
-          int networkTimeout,
-          int authTimeout,
-          int socketTimeout) throws SnowflakeSQLException {
-    CloseableHttpClient httpClient =
-            HttpUtil.getHttpClient(oscpAndProxyKey);
-
-    // fetch the result chunk
-    return RestRequest.execute(
-                    httpClient,
-                    httpRequest,
-                    networkTimeout / 1000, // retry timeout
-                    authTimeout,
-                    socketTimeout,
-                    0,
-                    0, // no socket timeout injection
-                    null, // no canceling
-                    false, // no cookie
-                    false, // no retry parameters in url
-                    false, // no request_guid
-                    true, // retry on HTTP403 for AWS S3
-                    true, // no retry on http request
-                    new ExecTimeTelemetryData());
   }
 }
