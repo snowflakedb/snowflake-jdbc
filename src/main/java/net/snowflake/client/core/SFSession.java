@@ -40,13 +40,13 @@ public class SFSession extends SFBaseSession {
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
   public static final String SF_HEADER_TOKEN_TAG = "Token";
   static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
   private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
   // temporarily have this variable to avoid hardcode.
   // Need to be removed when a better way to organize session parameter is introduced.
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
-  private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final int MAX_SESSION_PARAMETERS = 1000;
   // this constant was public - let's not change it
   public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT =
@@ -930,7 +930,7 @@ public class SFSession extends SFBaseSession {
 
         logger.debug("connection heartbeat response: {}", theResponse);
 
-        rootNode = mapper.readTree(theResponse);
+        rootNode = OBJECT_MAPPER.readTree(theResponse);
 
         // check the response to see if it is session expiration response
         if (rootNode != null

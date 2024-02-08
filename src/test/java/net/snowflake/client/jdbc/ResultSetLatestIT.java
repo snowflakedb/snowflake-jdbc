@@ -926,45 +926,28 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
+  /** Added in > 3.14.5 */
   @Test
   public void testLargeStringRetrieval() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    statement.execute("create or replace table maxJsonStringLength_table (c1 string(16777216))");
-    statement.execute("insert into maxJsonStringLength_table select randstr(16777216, random())");
-    try {
-      assertNull(System.getProperty("net.snowflake.jdbc.objectMapper.maxJsonStringLength"));
-      ResultSet rs = statement.executeQuery("select * from maxJsonStringLength_table");
+    String tableName = "maxJsonStringLength_table";
+    int colLength = 16777216;
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      statement.execute("create or replace table " + tableName + " (c1 string(" + colLength + "))");
+      statement.execute(
+          "insert into " + tableName + " select randstr(" + colLength + ", random())");
+      assertNull(System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM));
+      ResultSet rs = statement.executeQuery("select * from " + tableName);
       assertNotNull(rs);
-    } catch (Exception e) {
-      fail("executeQuery should not fail");
-    } finally {
-      statement.execute("drop table maxJsonStringLength_table");
+      while (rs.next()) {
+        assertEquals(colLength, rs.getString(1).length());
+      }
+      // cleanup
+      statement.execute("drop table " + tableName);
       statement.close();
       con.close();
-    }
-  }
-
-  @Test
-  public void testInvalidMaxJsonStringLength() throws SQLException {
-    Connection con = null;
-    Statement statement = null;
-    System.setProperty("net.snowflake.jdbc.objectMapper.maxJsonStringLength", "abc");
-    try {
-      // calling getObjectMapper() should log the exception but not throw
-      ObjectMapperFactory.getObjectMapper();
-      con = getConnection();
-      statement = con.createStatement();
-      statement.execute("create or replace table maxJsonStringLength_table (c1 string(16777216))");
-      statement.execute("insert into maxJsonStringLength_table select randstr(16777216, random())");
-      statement.executeQuery("select * from maxJsonStringLength_table");
     } catch (Exception e) {
       fail("executeQuery should not fail");
-    } finally {
-      System.clearProperty("net.snowflake.jdbc.objectMapper.maxJsonStringLength");
-      statement.execute("drop table maxJsonStringLength_table");
-      statement.close();
-      con.close();
     }
   }
 }

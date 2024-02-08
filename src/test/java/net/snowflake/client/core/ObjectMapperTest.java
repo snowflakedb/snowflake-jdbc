@@ -1,10 +1,11 @@
 package net.snowflake.client.core;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -20,39 +21,54 @@ import org.junit.runners.Parameterized;
 public class ObjectMapperTest {
   @Parameterized.Parameters(name = "LOBSize={0}, maxJsonStringLength={1}")
   public static Collection<Object[]> data() {
-    // LOB sizes in MB
-    int[] lobSizes = new int[] {16, 32, 64, 128};
+    int[] lobSizeInMB = new int[] {16, 16, 32, 64, 128};
     // maxJsonStringLength to be set for the corresponding LOB size
-    int[] maxJsonStringLengths = new int[] {23_000_000, 45_000_000, 90_000_000, 180_000_000};
+    int[] maxJsonStringLengths =
+        new int[] {20_000_000, 23_000_000, 45_000_000, 90_000_000, 180_000_000};
     List<Object[]> ret = new ArrayList<>();
-    for (int i = 0; i < lobSizes.length; i++) {
-      ret.add(new Object[] {lobSizes[i], maxJsonStringLengths[i]});
+    for (int i = 0; i < lobSizeInMB.length; i++) {
+      ret.add(new Object[] {lobSizeInMB[i], maxJsonStringLengths[i]});
     }
     return ret;
   }
 
-  private final int lobSize;
+  private final int lobSizeInBytes;
+  private final int maxJsonStringLength;
+  private final int jacksonDefaultMaxStringLength = 20_000_000;
 
   @After
   public void clearProperty() {
-    System.clearProperty("net.snowflake.jdbc.objectMapper.maxJsonStringLength");
+    System.clearProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
   }
 
-  public ObjectMapperTest(int lobSize, int maxLength) {
+  public ObjectMapperTest(int lobSizeInMB, int maxJsonStringLength) {
     // convert LOB size from MB to bytes
-    this.lobSize = lobSize * 1024 * 1024;
+    this.lobSizeInBytes = lobSizeInMB * 1024 * 1024;
+    this.maxJsonStringLength = maxJsonStringLength;
     System.setProperty(
-        "net.snowflake.jdbc.objectMapper.maxJsonStringLength", Integer.toString(maxLength));
+        ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, Integer.toString(maxJsonStringLength));
+  }
+
+  @Test
+  public void testInvalidMaxJsonStringLength() throws SQLException {
+    System.setProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, "abc");
+    // calling getObjectMapper() should log the exception but not throw
+    // default maxJsonStringLength value will be used
+    ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
+    int stringLengthInMapper = mapper.getFactory().streamReadConstraints().getMaxStringLength();
+    Assert.assertEquals(ObjectMapperFactory.DEFAULT_MAX_JSON_STRING_LEN, stringLengthInMapper);
   }
 
   @Test
   public void testObjectMapperWithLargeJsonString() {
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     try {
-      JsonNode jsonNode = mapper.readTree(generateBase64EncodedJsonString(lobSize));
+      JsonNode jsonNode = mapper.readTree(generateBase64EncodedJsonString(lobSizeInBytes));
       Assert.assertNotNull(jsonNode);
     } catch (Exception e) {
-      fail("failed to read the JsonNode. err: " + e.getMessage());
+      // exception is expected when jackson's default maxStringLength value is used while retrieving
+      // 16M string data
+      assertEquals(jacksonDefaultMaxStringLength, maxJsonStringLength);
     }
   }
 
