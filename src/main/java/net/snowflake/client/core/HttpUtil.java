@@ -296,7 +296,7 @@ public class HttpUtil {
     HttpHost proxy =
         (key != null && key.usesProxy())
             ? new HttpHost(
-                key.getProxyHost(), key.getProxyPort(), key.getProxyHttpProtocol().toString())
+                key.getProxyHost(), key.getProxyPort(), key.getProxyHttpProtocol().getScheme())
             : null;
     // If defaultrequestconfig is not initialized or its proxy settings do not match current proxy
     // settings, re-build it (current or old proxy settings could be null, so null check is

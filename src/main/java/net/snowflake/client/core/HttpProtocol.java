@@ -10,14 +10,13 @@ public enum HttpProtocol {
 
     HTTPS("https");
 
-    private final String protocol;
+    private final String scheme;
 
     HttpProtocol(String protocol) {
-        this.protocol = protocol;
+        this.scheme = protocol;
     }
 
-    @Override
-    public String toString() {
-        return protocol;
+    public String getScheme() {
+        return scheme;
     }
 }
