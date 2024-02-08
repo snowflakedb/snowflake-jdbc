@@ -920,9 +920,8 @@ public class HttpUtil {
   }
 
   /**
-   * This method was moved from DefaultResultStreamProvider to take advantage of the HTTP connection
-   * pool manager initialized by HttpUtil
-   *
+   * This method was moved from DefaultResultStreamProvider to take advantage of the HTTP
+   * connection pool manager initialized by HttpUtil
    * @param oscpAndProxyKey OCSP mode and proxy settings for httpclient
    * @param httpRequest HttpRequest
    * @param networkTimeout network timeout
@@ -932,29 +931,29 @@ public class HttpUtil {
    * @throws SnowflakeSQLException
    */
   public static HttpResponse getHttpResponseForS3Request(
-      HttpClientSettingsKey oscpAndProxyKey,
-      HttpGet httpRequest,
-      int networkTimeout,
-      int authTimeout,
-      int socketTimeout)
-      throws SnowflakeSQLException {
-    CloseableHttpClient httpClient = HttpUtil.getHttpClient(oscpAndProxyKey);
+          HttpClientSettingsKey oscpAndProxyKey,
+          HttpGet httpRequest,
+          int networkTimeout,
+          int authTimeout,
+          int socketTimeout) throws SnowflakeSQLException {
+    CloseableHttpClient httpClient =
+            HttpUtil.getHttpClient(oscpAndProxyKey);
 
     // fetch the result chunk
     return RestRequest.execute(
-        httpClient,
-        httpRequest,
-        networkTimeout / 1000, // retry timeout
-        authTimeout,
-        socketTimeout,
-        0,
-        0, // no socket timeout injection
-        null, // no canceling
-        false, // no cookie
-        false, // no retry parameters in url
-        false, // no request_guid
-        true, // retry on HTTP403 for AWS S3
-        true, // no retry on http request
-        new ExecTimeTelemetryData());
+                    httpClient,
+                    httpRequest,
+                    networkTimeout / 1000, // retry timeout
+                    authTimeout,
+                    socketTimeout,
+                    0,
+                    0, // no socket timeout injection
+                    null, // no canceling
+                    false, // no cookie
+                    false, // no retry parameters in url
+                    false, // no request_guid
+                    true, // retry on HTTP403 for AWS S3
+                    true, // no retry on http request
+                    new ExecTimeTelemetryData());
   }
 }
