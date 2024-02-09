@@ -14,6 +14,7 @@ import com.google.common.base.Strings;
 import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,7 +49,9 @@ public class SFSession extends SFBaseSession {
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final int MAX_SESSION_PARAMETERS = 1000;
-  public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT = 300000; // millisec
+  // this constant was public - let's not change it
+  public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT =
+      HttpUtil.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS;
   private final AtomicInteger sequenceId = new AtomicInteger(0);
   private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
   // list of active asynchronous queries. Used to see if session should be closed when connection
@@ -85,8 +88,8 @@ public class SFSession extends SFBaseSession {
 
   private int authTimeout = 0;
   private boolean enableCombineDescribe = false;
-  private int httpClientConnectionTimeout = 60000; // milliseconds
-  private int httpClientSocketTimeout = DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT; // milliseconds
+  private final Duration httpClientConnectionTimeout = HttpUtil.getConnectionTimeout();
+  private Duration httpClientSocketTimeout = HttpUtil.getSocketTimeout();
   // whether we try to simulate a socket timeout (a default value of 0 means
   // no simulation). The value is in milliseconds
   private int injectSocketTimeout = 0;
@@ -188,7 +191,12 @@ public class SFSession extends SFBaseSession {
         get.setHeader("Authorization", "Snowflake Token=\"" + this.sessionToken + "\"");
         response =
             HttpUtil.executeGeneralRequest(
-                get, loginTimeout, authTimeout, httpClientSocketTimeout, 0, getHttpClientKey());
+                get,
+                loginTimeout,
+                authTimeout,
+                (int) httpClientSocketTimeout.toMillis(),
+                0,
+                getHttpClientKey());
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
         throw new SnowflakeSQLLoggedException(
@@ -915,7 +923,7 @@ public class SFSession extends SFBaseSession {
                 postRequest,
                 SF_HEARTBEAT_TIMEOUT,
                 authTimeout,
-                httpClientSocketTimeout,
+                (int) httpClientSocketTimeout.toMillis(),
                 0,
                 getHttpClientKey());
 
@@ -985,11 +993,11 @@ public class SFSession extends SFBaseSession {
   }
 
   public int getHttpClientSocketTimeout() {
-    return httpClientSocketTimeout;
+    return (int) httpClientSocketTimeout.toMillis();
   }
 
   public int getHttpClientConnectionTimeout() {
-    return httpClientConnectionTimeout;
+    return (int) httpClientConnectionTimeout.toMillis();
   }
 
   public boolean isClosed() {

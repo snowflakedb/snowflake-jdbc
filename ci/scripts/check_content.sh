@@ -12,3 +12,8 @@ if jar tvf $DIR/../../target/snowflake-jdbc${package_modifier}.jar  | awk '{prin
   echo "[ERROR] JDBC jar includes class not under the snowflake namespace"
   exit 1
 fi
+
+if jar tvf $DIR/../../target/snowflake-jdbc${package_modifier}.jar  | awk '{print $8}' | grep -E "^META-INF/versions/.*.class"  | grep -v -E "^META-INF/versions/.*/(net|com)/snowflake"; then
+  echo "[ERROR] JDBC jar includes multi release classes not under the snowflake namespace"
+  exit 1
+fi
