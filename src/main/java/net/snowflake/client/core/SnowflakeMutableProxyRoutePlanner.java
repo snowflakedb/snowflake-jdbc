@@ -29,6 +29,7 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
   /**
    * @deprecated use SnowflakeMutableProxyRoutePlanner(String host, int proxyPort, HttpProtocol protocol, String nonProxyHosts)
    */
+  @Deprecated
   public SnowflakeMutableProxyRoutePlanner(
       String host, int proxyPort, Protocol proxyProtocol, String nonProxyHosts) {
     proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, proxyProtocol, nonProxyHosts);
