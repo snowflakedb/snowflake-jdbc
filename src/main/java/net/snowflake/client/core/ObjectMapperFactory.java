@@ -1,6 +1,5 @@
 package net.snowflake.client.core;
 
-
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
