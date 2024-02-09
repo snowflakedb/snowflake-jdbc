@@ -41,11 +41,7 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
 
   public SnowflakeMutableProxyRoutePlanner(
           String host, int proxyPort, HttpProtocol proxyProtocol, String nonProxyHosts) {
-    proxyRoutePlanner = new SdkProxyRoutePlanner(host, proxyPort, toAwsProtocol(proxyProtocol), nonProxyHosts);
-    this.host = host;
-    this.proxyPort = proxyPort;
-    this.nonProxyHosts = nonProxyHosts;
-    this.protocol = proxyProtocol;
+    this(host, proxyPort, toAwsProtocol(proxyProtocol), nonProxyHosts);
   }
 
   public void setNonProxyHosts(String nonProxyHosts) {
@@ -63,11 +59,11 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
     return proxyRoutePlanner.determineRoute(target, request, context);
   }
 
-  private Protocol toAwsProtocol(HttpProtocol protocol) {
+  private static Protocol toAwsProtocol(HttpProtocol protocol) {
     return protocol == HttpProtocol.HTTP ? Protocol.HTTP : Protocol.HTTPS;
   }
 
-  private HttpProtocol toSnowflakeProtocol(Protocol protocol) {
+  private static HttpProtocol toSnowflakeProtocol(Protocol protocol) {
       return protocol == Protocol.HTTP ? HttpProtocol.HTTP : HttpProtocol.HTTPS;
   }
 }
