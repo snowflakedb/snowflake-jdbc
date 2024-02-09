@@ -79,7 +79,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   @Test
   public void testStaticVersionMatchesManifest() {
-    assertEquals(implementVersion, getClientVersionStringFromManifest());
+    assertEquals(implementVersion, getClientVersionStringFromManifest().replace("-SNAPSHOT", ""));
   }
 
   @Test
