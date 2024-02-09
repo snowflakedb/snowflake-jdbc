@@ -1,5 +1,6 @@
 package net.snowflake.client.core;
 
+
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +28,7 @@ public class ObjectMapperFactory {
 
     // override the maxStringLength value in ObjectMapper
     int maxJsonStringLength =
-        HttpUtil.convertSystemPropertyToIntValue(
+        SystemUtil.convertSystemPropertyToIntValue(
             MAX_JSON_STRING_LENGTH_JVM, DEFAULT_MAX_JSON_STRING_LEN);
     mapper
         .getFactory()

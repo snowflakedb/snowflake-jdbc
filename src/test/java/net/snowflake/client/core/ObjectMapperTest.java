@@ -19,12 +19,14 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class ObjectMapperTest {
-  @Parameterized.Parameters(name = "LOBSize={0}, maxJsonStringLength={1}")
+  private static final int jacksonDefaultMaxStringLength = 20_000_000;
+
+  @Parameterized.Parameters(name = "lobSizeInMB={0}, maxJsonStringLength={1}")
   public static Collection<Object[]> data() {
     int[] lobSizeInMB = new int[] {16, 16, 32, 64, 128};
     // maxJsonStringLength to be set for the corresponding LOB size
     int[] maxJsonStringLengths =
-        new int[] {20_000_000, 23_000_000, 45_000_000, 90_000_000, 180_000_000};
+        new int[] {jacksonDefaultMaxStringLength, 23_000_000, 45_000_000, 90_000_000, 180_000_000};
     List<Object[]> ret = new ArrayList<>();
     for (int i = 0; i < lobSizeInMB.length; i++) {
       ret.add(new Object[] {lobSizeInMB[i], maxJsonStringLengths[i]});
@@ -34,7 +36,6 @@ public class ObjectMapperTest {
 
   private final int lobSizeInBytes;
   private final int maxJsonStringLength;
-  private final int jacksonDefaultMaxStringLength = 20_000_000;
 
   @After
   public void clearProperty() {
