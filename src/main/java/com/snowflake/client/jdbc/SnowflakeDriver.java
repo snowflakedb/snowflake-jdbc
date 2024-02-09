@@ -11,6 +11,7 @@ import java.sql.Driver;
  * legacy com.snowflake.client.jdbc.SnowflakeDriver. Ideally, we want to remove this class and have
  * all customers move to net.snowflake.client.jdbc.SnowflakeDriver.
  *
- * <p>Created by hyu on 10/10/16.
+ * @deprecated Use {@link net.snowflake.client.jdbc.SnowflakeDriver} instead
  */
+@Deprecated
 public class SnowflakeDriver extends net.snowflake.client.jdbc.SnowflakeDriver implements Driver {}
