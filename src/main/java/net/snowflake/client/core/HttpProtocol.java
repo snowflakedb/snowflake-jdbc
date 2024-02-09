@@ -12,8 +12,8 @@ public enum HttpProtocol {
 
     private final String scheme;
 
-    HttpProtocol(String protocol) {
-        this.scheme = protocol;
+    HttpProtocol(String scheme) {
+        this.scheme = scheme;
     }
 
     public String getScheme() {
