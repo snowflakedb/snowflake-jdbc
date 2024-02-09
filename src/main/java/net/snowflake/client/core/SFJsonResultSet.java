@@ -4,11 +4,15 @@
 
 package net.snowflake.client.core;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Arrays;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -18,6 +22,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   protected final TimeZone sessionTimeZone;
   protected final Converters converters;
@@ -78,8 +83,41 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       case Types.BOOLEAN:
         return getBoolean(columnIndex);
 
+      case Types.STRUCT:
+        return getSqlInput((String) obj, columnIndex);
+
+        //      case Types.ARRAY:
+        //        return getArrayOfSqlInput((String) obj);
+
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
+    }
+  }
+
+  //  private Array getArrayOfSqlInput(String input) throws SFException {
+  //    try {
+  //      List<JsonSqlInput> result = new ArrayList<>();
+  //      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(input);
+  //      Iterator nodeElements = arrayNode.elements();
+  //      while (nodeElements.hasNext()) {
+  //        result.add(new JsonSqlInput((JsonNode) nodeElements.next()));
+  //      }
+  //      return new SQLInputArray(result);
+  //    } catch (JsonProcessingException e) {
+  //      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+  //    }
+  //  }
+
+  private Object getSqlInput(String input, int columnIndex) throws SFException {
+    try {
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
+      return new JsonSqlInput(
+          jsonNode,
+          session,
+          converters,
+          Arrays.asList(resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields()));
+    } catch (JsonProcessingException e) {
+      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 

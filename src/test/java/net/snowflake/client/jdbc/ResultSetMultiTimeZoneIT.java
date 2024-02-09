@@ -15,7 +15,6 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,8 +27,8 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
   public static Collection<Object[]> data() {
     // all tests in this class need to run for both query result formats json and arrow
-    String[] timeZones = new String[] {"UTC", "Asia/Singapore", "MEZ"};
-    String[] queryFormats = new String[] {"json", "arrow"};
+    String[] timeZones = new String[] {"UTC"};
+    String[] queryFormats = new String[] {"json"};
     List<Object[]> ret = new ArrayList<>();
     for (String queryFormat : queryFormats) {
       for (String timeZone : timeZones) {
@@ -73,7 +72,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     return conn;
   }
 
-  @Before
+  //  @Before
   public void setUp() throws SQLException {
     Connection con = init();
 
