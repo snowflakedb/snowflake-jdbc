@@ -937,15 +937,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
       statement.execute(
           "insert into " + tableName + " select randstr(" + colLength + ", random())");
       assertNull(System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM));
-      ResultSet rs = statement.executeQuery("select * from " + tableName);
-      assertNotNull(rs);
-      while (rs.next()) {
+      try (ResultSet rs = statement.executeQuery("select * from " + tableName)) {
+        assertTrue(rs.next());
         assertEquals(colLength, rs.getString(1).length());
+        assertFalse(rs.next());
       }
-      // cleanup
-      statement.execute("drop table " + tableName);
-      statement.close();
-      con.close();
     } catch (Exception e) {
       fail("executeQuery should not fail");
     }
