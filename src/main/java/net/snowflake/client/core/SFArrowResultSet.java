@@ -122,11 +122,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       SFBaseStatement statement,
       boolean sortResult)
       throws SQLException {
-    this(
-        resultSetSerializable,
-        session.getTelemetryClient(),
-        sortResult,
-        new Converters(
+    this(resultSetSerializable, session.getTelemetryClient(), sortResult);
+    this.jsonConverters = new Converters(
             resultSetSerializable.getTimeZone(),
             session,
             resultSetSerializable.getResultVersion(),
@@ -139,7 +136,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
             resultSetSerializable.getTimeFormatter(),
             resultSetSerializable.getTimestampNTZFormatter(),
             resultSetSerializable.getTimestampLTZFormatter(),
-            resultSetSerializable.getTimestampTZFormatter()));
+            resultSetSerializable.getTimestampTZFormatter());
 
     // update the session db/schema/wh/role etc
     this.statement = statement;
@@ -232,15 +229,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
   }
 
-  public SFArrowResultSet(
-      SnowflakeResultSetSerializableV1 resultSetSerializable,
-      Telemetry telemetryClient,
-      boolean sortResult,
-      Converters converters)
-      throws SQLException {
-    this(resultSetSerializable, telemetryClient, sortResult);
-    this.jsonConverters = converters;
-  }
 
   private boolean fetchNextRow() throws SnowflakeSQLException {
     if (sortResult) {
