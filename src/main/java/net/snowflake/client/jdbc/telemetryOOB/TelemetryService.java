@@ -178,7 +178,7 @@ public class TelemetryService {
   private TELEMETRY_SERVER_DEPLOYMENT manuallyConfigureDeployment(String dep) {
     switch (dep) {
       case "K8TEST":
-        return TELEMETRY_SERVER_DEPLOYMENT.K8TEST;
+        return TELEMETRY_SERVER_DEPLOYMENT.DEV;
       case "REG":
         return TELEMETRY_SERVER_DEPLOYMENT.REG;
       case "DEV":
