@@ -73,19 +73,19 @@ public class SessionUtilTest {
     System.setProperty("net.snowflake.jdbc.max_connections", "500");
     assertEquals(
         500,
-        HttpUtil.convertSystemPropertyToIntValue(
+        SystemUtil.convertSystemPropertyToIntValue(
             HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
     // Test that entering a non-int sets the value to the default
     System.setProperty("net.snowflake.jdbc.max_connections", "notAnInteger");
     assertEquals(
         HttpUtil.DEFAULT_MAX_CONNECTIONS,
-        HttpUtil.convertSystemPropertyToIntValue(
+        SystemUtil.convertSystemPropertyToIntValue(
             HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
     // Test another system property
     System.setProperty("net.snowflake.jdbc.max_connections_per_route", "30");
     assertEquals(
         30,
-        HttpUtil.convertSystemPropertyToIntValue(
+        SystemUtil.convertSystemPropertyToIntValue(
             HttpUtil.JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY,
             HttpUtil.DEFAULT_MAX_CONNECTIONS_PER_ROUTE));
   }

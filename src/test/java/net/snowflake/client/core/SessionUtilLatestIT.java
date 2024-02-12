@@ -112,12 +112,12 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   public void testConvertSystemPropertyToIntValue() {
     // SNOW-760642 - Test that new default for net.snowflake.jdbc.ttl is 60 seconds.
     assertEquals(
-        60, HttpUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
+        60, SystemUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
 
     // Test that TTL can be disabled
     System.setProperty(HttpUtil.JDBC_TTL, "-1");
     assertEquals(
-        -1, HttpUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
+        -1, SystemUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
   }
 
   /**

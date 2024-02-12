@@ -21,6 +21,7 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.telemetry.*;
@@ -922,6 +923,27 @@ public class ResultSetLatestIT extends ResultSet0IT {
       statement.execute("drop table if exists testGranularTime");
       statement.close();
       connection.close();
+    }
+  }
+
+  /** Added in > 3.14.5 */
+  @Test
+  public void testLargeStringRetrieval() throws SQLException {
+    String tableName = "maxJsonStringLength_table";
+    int colLength = 16777216;
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      statement.execute("create or replace table " + tableName + " (c1 string(" + colLength + "))");
+      statement.execute(
+          "insert into " + tableName + " select randstr(" + colLength + ", random())");
+      assertNull(System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM));
+      try (ResultSet rs = statement.executeQuery("select * from " + tableName)) {
+        assertTrue(rs.next());
+        assertEquals(colLength, rs.getString(1).length());
+        assertFalse(rs.next());
+      }
+    } catch (Exception e) {
+      fail("executeQuery should not fail");
     }
   }
 }
