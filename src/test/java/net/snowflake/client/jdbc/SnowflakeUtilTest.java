@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2012-2022 Snowflake Computing Inc. All rights reserved.
+ * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
  */
-
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

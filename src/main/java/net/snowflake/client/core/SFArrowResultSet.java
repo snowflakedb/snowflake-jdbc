@@ -13,10 +13,15 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.sql.*;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -98,7 +103,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   private boolean formatDateWithTimezone;
 
-  protected Converters jsonConverters;
+  @SnowflakeJdbcInternalApi protected Converters jsonConverters;
 
   /**
    * Constructor takes a result from the API response that we get from executing a SQL statement.
@@ -519,7 +524,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private Object handleObjectType(int columnIndex, Object obj) throws SFException {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     if (columnType == Types.STRUCT
-        && Boolean.valueOf(System.getProperty("STRUCTURED_TYPE_ENABLED"))) {
+        && Boolean.valueOf(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
       try {
         JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
         return new JsonSqlInput(

@@ -25,13 +25,18 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -270,7 +275,6 @@ public class SnowflakeUtil {
             new ColumnTypeInfo(Types.BOOLEAN, defaultIfNull(extColTypeName, "BOOLEAN"), baseType);
         break;
 
-        // TODO structuredType fill for Array and Map
       case ARRAY:
         columnTypeInfo =
             new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
@@ -312,7 +316,7 @@ public class SnowflakeUtil {
 
       default:
         throw new SnowflakeSQLLoggedException(
-            new SFSession(), // TODO
+            new SFSession(),
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
             "Unknown column type: " + internalColTypeName);

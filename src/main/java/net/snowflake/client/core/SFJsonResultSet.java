@@ -84,12 +84,11 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBoolean(columnIndex);
 
       case Types.STRUCT:
-        if (Boolean.valueOf(System.getProperty("STRUCTURED_TYPE_ENABLED"))) {
+        if (Boolean.valueOf(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
           return getSqlInput((String) obj, columnIndex);
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
-        // TODO structuredType fill for arrays and maps
 
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
