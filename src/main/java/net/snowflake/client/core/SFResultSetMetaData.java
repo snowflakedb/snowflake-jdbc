@@ -48,7 +48,7 @@ public class SFResultSetMetaData {
 
   private List<Integer> columnDisplaySizes;
 
-  private final List<SnowflakeColumnMetadata> columnMetadata;
+  private List<SnowflakeColumnMetadata> columnMetadata = new ArrayList<>();
   private String queryId;
 
   private Map<String, Integer> columnNamePositionMap = new HashMap<>();
@@ -96,7 +96,6 @@ public class SFResultSetMetaData {
     this.columnTypeNames = columnTypeNames;
     this.columnTypes = columnTypes;
     this.session = session;
-    columnMetadata = null; // TODO structuredType
   }
 
   public SFResultSetMetaData(
@@ -474,7 +473,7 @@ public class SFResultSetMetaData {
     return isAutoIncrementList;
   }
 
-  public List<SnowflakeColumnMetadata> getColumnMetadata() {
+  List<SnowflakeColumnMetadata> getColumnMetadata() {
     return columnMetadata;
   }
 }

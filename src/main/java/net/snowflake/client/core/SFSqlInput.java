@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client.core;
 
 import java.sql.SQLException;
@@ -6,6 +9,7 @@ import java.sql.SQLInput;
 import java.util.TimeZone;
 
 /** This interface extends the standard {@link SQLInput} interface to provide additional methods. */
+@SnowflakeJdbcInternalApi
 public interface SFSqlInput extends SQLInput {
   static SFSqlInput unwrap(SQLInput sqlInput) {
     return (SFSqlInput) sqlInput;

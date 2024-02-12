@@ -13,10 +13,15 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.sql.*;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -98,7 +103,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   private boolean formatDateWithTimezone;
 
-  protected Converters jsonConverters;
+  @SnowflakeJdbcInternalApi protected Converters jsonConverters;
 
   /**
    * Constructor takes a result from the API response that we get from executing a SQL statement.
@@ -117,11 +122,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       SFBaseStatement statement,
       boolean sortResult)
       throws SQLException {
-    this(
-        resultSetSerializable,
-        session.getTelemetryClient(),
-        sortResult,
-        new Converters(
+    this(resultSetSerializable, session.getTelemetryClient(), sortResult);
+    this.jsonConverters = new Converters(
             resultSetSerializable.getTimeZone(),
             session,
             resultSetSerializable.getResultVersion(),
@@ -134,7 +136,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
             resultSetSerializable.getTimeFormatter(),
             resultSetSerializable.getTimestampNTZFormatter(),
             resultSetSerializable.getTimestampLTZFormatter(),
-            resultSetSerializable.getTimestampTZFormatter()));
+            resultSetSerializable.getTimestampTZFormatter());
 
     // update the session db/schema/wh/role etc
     this.statement = statement;
@@ -227,15 +229,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
   }
 
-  public SFArrowResultSet(
-      SnowflakeResultSetSerializableV1 resultSetSerializable,
-      Telemetry telemetryClient,
-      boolean sortResult,
-      Converters converters)
-      throws SQLException {
-    this(resultSetSerializable, telemetryClient, sortResult);
-    this.jsonConverters = converters;
-  }
 
   private boolean fetchNextRow() throws SnowflakeSQLException {
     if (sortResult) {
@@ -519,7 +512,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private Object handleObjectType(int columnIndex, Object obj) throws SFException {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     if (columnType == Types.STRUCT
-        && Boolean.valueOf(System.getProperty("STRUCTURED_TYPE_ENABLED"))) {
+        && Boolean.valueOf(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
       try {
         JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
         return new JsonSqlInput(

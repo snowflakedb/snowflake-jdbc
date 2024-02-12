@@ -1,7 +1,12 @@
+/*
+ * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
+@SnowflakeJdbcInternalApi
 public class FieldMetadata {
 
   private String name;

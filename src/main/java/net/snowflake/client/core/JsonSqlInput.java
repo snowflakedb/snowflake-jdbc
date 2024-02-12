@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -5,7 +8,19 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.Date;
+import java.sql.NClob;
+import java.sql.Ref;
+import java.sql.RowId;
+import java.sql.SQLData;
+import java.sql.SQLException;
+import java.sql.SQLXML;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -22,6 +37,7 @@ import net.snowflake.client.util.ThrowingTriFunction;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
+@SnowflakeJdbcInternalApi
 public class JsonSqlInput implements SFSqlInput {
   private final JsonNode input;
   private final Iterator<JsonNode> elements;
@@ -147,13 +163,7 @@ public class JsonSqlInput implements SFSqlInput {
   public Date readDate() throws SQLException {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          int columnSubType = fieldMetadata.getType();
-          TimeZone tz = TimeZone.getDefault(); // TODO structuredType how to get timezone?
-          int scale = fieldMetadata.getScale();
-          SnowflakeDateTimeFormat formatter =
-              SnowflakeDateTimeFormat.fromSqlFormat(
-                  (String) session.getCommonParameters().get("DATE_OUTPUT_FORMAT"));
+          SnowflakeDateTimeFormat formatter = getFormat(session, "DATE_OUTPUT_FORMAT");
           SFTimestamp timestamp = formatter.parse((String) value);
           return Date.valueOf(
               Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalDate());
@@ -164,13 +174,7 @@ public class JsonSqlInput implements SFSqlInput {
   public Time readTime() throws SQLException {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          int columnSubType = fieldMetadata.getType();
-          TimeZone tz = TimeZone.getDefault(); // TODO structuredType how to get timezone?
-          int scale = fieldMetadata.getScale();
-          SnowflakeDateTimeFormat formatter =
-              SnowflakeDateTimeFormat.fromSqlFormat(
-                  (String) session.getCommonParameters().get("TIME_OUTPUT_FORMAT"));
+          SnowflakeDateTimeFormat formatter = getFormat(session, "TIME_OUTPUT_FORMAT");
           SFTimestamp timestamp = formatter.parse((String) value);
           return Time.valueOf(
               Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalTime());
@@ -244,7 +248,7 @@ public class JsonSqlInput implements SFSqlInput {
 
   @Override
   public Object readObject() throws SQLException {
-    // TODO structuredType return map
+    // TODO structuredType return map - SNOW-974575
     throw new SnowflakeLoggedFeatureNotSupportedException(session, "readCharacterStream");
   }
 
@@ -302,7 +306,6 @@ public class JsonSqlInput implements SFSqlInput {
   public <T> T readObject(Class<T> type) throws SQLException {
     return withNextValue(
         (__, jsonNode, fieldMetadata) -> {
-          // TODO structuredType what if it is not an object but i.e. string?
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
           instance.readSQL(
               new JsonSqlInput(
@@ -337,5 +340,10 @@ public class JsonSqlInput implements SFSqlInput {
     } catch (SFException e) {
       throw new SQLException(e);
     }
+  }
+
+  private static SnowflakeDateTimeFormat getFormat(SFBaseSession session, String format) {
+    return SnowflakeDateTimeFormat.fromSqlFormat(
+        (String) session.getCommonParameters().get(format));
   }
 }
