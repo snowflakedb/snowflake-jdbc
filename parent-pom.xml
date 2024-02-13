@@ -5,8 +5,13 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.14.5</version>
+  <version>3.14.6-SNAPSHOT</version>
   <packaging>pom</packaging>
+
+  <modules>
+    <module>.</module>
+    <module>FIPS</module>
+  </modules>
 
   <properties>
     <apache.commons.compress.version>1.21</apache.commons.compress.version>
