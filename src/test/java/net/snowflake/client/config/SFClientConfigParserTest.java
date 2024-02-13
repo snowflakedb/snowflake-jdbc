@@ -1,8 +1,15 @@
 package net.snowflake.client.config;
 
-import static net.snowflake.client.config.SFClientConfigParser.*;
-import static net.snowflake.client.jdbc.SnowflakeUtil.*;
-import static org.junit.Assert.*;
+import static net.snowflake.client.config.SFClientConfigParser.SF_CLIENT_CONFIG_ENV_NAME;
+import static net.snowflake.client.config.SFClientConfigParser.SF_CLIENT_CONFIG_FILE_NAME;
+import static net.snowflake.client.config.SFClientConfigParser.getConfigFilePathFromJDBCJarLocation;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemSetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemUnsetEnv;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mockStatic;
 
 import java.io.IOException;

@@ -8,7 +8,11 @@ import java.io.InputStream;
 import java.util.Map;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.SFSession;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.FileBackedOutputStream;
+import net.snowflake.client.jdbc.MatDesc;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.SqlState;
 
 /**

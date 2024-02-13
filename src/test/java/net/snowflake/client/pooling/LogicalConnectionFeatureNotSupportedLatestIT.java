@@ -3,7 +3,11 @@
  */
 package net.snowflake.client.pooling;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Savepoint;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.PooledConnection;

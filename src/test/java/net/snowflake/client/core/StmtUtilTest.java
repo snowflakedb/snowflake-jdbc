@@ -4,7 +4,9 @@
 
 package net.snowflake.client.core;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 
 import java.util.HashMap;
 import java.util.Map;

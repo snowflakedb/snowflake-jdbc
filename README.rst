@@ -138,7 +138,7 @@ Run the maven command to check the coding style.
 
 .. code-block:: bash
 
-    mvn -P check-style verify
+    mvn -P check-style validate
 
 Follow the instruction if any error occurs or run this command to fix the formats.
 
@@ -151,6 +151,10 @@ You may import the coding style from IntelliJ so that the coding style can be ap
 - In the **File** -> **Settings/Plugins**, and install `google-java-format` plugin.
 - Enable `google-java-format` for the JDBC project.
 - In the source code window, select **Code** -> **Reformat** to apply the coding style.
+- Additionally configure IDE to not use wildcard imports in **File** -> **Ecitor** -> **Code Style** -> **Java** set:
+  - **Use single class import**
+  - **Class count to use import with '*'** to 1000
+  - **Names count to use static import with '*'** to 1000
 
 Tests
 =====
