@@ -73,8 +73,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       DatabaseMetaData metaData = connection.getMetaData();
 
       // JDBC x.x compatible
-      assertEquals(1, metaData.getJDBCMajorVersion());
-      assertEquals(0, metaData.getJDBCMinorVersion());
+      assertEquals(4, metaData.getJDBCMajorVersion());
+      assertEquals(2, metaData.getJDBCMinorVersion());
 
       // identifiers
       assertEquals("Snowflake", metaData.getDatabaseProductName());
