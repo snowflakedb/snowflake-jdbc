@@ -1694,4 +1694,20 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertFalse(metaData.locatorsUpdateCopy());
     }
   }
+
+  /**
+   * For driver versions higher than 3.14.5 the driver reports support for version 4.2.
+   * For driver version 3.14.5 and earlier, the driver reports support for JDBC 1.0.
+   * @throws SQLException
+   */
+  @Test
+  public void testGetJDBCVersion() throws SQLException {
+    try (Connection connection = getConnection()) {
+      DatabaseMetaData metaData = connection.getMetaData();
+
+      // JDBC x.x compatible
+      assertEquals(4, metaData.getJDBCMajorVersion());
+      assertEquals(2, metaData.getJDBCMinorVersion());
+    }
+  }
 }
