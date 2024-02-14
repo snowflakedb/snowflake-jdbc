@@ -138,7 +138,8 @@ public class HttpClientSettingsKey implements Serializable {
   @Deprecated
   public com.amazonaws.Protocol getProxyProtocol() {
     return this.proxyProtocol.equalsIgnoreCase("https")
-        ? com.amazonaws.Protocol.HTTPS : com.amazonaws.Protocol.HTTP;
+        ? com.amazonaws.Protocol.HTTPS
+        : com.amazonaws.Protocol.HTTP;
   }
 
   public HttpProtocol getProxyHttpProtocol() {
