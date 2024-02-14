@@ -9,7 +9,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import com.amazonaws.Protocol;
 import java.io.File;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
@@ -21,6 +20,7 @@ import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpProtocol;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
@@ -600,7 +600,7 @@ public class CustomProxyLatestIT {
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
     HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
-    assertEquals(Protocol.HTTP, clientSettingsKey.getProxyProtocol());
+    assertEquals(HttpProtocol.HTTP, clientSettingsKey.getProxyHttpProtocol());
     con.close();
   }
 
@@ -626,7 +626,7 @@ public class CustomProxyLatestIT {
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
     HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
-    assertEquals(Protocol.HTTPS, clientSettingsKey.getProxyProtocol());
+    assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
     con.close();
   }
 
@@ -651,7 +651,7 @@ public class CustomProxyLatestIT {
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
     SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
     HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
-    assertEquals(Protocol.HTTPS, clientSettingsKey.getProxyProtocol());
+    assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
     con.close();
   }
 

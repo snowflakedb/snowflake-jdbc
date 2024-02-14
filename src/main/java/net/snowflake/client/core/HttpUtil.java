@@ -9,7 +9,6 @@ import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
@@ -36,6 +35,7 @@ import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -143,19 +143,11 @@ public class HttpUtil {
    *
    * @param key key to HttpClient map containing OCSP and proxy info
    * @param clientConfig the configuration needed by S3 to set the proxy
+   * @deprecated use S3HttpUtil.setProxyForS3(HttpClientSettingsKey, ClientConfiguration) instead
    */
+  @Deprecated
   public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
-    if (key != null && key.usesProxy()) {
-      clientConfig.setProxyProtocol(key.getProxyProtocol());
-      clientConfig.setProxyHost(key.getProxyHost());
-      clientConfig.setProxyPort(key.getProxyPort());
-      clientConfig.setNonProxyHosts(key.getNonProxyHosts());
-      if (!Strings.isNullOrEmpty(key.getProxyUser())
-          && !Strings.isNullOrEmpty(key.getProxyPassword())) {
-        clientConfig.setProxyUsername(key.getProxyUser());
-        clientConfig.setProxyPassword(key.getProxyPassword());
-      }
-    }
+    S3HttpUtil.setProxyForS3(key, clientConfig);
   }
 
   /**
@@ -165,51 +157,12 @@ public class HttpUtil {
    * @param proxyProperties proxy properties
    * @param clientConfig the configuration needed by S3 to set the proxy
    * @throws SnowflakeSQLException
+   * @deprecated use S3HttpUtil.setSessionlessProxyForS3(Properties, ClientConfiguration) instead
    */
+  @Deprecated
   public static void setSessionlessProxyForS3(
       Properties proxyProperties, ClientConfiguration clientConfig) throws SnowflakeSQLException {
-    // do nothing yet
-    if (proxyProperties != null
-        && proxyProperties.size() > 0
-        && proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
-      Boolean useProxy =
-          Boolean.valueOf(
-              proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
-      if (useProxy) {
-        // set up other proxy related values.
-        String proxyHost =
-            proxyProperties.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
-        int proxyPort;
-        try {
-          proxyPort =
-              Integer.parseInt(
-                  proxyProperties.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey()));
-        } catch (NumberFormatException | NullPointerException e) {
-          throw new SnowflakeSQLException(
-              ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
-        }
-        String proxyUser =
-            proxyProperties.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey());
-        String proxyPassword =
-            proxyProperties.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
-        String nonProxyHosts =
-            proxyProperties.getProperty(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey());
-        String proxyProtocol =
-            proxyProperties.getProperty(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey());
-        Protocol protocolEnum =
-            (!Strings.isNullOrEmpty(proxyProtocol) && proxyProtocol.equalsIgnoreCase("https"))
-                ? Protocol.HTTPS
-                : Protocol.HTTP;
-        clientConfig.setProxyHost(proxyHost);
-        clientConfig.setProxyPort(proxyPort);
-        clientConfig.setNonProxyHosts(nonProxyHosts);
-        clientConfig.setProxyProtocol(protocolEnum);
-        if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
-          clientConfig.setProxyUsername(proxyUser);
-          clientConfig.setProxyPassword(proxyPassword);
-        }
-      }
-    }
+    S3HttpUtil.setSessionlessProxyForS3(proxyProperties, clientConfig);
   }
 
   /**
@@ -324,7 +277,7 @@ public class HttpUtil {
     HttpHost proxy =
         (key != null && key.usesProxy())
             ? new HttpHost(
-                key.getProxyHost(), key.getProxyPort(), key.getProxyProtocol().toString())
+                key.getProxyHost(), key.getProxyPort(), key.getProxyHttpProtocol().getScheme())
             : null;
     // If defaultrequestconfig is not initialized or its proxy settings do not match current proxy
     // settings, re-build it (current or old proxy settings could be null, so null check is
@@ -408,7 +361,7 @@ public class HttpUtil {
                     new SnowflakeMutableProxyRoutePlanner(
                         key.getProxyHost(),
                         key.getProxyPort(),
-                        key.getProxyProtocol(),
+                        key.getProxyHttpProtocol(),
                         key.getNonProxyHosts()));
         httpClientBuilder = httpClientBuilder.setProxy(proxy).setRoutePlanner(sdkProxyRoutePlanner);
         if (!Strings.isNullOrEmpty(key.getProxyUser())

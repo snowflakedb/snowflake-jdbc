@@ -4,7 +4,6 @@
 
 package net.snowflake.client.core;
 
-import com.amazonaws.Protocol;
 import com.google.common.base.Strings;
 import java.io.Serializable;
 
@@ -124,7 +123,8 @@ public class HttpClientSettingsKey implements Serializable {
   }
 
   /** Be careful of using this! Should only be called when password is later masked. */
-  String getProxyPassword() {
+  @SnowflakeJdbcInternalApi
+  public String getProxyPassword() {
     return this.proxyPassword;
   }
 
@@ -132,8 +132,19 @@ public class HttpClientSettingsKey implements Serializable {
     return this.nonProxyHosts;
   }
 
-  public Protocol getProxyProtocol() {
-    return this.proxyProtocol.equalsIgnoreCase("https") ? Protocol.HTTPS : Protocol.HTTP;
+  /**
+   * @deprecated Use {@link #getProxyHttpProtocol()}
+   * @return ProxyProtocol
+   */
+  @Deprecated
+  public com.amazonaws.Protocol getProxyProtocol() {
+    return this.proxyProtocol.equalsIgnoreCase("https")
+        ? com.amazonaws.Protocol.HTTPS
+        : com.amazonaws.Protocol.HTTP;
+  }
+
+  public HttpProtocol getProxyHttpProtocol() {
+    return this.proxyProtocol.equalsIgnoreCase("https") ? HttpProtocol.HTTPS : HttpProtocol.HTTP;
   }
 
   public Boolean getGzipDisabled() {
