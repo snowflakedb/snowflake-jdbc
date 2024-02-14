@@ -5,7 +5,12 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Field;
@@ -13,17 +18,39 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
-import java.sql.*;
-import java.util.*;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SessionUtil;
-import net.snowflake.client.jdbc.telemetry.*;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryClient;
+import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
+import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
 import org.junit.Test;
@@ -922,6 +949,27 @@ public class ResultSetLatestIT extends ResultSet0IT {
       statement.execute("drop table if exists testGranularTime");
       statement.close();
       connection.close();
+    }
+  }
+
+  /** Added in > 3.14.5 */
+  @Test
+  public void testLargeStringRetrieval() throws SQLException {
+    String tableName = "maxJsonStringLength_table";
+    int colLength = 16777216;
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      statement.execute("create or replace table " + tableName + " (c1 string(" + colLength + "))");
+      statement.execute(
+          "insert into " + tableName + " select randstr(" + colLength + ", random())");
+      assertNull(System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM));
+      try (ResultSet rs = statement.executeQuery("select * from " + tableName)) {
+        assertTrue(rs.next());
+        assertEquals(colLength, rs.getString(1).length());
+        assertFalse(rs.next());
+      }
+    } catch (Exception e) {
+      fail("executeQuery should not fail");
     }
   }
 }

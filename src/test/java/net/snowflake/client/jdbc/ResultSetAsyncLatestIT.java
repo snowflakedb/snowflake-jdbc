@@ -6,7 +6,11 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

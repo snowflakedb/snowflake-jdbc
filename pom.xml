@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.14.5</version>
+    <version>3.14.6-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.14.5</version>
+  <version>3.14.6-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -67,6 +67,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-antrun-plugin</artifactId>
           <version>${version.plugin.antrun}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${version.plugin.checkstyle}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -185,14 +190,15 @@
         <artifactId>japicmp-maven-plugin</artifactId>
         <configuration>
           <parameter>
-            <breakBuildBasedOnSemanticVersioning>true</breakBuildBasedOnSemanticVersioning>
-            <ignoreMissingClasses>true</ignoreMissingClasses>
+            <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+            <ignoreMissingClasses>false</ignoreMissingClasses>
             <oldVersionPattern>\d+\.\d+\.\d+</oldVersionPattern>
             <includes>
               <include>com.snowflake</include>
               <include>net.snowflake</include>
             </includes>
             <excludes>
+              <exclude>@net.snowflake.client.core.SnowflakeJdbcInternalApi</exclude>
               <exclude>${shadeBase}</exclude>
             </excludes>
           </parameter>
@@ -573,9 +579,37 @@
             <artifactId>fmt-maven-plugin</artifactId>
             <executions>
               <execution>
+                <id>fmt</id>
                 <goals>
                   <goal>check</goal>
                 </goals>
+                <phase>validate</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <configuration>
+              <checkstyleRules>
+                <module name="Checker">
+                  <module name="TreeWalker">
+                    <module name="AvoidStarImport"/>
+                  </module>
+                </module>
+              </checkstyleRules>
+              <consoleOutput>true</consoleOutput>
+              <failsOnError>true</failsOnError>
+              <includeTestSourceDirectory>true</includeTestSourceDirectory>
+              <violationSeverity>warning</violationSeverity>
+            </configuration>
+            <executions>
+              <execution>
+                <id>checkstyle</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
               </execution>
             </executions>
           </plugin>
@@ -594,20 +628,6 @@
       </properties>
       <build>
         <plugins>
-          <plugin>
-            <!-- we don't want to run japicmp for thin-jar until we release it for the first time -->
-            <groupId>com.github.siom79.japicmp</groupId>
-            <artifactId>japicmp-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>japicmp</id>
-                <goals>
-                  <goal>cmp</goal>
-                </goals>
-                <phase>none</phase>
-              </execution>
-            </executions>
-          </plugin>
           <plugin>
             <!-- google linkage checker doesn't work well with shaded jar, disable the check in this case for now -->
             <groupId>org.apache.maven.plugins</groupId>

@@ -4,7 +4,9 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.QueryStatus.*;
+import static net.snowflake.client.core.QueryStatus.getStatusFromString;
+import static net.snowflake.client.core.QueryStatus.isAnError;
+import static net.snowflake.client.core.QueryStatus.isStillRunning;
 import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,12 +17,29 @@ import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.QueryStatusV2;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
+import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -47,7 +66,6 @@ public class SFSession extends SFBaseSession {
   // Need to be removed when a better way to organize session parameter is introduced.
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
-  private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final int MAX_SESSION_PARAMETERS = 1000;
   // this constant was public - let's not change it
   public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT =
@@ -931,7 +949,7 @@ public class SFSession extends SFBaseSession {
 
         logger.debug("connection heartbeat response: {}", theResponse);
 
-        rootNode = mapper.readTree(theResponse);
+        rootNode = OBJECT_MAPPER.readTree(theResponse);
 
         // check the response to see if it is session expiration response
         if (rootNode != null

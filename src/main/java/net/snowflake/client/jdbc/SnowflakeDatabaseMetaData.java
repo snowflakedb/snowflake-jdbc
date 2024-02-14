@@ -4,15 +4,38 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_CATALOGS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS_EXTENDED_SET;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FOREIGN_KEYS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FUNCTIONS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FUNCTION_COLUMNS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PRIMARY_KEYS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PROCEDURES;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_SCHEMAS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_STREAMS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES;
 import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.RowIdLifetime;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;

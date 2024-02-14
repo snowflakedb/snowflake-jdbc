@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc.telemetryOOB;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.HashMap;
