@@ -205,6 +205,11 @@ public class RestRequest {
           builder.setParameter("clientStartTime", String.valueOf(startTime));
         }
 
+        // Set the socket timeout
+        if (socketTimeout > 0) {
+          httpRequest.setConfig(
+              HttpUtil.getDefaultRequestConfigWithSocketTimeout(socketTimeout, withoutCookies));
+        }
         // When the auth timeout is set, set the socket timeout as the authTimeout
         // so that it can be renewed in time and pass it to the http request configuration.
         if (authTimeout > 0) {
