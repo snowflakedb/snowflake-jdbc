@@ -1694,4 +1694,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertFalse(metaData.locatorsUpdateCopy());
     }
   }
+
+  @Test
+  public void testGetPrimaryKeysNoPatternSearchAllowed() throws SQLException {
+
+  }
 }

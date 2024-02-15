@@ -464,6 +464,13 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ENABLE_PATTERN_SEARCH:
+          if (propertyValue != null) {
+            setEnablePatternSearch(getBooleanValue(propertyValue));
+          }
+          break;
+
+
         default:
           break;
       }
