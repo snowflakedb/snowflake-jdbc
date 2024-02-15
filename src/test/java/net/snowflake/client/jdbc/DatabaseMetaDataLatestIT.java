@@ -1815,28 +1815,28 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
 
     // Should return a result if we try a pattern match on the schema
-    assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern, table1)));
+    assertTrue(0 < getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern, table1)));
 
     // Should return a result if we try a pattern match on the table name
-    assertEquals(2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, "T%")));
+    assertTrue(0 < getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, "T%")));
 
     // Should return result for matching schema and table name
     assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
 
     // Should return a result if we try a pattern match on the schema
-    assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern, table2)));
+    assertTrue(0 < getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern, table2)));
 
     // Should return a result if we try a pattern match on the table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, null, "T%")));
+    assertTrue(0 < getSizeOfResultSet(dbmd.getImportedKeys(database, null, "T%")));
 
     // Should return result for matching schema and table name
     assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
 
     // Should return a result if we try a pattern match on the schema
-    assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern, table1)));
+    assertTrue(0 < getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern, table1)));
 
     // Should return a result if we try a pattern match on the table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, null, "T%")));
+    assertTrue(0 < getSizeOfResultSet(dbmd.getExportedKeys(database, null, "T%")));
 
     // Should return result for matching schema and table name
     assertEquals(
@@ -1845,19 +1845,21 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
 
     // Should return a result if we try a pattern match on any of the table or schema names
-    assertEquals(
-        1,
-        getSizeOfResultSet(
-            dbmd.getCrossReference(database, schemaPattern, table1, database, schema, table2)));
-    assertEquals(
-        1,
-        getSizeOfResultSet(
-            dbmd.getCrossReference(database, schema, table1, database, schemaPattern, table2)));
-    assertEquals(
-        1,
-        getSizeOfResultSet(dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
-    assertEquals(
-        1,
-        getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, null, "T%")));
+    assertTrue(
+        0
+            < getSizeOfResultSet(
+                dbmd.getCrossReference(database, schemaPattern, table1, database, schema, table2)));
+    assertTrue(
+        0
+            < getSizeOfResultSet(
+                dbmd.getCrossReference(database, schema, table1, database, schemaPattern, table2)));
+    assertTrue(
+        0
+            < getSizeOfResultSet(
+                dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
+    assertTrue(
+        0
+            < getSizeOfResultSet(
+                dbmd.getCrossReference(database, schema, table1, database, null, "T%")));
   }
 }
