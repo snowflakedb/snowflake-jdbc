@@ -1710,6 +1710,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
     String database = connection.getCatalog();
     String schema = connection.getSchema();
+    String schemaPattern = schema.substring(0,1).concat("%");
     final String table1 = "T1";
     final String table2 = "T2";
 
@@ -1731,7 +1732,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
 
     // Should return an empty result if we try a pattern match on the schema
-    assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, "TEST%", table1)));
+    assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern, table1)));
 
     // Should return an empty result if we try a pattern match on the table name
     assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, "T%")));
@@ -1740,7 +1741,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
 
     // Should return an empty result if we try a pattern match on the schema
-    assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, "TEST%", table2)));
+    assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern, table2)));
 
     // Should return an empty result if we try a pattern match on the table name
     assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, "T%")));
@@ -1749,7 +1750,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
 
     // Should return an empty result if we try a pattern match on the schema
-    assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, "TEST%", table1)));
+    assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern, table1)));
 
     // Should return an empty result if we try a pattern match on the table name
     assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, "T%")));
@@ -1764,11 +1765,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(
         0,
         getSizeOfResultSet(
-            dbmd.getCrossReference(database, "TEST%", table1, database, schema, table2)));
+            dbmd.getCrossReference(database, schemaPattern, table1, database, schema, table2)));
     assertEquals(
         0,
         getSizeOfResultSet(
-            dbmd.getCrossReference(database, schema, table1, database, "TEST%", table2)));
+            dbmd.getCrossReference(database, schema, table1, database, schemaPattern, table2)));
     assertEquals(
         0,
         getSizeOfResultSet(dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
@@ -1792,6 +1793,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
     String database = connection.getCatalog();
     String schema = connection.getSchema();
+    String schemaPattern = schema.substring(0,1).concat("%");
     final String table1 = "T1";
     final String table2 = "T2";
 
@@ -1813,7 +1815,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
 
     // Should return a result if we try a pattern match on the schema
-    assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, "TEST%", table1)));
+    assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern, table1)));
 
     // Should return a result if we try a pattern match on the table name
     assertEquals(2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, "T%")));
@@ -1822,7 +1824,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
 
     // Should return a result if we try a pattern match on the schema
-    assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, "TEST%", table2)));
+    assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern, table2)));
 
     // Should return a result if we try a pattern match on the table name
     assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, null, "T%")));
@@ -1831,7 +1833,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
 
     // Should return a result if we try a pattern match on the schema
-    assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, "TEST%", table1)));
+    assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern, table1)));
 
     // Should return a result if we try a pattern match on the table name
     assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, null, "T%")));
@@ -1846,11 +1848,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(
         1,
         getSizeOfResultSet(
-            dbmd.getCrossReference(database, "TEST%", table1, database, schema, table2)));
+            dbmd.getCrossReference(database, schemaPattern, table1, database, schema, table2)));
     assertEquals(
         1,
         getSizeOfResultSet(
-            dbmd.getCrossReference(database, schema, table1, database, "TEST%", table2)));
+            dbmd.getCrossReference(database, schema, table1, database, schemaPattern, table2)));
     assertEquals(
         1,
         getSizeOfResultSet(dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
