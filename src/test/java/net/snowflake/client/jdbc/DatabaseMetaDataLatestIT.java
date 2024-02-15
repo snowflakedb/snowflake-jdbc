@@ -1710,7 +1710,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
     String database = connection.getCatalog();
     String schema = connection.getSchema();
-    String schemaPattern = schema.substring(0,1).concat("%");
+    String schemaPattern = schema.substring(0, 1).concat("%");
     final String table1 = "T1";
     final String table2 = "T2";
 
@@ -1793,7 +1793,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
     String database = connection.getCatalog();
     String schema = connection.getSchema();
-    String schemaPattern = schema.substring(0,1).concat("%");
+    String schemaPattern = schema.substring(0, 1).concat("%");
     final String table1 = "T1";
     final String table2 = "T2";
 
