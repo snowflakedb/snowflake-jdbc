@@ -1714,16 +1714,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     final String table2 = "T2";
 
     connection
-            .createStatement()
-            .execute("create or replace table " + table1 + "(C1 int primary key, C2 string)");
+        .createStatement()
+        .execute("create or replace table " + table1 + "(C1 int primary key, C2 string)");
     connection
-            .createStatement()
-            .execute(
-                    "create or replace table "
-                            + table2
-                            + "(C1 int primary key, C2 string, C3 int references "
-                            + table1
-                            + ")");
+        .createStatement()
+        .execute(
+            "create or replace table "
+                + table2
+                + "(C1 int primary key, C2 string, C3 int references "
+                + table1
+                + ")");
 
     DatabaseMetaData dbmd = connection.getMetaData();
 
@@ -1755,13 +1755,26 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, "T%")));
 
     // Should return result for matching schema and table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
+    assertEquals(
+        1,
+        getSizeOfResultSet(
+            dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
 
     // Should return an empty result if we try a pattern match on any of the table or schema names
-    assertEquals(0, getSizeOfResultSet(dbmd.getCrossReference(database, "TEST%", table1, database, schema, table2)));
-    assertEquals(0, getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, "TEST%", table2)));
-    assertEquals(0, getSizeOfResultSet(dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
-    assertEquals(0, getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, null, "T%")));
+    assertEquals(
+        0,
+        getSizeOfResultSet(
+            dbmd.getCrossReference(database, "TEST%", table1, database, schema, table2)));
+    assertEquals(
+        0,
+        getSizeOfResultSet(
+            dbmd.getCrossReference(database, schema, table1, database, "TEST%", table2)));
+    assertEquals(
+        0,
+        getSizeOfResultSet(dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
+    assertEquals(
+        0,
+        getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, null, "T%")));
   }
 
   @Test
@@ -1783,16 +1796,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     final String table2 = "T2";
 
     connection
-            .createStatement()
-            .execute("create or replace table " + table1 + "(C1 int primary key, C2 string)");
+        .createStatement()
+        .execute("create or replace table " + table1 + "(C1 int primary key, C2 string)");
     connection
-            .createStatement()
-            .execute(
-                    "create or replace table "
-                            + table2
-                            + "(C1 int primary key, C2 string, C3 int references "
-                            + table1
-                            + ")");
+        .createStatement()
+        .execute(
+            "create or replace table "
+                + table2
+                + "(C1 int primary key, C2 string, C3 int references "
+                + table1
+                + ")");
 
     DatabaseMetaData dbmd = connection.getMetaData();
 
@@ -1824,12 +1837,25 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, null, "T%")));
 
     // Should return result for matching schema and table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
+    assertEquals(
+        1,
+        getSizeOfResultSet(
+            dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
 
     // Should return a result if we try a pattern match on any of the table or schema names
-    assertEquals(1, getSizeOfResultSet(dbmd.getCrossReference(database, "TEST%", table1, database, schema, table2)));
-    assertEquals(1, getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, "TEST%", table2)));
-    assertEquals(1, getSizeOfResultSet(dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
-    assertEquals(1, getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, null, "T%")));
+    assertEquals(
+        1,
+        getSizeOfResultSet(
+            dbmd.getCrossReference(database, "TEST%", table1, database, schema, table2)));
+    assertEquals(
+        1,
+        getSizeOfResultSet(
+            dbmd.getCrossReference(database, schema, table1, database, "TEST%", table2)));
+    assertEquals(
+        1,
+        getSizeOfResultSet(dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
+    assertEquals(
+        1,
+        getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, null, "T%")));
   }
 }

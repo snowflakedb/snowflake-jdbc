@@ -470,7 +470,6 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
-
         default:
           break;
       }
