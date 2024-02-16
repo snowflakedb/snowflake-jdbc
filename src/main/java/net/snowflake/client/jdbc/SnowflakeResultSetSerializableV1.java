@@ -1068,7 +1068,7 @@ public class SnowflakeResultSetSerializableV1
    * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
    *
    * @return a ResultSet which represents for the data wrapped in the object
-   * @deprecated Please use new interface function getResultSet(ResultSetRetrieveConfig)
+   * @deprecated Use {@link #getResultSet(ResultSetRetrieveConfig)} instead
    */
   @Deprecated
   public ResultSet getResultSet() throws SQLException {
@@ -1083,7 +1083,7 @@ public class SnowflakeResultSetSerializableV1
    *
    * @param info The proxy sever information if proxy is necessary.
    * @return a ResultSet which represents for the data wrapped in the object
-   * @deprecated Please use new interface function getResultSet(ResultSetRetrieveConfig)
+   * @deprecated Use {@link #getResultSet(ResultSetRetrieveConfig)} instead
    */
   @Deprecated
   public ResultSet getResultSet(Properties info) throws SQLException {
