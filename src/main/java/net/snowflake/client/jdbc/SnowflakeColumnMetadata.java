@@ -58,6 +58,36 @@ public class SnowflakeColumnMetadata implements Serializable {
     this.isAutoIncrement = isAutoIncrement;
   }
 
+  @Deprecated
+  public SnowflakeColumnMetadata(
+      String name,
+      int type,
+      boolean nullable,
+      int length,
+      int precision,
+      int scale,
+      String typeName,
+      boolean fixed,
+      SnowflakeType base,
+      String columnSrcDatabase,
+      String columnSrcSchema,
+      String columnSrcTable,
+      boolean isAutoIncrement) {
+    this.name = name;
+    this.type = type;
+    this.nullable = nullable;
+    this.length = length;
+    this.precision = precision;
+    this.scale = scale;
+    this.typeName = typeName;
+    this.fixed = fixed;
+    this.base = base;
+    this.columnSrcDatabase = columnSrcDatabase;
+    this.columnSrcSchema = columnSrcSchema;
+    this.columnSrcTable = columnSrcTable;
+    this.isAutoIncrement = isAutoIncrement;
+  }
+
   public String getName() {
     return name;
   }
