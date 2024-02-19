@@ -33,6 +33,7 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFSessionProperty;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -74,7 +75,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           + "    return message;\n"
           + "    $$\n"
           + "    ;";
-  private static final String ENABLE_PATTERN_SEARCH = "enablePatternSearch";
+  private static final String ENABLE_PATTERN_SEARCH =
+      SFSessionProperty.ENABLE_PATTERN_SEARCH.getPropertyKey();
 
   /** Create catalog and schema for tests with double quotes */
   public void createDoubleQuotedSchemaAndCatalog(Statement statement) throws SQLException {
@@ -319,7 +321,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   /**
    * For driver versions higher than 3.14.5 we can disable the abilty to use pattern searches for
-   * getPrimaryKey and getForeignKey functions by setting enablePatternSearch = false.
+   * getPrimaryKeys and getImportedKeys functions by setting enablePatternSearch = false.
    */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
@@ -327,8 +329,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       throws SQLException {
     Properties properties = new Properties();
     properties.put(ENABLE_PATTERN_SEARCH, false);
-    try (Connection con = getConnection(properties)) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection(properties);
+        Statement statement = con.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a table with a primary key constraint
@@ -339,14 +341,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       statement.execute(
           "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"test2\" (col_a integer not null, col_b integer not null, constraint fkey_1 foreign key (col_a, col_b) references \"test1\" (col1, col2) not enforced)");
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getPrimaryKeys("dbwith\"quotes", "schemawith\"quotes", null);
-      // Assert 2 rows are returned for primary key constraint for table and schema with quotes
-      assertEquals(2, getSizeOfResultSet(rs));
-      rs = metaData.getImportedKeys("dbwith\"quotes", "schemawith\"quotes", null);
-      // Assert 2 rows are returned for foreign key constraint
-      assertEquals(2, getSizeOfResultSet(rs));
-      rs.close();
-      statement.close();
+      try (ResultSet rs = metaData.getPrimaryKeys("dbwith\"quotes", "schemawith\"quotes", null)) {
+        // Assert 2 rows are returned for primary key constraint for table and schema with quotes
+        assertEquals(2, getSizeOfResultSet(rs));
+      }
+      try (ResultSet rs = metaData.getImportedKeys("dbwith\"quotes", "schemawith\"quotes", null)) {
+        // Assert 2 rows are returned for foreign key constraint
+        assertEquals(2, getSizeOfResultSet(rs));
+      }
     }
   }
 
@@ -1086,7 +1088,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   /**
    * For driver versions higher than 3.14.5 we can disable the abilty to use pattern searches for
-   * getPrimaryKey and getForeignKey functions by setting enablePatternSearch = false.
+   * getPrimaryKeys and getImportedKeys functions by setting enablePatternSearch = false.
    */
   @Test
   public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeysWithPatternSearchDisabled()
@@ -1113,6 +1115,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             }
             try (ResultSet rs = metaData.getImportedKeys(database, escapedSchema, null)) {
               assertEquals(0, getSizeOfResultSet(rs));
+            }
+            // We expect the results to be returned if we use the actual schema name
+            try (ResultSet rs = metaData.getPrimaryKeys(database, customSchema, null)) {
+              assertEquals(1, getSizeOfResultSet(rs));
+            }
+            try (ResultSet rs = metaData.getImportedKeys(database, customSchema, null)) {
+              assertEquals(1, getSizeOfResultSet(rs));
             }
           });
     }

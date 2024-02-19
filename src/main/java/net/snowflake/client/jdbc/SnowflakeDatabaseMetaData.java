@@ -2141,7 +2141,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         if ((catalogIn == null || catalogIn.equals(table_cat))
             && (schemaIn == null || schemaIn.equals(table_schem))
             && (tableIn == null || tableIn.equals(table_name))) {
-          createPrimaryKeyRow(table_cat, table_schem, table_name, column_name, key_seq, pk_name);
+          nextRow[0] = table_cat;
+          nextRow[1] = table_schem;
+          nextRow[2] = table_name;
+          nextRow[3] = column_name;
+          nextRow[4] = key_seq;
+          nextRow[5] = pk_name;
           return true;
         }
         return false;
@@ -2161,25 +2166,15 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             && (compiledTablePattern == null
                 || compiledTablePattern.equals(table_name)
                 || compiledTablePattern.matcher(table_name).matches())) {
-          createPrimaryKeyRow(table_cat, table_schem, table_name, column_name, key_seq, pk_name);
+          nextRow[0] = table_cat;
+          nextRow[1] = table_schem;
+          nextRow[2] = table_name;
+          nextRow[3] = column_name;
+          nextRow[4] = key_seq;
+          nextRow[5] = pk_name;
           return true;
         }
         return false;
-      }
-
-      private void createPrimaryKeyRow(
-          String table_cat,
-          String table_schem,
-          String table_name,
-          String column_name,
-          int key_seq,
-          String pk_name) {
-        nextRow[0] = table_cat;
-        nextRow[1] = table_schem;
-        nextRow[2] = table_name;
-        nextRow[3] = column_name;
-        nextRow[4] = key_seq;
-        nextRow[5] = pk_name;
       }
     };
   }
