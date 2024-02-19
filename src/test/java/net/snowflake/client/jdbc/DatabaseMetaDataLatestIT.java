@@ -318,7 +318,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   /**
-   * As of driver version 3.14.16 we can disable the abilty to use pattern searches for
+   * For driver versions higher than 3.14.5 we can disable the abilty to use pattern searches for
    * getPrimaryKey and getForeignKey functions by setting enablePatternSearch = false.
    */
   @Test
@@ -1085,7 +1085,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   /**
-   * As of driver version 3.14.16 we can disable the abilty to use pattern searches for
+   * For driver versions higher than 3.14.5 we can disable the abilty to use pattern searches for
    * getPrimaryKey and getForeignKey functions by setting enablePatternSearch = false.
    */
   @Test
@@ -1773,10 +1773,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   /**
-   * From version 3.14.16 we have the enablePatternSearch connection property which sets whether
-   * pattern searches are allowed for certain DatabaseMetaData queries. This test sets that value to
-   * false meaning pattern searches are not allowed for getPrimaryKeys, getImportedKeys,
-   * getExportedKeys, and getCrossReference.
+   * For driver versions higher than 3.14.5 we have the enablePatternSearch connection property
+   * which sets whether pattern searches are allowed for certain DatabaseMetaData queries. This test
+   * sets that value to false meaning pattern searches are not allowed for getPrimaryKeys,
+   * getImportedKeys, getExportedKeys, and getCrossReference.
    */
   @Test
   public void testNoPatternSearchAllowedForPrimaryAndForeignKeys() throws Exception {
@@ -2016,9 +2016,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   /**
-   * From version 3.14.16 we have the enablePatternSearch connection property which sets whether
-   * pattern searches are allowed for certain DatabaseMetaData queries. This test uses the default
-   * setting for this property which is true.
+   * For driver versions higher than 3.14.5 we have the enablePatternSearch connection property
+   * which sets whether pattern searches are allowed for certain DatabaseMetaData queries. This test
+   * uses the default setting for this property which is true.
    */
   @Test
   public void testPatternSearchAllowedForPrimaryAndForeignKeys() throws Exception {
@@ -2229,7 +2229,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           });
     }
   }
-  
+
+  /**
    * For driver versions higher than 3.14.5 the driver reports support for JDBC 4.2. For driver
    * version 3.14.5 and earlier, the driver reports support for JDBC 1.0.
    *
