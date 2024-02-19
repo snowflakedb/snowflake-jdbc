@@ -27,8 +27,8 @@ public class SnowflakeMutableProxyRoutePlanner implements HttpRoutePlanner, Seri
   private HttpProtocol protocol;
 
   /**
-   * @deprecated use SnowflakeMutableProxyRoutePlanner(String host, int proxyPort, HttpProtocol
-   *     protocol, String nonProxyHosts)
+   * @deprecated Use {@link #SnowflakeMutableProxyRoutePlanner(String, int, HttpProtocol, String)}
+   *     instead
    */
   @Deprecated
   public SnowflakeMutableProxyRoutePlanner(

@@ -62,7 +62,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private static final char SEARCH_STRING_ESCAPE = '\\';
 
-  private static final String JDBCVersion = "1.0";
+  private static final String JDBCVersion = "4.2";
   // Open Group CLI Functions
   // LOG10 is not supported
   public static final String NumericFunctionsSupported =

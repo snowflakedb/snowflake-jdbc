@@ -423,7 +423,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  public void testGetProcedureColumnsWildcards() throws SQLException {
+  public void testGetProcedureColumnsWildcards() throws Exception {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       String database = con.getCatalog();
@@ -431,19 +431,28 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           TestUtil.GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
       String schema1 = schemaPrefix + "SCH1";
       String schema2 = schemaPrefix + "SCH2";
-      // Create 2 schemas, each with the same stored procedure declared in them
-      statement.execute("create or replace schema " + schema1);
-      statement.execute(TEST_PROC);
-      statement.execute("create or replace schema " + schema2);
-      statement.execute(TEST_PROC);
-      DatabaseMetaData metaData = con.getMetaData();
-      try (ResultSet rs =
-          metaData.getProcedureColumns(database, schemaPrefix + "SCH_", "TESTPROC", "PARAM1")) {
-        // Assert 4 rows returned for the param PARAM1 that's present in each of the 2 identical
-        // stored procs in different schemas. A result row is returned for each procedure, making
-        // the total rowcount 4
-        assertEquals(4, getSizeOfResultSet(rs));
-      }
+      TestUtil.withSchema(
+          statement,
+          schema1,
+          () -> {
+            statement.execute(TEST_PROC);
+            TestUtil.withSchema(
+                statement,
+                schema2,
+                () -> {
+                  statement.execute(TEST_PROC);
+                  // Create 2 schemas, each with the same stored procedure declared in them
+                  DatabaseMetaData metaData = con.getMetaData();
+                  try (ResultSet rs =
+                      metaData.getProcedureColumns(
+                          database, schemaPrefix + "SCH_", "TESTPROC", "PARAM1")) {
+                    // Assert 4 rows returned for the param PARAM1 that's present in each of the 2
+                    // identical stored procs in different schemas. A result row is returned for
+                    // each procedure, making the total rowcount 4
+                    assertEquals(4, getSizeOfResultSet(rs));
+                  }
+                });
+          });
     }
   }
 
@@ -2218,6 +2227,22 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
                     dbmd.getCrossReference(
                         database, schema, table1, database, schema, tablePattern2)));
           });
+    }
+  }
+  
+   * For driver versions higher than 3.14.5 the driver reports support for JDBC 4.2. For driver
+   * version 3.14.5 and earlier, the driver reports support for JDBC 1.0.
+   *
+   * @throws SQLException
+   */
+  @Test
+  public void testGetJDBCVersion() throws SQLException {
+    try (Connection connection = getConnection()) {
+      DatabaseMetaData metaData = connection.getMetaData();
+
+      // JDBC x.x compatible
+      assertEquals(4, metaData.getJDBCMajorVersion());
+      assertEquals(2, metaData.getJDBCMinorVersion());
     }
   }
 }

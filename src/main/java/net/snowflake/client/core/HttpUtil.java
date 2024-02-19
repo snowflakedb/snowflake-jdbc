@@ -143,7 +143,8 @@ public class HttpUtil {
    *
    * @param key key to HttpClient map containing OCSP and proxy info
    * @param clientConfig the configuration needed by S3 to set the proxy
-   * @deprecated use S3HttpUtil.setProxyForS3(HttpClientSettingsKey, ClientConfiguration) instead
+   * @deprecated Use {@link S3HttpUtil#setProxyForS3(HttpClientSettingsKey, ClientConfiguration)}
+   *     instead
    */
   @Deprecated
   public static void setProxyForS3(HttpClientSettingsKey key, ClientConfiguration clientConfig) {
@@ -157,7 +158,8 @@ public class HttpUtil {
    * @param proxyProperties proxy properties
    * @param clientConfig the configuration needed by S3 to set the proxy
    * @throws SnowflakeSQLException
-   * @deprecated use S3HttpUtil.setSessionlessProxyForS3(Properties, ClientConfiguration) instead
+   * @deprecated Use {@link S3HttpUtil#setSessionlessProxyForS3(Properties, ClientConfiguration)}
+   *     instead
    */
   @Deprecated
   public static void setSessionlessProxyForS3(
