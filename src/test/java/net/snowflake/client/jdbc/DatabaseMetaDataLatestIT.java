@@ -74,6 +74,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           + "    return message;\n"
           + "    $$\n"
           + "    ;";
+  private static final String ENABLE_PATTERN_SEARCH = "enablePatternSearch";
 
   /** Create catalog and schema for tests with double quotes */
   public void createDoubleQuotedSchemaAndCatalog(Statement statement) throws SQLException {
@@ -294,6 +295,39 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeys() throws SQLException {
     try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // Create a database and schema with double quotes inside the database name
+      createDoubleQuotedSchemaAndCatalog(statement);
+      // Create a table with a primary key constraint
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"test1\"  (col1 integer not null, col2 integer not null, constraint pkey_1 primary key (col1, col2) not enforced)");
+      // Create a table with a foreign key constraint that points to same columns as test1's primary
+      // key constraint
+      statement.execute(
+          "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"test2\" (col_a integer not null, col_b integer not null, constraint fkey_1 foreign key (col_a, col_b) references \"test1\" (col1, col2) not enforced)");
+      DatabaseMetaData metaData = con.getMetaData();
+      ResultSet rs = metaData.getPrimaryKeys("dbwith\"quotes", "schemawith\"quotes", null);
+      // Assert 2 rows are returned for primary key constraint for table and schema with quotes
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs = metaData.getImportedKeys("dbwith\"quotes", "schemawith\"quotes", null);
+      // Assert 2 rows are returned for foreign key constraint
+      assertEquals(2, getSizeOfResultSet(rs));
+      rs.close();
+      statement.close();
+    }
+  }
+
+  /**
+   * As of driver version 3.14.16 we can disable the abilty to use pattern searches for
+   * getPrimaryKey and getForeignKey functions by setting enablePatternSearch = false.
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeysWithPatternSearchDisabled()
+      throws SQLException {
+    Properties properties = new Properties();
+    properties.put(ENABLE_PATTERN_SEARCH, false);
+    try (Connection con = getConnection(properties)) {
       Statement statement = con.createStatement();
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
@@ -1041,6 +1075,40 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * As of driver version 3.14.16 we can disable the abilty to use pattern searches for
+   * getPrimaryKey and getForeignKey functions by setting enablePatternSearch = false.
+   */
+  @Test
+  public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeysWithPatternSearchDisabled()
+      throws Exception {
+    Properties properties = new Properties();
+    properties.put(ENABLE_PATTERN_SEARCH, false);
+
+    try (Connection con = getConnection(properties);
+        Statement statement = con.createStatement()) {
+      String database = con.getCatalog();
+      TestUtil.withRandomSchema(
+          statement,
+          customSchema -> {
+            String escapedSchema = customSchema.replace("_", "\\_");
+            statement.execute("use schema " + customSchema);
+            statement.execute(
+                "create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
+            statement.execute(
+                "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
+            DatabaseMetaData metaData = con.getMetaData();
+            // We have disabled the pattern search so we should get no results.
+            try (ResultSet rs = metaData.getPrimaryKeys(database, escapedSchema, null)) {
+              assertEquals(0, getSizeOfResultSet(rs));
+            }
+            try (ResultSet rs = metaData.getImportedKeys(database, escapedSchema, null)) {
+              assertEquals(0, getSizeOfResultSet(rs));
+            }
+          });
+    }
+  }
+
   @Test
   public void testTimestampWithTimezoneDataType() throws Exception {
     try (Connection connection = getConnection()) {
@@ -1695,171 +1763,461 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * From version 3.14.16 we have the enablePatternSearch connection property which sets whether
+   * pattern searches are allowed for certain DatabaseMetaData queries. This test sets that value to
+   * false meaning pattern searches are not allowed for getPrimaryKeys, getImportedKeys,
+   * getExportedKeys, and getCrossReference.
+   */
   @Test
-  public void testNoPatternSearchAllowedForPrimaryAndForeignKeys() throws SQLException {
-    Map<String, String> params = getConnectionParameters();
+  public void testNoPatternSearchAllowedForPrimaryAndForeignKeys() throws Exception {
     Properties properties = new Properties();
-    for (Map.Entry<?, ?> entry : params.entrySet()) {
-      if (entry.getValue() != null) {
-        properties.put(entry.getKey(), entry.getValue());
-      }
+    properties.put(ENABLE_PATTERN_SEARCH, "false");
+    final String table1 = "PATTERN_SEARCH_TABLE1";
+    final String table2 = "PATTERN_SEARCH_TABLE2";
+
+    try (Connection connection = getConnection(properties);
+        Statement statement = connection.createStatement()) {
+      String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
+      String schemaName =
+          "\""
+              + TestUtil.GENERATED_SCHEMA_PREFIX
+              + "TEST_PATTERNS_SCHEMA_"
+              + schemaRandomPart
+              + "\"";
+
+      TestUtil.withSchema(
+          statement,
+          schemaName,
+          () -> {
+            String schema = connection.getSchema();
+            statement.execute(
+                "create or replace table " + table1 + "(C1 int primary key, C2 string)");
+            statement.execute(
+                "create or replace table "
+                    + table2
+                    + "(C1 int primary key, C2 string, C3 int references "
+                    + table1
+                    + ")");
+
+            DatabaseMetaData dbmd = connection.getMetaData();
+
+            String schemaPattern1 = schema.substring(0, schema.length() - 1).concat("%");
+            String schemaPattern2 = schema.substring(0, schema.length() - 1).concat("_");
+            String tablePattern1 = "PATTERN_SEARCH_TABLE%";
+            String tablePattern2 = "PATTERN_SEARCH_TABLE_";
+            String database = connection.getCatalog();
+
+            // Should return result for matching schema and table name
+            assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)));
+
+            // Should return result for matching schema and table name
+            assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)));
+
+            // Should return result for matching schema and table name
+            assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
+
+            // Should return an empty result if we try a pattern match on the schema
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)));
+
+            // Should return an empty result if we try a pattern match on the table name
+            assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)));
+
+            // Should return result for matching schema and table name
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
+
+            // Should return an empty result if we try a pattern match on any of the table or schema
+            // names
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern1, table1, database, schema, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern2, table1, database, schema, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern1, null, database, schema, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern2, null, database, schema, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern1, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern2, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern1, null)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern2, null)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, null, tablePattern1, database, schema, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, null, tablePattern2, database, schema, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, tablePattern1, database, schema, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, tablePattern2, database, schema, table2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, null, tablePattern1)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, null, tablePattern2)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schema, tablePattern1)));
+
+            assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schema, tablePattern2)));
+          });
     }
-    // test out connection parameter stringsQuoted to remove strings from quotes
-    properties.put("enablePatternSearch", "false");
-    Connection connection = DriverManager.getConnection(params.get("uri"), properties);
-
-    String database = connection.getCatalog();
-    String schema = connection.getSchema();
-    String schemaPattern = schema.substring(0, 1).concat("%");
-    final String table1 = "T1";
-    final String table2 = "T2";
-
-    connection
-        .createStatement()
-        .execute("create or replace table " + table1 + "(C1 int primary key, C2 string)");
-    connection
-        .createStatement()
-        .execute(
-            "create or replace table "
-                + table2
-                + "(C1 int primary key, C2 string, C3 int references "
-                + table1
-                + ")");
-
-    DatabaseMetaData dbmd = connection.getMetaData();
-
-    // Should return result for matching schema and table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
-
-    // Should return an empty result if we try a pattern match on the schema
-    assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern, table1)));
-
-    // Should return an empty result if we try a pattern match on the table name
-    assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, "T%")));
-
-    // Should return result for matching schema and table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
-
-    // Should return an empty result if we try a pattern match on the schema
-    assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern, table2)));
-
-    // Should return an empty result if we try a pattern match on the table name
-    assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, "T%")));
-
-    // Should return result for matching schema and table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
-
-    // Should return an empty result if we try a pattern match on the schema
-    assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern, table1)));
-
-    // Should return an empty result if we try a pattern match on the table name
-    assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, "T%")));
-
-    // Should return result for matching schema and table name
-    assertEquals(
-        1,
-        getSizeOfResultSet(
-            dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
-
-    // Should return an empty result if we try a pattern match on any of the table or schema names
-    assertEquals(
-        0,
-        getSizeOfResultSet(
-            dbmd.getCrossReference(database, schemaPattern, table1, database, schema, table2)));
-    assertEquals(
-        0,
-        getSizeOfResultSet(
-            dbmd.getCrossReference(database, schema, table1, database, schemaPattern, table2)));
-    assertEquals(
-        0,
-        getSizeOfResultSet(dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
-    assertEquals(
-        0,
-        getSizeOfResultSet(dbmd.getCrossReference(database, schema, table1, database, null, "T%")));
   }
 
+  /**
+   * From version 3.14.16 we have the enablePatternSearch connection property which sets whether
+   * pattern searches are allowed for certain DatabaseMetaData queries. This test uses the default
+   * setting for this property which is true.
+   */
   @Test
-  public void testPatternSearchAllowedForPrimaryAndForeignKeys() throws SQLException {
-    Map<String, String> params = getConnectionParameters();
-    Properties properties = new Properties();
-    for (Map.Entry<?, ?> entry : params.entrySet()) {
-      if (entry.getValue() != null) {
-        properties.put(entry.getKey(), entry.getValue());
-      }
+  public void testPatternSearchAllowedForPrimaryAndForeignKeys() throws Exception {
+    final String table1 = "PATTERN_SEARCH_TABLE1";
+    final String table2 = "PATTERN_SEARCH_TABLE2";
+
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
+      String schemaName =
+          "\""
+              + TestUtil.GENERATED_SCHEMA_PREFIX
+              + "TEST_PATTERNS_SCHEMA_"
+              + schemaRandomPart
+              + "\"";
+
+      TestUtil.withSchema(
+          statement,
+          schemaName,
+          () -> {
+            String schema = connection.getSchema();
+            statement.execute(
+                "create or replace table " + table1 + "(C1 int primary key, C2 string)");
+            statement.execute(
+                "create or replace table "
+                    + table2
+                    + "(C1 int primary key, C2 string, C3 int references "
+                    + table1
+                    + ")");
+
+            DatabaseMetaData dbmd = connection.getMetaData();
+
+            String schemaPattern1 = schema.substring(0, schema.length() - 1).concat("%");
+            String schemaPattern2 = schema.substring(0, schema.length() - 1).concat("_");
+            String tablePattern1 = "PATTERN_SEARCH_TABLE%";
+            String tablePattern2 = "PATTERN_SEARCH_TABLE_";
+            String database = connection.getCatalog();
+
+            // Should return result for matching on either an exact schema and table name or a
+            // pattern
+            assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)));
+
+            assertEquals(
+                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)));
+
+            assertEquals(
+                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)));
+
+            assertEquals(
+                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)));
+
+            assertEquals(
+                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
+
+            assertEquals(2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)));
+
+            assertEquals(2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)));
+
+            assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)));
+
+            assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)));
+
+            assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern1, table1, database, schema, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern2, table1, database, schema, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern1, null, database, schema, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern2, null, database, schema, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern1, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern2, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern1, null)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern2, null)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, null, tablePattern1, database, schema, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, null, tablePattern2, database, schema, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, tablePattern1, database, schema, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, tablePattern2, database, schema, table2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, null, tablePattern1)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, null, tablePattern2)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schema, tablePattern1)));
+
+            assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schema, tablePattern2)));
+          });
     }
-    // test out connection parameter stringsQuoted to remove strings from quotes
-    properties.put("enablePatternSearch", "true");
-    Connection connection = DriverManager.getConnection(params.get("uri"), properties);
-
-    String database = connection.getCatalog();
-    String schema = connection.getSchema();
-    String schemaPattern = schema.substring(0, 1).concat("%");
-    final String table1 = "T1";
-    final String table2 = "T2";
-
-    connection
-        .createStatement()
-        .execute("create or replace table " + table1 + "(C1 int primary key, C2 string)");
-    connection
-        .createStatement()
-        .execute(
-            "create or replace table "
-                + table2
-                + "(C1 int primary key, C2 string, C3 int references "
-                + table1
-                + ")");
-
-    DatabaseMetaData dbmd = connection.getMetaData();
-
-    // Should return result for matching schema and table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
-
-    // Should return a result if we try a pattern match on the schema
-    assertTrue(0 < getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern, table1)));
-
-    // Should return a result if we try a pattern match on the table name
-    assertTrue(0 < getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, "T%")));
-
-    // Should return result for matching schema and table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
-
-    // Should return a result if we try a pattern match on the schema
-    assertTrue(0 < getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern, table2)));
-
-    // Should return a result if we try a pattern match on the table name
-    assertTrue(0 < getSizeOfResultSet(dbmd.getImportedKeys(database, null, "T%")));
-
-    // Should return result for matching schema and table name
-    assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
-
-    // Should return a result if we try a pattern match on the schema
-    assertTrue(0 < getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern, table1)));
-
-    // Should return a result if we try a pattern match on the table name
-    assertTrue(0 < getSizeOfResultSet(dbmd.getExportedKeys(database, null, "T%")));
-
-    // Should return result for matching schema and table name
-    assertEquals(
-        1,
-        getSizeOfResultSet(
-            dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
-
-    // Should return a result if we try a pattern match on any of the table or schema names
-    assertTrue(
-        0
-            < getSizeOfResultSet(
-                dbmd.getCrossReference(database, schemaPattern, table1, database, schema, table2)));
-    assertTrue(
-        0
-            < getSizeOfResultSet(
-                dbmd.getCrossReference(database, schema, table1, database, schemaPattern, table2)));
-    assertTrue(
-        0
-            < getSizeOfResultSet(
-                dbmd.getCrossReference(database, null, "T%", database, schema, table2)));
-    assertTrue(
-        0
-            < getSizeOfResultSet(
-                dbmd.getCrossReference(database, schema, table1, database, null, "T%")));
   }
 }
