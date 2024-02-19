@@ -132,6 +132,11 @@ public abstract class SFBaseSession {
   // Connection string setting
   private boolean enablePutGet = true;
 
+  // Enables the use of pattern searches for certain DatabaseMetaData methods
+  // which do not by definition allow the use of patterns, but
+  // we need to allow for it to maintain backwards compatibility.
+  private boolean enablePatternSearch = true;
+
   private Map<String, Object> commonParameters;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
@@ -711,6 +716,14 @@ public abstract class SFBaseSession {
 
   public boolean setEnablePutGet(boolean enablePutGet) {
     return this.enablePutGet = enablePutGet;
+  }
+
+  public boolean getEnablePatternSearch() {
+    return enablePatternSearch;
+  }
+
+  public void setEnablePatternSearch(boolean enablePatternSearch) {
+    this.enablePatternSearch = enablePatternSearch;
   }
 
   public int getClientResultChunkSize() {
