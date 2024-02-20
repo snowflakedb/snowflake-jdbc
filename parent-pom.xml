@@ -22,6 +22,7 @@
     <arrow.version>10.0.1</arrow.version>
     <asm.version>9.3</asm.version>
     <avro.version>1.8.1</avro.version>
+    <awaitility.version>4.2.0</awaitility.version>
     <awssdk.version>1.12.501</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
     <bouncycastle.version>1.74</bouncycastle.version>
@@ -475,6 +476,12 @@
         <version>${mockito.version}</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>org.awaitility</groupId>
+        <artifactId>awaitility</artifactId>
+        <version>${awaitility.version}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -703,6 +710,10 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-inline</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
     </dependency>
   </dependencies>
 </project>
