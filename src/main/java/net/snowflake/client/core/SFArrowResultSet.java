@@ -18,7 +18,6 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.Arrays;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.json.Converters;
@@ -519,7 +518,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
             jsonNode,
             session,
             jsonConverters,
-            Arrays.asList(resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields()));
+            resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
       } catch (JsonProcessingException e) {
         throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
       }

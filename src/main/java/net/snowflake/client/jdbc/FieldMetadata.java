@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 @SnowflakeJdbcInternalApi
@@ -21,7 +22,7 @@ public class FieldMetadata {
   private int scale;
   private boolean fixed;
   private SnowflakeType base;
-  private FieldMetadata[] fields;
+  private List<FieldMetadata> fields;
 
   public FieldMetadata(
       String name,
@@ -33,7 +34,7 @@ public class FieldMetadata {
       int scale,
       boolean fixed,
       SnowflakeType base,
-      FieldMetadata[] fields) {
+      List<FieldMetadata> fields) {
     this.name = name;
     this.typeName = typeName;
     this.type = type;
@@ -118,11 +119,11 @@ public class FieldMetadata {
     this.base = base;
   }
 
-  public FieldMetadata[] getFields() {
+  public List<FieldMetadata> getFields() {
     return fields;
   }
 
-  public void setFields(FieldMetadata[] fields) {
+  public void setFields(List<FieldMetadata> fields) {
     this.fields = fields;
   }
 }

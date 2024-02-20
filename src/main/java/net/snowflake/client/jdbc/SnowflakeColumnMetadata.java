@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author jhuang
@@ -20,7 +21,7 @@ public class SnowflakeColumnMetadata implements Serializable {
   private int scale;
   private boolean fixed;
   private SnowflakeType base;
-  private FieldMetadata[] fields;
+  private List<FieldMetadata> fields;
   private String columnSrcTable;
   private String columnSrcSchema;
   private String columnSrcDatabase;
@@ -37,7 +38,7 @@ public class SnowflakeColumnMetadata implements Serializable {
       String typeName,
       boolean fixed,
       SnowflakeType base,
-      FieldMetadata[] fields,
+      List<FieldMetadata> fields,
       String columnSrcDatabase,
       String columnSrcSchema,
       String columnSrcTable,
@@ -156,7 +157,7 @@ public class SnowflakeColumnMetadata implements Serializable {
     return this.base;
   }
 
-  public FieldMetadata[] getFields() {
+  public List<FieldMetadata> getFields() {
     return fields;
   }
 

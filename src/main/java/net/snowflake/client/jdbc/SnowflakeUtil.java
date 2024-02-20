@@ -182,11 +182,7 @@ public class SnowflakeUtil {
     String colSrcDatabase = colNode.path("database").asText();
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
-    FieldMetadata[] fieldsMetadata = new FieldMetadata[0];
-    if (!colNode.path("fields").isEmpty()) {
-      ArrayNode arrayNode = (ArrayNode) colNode.path("fields");
-      fieldsMetadata = createFieldsMetadata(arrayNode, fixedColType);
-    }
+    List<FieldMetadata> fieldsMetadata = getFieldMetadata(fixedColType, colNode);
 
     boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
 
@@ -329,10 +325,10 @@ public class SnowflakeUtil {
     return Optional.ofNullable(extColTypeName).orElse(defaultValue);
   }
 
-  static FieldMetadata[] createFieldsMetadata(ArrayNode fieldsJson, int fixedColType)
+  static List<FieldMetadata> createFieldsMetadata(ArrayNode fieldsJson, int fixedColType)
       throws SnowflakeSQLLoggedException {
     //    TODO: verify that jsonFileds is not empty array
-    FieldMetadata[] fields = new FieldMetadata[fieldsJson.size()];
+    List<FieldMetadata> fields = new ArrayList<>();
     int fieldCounter = 0;
     for (JsonNode node : fieldsJson) {
       String colName = node.path("name").asText();
@@ -342,11 +338,7 @@ public class SnowflakeUtil {
       boolean nullable = node.path("nullable").asBoolean();
       int length = node.path("length").asInt();
       boolean fixed = node.path("fixed").asBoolean();
-      FieldMetadata[] internalFields = new FieldMetadata[0];
-      if (!node.path("fields").isEmpty()) {
-        ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
-        internalFields = createFieldsMetadata(internalFieldsJson, fixedColType);
-      }
+      List<FieldMetadata> internalFields = getFieldMetadata(fixedColType, node);
       JsonNode outputType = node.path("outputType");
       JsonNode extColTypeNameNode = node.path("extTypeName");
       String extColTypeName = null;
@@ -356,7 +348,7 @@ public class SnowflakeUtil {
       }
       ColumnTypeInfo columnTypeInfo =
           getSnowflakeType(internalColTypeName, extColTypeName, outputType, null, fixedColType);
-      fields[fieldCounter++] =
+      fields.add(
           new FieldMetadata(
               colName,
               columnTypeInfo.getExtColTypeName(),
@@ -367,9 +359,19 @@ public class SnowflakeUtil {
               scale,
               fixed,
               columnTypeInfo.getSnowflakeType(),
-              internalFields);
+              internalFields));
     }
     return fields;
+  }
+
+  private static List<FieldMetadata> getFieldMetadata(int fixedColType, JsonNode node)
+      throws SnowflakeSQLLoggedException {
+    if (!node.path("fields").isEmpty()) {
+      ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
+      return createFieldsMetadata(internalFieldsJson, fixedColType);
+    } else {
+      return new ArrayList<>();
+    }
   }
 
   static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
@@ -484,7 +486,7 @@ public class SnowflakeUtil {
               typeName, // type name
               true,
               stype, // fixed
-              new FieldMetadata[] {}, // TODO Structured type fields
+              new ArrayList<>(),
               "", // database
               "", // schema
               "",

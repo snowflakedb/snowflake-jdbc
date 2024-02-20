@@ -12,7 +12,6 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.Arrays;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -102,7 +101,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
           jsonNode,
           session,
           converters,
-          Arrays.asList(resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields()));
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }

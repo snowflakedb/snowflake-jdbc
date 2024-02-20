@@ -23,7 +23,6 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
@@ -196,7 +195,6 @@ public class JsonSqlInput implements SFSqlInput {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
           int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
-          // TODO structuredType what if not a string value?
           Timestamp result = getTimestampFromType(columnSubType, (String) value);
           if (result != null) {
             return result;
@@ -249,7 +247,7 @@ public class JsonSqlInput implements SFSqlInput {
   @Override
   public Object readObject() throws SQLException {
     // TODO structuredType return map - SNOW-974575
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readCharacterStream");
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readObject");
   }
 
   @Override
@@ -279,7 +277,7 @@ public class JsonSqlInput implements SFSqlInput {
 
   @Override
   public URL readURL() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readCharacterStream");
+    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readURL");
   }
 
   @Override
@@ -308,9 +306,7 @@ public class JsonSqlInput implements SFSqlInput {
         (__, jsonNode, fieldMetadata) -> {
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
           instance.readSQL(
-              new JsonSqlInput(
-                  jsonNode, session, converters, Arrays.asList(fieldMetadata.getFields())),
-              null);
+              new JsonSqlInput(jsonNode, session, converters, fieldMetadata.getFields()), null);
           return (T) instance;
         });
   }
