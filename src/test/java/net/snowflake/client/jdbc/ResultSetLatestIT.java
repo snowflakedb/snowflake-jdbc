@@ -542,8 +542,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       try {
         // Normally this step won't cause too long. Because we will get exception once trying to get
         // result from the first chunk downloader
-        while (resultSet.next())
-          ;
+        while (resultSet.next()) {}
         fail("Should not reach here. Last next() command is supposed to throw an exception");
       } catch (SnowflakeSQLException ex) {
         // pass, do nothing

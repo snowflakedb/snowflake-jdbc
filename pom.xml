@@ -595,6 +595,7 @@
                 <module name="Checker">
                   <module name="TreeWalker">
                     <module name="AvoidStarImport"/>
+                    <module name="NeedBraces"/>
                   </module>
                 </module>
               </checkstyleRules>

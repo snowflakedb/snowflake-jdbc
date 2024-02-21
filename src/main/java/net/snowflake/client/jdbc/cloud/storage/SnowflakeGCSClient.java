@@ -694,7 +694,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       logger.debug("Upload successful", false);
 
       // close any open streams in the "toClose" list and return
-      for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+      for (FileInputStream is : toClose) {
+        IOUtils.closeQuietly(is);
+      }
 
       return;
     }
@@ -716,7 +718,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         logger.debug("Upload successful", false);
 
         // close any open streams in the "toClose" list and return
-        for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+        for (FileInputStream is : toClose) {
+          IOUtils.closeQuietly(is);
+        }
 
         return;
       } catch (Exception ex) {
@@ -747,7 +751,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
     } while (retryCount <= getMaxRetries());
 
-    for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+    for (FileInputStream is : toClose) {
+      IOUtils.closeQuietly(is);
+    }
 
     throw new SnowflakeSQLLoggedException(
         queryId,
