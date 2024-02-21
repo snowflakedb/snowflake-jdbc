@@ -683,8 +683,11 @@ public class SFSession extends SFBaseSession {
         "Query context cache is {}", ((disableQueryContextCache) ? "disabled" : "enabled"));
 
     // Initialize QCC
-    if (!disableQueryContextCache) qcc = new QueryContextCache(this.getQueryContextCacheSize());
-    else qcc = null;
+    if (!disableQueryContextCache) {
+      qcc = new QueryContextCache(this.getQueryContextCacheSize());
+    } else {
+      qcc = null;
+    }
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
@@ -814,7 +817,9 @@ public class SFSession extends SFBaseSession {
     getClientInfo().clear();
 
     // qcc can be null, if disabled.
-    if (qcc != null) qcc.clearCache();
+    if (qcc != null) {
+      qcc.clearCache();
+    }
 
     isClosed = true;
   }

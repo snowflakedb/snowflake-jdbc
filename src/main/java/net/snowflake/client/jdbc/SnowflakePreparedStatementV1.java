@@ -903,10 +903,14 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
         if (updateCount == batchSize) {
           if (isLong) {
             updateCounts = new VariableTypeArray(null, new long[updateCount]);
-            for (int idx = 0; idx < updateCount; idx++) updateCounts.longArr[idx] = 1;
+            for (int idx = 0; idx < updateCount; idx++) {
+              updateCounts.longArr[idx] = 1;
+            }
           } else {
             updateCounts = new VariableTypeArray(new int[updateCount], null);
-            for (int idx = 0; idx < updateCount; idx++) updateCounts.intArr[idx] = 1;
+            for (int idx = 0; idx < updateCount; idx++) {
+              updateCounts.intArr[idx] = 1;
+            }
           }
         } else {
           if (isLong) {
