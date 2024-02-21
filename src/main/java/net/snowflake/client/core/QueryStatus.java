@@ -37,18 +37,34 @@ public enum QueryStatus {
     return this.description;
   }
 
+  /**
+   * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   */
+  @Deprecated
   public String getErrorMessage() {
     return this.errorMessage;
   }
 
+  /**
+   * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   */
+  @Deprecated
   public int getErrorCode() {
     return this.errorCode;
   }
 
+  /**
+   * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   */
+  @Deprecated
   public void setErrorMessage(String message) {
     this.errorMessage = message;
   }
 
+  /**
+   * @deprecated use {@link net.snowflake.client.jdbc.QueryStatusV2} instead
+   */
+  @Deprecated
   public void setErrorCode(int errorCode) {
     this.errorCode = errorCode;
   }

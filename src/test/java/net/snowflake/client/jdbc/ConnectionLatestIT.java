@@ -7,6 +7,7 @@ import static net.snowflake.client.core.SessionUtil.CLIENT_SESSION_KEEP_ALIVE_HE
 import static net.snowflake.client.jdbc.ConnectionIT.BAD_REQUEST_GS_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.INVALID_CONNECTION_INFO_CODE;
 import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -390,36 +391,24 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     con.close();
   }
 
-  /**
-   * Tests that error message and error code are reset after an error. This test is not reliable as
-   * it uses sleep() call. It works locally but failed with PR.
-   *
-   * @throws SQLException
-   * @throws InterruptedException
-   */
-  // @Test
-  public void testQueryStatusErrorMessageAndErrorCode() throws SQLException, InterruptedException {
-    // open connection and run asynchronous query
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    statement.execute("create or replace table testTable(colA string, colB boolean)");
-    statement.execute("insert into testTable values ('test', true)");
-    ResultSet rs1 =
-        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from testTable");
-    QueryStatus status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
-    // Set the error message and error code so we can confirm they are reset when getStatus() is
-    // called.
-    status.setErrorMessage(QueryStatus.FAILED_WITH_ERROR.toString());
-    status.setErrorCode(2003);
-    Thread.sleep(300);
-    status = rs1.unwrap(SnowflakeResultSet.class).getStatus();
-    // Assert status of query is a success
-    assertEquals(QueryStatus.SUCCESS, status);
-    assertEquals("No error reported", status.getErrorMessage());
-    assertEquals(0, status.getErrorCode());
-    statement.execute("drop table if exists testTable");
-    statement.close();
-    con.close();
+  /** Can be used in > 3.14.4 (when {@link QueryStatusV2} was added) */
+  @Test
+  public void testQueryStatusErrorMessageAndErrorCodeChangeOnAsyncQuery() throws SQLException {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement();
+        ResultSet rs1 =
+            statement
+                .unwrap(SnowflakeStatement.class)
+                .executeAsyncQuery("select count(*) from table(generator(timeLimit => 2))")) {
+      SnowflakeResultSet sfResultSet = rs1.unwrap(SnowflakeResultSet.class);
+      // status should change state to RUNNING and then to SUCCESS
+      await()
+          .atMost(Duration.ofSeconds(5))
+          .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.RUNNING));
+      await()
+          .atMost(Duration.ofSeconds(5))
+          .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.SUCCESS));
+    }
   }
 
   @Test
