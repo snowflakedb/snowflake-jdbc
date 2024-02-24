@@ -27,13 +27,13 @@ import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryStructuredType.class)
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
-  private final String queryResultFormat;
+  private final ResultSetFormatType queryResultFormat;
 
   public ResultSetStructuredTypesLatestIT() {
-    this("JSON");
+    this(ResultSetFormatType.JSON);
   }
 
-  protected ResultSetStructuredTypesLatestIT(String queryResultFormat) {
+  protected ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
     this.queryResultFormat = queryResultFormat;
   }
 
@@ -42,7 +42,11 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     try (Statement stmt = conn.createStatement()) {
       stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
       stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
-      stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+      stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat.sessionParameterTypeValue + "'");
+      if (queryResultFormat == ResultSetFormatType.NATIVE_ARROW) {
+        stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
+        stmt.execute("alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
+      }
     }
     return conn;
   }
@@ -70,8 +74,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     }
     try (Connection connection = init();
         Statement statement = connection.createStatement();
-        ResultSet resultSet =
-            statement.executeQuery("select {'string':'a'}::OBJECT(string VARCHAR)"); ) {
+         ResultSet resultSet =
+                 statement.executeQuery("select {'string':'a'}::OBJECT(string VARCHAR)"); ) {
       resultSet.next();
       SimpleClass object = resultSet.getObject(1, SimpleClass.class);
       assertEquals("a", object.getString());
@@ -162,6 +166,18 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         SimpleClass object = resultSet.getObject(1, SimpleClass.class);
         assertEquals("a", object.getString());
       }
+    }
+  }
+
+  enum ResultSetFormatType {
+    JSON("JSON"),
+    ARROW_WITH_JSON_STRUCTURED_TYPES("ARROW"),
+    NATIVE_ARROW("ARROW");
+
+    public final String sessionParameterTypeValue;
+
+    ResultSetFormatType(String sessionParameterTypeValue) {
+      this.sessionParameterTypeValue = sessionParameterTypeValue;
     }
   }
 }

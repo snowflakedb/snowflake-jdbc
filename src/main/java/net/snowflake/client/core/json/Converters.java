@@ -2,6 +2,7 @@ package net.snowflake.client.core.json;
 
 import java.util.TimeZone;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
@@ -11,6 +12,7 @@ public class Converters {
   private final DateTimeConverter dateTimeConverter;
   private final BytesConverter bytesConverter;
   private final StringConverter stringConverter;
+  private final StructuredTypeDateTimeConverter structuredTypeDateTimeConverter;
 
   public Converters(
       TimeZone sessionTimeZone,
@@ -50,6 +52,15 @@ public class Converters {
             resultVersion,
             session,
             this);
+    structuredTypeDateTimeConverter =
+          new StructuredTypeDateTimeConverter(
+                  sessionTimeZone,
+                  session,
+                  resultVersion,
+                  honorClientTZForTimestampNTZ,
+                  treatNTZAsUTC,
+                  useSessionTimezone,
+                  formatDateWithTimeZone);
   }
 
   public BooleanConverter getBooleanConverter() {

@@ -5,6 +5,6 @@ package net.snowflake.client.jdbc;
 
 public class ArrowResultSetStructuredTypesLatestIT extends ResultSetStructuredTypesLatestIT {
   public ArrowResultSetStructuredTypesLatestIT() {
-    super("ARROW");
+    super(ResultSetFormatType.ARROW_WITH_JSON_STRUCTURED_TYPES);
   }
 }

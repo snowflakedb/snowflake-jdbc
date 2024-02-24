@@ -21,6 +21,8 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.StructConverter;
+import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
@@ -38,6 +40,7 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.util.JsonStringHashMap;
 
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
@@ -506,25 +509,39 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(timeZone);
     Object obj = converter.toObject(index);
-    return handleObjectType(columnIndex, obj);
-  }
-
-  private Object handleObjectType(int columnIndex, Object obj) throws SFException {
-    int columnType = resultSetMetaData.getColumnType(columnIndex);
-    if (columnType == Types.STRUCT
-        && Boolean.valueOf(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
-      try {
-        JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
-        return new JsonSqlInput(
-            jsonNode,
-            session,
-            jsonConverters,
-            Arrays.asList(resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields()));
-      } catch (JsonProcessingException e) {
-        throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+    int type = resultSetMetaData.getColumnType(columnIndex);
+    if (type == Types.STRUCT &&
+            Boolean.parseBoolean(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
+      if (converter instanceof VarCharConverter) {
+        return createJsonSqlInput(columnIndex, obj);
+      } else if (converter instanceof StructConverter) {
+        return createArrowSqlInput(columnIndex, (JsonStringHashMap<String, Object>) obj);
       }
     }
     return obj;
+  }
+
+  private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
+    try {
+      JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
+      return new JsonSqlInput(
+              jsonNode,
+              session,
+              jsonConverters,
+              Arrays.asList(resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields())
+      );
+    } catch (JsonProcessingException e) {
+      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+    }
+  }
+
+  private Object createArrowSqlInput(int columnIndex, JsonStringHashMap<String, Object> input) {
+    return new ArrowSqlInput(
+            input,
+            session,
+            jsonConverters,
+            Arrays.asList(resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields())
+    );
   }
 
   @Override

@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
 import java.time.Instant;
@@ -32,13 +33,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionProperty;
+
+import net.snowflake.client.core.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.ThrowingCallable;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -754,5 +753,13 @@ public class SnowflakeUtil {
     c.add(Calendar.MILLISECOND, nanos / 1000000);
     ts.setTime(c.getTimeInMillis());
     return ts;
+  }
+
+  public static <T> T mapExceptions(ThrowingCallable<T, SFException> action) throws SQLException {
+    try {
+      return action.call();
+    } catch (SFException e) {
+      throw new SQLException(e);
+    }
   }
 }
