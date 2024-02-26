@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import java.io.Serializable;
 import java.util.List;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /**
  * @author jhuang
@@ -28,6 +29,7 @@ public class SnowflakeColumnMetadata implements Serializable {
 
   private boolean isAutoIncrement;
 
+  @SnowflakeJdbcInternalApi
   public SnowflakeColumnMetadata(
       String name,
       int type,
@@ -59,6 +61,11 @@ public class SnowflakeColumnMetadata implements Serializable {
     this.isAutoIncrement = isAutoIncrement;
   }
 
+  /**
+   * @deprecated Use {@link net.snowflake.client.jdbc.SnowflakeColumnMetadata(String, int, boolean,
+   *     int, int, int, String, boolean, SnowflakeType, List<FieldMetadata>, String, String, String,
+   *     boolean)} instead
+   */
   @Deprecated
   public SnowflakeColumnMetadata(
       String name,
@@ -157,8 +164,14 @@ public class SnowflakeColumnMetadata implements Serializable {
     return this.base;
   }
 
+  @SnowflakeJdbcInternalApi
   public List<FieldMetadata> getFields() {
     return fields;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public void setFields(List<FieldMetadata> fields) {
+    this.fields = fields;
   }
 
   public String getColumnSrcTable() {

@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -273,7 +272,7 @@ public class SnowflakeUtil {
 
       case ARRAY:
         columnTypeInfo =
-            new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
+            new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
 
       case OBJECT:
@@ -312,7 +311,7 @@ public class SnowflakeUtil {
 
       default:
         throw new SnowflakeSQLLoggedException(
-            new SFSession(),
+            session,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
             "Unknown column type: " + internalColTypeName);

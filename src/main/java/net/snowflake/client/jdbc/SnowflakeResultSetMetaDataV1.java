@@ -110,7 +110,6 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
       case Types.VARCHAR:
       case Types.CHAR:
       case Types.STRUCT:
-      case Types.ARRAY:
         return true;
 
       case Types.INTEGER:
