@@ -5,6 +5,8 @@
 package net.snowflake.client.jdbc;
 
 import java.io.Serializable;
+import java.util.List;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /**
  * @author jhuang
@@ -20,12 +22,51 @@ public class SnowflakeColumnMetadata implements Serializable {
   private int scale;
   private boolean fixed;
   private SnowflakeType base;
+  private List<FieldMetadata> fields;
   private String columnSrcTable;
   private String columnSrcSchema;
   private String columnSrcDatabase;
 
   private boolean isAutoIncrement;
 
+  @SnowflakeJdbcInternalApi
+  public SnowflakeColumnMetadata(
+      String name,
+      int type,
+      boolean nullable,
+      int length,
+      int precision,
+      int scale,
+      String typeName,
+      boolean fixed,
+      SnowflakeType base,
+      List<FieldMetadata> fields,
+      String columnSrcDatabase,
+      String columnSrcSchema,
+      String columnSrcTable,
+      boolean isAutoIncrement) {
+    this.name = name;
+    this.type = type;
+    this.nullable = nullable;
+    this.length = length;
+    this.precision = precision;
+    this.scale = scale;
+    this.typeName = typeName;
+    this.fixed = fixed;
+    this.base = base;
+    this.fields = fields;
+    this.columnSrcDatabase = columnSrcDatabase;
+    this.columnSrcSchema = columnSrcSchema;
+    this.columnSrcTable = columnSrcTable;
+    this.isAutoIncrement = isAutoIncrement;
+  }
+
+  /**
+   * @deprecated Use {@link SnowflakeColumnMetadata#SnowflakeColumnMetadata(String, int, boolean,
+   *     int, int, int, String, boolean, SnowflakeType, List, String, String, String, boolean)}
+   *     instead
+   */
+  @Deprecated
   public SnowflakeColumnMetadata(
       String name,
       int type,
@@ -121,6 +162,16 @@ public class SnowflakeColumnMetadata implements Serializable {
 
   public SnowflakeType getBase() {
     return this.base;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public List<FieldMetadata> getFields() {
+    return fields;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public void setFields(List<FieldMetadata> fields) {
+    this.fields = fields;
   }
 
   public String getColumnSrcTable() {
