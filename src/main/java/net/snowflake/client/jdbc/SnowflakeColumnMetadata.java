@@ -62,9 +62,9 @@ public class SnowflakeColumnMetadata implements Serializable {
   }
 
   /**
-   * @deprecated Use {@link net.snowflake.client.jdbc.SnowflakeColumnMetadata(String, int, boolean,
-   *     int, int, int, String, boolean, SnowflakeType, List<FieldMetadata>, String, String, String,
-   *     boolean)} instead
+   * @deprecated Use {@link SnowflakeColumnMetadata#SnowflakeColumnMetadata(String, int, boolean,
+   *     int, int, int, String, boolean, SnowflakeType, List, String, String, String, boolean)}
+   *     instead
    */
   @Deprecated
   public SnowflakeColumnMetadata(
