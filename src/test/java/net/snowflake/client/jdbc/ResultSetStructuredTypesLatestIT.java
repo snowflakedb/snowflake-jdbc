@@ -87,7 +87,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   private void testMapAllTypes(boolean registerFactory) throws SQLException {
-    SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
     if (registerFactory) {
       SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
     } else {

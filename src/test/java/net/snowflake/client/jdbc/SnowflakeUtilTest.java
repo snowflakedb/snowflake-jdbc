@@ -97,12 +97,9 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
 
   private static ObjectNode createRootNode() {
     ObjectNode rootNode = createFieldNode("STRUCT", 2, 128, 8, "object", false, null, 42);
-    String database = "database";
-    rootNode.put("database", database);
-    String schema = "schema";
-    rootNode.put("schema", schema);
-    String table = "table";
-    rootNode.put("table", table);
+    rootNode.put("database", "databaseName");
+    rootNode.put("schema", "schemaName");
+    rootNode.put("table", "tableName");
     return rootNode;
   }
 

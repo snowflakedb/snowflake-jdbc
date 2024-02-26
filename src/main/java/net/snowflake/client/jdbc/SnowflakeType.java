@@ -52,7 +52,6 @@ public enum SnowflakeType {
   }
 
   public static JavaDataType getJavaType(SnowflakeType type) {
-    // TODO structuredType fill for Array and Map
     switch (type) {
       case TEXT:
         return JavaDataType.JAVA_STRING;

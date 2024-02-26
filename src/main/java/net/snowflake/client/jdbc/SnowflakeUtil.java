@@ -327,9 +327,7 @@ public class SnowflakeUtil {
 
   static List<FieldMetadata> createFieldsMetadata(ArrayNode fieldsJson, int fixedColType)
       throws SnowflakeSQLLoggedException {
-    //    TODO: verify that jsonFileds is not empty array
     List<FieldMetadata> fields = new ArrayList<>();
-    int fieldCounter = 0;
     for (JsonNode node : fieldsJson) {
       String colName = node.path("name").asText();
       int scale = node.path("scale").asInt();
