@@ -29,6 +29,7 @@ public enum SnowflakeType {
   FIXED,
   INTEGER,
   OBJECT,
+  MAP,
   REAL,
   TEXT,
   TIME,

@@ -12,7 +12,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
 import net.snowflake.client.core.BasicEvent.QueryState;
-import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.JsonResultChunk;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
@@ -157,20 +156,7 @@ public class SFResultSet extends SFJsonResultSet {
       throws SQLException {
     super(
         resultSetSerializable.getTimeZone(),
-        new Converters(
-            resultSetSerializable.getTimeZone(),
-            session,
-            resultSetSerializable.getResultVersion(),
-            resultSetSerializable.isHonorClientTZForTimestampNTZ(),
-            resultSetSerializable.getTreatNTZAsUTC(),
-            resultSetSerializable.getUseSessionTimezone(),
-            resultSetSerializable.getFormatDateWithTimeZone(),
-            resultSetSerializable.getBinaryFormatter(),
-            resultSetSerializable.getDateFormatter(),
-            resultSetSerializable.getTimeFormatter(),
-            resultSetSerializable.getTimestampNTZFormatter(),
-            resultSetSerializable.getTimestampLTZFormatter(),
-            resultSetSerializable.getTimestampTZFormatter()));
+        ConvertersFactory.createJsonConverters(session, resultSetSerializable));
     this.resultSetSerializable = resultSetSerializable;
     this.columnCount = 0;
     this.sortResult = sortResult;

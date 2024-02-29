@@ -473,7 +473,7 @@ public class SFResultSetMetaData {
     return isAutoIncrementList;
   }
 
-  List<SnowflakeColumnMetadata> getColumnMetadata() {
+  public List<SnowflakeColumnMetadata> getColumnMetadata() {
     return columnMetadata;
   }
 }

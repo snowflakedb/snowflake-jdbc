@@ -212,4 +212,8 @@ public class SnowflakeColumnMetadata implements Serializable {
 
     return sBuilder.toString();
   }
+
+  public FieldMetadata getField(int index) {
+    return fields.get(index - 1);
+  }
 }

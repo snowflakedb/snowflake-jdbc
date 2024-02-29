@@ -13,6 +13,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Array;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
@@ -506,6 +507,19 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setSessionTimeZone(timeZone);
     Object obj = converter.toObject(index);
     return handleObjectType(columnIndex, obj);
+  }
+
+  @Override
+  public Array getArray(int columnIndex) throws SFException {
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
+    int index = currentChunkIterator.getCurrentRowInRecordBatch();
+    wasNull = converter.isNull(index);
+    converter.setTreatNTZAsUTC(treatNTZAsUTC);
+    converter.setUseSessionTimezone(useSessionTimezone);
+    converter.setSessionTimeZone(timeZone);
+    Object obj = converter.toObject(index);
+    //    TODO: handleArray SNOW-969794
+    return null;
   }
 
   private Object handleObjectType(int columnIndex, Object obj) throws SFException {

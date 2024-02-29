@@ -50,6 +50,7 @@ import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
+import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -881,6 +882,21 @@ public class MockConnectionTest extends BaseJDBCTest {
     @Override
     public SnowflakeBaseResultSet createResultSet(SFBaseResultSet resultSet, Statement statement)
         throws SQLException {
+      Converters convertes =
+          new Converters(
+              null,
+              new SFSession(),
+              0,
+              false,
+              false,
+              false,
+              false,
+              SFBinaryFormat.BASE64,
+              null,
+              null,
+              null,
+              null,
+              null);
       return new SnowflakeResultSetV1(resultSet, statement);
     }
 
