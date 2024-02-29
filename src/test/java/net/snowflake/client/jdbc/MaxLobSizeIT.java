@@ -1,371 +1,254 @@
 package net.snowflake.client.jdbc;
 
-import org.apache.commons.text.RandomStringGenerator;
-import org.junit.Test;
 import static org.junit.Assert.*;
 
-import java.nio.charset.Charset;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Random;
+import net.snowflake.client.core.ObjectMapperFactory;
+import org.apache.commons.text.RandomStringGenerator;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 public class MaxLobSizeIT extends BaseJDBCTest {
 
-    protected static String jsonQueryResultFormat = "json";
+  protected static String jsonQueryResultFormat = "json";
 
-    //TODO: increase max size to 128 * 1024 * 1024
-    public static int maxLobSize = 16 * 1024 * 1024;
-    public static int largeLobSize = maxLobSize/2;
-    public static int mediumLobSize = largeLobSize/2;
-    public static int originLobSize = mediumLobSize/2;
-    public static int smallLobSize = 16;
+  // TODO: increase max size to 128 * 1024 * 1024
+  private static int maxLobSize = 16 * 1024 * 1024;
+  private static int largeLobSize = maxLobSize / 2;
+  private static int mediumLobSize = largeLobSize / 2;
+  private static int originLobSize = mediumLobSize / 2;
+  private static int smallLobSize = 16;
 
-    public static String enableMaxLobSize = "alter session set FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY = 'ENABLED'";
-    public static String insertQuery = "insert into my_lob_test (c1, c2, c3) values ('";
-    public static String preparedInsertQuery = "insert into my_lob_test (c1, c2, c3) values (?, ?, ?)";
-    public static String selectQuery = "select * from my_lob_test";
+  @BeforeClass
+  public static void setUp() {
+    // TODO: May need to increase MAX_JSON_STRING_LENGTH_JVM once we increase the max LOB size.
+    System.setProperty(
+        ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, Integer.toString(45_000_000));
+  }
 
-    public static String generateRandomString(int stringSize) {
-        RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder().withinRange('a','z').build();
-        return randomStringGenerator.generate(stringSize);
+  @Parameterized.Parameters
+  public static Collection<Integer> data() {
+    int[] lobSizes =
+        new int[] {smallLobSize, originLobSize, mediumLobSize, largeLobSize, maxLobSize};
+    List<Integer> ret = new ArrayList<>();
+    for (int i = 0; i < lobSizes.length; i++) {
+      ret.add(lobSizes[i]);
     }
+    return ret;
+  }
 
-    public static Connection getConnection() throws SQLException {
-        Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement();
-//        stmt.execute(enableMaxLobSize);
-        stmt.close();
-        return con;
+  private final int lobSize;
+
+  public MaxLobSizeIT(int lobSize) {
+    this.lobSize = lobSize;
+  }
+
+  private static String enableMaxLobSize =
+      "alter session set FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY = 'ENABLED'";
+  private static String insertQuery = "insert into my_lob_test (c1, c2, c3) values ('";
+  private static String preparedInsertQuery =
+      "insert into my_lob_test (c1, c2, c3) values (?, ?, ?)";
+  private static String selectQuery = "select * from my_lob_test";
+
+  private static String tableName = "my_lob_test";
+
+  private static String generateRandomString(int stringSize) {
+    RandomStringGenerator randomStringGenerator =
+        new RandomStringGenerator.Builder().withinRange('a', 'z').build();
+    return randomStringGenerator.generate(stringSize);
+  }
+
+  private static void setJSONResultFormat(Connection con) throws SQLException {
+    try (Statement stmt = con.createStatement()) {
+      stmt.execute("alter session set jdbc_query_result_format = '" + jsonQueryResultFormat + "'");
     }
+  }
 
-    public static void setJSONResultFormat(Connection con) throws SQLException {
-        Statement stmt = con.createStatement();
-        stmt.execute("alter session set jdbc_query_result_format = '" + jsonQueryResultFormat + "'");
-        stmt.close();
+  private void createTable(int lobSize, Connection con) throws SQLException {
+    try (Statement stmt = con.createStatement()) {
+      String createTableQuery =
+          "create or replace table my_lob_test (c1 varchar, c2 varchar(" + lobSize + "), c3 int)";
+      stmt.execute(createTableQuery);
     }
+  }
 
-    public void createTable(int lobSize, Connection con) throws SQLException {
-        String createTableQuery = "create or replace table my_lob_test (c1 varchar, c2 varchar("
-                + lobSize
-                + "), c3 int)";
-
-        Statement stmt = con.createStatement();
-        stmt.execute(createTableQuery);
-        stmt.close();
+  private void insertQuery(String varCharValue, int intValue, Connection con) throws SQLException {
+    try (Statement stmt = con.createStatement()) {
+      stmt.executeUpdate(
+          insertQuery + varCharValue + "', '" + varCharValue + "', " + intValue + ")");
     }
+  }
 
-    public void insertQuery(String varCharValue, int intValue, Connection con) throws SQLException {
-        Statement stmt = con.createStatement();
-        stmt.executeUpdate(insertQuery + varCharValue + "', '" + varCharValue + "', " + intValue + ")");
-        stmt.close();
+  private void preparedInsertQuery(String varCharValue, int intValue, Connection con)
+      throws SQLException {
+    try (PreparedStatement pstmt = con.prepareStatement(preparedInsertQuery)) {
+      pstmt.setString(1, varCharValue);
+      pstmt.setString(2, varCharValue);
+      pstmt.setInt(3, intValue);
+
+      pstmt.execute();
     }
+  }
 
-    public void preparedInsertQuery(String varCharValue, int intValue, Connection con) throws SQLException {
-        PreparedStatement pstmt = con.prepareStatement(preparedInsertQuery);
-
-        pstmt.setString(1, varCharValue);
-        pstmt.setString(2, varCharValue);
-        pstmt.setInt(3, intValue);
-
-        pstmt.execute();
-        pstmt.close();
+  @After
+  public void tearDown() throws SQLException {
+    try (Connection con = BaseJDBCTest.getConnection();
+        Statement stmt = con.createStatement()) {
+      stmt.execute("Drop table if exists " + tableName);
     }
-    @Test
-    public void testSmallLobSize() throws SQLException {
-        Connection con = getConnection();
-        createTable(smallLobSize, con);
+  }
 
-        String smallVarCharValue = generateRandomString(smallLobSize);
-        int intValue = new Random().nextInt();
-        insertQuery(smallVarCharValue, intValue, con);
+  @Test
+  public void testStandardInsertAndSelectWithMaxLobSizeEnabled() throws SQLException {
+    try (Connection con = BaseJDBCTest.getConnection();
+        Statement stmt = con.createStatement()) {
+      // TODO: Uncomment when ready to test with max lob size enabled.
+      // stmt.execute(enableMaxLobSize);
+      createTable(lobSize, con);
 
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
+      String varCharValue = generateRandomString(lobSize);
+      int intValue = new Random().nextInt();
+      insertQuery(varCharValue, intValue, con);
+
+      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
         rs.next();
-        assertEquals(smallVarCharValue, rs.getString(1));
-        assertEquals(smallVarCharValue, rs.getString(2));
+        assertEquals(varCharValue, rs.getString(1));
+        assertEquals(varCharValue, rs.getString(2));
         assertEquals(intValue, rs.getInt(3));
-        rs.close();
+      }
 
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
+      // Execute select query again with JSON result format
+      setJSONResultFormat(con);
+      try (ResultSet rsJSON = stmt.executeQuery(selectQuery)) {
         rsJSON.next();
-        assertEquals(smallVarCharValue, rsJSON.getString(1));
-        assertEquals(smallVarCharValue, rsJSON.getString(2));
+        assertEquals(varCharValue, rsJSON.getString(1));
+        assertEquals(varCharValue, rsJSON.getString(2));
         assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
-
-        stmt.close();
-        con.close();
+      }
     }
-    @Test
-    public void testSmallLobSizePreparedInsert() throws SQLException {
-        Connection con = getConnection();
-        createTable(smallLobSize, con);
+  }
 
-        String smallVarCharValue = generateRandomString(smallLobSize);
-        int intValue = new Random().nextInt();
-        preparedInsertQuery(smallVarCharValue, intValue, con);
+  @Test
+  public void testPreparedInsertWithMaxLobSizeEnabled() throws SQLException {
+    try (Connection con = BaseJDBCTest.getConnection();
+        Statement stmt = con.createStatement()) {
+      // TODO: Uncomment when ready to test with max lob size enabled.
+      // stmt.execute(enableMaxLobSize);
 
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
-        rs.next();
-        assertEquals(smallVarCharValue, rs.getString(1));
-        assertEquals(smallVarCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
-        rs.close();
+      createTable(lobSize, con);
 
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
-        rsJSON.next();
-        assertEquals(smallVarCharValue, rsJSON.getString(1));
-        assertEquals(smallVarCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
+      String maxVarCharValue = generateRandomString(lobSize);
+      int intValue = new Random().nextInt();
+      preparedInsertQuery(maxVarCharValue, intValue, con);
 
-        stmt.close();
-        con.close();
-    }
-
-    @Test
-    public void testOriginLobSize() throws SQLException {
-        Connection con = getConnection();
-        createTable(originLobSize, con);
-
-        String originVarCharValue = generateRandomString(originLobSize);
-        int intValue = new Random().nextInt();
-        insertQuery(originVarCharValue, intValue, con);
-
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
-        rs.next();
-        assertEquals(originVarCharValue, rs.getString(1));
-        assertEquals(originVarCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
-        rs.close();
-
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
-        rsJSON.next();
-        assertEquals(originVarCharValue, rsJSON.getString(1));
-        assertEquals(originVarCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
-
-        stmt.close();
-        con.close();
-    }
-    @Test
-    public void testOriginLobSizePreparedInsert() throws SQLException {
-        Connection con = getConnection();
-        createTable(originLobSize, con);
-
-        String originVarCharValue = generateRandomString(originLobSize);
-        int intValue = new Random().nextInt();
-        preparedInsertQuery(originVarCharValue, intValue, con);
-
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
-        rs.next();
-        assertEquals(originVarCharValue, rs.getString(1));
-        assertEquals(originVarCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
-        rs.close();
-
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
-        rsJSON.next();
-        assertEquals(originVarCharValue, rsJSON.getString(1));
-        assertEquals(originVarCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
-
-        stmt.close();
-        con.close();
-    }
-
-    @Test
-    public void testMediumLobSize() throws SQLException {
-        Connection con = getConnection();
-        createTable(mediumLobSize, con);
-
-        String mediumVarCharValue = generateRandomString(mediumLobSize);
-        int intValue = new Random().nextInt();
-        insertQuery(mediumVarCharValue, intValue, con);
-
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
-        rs.next();
-        assertEquals(mediumVarCharValue, rs.getString(1));
-        assertEquals(mediumVarCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
-        rs.close();
-
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
-        rsJSON.next();
-        assertEquals(mediumVarCharValue, rsJSON.getString(1));
-        assertEquals(mediumVarCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
-
-        stmt.close();
-        con.close();
-    }
-    @Test
-    public void testMediumLobSizePreparedInsert() throws SQLException {
-        Connection con = getConnection();
-        createTable(mediumLobSize, con);
-
-        String mediumVarCharValue = generateRandomString(mediumLobSize);
-        int intValue = new Random().nextInt();
-        preparedInsertQuery(mediumVarCharValue, intValue, con);
-
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
-        rs.next();
-        assertEquals(mediumVarCharValue, rs.getString(1));
-        assertEquals(mediumVarCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
-        rs.close();
-
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
-        rsJSON.next();
-        assertEquals(mediumVarCharValue, rsJSON.getString(1));
-        assertEquals(mediumVarCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
-
-        stmt.close();
-        con.close();
-    }
-
-    @Test
-    public void testLargeLobSize() throws SQLException {
-        Connection con = getConnection();
-        createTable(largeLobSize, con);
-
-        String largeVarCharValue = generateRandomString(largeLobSize);
-        int intValue = new Random().nextInt();
-        insertQuery(largeVarCharValue, intValue, con);
-
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
-        rs.next();
-        assertEquals(largeVarCharValue, rs.getString(1));
-        assertEquals(largeVarCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
-        rs.close();
-
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
-        rsJSON.next();
-        assertEquals(largeVarCharValue, rsJSON.getString(1));
-        assertEquals(largeVarCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
-
-        stmt.close();
-        con.close();
-    }
-    @Test
-    public void testLargeLobSizePreparedInsert() throws SQLException {
-        Connection con = getConnection();
-        createTable(largeLobSize, con);
-
-        String largeVarCharValue = generateRandomString(largeLobSize);
-        int intValue = new Random().nextInt();
-        preparedInsertQuery(largeVarCharValue, intValue, con);
-
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
-        rs.next();
-        assertEquals(largeVarCharValue, rs.getString(1));
-        assertEquals(largeVarCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
-        rs.close();
-
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
-        rsJSON.next();
-        assertEquals(largeVarCharValue, rsJSON.getString(1));
-        assertEquals(largeVarCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
-
-        stmt.close();
-        con.close();
-    }
-
-    @Test
-    public void testMaxLobSize() throws SQLException {
-        Connection con = getConnection();
-        createTable(maxLobSize, con);
-
-        String maxVarCharValue = generateRandomString(maxLobSize);
-        int intValue = new Random().nextInt();
-        insertQuery(maxVarCharValue, intValue, con);
-
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
+      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
         rs.next();
         assertEquals(maxVarCharValue, rs.getString(1));
         assertEquals(maxVarCharValue, rs.getString(2));
         assertEquals(intValue, rs.getInt(3));
-        rs.close();
+      }
 
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
+      // Execute select query again with JSON result format
+      setJSONResultFormat(con);
+
+      try (ResultSet rsJSON = stmt.executeQuery(selectQuery)) {
         rsJSON.next();
         assertEquals(maxVarCharValue, rsJSON.getString(1));
         assertEquals(maxVarCharValue, rsJSON.getString(2));
         assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
-
-        stmt.close();
-        con.close();
+      }
     }
-    @Test
-    public void testMaxLobSizePreparedInsert() throws SQLException {
-        Connection con = getConnection();
-        createTable(maxLobSize, con);
+  }
 
-        String maxVarCharValue = generateRandomString(maxLobSize);
-        int intValue = new Random().nextInt();
-        preparedInsertQuery(maxVarCharValue, intValue, con);
+  @Test
+  public void testPutAndGet() throws IOException, SQLException {
+    File tempFile = File.createTempFile("LobSizeTest", ".csv");
+    // Delete file when JVM shuts down
+    tempFile.deleteOnExit();
 
-        Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery(selectQuery);
-        rs.next();
-        assertEquals(maxVarCharValue, rs.getString(1));
-        assertEquals(maxVarCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
-        rs.close();
+    String filePath = tempFile.getPath();
+    String filePathEscaped = filePath.replace("\\", "\\\\");
+    String fileName = tempFile.getName();
 
-        // Execute select query again with JSON result format
-        setJSONResultFormat(con);
-        ResultSet rsJSON = stmt.executeQuery(selectQuery);
-        rsJSON.next();
-        assertEquals(maxVarCharValue, rsJSON.getString(1));
-        assertEquals(maxVarCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
-        rsJSON.close();
+    String varCharValue = generateRandomString(lobSize);
+    int intValue = new Random().nextInt();
+    String fileInput = varCharValue + "," + varCharValue + "," + intValue;
 
-        stmt.close();
-        con.close();
+    // Print data to new temporary file
+    try (PrintWriter out = new PrintWriter(filePath)) {
+      out.println(fileInput);
     }
 
+    try (Connection con = BaseJDBCTest.getConnection();
+        Statement stmt = con.createStatement()) {
+      // TODO: Uncomment when ready to test with max lob size enabled.
+      // stmt.execute(enableMaxLobSize);
+
+      createTable(lobSize, con);
+
+      // Test PUT
+      String sqlPut = "PUT 'file://" + filePathEscaped + "' @%" + tableName;
+
+      stmt.execute(sqlPut);
+
+      try (ResultSet rsPut = stmt.getResultSet()) {
+        assertTrue(rsPut.next());
+        assertEquals(fileName, rsPut.getString(1));
+        assertEquals(fileName + ".gz", rsPut.getString(2));
+        assertEquals("GZIP", rsPut.getString(6));
+        assertEquals("UPLOADED", rsPut.getString(7));
+      }
+
+      try (ResultSet rsFiles = stmt.executeQuery("ls @%" + tableName)) {
+        // ResultSet should return a row with the zipped file name
+        assertTrue(rsFiles.next());
+        assertEquals(fileName + ".gz", rsFiles.getString(1));
+      }
+
+      String copyInto =
+          "copy into "
+              + tableName
+              + " from @%"
+              + tableName
+              + " file_format=(type=csv compression='gzip')";
+      stmt.execute(copyInto);
+
+      // Check that results are copied into table correctly
+      try (ResultSet rsCopy = stmt.executeQuery("Select * from " + tableName)) {
+        assertTrue(rsCopy.next());
+        assertEquals(varCharValue, rsCopy.getString(1));
+        assertEquals(varCharValue, rsCopy.getString(2));
+        assertEquals(intValue, rsCopy.getInt(3));
+      }
+
+      // Test Get
+      Path tempDir = Files.createTempDirectory("MaxLobTest");
+      // Delete tempDir when JVM shuts down
+      tempDir.toFile().deleteOnExit();
+      String pathToTempDir = tempDir.toString().replace("\\", "\\\\");
+
+      String getSql = "get @%" + tableName + " 'file://" + pathToTempDir + "'";
+      stmt.execute(getSql);
+
+      try (ResultSet rsGet = stmt.getResultSet()) {
+        assertTrue(rsGet.next());
+        assertEquals(fileName + ".gz", rsGet.getString(1));
+        assertEquals("DOWNLOADED", rsGet.getString(3));
+        assertEquals("DECRYPTED", rsGet.getString(4));
+      }
+    }
+  }
 }
