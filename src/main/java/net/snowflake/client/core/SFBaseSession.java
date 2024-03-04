@@ -341,6 +341,8 @@ public abstract class SFBaseSession {
       return ocspAndProxyAndGzipKey;
     }
 
+    OCSPMode ocspMode = getOCSPMode();
+
     Boolean gzipDisabled = false;
     if (connectionPropertiesMap.containsKey(SFSessionProperty.GZIP_DISABLED)) {
       gzipDisabled = (Boolean) connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED);
@@ -374,7 +376,7 @@ public abstract class SFBaseSession {
       String proxyProtocol = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PROTOCOL);
       ocspAndProxyAndGzipKey =
           new HttpClientSettingsKey(
-              getOCSPMode(),
+              ocspMode,
               proxyHost,
               proxyPort,
               nonProxyHosts,
@@ -383,6 +385,15 @@ public abstract class SFBaseSession {
               proxyProtocol,
               userAgentSuffix,
               gzipDisabled);
+
+      logger.info("Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {}," +
+                  " proxy host: {}, proxy port: {}, proxy user: {}",
+              ocspMode,
+              gzipDisabled,
+              proxyProtocol,
+              proxyHost,
+              proxyPort,
+              proxyUser);
 
       return ocspAndProxyAndGzipKey;
     }
@@ -399,6 +410,7 @@ public abstract class SFBaseSession {
       String nonProxyHosts = systemGetProperty("http.nonProxyHosts");
       // log the JVM parameters that are being used
       if (httpUseProxy) {
+        logger.debug("Using JVM parameters for proxy setup");
         logger.debug(
             "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={},"
                 + " https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
@@ -434,6 +446,7 @@ public abstract class SFBaseSession {
         if (proxyProtocol.equals("https")
             && !Strings.isNullOrEmpty(httpsProxyHost)
             && !Strings.isNullOrEmpty(httpsProxyPort)) {
+          logger.debug("Using https proxy configuration from JVM parameters");
           int proxyPort;
           try {
             proxyPort = Integer.parseInt(httpsProxyPort);
@@ -443,7 +456,7 @@ public abstract class SFBaseSession {
           }
           ocspAndProxyAndGzipKey =
               new HttpClientSettingsKey(
-                  getOCSPMode(),
+                  ocspMode,
                   httpsProxyHost,
                   proxyPort,
                   combinedNonProxyHosts,
@@ -452,9 +465,18 @@ public abstract class SFBaseSession {
                   "https",
                   userAgentSuffix,
                   gzipDisabled);
+          logger.info("Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {}," +
+                      " proxy host: {}, proxy port: {}, non proxy hosts: {}",
+                  ocspMode,
+                  gzipDisabled,
+                  proxyProtocol,
+                  httpsProxyHost,
+                  proxyPort,
+                  combinedNonProxyHosts);
         } else if (proxyProtocol.equals("http")
             && !Strings.isNullOrEmpty(httpProxyHost)
             && !Strings.isNullOrEmpty(httpProxyPort)) {
+          logger.debug("Using http proxy configuration from JVM parameters");
           int proxyPort;
           try {
             proxyPort = Integer.parseInt(httpProxyPort);
@@ -464,7 +486,7 @@ public abstract class SFBaseSession {
           }
           ocspAndProxyAndGzipKey =
               new HttpClientSettingsKey(
-                  getOCSPMode(),
+                  ocspMode,
                   httpProxyHost,
                   proxyPort,
                   combinedNonProxyHosts,
@@ -473,20 +495,35 @@ public abstract class SFBaseSession {
                   "http",
                   userAgentSuffix,
                   gzipDisabled);
+          logger.info("Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {}," +
+                      " proxy host: {}, proxy port: {}, non proxy hosts: {}",
+                  ocspMode,
+                  gzipDisabled,
+                  proxyProtocol,
+                  httpProxyHost,
+                  proxyPort,
+                  combinedNonProxyHosts);
         } else {
           // Not enough parameters set to use the proxy.
-          logger.debug(
-              "http.useProxy={} but valid host and port were not provided. No proxy in use.",
-              httpUseProxy);
+          logger.warn(
+              "Failed parsing the proxy settings from JVM parameters as http.useProxy={}," +
+              " but valid host and port were not provided.",
+                  httpUseProxy);
+          logger.info("Drier OCSP mode: {}, gzip disabled: {} and no proxy",
+                  ocspMode,
+                  gzipDisabled);
           ocspAndProxyAndGzipKey =
-              new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix, gzipDisabled);
+              new HttpClientSettingsKey(ocspMode, userAgentSuffix, gzipDisabled);
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         unsetInvalidProxyHostAndPort();
+        logger.info("Snowflake driver OCSP mode: {}, gzip disabled: {} and no proxy",
+                ocspMode,
+                gzipDisabled);
         ocspAndProxyAndGzipKey =
-            new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix, gzipDisabled);
+            new HttpClientSettingsKey(ocspMode, userAgentSuffix, gzipDisabled);
       }
     }
     return ocspAndProxyAndGzipKey;
