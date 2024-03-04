@@ -197,7 +197,7 @@ public class RestRequest {
         if (injectSocketTimeout != 0 && retryCount == 0) {
           // test code path
           logger.debug(
-              "Injecting socket timeout by setting socket timeout to {} millisecond ",
+              "Injecting socket timeout by setting socket timeout to {} ms",
               injectSocketTimeout);
           httpRequest.setConfig(
               HttpUtil.getDefaultRequestConfigWithSocketTimeout(

@@ -830,7 +830,7 @@ public class HttpUtil {
     }
 
     logger.debug(
-        "Pool: {} Request returned for: {} took {}",
+        "Pool: {} Request returned for: {} took {} ms",
         (ArgSupplier) HttpUtil::getHttpClientStats,
         requestInfoScrubbed,
         stopwatch.elapsed(TimeUnit.MILLISECONDS));
