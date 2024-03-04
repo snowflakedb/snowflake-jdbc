@@ -150,4 +150,19 @@ public class HttpClientSettingsKey implements Serializable {
   public Boolean getGzipDisabled() {
     return gzipDisabled;
   }
+
+  @Override
+  public String toString() {
+    return "HttpClientSettingsKey[" +
+           "ocspMode=" + ocspMode +
+           ", useProxy=" + useProxy +
+           ", proxyHost='" + proxyHost + '\'' +
+           ", proxyPort=" + proxyPort +
+           ", nonProxyHosts='" + nonProxyHosts + '\'' +
+           ", proxyUser='" + proxyUser + '\'' +
+           ", proxyProtocol='" + proxyProtocol + '\'' +
+           ", userAgentSuffix='" + userAgentSuffix + '\'' +
+           ", gzipDisabled=" + gzipDisabled +
+           ']';
+  }
 }
