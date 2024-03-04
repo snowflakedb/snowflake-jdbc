@@ -11,7 +11,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.gax.paging.Page;
-import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
@@ -1207,8 +1208,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         // We are authenticated with an oauth access token.
         this.gcsClient =
             StorageOptions.newBuilder()
-                .setHeaderProvider(
-                    FixedHeaderProvider.create("Authorization", "Bearer " + accessToken))
+                .setCredentials(GoogleCredentials.create(new AccessToken(accessToken, null)))
                 .build()
                 .getService();
       } else {
