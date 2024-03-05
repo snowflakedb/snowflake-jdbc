@@ -392,22 +392,12 @@ public abstract class SFBaseSession {
       boolean httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
       String httpProxyHost = systemGetProperty("http.proxyHost");
       String httpProxyPort = systemGetProperty("http.proxyPort");
-      String httpProxyUser =
-          (systemGetProperty("http.proxyUser") != null) ? systemGetProperty("http.proxyUser") : "";
-      String httpProxyPassword =
-          (systemGetProperty("http.proxyPassword") != null)
-              ? systemGetProperty("http.proxyPassword")
-              : "";
+      String httpProxyUser = systemGetProperty("http.proxyUser");
+      String httpProxyPassword = systemGetProperty("http.proxyPassword");
       String httpsProxyHost = systemGetProperty("https.proxyHost");
       String httpsProxyPort = systemGetProperty("https.proxyPort");
-      String httpsProxyUser =
-          (systemGetProperty("https.proxyUser") != null)
-              ? systemGetProperty("https.proxyUser")
-              : "";
-      String httpsProxyPassword =
-          (systemGetProperty("https.proxyPassword") != null)
-              ? systemGetProperty("https.proxyPassword")
-              : "";
+      String httpsProxyUser = systemGetProperty("https.proxyUser");
+      String httpsProxyPassword = systemGetProperty("https.proxyPassword");
       String httpProxyProtocol = systemGetProperty("http.proxyProtocol");
       String noProxy = systemGetEnv("NO_PROXY");
       String nonProxyHosts = systemGetProperty("http.nonProxyHosts");
@@ -415,15 +405,17 @@ public abstract class SFBaseSession {
       if (httpUseProxy) {
         logger.debug(
             "Proxy environment settings: http.useProxy={}, http.proxyHost={}, http.proxyPort={}, http.proxyUser={}, "
-                + "https.proxyHost={}, https.proxyPort={}, https.proxyUser={}, http.nonProxyHosts={}, "
-                + "NO_PROXY={}, http.proxyProtocol={}",
+                + "http.proxyUser is {}, https.proxyHost={}, https.proxyPort={}, https.proxyUser={}, "
+                + "https.proxyPassword is {}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
             httpUseProxy,
             httpProxyHost,
             httpProxyPort,
             httpProxyUser,
+            httpProxyPassword == null || httpProxyPassword.isEmpty() ? "not set" : "set",
             httpsProxyHost,
             httpsProxyPort,
             httpsProxyUser,
+            httpsProxyPassword == null || httpsProxyPassword.isEmpty() ? "not set" : "set",
             nonProxyHosts,
             noProxy,
             httpProxyProtocol,
