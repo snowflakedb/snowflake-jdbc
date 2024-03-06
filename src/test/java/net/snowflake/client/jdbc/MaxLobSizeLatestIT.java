@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class MaxLobSizeIT extends BaseJDBCTest {
+public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
   // TODO: increase max size to 128 * 1024 * 1024
   private static int maxLobSize = 16 * 1024 * 1024;
@@ -63,7 +63,7 @@ public class MaxLobSizeIT extends BaseJDBCTest {
 
   private final String resultFormat;
 
-  public MaxLobSizeIT(int lobSize, String resultFormat) {
+  public MaxLobSizeLatestIT(int lobSize, String resultFormat) {
     this.lobSize = lobSize;
     this.resultFormat = resultFormat;
   }
