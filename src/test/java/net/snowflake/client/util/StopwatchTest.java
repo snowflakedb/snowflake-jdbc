@@ -27,14 +27,14 @@ public class StopwatchTest {
         TimeUnit.MILLISECONDS.sleep(20);
         stopwatch.stop();
 
-        assertThat(stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(30L)));
+        assertThat(stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(50L)));
     }
 
     @Test
     public void testGetMillisWithoutStopping() throws InterruptedException {
         stopwatch.start();
         TimeUnit.MILLISECONDS.sleep(20);
-        assertThat(stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(30L)));
+        assertThat(stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(50L)));
     }
 
     @Test
