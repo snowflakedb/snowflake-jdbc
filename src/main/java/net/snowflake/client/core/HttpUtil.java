@@ -10,6 +10,7 @@ import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
