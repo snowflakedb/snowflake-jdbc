@@ -46,6 +46,7 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
@@ -1105,58 +1106,66 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetGcsDownscopedCredential() throws Throwable {
-    Connection connection = null;
-    Statement statement = null;
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      putAndGetFile(statement);
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPutGetGcsDownscopedCredentialWithDisabledDefaultCredentials() throws Throwable {
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    paramProperties.put(SFSessionProperty.DISABLE_GCS_DEFAULT_CREDENTIALS.getPropertyKey(), true);
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      putAndGetFile(statement);
+    }
+  }
+
+  private void putAndGetFile(Statement statement) throws Throwable {
+    String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE_2);
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
     try {
-      connection = getConnection("gcpaccount", paramProperties);
+      statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
-      statement = connection.createStatement();
+      assertTrue(
+          "Failed to put a file",
+          statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
 
-      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE_2);
+      findFile(statement, "ls @testPutGet_stage/");
 
-      File destFolder = tmpFolder.newFolder();
-      String destFolderCanonicalPath = destFolder.getCanonicalPath();
-      String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+      // download the file we just uploaded to stage
+      assertTrue(
+          "Failed to get a file",
+          statement.execute(
+              "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
 
-      try {
-        statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+      // Make sure that the downloaded file exists, it should be gzip compressed
+      File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
+      assert (downloaded.exists());
 
-        assertTrue(
-            "Failed to put a file",
-            statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
+      Process p =
+          Runtime.getRuntime()
+              .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
+      p.waitFor();
 
-        findFile(statement, "ls @testPutGet_stage/");
-
-        // download the file we just uploaded to stage
-        assertTrue(
-            "Failed to get a file",
-            statement.execute(
-                "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
-
-        // Make sure that the downloaded file exists, it should be gzip compressed
-        File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
-        assert (downloaded.exists());
-
-        Process p =
-            Runtime.getRuntime()
-                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
-        p.waitFor();
-
-        File original = new File(sourceFilePath);
-        File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2);
-        System.out.println(
-            "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
-        System.out.println(
-            "Unzipped file: " + unzipped.getAbsolutePath() + ", size: " + unzipped.length());
-        assert (original.length() == unzipped.length());
-      } finally {
-        statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
-        statement.close();
-      }
+      File original = new File(sourceFilePath);
+      File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2);
+      System.out.println(
+          "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
+      System.out.println(
+          "Unzipped file: " + unzipped.getAbsolutePath() + ", size: " + unzipped.length());
+      assert (original.length() == unzipped.length());
     } finally {
-      closeSQLObjects(null, statement, connection);
+      statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
     }
   }
 

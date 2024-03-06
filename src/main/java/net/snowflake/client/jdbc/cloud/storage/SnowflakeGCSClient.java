@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.gax.paging.Page;
+import com.google.api.gax.rpc.FixedHeaderProvider;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Blob;
@@ -1201,14 +1202,21 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     try {
       String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
       if (accessToken != null) {
+        // We are authenticated with an oauth access token.
+        StorageOptions.Builder builder = StorageOptions.newBuilder();
+        if (session.getDisableGcsDefaultCredentials()) {
+          logger.debug(
+              "Adding explicit credentials to avoid default credential lookup by the GCS client");
+          builder.setCredentials(GoogleCredentials.create(new AccessToken(accessToken, null)));
+        }
+
         // Using GoogleCredential with access token will cause IllegalStateException when the token
         // is expired and trying to refresh, which cause error cannot be caught. Instead, set a
         // header so we can caught the error code.
-
-        // We are authenticated with an oauth access token.
         this.gcsClient =
-            StorageOptions.newBuilder()
-                .setCredentials(GoogleCredentials.create(new AccessToken(accessToken, null)))
+            builder
+                .setHeaderProvider(
+                    FixedHeaderProvider.create("Authorization", "Bearer " + accessToken))
                 .build()
                 .getService();
       } else {
