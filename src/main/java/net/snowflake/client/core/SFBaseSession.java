@@ -386,14 +386,7 @@ public abstract class SFBaseSession {
               userAgentSuffix,
               gzipDisabled);
 
-      logger.info("Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {}," +
-                  " proxy host: {}, proxy port: {}, proxy user: {}",
-              ocspMode,
-              gzipDisabled,
-              proxyProtocol,
-              proxyHost,
-              proxyPort,
-              proxyUser);
+      logDriverInitInfo(ocspAndProxyAndGzipKey);
 
       return ocspAndProxyAndGzipKey;
     }
@@ -410,9 +403,8 @@ public abstract class SFBaseSession {
       String nonProxyHosts = systemGetProperty("http.nonProxyHosts");
       // log the JVM parameters that are being used
       if (httpUseProxy) {
-        logger.debug("Using JVM parameters for proxy setup");
         logger.debug(
-            "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={},"
+            "Using JVM parameters for proxy setup: http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={},"
                 + " https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
             httpUseProxy,
             httpProxyHost,
@@ -465,14 +457,7 @@ public abstract class SFBaseSession {
                   "https",
                   userAgentSuffix,
                   gzipDisabled);
-          logger.info("Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {}," +
-                      " proxy host: {}, proxy port: {}, non proxy hosts: {}",
-                  ocspMode,
-                  gzipDisabled,
-                  proxyProtocol,
-                  httpsProxyHost,
-                  proxyPort,
-                  combinedNonProxyHosts);
+          logDriverInitInfo(ocspAndProxyAndGzipKey);
         } else if (proxyProtocol.equals("http")
             && !Strings.isNullOrEmpty(httpProxyHost)
             && !Strings.isNullOrEmpty(httpProxyPort)) {
@@ -495,38 +480,47 @@ public abstract class SFBaseSession {
                   "http",
                   userAgentSuffix,
                   gzipDisabled);
-          logger.info("Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {}," +
-                      " proxy host: {}, proxy port: {}, non proxy hosts: {}",
-                  ocspMode,
-                  gzipDisabled,
-                  proxyProtocol,
-                  httpProxyHost,
-                  proxyPort,
-                  combinedNonProxyHosts);
+          logDriverInitInfo(ocspAndProxyAndGzipKey);
         } else {
           // Not enough parameters set to use the proxy.
           logger.warn(
-              "Failed parsing the proxy settings from JVM parameters as http.useProxy={}," +
-              " but valid host and port were not provided.",
-                  httpUseProxy);
-          logger.info("Drier OCSP mode: {}, gzip disabled: {} and no proxy",
-                  ocspMode,
-                  gzipDisabled);
+              "Failed parsing the proxy settings from JVM parameters as http.useProxy={},"
+                  + " but valid host and port were not provided.",
+              httpUseProxy);
           ocspAndProxyAndGzipKey =
               new HttpClientSettingsKey(ocspMode, userAgentSuffix, gzipDisabled);
+          logDriverInitInfo(ocspAndProxyAndGzipKey);
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         unsetInvalidProxyHostAndPort();
-        logger.info("Snowflake driver OCSP mode: {}, gzip disabled: {} and no proxy",
-                ocspMode,
-                gzipDisabled);
-        ocspAndProxyAndGzipKey =
-            new HttpClientSettingsKey(ocspMode, userAgentSuffix, gzipDisabled);
+        ocspAndProxyAndGzipKey = new HttpClientSettingsKey(ocspMode, userAgentSuffix, gzipDisabled);
+        logDriverInitInfo(ocspAndProxyAndGzipKey);
       }
     }
     return ocspAndProxyAndGzipKey;
+  }
+
+  private void logDriverInitInfo(HttpClientSettingsKey key) {
+    if (key.usesProxy()) {
+      logger.info(
+          "Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {},"
+              + " proxy host: {}, proxy port: {}, non proxy hosts: {}, proxy user: {}, proxy password is {}",
+          key.getOcspMode(),
+          key.getGzipDisabled(),
+          key.getProxyHttpProtocol(),
+          key.getProxyHost(),
+          key.getProxyPort(),
+          key.getNonProxyHosts(),
+          key.getProxyUser(),
+          key.getProxyPassword().isEmpty() ? "not set" : "set");
+    } else {
+      logger.info(
+          "Driver OCSP mode: {}, gzip disabled: {} and no proxy",
+          key.getOcspMode(),
+          key.getGzipDisabled());
+    }
   }
 
   public void unsetInvalidProxyHostAndPort() {
