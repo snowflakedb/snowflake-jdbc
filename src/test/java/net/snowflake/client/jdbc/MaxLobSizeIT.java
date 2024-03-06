@@ -1,13 +1,21 @@
+/*
+ * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
+ */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -22,8 +30,6 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class MaxLobSizeIT extends BaseJDBCTest {
-
-  protected static String jsonQueryResultFormat = "json";
 
   // TODO: increase max size to 128 * 1024 * 1024
   private static int maxLobSize = 16 * 1024 * 1024;
@@ -40,30 +46,34 @@ public class MaxLobSizeIT extends BaseJDBCTest {
   }
 
   @Parameterized.Parameters
-  public static Collection<Integer> data() {
+  public static Collection<Object[]> data() {
     int[] lobSizes =
         new int[] {smallLobSize, originLobSize, mediumLobSize, largeLobSize, maxLobSize};
-    List<Integer> ret = new ArrayList<>();
+    String[] resultFormats = new String[] {"Arrow", "JSON"};
+    List<Object[]> ret = new ArrayList<>();
     for (int i = 0; i < lobSizes.length; i++) {
-      ret.add(lobSizes[i]);
+      for (int j = 0; j < resultFormats.length; j++) {
+        ret.add(new Object[] {lobSizes[i], resultFormats[j]});
+      }
     }
     return ret;
   }
 
   private final int lobSize;
 
-  public MaxLobSizeIT(int lobSize) {
+  private final String resultFormat;
+
+  public MaxLobSizeIT(int lobSize, String resultFormat) {
     this.lobSize = lobSize;
+    this.resultFormat = resultFormat;
   }
 
+  private static String tableName = "my_lob_test";
   private static String enableMaxLobSize =
       "alter session set FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY = 'ENABLED'";
-  private static String insertQuery = "insert into my_lob_test (c1, c2, c3) values ('";
-  private static String preparedInsertQuery =
-      "insert into my_lob_test (c1, c2, c3) values (?, ?, ?)";
-  private static String selectQuery = "select * from my_lob_test";
-
-  private static String tableName = "my_lob_test";
+  private static String executeInsert = "insert into " + tableName + " (c1, c2, c3) values (";
+  private static String executePreparedStatementInsert = executeInsert + "?, ?, ?)";
+  private static String selectQuery = "select * from " + tableName;
 
   private static String generateRandomString(int stringSize) {
     RandomStringGenerator randomStringGenerator =
@@ -71,16 +81,20 @@ public class MaxLobSizeIT extends BaseJDBCTest {
     return randomStringGenerator.generate(stringSize);
   }
 
-  private static void setJSONResultFormat(Connection con) throws SQLException {
+  private static void setResultFormat(Connection con, String format) throws SQLException {
     try (Statement stmt = con.createStatement()) {
-      stmt.execute("alter session set jdbc_query_result_format = '" + jsonQueryResultFormat + "'");
+      stmt.execute("alter session set jdbc_query_result_format = '" + format + "'");
     }
   }
 
   private void createTable(int lobSize, Connection con) throws SQLException {
     try (Statement stmt = con.createStatement()) {
       String createTableQuery =
-          "create or replace table my_lob_test (c1 varchar, c2 varchar(" + lobSize + "), c3 int)";
+          "create or replace table "
+              + tableName
+              + " (c1 varchar, c2 varchar("
+              + lobSize
+              + "), c3 int)";
       stmt.execute(createTableQuery);
     }
   }
@@ -88,13 +102,13 @@ public class MaxLobSizeIT extends BaseJDBCTest {
   private void insertQuery(String varCharValue, int intValue, Connection con) throws SQLException {
     try (Statement stmt = con.createStatement()) {
       stmt.executeUpdate(
-          insertQuery + varCharValue + "', '" + varCharValue + "', " + intValue + ")");
+          executeInsert + "'" + varCharValue + "', '" + varCharValue + "', " + intValue + ")");
     }
   }
 
   private void preparedInsertQuery(String varCharValue, int intValue, Connection con)
       throws SQLException {
-    try (PreparedStatement pstmt = con.prepareStatement(preparedInsertQuery)) {
+    try (PreparedStatement pstmt = con.prepareStatement(executePreparedStatementInsert)) {
       pstmt.setString(1, varCharValue);
       pstmt.setString(2, varCharValue);
       pstmt.setInt(3, intValue);
@@ -117,6 +131,8 @@ public class MaxLobSizeIT extends BaseJDBCTest {
         Statement stmt = con.createStatement()) {
       // TODO: Uncomment when ready to test with max lob size enabled.
       // stmt.execute(enableMaxLobSize);
+
+      setResultFormat(con, resultFormat);
       createTable(lobSize, con);
 
       String varCharValue = generateRandomString(lobSize);
@@ -129,15 +145,6 @@ public class MaxLobSizeIT extends BaseJDBCTest {
         assertEquals(varCharValue, rs.getString(2));
         assertEquals(intValue, rs.getInt(3));
       }
-
-      // Execute select query again with JSON result format
-      setJSONResultFormat(con);
-      try (ResultSet rsJSON = stmt.executeQuery(selectQuery)) {
-        rsJSON.next();
-        assertEquals(varCharValue, rsJSON.getString(1));
-        assertEquals(varCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
-      }
     }
   }
 
@@ -148,6 +155,7 @@ public class MaxLobSizeIT extends BaseJDBCTest {
       // TODO: Uncomment when ready to test with max lob size enabled.
       // stmt.execute(enableMaxLobSize);
 
+      setResultFormat(con, resultFormat);
       createTable(lobSize, con);
 
       String maxVarCharValue = generateRandomString(lobSize);
@@ -159,16 +167,6 @@ public class MaxLobSizeIT extends BaseJDBCTest {
         assertEquals(maxVarCharValue, rs.getString(1));
         assertEquals(maxVarCharValue, rs.getString(2));
         assertEquals(intValue, rs.getInt(3));
-      }
-
-      // Execute select query again with JSON result format
-      setJSONResultFormat(con);
-
-      try (ResultSet rsJSON = stmt.executeQuery(selectQuery)) {
-        rsJSON.next();
-        assertEquals(maxVarCharValue, rsJSON.getString(1));
-        assertEquals(maxVarCharValue, rsJSON.getString(2));
-        assertEquals(intValue, rsJSON.getInt(3));
       }
     }
   }
