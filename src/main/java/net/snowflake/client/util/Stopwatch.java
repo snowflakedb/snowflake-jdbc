@@ -58,20 +58,31 @@ public class Stopwatch {
     }
 
     /**
-     * Get the elapsed time between the stopTime and startTime.
+     * Get the elapsed time (in ms) between the stopTime and startTime.
      *
      * @return elapsed milliseconds between stopTime and startTime
-     * @throws IllegalStateException when Stopwatch is running or has not been started yet
+     * @throws IllegalStateException when Stopwatch has not been started yet
      */
     public long elapsedMillis() {
+        return elapsedNanos() / 1_000_000;
+    }
+
+    /**
+     * Get the elapsed time (in nanoseconds) between the stopTime and startTime.
+     *
+     * @return elapsed nanoseconds between stopTime and startTime
+     * @throws IllegalStateException when Stopwatch has not been started yet
+     */
+    public long elapsedNanos() {
         if (isStarted) {
-            throw new IllegalStateException("Stopwatch is running");
+            return (System.nanoTime() - startTime);
         }
+
         if (stopTime == null) {
             throw new IllegalStateException("Stopwatch has not been ran yet");
         }
 
-        return (stopTime - startTime) / 1_000_000;
+        return stopTime - startTime;
     }
 
     /**
