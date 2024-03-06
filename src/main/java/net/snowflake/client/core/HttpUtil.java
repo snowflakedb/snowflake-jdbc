@@ -10,7 +10,6 @@ import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
@@ -41,6 +40,7 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
@@ -307,18 +307,14 @@ public class HttpUtil {
       // only set the proxy settings if they are not null
       // but no value has been specified for nonProxyHosts
       // the route planner will determine whether to use a proxy based on nonProxyHosts value.
-      StringBuilder logBuilder = new StringBuilder();
-      logBuilder.append(String.format("Rebuilding request config. Connect timeout: %d ms, connection request timeout: %d ms, " +
-                                      "socket timeout: %d ms",
-              connectTimeout, connectTimeout, socketTimeout));
+      String logMessage = "Rebuilding request config. Connect timeout: " + connectTimeout + " ms, connection request " +
+                          "timeout: " + connectTimeout + " ms, socket timeout: " + socketTimeout + " ms";
       if (proxy != null && Strings.isNullOrEmpty(key.getNonProxyHosts())) {
         builder.setProxy(proxy);
-        logBuilder.append(String.format(", host: %s, port: %d, scheme: %s",
-                key.getProxyHost(),
-                key.getProxyPort(),
-                key.getProxyHttpProtocol().getScheme()));
+        logMessage += ", host: " + key.getProxyHost() + ", port: " + key.getProxyPort() + ", scheme: " +
+                      key.getProxyHttpProtocol().getScheme();
       }
-      logger.debug(logBuilder.toString());
+      logger.debug(logMessage);
       DefaultRequestConfig = builder.build();
     }
 
@@ -347,11 +343,11 @@ public class HttpUtil {
     } else if (key != null) {
       logger.debug("Omitting trust manager instantiation as OCSP mode is set to {}", key.getOcspMode());
     } else {
-      logger.debug("Omitting trust manager instantiation as configuration is null");
+      logger.debug("Omitting trust manager instantiation as configuration is not provided");
     }
     try {
-      logger.debug("Registering https connection socket factory with socks proxy disabled: {}", socksProxyDisabled);
-      logger.debug("Registering http connection socket factory");
+      logger.debug("Registering https connection socket factory with socks proxy disabled: {} and http " +
+                   "connection socket factory", socksProxyDisabled);
 
       Registry<ConnectionSocketFactory> registry =
           RegistryBuilder.<ConnectionSocketFactory>create()
@@ -407,8 +403,9 @@ public class HttpUtil {
               new UsernamePasswordCredentials(key.getProxyUser(), key.getProxyPassword());
           AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
           CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-          logger.debug("Using user: {} for proxy host: {}, port: {}",
+          logger.debug("Using user: {} with password {} for proxy host: {}, port: {}",
                   key.getProxyUser(),
+                  key.getProxyPassword().isEmpty() ? "not provided" : "provided",
                   key.getProxyHost(),
                   key.getProxyPort());
           credentialsProvider.setCredentials(authScope, credentials);
@@ -534,7 +531,8 @@ public class HttpUtil {
   }
 
   public static void setRequestConfig(RequestConfig requestConfig) {
-    logger.debug("Setting default request config to: {}", requestConfig.toString());
+    logger.debug("Setting default request config to: {}",
+            requestConfig == null ? "null" : requestConfig.toString());
     DefaultRequestConfig = requestConfig;
   }
 
@@ -779,7 +777,12 @@ public class HttpUtil {
     String theString;
     StringWriter writer = null;
     CloseableHttpResponse response = null;
-    Stopwatch stopwatch = Stopwatch.createStarted();
+    Stopwatch stopwatch = null;
+
+    if (logger.isDebugEnabled()) {
+      stopwatch = new Stopwatch();
+      stopwatch.start();
+    }
 
     try {
       response =
@@ -797,7 +800,9 @@ public class HttpUtil {
               includeRequestGuid,
               retryOnHTTP403,
               execTimeData);
-       stopwatch.stop();
+      if (logger.isDebugEnabled() && stopwatch != null) {
+          stopwatch.stop();
+      }
 
       if (response == null || response.getStatusLine().getStatusCode() != 200) {
         logger.error("Error executing request: {}", requestInfoScrubbed);
@@ -833,7 +838,7 @@ public class HttpUtil {
         "Pool: {} Request returned for: {} took {} ms",
         (ArgSupplier) HttpUtil::getHttpClientStats,
         requestInfoScrubbed,
-        stopwatch.elapsed(TimeUnit.MILLISECONDS));
+        stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
 
     return theString;
   }

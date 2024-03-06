@@ -160,6 +160,7 @@ public class HttpClientSettingsKey implements Serializable {
            ", proxyPort=" + proxyPort +
            ", nonProxyHosts='" + nonProxyHosts + '\'' +
            ", proxyUser='" + proxyUser + '\'' +
+           ", proxyPassword is " + (proxyPassword.isEmpty() ? "not set" : "set") +
            ", proxyProtocol='" + proxyProtocol + '\'' +
            ", userAgentSuffix='" + userAgentSuffix + '\'' +
            ", gzipDisabled=" + gzipDisabled +

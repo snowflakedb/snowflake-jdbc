@@ -35,17 +35,16 @@ public class S3HttpUtil {
       clientConfig.setProxyHost(key.getProxyHost());
       clientConfig.setProxyPort(key.getProxyPort());
       clientConfig.setNonProxyHosts(key.getNonProxyHosts());
-      StringBuilder logBuilder = new StringBuilder(
-              String.format("Setting S3 proxy. Host: %s, port: %d, protocol: %s, non-proxy hosts: %s",
-                      key.getProxyHost(), key.getProxyPort(), key.getProxyHttpProtocol(), key.getNonProxyHosts())
-      );
+      String logMessage = "Setting S3 proxy. Host: " + key.getProxyHost() + ", port: " + key.getProxyPort() +
+                          ", protocol: " + key.getProxyHttpProtocol() + ", non-proxy hosts: " + key.getNonProxyHosts();
       if (!Strings.isNullOrEmpty(key.getProxyUser())
           && !Strings.isNullOrEmpty(key.getProxyPassword())) {
-        logBuilder.append(String.format(", user: %s", key.getProxyUser()));
+        logMessage += ", user: " + key.getProxyUser() + "with password " +
+                      (key.getProxyPassword().isEmpty() ? "not provided" : "provided");
         clientConfig.setProxyUsername(key.getProxyUser());
         clientConfig.setProxyPassword(key.getProxyPassword());
       }
-      LOGGER.debug(logBuilder.toString());
+      LOGGER.debug(logMessage);
     } else {
       LOGGER.debug("Omitting S3 proxy setup");
     }
