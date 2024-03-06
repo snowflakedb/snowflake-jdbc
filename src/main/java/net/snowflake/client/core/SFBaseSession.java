@@ -405,7 +405,7 @@ public abstract class SFBaseSession {
       if (httpUseProxy) {
         logger.debug(
             "Proxy environment settings: http.useProxy={}, http.proxyHost={}, http.proxyPort={}, http.proxyUser={}, "
-                + "http.proxyUser is {}, https.proxyHost={}, https.proxyPort={}, https.proxyUser={}, "
+                + "http.proxyPassword is {}, https.proxyHost={}, https.proxyPort={}, https.proxyUser={}, "
                 + "https.proxyPassword is {}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
             httpUseProxy,
             httpProxyHost,
