@@ -24,17 +24,17 @@ public class StopwatchTest {
     @Test
     public void testGetMillisWhenStopped() throws InterruptedException {
         stopwatch.start();
-        TimeUnit.SECONDS.sleep(1);
+        TimeUnit.MILLISECONDS.sleep(20);
         stopwatch.stop();
 
-        assertThat(stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(990L), lessThanOrEqualTo(1010L)));
+        assertThat(stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(30L)));
     }
 
     @Test
     public void testGetMillisWithoutStopping() throws InterruptedException {
         stopwatch.start();
-        TimeUnit.SECONDS.sleep(1);
-        assertThat(stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(990L), lessThanOrEqualTo(1050L)));
+        TimeUnit.MILLISECONDS.sleep(20);
+        assertThat(stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(30L)));
     }
 
     @Test
@@ -78,7 +78,7 @@ public class StopwatchTest {
     public void testThrowsExceptionWhenElapsedMillisWithoutStarting() {
         Exception e = assertThrows(IllegalStateException.class, () -> stopwatch.elapsedMillis());
 
-        assertTrue(e.getMessage().contains("Stopwatch has not been ran yet"));
+        assertTrue(e.getMessage().contains("Stopwatch has not been started"));
     }
 
     @Test

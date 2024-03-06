@@ -5,8 +5,8 @@ package net.snowflake.client.util;
  */
 public class Stopwatch {
     private boolean isStarted = false;
-    private Long startTime;
-    private Long stopTime;
+    private long startTime;
+    private long elapsedTime;
 
     /**
      * Starts the Stopwatch.
@@ -29,14 +29,14 @@ public class Stopwatch {
      */
     public void stop() {
         if (!isStarted) {
-            if (startTime == null) {
+            if (startTime == 0) {
                 throw new IllegalStateException("Stopwatch has not been started");
             }
             throw new IllegalStateException("Stopwatch is already stopped");
         }
 
         isStarted = false;
-        stopTime = System.nanoTime();
+        elapsedTime = System.nanoTime() - startTime;
     }
 
     /**
@@ -44,8 +44,8 @@ public class Stopwatch {
      */
     public void reset() {
         isStarted = false;
-        startTime = null;
-        stopTime = null;
+        startTime = 0;
+        elapsedTime = 0;
     }
 
     /**
@@ -54,7 +54,7 @@ public class Stopwatch {
     public void restart() {
         isStarted = true;
         startTime = System.nanoTime();
-        stopTime = null;
+        elapsedTime = 0;
     }
 
     /**
@@ -77,12 +77,10 @@ public class Stopwatch {
         if (isStarted) {
             return (System.nanoTime() - startTime);
         }
-
-        if (stopTime == null) {
-            throw new IllegalStateException("Stopwatch has not been ran yet");
+        if (startTime == 0) {
+            throw new IllegalStateException("Stopwatch has not been started");
         }
-
-        return stopTime - startTime;
+        return elapsedTime;
     }
 
     /**
