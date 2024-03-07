@@ -386,7 +386,7 @@ public abstract class SFBaseSession {
               userAgentSuffix,
               gzipDisabled);
 
-      logDriverInitInfo(ocspAndProxyAndGzipKey);
+      logHttpClientInitInfo(ocspAndProxyAndGzipKey);
 
       return ocspAndProxyAndGzipKey;
     }
@@ -457,7 +457,7 @@ public abstract class SFBaseSession {
                   "https",
                   userAgentSuffix,
                   gzipDisabled);
-          logDriverInitInfo(ocspAndProxyAndGzipKey);
+          logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         } else if (proxyProtocol.equals("http")
             && !Strings.isNullOrEmpty(httpProxyHost)
             && !Strings.isNullOrEmpty(httpProxyPort)) {
@@ -480,7 +480,7 @@ public abstract class SFBaseSession {
                   "http",
                   userAgentSuffix,
                   gzipDisabled);
-          logDriverInitInfo(ocspAndProxyAndGzipKey);
+          logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         } else {
           // Not enough parameters set to use the proxy.
           logger.warn(
@@ -489,20 +489,20 @@ public abstract class SFBaseSession {
               httpUseProxy);
           ocspAndProxyAndGzipKey =
               new HttpClientSettingsKey(ocspMode, userAgentSuffix, gzipDisabled);
-          logDriverInitInfo(ocspAndProxyAndGzipKey);
+          logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         unsetInvalidProxyHostAndPort();
         ocspAndProxyAndGzipKey = new HttpClientSettingsKey(ocspMode, userAgentSuffix, gzipDisabled);
-        logDriverInitInfo(ocspAndProxyAndGzipKey);
+        logHttpClientInitInfo(ocspAndProxyAndGzipKey);
       }
     }
     return ocspAndProxyAndGzipKey;
   }
 
-  private void logDriverInitInfo(HttpClientSettingsKey key) {
+  private void logHttpClientInitInfo(HttpClientSettingsKey key) {
     if (key.usesProxy()) {
       logger.info(
           "Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {},"
