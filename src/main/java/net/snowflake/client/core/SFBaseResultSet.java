@@ -64,7 +64,6 @@ public abstract class SFBaseResultSet {
   // The serializable object which can serialize the metadata for this
   // result set
   protected SnowflakeResultSetSerializableV1 resultSetSerializable;
-  protected Converters converters;
 
   public abstract boolean isLast();
 
@@ -199,7 +198,9 @@ public abstract class SFBaseResultSet {
     return this.resultSetSerializable.splitBySize(maxSizeInBytes);
   }
 
+  @SnowflakeJdbcInternalApi
   public Converters getConverters() {
-    return converters;
+    logger.debug("Json converters weren't created");
+    return null;
   }
 }

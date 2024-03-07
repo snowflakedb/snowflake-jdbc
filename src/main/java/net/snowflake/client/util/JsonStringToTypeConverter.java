@@ -6,8 +6,9 @@ package net.snowflake.client.util;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
+/** Functional interface used to convert json data to expected type */
 @SnowflakeJdbcInternalApi
 @FunctionalInterface
-public interface TypeConverter {
-  Object convert(String string) throws SFException;
+public interface JsonStringToTypeConverter<T> {
+  T convert(String string) throws SFException;
 }

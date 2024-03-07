@@ -28,7 +28,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.ConvertersFactory;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
@@ -54,7 +53,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
-    this.converters = sfBaseResultSet.getConverters();
   }
 
   /**
@@ -104,7 +102,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
       throws SQLException {
     super(resultSetSerializable);
     this.sfBaseResultSet = sfBaseResultSet;
-    this.converters = ConvertersFactory.createJsonConverters(session, resultSetSerializable);
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
   }
 

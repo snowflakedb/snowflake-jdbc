@@ -17,7 +17,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.TimeZone;
-import net.snowflake.client.core.ConvertersFactory;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
@@ -73,7 +72,6 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
     this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
     this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
-    this.converters = ConvertersFactory.createJsonConverters(session, resultSetSerializable);
   }
 
   public SFAsyncResultSet(String queryID, Statement statement) throws SQLException {

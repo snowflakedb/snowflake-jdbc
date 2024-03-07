@@ -184,7 +184,7 @@ public class SnowflakeUtil {
     String colSrcDatabase = colNode.path("database").asText();
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
-    List<FieldMetadata> fieldsMetadata = getFieldMetadata(fixedColType, colNode);
+    List<FieldMetadata> fieldsMetadata = getFieldMetadata(jdbcTreatDecimalAsInt, colNode);
 
     boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
 
@@ -332,8 +332,8 @@ public class SnowflakeUtil {
     return Optional.ofNullable(extColTypeName).orElse(defaultValue);
   }
 
-  static List<FieldMetadata> createFieldsMetadata(ArrayNode fieldsJson, int fixedColType)
-      throws SnowflakeSQLLoggedException {
+  static List<FieldMetadata> createFieldsMetadata(
+      ArrayNode fieldsJson, boolean jdbcTreatDecimalAsInt) throws SnowflakeSQLLoggedException {
     List<FieldMetadata> fields = new ArrayList<>();
     for (JsonNode node : fieldsJson) {
       String colName = node.path("name").asText();
@@ -343,7 +343,8 @@ public class SnowflakeUtil {
       boolean nullable = node.path("nullable").asBoolean();
       int length = node.path("length").asInt();
       boolean fixed = node.path("fixed").asBoolean();
-      List<FieldMetadata> internalFields = getFieldMetadata(fixedColType, node);
+      int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
+      List<FieldMetadata> internalFields = getFieldMetadata(jdbcTreatDecimalAsInt, node);
       JsonNode outputType = node.path("outputType");
       JsonNode extColTypeNameNode = node.path("extTypeName");
       String extColTypeName = null;
@@ -369,11 +370,11 @@ public class SnowflakeUtil {
     return fields;
   }
 
-  private static List<FieldMetadata> getFieldMetadata(int fixedColType, JsonNode node)
+  private static List<FieldMetadata> getFieldMetadata(boolean jdbcTreatDecimalAsInt, JsonNode node)
       throws SnowflakeSQLLoggedException {
     if (!node.path("fields").isEmpty()) {
       ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
-      return createFieldsMetadata(internalFieldsJson, fixedColType);
+      return createFieldsMetadata(internalFieldsJson, jdbcTreatDecimalAsInt);
     } else {
       return new ArrayList<>();
     }
@@ -763,8 +764,17 @@ public class SnowflakeUtil {
     return ts;
   }
 
-    @SnowflakeJdbcInternalApi
-  public static Timestamp getTimestampFromType(int columnSubType, String value, SFBaseSession session) {
+  /**
+   * Helper function to convert system properties to boolean
+   *
+   * @param columnSubType column subtype value
+   * @param value value to convert
+   * @param session session object
+   * @return converted Timestamp object
+   */
+  @SnowflakeJdbcInternalApi
+  public static Timestamp getTimestampFromType(
+      int columnSubType, String value, SFBaseSession session) {
     if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
       return getTimestampFromFormat("TIMESTAMP_LTZ_OUTPUT_FORMAT", value, session);
     } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ

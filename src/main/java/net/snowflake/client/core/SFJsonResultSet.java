@@ -4,8 +4,6 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.getTimestampFromType;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,9 +14,6 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Spliterator;
@@ -33,9 +28,7 @@ import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.TypeConverter;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import net.snowflake.client.util.JsonStringToTypeConverter;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
@@ -102,13 +95,13 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBoolean(columnIndex);
 
       case Types.STRUCT:
-        if (Boolean.valueOf(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
+        if (Boolean.parseBoolean(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
           return getSqlInput((String) obj, columnIndex);
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
       case Types.ARRAY:
-        if (Boolean.valueOf(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
+        if (Boolean.parseBoolean(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
           return getArray(columnIndex);
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
@@ -122,7 +115,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   public Array getArray(int columnIndex) throws SFException {
     Object obj = getObjectInternal(columnIndex);
-    return getArrayInternal((String) obj);
+    return getArrayInternal((String) obj, columnIndex);
   }
 
   @Override
@@ -257,6 +250,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     return getTimestamp(columnIndex, TimeZone.getDefault());
   }
 
+  @Override
+  @SnowflakeJdbcInternalApi
   public Converters getConverters() {
     return converters;
   }
@@ -274,134 +269,116 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
-  private SfSqlArray getArrayInternal(String obj) throws SFException {
+  private SfSqlArray getArrayInternal(String obj, int columnIndex) throws SFException {
     try {
-      SnowflakeColumnMetadata arrayMetadata = resultSetMetaData.getColumnMetadata().get(0);
-      FieldMetadata fieldMetadata = arrayMetadata.getField(1);
+      SnowflakeColumnMetadata arrayMetadata =
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1);
+      FieldMetadata fieldMetadata = arrayMetadata.getFields().get(0);
 
       int columnSubType = fieldMetadata.getType();
       int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
       int scale = fieldMetadata.getScale();
 
       ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(obj);
-
-      Iterator nodeElements = arrayNode.elements();
+      Iterator<JsonNode> nodeElements = arrayNode.elements();
 
       switch (columnSubType) {
         case Types.INTEGER:
-        case Types.SMALLINT:
-        case Types.TINYINT:
-          TypeConverter integerConverter =
-              value -> converters.getNumberConverter().getInt(value, Types.INTEGER);
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, integerConverter).toArray(Integer[]::new));
+              columnSubType,
+              getStream(nodeElements, converters.integerConverter(columnType))
+                  .toArray(Integer[]::new));
+        case Types.SMALLINT:
+          return new SfSqlArray(
+              columnSubType,
+              getStream(nodeElements, converters.smallIntConverter(columnType))
+                  .toArray(Short[]::new));
+        case Types.TINYINT:
+          return new SfSqlArray(
+              columnSubType,
+              getStream(nodeElements, converters.tinyIntConverter(columnType))
+                  .toArray(Byte[]::new));
         case Types.BIGINT:
+          return new SfSqlArray(
+              columnSubType,
+              getStream(nodeElements, converters.bigIntConverter(columnType)).toArray(Long[]::new));
         case Types.DECIMAL:
         case Types.NUMERIC:
-          TypeConverter bigIntConverter =
-              value -> converters.getNumberConverter().getBigInt(value, Types.BIGINT);
           return new SfSqlArray(
-              columnSubType, convertToNumericArray(nodeElements, bigIntConverter));
+              columnSubType,
+              convertToFixedArray(nodeElements, converters.bigDecimalConverter(columnType)));
         case Types.CHAR:
         case Types.VARCHAR:
         case Types.LONGNVARCHAR:
-          TypeConverter varcharConverter = value -> value.toString();
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, varcharConverter).toArray(String[]::new));
+              columnSubType,
+              getStream(nodeElements, converters.varcharConverter(columnType, columnSubType, scale))
+                  .toArray(String[]::new));
         case Types.BINARY:
-          TypeConverter bytesConverter =
-              value ->
-                  converters.getBytesConverter().getBytes(value, columnType, Types.BINARY, scale);
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, bytesConverter).toArray(Object[]::new));
+              columnSubType,
+              getStream(nodeElements, converters.bytesConverter(columnType, scale))
+                  .toArray(Byte[][]::new));
         case Types.FLOAT:
+        case Types.REAL:
+          return new SfSqlArray(
+              columnSubType,
+              getStream(nodeElements, converters.floatConverter(columnType)).toArray(Float[]::new));
         case Types.DOUBLE:
-          TypeConverter doubleConverter =
-              value -> converters.getNumberConverter().getDouble(value, Types.DOUBLE);
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, doubleConverter).toArray(Double[]::new));
+              columnSubType,
+              getStream(nodeElements, converters.doubleConverter(columnType))
+                  .toArray(Double[]::new));
         case Types.DATE:
-          TypeConverter dateConverter =
-              value -> {
-                SnowflakeDateTimeFormat formatter =
-                    SnowflakeDateTimeFormat.fromSqlFormat(
-                        (String) session.getCommonParameters().get("DATE_OUTPUT_FORMAT"));
-                SFTimestamp timestamp = formatter.parse((String) value);
-                return Date.valueOf(
-                    Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalDate());
-              };
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, dateConverter).toArray(Date[]::new));
+              columnSubType,
+              getStream(nodeElements, converters.dateConverter(session)).toArray(Date[]::new));
         case Types.TIME:
-          TypeConverter timeConverter =
-              value -> {
-                SnowflakeDateTimeFormat formatter =
-                    SnowflakeDateTimeFormat.fromSqlFormat(
-                        (String) session.getCommonParameters().get("TIME_OUTPUT_FORMAT"));
-                SFTimestamp timestamp = formatter.parse((String) value);
-                return Time.valueOf(
-                    Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalTime());
-              };
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, timeConverter).toArray(Time[]::new));
+              columnSubType,
+              getStream(nodeElements, converters.timeConverter(session)).toArray(Time[]::new));
         case Types.TIMESTAMP:
-          TypeConverter timestampConverter =
-              value -> {
-                Timestamp result = getTimestampFromType(columnSubType, (String) value, session);
-                if (result != null) {
-                  return result;
-                }
-                return converters
-                    .getDateTimeConverter()
-                    .getTimestamp(value, columnType, columnSubType, null, scale);
-              };
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, timestampConverter).toArray(Timestamp[]::new));
+              columnSubType,
+              getStream(
+                      nodeElements,
+                      converters.timestampConverter(columnSubType, columnType, scale, session))
+                  .toArray(Timestamp[]::new));
         case Types.BOOLEAN:
-          TypeConverter booleanConverter =
-              value -> converters.getBooleanConverter().getBoolean(value, columnType);
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, booleanConverter).toArray(Boolean[]::new));
+              columnSubType,
+              getStream(nodeElements, converters.booleanConverter(columnType))
+                  .toArray(Boolean[]::new));
         case Types.STRUCT:
-          TypeConverter structConverter =
-              value -> {
-                try {
-                  return OBJECT_MAPPER.readValue(value, Map.class);
-                } catch (JsonProcessingException e) {
-                  throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
-                }
-              };
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, structConverter).toArray(Map[]::new));
+              columnSubType,
+              getStream(nodeElements, converters.structConverter(OBJECT_MAPPER))
+                  .toArray(Map[]::new));
         case Types.ARRAY:
-          TypeConverter arrayConverter =
-              value -> {
-                try {
-                  return OBJECT_MAPPER.readValue(value, HashMap[].class);
-                } catch (JsonProcessingException e) {
-                  throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
-                }
-              };
           return new SfSqlArray(
-              columnSubType, getStream(nodeElements, arrayConverter).toArray(Map[][]::new));
+              columnSubType,
+              getStream(nodeElements, converters.arrayConverter(OBJECT_MAPPER))
+                  .toArray(Map[][]::new));
         default:
-          return null;
+          throw new SFException(
+              ErrorCode.FEATURE_UNSUPPORTED,
+              "Can't construct array for data type: " + columnSubType);
       }
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 
-  private Object[] convertToNumericArray(Iterator nodeElements, TypeConverter bigIntConverter) {
+  private Object[] convertToFixedArray(
+      Iterator nodeElements, JsonStringToTypeConverter bigIntConverter) {
     AtomicInteger bigDecimalCount = new AtomicInteger();
     Object[] elements =
         getStream(nodeElements, bigIntConverter)
-            .map(
+            .peek(
                 elem -> {
                   if (elem instanceof BigDecimal) {
                     bigDecimalCount.incrementAndGet();
                   }
-                  return elem;
                 })
             .toArray(
                 size -> {
@@ -413,7 +390,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     return elements;
   }
 
-  private Stream getStream(Iterator nodeElements, TypeConverter converter) {
+  private Stream getStream(Iterator nodeElements, JsonStringToTypeConverter converter) {
     return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(nodeElements, Spliterator.ORDERED), false)
         .map(
@@ -426,8 +403,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
             });
   }
 
-  private static Object convert(TypeConverter converter, JsonNode elem) throws SFException {
-    JsonNode node = elem;
+  private static Object convert(JsonStringToTypeConverter converter, JsonNode node)
+      throws SFException {
     if (node.isValueNode()) {
       return converter.convert(node.asText());
     } else {

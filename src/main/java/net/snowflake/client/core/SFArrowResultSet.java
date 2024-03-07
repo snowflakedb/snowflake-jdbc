@@ -511,15 +511,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public Array getArray(int columnIndex) throws SFException {
-    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
-    int index = currentChunkIterator.getCurrentRowInRecordBatch();
-    wasNull = converter.isNull(index);
-    converter.setTreatNTZAsUTC(treatNTZAsUTC);
-    converter.setUseSessionTimezone(useSessionTimezone);
-    converter.setSessionTimeZone(timeZone);
-    Object obj = converter.toObject(index);
     //    TODO: handleArray SNOW-969794
-    return null;
+    throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type ARRAY");
   }
 
   private Object handleObjectType(int columnIndex, Object obj) throws SFException {

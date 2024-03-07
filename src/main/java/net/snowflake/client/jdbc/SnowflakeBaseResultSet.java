@@ -29,23 +29,17 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
+import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -57,7 +51,6 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   private final int resultSetConcurrency;
   private final int resultSetHoldability;
   protected SFBaseResultSet sfBaseResultSet;
-  protected Converters converters;
   // Snowflake supports sessionless result set. For this case, there is no
   // statement for this result set.
   protected final Statement statement;
@@ -1354,11 +1347,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (SQLData.class.isAssignableFrom(type)) {
-      Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
-      SQLData instance =
-          typeFactory
-              .map(Supplier::get)
-              .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
+      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
       SQLInput sqlInput = (SQLInput) getObject(columnIndex);
       instance.readSQL(sqlInput, null);
       return (T) instance;
@@ -1376,80 +1365,44 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
-    Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
-    Map[] sqlInputs = (Map[]) getArray(columnIndex).getArray();
-    T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, sqlInputs.length);
-    AtomicInteger counter = new AtomicInteger(0);
-    Arrays.stream(sqlInputs)
-        .map(
-            map ->
-                new JsonSqlInput(
-                    OBJECT_MAPPER.convertValue(map, JsonNode.class),
-                    session,
-                    converters,
-                    sfBaseResultSet
-                        .getMetaData()
-                        .getColumnMetadata()
-                        .get(columnIndex - 1)
-                        .getFields()))
-        .forEach(
-            i -> {
-              SQLData instance =
-                  typeFactory
-                      .map(Supplier::get)
-                      .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
-              try {
-                instance.readSQL(i, null);
-              } catch (SQLException e) {
-                throw new RuntimeException(e);
-              }
-              arr[counter.getAndIncrement()] = (T) instance;
-            });
+    Map[] jsonMaps = (Map[]) getArray(columnIndex).getArray();
+    T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, jsonMaps.length);
+    int counter = 0;
+    for (Map map : jsonMaps) {
+      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+      SQLInput sqlInput =
+          new JsonSqlInput(
+              OBJECT_MAPPER.convertValue(map, JsonNode.class),
+              session,
+              sfBaseResultSet.getConverters(),
+              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields());
+      instance.readSQL(sqlInput, null);
+      arr[counter++] = (T) instance;
+    }
+
     return arr;
   }
 
   public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
-    Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
-    //    TODO: structuredType how to get raw json object not as SqlInput
     Object object = getObject(columnIndex);
     JsonNode jsonNode = ((JsonSqlInput) object).getInput();
     Map<String, Object> map =
         OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
-    Map<String, T> collect =
-        map.entrySet().stream()
-            .map(
-                e -> {
-                  SQLData instance =
-                      typeFactory
-                          .map(Supplier::get)
-                          .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
-                  try {
-                    SQLInput sqlInput =
-                        new JsonSqlInput(
-                            jsonNode.get(e.getKey()),
-                            session,
-                            converters,
-                            sfBaseResultSet
-                                .getMetaData()
-                                .getColumnMetadata()
-                                .get(columnIndex - 1)
-                                .getFields()); // TODO structuredType
-                    instance.readSQL(sqlInput, null);
-                  } catch (SQLException ex) {
-                    throw new RuntimeException(ex);
-                  }
-                  return new AbstractMap.SimpleEntry<>(e.getKey(), (T) instance);
-                })
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    return collect;
-  }
+    Map<String, T> resultMap = new HashMap<>();
 
-  private SQLData createUsingReflection(Class<? extends SQLData> type) {
-    try {
-      return type.newInstance();
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new RuntimeException(e);
+    for (Map.Entry<String, Object> entry : map.entrySet()) {
+      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+      SQLInput sqlInput =
+          new JsonSqlInput(
+              jsonNode.get(entry.getKey()),
+              session,
+              sfBaseResultSet.getConverters(),
+              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields());
+      instance.readSQL(sqlInput, null);
+      resultMap.put(entry.getKey(), (T) instance);
     }
+
+    return resultMap;
   }
 
   @Override

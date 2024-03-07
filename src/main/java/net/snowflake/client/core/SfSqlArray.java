@@ -8,24 +8,24 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Map;
 
 @SnowflakeJdbcInternalApi
-public class SfSqlArray<T> implements Array {
+public class SfSqlArray implements Array {
 
-  private int base;
+  private int baseType;
   private Object elements;
 
-  public SfSqlArray(int base, Object elements) {
-    this.base = base;
+  public SfSqlArray(int baseType, Object elements) {
+    this.baseType = baseType;
     this.elements = elements;
   }
 
   @Override
   public String getBaseTypeName() throws SQLException {
-    return JDBCType.valueOf(base).getName();
+    return JDBCType.valueOf(baseType).getName();
   }
 
   @Override
   public int getBaseType() throws SQLException {
-    return base;
+    return baseType;
   }
 
   @Override
