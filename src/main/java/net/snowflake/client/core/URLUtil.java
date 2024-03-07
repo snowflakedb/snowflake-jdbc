@@ -59,6 +59,7 @@ public class URLUtil {
     return encodedTarget;
   }
 
+  @SnowflakeJdbcInternalApi
   public static String getRequestId(URI uri) {
     return URLEncodedUtils.parse(uri, StandardCharsets.UTF_8).stream()
         .filter(p -> p.getName().equals(SF_QUERY_REQUEST_ID))
@@ -67,6 +68,7 @@ public class URLUtil {
         .orElse(null);
   }
 
+  @SnowflakeJdbcInternalApi
   public static String getRequestIdLogStr(URI uri) {
     String requestId = getRequestId(uri);
 

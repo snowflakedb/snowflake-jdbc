@@ -126,8 +126,13 @@ public class RestRequest {
       boolean noRetry,
       ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException {
-    Stopwatch stopwatch = new Stopwatch();
-    stopwatch.start();
+    Stopwatch stopwatch = null;
+
+    if (logger.isDebugEnabled()) {
+      stopwatch = new Stopwatch();
+      stopwatch.start();
+    }
+
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
     String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
     logger.debug("{}Executing rest request: {}, retry timeout: {}, socket timeout: {}, max retries: {}," +
@@ -286,10 +291,10 @@ public class RestRequest {
         if ((System.currentTimeMillis() - startTimePerRequest)
             > HttpUtil.getSocketTimeout().toMillis()) {
           logger.warn(
-              "{}HTTP request took longer than socket timeout {} s: {} s",
+              "{}HTTP request took longer than socket timeout {} ms: {} ms",
               requestIdStr,
-              HttpUtil.getSocketTimeout().toMillis() / 1000,
-              (System.currentTimeMillis() - startTimePerRequest) / 1000);
+              HttpUtil.getSocketTimeout().toMillis(),
+              (System.currentTimeMillis() - startTimePerRequest));
         }
         StringWriter sw = new StringWriter();
         savedEx.printStackTrace(new PrintWriter(sw));
@@ -376,7 +381,7 @@ public class RestRequest {
 
         // check canceling flag
         if (canceling != null && canceling.get()) {
-          logger.debug(requestIdStr + "Stop retrying since canceling is requested", false);
+          logger.debug("{}Stop retrying since canceling is requested", requestIdStr);
           breakRetryReason = "canceling is requested";
           break;
         }
@@ -498,7 +503,7 @@ public class RestRequest {
                       backoffInMilli, retryTimeoutInMilliseconds - elapsedMilliForTransientIssues);
             }
           } catch (InterruptedException ex1) {
-            logger.debug(requestIdStr + "Backoff sleep before retrying login got interrupted", false);
+            logger.debug("{}Backoff sleep before retrying login got interrupted", requestIdStr);
           }
         }
 
@@ -600,12 +605,14 @@ public class RestRequest {
       }
     }
 
-    stopwatch.stop();
+    if (logger.isDebugEnabled() && stopwatch != null) {
+      stopwatch.stop();
+    }
     logger.debug(
         "{}Execution of request {} took {} ms with total of {} retries",
         requestIdStr,
         requestInfoScrubbed,
-        stopwatch.elapsedMillis(),
+        stopwatch == null ? "n/a" : stopwatch.elapsedMillis(),
         retryCount);
     return response;
   }
