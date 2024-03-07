@@ -531,8 +531,7 @@ public class HttpUtil {
   }
 
   public static void setRequestConfig(RequestConfig requestConfig) {
-    logger.debug("Setting default request config to: {}",
-            requestConfig == null ? "null" : requestConfig.toString());
+    logger.debug("Setting default request config to: {}", requestConfig);
     DefaultRequestConfig = requestConfig;
   }
 

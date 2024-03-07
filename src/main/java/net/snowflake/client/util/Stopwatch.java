@@ -1,8 +1,15 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ */
+
 package net.snowflake.client.util;
+
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /**
  * Stopwatch class used to calculate the time between start and stop.
  */
+@SnowflakeJdbcInternalApi
 public class Stopwatch {
     private boolean isStarted = false;
     private long startTime;
