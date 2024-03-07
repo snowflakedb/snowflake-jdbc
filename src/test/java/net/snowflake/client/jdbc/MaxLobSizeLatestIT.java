@@ -31,6 +31,7 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
+  // Max LOB size is testable from version 3.15.0 and above.
   // TODO: increase max size to 128 * 1024 * 1024
   private static int maxLobSize = 16 * 1024 * 1024;
   private static int largeLobSize = maxLobSize / 2;
