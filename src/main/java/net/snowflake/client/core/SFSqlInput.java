@@ -11,6 +11,13 @@ import java.util.TimeZone;
 /** This interface extends the standard {@link SQLInput} interface to provide additional methods. */
 @SnowflakeJdbcInternalApi
 public interface SFSqlInput extends SQLInput {
+
+  /**
+   * Method unwrapping object of class SQLInput to object of class SfSqlInput.
+   *
+   * @param sqlInput SQLInput to consider.
+   * @return Object unwrapped to SFSqlInput class.
+   */
   static SFSqlInput unwrap(SQLInput sqlInput) {
     return (SFSqlInput) sqlInput;
   }

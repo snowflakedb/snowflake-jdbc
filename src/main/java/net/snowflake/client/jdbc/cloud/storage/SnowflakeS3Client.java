@@ -578,7 +578,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         myUpload.waitForCompletion();
 
         // get out
-        for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+        for (FileInputStream is : toClose) {
+          IOUtils.closeQuietly(is);
+        }
         return;
       } catch (Exception ex) {
 
@@ -610,7 +612,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       }
     } while (retryCount <= getMaxRetries());
 
-    for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+    for (FileInputStream is : toClose) {
+      IOUtils.closeQuietly(is);
+    }
 
     throw new SnowflakeSQLLoggedException(
         queryId,

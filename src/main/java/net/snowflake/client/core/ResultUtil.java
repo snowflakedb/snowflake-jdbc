@@ -411,8 +411,9 @@ public class ResultUtil {
             || statementType == SFStatementType.MERGE
             || statementType == SFStatementType.MULTI_INSERT) {
           int columnCount = resultSet.getMetaData().getColumnCount();
-          for (int i = 0; i < columnCount; i++)
+          for (int i = 0; i < columnCount; i++) {
             updateCount += resultSet.getLong(i + 1); // add up number of rows updated
+          }
         } else {
           updateCount = 0;
         }

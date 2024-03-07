@@ -74,8 +74,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     }
     try (Connection connection = init();
         Statement statement = connection.createStatement();
-         ResultSet resultSet =
-                 statement.executeQuery("select {'string':'a'}::OBJECT(string VARCHAR)"); ) {
+        ResultSet resultSet =
+            statement.executeQuery("select {'string':'a'}::OBJECT(string VARCHAR)"); ) {
       resultSet.next();
       SimpleClass object = resultSet.getObject(1, SimpleClass.class);
       assertEquals("a", object.getString());
@@ -85,8 +85,17 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   // TODO Structured types feature exists only on QA environments
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapAllTypesOfFields() throws SQLException {
-    SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
+  public void testMapStructAllTypes() throws SQLException {
+    testMapAllTypes(false);
+    testMapAllTypes(true);
+  }
+
+  private void testMapAllTypes(boolean registerFactory) throws SQLException {
+    if (registerFactory) {
+      SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
+    } else {
+      SnowflakeObjectTypeFactories.unregister(AllTypesClass.class);
+    }
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
       statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");

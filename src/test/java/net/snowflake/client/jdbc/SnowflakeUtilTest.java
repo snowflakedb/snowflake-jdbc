@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.junit.Test;
@@ -63,30 +65,29 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
             columnTypeInfo.getExtColTypeName(),
             false,
             columnTypeInfo.getSnowflakeType(),
-            new FieldMetadata[] {
-              new FieldMetadata(
-                  fieldOne.path("name").asText(),
-                  columnTypeInfoNodeOne.getExtColTypeName(),
-                  columnTypeInfoNodeOne.getColumnType(),
-                  fieldOne.path("nullable").asBoolean(),
-                  fieldOne.path("length").asInt(),
-                  fieldOne.path("precision").asInt(),
-                  fieldOne.path("scale").asInt(),
-                  fieldOne.path("fixed").asBoolean(),
-                  columnTypeInfoNodeOne.getSnowflakeType(),
-                  new FieldMetadata[0]),
-              new FieldMetadata(
-                  fieldTwo.path("name").asText(),
-                  columnTypeInfoNodeTwo.getExtColTypeName(),
-                  columnTypeInfoNodeTwo.getColumnType(),
-                  fieldTwo.path("nullable").asBoolean(),
-                  fieldTwo.path("length").asInt(),
-                  fieldTwo.path("precision").asInt(),
-                  fieldTwo.path("scale").asInt(),
-                  fieldTwo.path("fixed").asBoolean(),
-                  columnTypeInfoNodeTwo.getSnowflakeType(),
-                  new FieldMetadata[0])
-            },
+            Arrays.asList(
+                new FieldMetadata(
+                    fieldOne.path("name").asText(),
+                    columnTypeInfoNodeOne.getExtColTypeName(),
+                    columnTypeInfoNodeOne.getColumnType(),
+                    fieldOne.path("nullable").asBoolean(),
+                    fieldOne.path("length").asInt(),
+                    fieldOne.path("precision").asInt(),
+                    fieldOne.path("scale").asInt(),
+                    fieldOne.path("fixed").asBoolean(),
+                    columnTypeInfoNodeOne.getSnowflakeType(),
+                    new ArrayList<>()),
+                new FieldMetadata(
+                    fieldTwo.path("name").asText(),
+                    columnTypeInfoNodeTwo.getExtColTypeName(),
+                    columnTypeInfoNodeTwo.getColumnType(),
+                    fieldTwo.path("nullable").asBoolean(),
+                    fieldTwo.path("length").asInt(),
+                    fieldTwo.path("precision").asInt(),
+                    fieldTwo.path("scale").asInt(),
+                    fieldTwo.path("fixed").asBoolean(),
+                    columnTypeInfoNodeTwo.getSnowflakeType(),
+                    new ArrayList<>())),
             rootNode.path("database").asText(),
             rootNode.path("schema").asText(),
             rootNode.path("table").asText(),
@@ -95,31 +96,14 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
   }
 
   private static ObjectNode createRootNode() {
-    ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
-    String name = "STRUCT";
-    rootNode.put("name", name);
-    String type = "object";
-    rootNode.put("type", type);
-    String database = "database";
-    rootNode.put("database", database);
-    String schema = "schema";
-    rootNode.put("schema", schema);
-    String table = "table";
-    rootNode.put("table", table);
-    Integer precision = 2;
-    rootNode.put("precision", 2);
-    boolean nullable = false;
-    rootNode.put("nullable", nullable);
-    Integer byteLength = 128;
-    rootNode.put("byteLength", byteLength);
-    Integer length = 42;
-    rootNode.put("length", length);
-    Integer scale = 8;
-    rootNode.put("scale", scale);
+    ObjectNode rootNode = createFieldNode("STRUCT", 2, 128, 8, "object", false, null, 42);
+    rootNode.put("database", "databaseName");
+    rootNode.put("schema", "schemaName");
+    rootNode.put("table", "tableName");
     return rootNode;
   }
 
-  private JsonNode createFieldNode(
+  private static ObjectNode createFieldNode(
       String name,
       Integer precision,
       Integer byteLength,

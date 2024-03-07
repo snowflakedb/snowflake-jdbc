@@ -5,6 +5,8 @@
 package net.snowflake.client.jdbc;
 
 import java.io.Serializable;
+import java.util.List;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /**
  * @author jhuang
@@ -20,13 +22,14 @@ public class SnowflakeColumnMetadata implements Serializable {
   private int scale;
   private boolean fixed;
   private SnowflakeType base;
-  private FieldMetadata[] fields;
+  private List<FieldMetadata> fields;
   private String columnSrcTable;
   private String columnSrcSchema;
   private String columnSrcDatabase;
 
   private boolean isAutoIncrement;
 
+  @SnowflakeJdbcInternalApi
   public SnowflakeColumnMetadata(
       String name,
       int type,
@@ -37,7 +40,7 @@ public class SnowflakeColumnMetadata implements Serializable {
       String typeName,
       boolean fixed,
       SnowflakeType base,
-      FieldMetadata[] fields,
+      List<FieldMetadata> fields,
       String columnSrcDatabase,
       String columnSrcSchema,
       String columnSrcTable,
@@ -58,6 +61,11 @@ public class SnowflakeColumnMetadata implements Serializable {
     this.isAutoIncrement = isAutoIncrement;
   }
 
+  /**
+   * @deprecated Use {@link SnowflakeColumnMetadata#SnowflakeColumnMetadata(String, int, boolean,
+   *     int, int, int, String, boolean, SnowflakeType, List, String, String, String, boolean)}
+   *     instead
+   */
   @Deprecated
   public SnowflakeColumnMetadata(
       String name,
@@ -156,8 +164,14 @@ public class SnowflakeColumnMetadata implements Serializable {
     return this.base;
   }
 
-  public FieldMetadata[] getFields() {
+  @SnowflakeJdbcInternalApi
+  public List<FieldMetadata> getFields() {
     return fields;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public void setFields(List<FieldMetadata> fields) {
+    this.fields = fields;
   }
 
   public String getColumnSrcTable() {

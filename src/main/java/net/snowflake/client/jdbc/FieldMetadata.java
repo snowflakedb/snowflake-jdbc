@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 @SnowflakeJdbcInternalApi
@@ -14,31 +14,30 @@ public class FieldMetadata {
   private int type;
   private boolean nullable;
 
-  @JsonProperty("byteLength")
-  private int length;
+  private int byteLength;
 
   private int precision;
   private int scale;
   private boolean fixed;
   private SnowflakeType base;
-  private FieldMetadata[] fields;
+  private List<FieldMetadata> fields;
 
   public FieldMetadata(
       String name,
       String typeName,
       int type,
       boolean nullable,
-      int length,
+      int byteLength,
       int precision,
       int scale,
       boolean fixed,
       SnowflakeType base,
-      FieldMetadata[] fields) {
+      List<FieldMetadata> fields) {
     this.name = name;
     this.typeName = typeName;
     this.type = type;
     this.nullable = nullable;
-    this.length = length;
+    this.byteLength = byteLength;
     this.precision = precision;
     this.scale = scale;
     this.fixed = fixed;
@@ -78,12 +77,12 @@ public class FieldMetadata {
     this.nullable = nullable;
   }
 
-  public int getLength() {
-    return length;
+  public int getByteLength() {
+    return byteLength;
   }
 
-  public void setLength(int length) {
-    this.length = length;
+  public void setByteLength(int byteLength) {
+    this.byteLength = byteLength;
   }
 
   public int getPrecision() {
@@ -118,11 +117,11 @@ public class FieldMetadata {
     this.base = base;
   }
 
-  public FieldMetadata[] getFields() {
+  public List<FieldMetadata> getFields() {
     return fields;
   }
 
-  public void setFields(FieldMetadata[] fields) {
+  public void setFields(List<FieldMetadata> fields) {
     this.fields = fields;
   }
 }

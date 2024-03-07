@@ -475,9 +475,11 @@ public class SessionUtil {
         // Fix for HikariCP refresh token issue:SNOW-533673.
         // If token value is not set but password field is set then
         // the driver treats password as token.
-        if (loginInput.getToken() != null)
+        if (loginInput.getToken() != null) {
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
-        else data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
+        } else {
+          data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
+        }
 
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());

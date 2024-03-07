@@ -15,7 +15,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
-import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
 import java.time.Instant;
@@ -33,11 +32,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.ThrowingCallable;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -181,11 +181,7 @@ public class SnowflakeUtil {
     String colSrcDatabase = colNode.path("database").asText();
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
-    FieldMetadata[] fieldsMetadata = new FieldMetadata[0];
-    if (!colNode.path("fields").isEmpty()) {
-      ArrayNode arrayNode = (ArrayNode) colNode.path("fields");
-      fieldsMetadata = createFieldsMetadata(arrayNode, fixedColType);
-    }
+    List<FieldMetadata> fieldsMetadata = getFieldMetadata(fixedColType, colNode);
 
     boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
 
@@ -276,7 +272,7 @@ public class SnowflakeUtil {
 
       case ARRAY:
         columnTypeInfo =
-            new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
+            new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
 
       case OBJECT:
@@ -315,7 +311,7 @@ public class SnowflakeUtil {
 
       default:
         throw new SnowflakeSQLLoggedException(
-            new SFSession(),
+            session,
             ErrorCode.INTERNAL_ERROR.getMessageCode(),
             SqlState.INTERNAL_ERROR,
             "Unknown column type: " + internalColTypeName);
@@ -328,11 +324,9 @@ public class SnowflakeUtil {
     return Optional.ofNullable(extColTypeName).orElse(defaultValue);
   }
 
-  static FieldMetadata[] createFieldsMetadata(ArrayNode fieldsJson, int fixedColType)
+  static List<FieldMetadata> createFieldsMetadata(ArrayNode fieldsJson, int fixedColType)
       throws SnowflakeSQLLoggedException {
-    //    TODO: verify that jsonFileds is not empty array
-    FieldMetadata[] fields = new FieldMetadata[fieldsJson.size()];
-    int fieldCounter = 0;
+    List<FieldMetadata> fields = new ArrayList<>();
     for (JsonNode node : fieldsJson) {
       String colName = node.path("name").asText();
       int scale = node.path("scale").asInt();
@@ -341,11 +335,7 @@ public class SnowflakeUtil {
       boolean nullable = node.path("nullable").asBoolean();
       int length = node.path("length").asInt();
       boolean fixed = node.path("fixed").asBoolean();
-      FieldMetadata[] internalFields = new FieldMetadata[0];
-      if (!node.path("fields").isEmpty()) {
-        ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
-        internalFields = createFieldsMetadata(internalFieldsJson, fixedColType);
-      }
+      List<FieldMetadata> internalFields = getFieldMetadata(fixedColType, node);
       JsonNode outputType = node.path("outputType");
       JsonNode extColTypeNameNode = node.path("extTypeName");
       String extColTypeName = null;
@@ -355,7 +345,7 @@ public class SnowflakeUtil {
       }
       ColumnTypeInfo columnTypeInfo =
           getSnowflakeType(internalColTypeName, extColTypeName, outputType, null, fixedColType);
-      fields[fieldCounter++] =
+      fields.add(
           new FieldMetadata(
               colName,
               columnTypeInfo.getExtColTypeName(),
@@ -366,9 +356,19 @@ public class SnowflakeUtil {
               scale,
               fixed,
               columnTypeInfo.getSnowflakeType(),
-              internalFields);
+              internalFields));
     }
     return fields;
+  }
+
+  private static List<FieldMetadata> getFieldMetadata(int fixedColType, JsonNode node)
+      throws SnowflakeSQLLoggedException {
+    if (!node.path("fields").isEmpty()) {
+      ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
+      return createFieldsMetadata(internalFieldsJson, fixedColType);
+    } else {
+      return new ArrayList<>();
+    }
   }
 
   static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
@@ -483,7 +483,7 @@ public class SnowflakeUtil {
               typeName, // type name
               true,
               stype, // fixed
-              new FieldMetadata[] {}, // TODO Structured type fields
+              new ArrayList<>(),
               "", // database
               "", // schema
               "",
@@ -753,13 +753,5 @@ public class SnowflakeUtil {
     c.add(Calendar.MILLISECOND, nanos / 1000000);
     ts.setTime(c.getTimeInMillis());
     return ts;
-  }
-
-  public static <T> T mapExceptions(ThrowingCallable<T, SFException> action) throws SQLException {
-    try {
-      return action.call();
-    } catch (SFException e) {
-      throw new SQLException(e);
-    }
   }
 }

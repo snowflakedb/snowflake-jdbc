@@ -536,7 +536,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         blob.uploadMetadata(null, transferOptions, opContext);
 
         // close any open streams in the "toClose" list and return
-        for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+        for (FileInputStream is : toClose) {
+          IOUtils.closeQuietly(is);
+        }
 
         return;
       } catch (Exception ex) {
@@ -566,7 +568,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
 
     } while (retryCount <= getMaxRetries());
 
-    for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+    for (FileInputStream is : toClose) {
+      IOUtils.closeQuietly(is);
+    }
 
     throw new SnowflakeSQLException(
         queryId,

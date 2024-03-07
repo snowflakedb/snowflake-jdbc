@@ -1801,14 +1801,18 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                   + "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
                   + " ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-      for (int idx = 0; idx < 16; idx++) addBindBatch(preparedStatement, sqlDate);
+      for (int idx = 0; idx < 16; idx++) {
+        addBindBatch(preparedStatement, sqlDate);
+      }
 
       updateCounts = preparedStatement.executeBatch();
 
       // GS optimizes this into one insert execution
       assertEquals("Number of update counts", 16, updateCounts.length);
 
-      for (int idx = 0; idx < 16; idx++) assertEquals("update count", 1, updateCounts[idx]);
+      for (int idx = 0; idx < 16; idx++) {
+        assertEquals("update count", 1, updateCounts[idx]);
+      }
     } finally {
       if (regularStatement != null) {
         regularStatement.execute("DROP TABLE testBind");

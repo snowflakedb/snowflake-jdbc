@@ -3,7 +3,4 @@
  */
 package net.snowflake.client.category;
 
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-
-@SnowflakeJdbcInternalApi
 public interface TestCategoryStructuredType {}

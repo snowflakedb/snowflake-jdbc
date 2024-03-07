@@ -35,8 +35,12 @@ public class SFClientConfig {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     SFClientConfig that = (SFClientConfig) o;
     return Objects.equals(commonProps, that.commonProps);
   }
@@ -78,8 +82,12 @@ public class SFClientConfig {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       CommonProps that = (CommonProps) o;
       return Objects.equals(logLevel, that.logLevel) && Objects.equals(logPath, that.logPath);
     }

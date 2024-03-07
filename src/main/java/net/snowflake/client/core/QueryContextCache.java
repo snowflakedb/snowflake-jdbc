@@ -340,7 +340,9 @@ public class QueryContextCache {
       logCacheEntries();
 
       TreeSet<QueryContextElement> elements = getElements();
-      if (elements.size() == 0) return null;
+      if (elements.size() == 0) {
+        return null;
+      }
 
       try {
         QueryContextDTO queryContextDTO = new QueryContextDTO();

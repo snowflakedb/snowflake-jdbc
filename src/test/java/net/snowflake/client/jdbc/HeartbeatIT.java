@@ -144,7 +144,9 @@ public class HeartbeatIT extends AbstractDriverIT {
               }));
     }
     executorService.shutdown();
-    for (int idx = 0; idx < concurrency; idx++) futures.get(idx).get();
+    for (int idx = 0; idx < concurrency; idx++) {
+      futures.get(idx).get();
+    }
   }
 
   /**

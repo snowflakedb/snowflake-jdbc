@@ -3,9 +3,10 @@
 SNOW-XXXXX
 
 ## Pre-review self checklist
+- [ ] PR branch is updated with all the changes from `master` branch
 - [ ] The code is correctly formatted (run `mvn -P check-style validate`)
-- [ ] I don't expose unnecessary new public API (run `mvn verify` and inspect `target/japicmp/japicmp.html`)
-- [ ] Pull request name is prefixed with `SNOW-XXXX: `
+- [ ] New public API is not unnecessary exposed (run `mvn verify` and inspect `target/japicmp/japicmp.html`)
+- [ ] The pull request name is prefixed with `SNOW-XXXX: `
 
 ## External contributors - please answer these questions before submitting a pull request. Thanks!
 

@@ -268,7 +268,9 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
                 }));
       }
       executorService.shutdown();
-      for (int i = 0; i < 10; i++) futures.get(i).get();
+      for (int i = 0; i < 10; i++) {
+        futures.get(i).get();
+      }
     }
   }
 }
