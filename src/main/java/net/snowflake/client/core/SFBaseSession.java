@@ -396,21 +396,30 @@ public abstract class SFBaseSession {
       boolean httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
       String httpProxyHost = systemGetProperty("http.proxyHost");
       String httpProxyPort = systemGetProperty("http.proxyPort");
+      String httpProxyUser = systemGetProperty("http.proxyUser");
+      String httpProxyPassword = systemGetProperty("http.proxyPassword");
       String httpsProxyHost = systemGetProperty("https.proxyHost");
       String httpsProxyPort = systemGetProperty("https.proxyPort");
+      String httpsProxyUser = systemGetProperty("https.proxyUser");
+      String httpsProxyPassword = systemGetProperty("https.proxyPassword");
       String httpProxyProtocol = systemGetProperty("http.proxyProtocol");
       String noProxy = systemGetEnv("NO_PROXY");
       String nonProxyHosts = systemGetProperty("http.nonProxyHosts");
       // log the JVM parameters that are being used
       if (httpUseProxy) {
         logger.debug(
-            "Using JVM parameters for proxy setup: http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={},"
-                + " https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
+            "Using JVM parameters for proxy setup: http.useProxy={}, http.proxyHost={}, http.proxyPort={}, http.proxyUser={}, "
+                + "http.proxyPassword is {}, https.proxyHost={}, https.proxyPort={}, https.proxyUser={}, "
+                + "https.proxyPassword is {}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
             httpUseProxy,
             httpProxyHost,
             httpProxyPort,
+            httpProxyUser,
+            httpProxyPassword == null || httpProxyPassword.isEmpty() ? "not set" : "set",
             httpsProxyHost,
             httpsProxyPort,
+            httpsProxyUser,
+            httpsProxyPassword == null || httpsProxyPassword.isEmpty() ? "not set" : "set",
             nonProxyHosts,
             noProxy,
             httpProxyProtocol,
@@ -452,8 +461,8 @@ public abstract class SFBaseSession {
                   httpsProxyHost,
                   proxyPort,
                   combinedNonProxyHosts,
-                  "", /* user = empty */
-                  "", /* password = empty */
+                  httpsProxyUser,
+                  httpsProxyPassword,
                   "https",
                   userAgentSuffix,
                   gzipDisabled);
@@ -475,8 +484,8 @@ public abstract class SFBaseSession {
                   httpProxyHost,
                   proxyPort,
                   combinedNonProxyHosts,
-                  "", /* user = empty */
-                  "", /* password = empty */
+                  httpProxyUser,
+                  httpProxyPassword,
                   "http",
                   userAgentSuffix,
                   gzipDisabled);
