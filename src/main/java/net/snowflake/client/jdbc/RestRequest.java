@@ -135,21 +135,22 @@ public class RestRequest {
 
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
     String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
-    logger.debug("{}Executing rest request: {}, retry timeout: {}, socket timeout: {}, max retries: {}," +
-                 " inject socket timeout: {}, canceling: {}, without cookies: {}, include retry parameters: {}," +
-                 " include request guid: {}, retry http 403: {}, no retry: {}",
-            requestIdStr,
-            requestInfoScrubbed,
-            retryTimeout,
-            socketTimeout,
-            maxRetries,
-            injectSocketTimeout,
-            canceling,
-            withoutCookies,
-            includeRetryParameters,
-            includeRequestGuid,
-            retryHTTP403,
-            noRetry);
+    logger.debug(
+        "{}Executing rest request: {}, retry timeout: {}, socket timeout: {}, max retries: {},"
+            + " inject socket timeout: {}, canceling: {}, without cookies: {}, include retry parameters: {},"
+            + " include request guid: {}, retry http 403: {}, no retry: {}",
+        requestIdStr,
+        requestInfoScrubbed,
+        retryTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
+        noRetry);
     CloseableHttpResponse response = null;
 
     // time the client started attempting to submit request
@@ -197,7 +198,8 @@ public class RestRequest {
 
     // try request till we get a good response or retry timeout
     while (true) {
-      logger.debug("{}Retry count: {}, max retries: {}, retry timeout: {} s, backoff: {} ms. Attempting request: {}",
+      logger.debug(
+          "{}Retry count: {}, max retries: {}, retry timeout: {} s, backoff: {} ms. Attempting request: {}",
           requestIdStr,
           retryCount,
           maxRetries,
@@ -259,8 +261,7 @@ public class RestRequest {
 
         if (includeRequestGuid) {
           UUID guid = UUIDUtils.getUUID();
-          logger.debug(
-              "{}Request {} guid: {}", requestIdStr, requestInfoScrubbed, guid.toString());
+          logger.debug("{}Request {} guid: {}", requestIdStr, requestInfoScrubbed, guid.toString());
           // Add request_guid for better tracing
           builder.setParameter(SF_REQUEST_GUID, guid.toString());
         }
@@ -289,8 +290,7 @@ public class RestRequest {
         savedEx = ex;
         // if the request took more than socket timeout log an error
         long currentMillis = System.currentTimeMillis();
-        if ((currentMillis - startTimePerRequest)
-            > HttpUtil.getSocketTimeout().toMillis()) {
+        if ((currentMillis - startTimePerRequest) > HttpUtil.getSocketTimeout().toMillis()) {
           logger.warn(
               "{}HTTP request took longer than socket timeout {} ms: {} ms",
               requestIdStr,
@@ -325,7 +325,8 @@ public class RestRequest {
           || isNonRetryableHTTPCode(response, retryHTTP403)) {
         String msg = "Unknown cause";
         if (response != null) {
-          logger.debug("{}HTTP response code for request {}: {}",
+          logger.debug(
+              "{}HTTP response code for request {}: {}",
               requestIdStr,
               requestInfoScrubbed,
               response.getStatusLine().getStatusCode());
@@ -342,15 +343,16 @@ public class RestRequest {
 
         if (response == null || response.getStatusLine().getStatusCode() != 200) {
           logger.debug(
-                  "{}Error response not retryable, " + msg + ", request: {}",
-                  requestIdStr,
-                  requestInfoScrubbed);
+              "{}Error response not retryable, " + msg + ", request: {}",
+              requestIdStr,
+              requestInfoScrubbed);
           EventUtil.triggerBasicEvent(
               Event.EventType.NETWORK_ERROR, msg + ", Request: " + httpRequest, false);
         }
         breakRetryReason = "status code does not need retry";
         if (noRetry) {
-          logger.debug("{}HTTP retry disabled for this request. noRetry: {}", requestIdStr, noRetry);
+          logger.debug(
+              "{}HTTP retry disabled for this request. noRetry: {}", requestIdStr, noRetry);
           breakRetryReason = "retry is disabled";
         }
 
@@ -415,9 +417,9 @@ public class RestRequest {
           // check for max retries.
           logger.error(
               "{}Stop retrying as max retries have been reached for request: {}! Max retry count: {}",
-                  requestIdStr,
-                  requestInfoScrubbed,
-                  maxRetries);
+              requestIdStr,
+              requestInfoScrubbed,
+              maxRetries);
           breakRetryReason = "max retries reached";
           breakRetryEventName = "HttpRequestRetryLimitExceeded";
         }

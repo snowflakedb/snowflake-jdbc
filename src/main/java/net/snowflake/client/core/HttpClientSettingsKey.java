@@ -153,17 +153,32 @@ public class HttpClientSettingsKey implements Serializable {
 
   @Override
   public String toString() {
-    return "HttpClientSettingsKey[" +
-           "ocspMode=" + ocspMode +
-           ", useProxy=" + useProxy +
-           ", proxyHost='" + proxyHost + '\'' +
-           ", proxyPort=" + proxyPort +
-           ", nonProxyHosts='" + nonProxyHosts + '\'' +
-           ", proxyUser='" + proxyUser + '\'' +
-           ", proxyPassword is " + (proxyPassword.isEmpty() ? "not set" : "set") +
-           ", proxyProtocol='" + proxyProtocol + '\'' +
-           ", userAgentSuffix='" + userAgentSuffix + '\'' +
-           ", gzipDisabled=" + gzipDisabled +
-           ']';
+    return "HttpClientSettingsKey["
+        + "ocspMode="
+        + ocspMode
+        + ", useProxy="
+        + useProxy
+        + ", proxyHost='"
+        + proxyHost
+        + '\''
+        + ", proxyPort="
+        + proxyPort
+        + ", nonProxyHosts='"
+        + nonProxyHosts
+        + '\''
+        + ", proxyUser='"
+        + proxyUser
+        + '\''
+        + ", proxyPassword is "
+        + (proxyPassword.isEmpty() ? "not set" : "set")
+        + ", proxyProtocol='"
+        + proxyProtocol
+        + '\''
+        + ", userAgentSuffix='"
+        + userAgentSuffix
+        + '\''
+        + ", gzipDisabled="
+        + gzipDisabled
+        + ']';
   }
 }
