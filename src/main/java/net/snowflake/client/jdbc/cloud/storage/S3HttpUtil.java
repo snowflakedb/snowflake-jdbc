@@ -96,16 +96,14 @@ public class S3HttpUtil {
         clientConfig.setProxyPort(proxyPort);
         clientConfig.setNonProxyHosts(nonProxyHosts);
         clientConfig.setProxyProtocol(protocolEnum);
-        StringBuilder logBuilder = new StringBuilder(
-                String.format("Setting sessionless S3 proxy. Host: %s, port: %d, non-proxy hosts: %s, protocol: %s",
-                        proxyHost, proxyPort, nonProxyHosts, proxyProtocol)
-        );
+        String logMessage = "Setting sessionless S3 proxy. Host: " + proxyHost + ", port: " + proxyPort +
+                            ", non-proxy hosts: " + nonProxyHosts + ", protocol: " + proxyProtocol;
         if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
-          logBuilder.append(String.format(", user: %s", proxyUser));
+          logMessage += ", user: " + proxyUser + " with password provided";
           clientConfig.setProxyUsername(proxyUser);
           clientConfig.setProxyPassword(proxyPassword);
         }
-        LOGGER.debug(logBuilder.toString());
+        LOGGER.debug(logMessage);
       } else {
         LOGGER.debug("Omitting sessionless S3 proxy setup as proxy is disabled");
       }
