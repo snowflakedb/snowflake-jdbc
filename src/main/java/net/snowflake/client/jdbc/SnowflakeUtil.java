@@ -276,8 +276,12 @@ public class SnowflakeUtil {
         break;
 
       case OBJECT:
+        int targetType =
+            "GEOGRAPHY".equals(extColTypeName) || "GEOMETRY".equals(extColTypeName)
+                ? Types.VARCHAR
+                : Types.STRUCT;
         columnTypeInfo =
-            new ColumnTypeInfo(Types.STRUCT, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+            new ColumnTypeInfo(targetType, defaultIfNull(extColTypeName, "OBJECT"), baseType);
         break;
 
       case VARIANT:
