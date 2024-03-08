@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLKeyException;
@@ -17,6 +18,7 @@ import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.URLUtil;
 import net.snowflake.client.core.UUIDUtils;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
@@ -24,6 +26,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.DecorrelatedJitterBackoff;
 import net.snowflake.client.util.SecretDetector;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -123,21 +126,31 @@ public class RestRequest {
       boolean noRetry,
       ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException {
+    Stopwatch stopwatch = null;
+
+    if (logger.isDebugEnabled()) {
+      stopwatch = new Stopwatch();
+      stopwatch.start();
+    }
+
     String requestInfoScrubbed = SecretDetector.maskSASToken(httpRequest.toString());
-    logger.debug("Executing rest request: {}, retry timeout: {}, socket timeout: {}, max retries: {}," +
-                 " inject socket timeout: {}, canceling: {}, without cookies: {}, include retry parameters: {}," +
-                 " include request guid: {}, retry http 403: {}, no retry: {}",
-            requestInfoScrubbed,
-            retryTimeout,
-            socketTimeout,
-            maxRetries,
-            injectSocketTimeout,
-            canceling,
-            withoutCookies,
-            includeRetryParameters,
-            includeRequestGuid,
-            retryHTTP403,
-            noRetry);
+    String requestIdStr = URLUtil.getRequestIdLogStr(httpRequest.getURI());
+    logger.debug(
+        "{}Executing rest request: {}, retry timeout: {}, socket timeout: {}, max retries: {},"
+            + " inject socket timeout: {}, canceling: {}, without cookies: {}, include retry parameters: {},"
+            + " include request guid: {}, retry http 403: {}, no retry: {}",
+        requestIdStr,
+        requestInfoScrubbed,
+        retryTimeout,
+        socketTimeout,
+        maxRetries,
+        injectSocketTimeout,
+        canceling,
+        withoutCookies,
+        includeRetryParameters,
+        includeRequestGuid,
+        retryHTTP403,
+        noRetry);
     CloseableHttpResponse response = null;
 
     // time the client started attempting to submit request
@@ -152,6 +165,10 @@ public class RestRequest {
 
     // Used to indicate that this is a login/auth request and will be using the new retry strategy.
     boolean isLoginRequest = SessionUtil.isNewRetryStrategyRequest(httpRequest);
+
+    if (isLoginRequest) {
+      logger.debug("{}Request is a login/auth request. Using new retry strategy", requestIdStr);
+    }
 
     // total elapsed time due to transient issues.
     long elapsedMilliForTransientIssues = 0;
@@ -181,9 +198,14 @@ public class RestRequest {
 
     // try request till we get a good response or retry timeout
     while (true) {
-      logger.debug("Retry count: {}", retryCount);
-      logger.debug("Attempting request: {}", requestInfoScrubbed);
-
+      logger.debug(
+          "{}Retry count: {}, max retries: {}, retry timeout: {} s, backoff: {} ms. Attempting request: {}",
+          requestIdStr,
+          retryCount,
+          maxRetries,
+          retryTimeout,
+          backoffInMilli,
+          requestInfoScrubbed);
       try {
         // update start time
         startTimePerRequest = System.currentTimeMillis();
@@ -197,7 +219,8 @@ public class RestRequest {
         if (injectSocketTimeout != 0 && retryCount == 0) {
           // test code path
           logger.debug(
-              "Injecting socket timeout by setting socket timeout to {} ms",
+              "{}Injecting socket timeout by setting socket timeout to {} ms",
+              requestIdStr,
               injectSocketTimeout);
           httpRequest.setConfig(
               HttpUtil.getDefaultRequestConfigWithSocketTimeout(
@@ -216,7 +239,7 @@ public class RestRequest {
         // If HTAP
         if ("true".equalsIgnoreCase(System.getenv("HTAP_SIMULATION"))
             && builder.getPathSegments().contains("query-request")) {
-          logger.debug("Setting htap simulation");
+          logger.debug("{}Setting htap simulation", requestIdStr);
           builder.setParameter("target", "htap_simulation");
         }
         if (includeRetryParameters && retryCount > 0) {
@@ -229,14 +252,18 @@ public class RestRequest {
         // so that it can be renewed in time and pass it to the http request configuration.
         if (authTimeout > 0) {
           int requestSocketAndConnectTimeout = (int) authTimeout * 1000;
+          logger.debug(
+              "{}Setting auth timeout as the socket timeout: {} s", requestIdStr, authTimeout);
           httpRequest.setConfig(
               HttpUtil.getDefaultRequestConfigWithSocketAndConnectTimeout(
                   requestSocketAndConnectTimeout, withoutCookies));
         }
 
         if (includeRequestGuid) {
+          UUID guid = UUIDUtils.getUUID();
+          logger.debug("{}Request {} guid: {}", requestIdStr, requestInfoScrubbed, guid.toString());
           // Add request_guid for better tracing
-          builder.setParameter(SF_REQUEST_GUID, UUIDUtils.getUUID().toString());
+          builder.setParameter(SF_REQUEST_GUID, guid.toString());
         }
 
         httpRequest.setURI(builder.build());
@@ -261,17 +288,20 @@ public class RestRequest {
       } catch (Exception ex) {
 
         savedEx = ex;
-        // if the request took more than 5 min (socket timeout) log an error
-        if ((System.currentTimeMillis() - startTimePerRequest)
-            > HttpUtil.getSocketTimeout().toMillis()) {
+        // if the request took more than socket timeout log an error
+        long currentMillis = System.currentTimeMillis();
+        if ((currentMillis - startTimePerRequest) > HttpUtil.getSocketTimeout().toMillis()) {
           logger.warn(
-              "HTTP request took longer than socket timeout {} s: {} s",
-              HttpUtil.getSocketTimeout().toMillis() / 1000, (System.currentTimeMillis() - startTimePerRequest) / 1000);
+              "{}HTTP request took longer than socket timeout {} ms: {} ms",
+              requestIdStr,
+              HttpUtil.getSocketTimeout().toMillis(),
+              (currentMillis - startTimePerRequest));
         }
         StringWriter sw = new StringWriter();
         savedEx.printStackTrace(new PrintWriter(sw));
         logger.debug(
-            "Exception encountered for: {}, {}, {}",
+            "{}Exception encountered for: {}, {}, {}",
+            requestIdStr,
             requestInfoScrubbed,
             ex.getLocalizedMessage(),
             (ArgSupplier) sw::toString);
@@ -295,7 +325,11 @@ public class RestRequest {
           || isNonRetryableHTTPCode(response, retryHTTP403)) {
         String msg = "Unknown cause";
         if (response != null) {
-          logger.debug("HTTP response code for request {}: {}", requestInfoScrubbed, response.getStatusLine().getStatusCode());
+          logger.debug(
+              "{}HTTP response code for request {}: {}",
+              requestIdStr,
+              requestInfoScrubbed,
+              response.getStatusLine().getStatusCode());
           msg =
               "StatusCode: "
                   + response.getStatusLine().getStatusCode()
@@ -309,13 +343,16 @@ public class RestRequest {
 
         if (response == null || response.getStatusLine().getStatusCode() != 200) {
           logger.debug(
-              "Error response not retryable, " + msg + ", request: {}", requestInfoScrubbed);
+              "{}Error response not retryable, " + msg + ", request: {}",
+              requestIdStr,
+              requestInfoScrubbed);
           EventUtil.triggerBasicEvent(
-              Event.EventType.NETWORK_ERROR, msg + ", Request: " + httpRequest.toString(), false);
+              Event.EventType.NETWORK_ERROR, msg + ", Request: " + httpRequest, false);
         }
         breakRetryReason = "status code does not need retry";
         if (noRetry) {
-          logger.debug("HTTP retry disabled for this request. noRetry: {}", noRetry);
+          logger.debug(
+              "{}HTTP retry disabled for this request. noRetry: {}", requestIdStr, noRetry);
           breakRetryReason = "retry is disabled";
         }
 
@@ -325,16 +362,18 @@ public class RestRequest {
       } else {
         if (response != null) {
           logger.debug(
-              "HTTP response not ok: status code: {}, request: {}",
+              "{}HTTP response not ok: status code: {}, request: {}",
+              requestIdStr,
               response.getStatusLine().getStatusCode(),
               requestInfoScrubbed);
         } else if (savedEx != null) {
           logger.debug(
-              "Null response for cause: {}, request: {}",
+              "{}Null response for cause: {}, request: {}",
+              requestIdStr,
               getRootCause(savedEx).getMessage(),
               requestInfoScrubbed);
         } else {
-          logger.debug("Null response for request: {}", requestInfoScrubbed);
+          logger.debug("{}Null response for request: {}", requestIdStr, requestInfoScrubbed);
         }
 
         // get the elapsed time for the last request
@@ -345,7 +384,7 @@ public class RestRequest {
 
         // check canceling flag
         if (canceling != null && canceling.get()) {
-          logger.debug("Stop retrying since canceling is requested", false);
+          logger.debug("{}Stop retrying since canceling is requested", requestIdStr);
           breakRetryReason = "canceling is requested";
           break;
         }
@@ -363,9 +402,10 @@ public class RestRequest {
           if (elapsedMilliForTransientIssues > retryTimeoutInMilliseconds
               && retryCount >= MIN_RETRY_COUNT) {
             logger.error(
-                "Stop retrying since elapsed time due to network "
+                "{}Stop retrying since elapsed time due to network "
                     + "issues has reached timeout. "
                     + "Elapsed: {} ms, timeout: {} ms",
+                requestIdStr,
                 elapsedMilliForTransientIssues,
                 retryTimeoutInMilliseconds);
 
@@ -376,9 +416,10 @@ public class RestRequest {
         if (maxRetries > 0 && retryCount > maxRetries) {
           // check for max retries.
           logger.error(
-              "Stop retrying as max retries have been reached for request: {}! Max retry count: {}",
-                  requestInfoScrubbed,
-                  maxRetries);
+              "{}Stop retrying as max retries have been reached for request: {}! Max retry count: {}",
+              requestIdStr,
+              requestInfoScrubbed,
+              maxRetries);
           breakRetryReason = "max retries reached";
           breakRetryEventName = "HttpRequestRetryLimitExceeded";
         }
@@ -439,7 +480,11 @@ public class RestRequest {
         // sleep for backoff - elapsed amount of time
         if (backoffInMilli > elapsedMilliForLastCall) {
           try {
-            logger.debug("Sleeping for {} ms", backoffInMilli);
+            logger.debug(
+                "{}Retry request {}: sleeping for {} ms",
+                requestIdStr,
+                requestInfoScrubbed,
+                backoffInMilli);
             Thread.sleep(backoffInMilli);
             elapsedMilliForTransientIssues += backoffInMilli;
             if (isLoginRequest) {
@@ -461,7 +506,7 @@ public class RestRequest {
                       backoffInMilli, retryTimeoutInMilliseconds - elapsedMilliForTransientIssues);
             }
           } catch (InterruptedException ex1) {
-            logger.debug("Backoff sleep before retrying login got interrupted", false);
+            logger.debug("{}Backoff sleep before retrying login got interrupted", requestIdStr);
           }
         }
 
@@ -510,15 +555,18 @@ public class RestRequest {
     if (response == null) {
       if (savedEx != null) {
         logger.error(
-            "Returning null response. Cause: {}, request: {}",
+            "{}Returning null response. Cause: {}, request: {}",
+            requestIdStr,
             getRootCause(savedEx),
             requestInfoScrubbed);
       } else {
-        logger.error("Returning null response for request: {}", requestInfoScrubbed);
+        logger.error(
+            "{}Returning null response for request: {}", requestIdStr, requestInfoScrubbed);
       }
     } else if (response.getStatusLine().getStatusCode() != 200) {
       logger.error(
-          "Error response: HTTP Response code: {}, request: {}",
+          "{}Error response: HTTP Response code: {}, request: {}",
+          requestIdStr,
           response.getStatusLine().getStatusCode(),
           requestInfoScrubbed);
     }
@@ -560,6 +608,15 @@ public class RestRequest {
       }
     }
 
+    if (logger.isDebugEnabled() && stopwatch != null) {
+      stopwatch.stop();
+    }
+    logger.debug(
+        "{}Execution of request {} took {} ms with total of {} retries",
+        requestIdStr,
+        requestInfoScrubbed,
+        stopwatch == null ? "n/a" : stopwatch.elapsedMillis(),
+        retryCount);
     return response;
   }
 

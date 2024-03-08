@@ -35,12 +35,22 @@ public class S3HttpUtil {
       clientConfig.setProxyHost(key.getProxyHost());
       clientConfig.setProxyPort(key.getProxyPort());
       clientConfig.setNonProxyHosts(key.getNonProxyHosts());
-      String logMessage = "Setting S3 proxy. Host: " + key.getProxyHost() + ", port: " + key.getProxyPort() +
-                          ", protocol: " + key.getProxyHttpProtocol() + ", non-proxy hosts: " + key.getNonProxyHosts();
+      String logMessage =
+          "Setting S3 proxy. Host: "
+              + key.getProxyHost()
+              + ", port: "
+              + key.getProxyPort()
+              + ", protocol: "
+              + key.getProxyHttpProtocol()
+              + ", non-proxy hosts: "
+              + key.getNonProxyHosts();
       if (!Strings.isNullOrEmpty(key.getProxyUser())
           && !Strings.isNullOrEmpty(key.getProxyPassword())) {
-        logMessage += ", user: " + key.getProxyUser() + "with password " +
-                      (key.getProxyPassword().isEmpty() ? "not provided" : "provided");
+        logMessage +=
+            ", user: "
+                + key.getProxyUser()
+                + "with password "
+                + (key.getProxyPassword().isEmpty() ? "not provided" : "provided");
         clientConfig.setProxyUsername(key.getProxyUser());
         clientConfig.setProxyPassword(key.getProxyPassword());
       }
@@ -96,16 +106,21 @@ public class S3HttpUtil {
         clientConfig.setProxyPort(proxyPort);
         clientConfig.setNonProxyHosts(nonProxyHosts);
         clientConfig.setProxyProtocol(protocolEnum);
-        StringBuilder logBuilder = new StringBuilder(
-                String.format("Setting sessionless S3 proxy. Host: %s, port: %d, non-proxy hosts: %s, protocol: %s",
-                        proxyHost, proxyPort, nonProxyHosts, proxyProtocol)
-        );
+        String logMessage =
+            "Setting sessionless S3 proxy. Host: "
+                + proxyHost
+                + ", port: "
+                + proxyPort
+                + ", non-proxy hosts: "
+                + nonProxyHosts
+                + ", protocol: "
+                + proxyProtocol;
         if (!Strings.isNullOrEmpty(proxyUser) && !Strings.isNullOrEmpty(proxyPassword)) {
-          logBuilder.append(String.format(", user: %s", proxyUser));
+          logMessage += ", user: " + proxyUser + " with password provided";
           clientConfig.setProxyUsername(proxyUser);
           clientConfig.setProxyPassword(proxyPassword);
         }
-        LOGGER.debug(logBuilder.toString());
+        LOGGER.debug(logMessage);
       } else {
         LOGGER.debug("Omitting sessionless S3 proxy setup as proxy is disabled");
       }
