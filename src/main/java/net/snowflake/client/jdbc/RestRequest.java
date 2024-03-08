@@ -288,13 +288,14 @@ public class RestRequest {
 
         savedEx = ex;
         // if the request took more than socket timeout log an error
-        if ((System.currentTimeMillis() - startTimePerRequest)
+        long currentMillis = System.currentTimeMillis();
+        if ((currentMillis - startTimePerRequest)
             > HttpUtil.getSocketTimeout().toMillis()) {
           logger.warn(
               "{}HTTP request took longer than socket timeout {} ms: {} ms",
               requestIdStr,
               HttpUtil.getSocketTimeout().toMillis(),
-              (System.currentTimeMillis() - startTimePerRequest));
+              (currentMillis - startTimePerRequest));
         }
         StringWriter sw = new StringWriter();
         savedEx.printStackTrace(new PrintWriter(sw));
