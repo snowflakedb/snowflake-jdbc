@@ -36,6 +36,8 @@ import net.snowflake.client.util.ThrowingTriFunction;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
+
 @SnowflakeJdbcInternalApi
 public class JsonSqlInput implements SFSqlInput {
   private final JsonNode input;
@@ -328,14 +330,6 @@ public class JsonSqlInput implements SFSqlInput {
       return jsonNode.numberValue();
     }
     return null;
-  }
-
-  private <T> T mapExceptions(ThrowingCallable<T, SFException> action) throws SQLException {
-    try {
-      return action.call();
-    } catch (SFException e) {
-      throw new SQLException(e);
-    }
   }
 
   private static SnowflakeDateTimeFormat getFormat(SFBaseSession session, String format) {

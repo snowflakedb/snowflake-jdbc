@@ -16,12 +16,12 @@ import java.net.URL;
 import java.sql.*;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
+
 
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput implements SFSqlInput {
@@ -227,7 +227,7 @@ public class ArrowSqlInput implements SFSqlInput {
                                     (JsonStringHashMap<String, Object>) value,
                                     session,
                                     converters,
-                                    Arrays.asList(fieldMetadata.getFields())
+                                    fieldMetadata.getFields()
                             ),
                             null
                     );

@@ -528,7 +528,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
               jsonNode,
               session,
               jsonConverters,
-              Arrays.asList(resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields())
+              resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields()
       );
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
@@ -540,7 +540,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
             input,
             session,
             jsonConverters,
-            Arrays.asList(resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields())
+            resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields()
     );
   }
 
