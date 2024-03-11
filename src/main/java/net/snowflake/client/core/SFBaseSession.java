@@ -142,6 +142,8 @@ public abstract class SFBaseSession {
 
   private Map<String, Object> commonParameters;
 
+  private boolean isJdbcArrowTreatDecimalAsInt = true;
+
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
   }
@@ -269,6 +271,15 @@ public abstract class SFBaseSession {
   public void setJdbcTreatDecimalAsInt(boolean jdbcTreatDecimalAsInt) {
     isJdbcTreatDecimalAsInt = jdbcTreatDecimalAsInt;
   }
+
+  public boolean isJdbcArrowTreatDecimalAsInt() {
+    return isJdbcArrowTreatDecimalAsInt;
+  }
+
+  public void setJdbcArrowTreatDecimalAsInt(boolean jdbcArrowTreatDecimalAsInt) {
+    isJdbcArrowTreatDecimalAsInt = jdbcArrowTreatDecimalAsInt;
+  }
+
 
   public String getServerUrl() {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL)) {
