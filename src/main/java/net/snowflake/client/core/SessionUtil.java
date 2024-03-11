@@ -373,10 +373,10 @@ public class SessionUtil {
     Map<String, Object> commonParams;
 
     String oktaUsername = loginInput.getOKTAUserName();
-    logger.info("Opening new session. Authenticating user: {}, account: {} with authentication method: {}." +
+    logger.info("Opening new session. Authenticating user: {}, host: {} with authentication method: {}." +
                 " Login timeout: {} s, auth timeout: {} s, OCSP mode: {}{}",
             loginInput.getUserName(),
-            loginInput.getAccountName(),
+            loginInput.getHostFromServerUrl(),
             authenticatorType,
             loginInput.getLoginTimeout(),
             loginInput.getAuthTimeout(),
@@ -741,9 +741,9 @@ public class SessionUtil {
 
         String errorMessage = jsonNode.path("message").asText();
 
-        logger.error("Failed to open new session for user: {}, account: {}. Error: {}",
+        logger.error("Failed to open new session for user: {}, host: {}. Error: {}",
                 loginInput.getUserName(),
-                loginInput.getAccountName(),
+                loginInput.getHostFromServerUrl(),
                 errorMessage);
         throw new SnowflakeSQLException(
             NO_QUERY_ID,
@@ -878,12 +878,12 @@ public class SessionUtil {
     }
 
     stopwatch.stop();
-    logger.info("User: {}, account: {} with authentication method: {} authenticated successfully." +
-                " Opening new session took: {} ms",
+    logger.info("Session opened in {} ms. User: {}, host: {} with authentication method: {} authenticated successfully.",
+            stopwatch.elapsedMillis(),
             loginInput.getUserName(),
-            loginInput.getAccountName(),
-            authenticatorType,
-            stopwatch.elapsedMillis());
+            loginInput.getHostFromServerUrl(),
+            authenticatorType
+    );
     return ret;
   }
 
