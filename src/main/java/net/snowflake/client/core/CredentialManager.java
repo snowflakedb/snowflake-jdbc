@@ -68,9 +68,10 @@ public class CredentialManager {
    * @param loginInput login input to attach id token
    */
   void fillCachedIdToken(SFLoginInput loginInput) throws SFException {
-    logger.debug("Looking for cached id token for user: {}, host: {}",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl());
+    logger.debug(
+        "Looking for cached id token for user: {}, host: {}",
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl());
     fillCachedCredential(loginInput, ID_TOKEN);
   }
 
@@ -80,9 +81,10 @@ public class CredentialManager {
    * @param loginInput login input to attach mfa token
    */
   void fillCachedMfaToken(SFLoginInput loginInput) throws SFException {
-    logger.debug("Looking for cached mfa token for user: {}, host: {}",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl());
+    logger.debug(
+        "Looking for cached mfa token for user: {}, host: {}",
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl());
     fillCachedCredential(loginInput, MFA_TOKEN);
   }
 
@@ -119,16 +121,18 @@ public class CredentialManager {
 
     // cred can be null
     if (credType == ID_TOKEN) {
-      logger.debug("Setting {}id token for user: {}, host: {}",
-              cred == null ? "null " : "",
-              loginInput.getUserName(),
-              loginInput.getHostFromServerUrl());
+      logger.debug(
+          "Setting {}id token for user: {}, host: {}",
+          cred == null ? "null " : "",
+          loginInput.getUserName(),
+          loginInput.getHostFromServerUrl());
       loginInput.setIdToken(cred);
     } else if (credType == MFA_TOKEN) {
-      logger.debug("Setting {}mfa token for user: {}, host: {}",
-              cred == null ? "null " : "",
-              loginInput.getUserName(),
-              loginInput.getHostFromServerUrl());
+      logger.debug(
+          "Setting {}mfa token for user: {}, host: {}",
+          cred == null ? "null " : "",
+          loginInput.getUserName(),
+          loginInput.getHostFromServerUrl());
       loginInput.setMfaToken(cred);
     } else {
       logger.debug("Unrecognized type %s for local cached credential", credType);
@@ -143,9 +147,10 @@ public class CredentialManager {
    * @param loginOutput loginOutput to denote to the cache
    */
   void writeIdToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
-    logger.debug("Caching id token in a secure storage for user: {}, host: {}",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl());
+    logger.debug(
+        "Caching id token in a secure storage for user: {}, host: {}",
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl());
     writeTemporaryCredential(loginInput, loginOutput.getIdToken(), ID_TOKEN);
   }
 
@@ -156,9 +161,10 @@ public class CredentialManager {
    * @param loginOutput loginOutput to denote to the cache
    */
   void writeMfaToken(SFLoginInput loginInput, SFLoginOutput loginOutput) throws SFException {
-    logger.debug("Caching mfa token in a secure storage for user: {}, host: {}",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl());
+    logger.debug(
+        "Caching mfa token in a secure storage for user: {}, host: {}",
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl());
     writeTemporaryCredential(loginInput, loginOutput.getMfaToken(), MFA_TOKEN);
   }
 
@@ -195,13 +201,15 @@ public class CredentialManager {
 
   /** Delete the id token cache */
   void deleteIdTokenCache(String host, String user) {
-    logger.debug("Removing cached id token from a secure storage for user: {}, host: {}", user, host);
+    logger.debug(
+        "Removing cached id token from a secure storage for user: {}, host: {}", user, host);
     deleteTemporaryCredential(host, user, ID_TOKEN);
   }
 
   /** Delete the mfa token cache */
   void deleteMfaTokenCache(String host, String user) {
-    logger.debug("Removing cached mfa token from a secure storage for user: {}, host: {}", user, host);
+    logger.debug(
+        "Removing cached mfa token from a secure storage for user: {}, host: {}", user, host);
     deleteTemporaryCredential(host, user, MFA_TOKEN);
   }
 
