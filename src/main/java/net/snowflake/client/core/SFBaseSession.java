@@ -277,7 +277,6 @@ public abstract class SFBaseSession {
     isJdbcArrowTreatDecimalAsInt = jdbcArrowTreatDecimalAsInt;
   }
 
-
   public String getServerUrl() {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL)) {
       return (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
