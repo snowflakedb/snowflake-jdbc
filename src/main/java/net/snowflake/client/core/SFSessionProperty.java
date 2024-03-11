@@ -78,7 +78,9 @@ public enum SFSessionProperty {
 
   RETRY_TIMEOUT("retryTimeout", false, Integer.class),
 
-  ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class);
+  ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class),
+
+  JDBC_ARROW_TREAT_DECIMAL_AS_INT("jdbc_arrow_treat_decimal_as_int", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
