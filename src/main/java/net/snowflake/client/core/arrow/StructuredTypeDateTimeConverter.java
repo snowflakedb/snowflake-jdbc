@@ -1,6 +1,5 @@
 package net.snowflake.client.core.arrow;
 
-import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -11,10 +10,11 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 
+import static net.snowflake.client.jdbc.SnowflakeType.*;
+
 public class StructuredTypeDateTimeConverter {
 
     private final TimeZone sessionTimeZone;
-    private final SFBaseSession session;
     private final long resultVersion;
     private final boolean honorClientTZForTimestampNTZ;
     private final boolean treatNTZAsUTC;
@@ -23,7 +23,6 @@ public class StructuredTypeDateTimeConverter {
 
     public StructuredTypeDateTimeConverter(
             TimeZone sessionTimeZone,
-            SFBaseSession session,
             long resultVersion,
             boolean honorClientTZForTimestampNTZ,
             boolean treatNTZAsUTC,
@@ -31,7 +30,6 @@ public class StructuredTypeDateTimeConverter {
             boolean formatDateWithTimeZone) {
 
         this.sessionTimeZone = sessionTimeZone;
-        this.session = session;
         this.resultVersion = resultVersion;
         this.honorClientTZForTimestampNTZ = honorClientTZForTimestampNTZ;
         this.treatNTZAsUTC = treatNTZAsUTC;
@@ -45,58 +43,88 @@ public class StructuredTypeDateTimeConverter {
         }
         switch (type) {
             case TIMESTAMP_LTZ:
-                if (obj.values().size() == 2) {
-                    return TwoFieldStructToTimestampLTZConverter.getTimestamp(
-                            (long) obj.get("epoch"),
-                            (int) obj.get("fraction"),
-                            false,
-                            sessionTimeZone,
-                            useSessionTimezone
-                    );
-                }
-                break;
+                return convertTimestampLtz(obj);
             case TIMESTAMP_NTZ:
-                if (obj.values().size() == 2) {
-                    return TwoFieldStructToTimestampNTZConverter.getTimestamp(
-                            (long) obj.get("epoch"),
-                            (int) obj.get("fraction"),
-                            false,
-                            tz,
-                            sessionTimeZone,
-                            treatNTZAsUTC,
-                            useSessionTimezone,
-                            honorClientTZForTimestampNTZ
-                    );
-                }
-                break;
+                return convertTimestampNtz(obj, tz);
             case TIMESTAMP_TZ:
-                if (obj.values().size() == 2) {
-                    return TwoFieldStructToTimestampTZConverter.getTimestamp(
-                            (long) obj.get("epoch"),
-                            (int) obj.get("timezone"),
-                            scale
-                    );
-                } else if (obj.values().size() == 3) {
-                    return ThreeFieldStructToTimestampTZConverter.getTimestamp(
-                            (long) obj.get("epoch"),
-                            (int) obj.get("fraction"),
-                            (int) obj.get("timezone"),
-                            false,
-                            resultVersion,
-                            useSessionTimezone
-                    );
-                }
-                break;
+                return convertTimestampTz(obj, scale);
         }
-        throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, "Unexpected Arrow Field for " + type.name());
+        throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                "Unexpected Arrow Field for " + type.name() + " and object type " + obj.getClass());
     }
 
     public Date getDate(int value, TimeZone tz) throws SFException {
-        return DateConverter.getDate(value, tz, sessionTimeZone, false);
+        return DateConverter.getDate(value, tz, sessionTimeZone, formatDateWithTimeZone);
     }
 
     public Time getTime(long value, int scale) throws SFException {
         return BigIntToTimeConverter.getTime(value, scale, useSessionTimezone);
     }
 
+    private Timestamp convertTimestampLtz(Object obj) throws SFException {
+        if (obj instanceof JsonStringHashMap) {
+            JsonStringHashMap<String, Object> map = (JsonStringHashMap<String, Object>) obj;
+            if (map.values().size() == 2) {
+                return TwoFieldStructToTimestampLTZConverter.getTimestamp(
+                        (long) map.get("epoch"),
+                        (int) map.get("fraction"),
+                        false,
+                        sessionTimeZone,
+                        useSessionTimezone
+                );
+            }
+        } else if (obj instanceof Long) {
+
+        }
+        throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                "Unexpected Arrow Field for " + TIMESTAMP_LTZ + " and object type " + obj.getClass());
+    }
+
+
+    private Timestamp convertTimestampNtz(Object obj, TimeZone tz) throws SFException {
+        if (obj instanceof JsonStringHashMap) {
+            JsonStringHashMap<String, Object> map = (JsonStringHashMap<String, Object>) obj;
+            if (map.values().size() == 2) {
+                return TwoFieldStructToTimestampNTZConverter.getTimestamp(
+                        (long) map.get("epoch"),
+                        (int) map.get("fraction"),
+                        false,
+                        tz,
+                        sessionTimeZone,
+                        treatNTZAsUTC,
+                        useSessionTimezone,
+                        honorClientTZForTimestampNTZ
+                );
+        }
+        } else if (obj instanceof Long) {
+
+        }
+        throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                "Unexpected Arrow Field for " + TIMESTAMP_NTZ + " and object type " + obj.getClass());
+    }
+
+
+    private Timestamp convertTimestampTz(Object obj, int scale) throws SFException {
+        if (obj instanceof JsonStringHashMap) {
+            JsonStringHashMap<String, Object> map = (JsonStringHashMap<String, Object>) obj;
+            if (map.values().size() == 2) {
+                return TwoFieldStructToTimestampTZConverter.getTimestamp(
+                        (long) map.get("epoch"),
+                        (int) map.get("timezone"),
+                        scale
+                );
+            } else if (map.values().size() == 3) {
+                return ThreeFieldStructToTimestampTZConverter.getTimestamp(
+                        (long) map.get("epoch"),
+                        (int) map.get("fraction"),
+                        (int) map.get("timezone"),
+                        false,
+                        resultVersion,
+                        useSessionTimezone
+                );
+            }
+        }
+        throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
+                "Unexpected Arrow Field for " + TIMESTAMP_TZ + " and object type " + obj.getClass());
+    }
 }
