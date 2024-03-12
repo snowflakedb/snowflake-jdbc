@@ -8,6 +8,7 @@ import static net.snowflake.client.jdbc.SnowflakeDriver.implementVersion;
 import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
 import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -46,7 +47,9 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.jdbc.cloud.storage.SnowflakeGCSClient;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
@@ -1105,58 +1108,67 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetGcsDownscopedCredential() throws Throwable {
-    Connection connection = null;
-    Statement statement = null;
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      putAndGetFile(statement);
+    }
+  }
+
+  /** Added in > 3.15.0 */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPutGetGcsDownscopedCredentialWithDisabledDefaultCredentials() throws Throwable {
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    paramProperties.put(SFSessionProperty.DISABLE_GCS_DEFAULT_CREDENTIALS.getPropertyKey(), true);
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      putAndGetFile(statement);
+    }
+  }
+
+  private void putAndGetFile(Statement statement) throws Throwable {
+    String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE_2);
+
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+
     try {
-      connection = getConnection("gcpaccount", paramProperties);
+      statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
-      statement = connection.createStatement();
+      assertTrue(
+          "Failed to put a file",
+          statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
 
-      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE_2);
+      findFile(statement, "ls @testPutGet_stage/");
 
-      File destFolder = tmpFolder.newFolder();
-      String destFolderCanonicalPath = destFolder.getCanonicalPath();
-      String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+      // download the file we just uploaded to stage
+      assertTrue(
+          "Failed to get a file",
+          statement.execute(
+              "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
 
-      try {
-        statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+      // Make sure that the downloaded file exists, it should be gzip compressed
+      File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
+      assert (downloaded.exists());
 
-        assertTrue(
-            "Failed to put a file",
-            statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
+      Process p =
+          Runtime.getRuntime()
+              .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
+      p.waitFor();
 
-        findFile(statement, "ls @testPutGet_stage/");
-
-        // download the file we just uploaded to stage
-        assertTrue(
-            "Failed to get a file",
-            statement.execute(
-                "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
-
-        // Make sure that the downloaded file exists, it should be gzip compressed
-        File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
-        assert (downloaded.exists());
-
-        Process p =
-            Runtime.getRuntime()
-                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
-        p.waitFor();
-
-        File original = new File(sourceFilePath);
-        File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2);
-        System.out.println(
-            "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
-        System.out.println(
-            "Unzipped file: " + unzipped.getAbsolutePath() + ", size: " + unzipped.length());
-        assert (original.length() == unzipped.length());
-      } finally {
-        statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
-        statement.close();
-      }
+      File original = new File(sourceFilePath);
+      File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2);
+      System.out.println(
+          "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
+      System.out.println(
+          "Unzipped file: " + unzipped.getAbsolutePath() + ", size: " + unzipped.length());
+      assert (original.length() == unzipped.length());
     } finally {
-      closeSQLObjects(null, statement, connection);
+      statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
     }
   }
 
@@ -1497,7 +1509,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                       ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo(),
                       1,
                       null,
-                      /*session = */ null);
+                      /* session= */ null);
 
           String location =
               ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo().getLocation();
@@ -1537,7 +1549,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
         StageInfo info = sfAgent.getStageInfo();
         SnowflakeStorageClient client =
-            StorageClientFactory.getFactory().createClient(info, 1, null, /*session = */ null);
+            StorageClientFactory.getFactory().createClient(info, 1, null, /* session= */ null);
 
         client.handleStorageException(
             new StorageException(
@@ -1613,58 +1625,72 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testUploadWithGCSDownscopedCredentialWithoutConnection() throws Throwable {
-    Connection connection = null;
+    uploadWithGCSDownscopedCredentialWithoutConnection();
+  }
+
+  /** Added in > 3.15.0 */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void
+      testUploadWithGCSDownscopedCredentialAndDisabledGcsDefaultCredentialsWithoutConnection()
+          throws Throwable {
+    System.setProperty(SnowflakeGCSClient.DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, "true");
+    try {
+      uploadWithGCSDownscopedCredentialWithoutConnection();
+    } finally {
+      System.clearProperty(SnowflakeGCSClient.DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME);
+    }
+  }
+
+  private void uploadWithGCSDownscopedCredentialWithoutConnection() throws Throwable {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    try {
-      Properties paramProperties = new Properties();
-      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
-      connection = getConnection("gcpaccount", paramProperties);
-      // connection = getConnection(null, paramProperties);
-      Statement statement = connection.createStatement();
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement(); ) {
+      try {
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-      // create a stage to put the file in
-      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        // Test put file with internal compression
+        String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
+        SnowflakeFileTransferAgent sfAgent =
+            new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+        List<SnowflakeFileTransferMetadata> metadataList = sfAgent.getFileTransferMetadatas();
+        assertEquals(1, metadataList.size());
+        SnowflakeFileTransferMetadata oneMetadata = metadataList.get(0);
+        assertFalse(oneMetadata.isForOneFile());
 
-      // Test put file with internal compression
-      String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
-      SnowflakeFileTransferAgent sfAgent =
-          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-      List<SnowflakeFileTransferMetadata> metadataList = sfAgent.getFileTransferMetadatas();
-      assert (metadataList.size() == 1);
-      SnowflakeFileTransferMetadata oneMetadata = metadataList.get(0);
-      assert (!oneMetadata.isForOneFile());
-
-      // Upload multiple file with the same SnowflakeFileTransferMetadata
-      String[] fileNames = {TEST_DATA_FILE, TEST_DATA_FILE_2};
-      for (String fileName : fileNames) {
-        String srcPath = getFullPathFileInResource(fileName);
-        InputStream inputStream = new FileInputStream(srcPath);
-        // upload file 1
-        String targetFileName = fileName + ".gz";
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
-            SnowflakeFileTransferConfig.Builder.newInstance()
-                .setSnowflakeFileTransferMetadata(oneMetadata)
-                .setUploadStream(inputStream)
-                .setDestFileName(targetFileName)
-                .setRequireCompress(true)
-                .setNetworkTimeoutInMilli(0)
-                .setOcspMode(OCSPMode.FAIL_OPEN)
-                .build());
-        assertTrue(
-            "Failed to get files with down-scoped token",
-            statement.execute(
-                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/'"));
-        assert (isFileContentEqual(
-            srcPath, false, destFolderCanonicalPath + "/" + targetFileName, true));
-        inputStream.close();
-      }
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-        connection.close();
+        // Upload multiple file with the same SnowflakeFileTransferMetadata
+        String[] fileNames = {TEST_DATA_FILE, TEST_DATA_FILE_2};
+        for (String fileName : fileNames) {
+          String srcPath = getFullPathFileInResource(fileName);
+          try (InputStream inputStream = new FileInputStream(srcPath)) {
+            // upload file 1
+            String targetFileName = fileName + ".gz";
+            SnowflakeFileTransferAgent.uploadWithoutConnection(
+                SnowflakeFileTransferConfig.Builder.newInstance()
+                    .setSnowflakeFileTransferMetadata(oneMetadata)
+                    .setUploadStream(inputStream)
+                    .setDestFileName(targetFileName)
+                    .setRequireCompress(true)
+                    .setNetworkTimeoutInMilli(0)
+                    .setOcspMode(OCSPMode.FAIL_OPEN)
+                    .build());
+            assertTrue(
+                "Failed to get files with down-scoped token",
+                statement.execute(
+                    "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/'"));
+            assertTrue(
+                isFileContentEqual(
+                    srcPath, false, destFolderCanonicalPath + "/" + targetFileName, true));
+          }
+        }
+      } finally {
+        statement.execute("DROP STAGE if exists " + testStageName);
       }
     }
   }

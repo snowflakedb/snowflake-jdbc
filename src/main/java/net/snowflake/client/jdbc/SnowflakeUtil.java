@@ -36,6 +36,7 @@ import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -50,7 +51,7 @@ import org.apache.http.HttpResponse;
  */
 public class SnowflakeUtil {
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
@@ -753,5 +754,22 @@ public class SnowflakeUtil {
     c.add(Calendar.MILLISECOND, nanos / 1000000);
     ts.setTime(c.getTimeInMillis());
     return ts;
+  }
+
+  /**
+   * Helper function to convert system properties to boolean
+   *
+   * @param systemProperty name of the system property
+   * @param defaultValue default value used
+   * @return the value of the system property as boolean, else the default value
+   */
+  @SnowflakeJdbcInternalApi
+  public static boolean convertSystemPropertyToBooleanValue(
+      String systemProperty, boolean defaultValue) {
+    String systemPropertyValue = systemGetProperty(systemProperty);
+    if (systemPropertyValue != null) {
+      return Boolean.parseBoolean(systemPropertyValue);
+    }
+    return defaultValue;
   }
 }
