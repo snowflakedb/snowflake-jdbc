@@ -82,4 +82,8 @@ public class Converters {
   public StringConverter getStringConverter() {
     return stringConverter;
   }
+
+  public StructuredTypeDateTimeConverter getStructuredTypeDateTimeConverter() {
+    return structuredTypeDateTimeConverter;
+  }
 }

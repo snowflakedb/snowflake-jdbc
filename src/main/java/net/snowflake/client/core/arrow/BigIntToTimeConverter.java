@@ -36,7 +36,11 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
    */
   private SFTime toSFTime(int index) {
     long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
-    return SFTime.fromFractionalSeconds(val, context.getScale(columnIndex));
+    return toSFTime(val, context.getScale(columnIndex));
+  }
+
+  private static SFTime toSFTime(long val, int scale) {
+    return SFTime.fromFractionalSeconds(val, scale);
   }
 
   @Override
@@ -44,21 +48,23 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return null;
     } else {
-      SFTime sfTime = toSFTime(index);
-      if (sfTime == null) {
-        return null;
-      }
-      Time ts =
-          new Time(
-              sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
-      if (useSessionTimezone) {
-        ts =
-            SnowflakeUtil.getTimeInSessionTimezone(
-                SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
-                sfTime.getNanosecondsWithinSecond());
-      }
-      return ts;
+      long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
+      return getTime(val, context.getScale(index), useSessionTimezone);
     }
+  }
+
+  public static Time getTime(long value, int scale, boolean useSessionTimezone) throws SFException {
+    SFTime sfTime = toSFTime(value, scale);
+    Time ts =
+            new Time(
+                    sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+    if (useSessionTimezone) {
+      ts =
+              SnowflakeUtil.getTimeInSessionTimezone(
+                      SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
+                      sfTime.getNanosecondsWithinSecond());
+    }
+    return ts;
   }
 
   @Override

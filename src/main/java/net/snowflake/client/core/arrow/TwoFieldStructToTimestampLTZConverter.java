@@ -72,20 +72,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
-    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      if (fromToString) {
-        throw new TimestampOperationNotAvailableException(epoch, fraction);
-      } else {
-        return null;
-      }
-    }
-
-    Timestamp ts =
-        ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
-
-    Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-
-    return adjustedTimestamp;
+    return getTimestamp(epoch, fraction, fromToString, sessionTimeZone, useSessionTimezone);
   }
 
   @Override
@@ -126,5 +113,24 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);
+  }
+
+  public static Timestamp getTimestamp(
+          long epoch,
+          int fraction,
+          boolean fromToString,
+          TimeZone sessionTimeZone,
+          boolean useSessionTimezone
+  ) throws SFException {
+    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
+      if (fromToString) {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      } else {
+        return null;
+      }
+    }
+    Timestamp ts =
+            ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
+    return ResultUtil.adjustTimestamp(ts);
   }
 }

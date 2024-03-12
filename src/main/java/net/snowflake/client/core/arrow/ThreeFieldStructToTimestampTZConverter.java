@@ -83,22 +83,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
     int timeZoneIndex = timeZoneIndices.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
-    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      if (fromToString) {
-        throw new TimestampOperationNotAvailableException(epoch, fraction);
-      } else {
-        return null;
-      }
-    }
-
-    if (context.getResultVersion() > 0) {
-      timeZone = SFTimestamp.convertTimezoneIndexToTimeZone(timeZoneIndex);
-    } else {
-      timeZone = TimeZone.getTimeZone("UTC");
-    }
-    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, timeZone, useSessionTimezone);
-    Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-    return adjustedTimestamp;
+    return getTimestamp(epoch, fraction, timeZoneIndex, fromToString, context.getResultVersion(), useSessionTimezone);
   }
 
   @Override
@@ -137,5 +122,31 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     }
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.SHORT_STR, "");
+  }
+
+  public static Timestamp getTimestamp(
+          long epoch,
+          int fraction,
+          int timeZoneIndex,
+          boolean fromToString,
+          long resultVersion,
+          boolean useSessionTimezone
+  ) throws SFException {
+    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
+      if (fromToString) {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      } else {
+        return null;
+      }
+    }
+
+    TimeZone timeZone;
+    if (resultVersion > 0) {
+      timeZone = SFTimestamp.convertTimezoneIndexToTimeZone(timeZoneIndex);
+    } else {
+      timeZone = TimeZone.getTimeZone("UTC");
+    }
+    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, timeZone, useSessionTimezone);
+    return ResultUtil.adjustTimestamp(ts);
   }
 }

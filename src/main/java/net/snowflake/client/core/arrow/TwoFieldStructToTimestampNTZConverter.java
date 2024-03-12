@@ -74,32 +74,16 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
   private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException {
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
-
-    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      if (fromToString) {
-        throw new TimestampOperationNotAvailableException(epoch, fraction);
-      } else {
-        return null;
-      }
-    }
-    Timestamp ts;
-    if (this.treatNTZasUTC || !this.useSessionTimezone) {
-      ts = ArrowResultUtil.createTimestamp(epoch, fraction, TimeZone.getTimeZone("UTC"), true);
-    } else {
-      ts = ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, false);
-    }
-
-    // Note: honorClientTZForTimestampNTZ is not enabled for toString method.
-    // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
-    // client timezone for NTZ time. Move NTZ timestamp offset to correspond to
-    // client's timezone. UseSessionTimezone overrides treatNTZasUTC.
-    if (!fromToString
-        && ((context.getHonorClientTZForTimestampNTZ() && !this.treatNTZasUTC)
-            || this.useSessionTimezone)) {
-      ts = ArrowResultUtil.moveToTimeZone(ts, NTZ, tz);
-    }
-    Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-    return adjustedTimestamp;
+    return getTimestamp(
+            epoch,
+            fraction,
+            fromToString,
+            tz,
+            sessionTimeZone,
+            treatNTZasUTC,
+            useSessionTimezone,
+            context.getHonorClientTZForTimestampNTZ()
+    );
   }
 
   @Override
@@ -138,5 +122,32 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);
+  }
+
+  public static Timestamp getTimestamp(long epoch, int fraction, boolean fromToString, TimeZone tz, TimeZone sessionTimeZone, boolean treatNTZasUTC, boolean useSessionTimezone, boolean honorClientTZForTimestampNTZ) throws SFException {
+
+    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
+      if (fromToString) {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      } else {
+        return null;
+      }
+    }
+    Timestamp ts;
+    if (treatNTZasUTC || !useSessionTimezone) {
+      ts = ArrowResultUtil.createTimestamp(epoch, fraction, TimeZone.getTimeZone("UTC"), true);
+    } else {
+      ts = ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, false);
+    }
+
+    // Note: honorClientTZForTimestampNTZ is not enabled for toString method.
+    // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
+    // client timezone for NTZ time. Move NTZ timestamp offset to correspond to
+    // client's timezone. UseSessionTimezone overrides treatNTZasUTC.
+    if (!fromToString
+            && (honorClientTZForTimestampNTZ && !treatNTZasUTC) || useSessionTimezone) {
+      ts = ArrowResultUtil.moveToTimeZone(ts, NTZ, tz);
+    }
+    return ResultUtil.adjustTimestamp(ts);
   }
 }

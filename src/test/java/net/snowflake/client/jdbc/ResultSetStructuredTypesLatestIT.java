@@ -149,7 +149,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.getTimestampLtz());
         assertEquals(
-            Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 10, 44, 44)),
+            Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)),
             object.getTimestampNtz());
         assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 2, 45, 45)), object.getTimestampTz());

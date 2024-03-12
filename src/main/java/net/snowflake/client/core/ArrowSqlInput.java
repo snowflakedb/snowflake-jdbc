@@ -1,5 +1,6 @@
 package net.snowflake.client.core;
 
+import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
@@ -144,23 +145,22 @@ public class ArrowSqlInput implements SFSqlInput {
     @Override
     public Date readDate() throws SQLException {
         return withNextValue(
-                (value, fieldMetadata) -> {
-                    SnowflakeDateTimeFormat formatter = SqlInputTimestampUtil.extractDateTimeFormat(session, "DATE_OUTPUT_FORMAT");
-                    SFTimestamp timestamp = formatter.parse((String) value);
-                    return Date.valueOf(
-                            Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalDate());
-                });
+                (value, fieldMetadata) -> mapExceptions(
+                        () -> converters.getStructuredTypeDateTimeConverter().getDate((int) value, TimeZone.getDefault())
+                )
+        );
     }
 
     @Override
     public Time readTime() throws SQLException {
         return withNextValue(
-                (value, fieldMetadata) -> {
-                    SnowflakeDateTimeFormat formatter = SqlInputTimestampUtil.extractDateTimeFormat(session, "TIME_OUTPUT_FORMAT");
-                    SFTimestamp timestamp = formatter.parse((String) value);
-                    return Time.valueOf(
-                            Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalTime());
-                });
+                (value, fieldMetadata) -> mapExceptions(
+                        () -> {
+                            int scale = fieldMetadata.getScale();
+                            return converters.getStructuredTypeDateTimeConverter().getTime((long) value, scale);
+                        }
+                )
+        );
     }
 
     @Override
@@ -175,19 +175,12 @@ public class ArrowSqlInput implements SFSqlInput {
                     if (value == null) {
                         return null;
                     }
-                    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-                    int columnSubType = fieldMetadata.getType();
                     int scale = fieldMetadata.getScale();
-                    // TODO structuredType what if not a string value?
-                    Timestamp result = SqlInputTimestampUtil.getTimestampFromType(columnSubType, (String) value, session);
-                    if (result != null) {
-                        return result;
-                    }
                     return mapExceptions(
                             () ->
                                     converters
-                                            .getDateTimeConverter()
-                                            .getTimestamp(value, columnType, columnSubType, tz, scale));
+                                            .getStructuredTypeDateTimeConverter()
+                                            .getTimestamp((JsonStringHashMap<String, Object>) value, fieldMetadata.getBase(), tz, scale));
                 });
     }
 
