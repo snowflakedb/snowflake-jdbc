@@ -84,7 +84,6 @@ public enum SFSessionProperty {
 
   JDBC_ARROW_TREAT_DECIMAL_AS_INT("jdbc_arrow_treat_decimal_as_int", false, Boolean.class);
 
-
   // property key in string
   private String propertyKey;
 
