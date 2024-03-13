@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
+ * Copyright (c) 2024 Snowflake Computing Inc. All right reserved.
  */
 package net.snowflake.client.jdbc;
 
@@ -16,13 +16,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.commons.text.RandomStringGenerator;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,21 +29,31 @@ import org.junit.runners.Parameterized;
 public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
   // Max LOB size is testable from version 3.15.0 and above.
-  // TODO: increase max size to 128 * 1024 * 1024
   private static int maxLobSize = 16 * 1024 * 1024;
   private static int largeLobSize = maxLobSize / 2;
   private static int mediumLobSize = largeLobSize / 2;
   private static int originLobSize = mediumLobSize / 2;
   private static int smallLobSize = 16;
 
+  private static Map<Integer, String> LobSizeStringValues =
+      new HashMap<Integer, String>() {
+        {
+          put(smallLobSize, generateRandomString(smallLobSize));
+          put(originLobSize, generateRandomString(originLobSize));
+          put(mediumLobSize, generateRandomString(mediumLobSize));
+          put(largeLobSize, generateRandomString(largeLobSize));
+          put(maxLobSize, generateRandomString(maxLobSize));
+        }
+      };
+
   @BeforeClass
   public static void setUp() {
-    // TODO: May need to increase MAX_JSON_STRING_LENGTH_JVM once we increase the max LOB size.
     System.setProperty(
-        ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, Integer.toString(45_000_000));
+        // the max json string should be ~1.33 for Arrow response so let's use 1.5 to be sure
+        ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, Integer.toString((int) (maxLobSize * 1.5)));
   }
 
-  @Parameterized.Parameters
+  @Parameterized.Parameters(name = "lobSize={0}, resultFormat={1}")
   public static Collection<Object[]> data() {
     int[] lobSizes =
         new int[] {smallLobSize, originLobSize, mediumLobSize, largeLobSize, maxLobSize};
@@ -64,9 +71,14 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
   private final String resultFormat;
 
-  public MaxLobSizeLatestIT(int lobSize, String resultFormat) {
+  public MaxLobSizeLatestIT(int lobSize, String resultFormat) throws SQLException {
     this.lobSize = lobSize;
     this.resultFormat = resultFormat;
+
+    try (Connection con = BaseJDBCTest.getConnection();
+        Statement stmt = con.createStatement()) {
+      createTable(lobSize, stmt);
+    }
   }
 
   private static String tableName = "my_lob_test";
@@ -82,35 +94,30 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
     return randomStringGenerator.generate(stringSize);
   }
 
-  private static void setResultFormat(Connection con, String format) throws SQLException {
-    try (Statement stmt = con.createStatement()) {
-      stmt.execute("alter session set jdbc_query_result_format = '" + format + "'");
-    }
+  private static void setResultFormat(Statement stmt, String format) throws SQLException {
+    stmt.execute("alter session set jdbc_query_result_format = '" + format + "'");
   }
 
-  private void createTable(int lobSize, Connection con) throws SQLException {
-    try (Statement stmt = con.createStatement()) {
-      String createTableQuery =
-          "create or replace table "
-              + tableName
-              + " (c1 varchar, c2 varchar("
-              + lobSize
-              + "), c3 int)";
-      stmt.execute(createTableQuery);
-    }
+  private void createTable(int lobSize, Statement stmt) throws SQLException {
+    String createTableQuery =
+        "create or replace table "
+            + tableName
+            + " (c1 varchar, c2 varchar("
+            + lobSize
+            + "), c3 int)";
+    stmt.execute(createTableQuery);
   }
 
   private void insertQuery(String varCharValue, int intValue, Connection con) throws SQLException {
     try (Statement stmt = con.createStatement()) {
-      stmt.executeUpdate(
-          executeInsert + "'" + varCharValue + "', '" + varCharValue + "', " + intValue + ")");
+      stmt.executeUpdate(executeInsert + "'abc', '" + varCharValue + "', " + intValue + ")");
     }
   }
 
   private void preparedInsertQuery(String varCharValue, int intValue, Connection con)
       throws SQLException {
     try (PreparedStatement pstmt = con.prepareStatement(executePreparedStatementInsert)) {
-      pstmt.setString(1, varCharValue);
+      pstmt.setString(1, "abc");
       pstmt.setString(2, varCharValue);
       pstmt.setInt(3, intValue);
 
@@ -118,8 +125,8 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
     }
   }
 
-  @After
-  public void tearDown() throws SQLException {
+  @AfterClass
+  public static void tearDown() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
       stmt.execute("Drop table if exists " + tableName);
@@ -130,19 +137,15 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
   public void testStandardInsertAndSelectWithMaxLobSizeEnabled() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
-      // TODO: Uncomment when ready to test with max lob size enabled.
-      // stmt.execute(enableMaxLobSize);
+      setResultFormat(stmt, resultFormat);
 
-      setResultFormat(con, resultFormat);
-      createTable(lobSize, con);
-
-      String varCharValue = generateRandomString(lobSize);
+      String varCharValue = LobSizeStringValues.get(lobSize);
       int intValue = new Random().nextInt();
       insertQuery(varCharValue, intValue, con);
 
       try (ResultSet rs = stmt.executeQuery(selectQuery)) {
-        rs.next();
-        assertEquals(varCharValue, rs.getString(1));
+        assertTrue(rs.next());
+        assertEquals("abc", rs.getString(1));
         assertEquals(varCharValue, rs.getString(2));
         assertEquals(intValue, rs.getInt(3));
       }
@@ -153,19 +156,15 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
   public void testPreparedInsertWithMaxLobSizeEnabled() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
-      // TODO: Uncomment when ready to test with max lob size enabled.
-      // stmt.execute(enableMaxLobSize);
+      setResultFormat(stmt, resultFormat);
 
-      setResultFormat(con, resultFormat);
-      createTable(lobSize, con);
-
-      String maxVarCharValue = generateRandomString(lobSize);
+      String maxVarCharValue = LobSizeStringValues.get(lobSize);
       int intValue = new Random().nextInt();
       preparedInsertQuery(maxVarCharValue, intValue, con);
 
       try (ResultSet rs = stmt.executeQuery(selectQuery)) {
-        rs.next();
-        assertEquals(maxVarCharValue, rs.getString(1));
+        assertTrue(rs.next());
+        assertEquals("abc", rs.getString(1));
         assertEquals(maxVarCharValue, rs.getString(2));
         assertEquals(intValue, rs.getInt(3));
       }
@@ -182,9 +181,9 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
     String filePathEscaped = filePath.replace("\\", "\\\\");
     String fileName = tempFile.getName();
 
-    String varCharValue = generateRandomString(lobSize);
+    String varCharValue = LobSizeStringValues.get(lobSize);
     int intValue = new Random().nextInt();
-    String fileInput = varCharValue + "," + varCharValue + "," + intValue;
+    String fileInput = "abc," + varCharValue + "," + intValue;
 
     // Print data to new temporary file
     try (PrintWriter out = new PrintWriter(filePath)) {
@@ -193,10 +192,7 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
-      // TODO: Uncomment when ready to test with max lob size enabled.
-      // stmt.execute(enableMaxLobSize);
-
-      createTable(lobSize, con);
+      setResultFormat(stmt, resultFormat);
 
       // Test PUT
       String sqlPut = "PUT 'file://" + filePathEscaped + "' @%" + tableName;
@@ -228,7 +224,7 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
       // Check that results are copied into table correctly
       try (ResultSet rsCopy = stmt.executeQuery("Select * from " + tableName)) {
         assertTrue(rsCopy.next());
-        assertEquals(varCharValue, rsCopy.getString(1));
+        assertEquals("abc", rsCopy.getString(1));
         assertEquals(varCharValue, rsCopy.getString(2));
         assertEquals(intValue, rsCopy.getInt(3));
       }
