@@ -1055,7 +1055,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   // Test getObject for numeric types when JDBC_TREAT_DECIMAL_AS_INT is set and using JSON result
   // format.
   @Test
-  public void testGetObjectForJSONResultFormatJDBCDecimalAsIntFalse() throws SQLException {
+  public void testGetObjectForJSONResultFormatUsingJDBCDecimalAsInt() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = 'JSON'");
