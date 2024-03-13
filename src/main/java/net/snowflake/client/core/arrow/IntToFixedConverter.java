@@ -107,8 +107,7 @@ public class IntToFixedConverter extends AbstractArrowVectorConverter {
   public Object toObject(int index) throws SFException {
     if (isNull(index)) {
       return null;
-    } else if (!context.getSession().isJdbcArrowTreatDecimalAsInt()
-        && !context.getSession().isJdbcTreatDecimalAsInt()) {
+    } else if (!shouldTreatDecimalAsInt()) {
       return BigDecimal.valueOf((long) getInt(index), sfScale);
     }
     return (long) getInt(index);
