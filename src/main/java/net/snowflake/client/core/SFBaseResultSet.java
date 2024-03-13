@@ -5,6 +5,7 @@
 package net.snowflake.client.core;
 
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
@@ -92,6 +94,8 @@ public abstract class SFBaseResultSet {
   public abstract Date getDate(int columnIndex, TimeZone tz) throws SFException;
 
   public abstract Object getObject(int columnIndex) throws SFException;
+
+  public abstract Array getArray(int columnIndex) throws SFException;
 
   public abstract BigDecimal getBigDecimal(int columnIndex) throws SFException;
 
@@ -192,5 +196,11 @@ public abstract class SFBaseResultSet {
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
       throws SQLException {
     return this.resultSetSerializable.splitBySize(maxSizeInBytes);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public Converters getConverters() {
+    logger.debug("Json converters weren't created");
+    return null;
   }
 }

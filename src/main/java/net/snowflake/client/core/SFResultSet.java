@@ -155,22 +155,7 @@ public class SFResultSet extends SFJsonResultSet {
       Telemetry telemetryClient,
       boolean sortResult)
       throws SQLException {
-    super(
-        resultSetSerializable.getTimeZone(),
-        new Converters(
-            resultSetSerializable.getTimeZone(),
-            session,
-            resultSetSerializable.getResultVersion(),
-            resultSetSerializable.isHonorClientTZForTimestampNTZ(),
-            resultSetSerializable.getTreatNTZAsUTC(),
-            resultSetSerializable.getUseSessionTimezone(),
-            resultSetSerializable.getFormatDateWithTimeZone(),
-            resultSetSerializable.getBinaryFormatter(),
-            resultSetSerializable.getDateFormatter(),
-            resultSetSerializable.getTimeFormatter(),
-            resultSetSerializable.getTimestampNTZFormatter(),
-            resultSetSerializable.getTimestampLTZFormatter(),
-            resultSetSerializable.getTimestampTZFormatter()));
+    super(resultSetSerializable.getTimeZone(), new Converters(session, resultSetSerializable));
     this.resultSetSerializable = resultSetSerializable;
     this.columnCount = 0;
     this.sortResult = sortResult;
