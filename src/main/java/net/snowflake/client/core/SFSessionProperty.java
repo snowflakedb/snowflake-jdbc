@@ -81,6 +81,8 @@ public enum SFSessionProperty {
   ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class),
 
   JDBC_ARROW_TREAT_DECIMAL_AS_INT("jdbc_arrow_treat_decimal_as_int", false, Boolean.class);
+  
+  DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

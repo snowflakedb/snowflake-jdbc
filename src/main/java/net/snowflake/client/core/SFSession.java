@@ -469,6 +469,11 @@ public class SFSession extends SFBaseSession {
             setEnablePatternSearch(getBooleanValue(propertyValue));
           }
           break;
+        case DISABLE_GCS_DEFAULT_CREDENTIALS:
+          if (propertyValue != null) {
+            setDisableGcsDefaultCredentials(getBooleanValue(propertyValue));
+          }
+          break;
 
         case JDBC_ARROW_TREAT_DECIMAL_AS_INT:
           if (propertyValue != null) {
