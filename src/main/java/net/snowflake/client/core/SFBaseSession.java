@@ -137,9 +137,6 @@ public abstract class SFBaseSession {
   // we need to allow for it to maintain backwards compatibility.
   private boolean enablePatternSearch = true;
 
-  /** Disable lookup for default credentials by GCS library */
-  private boolean disableGcsDefaultCredentials = false;
-
   private Map<String, Object> commonParameters;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
@@ -736,14 +733,6 @@ public abstract class SFBaseSession {
 
   public void setEnablePatternSearch(boolean enablePatternSearch) {
     this.enablePatternSearch = enablePatternSearch;
-  }
-
-  public boolean getDisableGcsDefaultCredentials() {
-    return disableGcsDefaultCredentials;
-  }
-
-  public void setDisableGcsDefaultCredentials(boolean disableGcsDefaultCredentials) {
-    this.disableGcsDefaultCredentials = disableGcsDefaultCredentials;
   }
 
   public int getClientResultChunkSize() {

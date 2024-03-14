@@ -390,4 +390,79 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
       assertEquals(SqlState.IO_ERROR, e.getSQLState());
     }
   }
+
+  private SFLoginInput createOktaLoginInput() {
+    SFLoginInput input = new SFLoginInput();
+    input.setServerUrl("https://testauth.okta.com");
+    input.setUserName("MOCK_USERNAME");
+    input.setPassword("MOCK_PASSWORD");
+    input.setAccountName("MOCK_ACCOUNT_NAME");
+    input.setAppId("MOCK_APP_ID");
+    input.setOCSPMode(OCSPMode.FAIL_OPEN);
+    input.setHttpClientSettingsKey(new HttpClientSettingsKey(OCSPMode.FAIL_OPEN));
+    input.setLoginTimeout(1000);
+    input.setSessionParameters(new HashMap<>());
+    input.setAuthenticator("https://testauth.okta.com");
+    return input;
+  }
+
+  // Testing retry with Okta calls the service to get a new unique token. This is valid after
+  // version 3.15.0.
+  @Test
+  public void testOktaAuthRetry() throws Throwable {
+    SFLoginInput loginInput = createOktaLoginInput();
+    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+    SnowflakeSQLException ex =
+        new SnowflakeSQLException(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT, 0, true, 0);
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpPost.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
+                  + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
+                  + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}")
+          .thenThrow(ex)
+          .thenReturn(
+              "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
+                  + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
+                  + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeRequestWithoutCookies(
+                      Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(AtomicBoolean.class),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpGet.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn("<body><form action=\"https://testauth.okta.com\"></form></body>");
+
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+    }
+  }
 }

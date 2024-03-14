@@ -35,6 +35,7 @@ import net.snowflake.client.core.SFException;
 /** Snowflake ResultSet implementation */
 public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     implements SnowflakeResultSet, ResultSet {
+  private final SFBaseResultSet sfBaseResultSet;
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -49,7 +50,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    */
   public SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement)
       throws SQLException {
-
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
@@ -101,6 +101,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
       SFBaseResultSet sfBaseResultSet, SnowflakeResultSetSerializableV1 resultSetSerializable)
       throws SQLException {
     super(resultSetSerializable);
+
     this.sfBaseResultSet = sfBaseResultSet;
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
   }
@@ -265,16 +266,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     raiseSQLExceptionIfResultSetIsClosed();
     try {
       return sfBaseResultSet.getObject(columnIndex);
-    } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    }
-  }
-
-  public Array getArray(int columnIndex) throws SQLException {
-    raiseSQLExceptionIfResultSetIsClosed();
-    try {
-      return sfBaseResultSet.getArray(columnIndex);
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());

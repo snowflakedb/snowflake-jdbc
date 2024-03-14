@@ -469,11 +469,6 @@ public class SFSession extends SFBaseSession {
             setEnablePatternSearch(getBooleanValue(propertyValue));
           }
           break;
-        case DISABLE_GCS_DEFAULT_CREDENTIALS:
-          if (propertyValue != null) {
-            setDisableGcsDefaultCredentials(getBooleanValue(propertyValue));
-          }
-          break;
 
         default:
           break;

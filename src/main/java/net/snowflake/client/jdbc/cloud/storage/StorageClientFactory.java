@@ -22,7 +22,7 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
  */
 public class StorageClientFactory {
 
-  private static final SFLogger logger = SFLoggerFactory.getLogger(StorageClientFactory.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeS3Client.class);
 
   private static StorageClientFactory factory;
 

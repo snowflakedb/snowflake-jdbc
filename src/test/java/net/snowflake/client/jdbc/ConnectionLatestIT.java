@@ -403,10 +403,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       SnowflakeResultSet sfResultSet = rs1.unwrap(SnowflakeResultSet.class);
       // status should change state to RUNNING and then to SUCCESS
       await()
-          .atMost(Duration.ofSeconds(10))
+          .atMost(Duration.ofSeconds(5))
           .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.RUNNING));
       await()
-          .atMost(Duration.ofSeconds(50))
+          .atMost(Duration.ofSeconds(5))
           .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.SUCCESS));
     }
   }
