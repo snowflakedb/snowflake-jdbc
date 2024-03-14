@@ -8,14 +8,6 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 public class SqlInputTimestampUtil {
 
-  /**
-   * Helper function to convert system properties to boolean
-   *
-   * @param columnSubType column subtype value
-   * @param value value to convert
-   * @param session session object
-   * @return converted Timestamp object
-   */
   @SnowflakeJdbcInternalApi
   public static Timestamp getTimestampFromType(
       int columnSubType,

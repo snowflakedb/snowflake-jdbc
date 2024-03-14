@@ -36,11 +36,7 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
    */
   private SFTime toSFTime(int index) {
     long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
-    return toSFTime(val, context.getScale(columnIndex));
-  }
-
-  private static SFTime toSFTime(long val, int scale) {
-    return SFTime.fromFractionalSeconds(val, scale);
+    return SFTime.fromFractionalSeconds(val, context.getScale(columnIndex));
   }
 
   @Override
@@ -54,7 +50,7 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
   }
 
   public static Time getTime(long value, int scale, boolean useSessionTimezone) throws SFException {
-    SFTime sfTime = toSFTime(value, scale);
+    SFTime sfTime = SFTime.fromFractionalSeconds(value, scale);
     Time ts =
         new Time(sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
     if (useSessionTimezone) {

@@ -124,8 +124,6 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
   public static Timestamp getTimestamp(long epoch, int timeZoneIndex, int scale)
       throws SFException {
     Timestamp ts = ArrowResultUtil.toJavaTimestamp(epoch, scale);
-    Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-
-    return adjustedTimestamp;
+    return ResultUtil.adjustTimestamp(ts);
   }
 }

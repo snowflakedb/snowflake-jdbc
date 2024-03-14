@@ -144,15 +144,8 @@ public class ArrowSqlInput implements SFSqlInput {
           int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
           return mapExceptions(
-              () -> {
-                if (value instanceof byte[]) {
-                  return (byte[]) value;
-                } else {
-                  return converters
-                      .getBytesConverter()
-                      .getBytes(value, columnType, columnSubType, scale);
-                }
-              });
+              () ->
+                  converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
         });
   }
 
