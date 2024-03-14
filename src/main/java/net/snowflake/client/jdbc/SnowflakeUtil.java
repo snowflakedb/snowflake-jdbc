@@ -4,26 +4,11 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSessionProperty;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.ThrowingCallable;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import net.snowflake.common.core.SqlState;
-import net.snowflake.common.util.ClassUtil;
-import net.snowflake.common.util.FixedViewColumn;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -32,7 +17,6 @@ import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.sql.Time;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -49,8 +33,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.ThrowingCallable;
+import net.snowflake.common.core.SqlState;
+import net.snowflake.common.util.ClassUtil;
+import net.snowflake.common.util.FixedViewColumn;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
 
 /**
  * @author jhuang

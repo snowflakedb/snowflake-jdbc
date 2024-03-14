@@ -207,9 +207,16 @@ public class Converters {
 
   @SnowflakeJdbcInternalApi
   public JsonStringToTypeConverter timestampConverter(
-          int columnSubType, int columnType, int scale, SFBaseSession session, TimeZone tz, TimeZone sessionTimezone) {
+      int columnSubType,
+      int columnType,
+      int scale,
+      SFBaseSession session,
+      TimeZone tz,
+      TimeZone sessionTimezone) {
     return value -> {
-      Timestamp result = SqlInputTimestampUtil.getTimestampFromType(columnSubType, (String) value, session, sessionTimezone, tz);
+      Timestamp result =
+          SqlInputTimestampUtil.getTimestampFromType(
+              columnSubType, (String) value, session, sessionTimezone, tz);
       if (result != null) {
         return result;
       }
