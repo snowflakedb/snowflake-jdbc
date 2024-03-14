@@ -4,11 +4,26 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.ThrowingCallable;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import net.snowflake.common.core.SqlState;
+import net.snowflake.common.util.ClassUtil;
+import net.snowflake.common.util.FixedViewColumn;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -34,22 +49,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.core.*;
-import net.snowflake.client.core.HttpClientSettingsKey;
-import net.snowflake.client.core.OCSPMode;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFSessionProperty;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.ThrowingCallable;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import net.snowflake.common.core.SqlState;
-import net.snowflake.common.util.ClassUtil;
-import net.snowflake.common.util.FixedViewColumn;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
+
+import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
 /**
  * @author jhuang
@@ -765,39 +766,6 @@ public class SnowflakeUtil {
     c.add(Calendar.MILLISECOND, nanos / 1000000);
     ts.setTime(c.getTimeInMillis());
     return ts;
-  }
-
-  /**
-   * Helper function to convert system properties to boolean
-   *
-   * @param columnSubType column subtype value
-   * @param value value to convert
-   * @param session session object
-   * @return converted Timestamp object
-   */
-  @SnowflakeJdbcInternalApi
-  public static Timestamp getTimestampFromType(
-      int columnSubType, String value, SFBaseSession session) {
-    if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
-      return getTimestampFromFormat("TIMESTAMP_LTZ_OUTPUT_FORMAT", value, session);
-    } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ
-        || columnSubType == Types.TIMESTAMP) {
-      return getTimestampFromFormat("TIMESTAMP_NTZ_OUTPUT_FORMAT", value, session);
-    } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-      return getTimestampFromFormat("TIMESTAMP_TZ_OUTPUT_FORMAT", value, session);
-    } else {
-      return null;
-    }
-  }
-
-  private static Timestamp getTimestampFromFormat(
-      String format, String value, SFBaseSession session) {
-    String rawFormat = (String) session.getCommonParameters().get(format);
-    if (rawFormat == null || rawFormat.equals("")) {
-      rawFormat = (String) session.getCommonParameters().get("TIMESTAMP_OUTPUT_FORMAT");
-    }
-    SnowflakeDateTimeFormat formatter = SnowflakeDateTimeFormat.fromSqlFormat(rawFormat);
-    return formatter.parse(value).getTimestamp();
   }
 
   /**

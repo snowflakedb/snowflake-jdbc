@@ -355,7 +355,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
               columnSubType,
               getStream(
                       nodeElements,
-                      converters.timestampConverter(columnSubType, columnType, scale, session))
+                      converters.timestampConverter(columnSubType, columnType, scale, session, null, sessionTimezone))
                   .toArray(Timestamp[]::new));
         case Types.BOOLEAN:
           return new SfSqlArray(
