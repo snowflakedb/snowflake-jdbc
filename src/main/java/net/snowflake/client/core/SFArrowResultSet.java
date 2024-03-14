@@ -198,7 +198,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.dateFormatter = resultSetSerializable.getDateFormatter();
     this.timeFormatter = resultSetSerializable.getTimeFormatter();
     this.sessionTimezone = resultSetSerializable.getTimeZone();
-    this.honorClientTZForTimestampNTZ = resultSetSerializable.isHonorClientTZForTimestampNTZ();
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
     this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
