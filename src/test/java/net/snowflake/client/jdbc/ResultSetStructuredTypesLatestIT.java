@@ -34,7 +34,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   private final ResultSetFormatType queryResultFormat;
 
   public ResultSetStructuredTypesLatestIT() {
-    this(ResultSetFormatType.NATIVE_ARROW);
+    this(ResultSetFormatType.JSON);
   }
 
   protected ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
