@@ -115,7 +115,7 @@ public class NumberConverter {
     if (obj == null) {
       return null;
     }
-    BigDecimal value = new BigDecimal(obj.toString());
+    BigDecimal value = getBigDecimal(obj.toString(), columnType);
     value = value.setScale(scale, RoundingMode.HALF_UP);
     return value;
   }

@@ -117,7 +117,6 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
     expectFeatureNotSupportedException(() -> resultSet.getObject(1, Collections.emptyMap()));
     expectFeatureNotSupportedException(() -> resultSet.getRef(1));
     expectFeatureNotSupportedException(() -> resultSet.getBlob(1));
-    expectFeatureNotSupportedException(() -> resultSet.getArray(1));
     expectFeatureNotSupportedException(() -> resultSet.getURL(1));
     expectFeatureNotSupportedException(() -> resultSet.getRowId(1));
     expectFeatureNotSupportedException(() -> resultSet.getNClob(1));
