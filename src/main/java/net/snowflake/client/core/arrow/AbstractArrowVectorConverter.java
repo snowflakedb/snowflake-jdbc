@@ -9,6 +9,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -146,9 +147,8 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.BIG_DECIMAL_STR, "");
   }
 
-  public boolean shouldTreatDecimalAsInt(DataConversionContext context) {
-    if (!context.getSession().isJdbcArrowTreatDecimalAsInt()
-        && !context.getSession().isJdbcTreatDecimalAsInt()) {
+  public boolean shouldTreatDecimalAsInt(SFBaseSession session) {
+    if (!session.isJdbcArrowTreatDecimalAsInt() && !session.isJdbcTreatDecimalAsInt()) {
       return false;
     }
     return true;
