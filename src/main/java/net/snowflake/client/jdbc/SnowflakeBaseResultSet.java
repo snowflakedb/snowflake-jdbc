@@ -4,9 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
@@ -29,17 +26,14 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
-import net.snowflake.client.core.JsonSqlInput;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFBaseResultSet;
+import java.util.function.Supplier;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.structs.SQLDataCreationHelper;
+import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -50,7 +44,6 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   private final int resultSetType;
   private final int resultSetConcurrency;
   private final int resultSetHoldability;
-  protected SFBaseResultSet sfBaseResultSet;
   // Snowflake supports sessionless result set. For this case, there is no
   // statement for this result set.
   protected final Statement statement;
@@ -58,7 +51,6 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   protected Map<String, Object> parameters = new HashMap<>();
   private int fetchSize = 0;
   protected SFBaseSession session = null;
-  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   SnowflakeBaseResultSet(Statement statement) throws SQLException {
     this.statement = statement;
@@ -1347,62 +1339,25 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (SQLData.class.isAssignableFrom(type)) {
-      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+      Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
+      SQLData instance =
+          typeFactory
+              .map(Supplier::get)
+              .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
       SQLInput sqlInput = (SQLInput) getObject(columnIndex);
       instance.readSQL(sqlInput, null);
       return (T) instance;
-    } else if (Map.class.isAssignableFrom(type)) {
-      JsonNode jsonNode = ((JsonSqlInput) getObject(columnIndex)).getInput();
-      return (T) OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
     } else {
       return (T) getObject(columnIndex);
     }
   }
 
-  public <T> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
-    T[] sqlInputs = getArray(columnIndex, type);
-    return Arrays.asList(sqlInputs);
-  }
-
-  public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
-    Map[] jsonMaps = (Map[]) getArray(columnIndex).getArray();
-    T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, jsonMaps.length);
-    int counter = 0;
-    for (Map map : jsonMaps) {
-      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-      SQLInput sqlInput =
-          new JsonSqlInput(
-              OBJECT_MAPPER.convertValue(map, JsonNode.class),
-              session,
-              sfBaseResultSet.getConverters(),
-              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields());
-      instance.readSQL(sqlInput, null);
-      arr[counter++] = (T) instance;
+  private SQLData createUsingReflection(Class<? extends SQLData> type) {
+    try {
+      return type.newInstance();
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
     }
-
-    return arr;
-  }
-
-  public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
-    Object object = getObject(columnIndex);
-    JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-    Map<String, Object> map =
-        OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
-    Map<String, T> resultMap = new HashMap<>();
-
-    for (Map.Entry<String, Object> entry : map.entrySet()) {
-      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-      SQLInput sqlInput =
-          new JsonSqlInput(
-              jsonNode.get(entry.getKey()),
-              session,
-              sfBaseResultSet.getConverters(),
-              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields());
-      instance.readSQL(sqlInput, null);
-      resultMap.put(entry.getKey(), (T) instance);
-    }
-
-    return resultMap;
   }
 
   @Override

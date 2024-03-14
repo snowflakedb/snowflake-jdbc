@@ -13,7 +13,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.sql.Array;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Time;
@@ -507,12 +506,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setSessionTimeZone(timeZone);
     Object obj = converter.toObject(index);
     return handleObjectType(columnIndex, obj);
-  }
-
-  @Override
-  public Array getArray(int columnIndex) throws SFException {
-    //    TODO: handleArray SNOW-969794
-    throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type ARRAY");
   }
 
   private Object handleObjectType(int columnIndex, Object obj) throws SFException {

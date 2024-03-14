@@ -16,7 +16,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.sql.Time;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -40,7 +39,6 @@ import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -184,7 +182,7 @@ public class SnowflakeUtil {
     String colSrcDatabase = colNode.path("database").asText();
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
-    List<FieldMetadata> fieldsMetadata = getFieldMetadata(jdbcTreatDecimalAsInt, colNode);
+    List<FieldMetadata> fieldsMetadata = getFieldMetadata(fixedColType, colNode);
 
     boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
 
@@ -275,11 +273,10 @@ public class SnowflakeUtil {
 
       case ARRAY:
         columnTypeInfo =
-            new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
+            new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
 
       case OBJECT:
-      case MAP:
         int targetType =
             "GEOGRAPHY".equals(extColTypeName) || "GEOMETRY".equals(extColTypeName)
                 ? Types.VARCHAR
@@ -332,8 +329,8 @@ public class SnowflakeUtil {
     return Optional.ofNullable(extColTypeName).orElse(defaultValue);
   }
 
-  static List<FieldMetadata> createFieldsMetadata(
-      ArrayNode fieldsJson, boolean jdbcTreatDecimalAsInt) throws SnowflakeSQLLoggedException {
+  static List<FieldMetadata> createFieldsMetadata(ArrayNode fieldsJson, int fixedColType)
+      throws SnowflakeSQLLoggedException {
     List<FieldMetadata> fields = new ArrayList<>();
     for (JsonNode node : fieldsJson) {
       String colName = node.path("name").asText();
@@ -343,8 +340,7 @@ public class SnowflakeUtil {
       boolean nullable = node.path("nullable").asBoolean();
       int length = node.path("length").asInt();
       boolean fixed = node.path("fixed").asBoolean();
-      int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
-      List<FieldMetadata> internalFields = getFieldMetadata(jdbcTreatDecimalAsInt, node);
+      List<FieldMetadata> internalFields = getFieldMetadata(fixedColType, node);
       JsonNode outputType = node.path("outputType");
       JsonNode extColTypeNameNode = node.path("extTypeName");
       String extColTypeName = null;
@@ -370,11 +366,11 @@ public class SnowflakeUtil {
     return fields;
   }
 
-  private static List<FieldMetadata> getFieldMetadata(boolean jdbcTreatDecimalAsInt, JsonNode node)
+  private static List<FieldMetadata> getFieldMetadata(int fixedColType, JsonNode node)
       throws SnowflakeSQLLoggedException {
     if (!node.path("fields").isEmpty()) {
       ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
-      return createFieldsMetadata(internalFieldsJson, jdbcTreatDecimalAsInt);
+      return createFieldsMetadata(internalFieldsJson, fixedColType);
     } else {
       return new ArrayList<>();
     }
@@ -762,39 +758,6 @@ public class SnowflakeUtil {
     c.add(Calendar.MILLISECOND, nanos / 1000000);
     ts.setTime(c.getTimeInMillis());
     return ts;
-  }
-
-  /**
-   * Helper function to convert system properties to boolean
-   *
-   * @param columnSubType column subtype value
-   * @param value value to convert
-   * @param session session object
-   * @return converted Timestamp object
-   */
-  @SnowflakeJdbcInternalApi
-  public static Timestamp getTimestampFromType(
-      int columnSubType, String value, SFBaseSession session) {
-    if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
-      return getTimestampFromFormat("TIMESTAMP_LTZ_OUTPUT_FORMAT", value, session);
-    } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ
-        || columnSubType == Types.TIMESTAMP) {
-      return getTimestampFromFormat("TIMESTAMP_NTZ_OUTPUT_FORMAT", value, session);
-    } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-      return getTimestampFromFormat("TIMESTAMP_TZ_OUTPUT_FORMAT", value, session);
-    } else {
-      return null;
-    }
-  }
-
-  private static Timestamp getTimestampFromFormat(
-      String format, String value, SFBaseSession session) {
-    String rawFormat = (String) session.getCommonParameters().get(format);
-    if (rawFormat == null || rawFormat.equals("")) {
-      rawFormat = (String) session.getCommonParameters().get("TIMESTAMP_OUTPUT_FORMAT");
-    }
-    SnowflakeDateTimeFormat formatter = SnowflakeDateTimeFormat.fromSqlFormat(rawFormat);
-    return formatter.parse(value).getTimestamp();
   }
 
   /**

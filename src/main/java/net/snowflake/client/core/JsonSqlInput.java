@@ -195,8 +195,7 @@ public class JsonSqlInput implements SFSqlInput {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
           int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
-          Timestamp result =
-              SnowflakeUtil.getTimestampFromType(columnSubType, (String) value, session);
+          Timestamp result = getTimestampFromType(columnSubType, (String) value);
           if (result != null) {
             return result;
           }

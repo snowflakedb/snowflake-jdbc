@@ -116,13 +116,13 @@ public class TestUtil {
    * @param action action to execute when schema was created
    * @throws Exception when any error occurred
    */
-  public static void withRandomSchema(
-      Statement statement, ThrowingConsumer<String, Exception> action) throws Exception {
+  public static void withRandomSchema(Statement statement, ThrowingConsumer<String> action)
+      throws Exception {
     String customSchema =
         GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
     try {
       statement.execute("CREATE OR REPLACE SCHEMA " + customSchema);
-      action.accept(customSchema);
+      action.call(customSchema);
     } finally {
       statement.execute("DROP SCHEMA " + customSchema);
     }
