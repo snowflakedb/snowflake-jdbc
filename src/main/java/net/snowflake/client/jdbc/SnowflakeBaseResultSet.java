@@ -1376,8 +1376,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
               session,
               sfBaseResultSet.getConverters(),
               sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
-              sfBaseResultSet.getSessionTimezone()
-          );
+              sfBaseResultSet.getSessionTimezone());
       instance.readSQL(sqlInput, null);
       arr[counter++] = (T) instance;
     }
@@ -1400,8 +1399,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
               session,
               sfBaseResultSet.getConverters(),
               sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
-              sfBaseResultSet.getSessionTimezone()
-      );
+              sfBaseResultSet.getSessionTimezone());
       instance.readSQL(sqlInput, null);
       resultMap.put(entry.getKey(), (T) instance);
     }

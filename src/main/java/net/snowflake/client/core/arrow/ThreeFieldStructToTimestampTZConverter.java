@@ -83,7 +83,13 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
     int timeZoneIndex = timeZoneIndices.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
-    return getTimestamp(epoch, fraction, timeZoneIndex, fromToString, context.getResultVersion(), useSessionTimezone);
+    return getTimestamp(
+        epoch,
+        fraction,
+        timeZoneIndex,
+        fromToString,
+        context.getResultVersion(),
+        useSessionTimezone);
   }
 
   @Override
@@ -125,13 +131,13 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   }
 
   public static Timestamp getTimestamp(
-          long epoch,
-          int fraction,
-          int timeZoneIndex,
-          boolean fromToString,
-          long resultVersion,
-          boolean useSessionTimezone
-  ) throws SFException {
+      long epoch,
+      int fraction,
+      int timeZoneIndex,
+      boolean fromToString,
+      long resultVersion,
+      boolean useSessionTimezone)
+      throws SFException {
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
       if (fromToString) {
         throw new TimestampOperationNotAvailableException(epoch, fraction);

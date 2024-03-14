@@ -272,12 +272,11 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     try {
       JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
       return new JsonSqlInput(
-              jsonNode,
-              session,
-              converters,
-              resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
-              sessionTimeZone
-      );
+          jsonNode,
+          session,
+          converters,
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
+          sessionTimeZone);
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }

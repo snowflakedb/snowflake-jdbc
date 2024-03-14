@@ -207,7 +207,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
             break;
 
           case OBJECT:
-            converters.add(new StructConverter(vector, i , context));
+            converters.add(new StructConverter(vector, i, context));
             break;
 
           case BINARY:

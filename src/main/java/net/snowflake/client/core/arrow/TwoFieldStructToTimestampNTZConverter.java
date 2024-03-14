@@ -75,15 +75,14 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
     return getTimestamp(
-            epoch,
-            fraction,
-            fromToString,
-            tz,
-            sessionTimeZone,
-            treatNTZasUTC,
-            useSessionTimezone,
-            context.getHonorClientTZForTimestampNTZ()
-    );
+        epoch,
+        fraction,
+        fromToString,
+        tz,
+        sessionTimeZone,
+        treatNTZasUTC,
+        useSessionTimezone,
+        context.getHonorClientTZForTimestampNTZ());
   }
 
   @Override
@@ -124,7 +123,16 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
         SnowflakeUtil.BOOLEAN_STR, val);
   }
 
-  public static Timestamp getTimestamp(long epoch, int fraction, boolean fromToString, TimeZone tz, TimeZone sessionTimeZone, boolean treatNTZasUTC, boolean useSessionTimezone, boolean honorClientTZForTimestampNTZ) throws SFException {
+  public static Timestamp getTimestamp(
+      long epoch,
+      int fraction,
+      boolean fromToString,
+      TimeZone tz,
+      TimeZone sessionTimeZone,
+      boolean treatNTZasUTC,
+      boolean useSessionTimezone,
+      boolean honorClientTZForTimestampNTZ)
+      throws SFException {
 
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
       if (fromToString) {
@@ -144,8 +152,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
     // If JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=false, default behavior is to honor
     // client timezone for NTZ time. Move NTZ timestamp offset to correspond to
     // client's timezone. UseSessionTimezone overrides treatNTZasUTC.
-    if (!fromToString
-            && (honorClientTZForTimestampNTZ && !treatNTZasUTC) || useSessionTimezone) {
+    if (!fromToString && (honorClientTZForTimestampNTZ && !treatNTZasUTC) || useSessionTimezone) {
       ts = ArrowResultUtil.moveToTimeZone(ts, NTZ, tz);
     }
     return ResultUtil.adjustTimestamp(ts);

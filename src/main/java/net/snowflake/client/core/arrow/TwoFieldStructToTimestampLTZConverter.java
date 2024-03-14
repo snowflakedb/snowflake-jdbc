@@ -116,12 +116,12 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   }
 
   public static Timestamp getTimestamp(
-          long epoch,
-          int fraction,
-          boolean fromToString,
-          TimeZone sessionTimeZone,
-          boolean useSessionTimezone
-  ) throws SFException {
+      long epoch,
+      int fraction,
+      boolean fromToString,
+      TimeZone sessionTimeZone,
+      boolean useSessionTimezone)
+      throws SFException {
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
       if (fromToString) {
         throw new TimestampOperationNotAvailableException(epoch, fraction);
@@ -130,7 +130,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
       }
     }
     Timestamp ts =
-            ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
+        ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
     return ResultUtil.adjustTimestamp(ts);
   }
 }

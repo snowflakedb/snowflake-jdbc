@@ -10,20 +10,20 @@ import org.apache.arrow.vector.complex.StructVector;
 @SnowflakeJdbcInternalApi
 public class StructConverter extends AbstractArrowVectorConverter {
 
-    private final StructVector structVector;
+  private final StructVector structVector;
 
-    public StructConverter(ValueVector vector, int columnIndex, DataConversionContext context) {
-        super(SnowflakeType.OBJECT.name(), vector, columnIndex, context);
-        structVector = (StructVector) vector;
-    }
+  public StructConverter(ValueVector vector, int columnIndex, DataConversionContext context) {
+    super(SnowflakeType.OBJECT.name(), vector, columnIndex, context);
+    structVector = (StructVector) vector;
+  }
 
-    @Override
-    public Object toObject(int index) throws SFException {
-        return structVector.getObject(index);
-    }
+  @Override
+  public Object toObject(int index) throws SFException {
+    return structVector.getObject(index);
+  }
 
-    @Override
-    public String toString(int index) throws SFException {
-        return structVector.getObject(index).toString();
-    }
+  @Override
+  public String toString(int index) throws SFException {
+    return structVector.getObject(index).toString();
+  }
 }

@@ -99,7 +99,9 @@ public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter 
         SnowflakeUtil.BOOLEAN_STR, val);
   }
 
-  public static Timestamp getTimestamp(long val, TimeZone tz, int scale, boolean honorClientTZForTimestampNTZ, boolean fromToString) throws SFException {
+  public static Timestamp getTimestamp(
+      long val, TimeZone tz, int scale, boolean honorClientTZForTimestampNTZ, boolean fromToString)
+      throws SFException {
     if (tz == null) {
       tz = TimeZone.getDefault();
     }

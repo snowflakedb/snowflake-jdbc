@@ -506,8 +506,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setSessionTimeZone(sessionTimezone);
     Object obj = converter.toObject(index);
     int type = resultSetMetaData.getColumnType(columnIndex);
-    if (type == Types.STRUCT &&
-            Boolean.parseBoolean(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
+    if (type == Types.STRUCT
+        && Boolean.parseBoolean(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
       if (converter instanceof VarCharConverter) {
         return createJsonSqlInput(columnIndex, obj);
       } else if (converter instanceof StructConverter) {
@@ -521,11 +521,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     try {
       JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
       return new JsonSqlInput(
-              jsonNode,
-              session,
-              jsonConverters,
-              resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
-              sessionTimezone);
+          jsonNode,
+          session,
+          jsonConverters,
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
+          sessionTimezone);
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }
@@ -533,11 +533,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   private Object createArrowSqlInput(int columnIndex, JsonStringHashMap<String, Object> input) {
     return new ArrowSqlInput(
-            input,
-            session,
-            jsonConverters,
-            resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields()
-    );
+        input,
+        session,
+        jsonConverters,
+        resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
   }
 
   @Override

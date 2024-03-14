@@ -66,7 +66,6 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int timeZoneIndex = timeZoneIndices.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
-
     if (context.getResultVersion() > 0) {
       timeZone = SFTimestamp.convertTimezoneIndexToTimeZone(timeZoneIndex);
     } else {
@@ -122,7 +121,8 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.SHORT_STR, "");
   }
 
-  public static Timestamp getTimestamp(long epoch, int timeZoneIndex, int scale) throws SFException {
+  public static Timestamp getTimestamp(long epoch, int timeZoneIndex, int scale)
+      throws SFException {
     Timestamp ts = ArrowResultUtil.toJavaTimestamp(epoch, scale);
     Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
 

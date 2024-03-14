@@ -119,11 +119,13 @@ public class DateConverter extends AbstractArrowVectorConverter {
         SnowflakeUtil.BOOLEAN_STR, val);
   }
 
-  public static Date getDate(int value, TimeZone jvmTz, TimeZone sessionTimeZone, boolean useDateFormat) throws SFException {
-      if (jvmTz == null || sessionTimeZone == null || !useDateFormat) {
-        return ArrowResultUtil.getDate(value);
-      }
-      // Note: use default time zone to match with current getDate() behavior
-      return ArrowResultUtil.getDate(value, jvmTz, sessionTimeZone);
+  public static Date getDate(
+      int value, TimeZone jvmTz, TimeZone sessionTimeZone, boolean useDateFormat)
+      throws SFException {
+    if (jvmTz == null || sessionTimeZone == null || !useDateFormat) {
+      return ArrowResultUtil.getDate(value);
+    }
+    // Note: use default time zone to match with current getDate() behavior
+    return ArrowResultUtil.getDate(value, jvmTz, sessionTimeZone);
   }
 }

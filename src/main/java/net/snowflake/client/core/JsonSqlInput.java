@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
 import java.io.Reader;
@@ -33,8 +35,6 @@ import net.snowflake.client.util.ThrowingTriFunction;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
-
 @SnowflakeJdbcInternalApi
 public class JsonSqlInput implements SFSqlInput {
   private final JsonNode input;
@@ -46,7 +46,11 @@ public class JsonSqlInput implements SFSqlInput {
   private int currentIndex = 0;
 
   public JsonSqlInput(
-          JsonNode input, SFBaseSession session, Converters converters, List<FieldMetadata> fields, TimeZone sessionTimeZone) {
+      JsonNode input,
+      SFBaseSession session,
+      Converters converters,
+      List<FieldMetadata> fields,
+      TimeZone sessionTimeZone) {
     this.input = input;
     this.elements = input.elements();
     this.session = session;
@@ -196,7 +200,9 @@ public class JsonSqlInput implements SFSqlInput {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
           int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
-          Timestamp result = SqlInputTimestampUtil.getTimestampFromType(columnSubType, (String) value, session, sessionTimeZone, tz);
+          Timestamp result =
+              SqlInputTimestampUtil.getTimestampFromType(
+                  columnSubType, (String) value, session, sessionTimeZone, tz);
           if (result != null) {
             return result;
           }
@@ -285,7 +291,9 @@ public class JsonSqlInput implements SFSqlInput {
         (__, jsonNode, fieldMetadata) -> {
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
           instance.readSQL(
-              new JsonSqlInput(jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone), null);
+              new JsonSqlInput(
+                  jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone),
+              null);
           return (T) instance;
         });
   }

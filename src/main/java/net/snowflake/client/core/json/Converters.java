@@ -14,9 +14,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.util.JsonStringToTypeConverter;
@@ -71,13 +71,13 @@ public class Converters {
             session,
             this);
     structuredTypeDateTimeConverter =
-          new StructuredTypeDateTimeConverter(
-                  sessionTimeZone,
-                  resultVersion,
-                  honorClientTZForTimestampNTZ,
-                  treatNTZAsUTC,
-                  useSessionTimezone,
-                  formatDateWithTimeZone);
+        new StructuredTypeDateTimeConverter(
+            sessionTimeZone,
+            resultVersion,
+            honorClientTZForTimestampNTZ,
+            treatNTZAsUTC,
+            useSessionTimezone,
+            formatDateWithTimeZone);
   }
 
   @SnowflakeJdbcInternalApi

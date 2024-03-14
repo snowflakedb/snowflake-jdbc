@@ -56,13 +56,12 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
   public static Time getTime(long value, int scale, boolean useSessionTimezone) throws SFException {
     SFTime sfTime = toSFTime(value, scale);
     Time ts =
-            new Time(
-                    sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+        new Time(sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
     if (useSessionTimezone) {
       ts =
-              SnowflakeUtil.getTimeInSessionTimezone(
-                      SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
-                      sfTime.getNanosecondsWithinSecond());
+          SnowflakeUtil.getTimeInSessionTimezone(
+              SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
+              sfTime.getNanosecondsWithinSecond());
     }
     return ts;
   }
