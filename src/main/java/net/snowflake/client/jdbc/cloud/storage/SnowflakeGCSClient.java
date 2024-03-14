@@ -12,8 +12,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.gax.paging.Page;
 import com.google.api.gax.rpc.FixedHeaderProvider;
-import com.google.auth.oauth2.AccessToken;
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
@@ -45,7 +43,6 @@ import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFSessionProperty;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.MatDesc;
@@ -77,10 +74,6 @@ import org.apache.http.util.EntityUtils;
  * @author ppaulus
  */
 public class SnowflakeGCSClient implements SnowflakeStorageClient {
-  @SnowflakeJdbcInternalApi
-  public static final String DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME =
-      "net.snowflake.jdbc.disableGcsDefaultCredentials";
-
   private static final String GCS_ENCRYPTIONDATAPROP = "encryptiondata";
   private static final String localFileSep = systemGetProperty("file.separator");
   private static final String GCS_METADATA_PREFIX = "x-goog-meta-";
@@ -1207,19 +1200,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     try {
       String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
       if (accessToken != null) {
-        // We are authenticated with an oauth access token.
-        StorageOptions.Builder builder = StorageOptions.newBuilder();
-        if (areDisabledGcsDefaultCredentials(session)) {
-          logger.debug(
-              "Adding explicit credentials to avoid default credential lookup by the GCS client");
-          builder.setCredentials(GoogleCredentials.create(new AccessToken(accessToken, null)));
-        }
-
         // Using GoogleCredential with access token will cause IllegalStateException when the token
         // is expired and trying to refresh, which cause error cannot be caught. Instead, set a
         // header so we can caught the error code.
+
+        // We are authenticated with an oauth access token.
         this.gcsClient =
-            builder
+            StorageOptions.newBuilder()
                 .setHeaderProvider(
                     FixedHeaderProvider.create("Authorization", "Bearer " + accessToken))
                 .build()
@@ -1245,12 +1232,6 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     } catch (Exception ex) {
       throw new IllegalArgumentException("invalid_gcs_credentials");
     }
-  }
-
-  private static boolean areDisabledGcsDefaultCredentials(SFSession session) {
-    return session != null && session.getDisableGcsDefaultCredentials()
-        || SnowflakeUtil.convertSystemPropertyToBooleanValue(
-            DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, false);
   }
 
   private static boolean isSuccessStatusCode(int code) {
