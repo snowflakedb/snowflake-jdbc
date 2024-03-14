@@ -146,7 +146,7 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.BIG_DECIMAL_STR, "");
   }
 
-  public boolean shouldTreatDecimalAsInt() {
+  public boolean shouldTreatDecimalAsInt(DataConversionContext context) {
     if (!context.getSession().isJdbcArrowTreatDecimalAsInt()
         && !context.getSession().isJdbcTreatDecimalAsInt()) {
       return false;

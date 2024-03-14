@@ -137,7 +137,7 @@ public class BigIntToFixedConverter extends AbstractArrowVectorConverter {
   public Object toObject(int index) throws SFException {
     if (bigIntVector.isNull(index)) {
       return null;
-    } else if (!shouldTreatDecimalAsInt()) {
+    } else if (!shouldTreatDecimalAsInt(context)) {
       return BigDecimal.valueOf(getLong(index), sfScale);
     }
     return getLong(index);
