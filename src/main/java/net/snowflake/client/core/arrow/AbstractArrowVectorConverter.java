@@ -148,8 +148,10 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   }
 
   public boolean shouldTreatDecimalAsInt(SFBaseSession session) {
-    if (!session.isJdbcArrowTreatDecimalAsInt() && !session.isJdbcTreatDecimalAsInt()) {
-      return false;
+    if (session != null) {
+      if (!session.isJdbcArrowTreatDecimalAsInt() && !session.isJdbcTreatDecimalAsInt()) {
+        return false;
+      }
     }
     return true;
   }
