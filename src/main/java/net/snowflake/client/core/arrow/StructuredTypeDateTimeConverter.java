@@ -43,9 +43,9 @@ public class StructuredTypeDateTimeConverter {
         }
         switch (type) {
             case TIMESTAMP_LTZ:
-                return convertTimestampLtz(obj);
+                return convertTimestampLtz(obj, scale);
             case TIMESTAMP_NTZ:
-                return convertTimestampNtz(obj, tz);
+                return convertTimestampNtz(obj, tz, scale);
             case TIMESTAMP_TZ:
                 return convertTimestampTz(obj, scale);
         }
@@ -61,7 +61,7 @@ public class StructuredTypeDateTimeConverter {
         return BigIntToTimeConverter.getTime(value, scale, useSessionTimezone);
     }
 
-    private Timestamp convertTimestampLtz(Object obj) throws SFException {
+    private Timestamp convertTimestampLtz(Object obj, int scale) throws SFException {
         if (obj instanceof JsonStringHashMap) {
             JsonStringHashMap<String, Object> map = (JsonStringHashMap<String, Object>) obj;
             if (map.values().size() == 2) {
@@ -74,14 +74,14 @@ public class StructuredTypeDateTimeConverter {
                 );
             }
         } else if (obj instanceof Long) {
-
+            return BigIntToTimestampLTZConverter.getTimestamp((long) obj, scale);
         }
         throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                 "Unexpected Arrow Field for " + TIMESTAMP_LTZ + " and object type " + obj.getClass());
     }
 
 
-    private Timestamp convertTimestampNtz(Object obj, TimeZone tz) throws SFException {
+    private Timestamp convertTimestampNtz(Object obj, TimeZone tz, int scale) throws SFException {
         if (obj instanceof JsonStringHashMap) {
             JsonStringHashMap<String, Object> map = (JsonStringHashMap<String, Object>) obj;
             if (map.values().size() == 2) {
@@ -97,7 +97,13 @@ public class StructuredTypeDateTimeConverter {
                 );
         }
         } else if (obj instanceof Long) {
-
+            return BigIntToTimestampNTZConverter.getTimestamp(
+                    (long) obj,
+                    tz,
+                    scale,
+                    honorClientTZForTimestampNTZ,
+                    false
+            );
         }
         throw new SFException(ErrorCode.INVALID_VALUE_CONVERT,
                 "Unexpected Arrow Field for " + TIMESTAMP_NTZ + " and object type " + obj.getClass());

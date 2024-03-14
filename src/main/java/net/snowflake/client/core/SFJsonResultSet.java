@@ -101,7 +101,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
           jsonNode,
           session,
           converters,
-          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(), sessionTimeZone);
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }

@@ -55,7 +55,6 @@ public class Converters {
     structuredTypeDateTimeConverter =
           new StructuredTypeDateTimeConverter(
                   sessionTimeZone,
-                  session,
                   resultVersion,
                   honorClientTZForTimestampNTZ,
                   treatNTZAsUTC,

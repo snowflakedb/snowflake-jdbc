@@ -1,13 +1,10 @@
 package net.snowflake.client.core;
 
-import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.util.ThrowingBiFunction;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
 import java.io.InputStream;
@@ -15,8 +12,6 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
@@ -27,17 +22,15 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput implements SFSqlInput {
 
-    private final JsonStringHashMap<String, Object> input;
     private final SFBaseSession session;
-    private final Iterator<Object> elements;
+    private final Iterator<Object> structuredTypeFields;
     private final Converters converters;
     private final List<FieldMetadata> fields;
 
     private int currentIndex = 0;
 
     public ArrowSqlInput(JsonStringHashMap<String, Object> input, SFBaseSession session, Converters converters, List<FieldMetadata> fields) {
-        this.input = input;
-        this.elements = input.values().iterator();
+        this.structuredTypeFields = input.values().iterator();
         this.session = session;
         this.converters = converters;
         this.fields = fields;
@@ -137,8 +130,13 @@ public class ArrowSqlInput implements SFSqlInput {
                     int columnSubType = fieldMetadata.getType();
                     int scale = fieldMetadata.getScale();
                     return mapExceptions(
-                            () ->
-                                    converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
+                            () -> {
+                                if (value instanceof byte[]) {
+                                    return (byte[]) value;
+                                } else {
+                                    return converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale);
+                                }
+                            });
                 });
     }
 
@@ -281,6 +279,6 @@ public class ArrowSqlInput implements SFSqlInput {
     private <T> T withNextValue(
             ThrowingBiFunction<Object, FieldMetadata, T, SQLException> action)
             throws SQLException {
-        return action.apply(elements.next(), fields.get(currentIndex++));
+        return action.apply(structuredTypeFields.next(), fields.get(currentIndex++));
     }
 }

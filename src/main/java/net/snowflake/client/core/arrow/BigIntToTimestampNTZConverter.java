@@ -69,19 +69,8 @@ public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter 
       tz = TimeZone.getDefault();
     }
     long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
-
     int scale = context.getScale(columnIndex);
-
-    Timestamp ts = ArrowResultUtil.toJavaTimestamp(val, scale);
-
-    // Note: honorClientTZForTimestampNTZ is not enabled for toString method
-    if (!fromToString && context.getHonorClientTZForTimestampNTZ()) {
-      ts = ArrowResultUtil.moveToTimeZone(ts, NTZ, tz);
-    }
-
-    Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-
-    return adjustedTimestamp;
+    return getTimestamp(val, tz, scale, context.getHonorClientTZForTimestampNTZ(), fromToString);
   }
 
   @Override
@@ -108,5 +97,19 @@ public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter 
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);
+  }
+
+  public static Timestamp getTimestamp(long val, TimeZone tz, int scale, boolean honorClientTZForTimestampNTZ, boolean fromToString) throws SFException {
+    if (tz == null) {
+      tz = TimeZone.getDefault();
+    }
+    Timestamp ts = ArrowResultUtil.toJavaTimestamp(val, scale);
+
+    // Note: honorClientTZForTimestampNTZ is not enabled for toString method
+    if (!fromToString && honorClientTZForTimestampNTZ) {
+      ts = ArrowResultUtil.moveToTimeZone(ts, NTZ, tz);
+    }
+
+    return ResultUtil.adjustTimestamp(ts);
   }
 }

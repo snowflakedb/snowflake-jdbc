@@ -26,8 +26,6 @@ public class BytesConverter {
       // methods are needed
       // for different types.
       switch (columnType) {
-        case Types.BINARY:
-          return (byte[]) obj;
         case Types.FLOAT:
         case Types.DOUBLE:
           return ByteBuffer.allocate(Float8Vector.TYPE_WIDTH)

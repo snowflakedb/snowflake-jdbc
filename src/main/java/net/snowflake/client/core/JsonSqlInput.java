@@ -20,7 +20,6 @@ import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Iterator;
@@ -30,8 +29,6 @@ import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
-import net.snowflake.client.util.ThrowingCallable;
 import net.snowflake.client.util.ThrowingTriFunction;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
@@ -45,15 +42,17 @@ public class JsonSqlInput implements SFSqlInput {
   private final SFBaseSession session;
   private final Converters converters;
   private final List<FieldMetadata> fields;
+  private final TimeZone sessionTimeZone;
   private int currentIndex = 0;
 
   public JsonSqlInput(
-      JsonNode input, SFBaseSession session, Converters converters, List<FieldMetadata> fields) {
+          JsonNode input, SFBaseSession session, Converters converters, List<FieldMetadata> fields, TimeZone sessionTimeZone) {
     this.input = input;
     this.elements = input.elements();
     this.session = session;
     this.converters = converters;
     this.fields = fields;
+    this.sessionTimeZone = sessionTimeZone;
   }
 
   public JsonNode getInput() {
@@ -197,7 +196,7 @@ public class JsonSqlInput implements SFSqlInput {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
           int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
-          Timestamp result = SqlInputTimestampUtil.getTimestampFromType(columnSubType, (String) value, session);
+          Timestamp result = SqlInputTimestampUtil.getTimestampFromType(columnSubType, (String) value, session, sessionTimeZone, tz);
           if (result != null) {
             return result;
           }
@@ -286,7 +285,7 @@ public class JsonSqlInput implements SFSqlInput {
         (__, jsonNode, fieldMetadata) -> {
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
           instance.readSQL(
-              new JsonSqlInput(jsonNode, session, converters, fieldMetadata.getFields()), null);
+              new JsonSqlInput(jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone), null);
           return (T) instance;
         });
   }
