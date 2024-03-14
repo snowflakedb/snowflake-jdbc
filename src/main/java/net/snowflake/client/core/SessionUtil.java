@@ -665,6 +665,7 @@ public class SessionUtil {
 
                 data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
               } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
+                logger.debug("Retrieve new token for Okta authentication.");
                 // If we need to retry, we need to get a new Okta token
                 tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
                 data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
