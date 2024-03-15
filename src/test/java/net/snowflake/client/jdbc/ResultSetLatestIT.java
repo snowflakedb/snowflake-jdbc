@@ -73,6 +73,14 @@ public class ResultSetLatestIT extends ResultSet0IT {
     super(queryResultFormat);
   }
 
+  private String createTableSql =
+      "Create or replace table get_object_for_numeric_types (c1 INT, c2 BIGINT, c3 SMALLINT, c4 TINYINT) ";
+  private String insertStmt =
+      "Insert into get_object_for_numeric_types (c1, c2, c3, c4) values (1000000000, 2000000000000000000000000, 3, 4)";
+  private String selectQuery = "Select * from get_object_for_numeric_types";
+  private String setJdbcTreatDecimalAsIntFalse =
+      "alter session set JDBC_TREAT_DECIMAL_AS_INT = false";
+
   /**
    * Test that when closing of results is interrupted by Thread.Interrupt(), the memory is released
    * safely before driver execution ends.
@@ -969,6 +977,96 @@ public class ResultSetLatestIT extends ResultSet0IT {
       }
     } catch (Exception e) {
       fail("executeQuery should not fail");
+    }
+  }
+
+  private static void assertAllColumnsAreLongButBigIntIsBigDecimal(ResultSet rs)
+      throws SQLException {
+    while (rs.next()) {
+      assertEquals(java.lang.Long.class, rs.getObject(1).getClass());
+      assertEquals(java.math.BigDecimal.class, rs.getObject(2).getClass());
+      assertEquals(java.lang.Long.class, rs.getObject(3).getClass());
+      assertEquals(java.lang.Long.class, rs.getObject(4).getClass());
+    }
+  }
+
+  private static void assertAllColumnsAreBigDecimal(ResultSet rs) throws SQLException {
+    while (rs.next()) {
+      assertEquals(java.math.BigDecimal.class, rs.getObject(1).getClass());
+      assertEquals(java.math.BigDecimal.class, rs.getObject(2).getClass());
+      assertEquals(java.math.BigDecimal.class, rs.getObject(3).getClass());
+      assertEquals(java.math.BigDecimal.class, rs.getObject(4).getClass());
+    }
+  }
+
+  // Test setting new connection property JDBC_ARROW_TREAT_DECIMAL_AS_INT=false. Connection property
+  // introduced after version 3.15.0.
+  @Test
+  public void testGetObjectForArrowResultFormatJDBCArrowDecimalAsIntFalse() throws SQLException {
+    Properties properties = new Properties();
+    properties.put("JDBC_ARROW_TREAT_DECIMAL_AS_INT", false);
+    try (Connection con = getConnection(properties);
+        Statement stmt = con.createStatement()) {
+      stmt.execute("alter session set jdbc_query_result_format = 'ARROW'");
+      stmt.execute(createTableSql);
+      stmt.execute(insertStmt);
+
+      // Test with JDBC_ARROW_TREAT_DECIMAL_AS_INT=false and JDBC_TREAT_DECIMAL_AS_INT=true
+      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
+        assertAllColumnsAreLongButBigIntIsBigDecimal(rs);
+      }
+
+      // Test with JDBC_ARROW_TREAT_DECIMAL_AS_INT=false and JDBC_TREAT_DECIMAL_AS_INT=false
+      stmt.execute(setJdbcTreatDecimalAsIntFalse);
+      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
+        assertAllColumnsAreBigDecimal(rs);
+      }
+    }
+  }
+
+  // Test default setting of new connection property JDBC_ARROW_TREAT_DECIMAL_AS_INT=true.
+  // Connection property introduced after version 3.15.0.
+  @Test
+  public void testGetObjectForArrowResultFormatJDBCArrowDecimalAsIntTrue() throws SQLException {
+    try (Connection con = BaseJDBCTest.getConnection();
+        Statement stmt = con.createStatement()) {
+      stmt.execute("alter session set jdbc_query_result_format = 'ARROW'");
+      stmt.execute(createTableSql);
+      stmt.execute(insertStmt);
+
+      // Test with JDBC_ARROW_TREAT_DECIMAL_AS_INT=true and JDBC_TREAT_DECIMAL_AS_INT=true
+      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
+        assertAllColumnsAreLongButBigIntIsBigDecimal(rs);
+      }
+
+      // Test with JDBC_ARROW_TREAT_DECIMAL_AS_INT=true and JDBC_TREAT_DECIMAL_AS_INT=false
+      stmt.execute(setJdbcTreatDecimalAsIntFalse);
+      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
+        assertAllColumnsAreLongButBigIntIsBigDecimal(rs);
+      }
+    }
+  }
+
+  // Test getObject for numeric types when JDBC_TREAT_DECIMAL_AS_INT is set and using JSON result
+  // format.
+  @Test
+  public void testGetObjectForJSONResultFormatUsingJDBCDecimalAsInt() throws SQLException {
+    try (Connection con = BaseJDBCTest.getConnection();
+        Statement stmt = con.createStatement()) {
+      stmt.execute("alter session set jdbc_query_result_format = 'JSON'");
+      stmt.execute(createTableSql);
+      stmt.execute(insertStmt);
+
+      // Test with JDBC_TREAT_DECIMAL_AS_INT=true (default value)
+      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
+        assertAllColumnsAreLongButBigIntIsBigDecimal(rs);
+      }
+
+      // Test with JDBC_TREAT_DECIMAL_AS_INT=false
+      stmt.execute(setJdbcTreatDecimalAsIntFalse);
+      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
+        assertAllColumnsAreBigDecimal(rs);
+      }
     }
   }
 }

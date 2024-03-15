@@ -475,6 +475,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case JDBC_ARROW_TREAT_DECIMAL_AS_INT:
+          if (propertyValue != null) {
+            setJdbcArrowTreatDecimalAsInt(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
