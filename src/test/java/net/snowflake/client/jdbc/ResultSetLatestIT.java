@@ -983,19 +983,19 @@ public class ResultSetLatestIT extends ResultSet0IT {
   private static void assertAllColumnsAreLongButBigIntIsBigDecimal(ResultSet rs)
       throws SQLException {
     while (rs.next()) {
-      assertEquals("class java.lang.Long", rs.getObject(1).getClass().toString());
-      assertEquals("class java.math.BigDecimal", rs.getObject(2).getClass().toString());
-      assertEquals("class java.lang.Long", rs.getObject(3).getClass().toString());
-      assertEquals("class java.lang.Long", rs.getObject(4).getClass().toString());
+      assertEquals(java.lang.Long.class, rs.getObject(1).getClass());
+      assertEquals(java.math.BigDecimal.class, rs.getObject(2).getClass());
+      assertEquals(java.lang.Long.class, rs.getObject(3).getClass());
+      assertEquals(java.lang.Long.class, rs.getObject(4).getClass());
     }
   }
 
   private static void assertAllColumnsAreBigDecimal(ResultSet rs) throws SQLException {
     while (rs.next()) {
-      assertEquals("class java.math.BigDecimal", rs.getObject(1).getClass().toString());
-      assertEquals("class java.math.BigDecimal", rs.getObject(2).getClass().toString());
-      assertEquals("class java.math.BigDecimal", rs.getObject(3).getClass().toString());
-      assertEquals("class java.math.BigDecimal", rs.getObject(4).getClass().toString());
+      assertEquals(java.math.BigDecimal.class, rs.getObject(1).getClass());
+      assertEquals(java.math.BigDecimal.class, rs.getObject(2).getClass());
+      assertEquals(java.math.BigDecimal.class, rs.getObject(3).getClass());
+      assertEquals(java.math.BigDecimal.class, rs.getObject(4).getClass());
     }
   }
 
