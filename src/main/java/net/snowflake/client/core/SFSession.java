@@ -87,6 +87,8 @@ public class SFSession extends SFBaseSession {
 
   private SFClientConfig sfClientConfig;
 
+  private SecurityUtil securityUtil;
+
   /**
    * Amount of seconds a user is willing to tolerate for establishing the connection with database.
    * In our case, it means the first login request to get authorization token.
@@ -145,6 +147,7 @@ public class SFSession extends SFBaseSession {
 
   public SFSession(DefaultSFConnectionHandler sfConnectionHandler) {
     super(sfConnectionHandler);
+    securityUtil = new SecurityUtil();
   }
 
   /**
@@ -613,6 +616,7 @@ public class SFSession extends SFBaseSession {
       TelemetryService.disable();
     }
 
+    securityUtil.addBouncyCastleProvider();
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
     SFLoginOutput loginOutput =

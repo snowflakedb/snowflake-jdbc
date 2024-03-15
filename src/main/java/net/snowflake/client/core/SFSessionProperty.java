@@ -80,7 +80,9 @@ public enum SFSessionProperty {
 
   ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class),
 
-  DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class);
+  DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class),
+
+  ENABLE_BOUNCY_CASTLE("enableBouncyCastle", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
