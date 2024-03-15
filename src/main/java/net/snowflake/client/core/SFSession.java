@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.diagnostic.DiagnosticContext;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -76,6 +77,7 @@ public class SFSession extends SFBaseSession {
    * <p>Default:300 seconds
    */
   private int loginTimeout = 300;
+
   /**
    * Amount of milliseconds a user is willing to tolerate for network related issues (e.g. HTTP
    * 503/504) or database transient issues (e.g. GS not responding)
@@ -483,7 +485,8 @@ public class SFSession extends SFBaseSession {
             + " warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={},"
             + " passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={},"
             + " application={}, app_id={}, app_version={}, login_timeout={}, retry_timeout={}, network_timeout={},"
-            + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}."
+            + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={},"
+            + " enable_diagnostics={}, diagnostics_log_path={}, diagnostics_allowlist_path={}."
             + " session_parameters: client_store_temporary_credential={}, gzip_disabled={}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
@@ -519,8 +522,12 @@ public class SFSession extends SFBaseSession {
                 (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
             ? "***"
             : "(empty)",
+        connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
+        connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_LOG_PATH),
+        connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
         connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
+
 
     HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
     logger.debug(
@@ -586,6 +593,9 @@ public class SFSession extends SFBaseSession {
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
+
+    runDiagnosticsIfEnabled();
+
     SFLoginOutput loginOutput =
         SessionUtil.openSession(loginInput, connectionPropertiesMap, tracingLevel.toString());
     isClosed = false;
@@ -1207,5 +1217,28 @@ public class SFSession extends SFBaseSession {
 
   public void setSfClientConfig(SFClientConfig sfClientConfig) {
     this.sfClientConfig = sfClientConfig;
+  }
+
+  private void runDiagnosticsIfEnabled() throws SnowflakeSQLException{
+    // If the user enables diagnostic check then we need to be sure we don't go on
+    // and create an actual connection because that would be a waste of time since
+    // they're trying to debug a connection issue. We need to throw a SqlException
+    // back to the calling application with a clear message explaining a connection
+    // is not created.
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+    boolean  isDiagnosticsEnabled = (Boolean) connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS);
+    if (isDiagnosticsEnabled) {
+      String allowListFile = (String) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+      String diagnosticLogPath = (String) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_LOG_PATH);
+
+      // Implement diagnostics check here
+      DiagnosticContext diagnosticContext = new DiagnosticContext(allowListFile,diagnosticLogPath,isDiagnosticsEnabled);
+      diagnosticContext.runDiagnostics();
+
+      throw new SnowflakeSQLException(
+              "A connection was not created because the driver is running in diagnostics mode."
+                      + " If this is unintended then disable diagnostics check by removing the ENABLE_DIAGNOSTICS"
+                      + " connection parameter or the -Dnet.snowflake.jdbc.enable.diagnostics JVM argument.");
+    }
   }
 }

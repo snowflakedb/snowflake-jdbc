@@ -76,7 +76,10 @@ public enum SFSessionProperty {
 
   PUT_GET_MAX_RETRIES("putGetMaxRetries", false, Integer.class),
 
-  RETRY_TIMEOUT("retryTimeout", false, Integer.class);
+  RETRY_TIMEOUT("retryTimeout", false, Integer.class),
+  ENABLE_DIAGNOSTICS("ENABLE_DIAGNOSTICS", false, Boolean.class),
+  DIAGNOSTICS_LOG_PATH("DIAGNOSTICS_LOG_PATH", false, String.class),
+  DIAGNOSTICS_ALLOWLIST_FILE("DIAGNOSTICS_ALLOWLIST_FILE", false, String.class);
 
   // property key in string
   private String propertyKey;
