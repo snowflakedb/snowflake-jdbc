@@ -999,24 +999,24 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
-  // Test setting new connection property jdbc_arrow_treat_decimal_as_int=false. Connection property
+  // Test setting new connection property JDBC_ARROW_TREAT_DECIMAL_AS_INT=false. Connection property
   // introduced after version 3.15.0.
   @Test
   public void testGetObjectForArrowResultFormatJDBCArrowDecimalAsIntFalse() throws SQLException {
     Properties properties = new Properties();
-    properties.put("jdbc_arrow_treat_decimal_as_int", false);
+    properties.put("JDBC_ARROW_TREAT_DECIMAL_AS_INT", false);
     try (Connection con = getConnection(properties);
         Statement stmt = con.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = 'ARROW'");
       stmt.execute(createTableSql);
       stmt.execute(insertStmt);
 
-      // Test with jdbc_arrow_treat_decimal_as_int=false and JDBC_TREAT_DECIMAL_AS_INT=true
+      // Test with JDBC_ARROW_TREAT_DECIMAL_AS_INT=false and JDBC_TREAT_DECIMAL_AS_INT=true
       try (ResultSet rs = stmt.executeQuery(selectQuery)) {
         assertAllColumnsAreLongButBigIntIsBigDecimal(rs);
       }
 
-      // Test with jdbc_arrow_treat_decimal_as_int=false and JDBC_TREAT_DECIMAL_AS_INT=false
+      // Test with JDBC_ARROW_TREAT_DECIMAL_AS_INT=false and JDBC_TREAT_DECIMAL_AS_INT=false
       stmt.execute(setJdbcTreatDecimalAsIntFalse);
       try (ResultSet rs = stmt.executeQuery(selectQuery)) {
         assertAllColumnsAreBigDecimal(rs);
@@ -1024,7 +1024,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
-  // Test default setting of new connection property jdbc_arrow_treat_decimal_as_int=true.
+  // Test default setting of new connection property JDBC_ARROW_TREAT_DECIMAL_AS_INT=true.
   // Connection property introduced after version 3.15.0.
   @Test
   public void testGetObjectForArrowResultFormatJDBCArrowDecimalAsIntTrue() throws SQLException {
@@ -1034,17 +1034,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
       stmt.execute(createTableSql);
       stmt.execute(insertStmt);
 
-      // Test with jdbc_arrow_treat_decimal_as_int=true and JDBC_TREAT_DECIMAL_AS_INT=true
+      // Test with JDBC_ARROW_TREAT_DECIMAL_AS_INT=true and JDBC_TREAT_DECIMAL_AS_INT=true
       try (ResultSet rs = stmt.executeQuery(selectQuery)) {
-        while (rs.next()) {
-          assertEquals("class java.lang.Long", rs.getObject(1).getClass().toString());
-          assertEquals("class java.math.BigDecimal", rs.getObject(2).getClass().toString());
-          assertEquals("class java.lang.Long", rs.getObject(3).getClass().toString());
-          assertEquals("class java.lang.Long", rs.getObject(4).getClass().toString());
-        }
+        assertAllColumnsAreLongButBigIntIsBigDecimal(rs);
       }
 
-      // Test with jdbc_arrow_treat_decimal_as_int=true and JDBC_TREAT_DECIMAL_AS_INT=false
+      // Test with JDBC_ARROW_TREAT_DECIMAL_AS_INT=true and JDBC_TREAT_DECIMAL_AS_INT=false
       stmt.execute(setJdbcTreatDecimalAsIntFalse);
       try (ResultSet rs = stmt.executeQuery(selectQuery)) {
         assertAllColumnsAreLongButBigIntIsBigDecimal(rs);
