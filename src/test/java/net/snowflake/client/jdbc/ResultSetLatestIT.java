@@ -22,6 +22,7 @@ import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -31,6 +32,9 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -1067,6 +1071,89 @@ public class ResultSetLatestIT extends ResultSet0IT {
       try (ResultSet rs = stmt.executeQuery(selectQuery)) {
         assertAllColumnsAreBigDecimal(rs);
       }
+    }
+  }
+
+  @Test
+  public void testGetObjectWithType() throws SQLException {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          " CREATE OR REPLACE TABLE test_all_types ("
+              + "                  string VARCHAR, "
+              + "                  b TINYINT, "
+              + "                  s SMALLINT, "
+              + "                  i INTEGER, "
+              + "                  l BIGINT, "
+              + "                  f FLOAT, "
+              + "                  d DOUBLE, "
+              + "                  bd DOUBLE, "
+              + "                  bool BOOLEAN, "
+              + "                  timestampLtz TIMESTAMP_LTZ, "
+              + "                  timestampNtz TIMESTAMP_NTZ, "
+              + "                  timestampTz TIMESTAMP_TZ, "
+              + "                  date DATE,"
+              + "                  time TIME "
+              + "                  )");
+      statement.execute(
+          "insert into test_all_types values('aString',1,2,3,4,1.1,2.2,3.3, false, "
+              + "'2021-12-22 09:43:44','2021-12-22 09:43:44','2021-12-22 09:43:44', "
+              + "'2023-12-24','12:34:56')");
+
+      assertResultValueAndType(statement, "aString", "string", String.class);
+      assertResultValueAndType(statement, new Byte("1"), "b", Byte.class);
+      assertResultValueAndType(statement, Short.valueOf("2"), "s", Short.class);
+      assertResultValueAndType(statement, Integer.valueOf("2"), "s", Integer.class);
+      assertResultValueAndType(statement, Integer.valueOf("3"), "i", Integer.class);
+      assertResultValueAndType(statement, Long.valueOf("4"), "l", Long.class);
+      assertResultValueAndType(statement, BigDecimal.valueOf(4), "l", BigDecimal.class);
+      assertResultValueAndType(statement, Float.valueOf("1.1"), "f", Float.class);
+      assertResultValueAndType(statement, Double.valueOf("1.1"), "f", Double.class);
+      assertResultValueAndType(statement, Double.valueOf("2.2"), "d", Double.class);
+      assertResultValueAndType(statement, BigDecimal.valueOf(3.3), "bd", BigDecimal.class);
+      assertResultValueAndType(statement, "FALSE", "bool", String.class);
+      assertResultValueAndType(statement, Boolean.FALSE, "bool", Boolean.class);
+      assertResultValueAndType(statement, Long.valueOf(0), "bool", Long.class);
+      assertResultValueAsString(
+          statement,
+          new SnowflakeTimestampWithTimezone(
+              Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), TimeZone.getDefault()),
+          "timestampLtz",
+          Timestamp.class);
+      assertResultValueAsString(
+          statement,
+          new SnowflakeTimestampWithTimezone(
+              Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), TimeZone.getDefault()),
+          "timestampNtz",
+          Timestamp.class);
+      assertResultValueAsString(
+          statement,
+          new SnowflakeTimestampWithTimezone(
+              Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), TimeZone.getDefault()),
+          "timestampTz",
+          Timestamp.class);
+      assertResultValueAndType(
+          statement, Date.valueOf(LocalDate.of(2023, 12, 24)), "date", Date.class);
+      assertResultValueAndType(
+          statement, Time.valueOf(LocalTime.of(12, 34, 56)), "time", Time.class);
+    }
+  }
+
+  private void assertResultValueAndType(
+      Statement statement, Object expected, String columnName, Class<?> type) throws SQLException {
+    try (ResultSet resultSetString =
+        statement.executeQuery(String.format("select %s from test_all_types", columnName))) {
+      resultSetString.next();
+      assertEquals(expected, resultSetString.getObject(1, type));
+    }
+  }
+
+  private void assertResultValueAsString(
+      Statement statement, Object expected, String columnName, Class type) throws SQLException {
+    try (ResultSet resultSetString =
+        statement.executeQuery(String.format("select %s from test_all_types", columnName))) {
+      resultSetString.next();
+      assertEquals(expected.toString(), resultSetString.getObject(1, type).toString());
     }
   }
 }
