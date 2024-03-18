@@ -38,6 +38,7 @@ import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
@@ -278,14 +279,22 @@ public class SnowflakeUtil {
             new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
 
-      case OBJECT:
       case MAP:
-        int targetType =
-            "GEOGRAPHY".equals(extColTypeName) || "GEOMETRY".equals(extColTypeName)
-                ? Types.VARCHAR
-                : Types.STRUCT;
         columnTypeInfo =
-            new ColumnTypeInfo(targetType, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+            new ColumnTypeInfo(Types.STRUCT, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+        break;
+
+      case OBJECT:
+        if (StructureTypeHelper.isStructureTypeEnabled()) {
+          boolean isGeoType =
+              "GEOMETRY".equals(extColTypeName) || "GEOGRAPHY".equals(extColTypeName);
+          int type = isGeoType ? Types.VARCHAR : Types.STRUCT;
+          columnTypeInfo =
+              new ColumnTypeInfo(type, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+        } else {
+          columnTypeInfo =
+              new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+        }
         break;
 
       case VARIANT:
