@@ -742,11 +742,10 @@ public class SessionUtil {
 
         String errorMessage = jsonNode.path("message").asText();
 
-        logger.error(
-            "Failed to open new session for user: {}, host: {}. Error: {}",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl(),
-            errorMessage);
+        logger.error("Failed to open new session for user: {}, host: {}. Error: {}",
+                loginInput.getUserName(),
+                loginInput.getHostFromServerUrl(),
+                errorMessage);
         throw new SnowflakeSQLException(
             NO_QUERY_ID,
             errorMessage,
@@ -880,12 +879,19 @@ public class SessionUtil {
     }
 
     stopwatch.stop();
-    logger.info(
-        "Session opened in {} ms. User: {}, host: {} with authentication method: {} authenticated successfully.",
-        stopwatch.elapsedMillis(),
-        loginInput.getUserName(),
-        loginInput.getHostFromServerUrl(),
-        authenticatorType);
+    logger.debug("Session database: {}, schema: {}, warehouse: {}, master token validity time: {} s, http client socket timeout: {} ms",
+            sessionDatabase,
+            sessionSchema,
+            sessionWarehouse,
+            masterTokenValidityInSeconds,
+            httpClientSocketTimeout);
+    logger.info("Session {} opened in {} ms. User: {}, host: {} with authentication method: {} authenticated successfully.",
+            sessionId,
+            stopwatch.elapsedMillis(),
+            loginInput.getUserName(),
+            loginInput.getHostFromServerUrl(),
+            authenticatorType
+    );
     return ret;
   }
 
