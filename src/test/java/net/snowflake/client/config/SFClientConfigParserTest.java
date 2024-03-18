@@ -23,6 +23,8 @@ import org.mockito.MockedStatic;
 public class SFClientConfigParserTest {
   private static final String CONFIG_JSON =
       "{\"common\":{\"log_level\":\"info\",\"log_path\":\"/jdbc.log\"}}";
+  private static final String CONFIG_JSON_WITH_UNKNOWN_PROPS =
+      "{\"common\":{\"log_level\":\"info\",\"log_path\":\"/jdbc.log\",\"unknown_inside\":\"/unknown\"},\"unknown_outside\":\"/unknown\"}";
 
   @Test
   public void testloadSFClientConfigValidPath() {
@@ -31,6 +33,22 @@ public class SFClientConfigParserTest {
       Files.write(configFilePath, CONFIG_JSON.getBytes());
       SFClientConfig actualConfig =
           SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
+      assertEquals("info", actualConfig.getCommonProps().getLogLevel());
+      assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
+
+      Files.delete(configFilePath);
+    } catch (IOException e) {
+      fail("testloadSFClientConfigValidPath failed");
+    }
+  }
+
+  @Test
+  public void testloadSFClientConfigValidPathWithUnknownProperties() {
+    Path configFilePath = Paths.get("config.json");
+    try {
+      Files.write(configFilePath, CONFIG_JSON_WITH_UNKNOWN_PROPS.getBytes());
+      SFClientConfig actualConfig =
+              SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
 
