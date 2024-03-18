@@ -9,7 +9,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
-import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -39,6 +38,8 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
 
   protected TimeZone sessionTimeZone;
 
+  private boolean shouldTreatDecimalAsInt;
+
   /** Field names of the struct vectors used by timestamp */
   public static final String FIELD_NAME_EPOCH = "epoch"; // seconds since epoch
 
@@ -54,6 +55,11 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
     this.valueVector = valueVector;
     this.columnIndex = vectorIndex + 1;
     this.context = context;
+    this.shouldTreatDecimalAsInt =
+        context == null
+            || context.getSession() == null
+            || context.getSession().isJdbcArrowTreatDecimalAsInt()
+            || context.getSession().isJdbcTreatDecimalAsInt();
   }
 
   @Override
@@ -147,13 +153,8 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.BIG_DECIMAL_STR, "");
   }
 
-  public boolean shouldTreatDecimalAsInt(SFBaseSession session) {
-    if (session != null) {
-      if (!session.isJdbcArrowTreatDecimalAsInt() && !session.isJdbcTreatDecimalAsInt()) {
-        return false;
-      }
-    }
-    return true;
+  boolean shouldTreatDecimalAsInt() {
+    return shouldTreatDecimalAsInt;
   }
 
   @Override
