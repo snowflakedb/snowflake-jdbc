@@ -381,7 +381,7 @@ public class SessionUtil {
             loginInput.getLoginTimeout(),
             loginInput.getAuthTimeout(),
             loginInput.getOCSPMode(),
-            !Strings.isNullOrEmpty(oktaUsername) ? ", okta username: " + oktaUsername : "");
+            Strings.isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
 
     try {
 
