@@ -831,7 +831,7 @@ public class SFSession extends SFBaseSession {
     }
 
     stopwatch.stop();
-    logger.debug("Session {} has been successfully closed in {} ms", getSessionId(), stopwatch.elapsedMillis());
+    logger.info("Session {} has been successfully closed in {} ms", getSessionId(), stopwatch.elapsedMillis());
     isClosed = true;
   }
 
