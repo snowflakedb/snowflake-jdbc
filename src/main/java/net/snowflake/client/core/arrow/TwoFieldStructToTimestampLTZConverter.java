@@ -46,7 +46,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     }
 
     try {
-      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
+      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault());
 
       return ts == null
           ? null
@@ -65,14 +65,14 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    return isNull(index) ? null : getTimestamp(index, tz, false);
+    return isNull(index) ? null : getTimestamp(index, tz);
   }
 
-  private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException {
+  private Timestamp getTimestamp(int index, TimeZone tz) throws SFException {
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
-    return getTimestamp(epoch, fraction, fromToString, sessionTimeZone, useSessionTimezone);
+    return getTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
   }
 
   @Override
@@ -89,7 +89,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     if (isNull(index)) {
       return null;
     }
-    Timestamp ts = getTimestamp(index, TimeZone.getDefault(), false);
+    Timestamp ts = getTimestamp(index, TimeZone.getDefault());
     // ts can be null when Java's timestamp is overflow.
     return ts == null
         ? null
@@ -118,16 +118,11 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   public static Timestamp getTimestamp(
       long epoch,
       int fraction,
-      boolean fromToString,
       TimeZone sessionTimeZone,
       boolean useSessionTimezone)
       throws SFException {
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      if (fromToString) {
-        throw new TimestampOperationNotAvailableException(epoch, fraction);
-      } else {
-        return null;
-      }
+      throw new TimestampOperationNotAvailableException(epoch, fraction);
     }
     Timestamp ts =
         ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);

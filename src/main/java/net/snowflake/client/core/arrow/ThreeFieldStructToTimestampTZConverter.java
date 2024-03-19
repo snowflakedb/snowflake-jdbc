@@ -49,7 +49,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
       throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp LTZ formatter");
     }
     try {
-      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
+      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault());
 
       return ts == null
           ? null
@@ -75,10 +75,10 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    return epochs.isNull(index) ? null : getTimestamp(index, tz, false);
+    return epochs.isNull(index) ? null : getTimestamp(index, tz);
   }
 
-  private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException {
+  private Timestamp getTimestamp(int index, TimeZone tz) throws SFException {
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
     int timeZoneIndex = timeZoneIndices.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
@@ -87,7 +87,6 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
         epoch,
         fraction,
         timeZoneIndex,
-        fromToString,
         context.getResultVersion(),
         useSessionTimezone);
   }
@@ -97,7 +96,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     if (epochs.isNull(index)) {
       return null;
     }
-    Timestamp ts = getTimestamp(index, TimeZone.getDefault(), false);
+    Timestamp ts = getTimestamp(index, TimeZone.getDefault());
     // ts can be null when Java's timestamp is overflow.
     return ts == null
         ? null
@@ -134,16 +133,11 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
       long epoch,
       int fraction,
       int timeZoneIndex,
-      boolean fromToString,
       long resultVersion,
       boolean useSessionTimezone)
       throws SFException {
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      if (fromToString) {
-        throw new TimestampOperationNotAvailableException(epoch, fraction);
-      } else {
-        return null;
-      }
+      throw new TimestampOperationNotAvailableException(epoch, fraction);
     }
 
     TimeZone timeZone;

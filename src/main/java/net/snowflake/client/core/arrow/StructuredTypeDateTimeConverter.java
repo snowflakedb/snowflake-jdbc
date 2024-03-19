@@ -76,7 +76,6 @@ public class StructuredTypeDateTimeConverter {
         return TwoFieldStructToTimestampLTZConverter.getTimestamp(
             (long) map.get("epoch"),
             (int) map.get("fraction"),
-            false,
             sessionTimeZone,
             useSessionTimezone);
       }
@@ -122,7 +121,6 @@ public class StructuredTypeDateTimeConverter {
             (long) map.get("epoch"),
             (int) map.get("fraction"),
             (int) map.get("timezone"),
-            false,
             resultVersion,
             useSessionTimezone);
       }

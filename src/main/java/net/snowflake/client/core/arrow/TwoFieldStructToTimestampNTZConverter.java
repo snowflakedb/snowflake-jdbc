@@ -135,11 +135,7 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
       throws SFException {
 
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      if (fromToString) {
-        throw new TimestampOperationNotAvailableException(epoch, fraction);
-      } else {
-        return null;
-      }
+      throw new TimestampOperationNotAvailableException(epoch, fraction);
     }
     Timestamp ts;
     if (treatNTZasUTC || !useSessionTimezone) {
