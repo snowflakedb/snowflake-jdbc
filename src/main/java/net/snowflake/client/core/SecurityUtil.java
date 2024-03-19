@@ -50,7 +50,7 @@ public class SecurityUtil {
                   + "import BouncyCastleFipsProvider in the application.",
               DEFAULT_SECURITY_PROVIDER_NAME, ex.getMessage());
       LOGGER.error(errMsg, true);
-      throw new RuntimeException(errMsg);
+      throw new RuntimeException(errMsg, ex);
     }
   }
 }

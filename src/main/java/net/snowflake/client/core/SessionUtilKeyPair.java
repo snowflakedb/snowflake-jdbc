@@ -39,6 +39,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
@@ -67,8 +68,6 @@ class SessionUtilKeyPair {
 
   private Provider SecurityProvider = null;
 
-  private SecretKeyFactory secretKeyFactory = null;
-
   private static final String ISSUER_FMT = "%s.%s.%s";
 
   private static final String SUBJECT_FMT = "%s.%s";
@@ -81,7 +80,9 @@ class SessionUtilKeyPair {
   /** provider name for FIPS */
   private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
 
-  private boolean ENABLE_BOUNCYCASTLE_PROVIDER = true;
+  private boolean ENABLE_BOUNCYCASTLE_PROVIDER = false;
+
+  private final String ENABLE_BOUNCYCASTLE_PROVIDER_JVM = "net.snowflake.jdbc.enableBouncyCastle";
 
   SessionUtilKeyPair(
       PrivateKey privateKey,
@@ -92,7 +93,10 @@ class SessionUtilKeyPair {
       throws SFException {
     this.userName = userName.toUpperCase();
     this.accountName = accountName.toUpperCase();
-
+    String enableBouncyCastleJvm = System.getProperty(ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
+    if (enableBouncyCastleJvm != null) {
+      ENABLE_BOUNCYCASTLE_PROVIDER = enableBouncyCastleJvm.equalsIgnoreCase("true");
+    }
     // check if in FIPS mode
     for (Provider p : Security.getProviders()) {
       if (BOUNCY_CASTLE_FIPS_PROVIDER.equals(p.getName())) {
@@ -168,7 +172,10 @@ class SessionUtilKeyPair {
           | NullPointerException
           | InvalidKeyException e) {
         logger.error(
-            "Could not extract private key. Try setting " + ENABLE_BOUNCYCASTLE_PROVIDER + "=TRUE");
+            "Could not extract private key. Try setting the JVM argument: "
+                + "-D"
+                + ENABLE_BOUNCYCASTLE_PROVIDER_JVM
+                + "=TRUE");
         throw new SFException(
             e,
             ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
@@ -246,6 +253,9 @@ class SessionUtilKeyPair {
       InputDecryptorProvider pkcs8Prov =
           new JceOpenSSLPKCS8DecryptorProviderBuilder().build(privateKeyFilePwd.toCharArray());
       privateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(pkcs8Prov);
+    } else if (pemObject instanceof PEMKeyPair) {
+      // PKCS#1 private key
+      privateKeyInfo = ((PEMKeyPair) pemObject).getPrivateKeyInfo();
     } else if (pemObject instanceof PrivateKeyInfo) {
       // Handle the case where the private key is unencrypted.
       privateKeyInfo = (PrivateKeyInfo) pemObject;
