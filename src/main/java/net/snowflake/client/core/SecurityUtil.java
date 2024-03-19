@@ -6,20 +6,22 @@ import java.security.Security;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
+@SnowflakeJdbcInternalApi
 public class SecurityUtil {
 
   private static final SFLogger LOGGER = SFLoggerFactory.getLogger(SecurityUtil.class);
 
-  /** provider name */
-  private final String BOUNCY_CASTLE_PROVIDER = "BC";
-
   /** provider name for FIPS */
-  private final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+  public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
 
+  public static final String BOUNCY_CASTLE_PROVIDER = "BC";
   private static final String DEFAULT_SECURITY_PROVIDER_NAME =
       "org.bouncycastle.jce.provider.BouncyCastleProvider";
 
-  public void addBouncyCastleProvider() {
+  public static final String ENABLE_BOUNCYCASTLE_PROVIDER_JVM =
+      "net.snowflake.jdbc.enableBouncyCastle";
+
+  public static void addBouncyCastleProvider() {
     // Add Bouncy Castle to the list of security providers. This is required to
     // verify the signature on OCSP response and attached certificates.
     // It is also required to decrypt password protected private keys.
@@ -31,7 +33,7 @@ public class SecurityUtil {
     }
   }
 
-  public Provider instantiateSecurityProvider() {
+  private static Provider instantiateSecurityProvider() {
 
     try {
       Class klass = Class.forName(DEFAULT_SECURITY_PROVIDER_NAME);
@@ -50,7 +52,7 @@ public class SecurityUtil {
                   + "import BouncyCastleFipsProvider in the application.",
               DEFAULT_SECURITY_PROVIDER_NAME, ex.getMessage());
       LOGGER.error(errMsg, true);
-      throw new RuntimeException(errMsg);
+      throw new RuntimeException(errMsg, ex);
     }
   }
 }

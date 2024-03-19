@@ -82,7 +82,7 @@ public enum SFSessionProperty {
 
   DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class),
 
-  ENABLE_BOUNCY_CASTLE("enableBouncyCastle", false, Boolean.class);
+  JDBC_ARROW_TREAT_DECIMAL_AS_INT("JDBC_ARROW_TREAT_DECIMAL_AS_INT", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
