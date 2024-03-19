@@ -1,41 +1,27 @@
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
+import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.core.structs.SQLDataCreationHelper;
+import net.snowflake.client.jdbc.FieldMetadata;
+import net.snowflake.client.util.ThrowingBiFunction;
+import org.apache.arrow.vector.util.JsonStringHashMap;
 
-import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.RowId;
 import java.sql.SQLData;
 import java.sql.SQLException;
-import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
-import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.core.structs.SQLDataCreationHelper;
-import net.snowflake.client.jdbc.FieldMetadata;
-import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
-import net.snowflake.client.util.ThrowingBiFunction;
-import org.apache.arrow.vector.util.JsonStringHashMap;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
 
 @SnowflakeJdbcInternalApi
-public class ArrowSqlInput implements SFSqlInput {
+public class ArrowSqlInput extends BaseSqlInput {
 
-  private final SFBaseSession session;
   private final Iterator<Object> structuredTypeFields;
-  private final Converters converters;
-  private final List<FieldMetadata> fields;
-
   private int currentIndex = 0;
 
   public ArrowSqlInput(
@@ -43,10 +29,8 @@ public class ArrowSqlInput implements SFSqlInput {
       SFBaseSession session,
       Converters converters,
       List<FieldMetadata> fields) {
-    this.structuredTypeFields = input.values().iterator();
-    this.session = session;
-    this.converters = converters;
-    this.fields = fields;
+      super(session, converters, fields);
+      this.structuredTypeFields = input.values().iterator();
   }
 
   @Override
@@ -174,11 +158,6 @@ public class ArrowSqlInput implements SFSqlInput {
   }
 
   @Override
-  public Timestamp readTimestamp() throws SQLException {
-    return readTimestamp(null);
-  }
-
-  @Override
   public Timestamp readTimestamp(TimeZone tz) throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
@@ -196,21 +175,6 @@ public class ArrowSqlInput implements SFSqlInput {
                           tz,
                           scale));
         });
-  }
-
-  @Override
-  public Reader readCharacterStream() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readCharacterStream");
-  }
-
-  @Override
-  public InputStream readAsciiStream() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readAsciiStream");
-  }
-
-  @Override
-  public InputStream readBinaryStream() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readBinaryStream");
   }
 
   @Override
@@ -239,56 +203,6 @@ public class ArrowSqlInput implements SFSqlInput {
               null);
           return (T) instance;
         });
-  }
-
-  @Override
-  public Ref readRef() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readRef");
-  }
-
-  @Override
-  public Blob readBlob() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readBlob");
-  }
-
-  @Override
-  public Clob readClob() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readClob");
-  }
-
-  @Override
-  public Array readArray() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readArray");
-  }
-
-  @Override
-  public boolean wasNull() throws SQLException {
-    return false; // nulls are not allowed in structure types
-  }
-
-  @Override
-  public URL readURL() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readCharacterStream");
-  }
-
-  @Override
-  public NClob readNClob() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readNClob");
-  }
-
-  @Override
-  public String readNString() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readNString");
-  }
-
-  @Override
-  public SQLXML readSQLXML() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readSQLXML");
-  }
-
-  @Override
-  public RowId readRowId() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readRowId");
   }
 
   private <T> T withNextValue(ThrowingBiFunction<Object, FieldMetadata, T, SQLException> action)

@@ -3,30 +3,7 @@
  */
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.InputStream;
-import java.io.Reader;
-import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.RowId;
-import java.sql.SQLData;
-import java.sql.SQLException;
-import java.sql.SQLXML;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.Iterator;
-import java.util.List;
-import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
@@ -35,13 +12,24 @@ import net.snowflake.client.util.ThrowingTriFunction;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.SQLData;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TimeZone;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
+
 @SnowflakeJdbcInternalApi
-public class JsonSqlInput implements SFSqlInput {
+public class JsonSqlInput extends BaseSqlInput {
   private final JsonNode input;
   private final Iterator<JsonNode> elements;
-  private final SFBaseSession session;
-  private final Converters converters;
-  private final List<FieldMetadata> fields;
   private final TimeZone sessionTimeZone;
   private int currentIndex = 0;
 
@@ -51,11 +39,9 @@ public class JsonSqlInput implements SFSqlInput {
       Converters converters,
       List<FieldMetadata> fields,
       TimeZone sessionTimeZone) {
+    super(session, converters, fields);
     this.input = input;
     this.elements = input.elements();
-    this.session = session;
-    this.converters = converters;
-    this.fields = fields;
     this.sessionTimeZone = sessionTimeZone;
   }
 
@@ -186,11 +172,6 @@ public class JsonSqlInput implements SFSqlInput {
   }
 
   @Override
-  public Timestamp readTimestamp() throws SQLException {
-    return readTimestamp(null);
-  }
-
-  @Override
   public Timestamp readTimestamp(TimeZone tz) throws SQLException {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
@@ -214,75 +195,11 @@ public class JsonSqlInput implements SFSqlInput {
         });
   }
 
-  @Override
-  public Reader readCharacterStream() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readCharacterStream");
-  }
-
-  @Override
-  public InputStream readAsciiStream() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readAsciiStream");
-  }
-
-  @Override
-  public InputStream readBinaryStream() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readBinaryStream");
-  }
 
   @Override
   public Object readObject() throws SQLException {
     // TODO structuredType return map - SNOW-974575
     throw new SnowflakeLoggedFeatureNotSupportedException(session, "readObject");
-  }
-
-  @Override
-  public Ref readRef() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readRef");
-  }
-
-  @Override
-  public Blob readBlob() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readBlob");
-  }
-
-  @Override
-  public Clob readClob() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readClob");
-  }
-
-  @Override
-  public Array readArray() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readArray");
-  }
-
-  @Override
-  public boolean wasNull() throws SQLException {
-    return false; // nulls are not allowed in structure types
-  }
-
-  @Override
-  public URL readURL() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readURL");
-  }
-
-  @Override
-  public NClob readNClob() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readNClob");
-  }
-
-  @Override
-  public String readNString() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readNString");
-  }
-
-  @Override
-  public SQLXML readSQLXML() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readSQLXML");
-  }
-
-  @Override
-  public RowId readRowId() throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(session, "readRowId");
   }
 
   @Override
