@@ -3,15 +3,9 @@
  */
 package net.snowflake.client.core;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.core.structs.SQLDataCreationHelper;
-import net.snowflake.client.jdbc.FieldMetadata;
-import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
-import net.snowflake.client.util.ThrowingTriFunction;
-import net.snowflake.common.core.SFTimestamp;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLData;
@@ -23,8 +17,13 @@ import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
+import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.core.structs.SQLDataCreationHelper;
+import net.snowflake.client.jdbc.FieldMetadata;
+import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
+import net.snowflake.client.util.ThrowingTriFunction;
+import net.snowflake.common.core.SFTimestamp;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 @SnowflakeJdbcInternalApi
 public class JsonSqlInput extends BaseSqlInput {
@@ -194,7 +193,6 @@ public class JsonSqlInput extends BaseSqlInput {
                       .getTimestamp(value, columnType, columnSubType, tz, scale));
         });
   }
-
 
   @Override
   public Object readObject() throws SQLException {

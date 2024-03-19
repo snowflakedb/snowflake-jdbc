@@ -116,10 +116,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   }
 
   public static Timestamp getTimestamp(
-      long epoch,
-      int fraction,
-      TimeZone sessionTimeZone,
-      boolean useSessionTimezone)
+      long epoch, int fraction, TimeZone sessionTimeZone, boolean useSessionTimezone)
       throws SFException {
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
       throw new TimestampOperationNotAvailableException(epoch, fraction);

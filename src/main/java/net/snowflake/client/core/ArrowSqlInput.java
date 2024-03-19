@@ -4,11 +4,7 @@
 
 package net.snowflake.client.core;
 
-import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.core.structs.SQLDataCreationHelper;
-import net.snowflake.client.jdbc.FieldMetadata;
-import net.snowflake.client.util.ThrowingBiFunction;
-import org.apache.arrow.vector.util.JsonStringHashMap;
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -19,8 +15,11 @@ import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
-
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
+import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.core.structs.SQLDataCreationHelper;
+import net.snowflake.client.jdbc.FieldMetadata;
+import net.snowflake.client.util.ThrowingBiFunction;
+import org.apache.arrow.vector.util.JsonStringHashMap;
 
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
@@ -33,8 +32,8 @@ public class ArrowSqlInput extends BaseSqlInput {
       SFBaseSession session,
       Converters converters,
       List<FieldMetadata> fields) {
-      super(session, converters, fields);
-      this.structuredTypeFields = input.values().iterator();
+    super(session, converters, fields);
+    this.structuredTypeFields = input.values().iterator();
   }
 
   @Override
