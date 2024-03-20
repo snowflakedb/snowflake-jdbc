@@ -48,7 +48,7 @@ public class SFClientConfigParserTest {
     try {
       Files.write(configFilePath, CONFIG_JSON_WITH_UNKNOWN_PROPS.getBytes());
       SFClientConfig actualConfig =
-              SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
+          SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
 

@@ -3,21 +3,18 @@ package net.snowflake.client.config;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /** POJO class for Snowflake's client config. */
 public class SFClientConfig {
   // Used to keep the unknown properties when deserializing
-  @JsonIgnore
-  @JsonAnySetter
-  private Map<String, Object> unknownParams = new LinkedHashMap<>();
+  @JsonIgnore @JsonAnySetter private Map<String, Object> unknownParams = new LinkedHashMap<>();
 
   @JsonProperty("common")
   private CommonProps commonProps;
@@ -52,10 +49,9 @@ public class SFClientConfig {
 
     if (!commonProps.unknownParams.isEmpty()) {
       unknownParamKeys.addAll(
-              commonProps.unknownParams.keySet().stream()
-                      .map(s -> "common:" + s)
-                      .collect(Collectors.toCollection(LinkedHashSet::new))
-      );
+          commonProps.unknownParams.keySet().stream()
+              .map(s -> "common:" + s)
+              .collect(Collectors.toCollection(LinkedHashSet::new)));
     }
     return unknownParamKeys;
   }
@@ -79,9 +75,7 @@ public class SFClientConfig {
 
   public static class CommonProps {
     // Used to keep the unknown properties when deserializing
-    @JsonIgnore
-    @JsonAnySetter
-    Map<String, Object> unknownParams = new LinkedHashMap<>();
+    @JsonIgnore @JsonAnySetter Map<String, Object> unknownParams = new LinkedHashMap<>();
 
     @JsonProperty("log_level")
     private String logLevel;
