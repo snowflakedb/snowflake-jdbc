@@ -828,7 +828,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       connection = DriverManager.getConnection(uri, properties);
       fail();
     } catch (SQLException e) {
-      assertEquals(390144, e.getErrorCode());
+      assertEquals(394304, e.getErrorCode());
     }
     connection.close();
 
