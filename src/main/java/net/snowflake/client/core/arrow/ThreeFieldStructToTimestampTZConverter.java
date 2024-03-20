@@ -46,7 +46,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   @Override
   public String toString(int index) throws SFException {
     if (context.getTimestampTZFormatter() == null) {
-      throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp LTZ formatter");
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp TZ formatter");
     }
     try {
       Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault());
@@ -82,7 +82,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
     int timeZoneIndex = timeZoneIndices.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
-
+    timeZone = convertFromTimeZoneIndex(timeZoneIndex, context.getResultVersion());
     return getTimestamp(
         epoch, fraction, timeZoneIndex, context.getResultVersion(), useSessionTimezone);
   }
@@ -131,14 +131,16 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
       throw new TimestampOperationNotAvailableException(epoch, fraction);
     }
-
-    TimeZone timeZone;
-    if (resultVersion > 0) {
-      timeZone = SFTimestamp.convertTimezoneIndexToTimeZone(timeZoneIndex);
-    } else {
-      timeZone = TimeZone.getTimeZone("UTC");
-    }
+    TimeZone timeZone = convertFromTimeZoneIndex(timeZoneIndex, resultVersion);
     Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, timeZone, useSessionTimezone);
     return ResultUtil.adjustTimestamp(ts);
+  }
+
+  private static TimeZone convertFromTimeZoneIndex(int timeZoneIndex, long resultVersion) {
+    if (resultVersion > 0) {
+      return SFTimestamp.convertTimezoneIndexToTimeZone(timeZoneIndex);
+    } else {
+      return TimeZone.getTimeZone("UTC");
+    }
   }
 }
