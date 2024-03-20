@@ -373,15 +373,16 @@ public class SessionUtil {
     Map<String, Object> commonParams;
 
     String oktaUsername = loginInput.getOKTAUserName();
-    logger.info("Opening new session. Authenticating user: {}, host: {} with authentication method: {}." +
-                " Login timeout: {} s, auth timeout: {} s, OCSP mode: {}{}",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl(),
-            authenticatorType,
-            loginInput.getLoginTimeout(),
-            loginInput.getAuthTimeout(),
-            loginInput.getOCSPMode(),
-            Strings.isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
+    logger.info(
+        "Opening new session. Authenticating user: {}, host: {} with authentication method: {}."
+            + " Login timeout: {} s, auth timeout: {} s, OCSP mode: {}{}",
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl(),
+        authenticatorType,
+        loginInput.getLoginTimeout(),
+        loginInput.getAuthTimeout(),
+        loginInput.getOCSPMode(),
+        Strings.isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
 
     try {
 
@@ -741,10 +742,11 @@ public class SessionUtil {
 
         String errorMessage = jsonNode.path("message").asText();
 
-        logger.error("Failed to open new session for user: {}, host: {}. Error: {}",
-                loginInput.getUserName(),
-                loginInput.getHostFromServerUrl(),
-                errorMessage);
+        logger.error(
+            "Failed to open new session for user: {}, host: {}. Error: {}",
+            loginInput.getUserName(),
+            loginInput.getHostFromServerUrl(),
+            errorMessage);
         throw new SnowflakeSQLException(
             NO_QUERY_ID,
             errorMessage,
@@ -878,12 +880,12 @@ public class SessionUtil {
     }
 
     stopwatch.stop();
-    logger.info("Session opened in {} ms. User: {}, host: {} with authentication method: {} authenticated successfully.",
-            stopwatch.elapsedMillis(),
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl(),
-            authenticatorType
-    );
+    logger.info(
+        "Session opened in {} ms. User: {}, host: {} with authentication method: {} authenticated successfully.",
+        stopwatch.elapsedMillis(),
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl(),
+        authenticatorType);
     return ret;
   }
 
