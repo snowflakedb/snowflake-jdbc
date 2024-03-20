@@ -557,7 +557,9 @@ public class SFSession extends SFBaseSession {
         httpClientSettingsKey.getProxyHost(),
         httpClientSettingsKey.getProxyPort(),
         httpClientSettingsKey.getProxyUser(),
-        !Strings.isNullOrEmpty(httpClientSettingsKey.getProxyPassword()) ? "provided" : "not provided",
+        !Strings.isNullOrEmpty(httpClientSettingsKey.getProxyPassword())
+            ? "provided"
+            : "not provided",
         httpClientSettingsKey.getNonProxyHosts(),
         httpClientSettingsKey.getProxyHttpProtocol());
 
@@ -695,10 +697,7 @@ public class SFSession extends SFBaseSession {
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
     stopwatch.stop();
-    logger.info("Session {} opened in {} ms.",
-            getSessionId(),
-            stopwatch.elapsedMillis()
-    );
+    logger.info("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
   }
 
   /**
@@ -759,7 +758,8 @@ public class SFSession extends SFBaseSession {
   synchronized void renewSession(String prevSessionToken)
       throws SFException, SnowflakeSQLException {
     if (sessionToken != null && !sessionToken.equals(prevSessionToken)) {
-      logger.debug("Not renewing session {} because session token has not been updated.", getSessionId());
+      logger.debug(
+          "Not renewing session {} because session token has not been updated.", getSessionId());
       return;
     }
     Stopwatch stopwatch = new Stopwatch();
@@ -787,7 +787,8 @@ public class SFSession extends SFBaseSession {
     sessionToken = loginOutput.getSessionToken();
     masterToken = loginOutput.getMasterToken();
     stopwatch.stop();
-    logger.debug("Session {} renewed successfully in {} ms", getSessionId(), stopwatch.elapsedMillis());
+    logger.debug(
+        "Session {} renewed successfully in {} ms", getSessionId(), stopwatch.elapsedMillis());
   }
 
   /**
@@ -838,7 +839,10 @@ public class SFSession extends SFBaseSession {
     }
 
     stopwatch.stop();
-    logger.info("Session {} has been successfully closed in {} ms", getSessionId(), stopwatch.elapsedMillis());
+    logger.info(
+        "Session {} has been successfully closed in {} ms",
+        getSessionId(),
+        stopwatch.elapsedMillis());
     isClosed = true;
   }
 
@@ -894,7 +898,10 @@ public class SFSession extends SFBaseSession {
   /** Start heartbeat for this session */
   protected void startHeartbeatForThisSession() {
     if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
-      logger.debug("Session {} start heartbeat, master token validity: {} s", getSessionId(), masterTokenValidityInSeconds);
+      logger.debug(
+          "Session {} start heartbeat, master token validity: {} s",
+          getSessionId(),
+          masterTokenValidityInSeconds);
 
       HeartbeatBackground.getInstance()
           .addSession(this, masterTokenValidityInSeconds, heartbeatFrequency);
@@ -1009,7 +1016,8 @@ public class SFSession extends SFBaseSession {
       }
     } while (retry);
     stopwatch.stop();
-    logger.debug("Session {} heartbeat successful in {} ms", getSessionId(), stopwatch.elapsedMillis());
+    logger.debug(
+        "Session {} heartbeat successful in {} ms", getSessionId(), stopwatch.elapsedMillis());
   }
 
   void injectedDelay() {

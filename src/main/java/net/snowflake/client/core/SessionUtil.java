@@ -373,8 +373,8 @@ public class SessionUtil {
     Map<String, Object> commonParams;
 
     String oktaUsername = loginInput.getOKTAUserName();
-    logger.info(
-        "Opening new session. Authenticating user: {}, host: {} with authentication method: {}."
+    logger.debug(
+        "Authenticating user: {}, host: {} with authentication method: {}."
             + " Login timeout: {} s, auth timeout: {} s, OCSP mode: {}{}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl(),
@@ -724,22 +724,24 @@ public class SessionUtil {
 
       if (theString == null) {
         if (lastRestException != null) {
-          logger.error("Failed to open new session for user: {}, host: {}. Error: {}",
-                  loginInput.getUserName(),
-                  loginInput.getHostFromServerUrl(),
-                  lastRestException);
+          logger.error(
+              "Failed to open new session for user: {}, host: {}. Error: {}",
+              loginInput.getUserName(),
+              loginInput.getHostFromServerUrl(),
+              lastRestException);
           throw lastRestException;
         } else {
-          SnowflakeSQLException exception = new SnowflakeSQLException(
+          SnowflakeSQLException exception =
+              new SnowflakeSQLException(
                   NO_QUERY_ID,
                   "empty authentication response",
                   SqlState.CONNECTION_EXCEPTION,
-                  ErrorCode.CONNECTION_ERROR.getMessageCode()
-          );
-          logger.error("Failed to open new session for user: {}, host: {}. Error: {}",
-                  loginInput.getUserName(),
-                  loginInput.getHostFromServerUrl(),
-                  exception);
+                  ErrorCode.CONNECTION_ERROR.getMessageCode());
+          logger.error(
+              "Failed to open new session for user: {}, host: {}. Error: {}",
+              loginInput.getUserName(),
+              loginInput.getHostFromServerUrl(),
+              exception);
           throw exception;
         }
       }
@@ -769,10 +771,11 @@ public class SessionUtil {
 
         String errorMessage = jsonNode.path("message").asText();
 
-        logger.error("Failed to open new session for user: {}, host: {}. Error: {}",
-                loginInput.getUserName(),
-                loginInput.getHostFromServerUrl(),
-                errorMessage);
+        logger.error(
+            "Failed to open new session for user: {}, host: {}. Error: {}",
+            loginInput.getUserName(),
+            loginInput.getHostFromServerUrl(),
+            errorMessage);
         throw new SnowflakeSQLException(
             NO_QUERY_ID,
             errorMessage,
@@ -906,12 +909,12 @@ public class SessionUtil {
     }
 
     stopwatch.stop();
-    logger.debug("User: {}, host: {} with authentication method: {} authenticated successfully in {} ms",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl(),
-            authenticatorType,
-            stopwatch.elapsedMillis()
-    );
+    logger.debug(
+        "User: {}, host: {} with authentication method: {} authenticated successfully in {} ms",
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl(),
+        authenticatorType,
+        stopwatch.elapsedMillis());
     return ret;
   }
 
