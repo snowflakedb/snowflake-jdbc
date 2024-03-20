@@ -268,7 +268,10 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           sfSession, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
     stopwatch.stop();
-    logger.info("Connection with session id: {} closed successfully in {} ms", sessionId, stopwatch.elapsedMillis());
+    logger.info(
+        "Connection with session id: {} closed successfully in {} ms",
+        sessionId,
+        stopwatch.elapsedMillis());
   }
 
   public String getSessionID() throws SQLException {

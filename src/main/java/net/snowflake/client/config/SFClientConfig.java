@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /** POJO class for Snowflake's client config. */
 public class SFClientConfig {
