@@ -5,7 +5,6 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1376,8 +1375,6 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return (T) (Double) getDouble(columnIndex);
     } else if (Date.class.isAssignableFrom(type)) {
       return (T) getDate(columnIndex);
-    } else if (Date.class.isAssignableFrom(type)) {
-      return (T) getDate(columnIndex);
     } else if (Time.class.isAssignableFrom(type)) {
       return (T) getTime(columnIndex);
     } else if (Timestamp.class.isAssignableFrom(type)) {
@@ -1399,8 +1396,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
-    int columnType = resultSetMetaData.getInternalColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
+    int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);;
     int scale = resultSetMetaData.getScale(columnIndex);
     TimeZone tz = TimeZone.getDefault();
     Object[] objects = (Object[]) getArray(columnIndex).getArray();
