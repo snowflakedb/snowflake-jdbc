@@ -43,6 +43,7 @@ import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.ThrowingCallable;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -791,6 +792,7 @@ public class SnowflakeUtil {
     return defaultValue;
   }
 
+  @SnowflakeJdbcInternalApi
   public static <T> T mapExceptions(ThrowingCallable<T, SFException> action) throws SQLException {
     try {
       return action.call();

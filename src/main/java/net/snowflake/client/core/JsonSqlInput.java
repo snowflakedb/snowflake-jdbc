@@ -21,6 +21,7 @@ import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.util.ThrowingTriFunction;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
@@ -168,6 +169,11 @@ public class JsonSqlInput extends BaseSqlInput {
           return Time.valueOf(
               Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalTime());
         });
+  }
+
+  @Override
+  public Timestamp readTimestamp() throws SQLException {
+    return readTimestamp(null);
   }
 
   @Override

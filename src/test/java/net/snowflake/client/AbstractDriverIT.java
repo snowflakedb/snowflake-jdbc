@@ -317,6 +317,9 @@ public class AbstractDriverIT {
       properties.put("role", params.get("role"));
       properties.put("account", params.get("account"));
     }
+    properties.put("useProxy", "true");
+    properties.put("proxyHost", "localhost");
+    properties.put("proxyPort", "8080");
     properties.put("db", params.get("database"));
     properties.put("schema", params.get("schema"));
     properties.put("warehouse", params.get("warehouse"));
