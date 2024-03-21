@@ -42,14 +42,12 @@ public class SqlInputTimestampUtilTest {
     Timestamp resultTz =
         getFromType(SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ, TIMESTAMP_IN_FORMAT_2, null);
     Timestamp resultNtz =
-        getFromType(
-            SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ,
-            TIMESTAMP_IN_FORMAT_1,
-            TimeZone.getTimeZone("EST"));
+        getFromType(SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ,
+                TIMESTAMP_IN_FORMAT_1, null);
 
     LOGGER.error("LTZ = " + resultLtz);
-    LOGGER.error("TZ = " + resultLtz);
-    LOGGER.error("NTZ = " + resultLtz);
+    LOGGER.error("TZ = " + resultTz);
+    LOGGER.error("NTZ = " + resultNtz);
 
     assertEquals(EXPECTED_TIMESTAMP, resultLtz);
     assertEquals(EXPECTED_TIMESTAMP, resultTz);
