@@ -48,12 +48,13 @@ public class SqlInputTimestampUtilTest {
             TIMESTAMP_IN_FORMAT_1,
             TimeZone.getTimeZone("EST"));
 
-    assertEquals(EXPECTED_TIMESTAMP, resultLtz);
     LOGGER.error("LTZ = " + resultLtz);
-    assertEquals(EXPECTED_TIMESTAMP, resultTz);
     LOGGER.error("TZ = " + resultLtz);
-    assertEquals(EXPECTED_TIMESTAMP, resultNtz);
     LOGGER.error("NTZ = " + resultLtz);
+
+    assertEquals(EXPECTED_TIMESTAMP, resultLtz);
+    assertEquals(EXPECTED_TIMESTAMP, resultTz);
+    assertEquals(EXPECTED_TIMESTAMP, resultNtz);
   }
 
   private Timestamp getFromType(int type, String value, TimeZone explicitTimezone) {
