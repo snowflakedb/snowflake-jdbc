@@ -10,9 +10,9 @@ import java.util.TimeZone;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
+@SnowflakeJdbcInternalApi
 public class SqlInputTimestampUtil {
 
-  @SnowflakeJdbcInternalApi
   public static Timestamp getTimestampFromType(
       int columnSubType,
       String value,
