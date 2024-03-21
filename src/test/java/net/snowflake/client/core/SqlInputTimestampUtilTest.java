@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.logging.Logger;
+
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -48,6 +50,7 @@ public class SqlInputTimestampUtilTest {
     LOGGER.error("LTZ = " + resultLtz);
     LOGGER.error("TZ = " + resultTz);
     LOGGER.error("NTZ = " + resultNtz);
+    LOGGER.error("Default TimeZone: " + TimeZone.getDefault());
 
     assertEquals(EXPECTED_TIMESTAMP, resultLtz);
     assertEquals(EXPECTED_TIMESTAMP, resultTz);
