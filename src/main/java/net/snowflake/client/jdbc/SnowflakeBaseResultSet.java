@@ -4,7 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapThrowingCallableExceptions;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,6 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+
+import net.snowflake.client.core.ColumnTypeHelper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
@@ -1395,8 +1397,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
-    int columnType = resultSetMetaData.getInternalColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
+    int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);;
     int scale = resultSetMetaData.getScale(columnIndex);
     TimeZone tz = TimeZone.getDefault();
     Object[] objects = (Object[]) getArray(columnIndex).getArray();
@@ -1417,7 +1419,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         arr[counter++] = (T) instance;
       } else if (String.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1426,7 +1428,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                             .getString(value, columnType, columnSubType, scale));
       } else if (Boolean.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1435,7 +1437,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                             .getBoolean(value, columnType));
       } else if (Byte.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1444,7 +1446,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                             .getBytes(value, columnType, columnSubType, scale));
       } else if (Short.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         Short.valueOf(
@@ -1454,7 +1456,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                                 .getShort(value, columnType)));
       } else if (Integer.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         Integer.valueOf(
@@ -1464,7 +1466,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                                 .getInt(value, columnType)));
       } else if (Long.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         Long.valueOf(
@@ -1474,7 +1476,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                                 .getLong(value, columnType)));
       } else if (Float.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         Float.valueOf(
@@ -1484,7 +1486,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                                 .getFloat(value, columnType)));
       } else if (Double.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         Double.valueOf(
@@ -1494,7 +1496,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                                 .getDouble(value, columnType)));
       } else if (Date.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1503,7 +1505,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                             .getDate(value, columnType, columnSubType, tz, scale));
       } else if (Time.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1511,7 +1513,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                             .getDateTimeConverter()
                             .getTime(value, columnType, columnSubType, tz, scale));
       } else if (Timestamp.class.isAssignableFrom(type)) {
-        mapExceptions(
+        mapThrowingCallableExceptions(
             () ->
                 (T)
                     sfBaseResultSet
@@ -1521,7 +1523,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (BigDecimal.class.isAssignableFrom(type)) {
         arr[counter++] = (T) getBigDecimal(columnIndex);
       } else {
-        logger.debug(
+        logger.warn(
             "Unsupported type passed to getArray(int columnIndex, Class<T> type): "
                 + type.getName());
         throw new SQLException(
@@ -1536,7 +1538,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = resultSetMetaData.getInternalColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
     int scale = resultSetMetaData.getScale(columnIndex);
-    TimeZone tz = TimeZone.getDefault();
+    TimeZone tz = session.getTim
     Object object = getObject(columnIndex);
     JsonNode jsonNode = ((JsonSqlInput) object).getInput();
     Map<String, Object> map =
@@ -1570,7 +1572,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (String.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1580,7 +1582,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Boolean.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1590,7 +1592,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Byte.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1600,7 +1602,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Short.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         (Short)
@@ -1611,7 +1613,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Integer.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         (Integer)
@@ -1622,7 +1624,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Long.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         (Long)
@@ -1633,7 +1635,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Float.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         (Float)
@@ -1644,7 +1646,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Double.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         (Double)
@@ -1655,7 +1657,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (BigDecimal.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1665,7 +1667,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Date.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1675,7 +1677,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Time.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1685,7 +1687,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Timestamp.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapExceptions(
+            mapThrowingCallableExceptions(
                 () ->
                     (T)
                         sfBaseResultSet
