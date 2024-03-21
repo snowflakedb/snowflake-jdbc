@@ -44,6 +44,6 @@ public class SqlInputTimestampUtil {
       tz = sessionTimeZone;
     }
     SnowflakeDateTimeFormat formatter = SnowflakeDateTimeFormat.fromSqlFormat(rawFormat);
-    return formatter.parse(value, tz, 0, true).getTimestamp();
+    return formatter.parse(value, tz, 0, false).getTimestamp();
   }
 }

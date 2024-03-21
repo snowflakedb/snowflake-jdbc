@@ -59,6 +59,6 @@ public class SqlInputTimestampUtilTest {
 
   private Timestamp getFromType(int type, String value, TimeZone explicitTimezone) {
     return SqlInputTimestampUtil.getTimestampFromType(
-        type, value, mockSession, TimeZone.getTimeZone("UTC"), explicitTimezone);
+        type, value, mockSession, TimeZone.getTimeZone("CET"), explicitTimezone);
   }
 }
