@@ -29,7 +29,7 @@ public class SqlInputTimestampUtilTest {
   }
 
   @Test
-  public void shouldGetTimestampForLtzType() {
+  public void shouldGetTimestampForDifferentType() {
     // when
     Timestamp resultLtz =
         getFromType(SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, TIMESTAMP_IN_FORMAT_1, null);
@@ -42,8 +42,11 @@ public class SqlInputTimestampUtilTest {
             TimeZone.getTimeZone("EST"));
 
     assertEquals(EXPECTED_TIMESTAMP, resultLtz);
+    System.out.println("LTZ = " + resultLtz);
     assertEquals(EXPECTED_TIMESTAMP, resultTz);
+    System.out.println("TZ = " + resultLtz);
     assertEquals(EXPECTED_TIMESTAMP, resultNtz);
+    System.out.println("NTZ = " + resultLtz);
   }
 
   private Timestamp getFromType(int type, String value, TimeZone explicitTimezone) {
