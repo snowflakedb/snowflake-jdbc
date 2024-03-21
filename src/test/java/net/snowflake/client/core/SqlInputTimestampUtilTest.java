@@ -3,20 +3,27 @@ package net.snowflake.client.core;
 import static org.junit.Assert.*;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 public class SqlInputTimestampUtilTest {
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(SqlInputTimestampUtilTest.class);
+
 
   private static final String TIMESTAMP_IN_FORMAT_1 = "2021-12-22 09:43:44.000 +0100";
   private static final String TIMESTAMP_IN_FORMAT_2 = "Wed, 22 Dec 2021 09:43:44 +0100";
   private static final Map<String, Object> CONNECTION_PARAMS = new HashMap<>();
-  private static final Timestamp EXPECTED_TIMESTAMP = Timestamp.valueOf("2021-12-22 09:43:44.0");
+  private static final Timestamp EXPECTED_TIMESTAMP =
+          Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44));
+
 
   private static SFBaseSession mockSession;
 
@@ -42,11 +49,11 @@ public class SqlInputTimestampUtilTest {
             TimeZone.getTimeZone("EST"));
 
     assertEquals(EXPECTED_TIMESTAMP, resultLtz);
-    System.out.println("LTZ = " + resultLtz);
+    LOGGER.debug("LTZ = " + resultLtz);
     assertEquals(EXPECTED_TIMESTAMP, resultTz);
-    System.out.println("TZ = " + resultLtz);
+    LOGGER.debug("TZ = " + resultLtz);
     assertEquals(EXPECTED_TIMESTAMP, resultNtz);
-    System.out.println("NTZ = " + resultLtz);
+    LOGGER.debug("NTZ = " + resultLtz);
   }
 
   private Timestamp getFromType(int type, String value, TimeZone explicitTimezone) {
