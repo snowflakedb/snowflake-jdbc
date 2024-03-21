@@ -49,11 +49,11 @@ public class SqlInputTimestampUtilTest {
             TimeZone.getTimeZone("EST"));
 
     assertEquals(EXPECTED_TIMESTAMP, resultLtz);
-    LOGGER.debug("LTZ = " + resultLtz);
+    LOGGER.error("LTZ = " + resultLtz);
     assertEquals(EXPECTED_TIMESTAMP, resultTz);
-    LOGGER.debug("TZ = " + resultLtz);
+    LOGGER.error("TZ = " + resultLtz);
     assertEquals(EXPECTED_TIMESTAMP, resultNtz);
-    LOGGER.debug("NTZ = " + resultLtz);
+    LOGGER.error("NTZ = " + resultLtz);
   }
 
   private Timestamp getFromType(int type, String value, TimeZone explicitTimezone) {
