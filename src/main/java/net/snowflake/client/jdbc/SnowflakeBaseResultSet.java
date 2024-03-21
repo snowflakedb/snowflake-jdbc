@@ -1526,7 +1526,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         arr[counter++] = (T) getBigDecimal(columnIndex);
       } else {
         logger.debug(
-            "Unsupported type passed to getList(int columnIndex,Class<T> type): " + type.getName());
+            "Unsupported type passed to getArray(int columnIndex, Class<T> type): "
+                + type.getName());
         throw new SQLException(
             "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
                 + type.getName());
