@@ -137,13 +137,19 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   private void initConnectionWithImpl(
       SFConnectionHandler sfConnectionHandler, String url, Properties info) throws SQLException {
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     logger.info("Initializing new connection");
     this.sfConnectionHandler = sfConnectionHandler;
     sfConnectionHandler.initializeConnection(url, info);
     this.sfSession = sfConnectionHandler.getSFSession();
     missingProperties = sfSession.checkProperties();
     this.showStatementParameters = sfSession.getPreparedStatementLogging();
-    logger.info("Connection initialized successfully. Session id: {}", sfSession.getSessionId());
+    stopwatch.stop();
+    logger.info(
+        "Connection initialized successfully in {} ms. Session id: {}",
+        stopwatch.elapsedMillis(),
+        sfSession.getSessionId());
   }
 
   public List<DriverPropertyInfo> returnMissingProperties() {
