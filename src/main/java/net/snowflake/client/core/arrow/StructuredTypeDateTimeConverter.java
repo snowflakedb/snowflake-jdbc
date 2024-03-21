@@ -77,7 +77,8 @@ public class StructuredTypeDateTimeConverter {
             (long) map.get("epoch"),
             (int) map.get("fraction"),
             sessionTimeZone,
-            useSessionTimezone);
+            useSessionTimezone,
+            false);
       }
     } else if (obj instanceof Long) {
       return BigIntToTimestampLTZConverter.getTimestamp((long) obj, scale);
@@ -94,12 +95,12 @@ public class StructuredTypeDateTimeConverter {
         return TwoFieldStructToTimestampNTZConverter.getTimestamp(
             (long) map.get("epoch"),
             (int) map.get("fraction"),
-            false,
             tz,
             sessionTimeZone,
             treatNTZAsUTC,
             useSessionTimezone,
-            honorClientTZForTimestampNTZ);
+            honorClientTZForTimestampNTZ,
+            false);
       }
     } else if (obj instanceof Long) {
       return BigIntToTimestampNTZConverter.getTimestamp(
@@ -122,7 +123,8 @@ public class StructuredTypeDateTimeConverter {
             (int) map.get("fraction"),
             (int) map.get("timezone"),
             resultVersion,
-            useSessionTimezone);
+            useSessionTimezone,
+            false);
       }
     }
     throw new SFException(

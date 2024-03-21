@@ -49,8 +49,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
       throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp TZ formatter");
     }
     try {
-      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault());
-
+      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
       return ts == null
           ? null
           : context.getTimestampTZFormatter().format(ts, timeZone, context.getScale(columnIndex));
@@ -75,16 +74,21 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    return epochs.isNull(index) ? null : getTimestamp(index, tz);
+    return epochs.isNull(index) ? null : getTimestamp(index, tz, false);
   }
 
-  private Timestamp getTimestamp(int index, TimeZone tz) throws SFException {
+  private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException {
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
     int timeZoneIndex = timeZoneIndices.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
     timeZone = convertFromTimeZoneIndex(timeZoneIndex, context.getResultVersion());
     return getTimestamp(
-        epoch, fraction, timeZoneIndex, context.getResultVersion(), useSessionTimezone);
+        epoch,
+        fraction,
+        timeZoneIndex,
+        context.getResultVersion(),
+        useSessionTimezone,
+        fromToString);
   }
 
   @Override
@@ -92,7 +96,7 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     if (epochs.isNull(index)) {
       return null;
     }
-    Timestamp ts = getTimestamp(index, TimeZone.getDefault());
+    Timestamp ts = getTimestamp(index, TimeZone.getDefault(), false);
     // ts can be null when Java's timestamp is overflow.
     return ts == null
         ? null
@@ -126,10 +130,19 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   }
 
   public static Timestamp getTimestamp(
-      long epoch, int fraction, int timeZoneIndex, long resultVersion, boolean useSessionTimezone)
+      long epoch,
+      int fraction,
+      int timeZoneIndex,
+      long resultVersion,
+      boolean useSessionTimezone,
+      boolean fromToString)
       throws SFException {
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      throw new TimestampOperationNotAvailableException(epoch, fraction);
+      if (fromToString) {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      } else {
+        return null;
+      }
     }
     TimeZone timeZone = convertFromTimeZoneIndex(timeZoneIndex, resultVersion);
     Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, timeZone, useSessionTimezone);

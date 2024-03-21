@@ -77,12 +77,12 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
     return getTimestamp(
         epoch,
         fraction,
-        fromToString,
         tz,
         sessionTimeZone,
         treatNTZasUTC,
         useSessionTimezone,
-        context.getHonorClientTZForTimestampNTZ());
+        context.getHonorClientTZForTimestampNTZ(),
+        fromToString);
   }
 
   @Override
@@ -126,16 +126,20 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
   public static Timestamp getTimestamp(
       long epoch,
       int fraction,
-      boolean fromToString,
       TimeZone tz,
       TimeZone sessionTimeZone,
       boolean treatNTZasUTC,
       boolean useSessionTimezone,
-      boolean honorClientTZForTimestampNTZ)
+      boolean honorClientTZForTimestampNTZ,
+      boolean fromToString)
       throws SFException {
 
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      throw new TimestampOperationNotAvailableException(epoch, fraction);
+      if (fromToString) {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      } else {
+        return null;
+      }
     }
     Timestamp ts;
     if (treatNTZasUTC || !useSessionTimezone) {

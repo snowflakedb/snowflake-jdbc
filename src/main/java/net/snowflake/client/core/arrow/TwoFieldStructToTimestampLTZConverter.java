@@ -46,7 +46,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     }
 
     try {
-      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault());
+      Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
 
       return ts == null
           ? null
@@ -65,14 +65,14 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    return isNull(index) ? null : getTimestamp(index, tz);
+    return isNull(index) ? null : getTimestamp(index, tz, false);
   }
 
-  private Timestamp getTimestamp(int index, TimeZone tz) throws SFException {
+  private Timestamp getTimestamp(int index, TimeZone tz, boolean fromToString) throws SFException {
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
-    return getTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
+    return getTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone, fromToString);
   }
 
   @Override
@@ -89,7 +89,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     if (isNull(index)) {
       return null;
     }
-    Timestamp ts = getTimestamp(index, TimeZone.getDefault());
+    Timestamp ts = getTimestamp(index, TimeZone.getDefault(), false);
     // ts can be null when Java's timestamp is overflow.
     return ts == null
         ? null
@@ -116,10 +116,18 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   }
 
   public static Timestamp getTimestamp(
-      long epoch, int fraction, TimeZone sessionTimeZone, boolean useSessionTimezone)
+      long epoch,
+      int fraction,
+      TimeZone sessionTimeZone,
+      boolean useSessionTimezone,
+      boolean fromToString)
       throws SFException {
     if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      throw new TimestampOperationNotAvailableException(epoch, fraction);
+      if (fromToString) {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      } else {
+        return null;
+      }
     }
     Timestamp ts =
         ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
