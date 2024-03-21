@@ -5,6 +5,7 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1375,6 +1376,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return (T) (Double) getDouble(columnIndex);
     } else if (Date.class.isAssignableFrom(type)) {
       return (T) getDate(columnIndex);
+    } else if (Date.class.isAssignableFrom(type)) {
+      return (T) getDate(columnIndex);
     } else if (Time.class.isAssignableFrom(type)) {
       return (T) getTime(columnIndex);
     } else if (Timestamp.class.isAssignableFrom(type)) {
@@ -1396,30 +1399,29 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
+    int columnType = resultSetMetaData.getInternalColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
-    int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
-    ;
     int scale = resultSetMetaData.getScale(columnIndex);
-    TimeZone tz = sfBaseResultSet.getSessionTimeZone();
+    TimeZone tz = TimeZone.getDefault();
     Object[] objects = (Object[]) getArray(columnIndex).getArray();
     T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, objects.length);
     int counter = 0;
     for (Object value : objects) {
       if (SQLData.class.isAssignableFrom(type)) {
-        Map data = (Map) value;
+        Map[] data = (Map[]) value;
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput =
-            new JsonSqlInput(
-                OBJECT_MAPPER.convertValue(data, JsonNode.class),
-                session,
-                sfBaseResultSet.getConverters(),
-                sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
-                sfBaseResultSet.getSessionTimezone());
+                new JsonSqlInput(
+                        OBJECT_MAPPER.convertValue(data, JsonNode.class),
+                        session,
+                        sfBaseResultSet.getConverters(),
+                        sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
+                        sfBaseResultSet.getSessionTimezone());
         instance.readSQL(sqlInput, null);
         arr[counter++] = (T) instance;
       } else if (String.class.isAssignableFrom(type)) {
         arr[counter++] =
-            mapSFExceptionToSQLException(
+                mapSFExceptionToSQLException(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1523,9 +1525,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (BigDecimal.class.isAssignableFrom(type)) {
         arr[counter++] = (T) getBigDecimal(columnIndex);
       } else {
-        logger.warn(
-            "Unsupported type passed to getArray(int columnIndex, Class<T> type): "
-                + type.getName());
+        logger.debug(
+            "Unsupported type passed to getList(int columnIndex,Class<T> type): " + type.getName());
         throw new SQLException(
             "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
                 + type.getName());
@@ -1538,7 +1539,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = resultSetMetaData.getInternalColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
     int scale = resultSetMetaData.getScale(columnIndex);
-    TimeZone tz = sfBaseResultSet.getSessionTimeZone();
+    TimeZone tz = TimeZone.getDefault();
     Object object = getObject(columnIndex);
     JsonNode jsonNode = ((JsonSqlInput) object).getInput();
     Map<String, Object> map =
@@ -1549,11 +1550,12 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput =
             new JsonSqlInput(
-                jsonNode.get(entry.getKey()),
-                session,
-                sfBaseResultSet.getConverters(),
-                sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
-                sfBaseResultSet.getSessionTimezone());
+                    new JsonSqlInput(
+                            jsonNode.get(entry.getKey()),
+                            session,
+                            sfBaseResultSet.getConverters(),
+                            sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
+                            sfBaseResultSet.getSessionTimezone());
         instance.readSQL(sqlInput, null);
         resultMap.put(entry.getKey(), (T) instance);
       } else if (String.class.isAssignableFrom(type)) {
