@@ -4,7 +4,6 @@ import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeType;
-import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
 
 @SnowflakeJdbcInternalApi
@@ -12,9 +11,9 @@ public class StructConverter extends AbstractArrowVectorConverter {
 
   private final StructVector structVector;
 
-  public StructConverter(ValueVector vector, int columnIndex, DataConversionContext context) {
+  public StructConverter(StructVector vector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.OBJECT.name(), vector, columnIndex, context);
-    structVector = (StructVector) vector;
+    structVector = vector;
   }
 
   @Override

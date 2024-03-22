@@ -24,7 +24,6 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.ThrowingConsumer;
 import net.snowflake.client.category.TestCategoryStructuredType;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import org.junit.Assume;
 import org.junit.Before;
@@ -36,7 +35,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   private final ResultSetFormatType queryResultFormat;
 
   public ResultSetStructuredTypesLatestIT() {
-    this(ResultSetFormatType.JSON);
+    this(ResultSetFormatType.NATIVE_ARROW);
   }
 
   protected ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
@@ -439,7 +438,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     }
   }
 
-  @SnowflakeJdbcInternalApi
   enum ResultSetFormatType {
     JSON("JSON"),
     ARROW_WITH_JSON_STRUCTURED_TYPES("ARROW"),
