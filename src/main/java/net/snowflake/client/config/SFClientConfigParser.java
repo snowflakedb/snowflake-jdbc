@@ -90,6 +90,8 @@ public class SFClientConfigParser {
             updatedPath = updatedPath.substring(1);
           } else if (updatedPath.startsWith("file:\\")) {
             updatedPath = updatedPath.substring(6);
+          } else if (updatedPath.startsWith("\\")) {
+            updatedPath = updatedPath.substring(2);
           }
           updatedPath = updatedPath.replace("/", "\\");
         }
