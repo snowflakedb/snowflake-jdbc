@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Set;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -34,21 +35,26 @@ public class SFClientConfigParser {
     String derivedConfigFilePath = null;
     if (configFilePath != null && !configFilePath.isEmpty()) {
       // 1. Try to read the file at  configFilePath.
+      logger.info("Using config file specified from connection string: {}", configFilePath);
       derivedConfigFilePath = configFilePath;
     } else if (System.getenv().containsKey(SF_CLIENT_CONFIG_ENV_NAME)) {
       // 2. If SF_CLIENT_CONFIG_ENV_NAME is set, read from env.
-      derivedConfigFilePath = systemGetEnv(SF_CLIENT_CONFIG_ENV_NAME);
+      String filePath = systemGetEnv(SF_CLIENT_CONFIG_ENV_NAME);
+      logger.info("Using config file specified from environment variable: {}", filePath);
+      derivedConfigFilePath = filePath;
     } else {
       // 3. Read SF_CLIENT_CONFIG_FILE_NAME from where jdbc jar is loaded.
       String driverLocation =
           Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
       if (Files.exists(Paths.get(driverLocation))) {
+        logger.info("Using config file specified from driver directory: {}", driverLocation);
         derivedConfigFilePath = driverLocation;
       } else {
         // 4. Read SF_CLIENT_CONFIG_FILE_NAME if it is present in user home directory.
         String userHomeFilePath =
             Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME).toString();
         if (Files.exists(Paths.get(userHomeFilePath))) {
+          logger.info("Using config file specified from home directory: {}", userHomeFilePath);
           derivedConfigFilePath = userHomeFilePath;
         }
       }
@@ -58,6 +64,12 @@ public class SFClientConfigParser {
         File configFile = new File(derivedConfigFilePath);
         ObjectMapper objectMapper = new ObjectMapper();
         SFClientConfig clientConfig = objectMapper.readValue(configFile, SFClientConfig.class);
+        Set<String> unknownParams = clientConfig.getUnknownParamKeys();
+        if (!unknownParams.isEmpty()) {
+          for (String unknownParam : unknownParams) {
+            logger.warn("Unknown field from config: {}", unknownParam);
+          }
+        }
         clientConfig.setConfigFilePath(derivedConfigFilePath);
 
         return clientConfig;
