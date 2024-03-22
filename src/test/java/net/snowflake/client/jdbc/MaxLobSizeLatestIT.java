@@ -87,8 +87,6 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
   }
 
   private static String tableName = "my_lob_test";
-  private static String enableMaxLobSize =
-      "alter session set FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY = 'ENABLED'";
   private static String executeInsert = "insert into " + tableName + " (c1, c2, c3) values (";
   private static String executePreparedStatementInsert = executeInsert + "?, ?, ?)";
   private static String selectQuery = "select * from " + tableName;
@@ -113,10 +111,8 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
     stmt.execute(createTableQuery);
   }
 
-  private void insertQuery(String varCharValue, int intValue, Connection con) throws SQLException {
-    try (Statement stmt = con.createStatement()) {
-      stmt.executeUpdate(executeInsert + "'abc', '" + varCharValue + "', " + intValue + ")");
-    }
+  private void insertQuery(String varCharValue, int intValue, Statement stmt) throws SQLException {
+    stmt.executeUpdate(executeInsert + "'abc', '" + varCharValue + "', " + intValue + ")");
   }
 
   private void preparedInsertQuery(String varCharValue, int intValue, Connection con)
@@ -146,7 +142,7 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
       String varCharValue = LobSizeStringValues.get(lobSize);
       int intValue = new Random().nextInt();
-      insertQuery(varCharValue, intValue, con);
+      insertQuery(varCharValue, intValue, stmt);
 
       try (ResultSet rs = stmt.executeQuery(selectQuery)) {
         assertTrue(rs.next());
