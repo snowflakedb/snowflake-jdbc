@@ -1397,7 +1397,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
-    int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);;
+    int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
+    ;
     int scale = resultSetMetaData.getScale(columnIndex);
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object[] objects = (Object[]) getArray(columnIndex).getArray();
