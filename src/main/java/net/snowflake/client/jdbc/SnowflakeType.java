@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -79,8 +80,13 @@ public enum SnowflakeType {
       case BINARY:
         return JavaDataType.JAVA_BYTES;
       case ANY:
-      case OBJECT:
         return JavaDataType.JAVA_OBJECT;
+      case OBJECT:
+        if (StructureTypeHelper.isStructureTypeEnabled()) {
+          return JavaDataType.JAVA_OBJECT;
+        } else {
+          return JavaDataType.JAVA_STRING;
+        }
       default:
         // Those are not supported, but no reason to panic
         return JavaDataType.JAVA_STRING;

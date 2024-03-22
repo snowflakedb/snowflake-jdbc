@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
@@ -95,13 +96,13 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBoolean(columnIndex);
 
       case Types.STRUCT:
-        if (Boolean.parseBoolean(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
+        if (StructureTypeHelper.isStructureTypeEnabled()) {
           return getSqlInput((String) obj, columnIndex);
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
       case Types.ARRAY:
-        if (Boolean.parseBoolean(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
+        if (StructureTypeHelper.isStructureTypeEnabled()) {
           return getArray(columnIndex);
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);

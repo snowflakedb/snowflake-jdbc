@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -23,8 +24,10 @@ import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.ThrowingConsumer;
+import net.snowflake.client.ThrowingRunnable;
 import net.snowflake.client.category.TestCategoryStructuredType;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
+import net.snowflake.client.core.structs.StructureTypeHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -404,6 +407,32 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         });
   }
 
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
+    withStructureTypeTemporaryDisabled(
+        () -> {
+          withFirstRow(
+              "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
+              resultSet -> {
+                assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
+              });
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testColumnTypeWhenStructureTypeIsEnabled() throws Exception {
+    withStructureTypeTemporaryEnabled(
+        () -> {
+          withFirstRow(
+              "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
+              resultSet -> {
+                assertEquals(Types.STRUCT, resultSet.getMetaData().getColumnType(1));
+              });
+        });
+  }
+
   private void withFirstRow(String sqlText, ThrowingConsumer<ResultSet, SQLException> consumer)
       throws SQLException {
     try (Connection connection = init();
@@ -413,5 +442,28 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
       consumer.accept(rs);
     }
   }
-  ;
+
+  private void withStructureTypeTemporaryEnabled(ThrowingRunnable action) throws Exception {
+    boolean isStructureTypeEnabled = StructureTypeHelper.isStructureTypeEnabled();
+    try {
+      StructureTypeHelper.enableStructuredType();
+      action.run();
+    } finally {
+      if (!isStructureTypeEnabled) {
+        StructureTypeHelper.disableStructuredType();
+      }
+    }
+  }
+
+  private void withStructureTypeTemporaryDisabled(ThrowingRunnable action) throws Exception {
+    boolean isStructureTypeEnabled = StructureTypeHelper.isStructureTypeEnabled();
+    try {
+      StructureTypeHelper.disableStructuredType();
+      action.run();
+    } finally {
+      if (isStructureTypeEnabled) {
+        StructureTypeHelper.enableStructuredType();
+      }
+    }
+  }
 }
