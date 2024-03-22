@@ -1,7 +1,5 @@
 package net.snowflake.client.core.json;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.getTimestampFromType;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Date;
@@ -16,6 +14,8 @@ import java.util.TimeZone;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.core.SqlInputTimestampUtil;
+import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.util.JsonStringToTypeConverter;
@@ -29,6 +29,7 @@ public class Converters {
   private final DateTimeConverter dateTimeConverter;
   private final BytesConverter bytesConverter;
   private final StringConverter stringConverter;
+  private final StructuredTypeDateTimeConverter structuredTypeDateTimeConverter;
 
   public Converters(
       TimeZone sessionTimeZone,
@@ -68,6 +69,14 @@ public class Converters {
             resultVersion,
             session,
             this);
+    structuredTypeDateTimeConverter =
+        new StructuredTypeDateTimeConverter(
+            sessionTimeZone,
+            resultVersion,
+            honorClientTZForTimestampNTZ,
+            treatNTZAsUTC,
+            useSessionTimezone,
+            formatDateWithTimeZone);
   }
 
   @SnowflakeJdbcInternalApi
@@ -106,6 +115,10 @@ public class Converters {
 
   public StringConverter getStringConverter() {
     return stringConverter;
+  }
+
+  public StructuredTypeDateTimeConverter getStructuredTypeDateTimeConverter() {
+    return structuredTypeDateTimeConverter;
   }
 
   @SnowflakeJdbcInternalApi
@@ -194,9 +207,16 @@ public class Converters {
 
   @SnowflakeJdbcInternalApi
   public JsonStringToTypeConverter timestampConverter(
-      int columnSubType, int columnType, int scale, SFBaseSession session) {
+      int columnSubType,
+      int columnType,
+      int scale,
+      SFBaseSession session,
+      TimeZone tz,
+      TimeZone sessionTimezone) {
     return value -> {
-      Timestamp result = getTimestampFromType(columnSubType, (String) value, session);
+      Timestamp result =
+          SqlInputTimestampUtil.getTimestampFromType(
+              columnSubType, (String) value, session, sessionTimezone, tz);
       if (result != null) {
         return result;
       }

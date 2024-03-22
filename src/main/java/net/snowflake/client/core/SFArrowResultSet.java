@@ -21,6 +21,8 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.StructConverter;
+import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.ArrowResultChunk;
@@ -39,6 +41,7 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.util.JsonStringHashMap;
 
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
@@ -64,9 +67,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   /** is array bind supported */
   private final boolean arrayBindSupported;
-
-  /** session timezone */
-  private TimeZone timeZone;
 
   /** index of next chunk to consume */
   private long nextChunkIndex = 0;
@@ -186,7 +186,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.parameters = resultSetSerializable.getParameters();
     this.chunkCount = resultSetSerializable.getChunkFileCount();
     this.chunkDownloader = resultSetSerializable.getChunkDownloader();
-    this.timeZone = resultSetSerializable.getTimeZone();
     this.honorClientTZForTimestampNTZ = resultSetSerializable.isHonorClientTZForTimestampNTZ();
     this.resultVersion = resultSetSerializable.getResultVersion();
     this.numberOfBinds = resultSetSerializable.getNumberOfBinds();
@@ -199,8 +198,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.timestampTZFormatter = resultSetSerializable.getTimestampTZFormatter();
     this.dateFormatter = resultSetSerializable.getDateFormatter();
     this.timeFormatter = resultSetSerializable.getTimeFormatter();
-    this.timeZone = resultSetSerializable.getTimeZone();
-    this.honorClientTZForTimestampNTZ = resultSetSerializable.isHonorClientTZForTimestampNTZ();
+    this.sessionTimezone = resultSetSerializable.getTimeZone();
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
     this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
@@ -473,7 +471,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    converter.setSessionTimeZone(timeZone);
+    converter.setSessionTimeZone(sessionTimezone);
     converter.setUseSessionTimezone(useSessionTimezone);
     return converter.toDate(index, tz, resultSetSerializable.getFormatDateWithTimeZone());
   }
@@ -483,7 +481,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    converter.setSessionTimeZone(timeZone);
+    converter.setSessionTimeZone(sessionTimezone);
     converter.setUseSessionTimezone(useSessionTimezone);
     return converter.toTime(index);
   }
@@ -492,7 +490,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
-    converter.setSessionTimeZone(timeZone);
+    converter.setSessionTimeZone(sessionTimezone);
     converter.setUseSessionTimezone(useSessionTimezone);
     wasNull = converter.isNull(index);
     return converter.toTimestamp(index, tz);
@@ -505,9 +503,39 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     wasNull = converter.isNull(index);
     converter.setTreatNTZAsUTC(treatNTZAsUTC);
     converter.setUseSessionTimezone(useSessionTimezone);
-    converter.setSessionTimeZone(timeZone);
+    converter.setSessionTimeZone(sessionTimezone);
     Object obj = converter.toObject(index);
-    return handleObjectType(columnIndex, obj);
+    int type = resultSetMetaData.getColumnType(columnIndex);
+    if (type == Types.STRUCT && StructureTypeHelper.isStructureTypeEnabled()) {
+      if (converter instanceof VarCharConverter) {
+        return createJsonSqlInput(columnIndex, obj);
+      } else if (converter instanceof StructConverter) {
+        return createArrowSqlInput(columnIndex, (JsonStringHashMap<String, Object>) obj);
+      }
+    }
+    return obj;
+  }
+
+  private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
+    try {
+      JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
+      return new JsonSqlInput(
+          jsonNode,
+          session,
+          jsonConverters,
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
+          sessionTimezone);
+    } catch (JsonProcessingException e) {
+      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+    }
+  }
+
+  private Object createArrowSqlInput(int columnIndex, JsonStringHashMap<String, Object> input) {
+    return new ArrowSqlInput(
+        input,
+        session,
+        jsonConverters,
+        resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
   }
 
   @Override
@@ -516,29 +544,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type ARRAY");
   }
 
-  private Object handleObjectType(int columnIndex, Object obj) throws SFException {
-    int columnType = resultSetMetaData.getColumnType(columnIndex);
-    if (columnType == Types.STRUCT && StructureTypeHelper.isStructureTypeEnabled()) {
-      try {
-        JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
-        return new JsonSqlInput(
-            jsonNode,
-            session,
-            jsonConverters,
-            resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
-      } catch (JsonProcessingException e) {
-        throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
-      }
-    }
-    return obj;
-  }
-
   @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    converter.setSessionTimeZone(timeZone);
+    converter.setSessionTimeZone(sessionTimezone);
     converter.setUseSessionTimezone(useSessionTimezone);
     return converter.toBigDecimal(index);
   }
@@ -678,7 +689,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public TimeZone getTimeZone() {
-    return timeZone;
+    return sessionTimezone;
   }
 
   @Override

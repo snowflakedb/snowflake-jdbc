@@ -28,19 +28,20 @@ import net.snowflake.client.ThrowingRunnable;
 import net.snowflake.client.category.TestCategoryStructuredType;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.core.structs.StructureTypeHelper;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryStructuredType.class)
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
-  private final String queryResultFormat;
+  private final ResultSetFormatType queryResultFormat;
 
   public ResultSetStructuredTypesLatestIT() {
-    this("JSON");
+    this(ResultSetFormatType.JSON);
   }
 
-  protected ResultSetStructuredTypesLatestIT(String queryResultFormat) {
+  protected ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
     this.queryResultFormat = queryResultFormat;
   }
 
@@ -49,7 +50,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     try (Statement stmt = conn.createStatement()) {
       stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
       stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
-      stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+      stmt.execute(
+          "alter session set jdbc_query_result_format = '"
+              + queryResultFormat.sessionParameterTypeValue
+              + "'");
+      if (queryResultFormat == ResultSetFormatType.NATIVE_ARROW) {
+        stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
+        stmt.execute("alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
+      }
     }
     return conn;
   }
@@ -154,11 +162,11 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.getTimestampLtz());
         assertEquals(
-            Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 10, 44, 44)),
-            object.getTimestampNtz());
+            Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
         assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 2, 45, 45)), object.getTimestampTz());
-        assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), object.getDate());
+        assertEquals(
+            Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), object.getDate().toString());
         assertEquals(Time.valueOf(LocalTime.of(12, 34, 56)), object.getTime());
         assertArrayEquals(new byte[] {'a', 'b', 'c'}, object.getBinary());
         assertTrue(object.getBool());
@@ -170,6 +178,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapJsonToMap() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT OBJECT_CONSTRUCT('string','a','string2',1)",
         (resultSet) -> {
@@ -182,6 +191,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsArrayOfSqlData() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT({'string':'one'}, {'string':'two'}, {'string':'three'})::ARRAY(OBJECT(string VARCHAR))",
@@ -197,6 +207,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMap() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
         "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
@@ -212,6 +223,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsList() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
         "select [{'string':'one'},{'string': 'two'}]::ARRAY(OBJECT(string varchar))",
@@ -227,6 +239,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapStructsFromChunks() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "select {'string':'a'}::OBJECT(string VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))",
         (resultSet) -> {
@@ -240,6 +253,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapIntegerArray() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(INTEGER)",
         (resultSet) -> {
@@ -253,6 +267,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapFixedToLongArray() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(SMALLINT)",
         (resultSet) -> {
@@ -266,6 +281,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapDecimalArray() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     //    when: jdbc_treat_decimal_as_int=true scale=0
     try (Connection connection = init();
         Statement statement = connection.createStatement();
@@ -310,6 +326,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapVarcharArray() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT 'text', ARRAY_CONSTRUCT('10', '20','30')::ARRAY(VARCHAR)",
         (resultSet) -> {
@@ -324,6 +341,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapDatesArray() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD'))::ARRAY(DATE)",
         (resultSet) -> {
@@ -336,6 +354,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapTimeArray() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(to_time('15:39:20.123'), to_time('15:39:20.123'))::ARRAY(TIME)",
         (resultSet) -> {
@@ -348,6 +367,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapTimestampArray() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), TO_TIMESTAMP_NTZ('2021-12-24 09:55:55'))::ARRAY(TIMESTAMP)",
         (resultSet) -> {
@@ -362,6 +382,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapBooleanArray() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(true,false)::ARRAY(BOOLEAN)",
         (resultSet) -> {
@@ -374,6 +395,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapBinaryArray() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(TO_BINARY('616263', 'HEX'),TO_BINARY('616263', 'HEX'))::ARRAY(BINARY)",
         (resultSet) -> {
@@ -386,6 +408,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapArrayOfStructToMap() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2} )::ARRAY(OBJECT(x VARCHAR, y INTEGER))",
         (resultSet) -> {
@@ -398,6 +421,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapArrayOfArrays() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2}) )::ARRAY(ARRAY(OBJECT(x VARCHAR, y INTEGER)))",
         (resultSet) -> {
@@ -464,6 +488,18 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
       if (isStructureTypeEnabled) {
         StructureTypeHelper.enableStructuredType();
       }
+    }
+  }
+
+  enum ResultSetFormatType {
+    JSON("JSON"),
+    ARROW_WITH_JSON_STRUCTURED_TYPES("ARROW"),
+    NATIVE_ARROW("ARROW");
+
+    public final String sessionParameterTypeValue;
+
+    ResultSetFormatType(String sessionParameterTypeValue) {
+      this.sessionParameterTypeValue = sessionParameterTypeValue;
     }
   }
 }

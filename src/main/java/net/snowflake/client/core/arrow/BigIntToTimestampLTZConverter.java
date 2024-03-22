@@ -64,14 +64,8 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
 
   private Timestamp getTimestamp(int index, TimeZone tz) throws SFException {
     long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
-
     int scale = context.getScale(columnIndex);
-
-    Timestamp ts = ArrowResultUtil.toJavaTimestamp(val, scale);
-
-    Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-
-    return adjustedTimestamp;
+    return getTimestamp(val, scale);
   }
 
   @Override
@@ -94,5 +88,10 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);
+  }
+
+  public static Timestamp getTimestamp(long val, int scale) throws SFException {
+    Timestamp ts = ArrowResultUtil.toJavaTimestamp(val, scale);
+    return ResultUtil.adjustTimestamp(ts);
   }
 }

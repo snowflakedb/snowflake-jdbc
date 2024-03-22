@@ -29,6 +29,7 @@ import net.snowflake.client.core.arrow.IntToScaledFixedConverter;
 import net.snowflake.client.core.arrow.IntToTimeConverter;
 import net.snowflake.client.core.arrow.SmallIntToFixedConverter;
 import net.snowflake.client.core.arrow.SmallIntToScaledFixedConverter;
+import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
 import net.snowflake.client.core.arrow.TinyIntToFixedConverter;
 import net.snowflake.client.core.arrow.TinyIntToScaledFixedConverter;
@@ -201,9 +202,16 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
           case ARRAY:
           case CHAR:
           case TEXT:
-          case OBJECT:
           case VARIANT:
             converters.add(new VarCharConverter(vector, i, context));
+            break;
+
+          case OBJECT:
+            if (vector instanceof StructVector) {
+              converters.add(new StructConverter((StructVector) vector, i, context));
+            } else {
+              converters.add(new VarCharConverter(vector, i, context));
+            }
             break;
 
           case BINARY:

@@ -15,8 +15,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 import java.sql.Time;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -36,12 +36,13 @@ import java.util.concurrent.TimeUnit;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.common.core.SnowflakeDateTimeFormat;
+import net.snowflake.client.util.ThrowingCallable;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -776,39 +777,6 @@ public class SnowflakeUtil {
   /**
    * Helper function to convert system properties to boolean
    *
-   * @param columnSubType column subtype value
-   * @param value value to convert
-   * @param session session object
-   * @return converted Timestamp object
-   */
-  @SnowflakeJdbcInternalApi
-  public static Timestamp getTimestampFromType(
-      int columnSubType, String value, SFBaseSession session) {
-    if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
-      return getTimestampFromFormat("TIMESTAMP_LTZ_OUTPUT_FORMAT", value, session);
-    } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ
-        || columnSubType == Types.TIMESTAMP) {
-      return getTimestampFromFormat("TIMESTAMP_NTZ_OUTPUT_FORMAT", value, session);
-    } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-      return getTimestampFromFormat("TIMESTAMP_TZ_OUTPUT_FORMAT", value, session);
-    } else {
-      return null;
-    }
-  }
-
-  private static Timestamp getTimestampFromFormat(
-      String format, String value, SFBaseSession session) {
-    String rawFormat = (String) session.getCommonParameters().get(format);
-    if (rawFormat == null || rawFormat.equals("")) {
-      rawFormat = (String) session.getCommonParameters().get("TIMESTAMP_OUTPUT_FORMAT");
-    }
-    SnowflakeDateTimeFormat formatter = SnowflakeDateTimeFormat.fromSqlFormat(rawFormat);
-    return formatter.parse(value).getTimestamp();
-  }
-
-  /**
-   * Helper function to convert system properties to boolean
-   *
    * @param systemProperty name of the system property
    * @param defaultValue default value used
    * @return the value of the system property as boolean, else the default value
@@ -821,5 +789,13 @@ public class SnowflakeUtil {
       return Boolean.parseBoolean(systemPropertyValue);
     }
     return defaultValue;
+  }
+
+  public static <T> T mapExceptions(ThrowingCallable<T, SFException> action) throws SQLException {
+    try {
+      return action.call();
+    } catch (SFException e) {
+      throw new SQLException(e);
+    }
   }
 }

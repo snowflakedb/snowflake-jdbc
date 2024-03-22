@@ -64,6 +64,8 @@ public abstract class SFBaseResultSet {
   // result set
   protected SnowflakeResultSetSerializableV1 resultSetSerializable;
 
+  protected TimeZone sessionTimezone;
+
   public abstract boolean isLast();
 
   public abstract boolean isAfterLast();
@@ -138,6 +140,10 @@ public abstract class SFBaseResultSet {
 
   public SFResultSetMetaData getMetaData() {
     return resultSetMetaData;
+  }
+
+  public TimeZone getSessionTimezone() {
+    return sessionTimezone;
   }
 
   public int getRow() throws SQLException {

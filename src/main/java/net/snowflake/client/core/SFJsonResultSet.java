@@ -113,6 +113,18 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
+  /**
+   * Sometimes large BIGINTS overflow the java Long type. In these cases, return a BigDecimal type
+   * instead.
+   *
+   * @param columnIndex the column index
+   * @return an object of type long or BigDecimal depending on number size
+   * @throws SFException
+   */
+  private Object getBigInt(int columnIndex, Object obj) throws SFException {
+    return converters.getNumberConverter().getBigInt(obj, columnIndex);
+  }
+
   @Override
   public Array getArray(int columnIndex) throws SFException {
     Object obj = getObjectInternal(columnIndex);
@@ -264,7 +276,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
           jsonNode,
           session,
           converters,
-          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
+          sessionTimeZone);
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }
@@ -343,7 +356,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
               columnSubType,
               getStream(
                       nodeElements,
-                      converters.timestampConverter(columnSubType, columnType, scale, session))
+                      converters.timestampConverter(
+                          columnSubType, columnType, scale, session, null, sessionTimezone))
                   .toArray(Timestamp[]::new));
         case Types.BOOLEAN:
           return new SfSqlArray(
@@ -411,17 +425,5 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     } else {
       return converter.convert(node.toString());
     }
-  }
-
-  /**
-   * Sometimes large BIGINTS overflow the java Long type. In these cases, return a BigDecimal type
-   * instead.
-   *
-   * @param columnIndex the column index
-   * @return an object of type long or BigDecimal depending on number size
-   * @throws SFException
-   */
-  private Object getBigInt(int columnIndex, Object obj) throws SFException {
-    return converters.getNumberConverter().getBigInt(obj, columnIndex);
   }
 }

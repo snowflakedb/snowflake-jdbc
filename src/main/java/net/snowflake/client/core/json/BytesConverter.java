@@ -20,6 +20,9 @@ public class BytesConverter {
     if (obj == null) {
       return null;
     }
+    if (obj instanceof byte[]) {
+      return (byte[]) obj;
+    }
 
     try {
       // For all types except time/date/timestamp data, convert data into byte array. Different

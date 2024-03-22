@@ -1405,7 +1405,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
               OBJECT_MAPPER.convertValue(map, JsonNode.class),
               session,
               sfBaseResultSet.getConverters(),
-              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields());
+              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
+              sfBaseResultSet.getSessionTimezone());
       instance.readSQL(sqlInput, null);
       arr[counter++] = (T) instance;
     }
@@ -1427,7 +1428,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
               jsonNode.get(entry.getKey()),
               session,
               sfBaseResultSet.getConverters(),
-              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields());
+              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
+              sfBaseResultSet.getSessionTimezone());
       instance.readSQL(sqlInput, null);
       resultMap.put(entry.getKey(), (T) instance);
     }
