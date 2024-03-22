@@ -116,7 +116,7 @@ public class CredentialManager {
     }
 
     if (cred == null) {
-      logger.debug("Retrieved %s is null", credType);
+      logger.debug("Retrieved {} is null", credType);
     }
 
     // cred can be null
@@ -135,7 +135,7 @@ public class CredentialManager {
           loginInput.getHostFromServerUrl());
       loginInput.setMfaToken(cred);
     } else {
-      logger.debug("Unrecognized type %s for local cached credential", credType);
+      logger.debug("Unrecognized type {} for local cached credential", credType);
     }
     return;
   }
@@ -178,7 +178,7 @@ public class CredentialManager {
   synchronized void writeTemporaryCredential(SFLoginInput loginInput, String cred, String credType)
       throws SFException {
     if (Strings.isNullOrEmpty(cred)) {
-      logger.debug("No %s is given.", credType);
+      logger.debug("No {} is given.", credType);
       return; // no credential
     }
 

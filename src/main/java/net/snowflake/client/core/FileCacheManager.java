@@ -318,7 +318,6 @@ class FileCacheManager {
     return -1;
   }
 
-  @SnowflakeJdbcInternalApi
   String getCacheFilePath() {
     return cacheFile.getAbsolutePath();
   }
