@@ -793,7 +793,7 @@ public class SnowflakeUtil {
   }
 
   @SnowflakeJdbcInternalApi
-  public static <T> T mapThrowingCallableExceptions(ThrowingCallable<T, SFException> action)
+  public static <T> T mapSFExceptionToSQLException(ThrowingCallable<T, SFException> action)
       throws SQLException {
     try {
       return action.call();
