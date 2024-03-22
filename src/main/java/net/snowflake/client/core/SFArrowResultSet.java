@@ -24,6 +24,7 @@ import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -505,8 +506,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setSessionTimeZone(sessionTimezone);
     Object obj = converter.toObject(index);
     int type = resultSetMetaData.getColumnType(columnIndex);
-    if (type == Types.STRUCT
-        && Boolean.parseBoolean(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
+    if (type == Types.STRUCT && StructureTypeHelper.isStructureTypeEnabled()) {
       if (converter instanceof VarCharConverter) {
         return createJsonSqlInput(columnIndex, obj);
       } else if (converter instanceof StructConverter) {

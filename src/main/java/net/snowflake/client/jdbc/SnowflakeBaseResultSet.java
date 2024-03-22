@@ -1354,8 +1354,38 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     } else if (Map.class.isAssignableFrom(type)) {
       JsonNode jsonNode = ((JsonSqlInput) getObject(columnIndex)).getInput();
       return (T) OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+    } else if (String.class.isAssignableFrom(type)) {
+      return (T) getString(columnIndex);
+    } else if (Boolean.class.isAssignableFrom(type)) {
+      return (T) (Boolean) getBoolean(columnIndex);
+    } else if (Byte.class.isAssignableFrom(type)) {
+      return (T) (Byte) getByte(columnIndex);
+    } else if (Short.class.isAssignableFrom(type)) {
+      return (T) (Short) getShort(columnIndex);
+    } else if (Integer.class.isAssignableFrom(type)) {
+      return (T) (Integer) getInt(columnIndex);
+    } else if (Long.class.isAssignableFrom(type)) {
+      return (T) (Long) getLong(columnIndex);
+    } else if (Float.class.isAssignableFrom(type)) {
+      return (T) (Float) getFloat(columnIndex);
+    } else if (Double.class.isAssignableFrom(type)) {
+      return (T) (Double) getDouble(columnIndex);
+    } else if (Date.class.isAssignableFrom(type)) {
+      return (T) getDate(columnIndex);
+    } else if (Date.class.isAssignableFrom(type)) {
+      return (T) getDate(columnIndex);
+    } else if (Time.class.isAssignableFrom(type)) {
+      return (T) getTime(columnIndex);
+    } else if (Timestamp.class.isAssignableFrom(type)) {
+      return (T) getTimestamp(columnIndex);
+    } else if (BigDecimal.class.isAssignableFrom(type)) {
+      return (T) getBigDecimal(columnIndex);
     } else {
-      return (T) getObject(columnIndex);
+      logger.debug(
+          "Unsupported type passed to getObject(int columnIndex,Class<T> type): " + type.getName());
+      throw new SQLException(
+          "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+              + type.getName());
     }
   }
 

@@ -90,7 +90,12 @@ public class TinyIntToFixedConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    return isNull(index) ? null : (long) toByte(index);
+    if (isNull(index)) {
+      return null;
+    } else if (!shouldTreatDecimalAsInt()) {
+      return BigDecimal.valueOf((long) getByte(index), sfScale);
+    }
+    return (long) toByte(index);
   }
 
   @Override

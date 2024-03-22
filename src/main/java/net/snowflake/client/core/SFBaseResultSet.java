@@ -28,7 +28,6 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 /** Base class for query result set and metadata result set */
 public abstract class SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseResultSet.class);
-  static final String STRUCTURED_TYPE_ENABLED_PROPERTY_NAME = "STRUCTURED_TYPE_ENABLED";
 
   boolean wasNull = false;
 
