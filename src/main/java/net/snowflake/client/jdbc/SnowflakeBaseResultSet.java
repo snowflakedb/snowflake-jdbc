@@ -1399,7 +1399,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
     int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);;
     int scale = resultSetMetaData.getScale(columnIndex);
-    TimeZone tz = TimeZone.getDefault();
+    TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object[] objects = (Object[]) getArray(columnIndex).getArray();
     T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, objects.length);
     int counter = 0;
@@ -1537,7 +1537,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = resultSetMetaData.getInternalColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
     int scale = resultSetMetaData.getScale(columnIndex);
-    TimeZone tz = TimeZone.getDefault();
+    TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object object = getObject(columnIndex);
     JsonNode jsonNode = ((JsonSqlInput) object).getInput();
     Map<String, Object> map =
