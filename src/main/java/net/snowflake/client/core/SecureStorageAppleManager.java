@@ -22,6 +22,7 @@ public class SecureStorageAppleManager implements SecureStorageManager {
   }
 
   public static SecureStorageAppleManager builder() {
+    logger.info("Using Apple Keychain as a token cache storage");
     return new SecureStorageAppleManager();
   }
 

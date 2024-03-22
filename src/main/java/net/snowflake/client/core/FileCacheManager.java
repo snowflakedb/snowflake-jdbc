@@ -317,4 +317,8 @@ class FileCacheManager {
     }
     return -1;
   }
+
+  String getCacheFilePath() {
+    return cacheFile.getAbsolutePath();
+  }
 }
