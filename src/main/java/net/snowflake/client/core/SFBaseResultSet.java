@@ -208,6 +208,7 @@ public abstract class SFBaseResultSet {
     logger.debug("Json converters weren't created");
     return null;
   }
+
   @SnowflakeJdbcInternalApi
   public TimeZone getSessionTimeZone() {
     return resultSetSerializable.getTimeZone();

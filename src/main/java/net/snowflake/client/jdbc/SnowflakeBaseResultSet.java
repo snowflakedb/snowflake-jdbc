@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
 import net.snowflake.client.core.ColumnTypeHelper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -1398,7 +1397,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
-    int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);;
+    int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
+    ;
     int scale = resultSetMetaData.getScale(columnIndex);
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object[] objects = (Object[]) getArray(columnIndex).getArray();
