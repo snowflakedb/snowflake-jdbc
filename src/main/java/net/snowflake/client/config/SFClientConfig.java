@@ -49,9 +49,9 @@ public class SFClientConfig {
 
     if (!commonProps.unknownParams.isEmpty()) {
       unknownParamKeys.addAll(
-        commonProps.unknownParams.keySet().stream()
-          .map(s -> "common:" + s)
-          .collect(Collectors.toCollection(LinkedHashSet::new)));
+          commonProps.unknownParams.keySet().stream()
+              .map(s -> "common:" + s)
+              .collect(Collectors.toCollection(LinkedHashSet::new)));
     }
     return unknownParamKeys;
   }
