@@ -373,8 +373,8 @@ public class SessionUtil {
     Map<String, Object> commonParams;
 
     String oktaUsername = loginInput.getOKTAUserName();
-    logger.info(
-        "Opening new session. Authenticating user: {}, host: {} with authentication method: {}."
+    logger.debug(
+        "Authenticating user: {}, host: {} with authentication method: {}."
             + " Login timeout: {} s, auth timeout: {} s, OCSP mode: {}{}",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl(),
@@ -654,6 +654,8 @@ public class SessionUtil {
       int leftsocketTimeout = loginInput.getSocketTimeoutInMillis();
       int retryCount = 0;
 
+      Exception lastRestException = null;
+
       while (true) {
         try {
           theString =
@@ -665,6 +667,7 @@ public class SessionUtil {
                   retryCount,
                   loginInput.getHttpClientSettingsKey());
         } catch (SnowflakeSQLException ex) {
+          lastRestException = ex;
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
             if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
               SessionUtilKeyPair s =
@@ -713,8 +716,34 @@ public class SessionUtil {
           } else {
             throw ex;
           }
+        } catch (Exception ex) {
+          lastRestException = ex;
         }
         break;
+      }
+
+      if (theString == null) {
+        if (lastRestException != null) {
+          logger.error(
+              "Failed to open new session for user: {}, host: {}. Error: {}",
+              loginInput.getUserName(),
+              loginInput.getHostFromServerUrl(),
+              lastRestException);
+          throw lastRestException;
+        } else {
+          SnowflakeSQLException exception =
+              new SnowflakeSQLException(
+                  NO_QUERY_ID,
+                  "empty authentication response",
+                  SqlState.CONNECTION_EXCEPTION,
+                  ErrorCode.CONNECTION_ERROR.getMessageCode());
+          logger.error(
+              "Failed to open new session for user: {}, host: {}. Error: {}",
+              loginInput.getUserName(),
+              loginInput.getHostFromServerUrl(),
+              exception);
+          throw exception;
+        }
       }
 
       // general method, same as with data binding
@@ -775,7 +804,7 @@ public class SessionUtil {
       commonParams = SessionUtil.getCommonParams(jsonNode.path("data").path("parameters"));
 
       if (serverVersion != null) {
-        logger.debug("server version = {}", serverVersion);
+        logger.debug("Server version = {}", serverVersion);
 
         if (serverVersion.indexOf(" ") > 0) {
           databaseVersion = serverVersion.substring(0, serverVersion.indexOf(" "));
@@ -783,7 +812,7 @@ public class SessionUtil {
           databaseVersion = serverVersion;
         }
       } else {
-        logger.debug("server version is null", false);
+        logger.debug("Server version is null", false);
       }
 
       if (databaseVersion != null) {
@@ -806,13 +835,13 @@ public class SessionUtil {
       if (!jsonNode.path("data").path("newClientForUpgrade").isNull()) {
         newClientForUpgrade = jsonNode.path("data").path("newClientForUpgrade").asText();
 
-        logger.debug("new client: {}", newClientForUpgrade);
+        logger.debug("New client: {}", newClientForUpgrade);
       }
 
       // get health check interval and adjust network timeouts if different
       int healthCheckIntervalFromGS = jsonNode.path("data").path("healthCheckInterval").asInt();
 
-      logger.debug("health check interval = {}", healthCheckIntervalFromGS);
+      logger.debug("Health check interval: {}", healthCheckIntervalFromGS);
 
       if (healthCheckIntervalFromGS > 0 && healthCheckIntervalFromGS != healthCheckInterval) {
         // add health check interval to socket timeout
@@ -827,9 +856,9 @@ public class SessionUtil {
 
         HttpUtil.setRequestConfig(requestConfig);
 
-        logger.debug("adjusted connection timeout to = {}", loginInput.getConnectionTimeout());
+        logger.debug("Adjusted connection timeout to: {}", loginInput.getConnectionTimeout());
 
-        logger.debug("adjusted socket timeout to = {}", httpClientSocketTimeout);
+        logger.debug("Adjusted socket timeout to: {}", httpClientSocketTimeout);
       }
     } catch (SnowflakeSQLException ex) {
       throw ex; // must catch here to avoid Throwable to get the exception
@@ -880,12 +909,12 @@ public class SessionUtil {
     }
 
     stopwatch.stop();
-    logger.info(
-        "Session opened in {} ms. User: {}, host: {} with authentication method: {} authenticated successfully.",
-        stopwatch.elapsedMillis(),
+    logger.debug(
+        "User: {}, host: {} with authentication method: {} authenticated successfully in {} ms",
         loginInput.getUserName(),
         loginInput.getHostFromServerUrl(),
-        authenticatorType);
+        authenticatorType,
+        stopwatch.elapsedMillis());
     return ret;
   }
 
