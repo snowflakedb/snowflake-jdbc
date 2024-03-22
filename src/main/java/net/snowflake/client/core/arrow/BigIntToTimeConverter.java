@@ -45,7 +45,7 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
       return null;
     } else {
       long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
-      return getTime(val, context.getScale(index), useSessionTimezone);
+      return getTime(val, context.getScale(columnIndex), useSessionTimezone);
     }
   }
 

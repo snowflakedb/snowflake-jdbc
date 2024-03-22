@@ -71,7 +71,7 @@ public class TwoFieldStructToTimestampTZConverter extends AbstractArrowVectorCon
     } else {
       timeZone = TimeZone.getTimeZone("UTC");
     }
-    return getTimestamp(epoch, timeZoneIndex, context.getScale(index));
+    return getTimestamp(epoch, timeZoneIndex, context.getScale(columnIndex));
   }
 
   @Override
