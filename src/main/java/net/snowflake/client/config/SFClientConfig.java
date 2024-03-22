@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /** POJO class for Snowflake's client config. */
 public class SFClientConfig {
@@ -43,8 +42,7 @@ public class SFClientConfig {
     this.configFilePath = configFilePath;
   }
 
-  @SnowflakeJdbcInternalApi
-  public Set<String> getUnknownParamKeys() {
+  Set<String> getUnknownParamKeys() {
     Set<String> unknownParamKeys = new LinkedHashSet<>(unknownParams.keySet());
 
     if (!commonProps.unknownParams.isEmpty()) {
