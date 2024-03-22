@@ -86,7 +86,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapThrowingCallableExceptions(() -> converters.getNumberConverter().getShort(value, columnType));
+          return mapThrowingCallableExceptions(
+              () -> converters.getNumberConverter().getShort(value, columnType));
         });
   }
 
@@ -95,7 +96,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapThrowingCallableExceptions(() -> converters.getNumberConverter().getInt(value, columnType));
+          return mapThrowingCallableExceptions(
+              () -> converters.getNumberConverter().getInt(value, columnType));
         });
   }
 
@@ -104,7 +106,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapThrowingCallableExceptions(() -> converters.getNumberConverter().getLong(value, columnType));
+          return mapThrowingCallableExceptions(
+              () -> converters.getNumberConverter().getLong(value, columnType));
         });
   }
 
@@ -113,7 +116,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapThrowingCallableExceptions(() -> converters.getNumberConverter().getFloat(value, columnType));
+          return mapThrowingCallableExceptions(
+              () -> converters.getNumberConverter().getFloat(value, columnType));
         });
   }
 
@@ -122,7 +126,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapThrowingCallableExceptions(() -> converters.getNumberConverter().getDouble(value, columnType));
+          return mapThrowingCallableExceptions(
+              () -> converters.getNumberConverter().getDouble(value, columnType));
         });
   }
 
