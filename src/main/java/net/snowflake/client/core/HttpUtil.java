@@ -423,7 +423,7 @@ public class HttpUtil {
           AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
           CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
           logger.debug(
-              "Using user: {} with password {} for proxy host: {}, port: {}",
+              "Using user: {}, password is {} for proxy host: {}, port: {}",
               key.getProxyUser(),
               key.getProxyPassword().isEmpty() ? "not provided" : "provided",
               key.getProxyHost(),

@@ -49,7 +49,7 @@ public class S3HttpUtil {
         logMessage +=
             ", user: "
                 + key.getProxyUser()
-                + "with password "
+                + ", password is "
                 + (key.getProxyPassword().isEmpty() ? "not provided" : "provided");
         clientConfig.setProxyUsername(key.getProxyUser());
         clientConfig.setProxyPassword(key.getProxyPassword());
