@@ -1,6 +1,6 @@
 package net.snowflake.client.core;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
