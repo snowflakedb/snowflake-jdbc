@@ -4,8 +4,6 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
-
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLData;
@@ -20,6 +18,8 @@ import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.util.ThrowingBiFunction;
 import org.apache.arrow.vector.util.JsonStringHashMap;
+
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
@@ -43,7 +43,7 @@ public class ArrowSqlInput extends BaseSqlInput {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
           int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () ->
                   converters
                       .getStringConverter()
@@ -56,7 +56,7 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () -> converters.getBooleanConverter().getBoolean(value, columnType));
         });
   }
@@ -65,7 +65,7 @@ public class ArrowSqlInput extends BaseSqlInput {
   public byte readByte() throws SQLException {
     return withNextValue(
         (value, fieldMetadata) ->
-            mapExceptions(() -> converters.getNumberConverter().getByte(value)));
+            mapSFExceptionToSQLException(() -> converters.getNumberConverter().getByte(value)));
   }
 
   @Override
@@ -73,7 +73,7 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getShort(value, columnType));
+          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getShort(value, columnType));
         });
   }
 
@@ -82,7 +82,7 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getInt(value, columnType));
+          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getInt(value, columnType));
         });
   }
 
@@ -91,7 +91,7 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getLong(value, columnType));
+          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getLong(value, columnType));
         });
   }
 
@@ -100,7 +100,7 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getFloat(value, columnType));
+          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getFloat(value, columnType));
         });
   }
 
@@ -109,7 +109,7 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getDouble(value, columnType));
+          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getDouble(value, columnType));
         });
   }
 
@@ -118,7 +118,7 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () -> converters.getNumberConverter().getBigDecimal(value, columnType));
         });
   }
@@ -130,7 +130,7 @@ public class ArrowSqlInput extends BaseSqlInput {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
           int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () ->
                   converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
         });
@@ -140,7 +140,7 @@ public class ArrowSqlInput extends BaseSqlInput {
   public Date readDate() throws SQLException {
     return withNextValue(
         (value, fieldMetadata) ->
-            mapExceptions(
+            mapSFExceptionToSQLException(
                 () ->
                     converters
                         .getStructuredTypeDateTimeConverter()
@@ -151,7 +151,7 @@ public class ArrowSqlInput extends BaseSqlInput {
   public Time readTime() throws SQLException {
     return withNextValue(
         (value, fieldMetadata) ->
-            mapExceptions(
+            mapSFExceptionToSQLException(
                 () -> {
                   int scale = fieldMetadata.getScale();
                   return converters
@@ -168,7 +168,7 @@ public class ArrowSqlInput extends BaseSqlInput {
             return null;
           }
           int scale = fieldMetadata.getScale();
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () ->
                   converters
                       .getStructuredTypeDateTimeConverter()
