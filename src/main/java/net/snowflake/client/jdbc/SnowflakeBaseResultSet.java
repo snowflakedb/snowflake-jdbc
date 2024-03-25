@@ -1406,7 +1406,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int counter = 0;
     for (Object value : objects) {
       if (SQLData.class.isAssignableFrom(type)) {
-        Map[] data = (Map[]) value;
+        Map data = (Map) value;
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput =
                 new JsonSqlInput(
@@ -1548,7 +1548,6 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput =
-            new JsonSqlInput(
                     new JsonSqlInput(
                             jsonNode.get(entry.getKey()),
                             session,
