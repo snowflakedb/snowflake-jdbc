@@ -8,6 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -85,6 +88,12 @@ public class SFClientConfigParser {
 
         if (systemGetProperty("os.name") != null
             && systemGetProperty("os.name").toLowerCase().startsWith("windows")) {
+
+          //Find the Windows file path pattern: ex) C:\ or D:\
+          Pattern windowsFilePattern = Pattern.compile("[C-Z]:[\\\\/]");
+          Matcher matcher = windowsFilePattern.matcher(updatedPath);
+          String prefix = "";
+
           // Path translation for windows
           if (updatedPath.startsWith("/")) {
             updatedPath = updatedPath.substring(1);
@@ -92,11 +101,15 @@ public class SFClientConfigParser {
             updatedPath = updatedPath.substring(6);
           } else if (updatedPath.startsWith("\\")) {
             updatedPath = updatedPath.substring(2);
+          } else if (matcher.find() && matcher.start() != 0) {
+            prefix = updatedPath.substring(0,matcher.start());
+            updatedPath = updatedPath.substring(matcher.start());
           }
-          updatedPath = updatedPath.replace("/", "\\");
+          updatedPath = prefix + updatedPath.replace("/", "\\");
         }
         return updatedPath;
       }
+
       return "";
     } catch (Exception ex) {
       // return empty path and move to step 4 of loadSFClientConfig()
