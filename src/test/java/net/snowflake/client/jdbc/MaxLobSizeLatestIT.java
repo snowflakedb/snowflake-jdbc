@@ -21,8 +21,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.UUIDUtils;
 import org.apache.commons.text.RandomStringGenerator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -89,7 +89,7 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
   private static String tableName = "my_lob_test";
   private static String executeInsert = "insert into " + tableName + " (c1, c2, c3) values (";
   private static String executePreparedStatementInsert = executeInsert + "?, ?, ?)";
-  private static String selectQuery = "select * from " + tableName;
+  private static String selectQuery = "select * from " + tableName + " where c3=";
 
   private static String generateRandomString(int stringSize) {
     RandomStringGenerator randomStringGenerator =
@@ -107,20 +107,21 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
             + tableName
             + " (c1 varchar, c2 varchar("
             + lobSize
-            + "), c3 int)";
+            + "), c3 varchar)";
     stmt.execute(createTableQuery);
   }
 
-  private void insertQuery(String varCharValue, int intValue, Statement stmt) throws SQLException {
-    stmt.executeUpdate(executeInsert + "'abc', '" + varCharValue + "', " + intValue + ")");
+  private void insertQuery(String varCharValue, String uuidValue, Statement stmt)
+      throws SQLException {
+    stmt.executeUpdate(executeInsert + "'abc', '" + varCharValue + "', '" + uuidValue + "')");
   }
 
-  private void preparedInsertQuery(String varCharValue, int intValue, Connection con)
+  private void preparedInsertQuery(String varCharValue, String uuidValue, Connection con)
       throws SQLException {
     try (PreparedStatement pstmt = con.prepareStatement(executePreparedStatementInsert)) {
       pstmt.setString(1, "abc");
       pstmt.setString(2, varCharValue);
-      pstmt.setInt(3, intValue);
+      pstmt.setString(3, uuidValue);
 
       pstmt.execute();
     }
@@ -141,14 +142,14 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
       setResultFormat(stmt, resultFormat);
 
       String varCharValue = LobSizeStringValues.get(lobSize);
-      int intValue = new Random().nextInt();
-      insertQuery(varCharValue, intValue, stmt);
+      String uuidValue = UUIDUtils.getUUID().toString();
+      insertQuery(varCharValue, uuidValue, stmt);
 
-      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
+      try (ResultSet rs = stmt.executeQuery(selectQuery + "'" + uuidValue + "'")) {
         assertTrue(rs.next());
         assertEquals("abc", rs.getString(1));
         assertEquals(varCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
+        assertEquals(uuidValue, rs.getString(3));
       }
     }
   }
@@ -160,14 +161,14 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
       setResultFormat(stmt, resultFormat);
 
       String maxVarCharValue = LobSizeStringValues.get(lobSize);
-      int intValue = new Random().nextInt();
-      preparedInsertQuery(maxVarCharValue, intValue, con);
+      String uuidValue = UUIDUtils.getUUID().toString();
+      preparedInsertQuery(maxVarCharValue, uuidValue, con);
 
-      try (ResultSet rs = stmt.executeQuery(selectQuery)) {
+      try (ResultSet rs = stmt.executeQuery(selectQuery + "'" + uuidValue + "'")) {
         assertTrue(rs.next());
         assertEquals("abc", rs.getString(1));
         assertEquals(maxVarCharValue, rs.getString(2));
-        assertEquals(intValue, rs.getInt(3));
+        assertEquals(uuidValue, rs.getString(3));
       }
     }
   }
@@ -183,8 +184,8 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
     String fileName = tempFile.getName();
 
     String varCharValue = LobSizeStringValues.get(lobSize);
-    int intValue = new Random().nextInt();
-    String fileInput = "abc," + varCharValue + "," + intValue;
+    String uuidValue = UUIDUtils.getUUID().toString();
+    String fileInput = "abc," + varCharValue + "," + uuidValue;
 
     // Print data to new temporary file
     try (PrintWriter out = new PrintWriter(filePath)) {
@@ -223,11 +224,11 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
       stmt.execute(copyInto);
 
       // Check that results are copied into table correctly
-      try (ResultSet rsCopy = stmt.executeQuery("Select * from " + tableName)) {
+      try (ResultSet rsCopy = stmt.executeQuery(selectQuery + "'" + uuidValue + "'")) {
         assertTrue(rsCopy.next());
         assertEquals("abc", rsCopy.getString(1));
         assertEquals(varCharValue, rsCopy.getString(2));
-        assertEquals(intValue, rsCopy.getInt(3));
+        assertEquals(uuidValue, rsCopy.getString(3));
       }
 
       // Test Get
