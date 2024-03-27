@@ -346,7 +346,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapIntegerArray() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -360,7 +360,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapFixedToLongArray() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -374,7 +374,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapDecimalArray() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     //    when: jdbc_treat_decimal_as_int=true scale=0
@@ -419,7 +419,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapVarcharArray() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -434,7 +434,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapDatesArray() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -447,7 +447,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapTimeArray() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -460,7 +460,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapTimestampArray() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -475,7 +475,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapBooleanArray() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -488,7 +488,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapBinaryArray() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -501,7 +501,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapArrayOfStructToMap() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -514,7 +514,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapArrayOfArrays() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -527,7 +527,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+//  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
     withStructureTypeTemporaryDisabled(
         () -> {
