@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.core;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapExceptions;
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
@@ -55,7 +55,7 @@ public class JsonSqlInput extends BaseSqlInput {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
           int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () ->
                   converters
                       .getStringConverter()
@@ -68,7 +68,7 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () -> converters.getBooleanConverter().getBoolean(value, columnType));
         });
   }
@@ -77,7 +77,7 @@ public class JsonSqlInput extends BaseSqlInput {
   public byte readByte() throws SQLException {
     return withNextValue(
         (value, jsonNode, fieldMetadata) ->
-            mapExceptions(() -> converters.getNumberConverter().getByte(value)));
+            mapSFExceptionToSQLException(() -> converters.getNumberConverter().getByte(value)));
   }
 
   @Override
@@ -85,7 +85,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getShort(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getShort(value, columnType));
         });
   }
 
@@ -94,7 +95,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getInt(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getInt(value, columnType));
         });
   }
 
@@ -103,7 +105,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getLong(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getLong(value, columnType));
         });
   }
 
@@ -112,7 +115,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getFloat(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getFloat(value, columnType));
         });
   }
 
@@ -121,7 +125,8 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(() -> converters.getNumberConverter().getDouble(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getDouble(value, columnType));
         });
   }
 
@@ -130,7 +135,7 @@ public class JsonSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () -> converters.getNumberConverter().getBigDecimal(value, columnType));
         });
   }
@@ -142,7 +147,7 @@ public class JsonSqlInput extends BaseSqlInput {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
           int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () ->
                   converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
         });
@@ -171,6 +176,11 @@ public class JsonSqlInput extends BaseSqlInput {
   }
 
   @Override
+  public Timestamp readTimestamp() throws SQLException {
+    return readTimestamp(null);
+  }
+
+  @Override
   public Timestamp readTimestamp(TimeZone tz) throws SQLException {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
@@ -186,7 +196,7 @@ public class JsonSqlInput extends BaseSqlInput {
           if (result != null) {
             return result;
           }
-          return mapExceptions(
+          return mapSFExceptionToSQLException(
               () ->
                   converters
                       .getDateTimeConverter()

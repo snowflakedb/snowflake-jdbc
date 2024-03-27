@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.ColumnTypeHelper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
@@ -1372,8 +1375,6 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return (T) (Double) getDouble(columnIndex);
     } else if (Date.class.isAssignableFrom(type)) {
       return (T) getDate(columnIndex);
-    } else if (Date.class.isAssignableFrom(type)) {
-      return (T) getDate(columnIndex);
     } else if (Time.class.isAssignableFrom(type)) {
       return (T) getTime(columnIndex);
     } else if (Timestamp.class.isAssignableFrom(type)) {
@@ -1395,43 +1396,299 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
-    Map[] jsonMaps = (Map[]) getArray(columnIndex).getArray();
-    T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, jsonMaps.length);
+    int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
+    int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
+    ;
+    int scale = resultSetMetaData.getScale(columnIndex);
+    TimeZone tz = sfBaseResultSet.getSessionTimeZone();
+    Object[] objects = (Object[]) getArray(columnIndex).getArray();
+    T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, objects.length);
     int counter = 0;
-    for (Map map : jsonMaps) {
-      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-      SQLInput sqlInput =
-          new JsonSqlInput(
-              OBJECT_MAPPER.convertValue(map, JsonNode.class),
-              session,
-              sfBaseResultSet.getConverters(),
-              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
-              sfBaseResultSet.getSessionTimezone());
-      instance.readSQL(sqlInput, null);
-      arr[counter++] = (T) instance;
+    for (Object value : objects) {
+      if (SQLData.class.isAssignableFrom(type)) {
+        Map data = (Map) value;
+        SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+        SQLInput sqlInput =
+            new JsonSqlInput(
+                OBJECT_MAPPER.convertValue(data, JsonNode.class),
+                session,
+                sfBaseResultSet.getConverters(),
+                sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
+                sfBaseResultSet.getSessionTimezone());
+        instance.readSQL(sqlInput, null);
+        arr[counter++] = (T) instance;
+      } else if (String.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getStringConverter()
+                            .getString(value, columnType, columnSubType, scale));
+      } else if (Boolean.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getBooleanConverter()
+                            .getBoolean(value, columnType));
+      } else if (Byte.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getBytesConverter()
+                            .getBytes(value, columnType, columnSubType, scale));
+      } else if (Short.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        Short.valueOf(
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getShort(value, columnType)));
+      } else if (Integer.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        Integer.valueOf(
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getInt(value, columnType)));
+      } else if (Long.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        Long.valueOf(
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getLong(value, columnType)));
+      } else if (Float.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        Float.valueOf(
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getFloat(value, columnType)));
+      } else if (Double.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        Double.valueOf(
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getDouble(value, columnType)));
+      } else if (Date.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getDateTimeConverter()
+                            .getDate(value, columnType, columnSubType, tz, scale));
+      } else if (Time.class.isAssignableFrom(type)) {
+        arr[counter++] =
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getDateTimeConverter()
+                            .getTime(value, columnType, columnSubType, tz, scale));
+      } else if (Timestamp.class.isAssignableFrom(type)) {
+        mapSFExceptionToSQLException(
+            () ->
+                (T)
+                    sfBaseResultSet
+                        .getConverters()
+                        .getDateTimeConverter()
+                        .getTimestamp(value, columnType, columnSubType, tz, scale));
+      } else if (BigDecimal.class.isAssignableFrom(type)) {
+        arr[counter++] = (T) getBigDecimal(columnIndex);
+      } else {
+        logger.warn(
+            "Unsupported type passed to getArray(int columnIndex, Class<T> type): "
+                + type.getName());
+        throw new SQLException(
+            "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+                + type.getName());
+      }
     }
-
     return arr;
   }
 
   public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
+    int columnType = resultSetMetaData.getInternalColumnType(columnIndex);
+    int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
+    int scale = resultSetMetaData.getScale(columnIndex);
+    TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object object = getObject(columnIndex);
     JsonNode jsonNode = ((JsonSqlInput) object).getInput();
     Map<String, Object> map =
         OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
     Map<String, T> resultMap = new HashMap<>();
-
     for (Map.Entry<String, Object> entry : map.entrySet()) {
-      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-      SQLInput sqlInput =
-          new JsonSqlInput(
-              jsonNode.get(entry.getKey()),
-              session,
-              sfBaseResultSet.getConverters(),
-              sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
-              sfBaseResultSet.getSessionTimezone());
-      instance.readSQL(sqlInput, null);
-      resultMap.put(entry.getKey(), (T) instance);
+      if (SQLData.class.isAssignableFrom(type)) {
+        SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+        SQLInput sqlInput =
+            new JsonSqlInput(
+                jsonNode.get(entry.getKey()),
+                session,
+                sfBaseResultSet.getConverters(),
+                sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
+                sfBaseResultSet.getSessionTimezone());
+        instance.readSQL(sqlInput, null);
+        resultMap.put(entry.getKey(), (T) instance);
+      } else if (String.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getStringConverter()
+                            .getString(entry.getValue(), columnType, columnSubType, scale)));
+      } else if (Boolean.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getBooleanConverter()
+                            .getBoolean(entry.getValue(), columnType)));
+      } else if (Byte.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getBytesConverter()
+                            .getBytes(entry.getValue(), columnType, columnSubType, scale)));
+      } else if (Short.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        (Short)
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getShort(entry.getValue(), columnType)));
+      } else if (Integer.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        (Integer)
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getInt(entry.getValue(), columnType)));
+      } else if (Long.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        (Long)
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getLong(entry.getValue(), columnType)));
+      } else if (Float.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        (Float)
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getFloat(entry.getValue(), columnType)));
+      } else if (Double.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        (Double)
+                            sfBaseResultSet
+                                .getConverters()
+                                .getNumberConverter()
+                                .getDouble(entry.getValue(), columnType)));
+      } else if (BigDecimal.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getNumberConverter()
+                            .getBigDecimal(entry.getValue(), columnType)));
+      } else if (Date.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getDateTimeConverter()
+                            .getDate(entry.getValue(), columnType, columnSubType, tz, scale)));
+      } else if (Time.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getDateTimeConverter()
+                            .getTime(entry.getValue(), columnType, columnSubType, tz, scale)));
+      } else if (Timestamp.class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getDateTimeConverter()
+                            .getTimestamp(entry.getValue(), columnType, columnSubType, tz, scale)));
+      } else {
+        logger.debug(
+            "Unsupported type passed to getObject(int columnIndex,Class<T> type): "
+                + type.getName());
+        throw new SQLException(
+            "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+                + type.getName());
+      }
     }
 
     return resultMap;

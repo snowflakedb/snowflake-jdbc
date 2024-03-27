@@ -206,6 +206,34 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsArrayOfString() throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT('one', 'two','three')::ARRAY(VARCHAR)",
+        (resultSet) -> {
+          String[] resultArray =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, String.class);
+          assertEquals("one", resultArray[0]);
+          assertEquals("two", resultArray[1]);
+          assertEquals("three", resultArray[2]);
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsListOfIntegers() throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT(1,2,3)::ARRAY(INTEGER)",
+        (resultSet) -> {
+          List<Integer> resultList =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1, Integer.class);
+          assertEquals(Integer.valueOf(1), resultList.get(0));
+          assertEquals(Integer.valueOf(2), resultList.get(1));
+          assertEquals(Integer.valueOf(3), resultList.get(2));
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMap() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
@@ -217,6 +245,33 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", map.get("x").getString());
           assertEquals("two", map.get("y").getString());
           assertEquals("three", map.get("z").getString());
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsMapOfLong() throws SQLException {
+    withFirstRow(
+        "SELECT {'x':1, 'y':2, 'z':3}::MAP(VARCHAR, BIGINT)",
+        (resultSet) -> {
+          Map<String, Long> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Long.class);
+          assertEquals(Long.valueOf(1), map.get("x"));
+          assertEquals(Long.valueOf(2), map.get("y"));
+          assertEquals(Long.valueOf(3), map.get("z"));
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsMapOfBoolean() throws SQLException {
+    withFirstRow(
+        "SELECT {'x':'true', 'y':0}::MAP(VARCHAR, BOOLEAN)",
+        (resultSet) -> {
+          Map<String, Boolean> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Boolean.class);
+          assertEquals(Boolean.TRUE, map.get("x"));
+          assertEquals(Boolean.FALSE, map.get("y"));
         });
   }
 
