@@ -11,11 +11,13 @@ import static net.snowflake.client.jdbc.SnowflakeType.TIMESTAMP_TZ;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
 @SnowflakeJdbcInternalApi
@@ -45,22 +47,23 @@ public class StructuredTypeDateTimeConverter {
   }
 
   public Timestamp getTimestamp(
-      JsonStringHashMap<String, Object> obj, SnowflakeType type, TimeZone tz, int scale)
+      JsonStringHashMap<String, Object> obj, int columnType, int columnSubType, TimeZone tz, int scale)
       throws SFException {
     if (tz == null) {
       tz = TimeZone.getDefault();
     }
-    switch (type) {
-      case TIMESTAMP_LTZ:
+    if ( Types.TIMESTAMP == columnType) {
+      if (SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ == columnSubType) {
         return convertTimestampLtz(obj, scale);
-      case TIMESTAMP_NTZ:
+      } else {
         return convertTimestampNtz(obj, tz, scale);
-      case TIMESTAMP_TZ:
-        return convertTimestampTz(obj, scale);
+      }
+    } else if (Types.TIMESTAMP_WITH_TIMEZONE == columnType && SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ == columnSubType) {
+      return convertTimestampTz(obj, scale);
     }
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT,
-        "Unexpected Arrow Field for " + type.name() + " and object type " + obj.getClass());
+        "Unexpected Arrow Field for columnType " + columnType + " , column subtype " + columnSubType + " , and object type " + obj.getClass());
   }
 
   public Date getDate(int value, TimeZone tz) throws SFException {

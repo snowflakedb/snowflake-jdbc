@@ -12,6 +12,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
@@ -24,6 +25,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLExcepti
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
 
+    private final JsonStringHashMap<String, Object> input;
   private final Iterator<Object> structuredTypeFields;
   private int currentIndex = 0;
 
@@ -34,6 +36,11 @@ public class ArrowSqlInput extends BaseSqlInput {
       List<FieldMetadata> fields) {
     super(session, converters, fields);
     this.structuredTypeFields = input.values().iterator();
+      this.input = input;
+  }
+
+  public Map<String, Object> getInput() {
+      return input;
   }
 
   @Override
@@ -167,6 +174,8 @@ public class ArrowSqlInput extends BaseSqlInput {
           if (value == null) {
             return null;
           }
+            int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+            int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
           return mapSFExceptionToSQLException(
               () ->
@@ -174,7 +183,8 @@ public class ArrowSqlInput extends BaseSqlInput {
                       .getStructuredTypeDateTimeConverter()
                       .getTimestamp(
                           (JsonStringHashMap<String, Object>) value,
-                          fieldMetadata.getBase(),
+                          columnType,
+                              columnSubType,
                           tz,
                           scale));
         });

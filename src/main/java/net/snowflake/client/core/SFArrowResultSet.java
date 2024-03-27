@@ -104,7 +104,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   private boolean formatDateWithTimezone;
 
-  @SnowflakeJdbcInternalApi protected Converters jsonConverters;
+  @SnowflakeJdbcInternalApi protected Converters converters;
 
   /**
    * Constructor takes a result from the API response that we get from executing a SQL statement.
@@ -124,7 +124,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       boolean sortResult)
       throws SQLException {
     this(resultSetSerializable, session.getTelemetryClient(), sortResult);
-    this.jsonConverters =
+    this.converters =
         new Converters(
             resultSetSerializable.getTimeZone(),
             session,
@@ -356,6 +356,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
   }
 
+  @Override
+  @SnowflakeJdbcInternalApi
+  public Converters getConverters() {
+    return converters;
+  }
+
   /**
    * Advance to next row
    *
@@ -522,7 +528,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       return new JsonSqlInput(
           jsonNode,
           session,
-          jsonConverters,
+              converters,
           resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
           sessionTimezone);
     } catch (JsonProcessingException e) {
@@ -534,7 +540,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return new ArrowSqlInput(
         input,
         session,
-        jsonConverters,
+            converters,
         resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
   }
 
