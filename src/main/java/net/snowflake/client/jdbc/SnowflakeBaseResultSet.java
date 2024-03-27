@@ -1409,12 +1409,12 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         Map data = (Map) value;
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput =
-                new JsonSqlInput(
-                        OBJECT_MAPPER.convertValue(data, JsonNode.class),
-                        session,
-                        sfBaseResultSet.getConverters(),
-                        sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
-                        sfBaseResultSet.getSessionTimezone());
+            new JsonSqlInput(
+                OBJECT_MAPPER.convertValue(data, JsonNode.class),
+                session,
+                sfBaseResultSet.getConverters(),
+                sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
+                sfBaseResultSet.getSessionTimezone());
         instance.readSQL(sqlInput, null);
         arr[counter++] = (T) instance;
       } else if (String.class.isAssignableFrom(type)) {
@@ -1548,12 +1548,12 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput =
-                    new JsonSqlInput(
-                            jsonNode.get(entry.getKey()),
-                            session,
-                            sfBaseResultSet.getConverters(),
-                            sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
-                            sfBaseResultSet.getSessionTimezone());
+            new JsonSqlInput(
+                jsonNode.get(entry.getKey()),
+                session,
+                sfBaseResultSet.getConverters(),
+                sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
+                sfBaseResultSet.getSessionTimezone());
         instance.readSQL(sqlInput, null);
         resultMap.put(entry.getKey(), (T) instance);
       } else if (String.class.isAssignableFrom(type)) {
