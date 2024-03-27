@@ -1396,10 +1396,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
-    FieldMetadata fieldMetadata = sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1)
-            .getFields().get(0);
+    FieldMetadata fieldMetadata =
+        sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields().get(0);
     int columnSubType = fieldMetadata.getType();
-    int columnType =  ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
     int scale = fieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object[] objects = (Object[]) getArray(columnIndex).getArray();
@@ -1420,7 +1420,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         arr[counter++] = (T) instance;
       } else if (String.class.isAssignableFrom(type)) {
         arr[counter++] =
-                mapSFExceptionToSQLException(
+            mapSFExceptionToSQLException(
                 () ->
                     (T)
                         sfBaseResultSet
@@ -1500,24 +1500,27 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
             mapSFExceptionToSQLException(
                 () ->
                     (T)
-                            sfBaseResultSet
-                                    .getConverters()
-                                    .dateConverter(session).convert((String) value));
+                        sfBaseResultSet
+                            .getConverters()
+                            .dateConverter(session)
+                            .convert((String) value));
       } else if (Time.class.isAssignableFrom(type)) {
         arr[counter++] =
             mapSFExceptionToSQLException(
                 () ->
                     (T)
-                            sfBaseResultSet
-                                    .getConverters()
-                                    .timeConverter(session).convert((String) value));
+                        sfBaseResultSet
+                            .getConverters()
+                            .timeConverter(session)
+                            .convert((String) value));
       } else if (Timestamp.class.isAssignableFrom(type)) {
         mapSFExceptionToSQLException(
             () ->
                 (T)
-                        sfBaseResultSet
-                                .getConverters()
-                                .timestampConverter(columnSubType, columnType, scale, session, null, tz).convert((String) value));
+                    sfBaseResultSet
+                        .getConverters()
+                        .timestampConverter(columnSubType, columnType, scale, session, null, tz)
+                        .convert((String) value));
       } else if (BigDecimal.class.isAssignableFrom(type)) {
         arr[counter++] = (T) getBigDecimal(columnIndex);
       } else {
@@ -1533,10 +1536,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
-    FieldMetadata valueFieldMetadata = sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1)
-            .getFields().get(1);
+    FieldMetadata valueFieldMetadata =
+        sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields().get(1);
     int columnSubType = valueFieldMetadata.getType();
-    int columnType =  ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
+    int columnType = ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object object = getObject(columnIndex);
@@ -1658,7 +1661,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                 () ->
                     (T)
                         sfBaseResultSet
-                            .getConverters().dateConverter(session).convert((String)entry.getValue())));
+                            .getConverters()
+                            .dateConverter(session)
+                            .convert((String) entry.getValue())));
       } else if (Time.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
@@ -1667,7 +1672,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                     (T)
                         sfBaseResultSet
                             .getConverters()
-                            .timeConverter(session).convert((String) entry.getValue())));
+                            .timeConverter(session)
+                            .convert((String) entry.getValue())));
       } else if (Timestamp.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
@@ -1676,9 +1682,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                     (T)
                         sfBaseResultSet
                             .getConverters()
-                                .timestampConverter(columnSubType, columnType, scale, session, null, tz).convert((String) entry.getValue())
-            )
-        );
+                            .timestampConverter(columnSubType, columnType, scale, session, null, tz)
+                            .convert((String) entry.getValue())));
       } else {
         logger.debug(
             "Unsupported type passed to getObject(int columnIndex,Class<T> type): "

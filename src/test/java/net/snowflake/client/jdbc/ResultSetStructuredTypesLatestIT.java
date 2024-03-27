@@ -271,8 +271,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         (resultSet) -> {
           Map<String, Date> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Date.class);
-          assertEquals( Date.valueOf(LocalDate.of(2023, 12, 24)), map.get("x"));
-          assertEquals( Date.valueOf(LocalDate.of(2023, 12, 25)), map.get("y"));
+          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), map.get("x"));
+          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 25)), map.get("y"));
         });
   }
 
@@ -283,8 +283,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         (resultSet) -> {
           Map<String, Time> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Time.class);
-          assertEquals( Time.valueOf(LocalTime.of(12, 34, 56)), map.get("x"));
-          assertEquals( Time.valueOf(LocalTime.of(12, 34, 58)), map.get("y"));
+          assertEquals(Time.valueOf(LocalTime.of(12, 34, 56)), map.get("x"));
+          assertEquals(Time.valueOf(LocalTime.of(12, 34, 58)), map.get("y"));
         });
   }
 
@@ -526,7 +526,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
       throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement();
-
         ResultSet rs = statement.executeQuery(sqlText); ) {
       assertTrue(rs.next());
       consumer.accept(rs);
