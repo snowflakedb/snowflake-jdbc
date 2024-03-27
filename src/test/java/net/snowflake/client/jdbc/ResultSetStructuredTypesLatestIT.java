@@ -50,6 +50,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     try (Statement stmt = conn.createStatement()) {
       stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
       stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
+      stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
       stmt.execute(
           "alter session set jdbc_query_result_format = '"
               + queryResultFormat.sessionParameterTypeValue
@@ -259,6 +260,45 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Long.valueOf(1), map.get("x"));
           assertEquals(Long.valueOf(2), map.get("y"));
           assertEquals(Long.valueOf(3), map.get("z"));
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsMapOfTimestamp() throws SQLException {
+    withFirstRow(
+        "SELECT {'x':'2021-12-22 09:43:44.000 +0100', 'y':'2021-12-22 10:43:44.000 +0100'}::MAP(VARCHAR, TIMESTAMP)",
+        (resultSet) -> {
+          Map<String, Timestamp> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
+          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), map.get("x"));
+          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 10, 43, 44)), map.get("y"));
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsMapOfDate() throws SQLException {
+    withFirstRow(
+        "SELECT {'x':'2023-12-24', 'y':'2023-12-25'}::MAP(VARCHAR, DATE)",
+        (resultSet) -> {
+          Map<String, Date> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Date.class);
+          assertEquals( Date.valueOf(LocalDate.of(2023, 12, 24)), map.get("x"));
+          assertEquals( Date.valueOf(LocalDate.of(2023, 12, 25)), map.get("y"));
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsMapOfTime() throws SQLException {
+    withFirstRow(
+        "SELECT {'x':'12:34:56', 'y':'12:34:58'}::MAP(VARCHAR, TIME)",
+        (resultSet) -> {
+          Map<String, Time> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Time.class);
+          assertEquals( Time.valueOf(LocalTime.of(12, 34, 56)), map.get("x"));
+          assertEquals( Time.valueOf(LocalTime.of(12, 34, 58)), map.get("y"));
         });
   }
 
@@ -516,6 +556,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
       throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement();
+
         ResultSet rs = statement.executeQuery(sqlText); ) {
       assertTrue(rs.next());
       consumer.accept(rs);
