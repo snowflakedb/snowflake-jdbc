@@ -1563,11 +1563,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     Object object = getObject(columnIndex);
     Map<String, Object> map;
     if (object instanceof JsonSqlInput) {
-      map = new HashMap<>();
       JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-      jsonNode
-          .fieldNames()
-          .forEachRemaining(node -> map.put(node.toString(), jsonNode.get(node.toString())));
+      map =
+              OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
     } else {
       map = (Map<String, Object>) object;
     }
@@ -1579,7 +1577,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         if (object instanceof JsonSqlInput) {
           sqlInput =
               new JsonSqlInput(
-                  (JsonNode) entry.getValue(),
+                      ((JsonSqlInput) object).getInput().get(entry.getKey()),
                   session,
                   sfBaseResultSet.getConverters(),
                   sfBaseResultSet
@@ -1758,44 +1756,5 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
-  }
-
-  private Date convertToDate(Object object, TimeZone tz) throws SFException {
-    if (sfBaseResultSet instanceof SFArrowResultSet) {
-      return sfBaseResultSet
-          .getConverters()
-          .getStructuredTypeDateTimeConverter()
-          .getDate((int) object, tz);
-    } else {
-      return (Date) sfBaseResultSet.getConverters().dateConverter(session).convert((String) object);
-    }
-  }
-
-  private Time convertToTime(Object object, TimeZone tz, int scale) throws SFException {
-    if (sfBaseResultSet instanceof SFArrowResultSet) {
-      return sfBaseResultSet
-          .getConverters()
-          .getStructuredTypeDateTimeConverter()
-          .getTime((long) object, scale);
-    } else {
-      return (Time) sfBaseResultSet.getConverters().timeConverter(session).convert((String) object);
-    }
-  }
-
-  private Timestamp convertToTimestamp(
-      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
-    if (sfBaseResultSet instanceof SFArrowResultSet) {
-      return sfBaseResultSet
-          .getConverters()
-          .getStructuredTypeDateTimeConverter()
-          .getTimestamp(
-              (JsonStringHashMap<String, Object>) object, columnType, columnSubType, tz, scale);
-    } else {
-      return (Timestamp)
-          sfBaseResultSet
-              .getConverters()
-              .timestampConverter(columnSubType, columnType, scale, session, null, tz)
-              .convert((String) object);
-    }
   }
 }
