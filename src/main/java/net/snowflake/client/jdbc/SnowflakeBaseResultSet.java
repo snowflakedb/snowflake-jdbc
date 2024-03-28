@@ -1552,8 +1552,11 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     Object object = getObject(columnIndex);
     Map<String, Object> map;
     if (object instanceof JsonSqlInput) {
+      map = new HashMap<>();
       JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-      map = OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+      jsonNode
+          .fieldNames()
+          .forEachRemaining(node -> map.put(node.toString(), jsonNode.get(node.toString())));
     } else {
       map = (Map<String, Object>) object;
     }
@@ -1565,7 +1568,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         if (object instanceof JsonSqlInput) {
           sqlInput =
               new JsonSqlInput(
-                  (((JsonSqlInput) object).getInput()).get(entry.getKey()),
+                  (JsonNode) entry.getValue(),
                   session,
                   sfBaseResultSet.getConverters(),
                   sfBaseResultSet
