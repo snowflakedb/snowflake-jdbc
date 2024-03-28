@@ -20,8 +20,9 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.*;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.stream.Stream;
-
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.VarCharConverter;
@@ -361,6 +362,25 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return converters;
   }
 
+  @Override
+  public Date convertToDate(Object object, TimeZone tz) throws SFException {
+    return converters.getStructuredTypeDateTimeConverter().getDate((int) object, tz);
+  }
+
+  @Override
+  public Time convertToTime(Object object, int scale) throws SFException {
+    return converters.getStructuredTypeDateTimeConverter().getTime((long) object, scale);
+  }
+
+  @Override
+  public Timestamp convertToTimestamp(
+      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+    return converters
+        .getStructuredTypeDateTimeConverter()
+        .getTimestamp(
+            (JsonStringHashMap<String, Object>) object, columnType, columnSubType, tz, scale);
+  }
+
   /**
    * Advance to next row
    *
@@ -515,7 +535,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       if (converter instanceof VarCharConverter) {
         return createJsonSqlInput(columnIndex, obj);
       } else if (converter instanceof StructConverter) {
-        return createArrowSqlInput(columnIndex, (JsonStringHashMap<String, Object>) obj);
+        return createArrowSqlInput(columnIndex, (Map<String, Object>) obj);
       }
     }
     return obj;
@@ -535,7 +555,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
   }
 
-  private Object createArrowSqlInput(int columnIndex, JsonStringHashMap<String, Object> input) {
+  private Object createArrowSqlInput(int columnIndex, Map<String, Object> input) {
     return new ArrowSqlInput(
         input,
         session,
@@ -545,7 +565,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public Array getArray(int columnIndex) throws SFException {
-    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex -1);
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
     Object obj = converter.toObject(index);
@@ -555,7 +575,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private SfSqlArray getArrayInternal(List<Object> elements, int columnIndex) throws SFException {
     try {
       SnowflakeColumnMetadata arrayMetadata =
-              resultSetMetaData.getColumnMetadata().get(columnIndex - 1);
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1);
       FieldMetadata fieldMetadata = arrayMetadata.getFields().get(0);
 
       int columnSubType = fieldMetadata.getType();
@@ -567,12 +587,13 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         case Types.CHAR:
         case Types.LONGNVARCHAR:
           return new SfSqlArray(
-                  columnSubType,
-                  mapAndConvert(elements, converters.varcharConverter(columnType, columnSubType, scale)).toArray(String[]::new));
+              columnSubType,
+              mapAndConvert(elements, converters.varcharConverter(columnType, columnSubType, scale))
+                  .toArray(String[]::new));
         default:
           throw new SFException(
-                  ErrorCode.FEATURE_UNSUPPORTED,
-                  "Can't construct array for data type: " + columnSubType);
+              ErrorCode.FEATURE_UNSUPPORTED,
+              "Can't construct array for data type: " + columnSubType);
       }
     } catch (RuntimeException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
@@ -580,16 +601,18 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   private <T> Stream<T> mapAndConvert(List<Object> elements, Converter<T> converter) {
-    return elements.stream().map(obj -> {
-      try {
-        return converter.convert(obj);
-      } catch (SFException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    return elements.stream()
+        .map(
+            obj -> {
+              try {
+                return converter.convert(obj);
+              } catch (SFException e) {
+                throw new RuntimeException(e);
+              }
+            });
   }
 
-    @Override
+  @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();

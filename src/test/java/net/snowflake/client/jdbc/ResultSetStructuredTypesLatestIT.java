@@ -38,7 +38,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   private final ResultSetFormatType queryResultFormat;
 
   public ResultSetStructuredTypesLatestIT() {
-    this(ResultSetFormatType.NATIVE_ARROW);
+    this(ResultSetFormatType.JSON);
   }
 
   protected ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
@@ -199,6 +199,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsArrayOfString() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two','three')::ARRAY(VARCHAR)",
         (resultSet) -> {

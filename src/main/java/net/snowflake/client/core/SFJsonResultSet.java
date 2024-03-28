@@ -384,8 +384,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
-  private Object[] convertToFixedArray(
-      Iterator nodeElements, Converter bigIntConverter) {
+  private Object[] convertToFixedArray(Iterator nodeElements, Converter bigIntConverter) {
     AtomicInteger bigDecimalCount = new AtomicInteger();
     Object[] elements =
         getStream(nodeElements, bigIntConverter)
@@ -418,12 +417,30 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
             });
   }
 
-  private static Object convert(Converter converter, JsonNode node)
-      throws SFException {
+  private static Object convert(Converter converter, JsonNode node) throws SFException {
     if (node.isValueNode()) {
       return converter.convert(node.asText());
     } else {
       return converter.convert(node.toString());
     }
+  }
+
+  @Override
+  public Date convertToDate(Object object, TimeZone tz) throws SFException {
+    return (Date) converters.dateConverter(session).convert(object);
+  }
+
+  @Override
+  public Time convertToTime(Object object, int scale) throws SFException {
+    return (Time) converters.timeConverter(session).convert(object);
+  }
+
+  @Override
+  public Timestamp convertToTimestamp(
+      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+    return (Timestamp)
+        converters
+            .timestampConverter(columnSubType, columnType, scale, session, null, tz)
+            .convert(object);
   }
 }
