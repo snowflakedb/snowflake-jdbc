@@ -214,10 +214,7 @@ public class ArrowSqlInput extends BaseSqlInput {
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
           instance.readSQL(
               new ArrowSqlInput(
-                  (Map<String, Object>) value,
-                  session,
-                  converters,
-                  fieldMetadata.getFields()),
+                  (Map<String, Object>) value, session, converters, fieldMetadata.getFields()),
               null);
           return (T) instance;
         });

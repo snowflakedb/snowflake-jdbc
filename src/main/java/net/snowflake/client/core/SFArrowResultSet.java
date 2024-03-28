@@ -365,23 +365,21 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public Date convertToDate(Object object, TimeZone tz) throws SFException {
-    return converters
-            .getStructuredTypeDateTimeConverter()
-            .getDate((int) object, tz);
+    return converters.getStructuredTypeDateTimeConverter().getDate((int) object, tz);
   }
 
   @Override
   public Time convertToTime(Object object, int scale) throws SFException {
-    return      converters.getStructuredTypeDateTimeConverter()
-            .getTime((long) object, scale);
+    return converters.getStructuredTypeDateTimeConverter().getTime((long) object, scale);
   }
 
   @Override
-  public Timestamp convertToTimestamp(Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
-     return converters
-            .getStructuredTypeDateTimeConverter()
-            .getTimestamp(
-                    (JsonStringHashMap<String, Object>) object, columnType, columnSubType, tz, scale);
+  public Timestamp convertToTimestamp(
+      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+    return converters
+        .getStructuredTypeDateTimeConverter()
+        .getTimestamp(
+            (JsonStringHashMap<String, Object>) object, columnType, columnSubType, tz, scale);
   }
 
   /**

@@ -191,15 +191,15 @@ public abstract class SFBaseResultSet {
    * data size.
    *
    * @param maxSizeInBytes The expected max data size wrapped in the ResultSetSerializables object.
-   *                       NOTE: this parameter is intended to make the data size in each serializable object to be
-   *                       less than it. But if user specifies a small value which may be smaller than the data size
-   *                       of one result chunk. So the definition can't be guaranteed completely. For this special
-   *                       case, one serializable object is used to wrap the data chunk.
+   *     NOTE: this parameter is intended to make the data size in each serializable object to be
+   *     less than it. But if user specifies a small value which may be smaller than the data size
+   *     of one result chunk. So the definition can't be guaranteed completely. For this special
+   *     case, one serializable object is used to wrap the data chunk.
    * @return a list of SnowflakeResultSetSerializable
    * @throws SQLException if fails to split objects.
    */
   public List<SnowflakeResultSetSerializable> getResultSetSerializables(long maxSizeInBytes)
-          throws SQLException {
+      throws SQLException {
     return this.resultSetSerializable.splitBySize(maxSizeInBytes);
   }
 
@@ -222,6 +222,5 @@ public abstract class SFBaseResultSet {
 
   @SnowflakeJdbcInternalApi
   public abstract Timestamp convertToTimestamp(
-          Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException;
+      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException;
 }
-

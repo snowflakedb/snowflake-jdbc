@@ -438,8 +438,10 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   }
 
   @Override
-  public Timestamp convertToTimestamp(Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
-    return (Timestamp) converters
+  public Timestamp convertToTimestamp(
+      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+    return (Timestamp)
+        converters
             .timestampConverter(columnSubType, columnType, scale, session, null, tz)
             .convert((String) object);
   }

@@ -41,15 +41,12 @@ import net.snowflake.client.core.ArrowSqlInput;
 import net.snowflake.client.core.ColumnTypeHelper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFArrowResultSet;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
-import org.apache.arrow.vector.util.JsonStringHashMap;
 
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
@@ -1589,7 +1586,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                       .get(columnIndex - 1)
                       .getFields());
         } else {
-          throw new SQLException("SqlInput type " + object.getClass() + " is not supported when mapping to SQLData class");
+          throw new SQLException(
+              "SqlInput type "
+                  + object.getClass()
+                  + " is not supported when mapping to SQLData class");
         }
         instance.readSQL(sqlInput, null);
         resultMap.put(entry.getKey(), (T) instance);
@@ -1691,17 +1691,21 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Date.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapSFExceptionToSQLException(() -> (T) sfBaseResultSet.convertToDate(entry.getValue(), tz)));
+            mapSFExceptionToSQLException(
+                () -> (T) sfBaseResultSet.convertToDate(entry.getValue(), tz)));
       } else if (Time.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapSFExceptionToSQLException(() -> (T) sfBaseResultSet.convertToTime(entry.getValue(), scale)));
+            mapSFExceptionToSQLException(
+                () -> (T) sfBaseResultSet.convertToTime(entry.getValue(), scale)));
 
       } else if (Timestamp.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
             mapSFExceptionToSQLException(
-                () -> (T) sfBaseResultSet.convertToTimestamp(
+                () ->
+                    (T)
+                        sfBaseResultSet.convertToTimestamp(
                             entry.getValue(), columnType, columnSubType, tz, scale)));
 
       } else {
