@@ -29,7 +29,7 @@ import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import net.snowflake.client.util.JsonStringToTypeConverter;
+import net.snowflake.client.util.Converter;
 
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
@@ -385,7 +385,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   }
 
   private Object[] convertToFixedArray(
-      Iterator nodeElements, JsonStringToTypeConverter bigIntConverter) {
+      Iterator nodeElements, Converter bigIntConverter) {
     AtomicInteger bigDecimalCount = new AtomicInteger();
     Object[] elements =
         getStream(nodeElements, bigIntConverter)
@@ -405,7 +405,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     return elements;
   }
 
-  private Stream getStream(Iterator nodeElements, JsonStringToTypeConverter converter) {
+  private Stream getStream(Iterator nodeElements, Converter converter) {
     return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(nodeElements, Spliterator.ORDERED), false)
         .map(
@@ -418,7 +418,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
             });
   }
 
-  private static Object convert(JsonStringToTypeConverter converter, JsonNode node)
+  private static Object convert(Converter converter, JsonNode node)
       throws SFException {
     if (node.isValueNode()) {
       return converter.convert(node.asText());

@@ -38,7 +38,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   private final ResultSetFormatType queryResultFormat;
 
   public ResultSetStructuredTypesLatestIT() {
-    this(ResultSetFormatType.JSON);
+    this(ResultSetFormatType.NATIVE_ARROW);
   }
 
   protected ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
@@ -411,7 +411,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMapVarcharArray() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT 'text', ARRAY_CONSTRUCT('10', '20','30')::ARRAY(VARCHAR)",
         (resultSet) -> {
