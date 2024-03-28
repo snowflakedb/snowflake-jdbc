@@ -199,7 +199,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsArrayOfString() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two','three')::ARRAY(VARCHAR)",
         (resultSet) -> {
