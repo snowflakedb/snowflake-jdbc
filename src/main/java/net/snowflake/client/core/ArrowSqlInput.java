@@ -4,6 +4,8 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLData;
@@ -20,12 +22,10 @@ import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.util.ThrowingBiFunction;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
-
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
 
-    private final JsonStringHashMap<String, Object> input;
+  private final JsonStringHashMap<String, Object> input;
   private final Iterator<Object> structuredTypeFields;
   private int currentIndex = 0;
 
@@ -36,11 +36,11 @@ public class ArrowSqlInput extends BaseSqlInput {
       List<FieldMetadata> fields) {
     super(session, converters, fields);
     this.structuredTypeFields = input.values().iterator();
-      this.input = input;
+    this.input = input;
   }
 
   public Map<String, Object> getInput() {
-      return input;
+    return input;
   }
 
   @Override
@@ -80,7 +80,8 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getShort(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getShort(value, columnType));
         });
   }
 
@@ -89,7 +90,8 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getInt(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getInt(value, columnType));
         });
   }
 
@@ -98,7 +100,8 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getLong(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getLong(value, columnType));
         });
   }
 
@@ -107,7 +110,8 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getFloat(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getFloat(value, columnType));
         });
   }
 
@@ -116,7 +120,8 @@ public class ArrowSqlInput extends BaseSqlInput {
     return withNextValue(
         (value, fieldMetadata) -> {
           int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(() -> converters.getNumberConverter().getDouble(value, columnType));
+          return mapSFExceptionToSQLException(
+              () -> converters.getNumberConverter().getDouble(value, columnType));
         });
   }
 
@@ -174,8 +179,8 @@ public class ArrowSqlInput extends BaseSqlInput {
           if (value == null) {
             return null;
           }
-            int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-            int columnSubType = fieldMetadata.getType();
+          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+          int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
           return mapSFExceptionToSQLException(
               () ->
@@ -184,7 +189,7 @@ public class ArrowSqlInput extends BaseSqlInput {
                       .getTimestamp(
                           (JsonStringHashMap<String, Object>) value,
                           columnType,
-                              columnSubType,
+                          columnSubType,
                           tz,
                           scale));
         });

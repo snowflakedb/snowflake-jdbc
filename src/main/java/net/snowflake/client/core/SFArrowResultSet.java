@@ -528,7 +528,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       return new JsonSqlInput(
           jsonNode,
           session,
-              converters,
+          converters,
           resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
           sessionTimezone);
     } catch (JsonProcessingException e) {
@@ -540,7 +540,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return new ArrowSqlInput(
         input,
         session,
-            converters,
+        converters,
         resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
   }
 
