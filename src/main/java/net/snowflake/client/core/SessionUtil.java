@@ -37,6 +37,7 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
@@ -343,6 +344,8 @@ public class SessionUtil {
       Map<SFSessionProperty, Object> connectionPropertiesMap,
       String tracingLevel)
       throws SFException, SnowflakeSQLException {
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     // build URL for login request
     URIBuilder uriBuilder;
     URI loginURI;
@@ -368,6 +371,18 @@ public class SessionUtil {
     int httpClientSocketTimeout = loginInput.getSocketTimeoutInMillis();
     final ClientAuthnDTO.AuthenticatorType authenticatorType = getAuthenticator(loginInput);
     Map<String, Object> commonParams;
+
+    String oktaUsername = loginInput.getOKTAUserName();
+    logger.info(
+        "Opening new session. Authenticating user: {}, host: {} with authentication method: {}."
+            + " Login timeout: {} s, auth timeout: {} s, OCSP mode: {}{}",
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl(),
+        authenticatorType,
+        loginInput.getLoginTimeout(),
+        loginInput.getAuthTimeout(),
+        loginInput.getOCSPMode(),
+        Strings.isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
 
     try {
 
@@ -725,9 +740,16 @@ public class SessionUtil {
           deleteMfaTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
         }
 
+        String errorMessage = jsonNode.path("message").asText();
+
+        logger.error(
+            "Failed to open new session for user: {}, host: {}. Error: {}",
+            loginInput.getUserName(),
+            loginInput.getHostFromServerUrl(),
+            errorMessage);
         throw new SnowflakeSQLException(
             NO_QUERY_ID,
-            jsonNode.path("message").asText(),
+            errorMessage,
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             errorCode);
       }
@@ -857,6 +879,13 @@ public class SessionUtil {
       CredentialManager.getInstance().writeMfaToken(loginInput, ret);
     }
 
+    stopwatch.stop();
+    logger.info(
+        "Session opened in {} ms. User: {}, host: {} with authentication method: {} authenticated successfully.",
+        stopwatch.elapsedMillis(),
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl(),
+        authenticatorType);
     return ret;
   }
 
