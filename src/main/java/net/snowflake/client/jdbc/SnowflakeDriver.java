@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
+import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
 
@@ -39,6 +40,8 @@ public class SnowflakeDriver implements Driver {
   private static boolean disableArrowResultFormat = false;
   private static String disableArrowResultFormatMessage;
 
+  private static SecurityUtil securityUtil;
+
   private static final ResourceBundleManager versionResourceBundleManager =
       ResourceBundleManager.getSingleton("net.snowflake.client.jdbc.version");
 
@@ -54,6 +57,10 @@ public class SnowflakeDriver implements Driver {
      * Get the manifest properties here.
      */
     initializeClientVersionFromManifest();
+
+    securityUtil = new SecurityUtil();
+
+    securityUtil.addBouncyCastleProvider();
   }
 
   /** try to initialize Arrow support if fails, JDBC is going to use the legacy format */
