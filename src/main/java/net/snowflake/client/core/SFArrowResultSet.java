@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.StructConverter;
@@ -362,6 +363,27 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     return converters;
   }
 
+  @Override
+  public Date convertToDate(Object object, TimeZone tz) throws SFException {
+    return converters
+            .getStructuredTypeDateTimeConverter()
+            .getDate((int) object, tz);
+  }
+
+  @Override
+  public Time convertToTime(Object object, int scale) throws SFException {
+    return      converters.getStructuredTypeDateTimeConverter()
+            .getTime((long) object, scale);
+  }
+
+  @Override
+  public Timestamp convertToTimestamp(Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+     return converters
+            .getStructuredTypeDateTimeConverter()
+            .getTimestamp(
+                    (JsonStringHashMap<String, Object>) object, columnType, columnSubType, tz, scale);
+  }
+
   /**
    * Advance to next row
    *
@@ -516,7 +538,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       if (converter instanceof VarCharConverter) {
         return createJsonSqlInput(columnIndex, obj);
       } else if (converter instanceof StructConverter) {
-        return createArrowSqlInput(columnIndex, (JsonStringHashMap<String, Object>) obj);
+        return createArrowSqlInput(columnIndex, (Map<String, Object>) obj);
       }
     }
     return obj;
@@ -536,7 +558,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
   }
 
-  private Object createArrowSqlInput(int columnIndex, JsonStringHashMap<String, Object> input) {
+  private Object createArrowSqlInput(int columnIndex, Map<String, Object> input) {
     return new ArrowSqlInput(
         input,
         session,

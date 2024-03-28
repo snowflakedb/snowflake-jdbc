@@ -1577,10 +1577,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                       .get(columnIndex - 1)
                       .getFields(),
                   sfBaseResultSet.getSessionTimezone());
-        } else {
+        } else if (object instanceof ArrowSqlInput || object instanceof Map) {
           sqlInput =
               new ArrowSqlInput(
-                  (JsonStringHashMap<String, Object>) entry.getValue(),
+                  (Map<String, Object>) entry.getValue(),
                   session,
                   sfBaseResultSet.getConverters(),
                   sfBaseResultSet
@@ -1588,6 +1588,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                       .getColumnMetadata()
                       .get(columnIndex - 1)
                       .getFields());
+        } else {
+          throw new SQLException("SqlInput type " + object.getClass() + " is not supported when mapping to SQLData class");
         }
         instance.readSQL(sqlInput, null);
         resultMap.put(entry.getKey(), (T) instance);
@@ -1689,19 +1691,17 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else if (Date.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapSFExceptionToSQLException(() -> (T) convertToDate(entry.getValue(), tz)));
+            mapSFExceptionToSQLException(() -> (T) sfBaseResultSet.convertToDate(entry.getValue(), tz)));
       } else if (Time.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
-            mapSFExceptionToSQLException(() -> (T) convertToTime(entry.getValue(), tz, scale)));
+            mapSFExceptionToSQLException(() -> (T) sfBaseResultSet.convertToTime(entry.getValue(), scale)));
 
       } else if (Timestamp.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
             mapSFExceptionToSQLException(
-                () ->
-                    (T)
-                        convertToTimestamp(
+                () -> (T) sfBaseResultSet.convertToTimestamp(
                             entry.getValue(), columnType, columnSubType, tz, scale)));
 
       } else {
@@ -1740,44 +1740,5 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
-  }
-
-  private Date convertToDate(Object object, TimeZone tz) throws SFException {
-    if (sfBaseResultSet instanceof SFArrowResultSet) {
-      return sfBaseResultSet
-          .getConverters()
-          .getStructuredTypeDateTimeConverter()
-          .getDate((int) object, tz);
-    } else {
-      return (Date) sfBaseResultSet.getConverters().dateConverter(session).convert((String) object);
-    }
-  }
-
-  private Time convertToTime(Object object, TimeZone tz, int scale) throws SFException {
-    if (sfBaseResultSet instanceof SFArrowResultSet) {
-      return sfBaseResultSet
-          .getConverters()
-          .getStructuredTypeDateTimeConverter()
-          .getTime((long) object, scale);
-    } else {
-      return (Time) sfBaseResultSet.getConverters().timeConverter(session).convert((String) object);
-    }
-  }
-
-  private Timestamp convertToTimestamp(
-      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
-    if (sfBaseResultSet instanceof SFArrowResultSet) {
-      return sfBaseResultSet
-          .getConverters()
-          .getStructuredTypeDateTimeConverter()
-          .getTimestamp(
-              (JsonStringHashMap<String, Object>) object, columnType, columnSubType, tz, scale);
-    } else {
-      return (Timestamp)
-          sfBaseResultSet
-              .getConverters()
-              .timestampConverter(columnSubType, columnType, scale, session, null, tz)
-              .convert((String) object);
-    }
   }
 }

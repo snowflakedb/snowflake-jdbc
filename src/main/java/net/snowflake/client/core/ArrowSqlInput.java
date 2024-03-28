@@ -25,12 +25,12 @@ import org.apache.arrow.vector.util.JsonStringHashMap;
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
 
-  private final JsonStringHashMap<String, Object> input;
+  private final Map<String, Object> input;
   private final Iterator<Object> structuredTypeFields;
   private int currentIndex = 0;
 
   public ArrowSqlInput(
-      JsonStringHashMap<String, Object> input,
+      Map<String, Object> input,
       SFBaseSession session,
       Converters converters,
       List<FieldMetadata> fields) {
@@ -214,7 +214,7 @@ public class ArrowSqlInput extends BaseSqlInput {
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
           instance.readSQL(
               new ArrowSqlInput(
-                  (JsonStringHashMap<String, Object>) value,
+                  (Map<String, Object>) value,
                   session,
                   converters,
                   fieldMetadata.getFields()),

@@ -426,4 +426,21 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       return converter.convert(node.toString());
     }
   }
+
+  @Override
+  public Date convertToDate(Object object, TimeZone tz) throws SFException {
+    return (Date) converters.dateConverter(session).convert((String) object);
+  }
+
+  @Override
+  public Time convertToTime(Object object, int scale) throws SFException {
+    return (Time) converters.timeConverter(session).convert((String) object);
+  }
+
+  @Override
+  public Timestamp convertToTimestamp(Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+    return (Timestamp) converters
+            .timestampConverter(columnSubType, columnType, scale, session, null, tz)
+            .convert((String) object);
+  }
 }
