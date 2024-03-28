@@ -213,4 +213,14 @@ public abstract class SFBaseResultSet {
   public TimeZone getSessionTimeZone() {
     return resultSetSerializable.getTimeZone();
   }
+
+  @SnowflakeJdbcInternalApi
+  public abstract Date convertToDate(Object object, TimeZone tz) throws SFException;
+
+  @SnowflakeJdbcInternalApi
+  public abstract Time convertToTime(Object object, int scale) throws SFException;
+
+  @SnowflakeJdbcInternalApi
+  public abstract Timestamp convertToTimestamp(
+      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException;
 }

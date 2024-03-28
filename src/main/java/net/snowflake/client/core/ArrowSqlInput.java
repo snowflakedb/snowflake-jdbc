@@ -14,6 +14,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
@@ -24,16 +25,22 @@ import org.apache.arrow.vector.util.JsonStringHashMap;
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
 
+  private final Map<String, Object> input;
   private final Iterator<Object> structuredTypeFields;
   private int currentIndex = 0;
 
   public ArrowSqlInput(
-      JsonStringHashMap<String, Object> input,
+      Map<String, Object> input,
       SFBaseSession session,
       Converters converters,
       List<FieldMetadata> fields) {
     super(session, converters, fields);
     this.structuredTypeFields = input.values().iterator();
+    this.input = input;
+  }
+
+  public Map<String, Object> getInput() {
+    return input;
   }
 
   @Override
@@ -172,6 +179,8 @@ public class ArrowSqlInput extends BaseSqlInput {
           if (value == null) {
             return null;
           }
+          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+          int columnSubType = fieldMetadata.getType();
           int scale = fieldMetadata.getScale();
           return mapSFExceptionToSQLException(
               () ->
@@ -179,7 +188,8 @@ public class ArrowSqlInput extends BaseSqlInput {
                       .getStructuredTypeDateTimeConverter()
                       .getTimestamp(
                           (JsonStringHashMap<String, Object>) value,
-                          fieldMetadata.getBase(),
+                          columnType,
+                          columnSubType,
                           tz,
                           scale));
         });
@@ -204,10 +214,7 @@ public class ArrowSqlInput extends BaseSqlInput {
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
           instance.readSQL(
               new ArrowSqlInput(
-                  (JsonStringHashMap<String, Object>) value,
-                  session,
-                  converters,
-                  fieldMetadata.getFields()),
+                  (Map<String, Object>) value, session, converters, fieldMetadata.getFields()),
               null);
           return (T) instance;
         });

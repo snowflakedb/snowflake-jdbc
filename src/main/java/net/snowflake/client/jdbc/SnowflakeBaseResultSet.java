@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.ArrowSqlInput;
 import net.snowflake.client.core.ColumnTypeHelper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -1355,8 +1356,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       instance.readSQL(sqlInput, null);
       return (T) instance;
     } else if (Map.class.isAssignableFrom(type)) {
-      JsonNode jsonNode = ((JsonSqlInput) getObject(columnIndex)).getInput();
-      return (T) OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+      Object object = getObject(columnIndex);
+      if (object instanceof JsonSqlInput) {
+        JsonNode jsonNode = ((JsonSqlInput) object).getInput();
+        return (T)
+            OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+      } else {
+        return (T) ((ArrowSqlInput) object).getInput();
+      }
     } else if (String.class.isAssignableFrom(type)) {
       return (T) getString(columnIndex);
     } else if (Boolean.class.isAssignableFrom(type)) {
@@ -1543,20 +1550,50 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object object = getObject(columnIndex);
-    JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-    Map<String, Object> map =
-        OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+    Map<String, Object> map;
+    if (object instanceof JsonSqlInput) {
+      map = new HashMap<>();
+      JsonNode jsonNode = ((JsonSqlInput) object).getInput();
+      jsonNode
+          .fieldNames()
+          .forEachRemaining(node -> map.put(node.toString(), jsonNode.get(node.toString())));
+    } else {
+      map = (Map<String, Object>) object;
+    }
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-        SQLInput sqlInput =
-            new JsonSqlInput(
-                jsonNode.get(entry.getKey()),
-                session,
-                sfBaseResultSet.getConverters(),
-                sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields(),
-                sfBaseResultSet.getSessionTimezone());
+        SQLInput sqlInput;
+        if (object instanceof JsonSqlInput) {
+          sqlInput =
+              new JsonSqlInput(
+                  (JsonNode) entry.getValue(),
+                  session,
+                  sfBaseResultSet.getConverters(),
+                  sfBaseResultSet
+                      .getMetaData()
+                      .getColumnMetadata()
+                      .get(columnIndex - 1)
+                      .getFields(),
+                  sfBaseResultSet.getSessionTimezone());
+        } else if (object instanceof ArrowSqlInput || object instanceof Map) {
+          sqlInput =
+              new ArrowSqlInput(
+                  (Map<String, Object>) entry.getValue(),
+                  session,
+                  sfBaseResultSet.getConverters(),
+                  sfBaseResultSet
+                      .getMetaData()
+                      .getColumnMetadata()
+                      .get(columnIndex - 1)
+                      .getFields());
+        } else {
+          throw new SQLException(
+              "SqlInput type "
+                  + object.getClass()
+                  + " is not supported when mapping to SQLData class");
+        }
         instance.readSQL(sqlInput, null);
         resultMap.put(entry.getKey(), (T) instance);
       } else if (String.class.isAssignableFrom(type)) {
@@ -1658,32 +1695,22 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         resultMap.put(
             entry.getKey(),
             mapSFExceptionToSQLException(
-                () ->
-                    (T)
-                        sfBaseResultSet
-                            .getConverters()
-                            .dateConverter(session)
-                            .convert((String) entry.getValue())));
+                () -> (T) sfBaseResultSet.convertToDate(entry.getValue(), tz)));
       } else if (Time.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
             mapSFExceptionToSQLException(
-                () ->
-                    (T)
-                        sfBaseResultSet
-                            .getConverters()
-                            .timeConverter(session)
-                            .convert((String) entry.getValue())));
+                () -> (T) sfBaseResultSet.convertToTime(entry.getValue(), scale)));
+
       } else if (Timestamp.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
             mapSFExceptionToSQLException(
                 () ->
                     (T)
-                        sfBaseResultSet
-                            .getConverters()
-                            .timestampConverter(columnSubType, columnType, scale, session, null, tz)
-                            .convert((String) entry.getValue())));
+                        sfBaseResultSet.convertToTimestamp(
+                            entry.getValue(), columnType, columnSubType, tz, scale)));
+
       } else {
         logger.debug(
             "Unsupported type passed to getObject(int columnIndex,Class<T> type): "

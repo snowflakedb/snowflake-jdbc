@@ -173,7 +173,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMapJsonToMap() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT OBJECT_CONSTRUCT('string','a','string2',1)",
         (resultSet) -> {
@@ -200,6 +199,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsArrayOfString() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two','three')::ARRAY(VARCHAR)",
         (resultSet) -> {
@@ -213,6 +213,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsListOfIntegers() throws SQLException {
+    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(1,2,3)::ARRAY(INTEGER)",
         (resultSet) -> {
@@ -226,7 +227,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsMap() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
         "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
@@ -236,6 +236,18 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", map.get("x").getString());
           assertEquals("two", map.get("y").getString());
           assertEquals("three", map.get("z").getString());
+        });
+  }
+
+  @Test
+  public void testReturnAsMapOfTimestampsNtz() throws SQLException {
+    withFirstRow(
+        "SELECT {'x': TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), 'y': TO_TIMESTAMP_NTZ('2021-12-24 09:55:55')}::MAP(VARCHAR, TIMESTAMP)",
+        (resultSet) -> {
+          Map<String, Timestamp> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
+          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), map.get("x"));
+          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 9, 55, 55)), map.get("y"));
         });
   }
 
@@ -271,8 +283,10 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         (resultSet) -> {
           Map<String, Date> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Date.class);
-          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), map.get("x"));
-          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 25)), map.get("y"));
+          assertEquals(
+              Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), map.get("x").toString());
+          assertEquals(
+              Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), map.get("y").toString());
         });
   }
 
@@ -316,7 +330,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMapStructsFromChunks() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "select {'string':'a'}::OBJECT(string VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))",
         (resultSet) -> {

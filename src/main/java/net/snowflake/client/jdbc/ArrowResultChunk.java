@@ -27,6 +27,7 @@ import net.snowflake.client.core.arrow.DoubleToRealConverter;
 import net.snowflake.client.core.arrow.IntToFixedConverter;
 import net.snowflake.client.core.arrow.IntToScaledFixedConverter;
 import net.snowflake.client.core.arrow.IntToTimeConverter;
+import net.snowflake.client.core.arrow.MapConverter;
 import net.snowflake.client.core.arrow.SmallIntToFixedConverter;
 import net.snowflake.client.core.arrow.SmallIntToScaledFixedConverter;
 import net.snowflake.client.core.arrow.StructConverter;
@@ -55,6 +56,7 @@ import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
 import org.apache.arrow.vector.types.Types;
@@ -204,6 +206,10 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
           case TEXT:
           case VARIANT:
             converters.add(new VarCharConverter(vector, i, context));
+            break;
+
+          case MAP:
+            converters.add(new MapConverter((MapVector) vector, i, context));
             break;
 
           case OBJECT:
