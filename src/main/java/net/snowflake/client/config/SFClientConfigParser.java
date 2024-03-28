@@ -99,7 +99,7 @@ public class SFClientConfigParser {
     }
   }
 
-  public static String convertToWindowsPath(String filePath) {
+  static String convertToWindowsPath(String filePath) {
     // Find the Windows file path pattern: ex) C:\ or D:\
     Pattern windowsFilePattern = Pattern.compile("[C-Z]:[\\\\/]");
     Matcher matcher = windowsFilePattern.matcher(filePath);
