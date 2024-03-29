@@ -44,6 +44,7 @@ import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -1551,7 +1552,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object object = getObject(columnIndex);
-    Map<String, Object> map = prepareMapWithValues(object, type);
+    Map<String, Object> map =
+        mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
@@ -1742,10 +1744,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   private <T> Map<String, Object> prepareMapWithValues(Object object, Class<T> type)
-      throws SQLException {
-    Map<String, Object> map;
+      throws SFException {
     if (object instanceof JsonSqlInput) {
-      map = new HashMap<>();
+      Map map = new HashMap<>();
       JsonNode jsonNode = ((JsonSqlInput) object).getInput();
       for (Iterator<String> it = jsonNode.fieldNames(); it.hasNext(); ) {
         String name = it.next();
@@ -1753,12 +1754,13 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
             name,
             SQLData.class.isAssignableFrom(type)
                 ? jsonNode.get(name)
-                : mapSFExceptionToSQLException(
-                    () -> SnowflakeUtil.getJsonNodeStringValue(jsonNode.get(name))));
+                : SnowflakeUtil.getJsonNodeStringValue(jsonNode.get(name)));
       }
+      return map;
+    } else if (object instanceof Map) {
+      return (Map<String, Object>) object;
     } else {
-      map = (Map<String, Object>) object;
+      throw new SFException(ErrorCode.INVALID_STRUCT_DATA, "Object couldn't be converted to map");
     }
-    return map;
   }
 }
