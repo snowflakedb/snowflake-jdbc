@@ -34,6 +34,7 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -1550,16 +1551,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object object = getObject(columnIndex);
-    Map<String, Object> map;
-    if (object instanceof JsonSqlInput) {
-      map = new HashMap<>();
-      JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-      jsonNode
-          .fieldNames()
-          .forEachRemaining(node -> map.put(node.toString(), jsonNode.get(node.toString())));
-    } else {
-      map = (Map<String, Object>) object;
-    }
+    Map<String, Object> map = prepareMapWithValues(object, type);
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
@@ -1747,5 +1739,26 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
+  }
+
+  private <T> Map<String, Object> prepareMapWithValues(Object object, Class<T> type)
+      throws SQLException {
+    Map<String, Object> map;
+    if (object instanceof JsonSqlInput) {
+      map = new HashMap<>();
+      JsonNode jsonNode = ((JsonSqlInput) object).getInput();
+      for (Iterator<String> it = jsonNode.fieldNames(); it.hasNext(); ) {
+        String name = it.next();
+        map.put(
+            name,
+            SQLData.class.isAssignableFrom(type)
+                ? jsonNode.get(name)
+                : mapSFExceptionToSQLException(
+                    () -> SnowflakeUtil.getJsonNodeStringValue(jsonNode.get(name))));
+      }
+    } else {
+      map = (Map<String, Object>) object;
+    }
+    return map;
   }
 }
