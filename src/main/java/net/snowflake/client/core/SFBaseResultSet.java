@@ -5,10 +5,17 @@
 package net.snowflake.client.core;
 
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Array;
 import java.sql.Date;
-import java.util.*;
-
+import java.sql.SQLException;
+import java.sql.SQLInput;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
@@ -208,7 +215,8 @@ public abstract class SFBaseResultSet {
   }
 
   @SnowflakeJdbcInternalApi
-  public abstract SQLInput createSqlInputForColumn(Object input, int columnIndex, SFBaseSession session);
+  public abstract SQLInput createSqlInputForColumn(
+      Object input, int columnIndex, SFBaseSession session);
 
   @SnowflakeJdbcInternalApi
   public abstract Date convertToDate(Object object, TimeZone tz) throws SFException;

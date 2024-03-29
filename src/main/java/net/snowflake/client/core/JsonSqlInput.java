@@ -17,7 +17,6 @@ import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
-
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;

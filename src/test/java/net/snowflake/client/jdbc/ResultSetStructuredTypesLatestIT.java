@@ -3,9 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.any;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -28,9 +28,6 @@ import net.snowflake.client.ThrowingRunnable;
 import net.snowflake.client.category.TestCategoryStructuredType;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.core.structs.StructureTypeHelper;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +37,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   private final ResultSetFormatType queryResultFormat;
 
   public ResultSetStructuredTypesLatestIT() {
-    this(ResultSetFormatType.JSON);
+    this(ResultSetFormatType.NATIVE_ARROW);
   }
 
   protected ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
@@ -424,8 +421,10 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         "SELECT ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD'))::ARRAY(DATE)",
         (resultSet) -> {
           Date[] resultArray = (Date[]) resultSet.getArray(1).getArray();
-          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), resultArray[0].toString());
-          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), resultArray[1].toString());
+          assertEquals(
+              Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), resultArray[0].toString());
+          assertEquals(
+              Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), resultArray[1].toString());
         });
   }
 
@@ -435,7 +434,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         "SELECT ARRAY_CONSTRUCT(to_time('15:39:20.123'), to_time('09:12:20.123'))::ARRAY(TIME)",
         (resultSet) -> {
           Time[] resultArray = (Time[]) resultSet.getArray(1).getArray();
-          assertEquals(Time.valueOf(LocalTime.of(15, 39, 20)).toString(), resultArray[0].toString());
+          assertEquals(
+              Time.valueOf(LocalTime.of(15, 39, 20)).toString(), resultArray[0].toString());
           assertEquals(Time.valueOf(LocalTime.of(9, 12, 20)).toString(), resultArray[1].toString());
         });
   }
@@ -484,9 +484,9 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           Map<String, Object> firstEntry = resultArray[0];
           Map<String, Object> secondEntry = resultArray[1];
           assertEquals(firstEntry.get("x").toString(), "abc");
-            assertEquals(firstEntry.get("y").toString(), "1");
-            assertEquals(secondEntry.get("x").toString(), "def");
-            assertEquals(secondEntry.get("y").toString(), "2");
+          assertEquals(firstEntry.get("y").toString(), "1");
+          assertEquals(secondEntry.get("x").toString(), "def");
+          assertEquals(secondEntry.get("y").toString(), "2");
         });
   }
 
@@ -496,12 +496,12 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         "SELECT ARRAY_CONSTRUCT(ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2}) )::ARRAY(ARRAY(OBJECT(x VARCHAR, y INTEGER)))",
         (resultSet) -> {
           Map[][] resultArray = (Map[][]) resultSet.getArray(1).getArray();
-            Map<String, Object> firstEntry = resultArray[0][0];
-            Map<String, Object> secondEntry = resultArray[0][1];
-            assertEquals(firstEntry.get("x").toString(), "abc");
-            assertEquals(firstEntry.get("y").toString(), "1");
-            assertEquals(secondEntry.get("x").toString(), "def");
-            assertEquals(secondEntry.get("y").toString(), "2");
+          Map<String, Object> firstEntry = resultArray[0][0];
+          Map<String, Object> secondEntry = resultArray[0][1];
+          assertEquals(firstEntry.get("x").toString(), "abc");
+          assertEquals(firstEntry.get("y").toString(), "1");
+          assertEquals(secondEntry.get("x").toString(), "def");
+          assertEquals(secondEntry.get("y").toString(), "2");
         });
   }
 

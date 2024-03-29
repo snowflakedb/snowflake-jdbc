@@ -34,11 +34,17 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.ArrowSqlInput;
+import net.snowflake.client.core.ColumnTypeHelper;
+import net.snowflake.client.core.JsonSqlInput;
+import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -1518,7 +1524,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                   (T)
                       sfBaseResultSet
                           .getConverters()
-                          .timestampFromStringConverter(columnSubType, columnType, scale, session, null, tz)
+                          .timestampFromStringConverter(
+                              columnSubType, columnType, scale, session, null, tz)
                           .convert((String) value));
         } else if (BigDecimal.class.isAssignableFrom(type)) {
           arr[counter++] = (T) getBigDecimal(columnIndex);
@@ -1545,9 +1552,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     Object object = getObject(columnIndex);
     Map<String, Object> map;
     if (object instanceof JsonSqlInput) {
-      JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-      map =
-              OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+      map = mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
     } else {
       map = (Map<String, Object>) object;
     }
@@ -1555,36 +1560,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-        SQLInput sqlInput;
-        if (object instanceof JsonSqlInput) {
-          sqlInput =
-              new JsonSqlInput(
-                      ((JsonSqlInput) object).getInput().get(entry.getKey()),
-                  session,
-                  sfBaseResultSet.getConverters(),
-                  sfBaseResultSet
-                      .getMetaData()
-                      .getColumnMetadata()
-                      .get(columnIndex - 1)
-                      .getFields(),
-                  sfBaseResultSet.getSessionTimezone());
-        } else if (object instanceof ArrowSqlInput || object instanceof Map) {
-          sqlInput =
-              new ArrowSqlInput(
-                  (Map<String, Object>) entry.getValue(),
-                  session,
-                  sfBaseResultSet.getConverters(),
-                  sfBaseResultSet
-                      .getMetaData()
-                      .getColumnMetadata()
-                      .get(columnIndex - 1)
-                      .getFields());
-        } else {
-          throw new SQLException(
-              "SqlInput type "
-                  + object.getClass()
-                  + " is not supported when mapping to SQLData class");
-        }
+        SQLInput sqlInput =
+            sfBaseResultSet.createSqlInputForColumn(entry.getValue(), columnIndex, session);
         instance.readSQL(sqlInput, null);
         resultMap.put(entry.getKey(), (T) instance);
       } else if (String.class.isAssignableFrom(type)) {
@@ -1738,5 +1715,26 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
+  }
+
+  private <T> Map<String, Object> prepareMapWithValues(Object object, Class<T> type)
+      throws SFException {
+    if (object instanceof JsonSqlInput) {
+      Map map = new HashMap<>();
+      JsonNode jsonNode = ((JsonSqlInput) object).getInput();
+      for (Iterator<String> it = jsonNode.fieldNames(); it.hasNext(); ) {
+        String name = it.next();
+        map.put(
+            name,
+            SQLData.class.isAssignableFrom(type)
+                ? jsonNode.get(name)
+                : SnowflakeUtil.getJsonNodeStringValue(jsonNode.get(name)));
+      }
+      return map;
+    } else if (object instanceof Map) {
+      return (Map<String, Object>) object;
+    } else {
+      throw new SFException(ErrorCode.INVALID_STRUCT_DATA, "Object couldn't be converted to map");
+    }
   }
 }

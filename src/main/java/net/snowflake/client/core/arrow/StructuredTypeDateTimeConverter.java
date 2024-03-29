@@ -47,11 +47,7 @@ public class StructuredTypeDateTimeConverter {
   }
 
   public Timestamp getTimestamp(
-      Map<String, Object> obj,
-      int columnType,
-      int columnSubType,
-      TimeZone tz,
-      int scale)
+      Map<String, Object> obj, int columnType, int columnSubType, TimeZone tz, int scale)
       throws SFException {
     if (tz == null) {
       tz = TimeZone.getDefault();

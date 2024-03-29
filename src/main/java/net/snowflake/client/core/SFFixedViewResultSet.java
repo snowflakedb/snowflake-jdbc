@@ -6,7 +6,6 @@ package net.snowflake.client.core;
 
 import java.sql.SQLException;
 import java.util.List;
-
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SFBaseFileTransferAgent;
 import net.snowflake.client.jdbc.SFBaseFileTransferAgent.CommandType;

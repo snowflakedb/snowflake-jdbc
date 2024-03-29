@@ -4,12 +4,19 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.getJsonNodeStringValue;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Array;
+import java.sql.Date;
+import java.sql.SQLInput;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Spliterator;
@@ -18,7 +25,6 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
@@ -257,15 +263,18 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   @SnowflakeJdbcInternalApi
   public SQLInput createSqlInputForColumn(Object input, int columnIndex, SFBaseSession session) {
+    JsonNode inputNode;
+    if (input instanceof JsonNode) {
+      inputNode = (JsonNode) input;
+    } else {
+      inputNode = OBJECT_MAPPER.convertValue(input, JsonNode.class);
+    }
     return new JsonSqlInput(
-            OBJECT_MAPPER.convertValue(input, JsonNode.class),
-            session,
-            converters,
-            resultSetMetaData
-                    .getColumnMetadata()
-                    .get(columnIndex - 1)
-                    .getFields(),
-            sessionTimezone);
+        inputNode,
+        session,
+        converters,
+        resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
+        sessionTimezone);
   }
 
   @Override
@@ -283,11 +292,11 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   @SnowflakeJdbcInternalApi
   public Timestamp convertToTimestamp(
-          Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
     return (Timestamp)
-            converters
-                    .timestampFromStringConverter(columnSubType, columnType, scale, session, null, tz)
-                    .convert(object);
+        converters
+            .timestampFromStringConverter(columnSubType, columnType, scale, session, null, tz)
+            .convert(object);
   }
 
   private Timestamp getTimestamp(int columnIndex) throws SFException {
@@ -351,7 +360,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         case Types.NUMERIC:
           return new SfSqlArray(
               columnSubType,
-              convertToFixedArray(getStream(nodeElements, converters.bigDecimalConverter(columnType))));
+              convertToFixedArray(
+                  getStream(nodeElements, converters.bigDecimalConverter(columnType))));
         case Types.CHAR:
         case Types.VARCHAR:
         case Types.LONGNVARCHAR:
@@ -377,11 +387,13 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         case Types.DATE:
           return new SfSqlArray(
               columnSubType,
-              getStream(nodeElements, converters.dateStringConverter(session)).toArray(Date[]::new));
+              getStream(nodeElements, converters.dateStringConverter(session))
+                  .toArray(Date[]::new));
         case Types.TIME:
           return new SfSqlArray(
               columnSubType,
-              getStream(nodeElements, converters.timeFromStringConverter(session)).toArray(Time[]::new));
+              getStream(nodeElements, converters.timeFromStringConverter(session))
+                  .toArray(Time[]::new));
         case Types.TIMESTAMP:
           return new SfSqlArray(
               columnSubType,
@@ -415,6 +427,25 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     }
   }
 
+  private Object[] convertToFixedArray(Stream inputStream) {
+    AtomicInteger bigDecimalCount = new AtomicInteger();
+    Object[] elements =
+        inputStream
+            .peek(
+                elem -> {
+                  if (elem instanceof BigDecimal) {
+                    bigDecimalCount.incrementAndGet();
+                  }
+                })
+            .toArray(
+                size -> {
+                  boolean shouldReturnAsBigDecimal = bigDecimalCount.get() > 0;
+                  Class<?> returnedClass = shouldReturnAsBigDecimal ? BigDecimal.class : Long.class;
+                  return java.lang.reflect.Array.newInstance(returnedClass, size);
+                });
+    return elements;
+  }
+
   private Stream getStream(Iterator nodeElements, Converter converter) {
     return StreamSupport.stream(
             Spliterators.spliteratorUnknownSize(nodeElements, Spliterator.ORDERED), false)
@@ -428,31 +459,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
             });
   }
 
-  private Object[] convertToFixedArray(Stream inputStream) {
-    AtomicInteger bigDecimalCount = new AtomicInteger();
-    Object[] elements =
-            inputStream
-                    .peek(
-                            elem -> {
-                              if (elem instanceof BigDecimal) {
-                                bigDecimalCount.incrementAndGet();
-                              }
-                            })
-                    .toArray(
-                            size -> {
-                              boolean shouldReturnAsBigDecimal = bigDecimalCount.get() > 0;
-                              Class<?> returnedClass =
-                                      shouldReturnAsBigDecimal ? BigDecimal.class : Long.class;
-                              return java.lang.reflect.Array.newInstance(returnedClass, size);
-                            });
-    return elements;
-  }
-
   private static Object convert(Converter converter, JsonNode node) throws SFException {
-    if (node.isValueNode()) {
-      return converter.convert(node.asText());
-    } else {
-      return converter.convert(node.toString());
-    }
+    String nodeValue = getJsonNodeStringValue(node);
+    return converter.convert(nodeValue);
   }
 }

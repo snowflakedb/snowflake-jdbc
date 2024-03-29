@@ -3,7 +3,6 @@ package net.snowflake.client.core.json;
 import java.sql.Date;
 import java.sql.Types;
 import java.util.TimeZone;
-
 import net.snowflake.client.core.Converters;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseSession;
