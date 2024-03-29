@@ -2,6 +2,8 @@ package net.snowflake.client.core.json;
 
 import java.nio.ByteBuffer;
 import java.sql.Types;
+
+import net.snowflake.client.core.Converters;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -11,7 +13,7 @@ import org.apache.arrow.vector.Float8Vector;
 public class BytesConverter {
   private final Converters converters;
 
-  BytesConverter(Converters converters) {
+  public BytesConverter(Converters converters) {
     this.converters = converters;
   }
 

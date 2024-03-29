@@ -5,6 +5,8 @@ import static org.junit.Assert.assertArrayEquals;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.Types;
+
+import net.snowflake.client.core.Converters;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import org.apache.arrow.vector.Float8Vector;

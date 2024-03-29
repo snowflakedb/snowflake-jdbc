@@ -16,7 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.json.Converters;
+
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.util.ThrowingBiFunction;
@@ -187,7 +187,7 @@ public class ArrowSqlInput extends BaseSqlInput {
                   converters
                       .getStructuredTypeDateTimeConverter()
                       .getTimestamp(
-                          (JsonStringHashMap<String, Object>) value,
+                          (Map<String, Object>) value,
                           columnType,
                           columnSubType,
                           tz,

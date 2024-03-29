@@ -37,19 +37,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.ArrowSqlInput;
-import net.snowflake.client.core.ColumnTypeHelper;
-import net.snowflake.client.core.JsonSqlInput;
-import net.snowflake.client.core.ObjectMapperFactory;
-import net.snowflake.client.core.SFArrowResultSet;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFException;
+
+import net.snowflake.client.core.*;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
-import org.apache.arrow.vector.util.JsonStringHashMap;
 
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
@@ -1420,19 +1413,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         arr[counter++] = (T) value;
       } else {
         if (SQLData.class.isAssignableFrom(type)) {
-          Map data = (Map) value;
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-          SQLInput sqlInput =
-              new JsonSqlInput(
-                  OBJECT_MAPPER.convertValue(data, JsonNode.class),
-                  session,
-                  sfBaseResultSet.getConverters(),
-                  sfBaseResultSet
-                      .getMetaData()
-                      .getColumnMetadata()
-                      .get(columnIndex - 1)
-                      .getFields(),
-                  sfBaseResultSet.getSessionTimezone());
+          SQLInput sqlInput = sfBaseResultSet.createSqlInputForColumn(value, columnIndex, session);
           instance.readSQL(sqlInput, null);
           arr[counter++] = (T) instance;
         } else if (String.class.isAssignableFrom(type)) {
@@ -1519,7 +1501,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                       (T)
                           sfBaseResultSet
                               .getConverters()
-                              .dateConverter(session)
+                              .dateStringConverter(session)
                               .convert((String) value));
         } else if (Time.class.isAssignableFrom(type)) {
           arr[counter++] =
@@ -1528,7 +1510,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                       (T)
                           sfBaseResultSet
                               .getConverters()
-                              .timeConverter(session)
+                              .timeFromStringConverter(session)
                               .convert((String) value));
         } else if (Timestamp.class.isAssignableFrom(type)) {
           mapSFExceptionToSQLException(
@@ -1536,7 +1518,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                   (T)
                       sfBaseResultSet
                           .getConverters()
-                          .timestampConverter(columnSubType, columnType, scale, session, null, tz)
+                          .timestampFromStringConverter(columnSubType, columnType, scale, session, null, tz)
                           .convert((String) value));
         } else if (BigDecimal.class.isAssignableFrom(type)) {
           arr[counter++] = (T) getBigDecimal(columnIndex);

@@ -47,7 +47,7 @@ import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatementType;
 import net.snowflake.client.core.SessionUtil;
-import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.core.Converters;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.common.core.SFBinaryFormat;

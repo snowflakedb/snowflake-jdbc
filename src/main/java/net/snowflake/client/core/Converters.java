@@ -1,4 +1,4 @@
-package net.snowflake.client.core.json;
+package net.snowflake.client.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,11 +11,9 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.core.SqlInputTimestampUtil;
+
 import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
+import net.snowflake.client.core.json.*;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.util.Converter;
@@ -182,7 +180,7 @@ public class Converters {
   }
 
   @SnowflakeJdbcInternalApi
-  public Converter dateConverter(SFBaseSession session) {
+  public Converter dateStringConverter(SFBaseSession session) {
     return value -> {
       SnowflakeDateTimeFormat formatter =
           SnowflakeDateTimeFormat.fromSqlFormat(
@@ -194,7 +192,12 @@ public class Converters {
   }
 
   @SnowflakeJdbcInternalApi
-  public Converter timeConverter(SFBaseSession session) {
+  public Converter dateFromIntConverter(TimeZone tz) {
+    return value -> structuredTypeDateTimeConverter.getDate((Integer) value, tz);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public Converter timeFromStringConverter(SFBaseSession session) {
     return value -> {
       SnowflakeDateTimeFormat formatter =
           SnowflakeDateTimeFormat.fromSqlFormat(
@@ -205,8 +208,12 @@ public class Converters {
     };
   }
 
+  public Converter timeFromIntConverter(int scale) {
+    return value -> structuredTypeDateTimeConverter.getTime((Long) value, scale);
+  }
+
   @SnowflakeJdbcInternalApi
-  public Converter timestampConverter(
+  public Converter timestampFromStringConverter(
       int columnSubType,
       int columnType,
       int scale,
@@ -223,6 +230,10 @@ public class Converters {
       return getDateTimeConverter()
           .getTimestamp(value, columnType, columnSubType, TimeZone.getDefault(), scale);
     };
+  }
+
+  public Converter timestampFromStructConverter(int columnType, int columnSubType, TimeZone tz, int scale) {
+    return value -> structuredTypeDateTimeConverter.getTimestamp((Map<String, Object>) value, columnType, columnSubType, tz, scale);
   }
 
   @SnowflakeJdbcInternalApi

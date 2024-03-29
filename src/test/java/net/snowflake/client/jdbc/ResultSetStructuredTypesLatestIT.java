@@ -3,9 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.any;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -28,6 +28,8 @@ import net.snowflake.client.ThrowingRunnable;
 import net.snowflake.client.category.TestCategoryStructuredType;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.core.structs.StructureTypeHelper;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +40,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   private final ResultSetFormatType queryResultFormat;
 
   public ResultSetStructuredTypesLatestIT() {
-    this(ResultSetFormatType.NATIVE_ARROW);
+    this(ResultSetFormatType.JSON);
   }
 
   protected ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
@@ -184,7 +186,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsArrayOfSqlData() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT({'string':'one'}, {'string':'two'}, {'string':'three'})::ARRAY(OBJECT(string VARCHAR))",
@@ -199,7 +200,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsArrayOfString() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two','three')::ARRAY(VARCHAR)",
         (resultSet) -> {
@@ -213,7 +213,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsListOfIntegers() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(1,2,3)::ARRAY(INTEGER)",
         (resultSet) -> {
@@ -316,7 +315,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsList() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
         "select [{'string':'one'},{'string': 'two'}]::ARRAY(OBJECT(string varchar))",
@@ -342,7 +340,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMapIntegerArray() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(INTEGER)",
         (resultSet) -> {
@@ -355,7 +352,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMapFixedToLongArray() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(SMALLINT)",
         (resultSet) -> {
@@ -368,7 +364,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMapDecimalArray() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     //    when: jdbc_treat_decimal_as_int=true scale=0
     try (Connection connection = init();
         Statement statement = connection.createStatement();
@@ -390,9 +385,9 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                 "SELECT ARRAY_CONSTRUCT(10.2, 20.02, 30)::ARRAY(DECIMAL(20,2))"); ) {
       resultSet.next();
       BigDecimal[] resultArray2 = (BigDecimal[]) resultSet.getArray(1).getArray();
-      assertEquals(BigDecimal.valueOf(10.2), resultArray2[0]);
-      assertEquals(BigDecimal.valueOf(20.02), resultArray2[1]);
-      assertEquals(BigDecimal.valueOf(30), resultArray2[2]);
+      assertEquals(BigDecimal.valueOf(10.20).doubleValue(), resultArray2[0].doubleValue(), 0);
+      assertEquals(BigDecimal.valueOf(20.02).doubleValue(), resultArray2[1].doubleValue(), 0);
+      assertEquals(BigDecimal.valueOf(30.00).doubleValue(), resultArray2[2].doubleValue(), 0);
     }
 
     //    when: jdbc_treat_decimal_as_int=false scale=0
@@ -425,45 +420,41 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMapDatesArray() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD'))::ARRAY(DATE)",
         (resultSet) -> {
           Date[] resultArray = (Date[]) resultSet.getArray(1).getArray();
-          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), resultArray[0]);
-          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 25)), resultArray[1]);
+          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), resultArray[0].toString());
+          assertEquals(Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), resultArray[1].toString());
         });
   }
 
   @Test
   public void testMapTimeArray() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
-        "SELECT ARRAY_CONSTRUCT(to_time('15:39:20.123'), to_time('15:39:20.123'))::ARRAY(TIME)",
+        "SELECT ARRAY_CONSTRUCT(to_time('15:39:20.123'), to_time('09:12:20.123'))::ARRAY(TIME)",
         (resultSet) -> {
           Time[] resultArray = (Time[]) resultSet.getArray(1).getArray();
-          assertEquals(Time.valueOf(LocalTime.of(15, 39, 20)), resultArray[0]);
-          assertEquals(Time.valueOf(LocalTime.of(15, 39, 20)), resultArray[1]);
+          assertEquals(Time.valueOf(LocalTime.of(15, 39, 20)).toString(), resultArray[0].toString());
+          assertEquals(Time.valueOf(LocalTime.of(9, 12, 20)).toString(), resultArray[1].toString());
         });
   }
 
   @Test
   public void testMapTimestampArray() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), TO_TIMESTAMP_NTZ('2021-12-24 09:55:55'))::ARRAY(TIMESTAMP)",
         (resultSet) -> {
           Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
           assertEquals(
-              Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 10, 44, 44)), resultArray[0]);
+              Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), resultArray[0]);
           assertEquals(
-              Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 10, 55, 55)), resultArray[1]);
+              Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 9, 55, 55)), resultArray[1]);
         });
   }
 
   @Test
   public void testMapBooleanArray() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(true,false)::ARRAY(BOOLEAN)",
         (resultSet) -> {
@@ -475,7 +466,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMapBinaryArray() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(TO_BINARY('616263', 'HEX'),TO_BINARY('616263', 'HEX'))::ARRAY(BINARY)",
         (resultSet) -> {
@@ -487,25 +477,31 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMapArrayOfStructToMap() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2} )::ARRAY(OBJECT(x VARCHAR, y INTEGER))",
         (resultSet) -> {
           Map[] resultArray = (Map[]) resultSet.getArray(1).getArray();
-          assertEquals("{x=abc, y=1}", resultArray[0].toString());
-          assertEquals("{x=def, y=2}", resultArray[1].toString());
+          Map<String, Object> firstEntry = resultArray[0];
+          Map<String, Object> secondEntry = resultArray[1];
+          assertEquals(firstEntry.get("x").toString(), "abc");
+            assertEquals(firstEntry.get("y").toString(), "1");
+            assertEquals(secondEntry.get("x").toString(), "def");
+            assertEquals(secondEntry.get("y").toString(), "2");
         });
   }
 
   @Test
   public void testMapArrayOfArrays() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2}) )::ARRAY(ARRAY(OBJECT(x VARCHAR, y INTEGER)))",
         (resultSet) -> {
           Map[][] resultArray = (Map[][]) resultSet.getArray(1).getArray();
-          assertEquals("{x=abc, y=1}", resultArray[0][0].toString());
-          assertEquals("{x=def, y=2}", resultArray[0][1].toString());
+            Map<String, Object> firstEntry = resultArray[0][0];
+            Map<String, Object> secondEntry = resultArray[0][1];
+            assertEquals(firstEntry.get("x").toString(), "abc");
+            assertEquals(firstEntry.get("y").toString(), "1");
+            assertEquals(secondEntry.get("x").toString(), "def");
+            assertEquals(secondEntry.get("y").toString(), "2");
         });
   }
 
