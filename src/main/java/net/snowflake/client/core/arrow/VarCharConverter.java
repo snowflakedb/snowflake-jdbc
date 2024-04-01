@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -19,6 +20,7 @@ import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarCharVector;
 
 /** Convert Arrow VarCharVector to Java types */
+@SnowflakeJdbcInternalApi
 public class VarCharConverter extends AbstractArrowVectorConverter {
   private VarCharVector varCharVector;
 

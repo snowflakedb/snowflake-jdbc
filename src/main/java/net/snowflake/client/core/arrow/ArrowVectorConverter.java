@@ -9,8 +9,10 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 /** Interface to convert from arrow vector values into java data types. */
+@SnowflakeJdbcInternalApi
 public interface ArrowVectorConverter {
 
   /**

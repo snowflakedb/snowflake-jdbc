@@ -4,9 +4,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Types;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 
+@SnowflakeJdbcInternalApi
 public class NumberConverter {
   // Precision of maximum long value in Java (2^63-1). Precision is 19
   private static final int LONG_PRECISION = 19;

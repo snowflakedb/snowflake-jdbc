@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -14,6 +15,7 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
 /** Data vector whose snowflake logical type is fixed while represented as a long value vector */
+@SnowflakeJdbcInternalApi
 public class BigIntToFixedConverter extends AbstractArrowVectorConverter {
   /** Underlying vector that this converter will convert from */
   protected BigIntVector bigIntVector;

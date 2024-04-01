@@ -7,6 +7,7 @@ import net.snowflake.client.core.Converters;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
@@ -18,6 +19,7 @@ import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
+@SnowflakeJdbcInternalApi
 public class StringConverter {
   private static final SFLogger logger = SFLoggerFactory.getLogger(StringConverter.class);
   private final TimeZone sessionTimeZone;

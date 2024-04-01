@@ -11,6 +11,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -18,6 +19,7 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
 /** converter from BigInt (Long) to Timestamp_LTZ */
+@SnowflakeJdbcInternalApi
 public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter {
   private BigIntVector bigIntVector;
   private ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);

@@ -10,6 +10,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDateWithTimezone;
 import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
@@ -22,6 +23,7 @@ import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
 
 /** converter from three-field struct (including epoch, fraction, and timezone) to Timestamp_TZ */
+@SnowflakeJdbcInternalApi
 public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorConverter {
   private StructVector structVector;
   private BigIntVector epochs;

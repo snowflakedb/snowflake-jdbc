@@ -11,6 +11,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -19,6 +20,7 @@ import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
 /** converter from BigInt (Long) to Timestamp_NTZ */
+@SnowflakeJdbcInternalApi
 public class BigIntToTimestampNTZConverter extends AbstractArrowVectorConverter {
   private BigIntVector bigIntVector;
   private static final TimeZone NTZ = TimeZone.getTimeZone("UTC");

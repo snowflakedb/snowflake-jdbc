@@ -2,9 +2,11 @@ package net.snowflake.client.core.json;
 
 import java.sql.Types;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 
+@SnowflakeJdbcInternalApi
 public class BooleanConverter {
   public Boolean getBoolean(Object obj, int columnType) throws SFException {
     if (obj == null) {

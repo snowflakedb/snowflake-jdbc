@@ -10,6 +10,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -119,6 +120,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
         SnowflakeUtil.BOOLEAN_STR, val);
   }
 
+  @SnowflakeJdbcInternalApi
   public static Date getDate(
       int value, TimeZone jvmTz, TimeZone sessionTimeZone, boolean useDateFormat)
       throws SFException {

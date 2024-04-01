@@ -10,6 +10,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -18,6 +19,7 @@ import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
 
+@SnowflakeJdbcInternalApi
 public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
   private BigIntVector bigIntVector;
   protected ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);

@@ -6,11 +6,13 @@ package net.snowflake.client.core.arrow;
 import java.math.BigDecimal;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.ValueVector;
 
 /** Convert Arrow BitVector to Boolean */
+@SnowflakeJdbcInternalApi
 public class BitToBooleanConverter extends AbstractArrowVectorConverter {
   private BitVector bitVector;
 
