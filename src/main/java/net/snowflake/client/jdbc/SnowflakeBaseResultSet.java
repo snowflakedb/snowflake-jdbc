@@ -1550,12 +1550,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object object = getObject(columnIndex);
-    Map<String, Object> map;
-    if (object instanceof JsonSqlInput) {
-      map = mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
-    } else {
-      map = (Map<String, Object>) object;
-    }
+    Map<String, Object> map =
+        mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {

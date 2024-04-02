@@ -41,7 +41,10 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   protected final Converters converters;
 
+  @Deprecated protected final TimeZone sessionTimeZone;
+
   protected SFJsonResultSet(TimeZone sessionTimeZone, Converters converters) {
+    this.sessionTimeZone = sessionTimeZone;
     this.sessionTimezone = sessionTimeZone;
     this.converters = converters;
   }

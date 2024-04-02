@@ -97,7 +97,9 @@ public abstract class SFBaseResultSet {
 
   public abstract Object getObject(int columnIndex) throws SFException;
 
-  public abstract Array getArray(int columnIndex) throws SFException;
+  public Array getArray(int columnIndex) throws SFException {
+    throw new UnsupportedOperationException();
+  }
 
   public abstract BigDecimal getBigDecimal(int columnIndex) throws SFException;
 
