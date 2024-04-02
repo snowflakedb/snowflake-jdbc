@@ -205,7 +205,7 @@ public class Converters {
       SnowflakeDateTimeFormat formatter =
           SnowflakeDateTimeFormat.fromSqlFormat(
               (String) session.getCommonParameters().get("TIME_OUTPUT_FORMAT"));
-      SFTimestamp timestamp = formatter.parse((String) value);
+      SFTimestamp timestamp = formatter.parse(value);
       return Time.valueOf(
           Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalTime());
     };
