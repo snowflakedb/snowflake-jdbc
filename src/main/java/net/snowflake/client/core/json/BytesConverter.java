@@ -11,7 +11,7 @@ import org.apache.arrow.vector.Float8Vector;
 public class BytesConverter {
   private final Converters converters;
 
-  BytesConverter(Converters converters) {
+  public BytesConverter(Converters converters) {
     this.converters = converters;
   }
 

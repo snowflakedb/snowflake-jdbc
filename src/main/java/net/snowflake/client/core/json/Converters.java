@@ -18,7 +18,7 @@ import net.snowflake.client.core.SqlInputTimestampUtil;
 import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.util.JsonStringToTypeConverter;
+import net.snowflake.client.util.Converter;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
@@ -122,47 +122,47 @@ public class Converters {
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter integerConverter(int columnType) {
+  public Converter integerConverter(int columnType) {
     return value -> getNumberConverter().getInt(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter smallIntConverter(int columnType) {
+  public Converter smallIntConverter(int columnType) {
     return value -> getNumberConverter().getShort(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter tinyIntConverter(int columnType) {
+  public Converter tinyIntConverter(int columnType) {
     return value -> getNumberConverter().getByte(value);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter bigIntConverter(int columnType) {
+  public Converter bigIntConverter(int columnType) {
     return value -> getNumberConverter().getBigInt(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter longConverter(int columnType) {
+  public Converter longConverter(int columnType) {
     return value -> getNumberConverter().getLong(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter bigDecimalConverter(int columnType) {
+  public Converter bigDecimalConverter(int columnType) {
     return value -> getNumberConverter().getBigDecimal(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter floatConverter(int columnType) {
+  public Converter floatConverter(int columnType) {
     return value -> getNumberConverter().getBigDecimal(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter doubleConverter(int columnType) {
+  public Converter doubleConverter(int columnType) {
     return value -> getNumberConverter().getBigDecimal(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter bytesConverter(int columnType, int scale) {
+  public Converter bytesConverter(int columnType, int scale) {
     return value -> {
       byte[] primitiveArray = getBytesConverter().getBytes(value, columnType, Types.BINARY, scale);
       Byte[] newByteArray = new Byte[primitiveArray.length];
@@ -172,41 +172,50 @@ public class Converters {
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter varcharConverter(int columnType, int columnSubType, int scale) {
+  public Converter varcharConverter(int columnType, int columnSubType, int scale) {
     return value -> getStringConverter().getString(value, columnType, columnSubType, scale);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter booleanConverter(int columnType) {
+  public Converter booleanConverter(int columnType) {
     return value -> getBooleanConverter().getBoolean(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter dateConverter(SFBaseSession session) {
+  public Converter dateStringConverter(SFBaseSession session) {
     return value -> {
       SnowflakeDateTimeFormat formatter =
           SnowflakeDateTimeFormat.fromSqlFormat(
               (String) session.getCommonParameters().get("DATE_OUTPUT_FORMAT"));
-      SFTimestamp timestamp = formatter.parse(value);
+      SFTimestamp timestamp = formatter.parse((String) value);
       return Date.valueOf(
           Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalDate());
     };
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter timeConverter(SFBaseSession session) {
+  public Converter dateFromIntConverter(TimeZone tz) {
+    return value -> structuredTypeDateTimeConverter.getDate((Integer) value, tz);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public Converter timeFromStringConverter(SFBaseSession session) {
     return value -> {
       SnowflakeDateTimeFormat formatter =
           SnowflakeDateTimeFormat.fromSqlFormat(
               (String) session.getCommonParameters().get("TIME_OUTPUT_FORMAT"));
-      SFTimestamp timestamp = formatter.parse(value);
+      SFTimestamp timestamp = formatter.parse((String) value);
       return Time.valueOf(
           Instant.ofEpochMilli(timestamp.getTime()).atZone(ZoneOffset.UTC).toLocalTime());
     };
   }
 
+  public Converter timeFromIntConverter(int scale) {
+    return value -> structuredTypeDateTimeConverter.getTime((Long) value, scale);
+  }
+
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter timestampConverter(
+  public Converter timestampFromStringConverter(
       int columnSubType,
       int columnType,
       int scale,
@@ -225,11 +234,18 @@ public class Converters {
     };
   }
 
+  public Converter timestampFromStructConverter(
+      int columnType, int columnSubType, TimeZone tz, int scale) {
+    return value ->
+        structuredTypeDateTimeConverter.getTimestamp(
+            (Map<String, Object>) value, columnType, columnSubType, tz, scale);
+  }
+
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter structConverter(ObjectMapper objectMapper) {
+  public Converter structConverter(ObjectMapper objectMapper) {
     return value -> {
       try {
-        return objectMapper.readValue(value, Map.class);
+        return objectMapper.readValue((String) value, Map.class);
       } catch (JsonProcessingException e) {
         throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
       }
@@ -237,10 +253,10 @@ public class Converters {
   }
 
   @SnowflakeJdbcInternalApi
-  public JsonStringToTypeConverter arrayConverter(ObjectMapper objectMapper) {
+  public Converter arrayConverter(ObjectMapper objectMapper) {
     return value -> {
       try {
-        return objectMapper.readValue(value, Map[].class);
+        return objectMapper.readValue((String) value, Map[].class);
       } catch (JsonProcessingException e) {
         throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
       }

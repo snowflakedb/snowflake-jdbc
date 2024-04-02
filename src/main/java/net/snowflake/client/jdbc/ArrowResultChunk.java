@@ -13,6 +13,7 @@ import java.util.Map;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.BigIntToFixedConverter;
@@ -56,6 +57,7 @@ import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
@@ -201,7 +203,6 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
         SnowflakeType st = SnowflakeType.valueOf(customMeta.get("logicalType"));
         switch (st) {
           case ANY:
-          case ARRAY:
           case CHAR:
           case TEXT:
           case VARIANT:
@@ -210,6 +211,14 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
 
           case MAP:
             converters.add(new MapConverter((MapVector) vector, i, context));
+            break;
+
+          case ARRAY:
+            if (vector instanceof ListVector) {
+              converters.add(new ArrayConverter((ListVector) vector, i, context));
+            } else {
+              converters.add(new VarCharConverter(vector, i, context));
+            }
             break;
 
           case OBJECT:

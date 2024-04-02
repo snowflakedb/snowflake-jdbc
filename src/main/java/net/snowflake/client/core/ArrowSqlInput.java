@@ -187,11 +187,7 @@ public class ArrowSqlInput extends BaseSqlInput {
                   converters
                       .getStructuredTypeDateTimeConverter()
                       .getTimestamp(
-                          (JsonStringHashMap<String, Object>) value,
-                          columnType,
-                          columnSubType,
-                          tz,
-                          scale));
+                          (Map<String, Object>) value, columnType, columnSubType, tz, scale));
         });
   }
 

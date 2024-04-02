@@ -12,6 +12,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
@@ -46,11 +47,7 @@ public class StructuredTypeDateTimeConverter {
   }
 
   public Timestamp getTimestamp(
-      JsonStringHashMap<String, Object> obj,
-      int columnType,
-      int columnSubType,
-      TimeZone tz,
-      int scale)
+      Map<String, Object> obj, int columnType, int columnSubType, TimeZone tz, int scale)
       throws SFException {
     if (tz == null) {
       tz = TimeZone.getDefault();
