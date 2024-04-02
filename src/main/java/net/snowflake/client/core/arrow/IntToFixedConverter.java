@@ -7,14 +7,12 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
 /** Data vector whose snowflake logical type is fixed while represented as a int value vector */
-@SnowflakeJdbcInternalApi
 public class IntToFixedConverter extends AbstractArrowVectorConverter {
   protected IntVector intVector;
   protected int sfScale;

@@ -4,12 +4,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
-@SnowflakeJdbcInternalApi
 public class MapConverter extends AbstractArrowVectorConverter {
 
   private final MapVector vector;

@@ -24,7 +24,6 @@ import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
-@SnowflakeJdbcInternalApi
 public class Converters {
   private final BooleanConverter booleanConverter;
   private final NumberConverter numberConverter;

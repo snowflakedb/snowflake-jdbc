@@ -4,13 +4,11 @@ import java.nio.ByteBuffer;
 import java.sql.Types;
 import net.snowflake.client.core.Converters;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
 
-@SnowflakeJdbcInternalApi
 public class BytesConverter {
   private final Converters converters;
 

@@ -10,7 +10,6 @@ import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.ValueVector;
@@ -22,7 +21,6 @@ import org.apache.arrow.vector.ValueVector;
  * <p>Note: two method toObject and toString is abstract method because every converter
  * implementation needs to implement them
  */
-@SnowflakeJdbcInternalApi
 abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   /** snowflake logical type of the target arrow vector */
   protected String logicalTypeStr;

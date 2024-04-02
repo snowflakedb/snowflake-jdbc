@@ -7,14 +7,12 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.ValueVector;
 
-@SnowflakeJdbcInternalApi
 public class DoubleToRealConverter extends AbstractArrowVectorConverter {
   private Float8Vector float8Vector;
   private ByteBuffer byteBuf = ByteBuffer.allocate(Float8Vector.TYPE_WIDTH);

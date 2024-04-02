@@ -12,7 +12,6 @@ import java.util.TimeZone;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.arrow.ArrowResultUtil;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeDateWithTimezone;
@@ -22,7 +21,6 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFTime;
 import net.snowflake.common.core.SFTimestamp;
 
-@SnowflakeJdbcInternalApi
 public class DateTimeConverter {
   private final TimeZone sessionTimeZone;
   private final long resultVersion;

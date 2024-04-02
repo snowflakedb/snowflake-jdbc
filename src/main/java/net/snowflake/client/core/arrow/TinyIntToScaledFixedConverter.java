@@ -6,13 +6,11 @@ package net.snowflake.client.core.arrow;
 import java.math.BigDecimal;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.ValueVector;
 
 /** A converter from scaled arrow tinyint to Snowflake Fixed type converter */
-@SnowflakeJdbcInternalApi
 public class TinyIntToScaledFixedConverter extends TinyIntToFixedConverter {
   private String format;
 
