@@ -4,6 +4,8 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.getJsonNodeStringValue;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -420,11 +422,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   private static Object convert(JsonStringToTypeConverter converter, JsonNode node)
       throws SFException {
-    if (node.isValueNode()) {
-      return converter.convert(node.asText());
-    } else {
-      return converter.convert(node.toString());
-    }
+    String nodeValue = getJsonNodeStringValue(node);
+    return converter.convert(nodeValue);
   }
 
   @Override

@@ -34,6 +34,7 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -43,6 +44,7 @@ import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -1550,16 +1552,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object object = getObject(columnIndex);
-    Map<String, Object> map;
-    if (object instanceof JsonSqlInput) {
-      map = new HashMap<>();
-      JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-      jsonNode
-          .fieldNames()
-          .forEachRemaining(node -> map.put(node.toString(), jsonNode.get(node.toString())));
-    } else {
-      map = (Map<String, Object>) object;
-    }
+    Map<String, Object> map =
+        mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
@@ -1747,5 +1741,26 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
+  }
+
+  private <T> Map<String, Object> prepareMapWithValues(Object object, Class<T> type)
+      throws SFException {
+    if (object instanceof JsonSqlInput) {
+      Map map = new HashMap<>();
+      JsonNode jsonNode = ((JsonSqlInput) object).getInput();
+      for (Iterator<String> it = jsonNode.fieldNames(); it.hasNext(); ) {
+        String name = it.next();
+        map.put(
+            name,
+            SQLData.class.isAssignableFrom(type)
+                ? jsonNode.get(name)
+                : SnowflakeUtil.getJsonNodeStringValue(jsonNode.get(name)));
+      }
+      return map;
+    } else if (object instanceof Map) {
+      return (Map<String, Object>) object;
+    } else {
+      throw new SFException(ErrorCode.INVALID_STRUCT_DATA, "Object couldn't be converted to map");
+    }
   }
 }
