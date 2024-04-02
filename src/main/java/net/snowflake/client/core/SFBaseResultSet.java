@@ -235,23 +235,23 @@ public abstract class SFBaseResultSet {
   }
 
   @SnowflakeJdbcInternalApi
-  protected SQLInput createSqlInputForColumn(
+  public SQLInput createSqlInputForColumn(
       Object input, Class<?> parentObjectClass, int columnIndex, SFBaseSession session) {
     throw new UnsupportedOperationException();
   }
 
   @SnowflakeJdbcInternalApi
-  protected Date convertToDate(Object object, TimeZone tz) throws SFException {
+  public Date convertToDate(Object object, TimeZone tz) throws SFException {
     throw new UnsupportedOperationException();
   }
 
   @SnowflakeJdbcInternalApi
-  protected Time convertToTime(Object object, int scale) throws SFException {
+  public Time convertToTime(Object object, int scale) throws SFException {
     throw new UnsupportedOperationException();
   }
 
   @SnowflakeJdbcInternalApi
-  protected Timestamp convertToTimestamp(
+  public Timestamp convertToTimestamp(
       Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
     throw new UnsupportedOperationException();
   }

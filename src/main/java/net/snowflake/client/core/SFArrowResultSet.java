@@ -605,7 +605,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     wasNull = converter.isNull(index);
     Object obj = converter.toObject(index);
     if (converter instanceof VarCharConverter) {
-      return getJsonArrayInternal((String) obj, columnIndex);
+      return getJsonArray((String) obj, columnIndex);
     } else if (converter instanceof ArrayConverter) {
       return getArrowArray((List<Object>) obj, columnIndex);
     } else {
