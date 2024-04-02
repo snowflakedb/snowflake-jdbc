@@ -609,7 +609,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     } else if (converter instanceof ArrayConverter) {
       return getArrayInternal((List<Object>) obj, columnIndex);
     } else {
-      throw new SFException(ErrorCode.INTERNAL_ERROR);
+      throw new SFException(ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 
