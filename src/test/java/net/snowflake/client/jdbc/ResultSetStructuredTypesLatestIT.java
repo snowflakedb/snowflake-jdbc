@@ -31,16 +31,25 @@ import net.snowflake.client.core.structs.StructureTypeHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 @Category(TestCategoryStructuredType.class)
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
-  private final ResultSetFormatType queryResultFormat;
 
-  public ResultSetStructuredTypesLatestIT() {
-    this(ResultSetFormatType.JSON);
+  @Parameterized.Parameters(name = "format={0}")
+  public static Object[][] data() {
+    return new Object[][] {
+      {ResultSetFormatType.JSON},
+      {ResultSetFormatType.ARROW_WITH_JSON_STRUCTURED_TYPES},
+      {ResultSetFormatType.NATIVE_ARROW}
+    };
   }
 
-  protected ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
+  private final ResultSetFormatType queryResultFormat;
+
+  public ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
     this.queryResultFormat = queryResultFormat;
   }
 

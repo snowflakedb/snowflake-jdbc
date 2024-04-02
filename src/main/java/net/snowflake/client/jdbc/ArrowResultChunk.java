@@ -214,7 +214,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
             break;
 
           case ARRAY:
-            converters.add(new ArrayConverter((ListVector) vector, i, context));
+            if (vector instanceof ListVector) {
+              converters.add(new ArrayConverter((ListVector) vector, i, context));
+            } else {
+              converters.add(new VarCharConverter(vector, i, context));
+            }
             break;
 
           case OBJECT:

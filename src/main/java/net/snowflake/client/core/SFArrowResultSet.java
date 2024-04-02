@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.Stream;
+import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.VarCharConverter;
@@ -371,23 +372,34 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   @SnowflakeJdbcInternalApi
-  public SQLInput createSqlInputForColumn(Object input, int columnIndex, SFBaseSession session) {
-    return new ArrowSqlInput(
-        (Map<String, Object>) input,
-        session,
-        converters,
-        resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
+  public SQLInput createSqlInputForColumn(
+      Object input, Class<?> parentObjectClass, int columnIndex, SFBaseSession session) {
+    if (parentObjectClass.equals(JsonSqlInput.class)) {
+      return createJsonSqlInputForColumn(input, columnIndex, session);
+    } else {
+      return new ArrowSqlInput(
+          (Map<String, Object>) input,
+          session,
+          converters,
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
+    }
   }
 
   @Override
   @SnowflakeJdbcInternalApi
   public Date convertToDate(Object object, TimeZone tz) throws SFException {
+    if (object instanceof String) {
+      return convertStringToDate(object, tz);
+    }
     return converters.getStructuredTypeDateTimeConverter().getDate((int) object, tz);
   }
 
   @Override
   @SnowflakeJdbcInternalApi
   public Time convertToTime(Object object, int scale) throws SFException {
+    if (object instanceof String) {
+      return convertStringToTime(object, scale);
+    }
     return converters.getStructuredTypeDateTimeConverter().getTime((long) object, scale);
   }
 
@@ -395,6 +407,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   @SnowflakeJdbcInternalApi
   public Timestamp convertToTimestamp(
       Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+    if (object instanceof String) {
+      return convertStringToTimestamp(object, columnType, columnSubType, tz, scale);
+    }
     return converters
         .getStructuredTypeDateTimeConverter()
         .getTimestamp(
@@ -589,7 +604,13 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
     Object obj = converter.toObject(index);
-    return getArrayInternal((List<Object>) obj, columnIndex);
+    if (converter instanceof VarCharConverter) {
+      return getJsonArrayInternal((String) obj, columnIndex);
+    } else if (converter instanceof ArrayConverter) {
+      return getArrayInternal((List<Object>) obj, columnIndex);
+    } else {
+      throw new SFException(ErrorCode.INTERNAL_ERROR);
+    }
   }
 
   private SfSqlArray getArrayInternal(List<Object> elements, int columnIndex) throws SFException {

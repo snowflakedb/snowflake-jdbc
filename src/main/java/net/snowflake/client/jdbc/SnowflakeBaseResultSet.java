@@ -1420,7 +1420,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else {
         if (SQLData.class.isAssignableFrom(type)) {
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-          SQLInput sqlInput = sfBaseResultSet.createSqlInputForColumn(value, columnIndex, session);
+          SQLInput sqlInput =
+              sfBaseResultSet.createSqlInputForColumn(
+                  value, objects.getClass(), columnIndex, session);
           instance.readSQL(sqlInput, null);
           arr[counter++] = (T) instance;
         } else if (String.class.isAssignableFrom(type)) {
@@ -1557,7 +1559,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput =
-            sfBaseResultSet.createSqlInputForColumn(entry.getValue(), columnIndex, session);
+            sfBaseResultSet.createSqlInputForColumn(
+                entry.getValue(), object.getClass(), columnIndex, session);
         instance.readSQL(sqlInput, null);
         resultMap.put(entry.getKey(), (T) instance);
       } else if (String.class.isAssignableFrom(type)) {
