@@ -270,7 +270,7 @@ public abstract class SFBaseResultSet {
         session,
         getConverters(),
         resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
-            sessionTimeZone);
+        sessionTimeZone);
   }
 
   @SnowflakeJdbcInternalApi
