@@ -26,11 +26,8 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   protected final Converters converters;
 
-  @Deprecated protected final TimeZone sessionTimeZone;
-
   protected SFJsonResultSet(TimeZone sessionTimeZone, Converters converters) {
     this.sessionTimeZone = sessionTimeZone;
-    this.sessionTimezone = sessionTimeZone;
     this.converters = converters;
   }
 
@@ -293,7 +290,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
           session,
           converters,
           resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
-          sessionTimezone);
+              sessionTimeZone);
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }

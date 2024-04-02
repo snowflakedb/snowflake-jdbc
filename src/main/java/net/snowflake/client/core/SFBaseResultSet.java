@@ -82,7 +82,7 @@ public abstract class SFBaseResultSet {
   // result set
   protected SnowflakeResultSetSerializableV1 resultSetSerializable;
 
-  protected TimeZone sessionTimezone;
+  protected TimeZone sessionTimeZone;
 
   public abstract boolean isLast();
 
@@ -163,7 +163,7 @@ public abstract class SFBaseResultSet {
   }
 
   public TimeZone getSessionTimezone() {
-    return sessionTimezone;
+    return sessionTimeZone;
   }
 
   public int getRow() throws SQLException {
@@ -270,7 +270,7 @@ public abstract class SFBaseResultSet {
         session,
         getConverters(),
         resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
-        sessionTimezone);
+            sessionTimeZone);
   }
 
   @SnowflakeJdbcInternalApi
@@ -356,7 +356,7 @@ public abstract class SFBaseResultSet {
                       nodeElements,
                       getConverters()
                           .timestampFromStringConverter(
-                              columnSubType, columnType, scale, session, null, sessionTimezone))
+                              columnSubType, columnType, scale, session, null, sessionTimeZone))
                   .toArray(Timestamp[]::new));
         case Types.BOOLEAN:
           return new SfSqlArray(
