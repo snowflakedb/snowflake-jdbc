@@ -2,7 +2,6 @@ package net.snowflake.client.core.json;
 
 import java.nio.ByteBuffer;
 import java.sql.Types;
-import net.snowflake.client.core.Converters;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;

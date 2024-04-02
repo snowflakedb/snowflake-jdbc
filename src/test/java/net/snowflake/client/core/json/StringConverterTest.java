@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mock;
 import java.sql.Types;
 import java.time.ZoneId;
 import java.util.TimeZone;
-import net.snowflake.client.core.Converters;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;

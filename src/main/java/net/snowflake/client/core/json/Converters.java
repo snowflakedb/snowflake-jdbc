@@ -1,4 +1,4 @@
-package net.snowflake.client.core;
+package net.snowflake.client.core.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,12 +11,11 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.core.SqlInputTimestampUtil;
 import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
-import net.snowflake.client.core.json.BooleanConverter;
-import net.snowflake.client.core.json.BytesConverter;
-import net.snowflake.client.core.json.DateTimeConverter;
-import net.snowflake.client.core.json.NumberConverter;
-import net.snowflake.client.core.json.StringConverter;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.util.Converter;

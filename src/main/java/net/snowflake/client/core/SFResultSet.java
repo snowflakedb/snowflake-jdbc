@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Comparator;
 import net.snowflake.client.core.BasicEvent.QueryState;
+import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.JsonResultChunk;
 import net.snowflake.client.jdbc.SnowflakeResultChunk;
