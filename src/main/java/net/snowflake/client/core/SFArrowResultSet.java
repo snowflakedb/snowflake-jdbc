@@ -389,7 +389,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   @SnowflakeJdbcInternalApi
   public Date convertToDate(Object object, TimeZone tz) throws SFException {
     if (object instanceof String) {
-      return convertStringToDate(object, tz);
+      return convertStringToDate((String) object, tz);
     }
     return converters.getStructuredTypeDateTimeConverter().getDate((int) object, tz);
   }
@@ -398,7 +398,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   @SnowflakeJdbcInternalApi
   public Time convertToTime(Object object, int scale) throws SFException {
     if (object instanceof String) {
-      return convertStringToTime(object, scale);
+      return convertStringToTime((String) object, scale);
     }
     return converters.getStructuredTypeDateTimeConverter().getTime((long) object, scale);
   }
@@ -408,7 +408,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   public Timestamp convertToTimestamp(
       Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
     if (object instanceof String) {
-      return convertStringToTimestamp(object, columnType, columnSubType, tz, scale);
+      return convertStringToTimestamp((String) object, columnType, columnSubType, tz, scale);
     }
     return converters
         .getStructuredTypeDateTimeConverter()
@@ -607,13 +607,13 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (converter instanceof VarCharConverter) {
       return getJsonArrayInternal((String) obj, columnIndex);
     } else if (converter instanceof ArrayConverter) {
-      return getArrayInternal((List<Object>) obj, columnIndex);
+      return getArrowArray((List<Object>) obj, columnIndex);
     } else {
       throw new SFException(ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 
-  private SfSqlArray getArrayInternal(List<Object> elements, int columnIndex) throws SFException {
+  private SfSqlArray getArrowArray(List<Object> elements, int columnIndex) throws SFException {
     try {
       SnowflakeColumnMetadata arrayMetadata =
           resultSetMetaData.getColumnMetadata().get(columnIndex - 1);

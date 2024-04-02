@@ -118,7 +118,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   public Array getArray(int columnIndex) throws SFException {
     Object obj = getObjectInternal(columnIndex);
-    return getJsonArrayInternal((String) obj, columnIndex);
+    return getJsonArray((String) obj, columnIndex);
   }
 
   @Override
@@ -259,20 +259,20 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   @SnowflakeJdbcInternalApi
   public Date convertToDate(Object object, TimeZone tz) throws SFException {
-    return convertStringToDate(object, tz);
+    return convertStringToDate((String) object, tz);
   }
 
   @Override
   @SnowflakeJdbcInternalApi
   public Time convertToTime(Object object, int scale) throws SFException {
-    return convertStringToTime(object, scale);
+    return convertStringToTime((String) object, scale);
   }
 
   @Override
   @SnowflakeJdbcInternalApi
   public Timestamp convertToTimestamp(
       Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
-    return convertStringToTimestamp(object, columnType, columnSubType, tz, scale);
+    return convertStringToTimestamp((String) object, columnType, columnSubType, tz, scale);
   }
 
   private Timestamp getTimestamp(int columnIndex) throws SFException {
