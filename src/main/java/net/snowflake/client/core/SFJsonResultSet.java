@@ -233,7 +233,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   }
 
   public Date getDate(int columnIndex) throws SFException {
-    return getDate(columnIndex, TimeZone.getDefault());
+    return getDate(columnIndex, TimeZone.getTimeZone("UTC"));
   }
 
   @Override
