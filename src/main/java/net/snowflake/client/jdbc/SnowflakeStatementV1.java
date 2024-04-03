@@ -155,6 +155,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     ResultSet rs = executeQueryInternal(sql, false, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
+    logger.debug("Query completed. {}", execTimeData.getLogString());
     return rs;
   }
 
@@ -172,6 +173,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     ResultSet rs = executeQueryInternal(sql, true, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
+    logger.debug("Query completed. {}", queryID, execTimeData.getLogString());
     return rs;
   }
 
@@ -206,6 +208,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     long res = executeUpdateInternal(sql, null, true, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
+    logger.debug("Query completed. {}", queryID, execTimeData.getLogString());
     return res;
   }
 
@@ -428,6 +431,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     boolean res = executeInternal(sql, null, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
+    logger.debug("Query completed. {}", queryID, execTimeData.getLogString());
     return res;
   }
 

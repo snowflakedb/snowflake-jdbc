@@ -34,11 +34,10 @@ public class ExecTimeTelemetryData {
   private String requestId;
 
   public ExecTimeTelemetryData(String queryFunction, String batchId) {
-    if (TelemetryService.getInstance().isHTAPEnabled()) {
-      this.queryStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
-      this.queryFunction = queryFunction;
-      this.batchId = batchId;
-    } else {
+    this.queryStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    this.queryFunction = queryFunction;
+    this.batchId = batchId;
+    if (!TelemetryService.getInstance().isHTAPEnabled()) {
       this.sendData = false;
     }
   }
@@ -48,133 +47,111 @@ public class ExecTimeTelemetryData {
   }
 
   public void setBindStart() {
-    if (!this.sendData) {
-      return;
-    }
     this.bindStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setOCSPStatus(Boolean ocspEnabled) {
-    if (!this.sendData) {
-      return;
-    }
     this.ocspEnabled = ocspEnabled;
   }
 
   public void setBindEnd() {
-    if (!this.sendData) {
-      return;
-    }
     this.bindEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setHttpClientStart() {
-    if (!this.sendData) {
-      return;
-    }
     this.httpClientStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setHttpClientEnd() {
-    if (!this.sendData) {
-      return;
-    }
     this.httpClientEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setGzipStart() {
-    if (!this.sendData) {
-      return;
-    }
     this.gzipStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setGzipEnd() {
-    if (!this.sendData) {
-      return;
-    }
     this.gzipEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setQueryEnd() {
-    if (!this.sendData) {
-      return;
-    }
     this.queryEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setQueryId(String queryId) {
-    if (!this.sendData) {
-      return;
-    }
     this.queryId = queryId;
   }
 
   public void setProcessResultChunkStart() {
-    if (!this.sendData) {
-      return;
-    }
     this.processResultChunkStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setProcessResultChunkEnd() {
-    if (!this.sendData) {
-      return;
-    }
     this.processResultChunkEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setResponseIOStreamStart() {
-    if (!this.sendData) {
-      return;
-    }
     this.responseIOStreamStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setResponseIOStreamEnd() {
-    if (!this.sendData) {
-      return;
-    }
     this.responseIOStreamEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setCreateResultSetStart() {
-    if (!this.sendData) {
-      return;
-    }
     this.createResultSetStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setCreateResultSetEnd() {
-    if (!this.sendData) {
-      return;
-    }
     this.createResultSetEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void incrementRetryCount() {
-    if (!this.sendData) {
-      return;
-    }
     this.retryCount++;
   }
 
   public void setRequestId(String requestId) {
-    if (!this.sendData) {
-      return;
-    }
     this.requestId = requestId;
   }
 
   public void addRetryLocation(String location) {
-    if (!this.sendData) {
-      return;
-    }
     if (Strings.isNullOrEmpty(this.retryLocations)) {
       this.retryLocations = location;
     } else {
       this.retryLocations = this.retryLocations.concat(", ").concat(location);
     }
+  }
+
+  public long getTotalQueryTime() {
+    if (queryStart == 0 || queryEnd == 0) {
+      return -1;
+    }
+
+    return queryEnd - queryStart;
+  }
+
+  public long getResultProcessingTime() {
+    if (createResultSetEnd == 0 || processResultChunkStart == 0) {
+      return -1;
+    }
+
+    return createResultSetEnd - processResultChunkStart;
+  }
+
+  public long getHttpRequestTime() {
+    if (httpClientStart == 0 || httpClientEnd == 0) {
+      return -1;
+    }
+
+    return httpClientEnd - httpClientStart;
+  }
+
+  public long getResultSetCreationTime() {
+    if (createResultSetStart == 0 || createResultSetEnd == 0) {
+      return -1;
+    }
+
+    return createResultSetEnd - createResultSetStart;
   }
 
   public String generateTelemetry() {
@@ -204,14 +181,26 @@ public class ExecTimeTelemetryData {
       value.put("RetryCount", this.retryCount);
       value.put("RetryLocations", this.retryLocations);
       value.put("ocspEnabled", this.ocspEnabled);
-      value.put("ElapsedQueryTime", (this.queryEnd - this.queryStart));
+      value.put("ElapsedQueryTime", getTotalQueryTime());
       value.put(
-          "ElapsedResultProcessTime", (this.createResultSetEnd - this.processResultChunkStart));
+          "ElapsedResultProcessTime", getResultProcessingTime());
       value.put("Urgent", true);
       valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
       TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
       return valueStr;
     }
     return "";
+  }
+
+  public String getLogString() {
+    return "Query id: " + this.queryId
+            + ", query function: " + this.queryFunction
+            + ", batch id: " + this.batchId
+            + ", request id: " + this.requestId
+            + ", total query time: " + getTotalQueryTime() / 1000 + " ms"
+            + ", result processing time: " + getResultProcessingTime() / 1000 + " ms"
+            + ", result set creation time: " + getResultSetCreationTime() / 1000 + " ms"
+            + ", http request time: " + getHttpRequestTime() / 1000 + " ms"
+            + ", retry count: " + this.retryCount;
   }
 }
