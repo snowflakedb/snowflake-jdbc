@@ -107,7 +107,6 @@ for c in "${CATEGORY[@]}"; do
                 -DSTRUCTURED_TYPE_ENABLED=true \
                 verify \
                 --batch-mode --show-version
-        popd >& /dev/null
     else
         echo "[INFO] Run $c tests"
         mvn -DjenkinsIT \
