@@ -8,8 +8,8 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLExcepti
 import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.sql.Date;
-import java.sql.SQLData;
 import java.sql.SQLException;
+import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -18,7 +18,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.util.ThrowingTriFunction;
@@ -31,6 +30,7 @@ public class JsonSqlInput extends BaseSqlInput {
   private final Iterator<JsonNode> elements;
   private final TimeZone sessionTimeZone;
   private int currentIndex = 0;
+  private boolean wasNull = false;
 
   public JsonSqlInput(
       JsonNode input,
@@ -213,14 +213,16 @@ public class JsonSqlInput extends BaseSqlInput {
   @Override
   public <T> T readObject(Class<T> type) throws SQLException {
     return withNextValue(
-        (__, jsonNode, fieldMetadata) -> {
-          SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-          instance.readSQL(
+        (value, jsonNode, fieldMetadata) -> {
+          SQLInput sqlInput =
               new JsonSqlInput(
-                  jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone),
-              null);
-          return (T) instance;
+                  jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone);
+          return readObjectOfType(type, value, sqlInput);
         });
+  }
+
+  public boolean wasNull() {
+    return wasNull;
   }
 
   private <T> T withNextValue(
@@ -228,6 +230,7 @@ public class JsonSqlInput extends BaseSqlInput {
       throws SQLException {
     JsonNode jsonNode = elements.next();
     Object value = getValue(jsonNode);
+    wasNull = value == null;
     return action.apply(value, jsonNode, fields.get(currentIndex++));
   }
 
