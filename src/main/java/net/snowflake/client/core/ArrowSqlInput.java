@@ -8,16 +8,13 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLExcepti
 
 import java.math.BigDecimal;
 import java.sql.Date;
-import java.sql.SQLData;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.util.ThrowingBiFunction;
 import org.apache.arrow.vector.util.JsonStringHashMap;
@@ -26,8 +23,8 @@ import org.apache.arrow.vector.util.JsonStringHashMap;
 public class ArrowSqlInput extends BaseSqlInput {
 
   private final Map<String, Object> input;
-  private final Iterator<Object> structuredTypeFields;
   private int currentIndex = 0;
+  private boolean wasNull = false;
 
   public ArrowSqlInput(
       Map<String, Object> input,
@@ -35,7 +32,6 @@ public class ArrowSqlInput extends BaseSqlInput {
       Converters converters,
       List<FieldMetadata> fields) {
     super(session, converters, fields);
-    this.structuredTypeFields = input.values().iterator();
     this.input = input;
   }
 
@@ -207,17 +203,22 @@ public class ArrowSqlInput extends BaseSqlInput {
   public <T> T readObject(Class<T> type) throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
-          SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-          instance.readSQL(
+          ArrowSqlInput sqlInput =
               new ArrowSqlInput(
-                  (Map<String, Object>) value, session, converters, fieldMetadata.getFields()),
-              null);
-          return (T) instance;
+                  (Map<String, Object>) value, session, converters, fieldMetadata.getFields());
+          return readObjectOfType(type, value, sqlInput);
         });
+  }
+
+  public boolean wasNull() {
+    return wasNull;
   }
 
   private <T> T withNextValue(ThrowingBiFunction<Object, FieldMetadata, T, SQLException> action)
       throws SQLException {
-    return action.apply(structuredTypeFields.next(), fields.get(currentIndex++));
+    FieldMetadata field = fields.get(currentIndex++);
+    Object value = input.get(field.getName());
+    wasNull = value == null;
+    return action.apply(value, field);
   }
 }
