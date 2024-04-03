@@ -283,7 +283,7 @@ public abstract class SFBaseResultSet {
       int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
       int scale = fieldMetadata.getScale();
 
-      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(obj);
+      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(obj.replaceAll("undefined", "null"));
       Iterator<JsonNode> nodeElements = arrayNode.elements();
 
       switch (columnSubType) {

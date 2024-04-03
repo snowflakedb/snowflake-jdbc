@@ -279,6 +279,18 @@ public class JsonSqlInput extends BaseSqlInput {
         });
   }
 
+
+//    @Override
+//    public <T> T readObject(Class<T> type) throws SQLException {
+//        return withNextValue(
+//                (value, jsonNode, fieldMetadata) -> {
+//                    SQLInput sqlInput =
+//                            new JsonSqlInput(
+//                                    jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone);
+//                    return readObjectOfType(type, value, sqlInput);
+//                });
+//        }
+
   private Timestamp formatTimestamp(TimeZone tz, Object value, FieldMetadata fieldMetadata)
       throws SQLException {
     if (value == null) {
