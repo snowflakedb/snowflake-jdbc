@@ -4,10 +4,8 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SFBaseResultSet.OBJECT_MAPPER;
 import static net.snowflake.client.core.SFResultSet.logger;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -115,24 +113,22 @@ public abstract class BaseSqlInput implements SFSqlInput {
     throw new SnowflakeLoggedFeatureNotSupportedException(session, "readRowId");
   }
 
+  @SnowflakeJdbcInternalApi
   protected <T> T readObjectOfType(Class<T> type, Object value, SQLInput sqlInput)
       throws SQLException {
     if (SQLData.class.isAssignableFrom(type)) {
-      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
       if (sqlInput == null) {
         return null;
       } else {
+        SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         instance.readSQL(sqlInput, null);
         return (T) instance;
       }
     } else if (Map.class.isAssignableFrom(type)) {
-      Object object = value;
-      if (object instanceof JsonSqlInput) {
-        return (T)
-            OBJECT_MAPPER.convertValue(
-                ((JsonSqlInput) object).getInput(), new TypeReference<Map<String, Object>>() {});
+      if (value == null) {
+        return null;
       } else {
-        return (T) ((ArrowSqlInput) object).getInput();
+        return (T) convertSqlInputToMap((SQLInput) value);
       }
     } else if (String.class.isAssignableFrom(type)
         || Boolean.class.isAssignableFrom(type)
@@ -163,4 +159,6 @@ public abstract class BaseSqlInput implements SFSqlInput {
               + type.getName());
     }
   }
+
+  abstract Map<String, Object> convertSqlInputToMap(SQLInput sqlInput);
 }

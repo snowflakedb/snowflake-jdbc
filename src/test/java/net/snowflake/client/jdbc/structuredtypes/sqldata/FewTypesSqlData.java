@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.jdbc.structuredtypes.sqldata;
 
 import java.sql.SQLData;
 import java.sql.SQLException;
@@ -10,7 +10,7 @@ public class FewTypesSqlData implements SQLData {
   private String string;
   private Integer nullableIntValue;
   private Long nullableLongValue;
-  private Long longValue;
+  private long longValue;
 
   public FewTypesSqlData() {}
 

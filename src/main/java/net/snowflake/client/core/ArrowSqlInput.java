@@ -9,6 +9,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLExcepti
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLException;
+import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
@@ -210,8 +211,14 @@ public class ArrowSqlInput extends BaseSqlInput {
         });
   }
 
+  @Override
   public boolean wasNull() {
     return wasNull;
+  }
+
+  @Override
+  Map<String, Object> convertSqlInputToMap(SQLInput sqlInput) {
+    return ((ArrowSqlInput) sqlInput).getInput();
   }
 
   private <T> T withNextValue(ThrowingBiFunction<Object, FieldMetadata, T, SQLException> action)

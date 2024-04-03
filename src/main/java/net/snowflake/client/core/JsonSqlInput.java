@@ -3,8 +3,10 @@
  */
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.SFBaseResultSet.OBJECT_MAPPER;
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -16,6 +18,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.FieldMetadata;
@@ -223,6 +226,12 @@ public class JsonSqlInput extends BaseSqlInput {
 
   public boolean wasNull() {
     return wasNull;
+  }
+
+  @Override
+  Map<String, Object> convertSqlInputToMap(SQLInput sqlInput) {
+    return OBJECT_MAPPER.convertValue(
+        ((JsonSqlInput) sqlInput).getInput(), new TypeReference<Map<String, Object>>() {});
   }
 
   private <T> T withNextValue(

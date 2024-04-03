@@ -1354,27 +1354,27 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (StructureTypeHelper.isStructureTypeEnabled()) {
-        if (SQLData.class.isAssignableFrom(type)) {
-            SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-            SQLInput sqlInput = (SQLInput) getObject(columnIndex);
-            if (sqlInput == null) {
-                return null;
-            } else {
-                instance.readSQL(sqlInput, null);
-                return (T) instance;
-            }
-        } else if (Map.class.isAssignableFrom(type)) {
-            Object object = getObject(columnIndex);
-            if (object == null) {
-                return null;
-            } else if (object instanceof JsonSqlInput) {
-                JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-                return (T)
-                        OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
-            } else {
-                return (T) ((ArrowSqlInput) object).getInput();
-            }
+      if (SQLData.class.isAssignableFrom(type)) {
+        SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+        SQLInput sqlInput = (SQLInput) getObject(columnIndex);
+        if (sqlInput == null) {
+          return null;
+        } else {
+          instance.readSQL(sqlInput, null);
+          return (T) instance;
         }
+      } else if (Map.class.isAssignableFrom(type)) {
+        Object object = getObject(columnIndex);
+        if (object == null) {
+          return null;
+        } else if (object instanceof JsonSqlInput) {
+          JsonNode jsonNode = ((JsonSqlInput) object).getInput();
+          return (T)
+              OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+        } else {
+          return (T) ((ArrowSqlInput) object).getInput();
+        }
+      }
     }
     if (String.class.isAssignableFrom(type)) {
       return (T) getString(columnIndex);

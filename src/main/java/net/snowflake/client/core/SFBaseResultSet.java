@@ -283,10 +283,7 @@ public abstract class SFBaseResultSet {
       int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
       int scale = fieldMetadata.getScale();
 
-      // Nowadays the null value inside arrays is returned as 'undefined' what is incompatible with json format.
-      // Must be change to null
-      String fixedArrayObject = obj.replaceAll("undefined", "null");
-      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(fixedArrayObject);
+      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(obj);
       Iterator<JsonNode> nodeElements = arrayNode.elements();
 
       switch (columnSubType) {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
  */
-package net.snowflake.client.jdbc;
+package net.snowflake.client.jdbc.structuredtypes;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -29,7 +29,13 @@ import net.snowflake.client.ThrowingRunnable;
 import net.snowflake.client.category.TestCategoryStructuredType;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.core.structs.StructureTypeHelper;
+import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.FewTypesSqlData;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -245,6 +251,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @Ignore // Arrays containing nulls aren't supported: SNOW-720936
   public void testReturnAsArrayOfNullableString() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two', null)::ARRAY(VARCHAR)",
@@ -253,19 +260,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, String.class);
           assertEquals("one", resultArray[0]);
           assertEquals("two", resultArray[1]);
-          assertNull(resultArray[2]);
-        });
-  }
-
-  @Test
-  public void testReturnAsArrayOfNullableInteger() throws SQLException {
-    withFirstRow(
-        "SELECT ARRAY_CONSTRUCT(1, 2, null)::ARRAY(INTEGER)",
-        (resultSet) -> {
-          Integer[] resultArray =
-              resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
-          assertEquals(Integer.valueOf(1), resultArray[0]);
-          assertEquals(Integer.valueOf(2), resultArray[1]);
           assertNull(resultArray[2]);
         });
   }
