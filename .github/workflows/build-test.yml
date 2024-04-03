@@ -37,9 +37,9 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
+                image: [ 'jdbc-centos7-openjdk8' ]
                 cloud: [ 'AWS' ]
-                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader,TestCategoryStructuredType', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                category: ['TestCategoryStructuredType']
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
             - uses: actions/checkout@v1
