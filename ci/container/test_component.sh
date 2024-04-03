@@ -97,6 +97,17 @@ for c in "${CATEGORY[@]}"; do
                 verify \
                 --batch-mode --show-version
         popd >& /dev/null
+    elif [[ "$c" == "TestCategoryStructuredType" ]]; then
+        pushd FIPS >& /dev/null
+            echo "[INFO] Run Fips tests"
+            mvn -DjenkinsIT \
+                -Djava.io.tmpdir=$WORKSPACE \
+                -Djacoco.skip.instrument=false \
+                -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
+                -Dnot-self-contained-jar \
+                verify \
+                --batch-mode --show-version
+        popd >& /dev/null
     else
         echo "[INFO] Run $c tests"
         mvn -DjenkinsIT \
