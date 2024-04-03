@@ -1353,21 +1353,24 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
-    if (SQLData.class.isAssignableFrom(type)) {
-      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-      SQLInput sqlInput = (SQLInput) getObject(columnIndex);
-      instance.readSQL(sqlInput, null);
-      return (T) instance;
-    } else if (Map.class.isAssignableFrom(type)) {
-      Object object = getObject(columnIndex);
-      if (object instanceof JsonSqlInput) {
-        JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-        return (T)
-            OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
-      } else {
-        return (T) ((ArrowSqlInput) object).getInput();
+    if (StructureTypeHelper.isStructureTypeEnabled()) {
+      if (SQLData.class.isAssignableFrom(type)) {
+        SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+        SQLInput sqlInput = (SQLInput) getObject(columnIndex);
+        instance.readSQL(sqlInput, null);
+        return (T) instance;
+      } else if (Map.class.isAssignableFrom(type)) {
+        Object object = getObject(columnIndex);
+        if (object instanceof JsonSqlInput) {
+          JsonNode jsonNode = ((JsonSqlInput) object).getInput();
+          return (T)
+              OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+        } else {
+          return (T) ((ArrowSqlInput) object).getInput();
+        }
       }
-    } else if (String.class.isAssignableFrom(type)) {
+    }
+    if (String.class.isAssignableFrom(type)) {
       return (T) getString(columnIndex);
     } else if (Boolean.class.isAssignableFrom(type)) {
       return (T) (Boolean) getBoolean(columnIndex);
