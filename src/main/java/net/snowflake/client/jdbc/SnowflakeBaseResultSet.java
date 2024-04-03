@@ -46,6 +46,7 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
+import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -1405,6 +1406,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
+    logger.debug("public <T> T[] getArray(int columnIndex, Class<T> type)", false);
+    if (!StructureTypeHelper.isStructureTypeEnabled()) {
+      throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    }
     FieldMetadata fieldMetadata =
         sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields().get(0);
     int columnSubType = fieldMetadata.getType();
@@ -1545,6 +1550,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
+    logger.debug("public <T> Map<String, T> getMap(int columnIndex, Class<T> type)", false);
+    if (!StructureTypeHelper.isStructureTypeEnabled()) {
+      throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    }
     FieldMetadata valueFieldMetadata =
         sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields().get(1);
     int columnSubType = valueFieldMetadata.getType();
