@@ -220,14 +220,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   public void testReturnAsArrayOfNullableFieldsInSqlData() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, FewTypesSqlData::new);
     withFirstRow(
-        "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'intValue', null, 'nullIntValue', null, 'longValue', 5)::OBJECT(string VARCHAR, intValue INTEGER, nullIntValue INTEGER, longValue INTEGER)",
+        "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'nullableIntValue', null, 'nullableLongValue', null, 'longValue', null)::OBJECT(string VARCHAR, nullableIntValue INTEGER, nullableLongValue INTEGER, longValue INTEGER)",
         (resultSet) -> {
           FewTypesSqlData result =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getObject(1, FewTypesSqlData.class);
           assertNull(result.getString());
-          assertEquals(Integer.valueOf(0), result.getIntValue());
-          assertNull(result.getNullIntValue());
-          assertEquals(Long.valueOf(5), result.getLongValue());
+          assertNull(result.getNullableIntValue());
+          assertNull(result.getNullableLongValue());
+          assertEquals(Long.valueOf(0), result.getLongValue());
         });
   }
 

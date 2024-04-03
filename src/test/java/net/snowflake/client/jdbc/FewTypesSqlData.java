@@ -8,8 +8,8 @@ import java.sql.SQLOutput;
 public class FewTypesSqlData implements SQLData {
 
   private String string;
-  private Integer intValue;
-  private Integer nullIntValue;
+  private Integer nullableIntValue;
+  private Long nullableLongValue;
   private Long longValue;
 
   public FewTypesSqlData() {}
@@ -22,15 +22,18 @@ public class FewTypesSqlData implements SQLData {
   @Override
   public void readSQL(SQLInput stream, String typeName) throws SQLException {
     string = stream.readString();
-    intValue = stream.readInt();
-    nullIntValue = stream.readObject(Integer.class);
+    nullableIntValue = stream.readInt();
+    if(stream.wasNull()) {
+      nullableIntValue = null;
+    }
+    nullableLongValue = stream.readObject(Long.class);
     longValue = stream.readLong();
   }
 
   @Override
   public void writeSQL(SQLOutput stream) throws SQLException {
     stream.writeString(string);
-    stream.writeInt(intValue);
+    stream.writeInt(nullableIntValue);
     stream.writeLong(longValue);
   }
 
@@ -38,12 +41,12 @@ public class FewTypesSqlData implements SQLData {
     return string;
   }
 
-  public Integer getIntValue() {
-    return intValue;
+  public Integer getNullableIntValue() {
+    return nullableIntValue;
   }
 
-  public Integer getNullIntValue() {
-    return nullIntValue;
+  public Long getNullableLongValue() {
+    return nullableLongValue;
   }
 
   public Long getLongValue() {
