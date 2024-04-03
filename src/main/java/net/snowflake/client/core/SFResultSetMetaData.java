@@ -477,4 +477,9 @@ public class SFResultSetMetaData {
   public List<SnowflakeColumnMetadata> getColumnMetadata() {
     return columnMetadata;
   }
+
+  public boolean isStructuredTypeColumn(int columnIndex) {
+    return getColumnMetadata().get(columnIndex - 1).getFields() != null
+        && !getColumnMetadata().get(columnIndex - 1).getFields().isEmpty();
+  }
 }

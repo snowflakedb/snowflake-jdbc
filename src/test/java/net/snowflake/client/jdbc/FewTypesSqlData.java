@@ -23,7 +23,7 @@ public class FewTypesSqlData implements SQLData {
   public void readSQL(SQLInput stream, String typeName) throws SQLException {
     string = stream.readString();
     nullableIntValue = stream.readInt();
-    if(stream.wasNull()) {
+    if (stream.wasNull()) {
       nullableIntValue = null;
     }
     nullableLongValue = stream.readObject(Long.class);

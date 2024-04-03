@@ -15,7 +15,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -53,7 +52,7 @@ public enum SnowflakeType {
     return SnowflakeType.valueOf(name.toUpperCase());
   }
 
-  public static JavaDataType getJavaType(SnowflakeType type) {
+  public static JavaDataType getJavaType(SnowflakeType type, boolean isStructuredType) {
     // TODO structuredType fill for Array and Map: SNOW-1234216, SNOW-1234214
     switch (type) {
       case TEXT:
@@ -83,7 +82,7 @@ public enum SnowflakeType {
       case ANY:
         return JavaDataType.JAVA_OBJECT;
       case OBJECT:
-        if (StructureTypeHelper.isStructureTypeEnabled()) {
+        if (isStructuredType) {
           return JavaDataType.JAVA_OBJECT;
         } else {
           return JavaDataType.JAVA_STRING;
