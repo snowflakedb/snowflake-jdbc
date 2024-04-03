@@ -1355,11 +1355,11 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (StructureTypeHelper.isStructureTypeEnabled()) {
       if (SQLData.class.isAssignableFrom(type)) {
-        SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput = (SQLInput) getObject(columnIndex);
         if (sqlInput == null) {
           return null;
         } else {
+          SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
           instance.readSQL(sqlInput, null);
           return (T) instance;
         }

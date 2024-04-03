@@ -33,4 +33,16 @@ public interface SFSqlInput extends SQLInput {
    * @since 1.2
    */
   java.sql.Timestamp readTimestamp(TimeZone tz) throws SQLException;
+  /**
+   * Reads the next attribute in the stream and returns it as a <code>Object</code> object.
+   *
+   * @param <T> the type of the class modeled by this Class object
+   * @param type Class representing the Java data type to convert the attribute to.
+   * @return the attribute at the head of the stream as an {@code Object} in the Java programming
+   *     language;{@code null} if the attribute is SQL {@code NULL}
+   * @exception SQLException if a database access error occurs
+   * @exception SQLFeatureNotSupportedException if the JDBC driver does not support this method
+   * @since 1.8
+   */
+  <T> T readObject(Class<T> type, TimeZone tz) throws SQLException;
 }

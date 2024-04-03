@@ -1,5 +1,7 @@
 package net.snowflake.client.jdbc.structuredtypes.sqldata;
 
+import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.SQLData;
 import java.sql.SQLException;
 import java.sql.SQLInput;
@@ -10,6 +12,8 @@ public class FewTypesSqlData implements SQLData {
   private String string;
   private Integer nullableIntValue;
   private Long nullableLongValue;
+  private Date date;
+  private BigDecimal bd;
   private long longValue;
 
   public FewTypesSqlData() {}
@@ -22,11 +26,10 @@ public class FewTypesSqlData implements SQLData {
   @Override
   public void readSQL(SQLInput stream, String typeName) throws SQLException {
     string = stream.readString();
-    nullableIntValue = stream.readInt();
-    if (stream.wasNull()) {
-      nullableIntValue = null;
-    }
+    nullableIntValue = stream.readObject(Integer.class);
     nullableLongValue = stream.readObject(Long.class);
+    date = stream.readObject(Date.class);
+    bd = stream.readBigDecimal();
     longValue = stream.readLong();
   }
 
@@ -51,5 +54,13 @@ public class FewTypesSqlData implements SQLData {
 
   public Long getLongValue() {
     return longValue;
+  }
+
+  public Date getDate() {
+    return date;
+  }
+
+  public BigDecimal getBd() {
+    return bd;
   }
 }

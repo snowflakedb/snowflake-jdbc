@@ -224,17 +224,54 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReturnAsArrayOfNullableFieldsInSqlData() throws SQLException {
-    SnowflakeObjectTypeFactories.register(SimpleClass.class, FewTypesSqlData::new);
+    SnowflakeObjectTypeFactories.register(FewTypesSqlData.class, FewTypesSqlData::new);
     withFirstRow(
-        "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'nullableIntValue', null, 'nullableLongValue', null, 'longValue', null)::OBJECT(string VARCHAR, nullableIntValue INTEGER, nullableLongValue INTEGER, longValue INTEGER)",
+        "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'nullableIntValue', null, 'nullableLongValue', null, "
+            + "'date', null, 'bd', null, 'longValue', null)::OBJECT(string VARCHAR, nullableIntValue INTEGER, nullableLongValue INTEGER, date DATE, bd DOUBLE,longValue INTEGER)",
         (resultSet) -> {
           FewTypesSqlData result =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getObject(1, FewTypesSqlData.class);
           assertNull(result.getString());
           assertNull(result.getNullableIntValue());
           assertNull(result.getNullableLongValue());
+          assertNull(result.getDate());
+          assertNull(result.getBd());
           assertEquals(Long.valueOf(0), result.getLongValue());
         });
+  }
+
+  @Test
+  public void testReturnNullsForAllTpesInSqlData() throws SQLException {
+    SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
+      try (ResultSet resultSet =
+          statement.executeQuery(
+              "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'b', null, 's', null, 'i', null, 'l', null, 'f', null,'d', null, 'bd', null, 'bool', null,"
+                  + " 'timestamp_ltz', null, 'timestamp_ntz', null, 'timestamp_tz', null, 'date', null, 'time', null, 'binary', null, 'simpleClass', null)"
+                  + "::OBJECT(string VARCHAR, b TINYINT, s SMALLINT, i INTEGER, l BIGINT, f FLOAT, d DOUBLE, bd DOUBLE, bool BOOLEAN, timestamp_ltz TIMESTAMP_LTZ, "
+                  + "timestamp_ntz TIMESTAMP_NTZ, timestamp_tz TIMESTAMP_TZ, date DATE, time TIME, binary BINARY, simpleClass OBJECT(string VARCHAR))"); ) {
+        resultSet.next();
+        AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
+        assertNull(object.getString());
+        assertNull(object.getB());
+        assertNull(object.getS());
+        assertNull(object.getI());
+        assertNull(object.getL());
+        assertNull(object.getF());
+        assertNull(object.getD());
+        assertNull(object.getBd());
+        assertNull(object.getTimestampLtz());
+        assertNull(object.getTimestampNtz());
+        assertNull(object.getTimestampTz());
+        assertNull(object.getDate());
+        assertNull(object.getTime());
+        assertNull(object.getBinary());
+        assertNull(object.getBool());
+        assertNull(object.getSimpleClass());
+      }
+    }
   }
 
   @Test

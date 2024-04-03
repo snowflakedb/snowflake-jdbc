@@ -4,10 +4,12 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.SFResultSet.logger;
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.SQLData;
 import java.sql.SQLException;
 import java.sql.SQLInput;
 import java.sql.Time;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.util.ThrowingBiFunction;
 import org.apache.arrow.vector.util.JsonStringHashMap;
@@ -124,12 +127,14 @@ public class ArrowSqlInput extends BaseSqlInput {
 
   @Override
   public BigDecimal readBigDecimal() throws SQLException {
-    return withNextValue(
-        (value, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getBigDecimal(value, columnType));
-        });
+    return withNextValue((value, fieldMetadata) -> convertToBigDecimal(value, fieldMetadata));
+  }
+
+  private BigDecimal convertToBigDecimal(Object value, FieldMetadata fieldMetadata)
+      throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getBigDecimal(value, columnType));
   }
 
   @Override
@@ -148,44 +153,57 @@ public class ArrowSqlInput extends BaseSqlInput {
   @Override
   public Date readDate() throws SQLException {
     return withNextValue(
-        (value, fieldMetadata) ->
-            mapSFExceptionToSQLException(
-                () ->
-                    converters
-                        .getStructuredTypeDateTimeConverter()
-                        .getDate((int) value, TimeZone.getDefault())));
+        (value, fieldMetadata) -> {
+          if (value == null) {
+            return null;
+          }
+          return formatDate((int) value);
+        });
+  }
+
+  private Date formatDate(int value) throws SQLException {
+    return mapSFExceptionToSQLException(
+        () ->
+            converters.getStructuredTypeDateTimeConverter().getDate(value, TimeZone.getDefault()));
   }
 
   @Override
   public Time readTime() throws SQLException {
     return withNextValue(
-        (value, fieldMetadata) ->
-            mapSFExceptionToSQLException(
-                () -> {
-                  int scale = fieldMetadata.getScale();
-                  return converters
-                      .getStructuredTypeDateTimeConverter()
-                      .getTime((long) value, scale);
-                }));
-  }
-
-  @Override
-  public Timestamp readTimestamp(TimeZone tz) throws SQLException {
-    return withNextValue(
         (value, fieldMetadata) -> {
           if (value == null) {
             return null;
           }
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          int columnSubType = fieldMetadata.getType();
-          int scale = fieldMetadata.getScale();
-          return mapSFExceptionToSQLException(
-              () ->
-                  converters
-                      .getStructuredTypeDateTimeConverter()
-                      .getTimestamp(
-                          (Map<String, Object>) value, columnType, columnSubType, tz, scale));
+          return formatTime((long) value, fieldMetadata);
         });
+  }
+
+  private Time formatTime(long value, FieldMetadata fieldMetadata) throws SQLException {
+    return mapSFExceptionToSQLException(
+        () -> {
+          int scale = fieldMetadata.getScale();
+          return converters.getStructuredTypeDateTimeConverter().getTime(value, scale);
+        });
+  }
+
+  @Override
+  public Timestamp readTimestamp(TimeZone tz) throws SQLException {
+    return withNextValue((value, fieldMetadata) -> formatTimestamp(tz, value, fieldMetadata));
+  }
+
+  private Timestamp formatTimestamp(TimeZone tz, Object value, FieldMetadata fieldMetadata)
+      throws SQLException {
+    if (value == null) {
+      return null;
+    }
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    int columnSubType = fieldMetadata.getType();
+    int scale = fieldMetadata.getScale();
+    return mapSFExceptionToSQLException(
+        () ->
+            converters
+                .getStructuredTypeDateTimeConverter()
+                .getTimestamp((Map<String, Object>) value, columnType, columnSubType, tz, scale));
   }
 
   @Override
@@ -202,12 +220,67 @@ public class ArrowSqlInput extends BaseSqlInput {
 
   @Override
   public <T> T readObject(Class<T> type) throws SQLException {
+    return readObject(type, TimeZone.getDefault());
+  }
+
+  @Override
+  public <T> T readObject(Class<T> type, TimeZone tz) throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
-          ArrowSqlInput sqlInput =
-              new ArrowSqlInput(
-                  (Map<String, Object>) value, session, converters, fieldMetadata.getFields());
-          return readObjectOfType(type, value, sqlInput);
+          if (SQLData.class.isAssignableFrom(type)) {
+            if (value == null) {
+              return null;
+            } else {
+              ArrowSqlInput sqlInput =
+                  new ArrowSqlInput(
+                      (Map<String, Object>) value, session, converters, fieldMetadata.getFields());
+              SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+              instance.readSQL(sqlInput, null);
+              return (T) instance;
+            }
+          } else if (Map.class.isAssignableFrom(type)) {
+            if (value == null) {
+              return null;
+            } else {
+              return (T) convertSqlInputToMap((SQLInput) value);
+            }
+          } else if (String.class.isAssignableFrom(type)
+              || Boolean.class.isAssignableFrom(type)
+              || Byte.class.isAssignableFrom(type)
+              || Short.class.isAssignableFrom(type)
+              || Integer.class.isAssignableFrom(type)
+              || Long.class.isAssignableFrom(type)
+              || Float.class.isAssignableFrom(type)
+              || Double.class.isAssignableFrom(type)) {
+            if (value == null) {
+              return null;
+            }
+            return (T) value;
+          } else if (Date.class.isAssignableFrom(type)) {
+            if (value == null) {
+              return null;
+            }
+            return (T) formatDate((int) value);
+          } else if (Time.class.isAssignableFrom(type)) {
+            if (value == null) {
+              return null;
+            }
+            return (T) formatTime((long) value, fieldMetadata);
+          } else if (Timestamp.class.isAssignableFrom(type)) {
+            if (value == null) {
+              return null;
+            }
+            return (T) formatTimestamp(tz, value, fieldMetadata);
+          } else if (BigDecimal.class.isAssignableFrom(type)) {
+            return (T) convertToBigDecimal(value, fieldMetadata);
+          } else {
+            logger.debug(
+                "Unsupported type passed to readObject(int columnIndex,Class<T> type): "
+                    + type.getName());
+            throw new SQLException(
+                "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+                    + type.getName());
+          }
         });
   }
 
