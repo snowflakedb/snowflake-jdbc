@@ -98,13 +98,13 @@ for c in "${CATEGORY[@]}"; do
                 --batch-mode --show-version
         popd >& /dev/null
     elif [[ "$c" == "TestCategoryStructuredType" ]]; then
-        pushd FIPS >& /dev/null
-            echo "[INFO] Run Fips tests"
+        echo "[INFO] Run $c tests structured types"
             mvn -DjenkinsIT \
                 -Djava.io.tmpdir=$WORKSPACE \
                 -Djacoco.skip.instrument=false \
                 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
                 -Dnot-self-contained-jar \
+                -DSTRUCTURED_TYPE_ENABLED=true \
                 verify \
                 --batch-mode --show-version
         popd >& /dev/null
