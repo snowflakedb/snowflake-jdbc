@@ -401,21 +401,7 @@ public class SessionUtil {
         }
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
         // okta authenticator v1
-        while (true) {
-          try {
-            tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
-          } catch (SnowflakeSQLException ex) {
-            // This error gets thrown if the okta request encountered a retry-able error that
-            // requires getting a new one-time token.
-            if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
-              logger.debug("Failed to get Okta SAML response. Retrying.");
-              continue;
-            } else {
-              throw ex;
-            }
-          }
-          break;
-        }
+        tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
         SessionUtilKeyPair s =
             new SessionUtilKeyPair(
@@ -1392,12 +1378,24 @@ public class SessionUtil {
    */
   private static String getSamlResponseUsingOkta(SFLoginInput loginInput)
       throws SnowflakeSQLException {
-    JsonNode dataNode = federatedFlowStep1(loginInput);
-    String tokenUrl = dataNode.path("tokenUrl").asText();
-    String ssoUrl = dataNode.path("ssoUrl").asText();
-    federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
-    final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
-    return federatedFlowStep4(loginInput, ssoUrl, oneTimeToken);
+    while (true) {
+      try {
+        JsonNode dataNode = federatedFlowStep1(loginInput);
+        String tokenUrl = dataNode.path("tokenUrl").asText();
+        String ssoUrl = dataNode.path("ssoUrl").asText();
+        federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
+        final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
+        return federatedFlowStep4(loginInput, ssoUrl, oneTimeToken);
+      } catch (SnowflakeSQLException ex) {
+        // This error gets thrown if the okta request encountered a retry-able error that
+        // requires getting a new one-time token.
+        if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
+          logger.debug("Failed to get Okta SAML response. Retrying.");
+        } else {
+          throw ex;
+        }
+      }
+    }
   }
 
   /**
