@@ -4,18 +4,13 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SFBaseResultSet.OBJECT_MAPPER;
-import static net.snowflake.client.core.SFResultSet.logger;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.InputStream;
 import java.io.Reader;
-import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
-import java.sql.Date;
 import java.sql.NClob;
 import java.sql.Ref;
 import java.sql.RowId;
@@ -113,5 +108,4 @@ public abstract class BaseSqlInput implements SFSqlInput {
   }
 
   abstract Map<String, Object> convertSqlInputToMap(SQLInput sqlInput);
-
 }

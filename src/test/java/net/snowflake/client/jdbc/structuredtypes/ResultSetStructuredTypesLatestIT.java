@@ -680,21 +680,21 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
-          withFirstRow(
-              "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
-              resultSet -> {
-                assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
-              });
+    withFirstRow(
+        "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
+        resultSet -> {
+          assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
+        });
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testColumnTypeWhenStructureTypeIsEnabled() throws Exception {
-          withFirstRow(
-              "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
-              resultSet -> {
-                assertEquals(Types.STRUCT, resultSet.getMetaData().getColumnType(1));
-              });
+    withFirstRow(
+        "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
+        resultSet -> {
+          assertEquals(Types.STRUCT, resultSet.getMetaData().getColumnType(1));
+        });
   }
 
   private void withFirstRow(String sqlText, ThrowingConsumer<ResultSet, SQLException> consumer)

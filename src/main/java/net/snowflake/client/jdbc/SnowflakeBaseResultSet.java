@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
 import net.snowflake.client.core.ColumnTypeHelper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
