@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
@@ -1368,13 +1367,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         if (object == null) {
           return null;
         }
-        if (object instanceof JsonSqlInput) {
-          JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-          return (T)
-              OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
-        } else if (object instanceof ArrowSqlInput) {
-          return (T) ((ArrowSqlInput) object).getInput();
-        }
+        return mapSFExceptionToSQLException(() -> (T) prepareMapWithValues(object, Object.class));
       }
     }
     if (String.class.isAssignableFrom(type)) {
@@ -1585,9 +1578,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return null;
     }
     Map<String, Object> map =
-        (object instanceof JsonSqlInput)
-            ? mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type))
-            : (Map<String, Object>) object;
+        mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
@@ -1768,6 +1759,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                 : SnowflakeUtil.getJsonNodeStringValue(jsonNode.get(name)));
       }
       return map;
+    } else if (object instanceof ArrowSqlInput) {
+      return ((ArrowSqlInput) object).getInput();
     } else if (object instanceof Map) {
       return (Map<String, Object>) object;
     } else {
