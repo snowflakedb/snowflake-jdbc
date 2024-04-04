@@ -401,7 +401,21 @@ public class SessionUtil {
         }
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
         // okta authenticator v1
-        tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
+        while (true) {
+          try {
+            tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
+          } catch (SnowflakeSQLException ex) {
+            // This error gets thrown if the okta request encountered a retry-able error that
+            // requires getting a new one-time token.
+            if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
+              logger.debug("Failed to get Okta SAML response. Retrying.");
+              continue;
+            } else {
+              throw ex;
+            }
+          }
+          break;
+        }
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
         SessionUtilKeyPair s =
             new SessionUtilKeyPair(
