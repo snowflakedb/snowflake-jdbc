@@ -233,6 +233,8 @@ public class ArrowSqlInput extends BaseSqlInput {
               instance.readSQL(sqlInput, null);
               return (T) instance;
             }
+          } else if (value == null) {
+            return null;
           } else if (Map.class.isAssignableFrom(type)) {
             if (value == null) {
               return null;
@@ -247,24 +249,12 @@ public class ArrowSqlInput extends BaseSqlInput {
               || Long.class.isAssignableFrom(type)
               || Float.class.isAssignableFrom(type)
               || Double.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            }
             return (T) value;
           } else if (Date.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            }
             return (T) formatDate((int) value);
           } else if (Time.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            }
             return (T) formatTime((long) value, fieldMetadata);
           } else if (Timestamp.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            }
             return (T) formatTimestamp(TimeZone.getDefault(), value, fieldMetadata);
           } else if (BigDecimal.class.isAssignableFrom(type)) {
             return (T) convertToBigDecimal(value, fieldMetadata);

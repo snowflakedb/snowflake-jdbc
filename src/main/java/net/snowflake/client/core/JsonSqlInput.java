@@ -150,10 +150,10 @@ public class JsonSqlInput extends BaseSqlInput {
 
   @Override
   public byte[] readBytes() throws SQLException {
-    return withNextValue((value, jsonNode, fieldMetadata) -> convertTyoBytes(value, fieldMetadata));
+    return withNextValue((value, jsonNode, fieldMetadata) -> convertToBytes(value, fieldMetadata));
   }
 
-  private byte[] convertTyoBytes(Object value, FieldMetadata fieldMetadata) throws SQLException {
+  private byte[] convertToBytes(Object value, FieldMetadata fieldMetadata) throws SQLException {
     int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
     int columnSubType = fieldMetadata.getType();
     int scale = fieldMetadata.getScale();
@@ -234,6 +234,8 @@ public class JsonSqlInput extends BaseSqlInput {
             } else {
               return (T) convertSqlInputToMap((SQLInput) value);
             }
+          } else if (value == null) {
+            return null;
           } else if (String.class.isAssignableFrom(type)
               || Boolean.class.isAssignableFrom(type)
               || Byte.class.isAssignableFrom(type)
@@ -242,30 +244,15 @@ public class JsonSqlInput extends BaseSqlInput {
               || Long.class.isAssignableFrom(type)
               || Float.class.isAssignableFrom(type)
               || Double.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            }
             return (T) value;
           } else if (Date.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            }
             return (T) formatDate((String) value);
           } else if (Time.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            }
             return (T) formatTime((String) value);
           } else if (Timestamp.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            }
             return (T) formatTimestamp(sessionTimeZone, value, fieldMetadata);
-          } else if (byte[].class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            }
-            return (T) convertTyoBytes(value, fieldMetadata);
+          } else if (Byte[].class.isAssignableFrom(type)) {
+            return (T) convertToBytes(value, fieldMetadata);
           } else if (BigDecimal.class.isAssignableFrom(type)) {
             return (T) convertBigDecimal(value, fieldMetadata);
           } else {
