@@ -835,7 +835,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       regularStatement.execute("insert into t_geo values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
 
       testGeoOutputTypeSingle(
-          regularStatement, false, "geoJson", "OBJECT", "java.lang.String", Types.STRUCT);
+          regularStatement, false, "geoJson", "OBJECT", "java.lang.String", Types.VARCHAR);
 
       testGeoOutputTypeSingle(
           regularStatement, true, "geoJson", "GEOGRAPHY", "java.lang.String", Types.STRUCT);

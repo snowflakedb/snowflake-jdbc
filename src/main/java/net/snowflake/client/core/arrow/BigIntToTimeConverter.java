@@ -44,21 +44,22 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return null;
     } else {
-      SFTime sfTime = toSFTime(index);
-      if (sfTime == null) {
-        return null;
-      }
-      Time ts =
-          new Time(
-              sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
-      if (useSessionTimezone) {
-        ts =
-            SnowflakeUtil.getTimeInSessionTimezone(
-                SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
-                sfTime.getNanosecondsWithinSecond());
-      }
-      return ts;
+      long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
+      return getTime(val, context.getScale(columnIndex), useSessionTimezone);
     }
+  }
+
+  public static Time getTime(long value, int scale, boolean useSessionTimezone) throws SFException {
+    SFTime sfTime = SFTime.fromFractionalSeconds(value, scale);
+    Time ts =
+        new Time(sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+    if (useSessionTimezone) {
+      ts =
+          SnowflakeUtil.getTimeInSessionTimezone(
+              SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
+              sfTime.getNanosecondsWithinSecond());
+    }
+    return ts;
   }
 
   @Override

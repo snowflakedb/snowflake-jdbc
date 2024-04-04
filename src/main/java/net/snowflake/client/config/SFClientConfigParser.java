@@ -8,6 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -85,20 +87,36 @@ public class SFClientConfigParser {
 
         if (systemGetProperty("os.name") != null
             && systemGetProperty("os.name").toLowerCase().startsWith("windows")) {
-          // Path translation for windows
-          if (updatedPath.startsWith("/")) {
-            updatedPath = updatedPath.substring(1);
-          } else if (updatedPath.startsWith("file:\\")) {
-            updatedPath = updatedPath.substring(6);
-          }
-          updatedPath = updatedPath.replace("/", "\\");
+          updatedPath = convertToWindowsPath(updatedPath);
         }
         return updatedPath;
       }
+
       return "";
     } catch (Exception ex) {
       // return empty path and move to step 4 of loadSFClientConfig()
       return "";
     }
+  }
+
+  static String convertToWindowsPath(String filePath) {
+    // Find the Windows file path pattern: ex) C:\ or D:\
+    Pattern windowsFilePattern = Pattern.compile("[C-Z]:[\\\\/]");
+    Matcher matcher = windowsFilePattern.matcher(filePath);
+    String prefix = "";
+
+    // Path translation for windows
+    if (filePath.startsWith("/")) {
+      filePath = filePath.substring(1);
+    } else if (filePath.startsWith("file:\\")) {
+      filePath = filePath.substring(6);
+    } else if (filePath.startsWith("\\")) {
+      filePath = filePath.substring(2);
+    } else if (matcher.find() && matcher.start() != 0) {
+      prefix = filePath.substring(0, matcher.start());
+      filePath = filePath.substring(matcher.start());
+    }
+    filePath = prefix + filePath.replace("/", "\\");
+    return filePath;
   }
 }

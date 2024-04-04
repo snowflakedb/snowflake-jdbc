@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
 import java.time.Instant;
@@ -35,9 +36,13 @@ import java.util.concurrent.TimeUnit;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.ThrowingCallable;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -275,9 +280,22 @@ public class SnowflakeUtil {
             new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
 
-      case OBJECT:
+      case MAP:
         columnTypeInfo =
             new ColumnTypeInfo(Types.STRUCT, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+        break;
+
+      case OBJECT:
+        if (StructureTypeHelper.isStructureTypeEnabled()) {
+          boolean isGeoType =
+              "GEOMETRY".equals(extColTypeName) || "GEOGRAPHY".equals(extColTypeName);
+          int type = isGeoType ? Types.VARCHAR : Types.STRUCT;
+          columnTypeInfo =
+              new ColumnTypeInfo(type, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+        } else {
+          columnTypeInfo =
+              new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+        }
         break;
 
       case VARIANT:
@@ -753,5 +771,36 @@ public class SnowflakeUtil {
     c.add(Calendar.MILLISECOND, nanos / 1000000);
     ts.setTime(c.getTimeInMillis());
     return ts;
+  }
+
+  /**
+   * Helper function to convert system properties to boolean
+   *
+   * @param systemProperty name of the system property
+   * @param defaultValue default value used
+   * @return the value of the system property as boolean, else the default value
+   */
+  @SnowflakeJdbcInternalApi
+  public static boolean convertSystemPropertyToBooleanValue(
+      String systemProperty, boolean defaultValue) {
+    String systemPropertyValue = systemGetProperty(systemProperty);
+    if (systemPropertyValue != null) {
+      return Boolean.parseBoolean(systemPropertyValue);
+    }
+    return defaultValue;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static <T> T mapSFExceptionToSQLException(ThrowingCallable<T, SFException> action)
+      throws SQLException {
+    try {
+      return action.call();
+    } catch (SFException e) {
+      throw new SQLException(e);
+    }
+  }
+
+  public static String getJsonNodeStringValue(JsonNode node) throws SFException {
+    return node.isValueNode() ? node.asText() : node.toString();
   }
 }

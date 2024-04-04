@@ -6,14 +6,15 @@ package net.snowflake.client.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -21,9 +22,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 /** Abstract class used to represent snowflake result set in json format */
 public abstract class SFJsonResultSet extends SFBaseResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFJsonResultSet.class);
-  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
-  protected final TimeZone sessionTimeZone;
   protected final Converters converters;
 
   protected SFJsonResultSet(TimeZone sessionTimeZone, Converters converters) {
@@ -83,27 +82,21 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBoolean(columnIndex);
 
       case Types.STRUCT:
-        if (Boolean.valueOf(System.getProperty(STRUCTURED_TYPE_ENABLED_PROPERTY_NAME))) {
+        if (StructureTypeHelper.isStructureTypeEnabled()) {
           return getSqlInput((String) obj, columnIndex);
+        } else {
+          throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
+        }
+        
+      case Types.ARRAY:
+        if (StructureTypeHelper.isStructureTypeEnabled()) {
+          return getArray(columnIndex);
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
 
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
-    }
-  }
-
-  private Object getSqlInput(String input, int columnIndex) throws SFException {
-    try {
-      JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
-      return new JsonSqlInput(
-          jsonNode,
-          session,
-          converters,
-          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
-    } catch (JsonProcessingException e) {
-      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 
@@ -117,6 +110,12 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
    */
   private Object getBigInt(int columnIndex, Object obj) throws SFException {
     return converters.getNumberConverter().getBigInt(obj, columnIndex);
+  }
+
+  @Override
+  public Array getArray(int columnIndex) throws SFException {
+    Object obj = getObjectInternal(columnIndex);
+    return getJsonArray((String) obj, columnIndex);
   }
 
   @Override
@@ -247,7 +246,53 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     return converters.getDateTimeConverter().getDate(obj, columnType, columnSubType, tz, scale);
   }
 
+  @Override
+  @SnowflakeJdbcInternalApi
+  public SQLInput createSqlInputForColumn(
+      Object input, Class<?> parentObjectClass, int columnIndex, SFBaseSession session) {
+    return createJsonSqlInputForColumn(input, columnIndex, session);
+  }
+
+  @Override
+  @SnowflakeJdbcInternalApi
+  public Date convertToDate(Object object, TimeZone tz) throws SFException {
+    return convertStringToDate((String) object, tz);
+  }
+
+  @Override
+  @SnowflakeJdbcInternalApi
+  public Time convertToTime(Object object, int scale) throws SFException {
+    return convertStringToTime((String) object, scale);
+  }
+
+  @Override
+  @SnowflakeJdbcInternalApi
+  public Timestamp convertToTimestamp(
+      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+    return convertStringToTimestamp((String) object, columnType, columnSubType, tz, scale);
+  }
+
   private Timestamp getTimestamp(int columnIndex) throws SFException {
     return getTimestamp(columnIndex, TimeZone.getDefault());
+  }
+
+  @Override
+  @SnowflakeJdbcInternalApi
+  public Converters getConverters() {
+    return converters;
+  }
+
+  private Object getSqlInput(String input, int columnIndex) throws SFException {
+    try {
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
+      return new JsonSqlInput(
+          jsonNode,
+          session,
+          converters,
+          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
+          sessionTimeZone);
+    } catch (JsonProcessingException e) {
+      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+    }
   }
 }

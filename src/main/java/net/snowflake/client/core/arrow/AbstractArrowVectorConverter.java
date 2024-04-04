@@ -38,6 +38,8 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
 
   protected TimeZone sessionTimeZone;
 
+  private boolean shouldTreatDecimalAsInt;
+
   /** Field names of the struct vectors used by timestamp */
   public static final String FIELD_NAME_EPOCH = "epoch"; // seconds since epoch
 
@@ -53,6 +55,11 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
     this.valueVector = valueVector;
     this.columnIndex = vectorIndex + 1;
     this.context = context;
+    this.shouldTreatDecimalAsInt =
+        context == null
+            || context.getSession() == null
+            || context.getSession().isJdbcArrowTreatDecimalAsInt()
+            || context.getSession().isJdbcTreatDecimalAsInt();
   }
 
   @Override
@@ -144,6 +151,10 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
     }
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.BIG_DECIMAL_STR, "");
+  }
+
+  boolean shouldTreatDecimalAsInt() {
+    return shouldTreatDecimalAsInt;
   }
 
   @Override

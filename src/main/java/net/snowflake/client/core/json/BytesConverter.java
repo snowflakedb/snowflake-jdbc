@@ -11,7 +11,7 @@ import org.apache.arrow.vector.Float8Vector;
 public class BytesConverter {
   private final Converters converters;
 
-  BytesConverter(Converters converters) {
+  public BytesConverter(Converters converters) {
     this.converters = converters;
   }
 
@@ -19,6 +19,9 @@ public class BytesConverter {
       throws SFException {
     if (obj == null) {
       return null;
+    }
+    if (obj instanceof byte[]) {
+      return (byte[]) obj;
     }
 
     try {
