@@ -272,7 +272,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   }
 
   public Array getArray(int columnIndex) throws SQLException {
-    if (resultSetMetaData.getSfResultSetMetaData().isStructuredTypeColumn(columnIndex)) {
+    if (!resultSetMetaData.getSfResultSetMetaData().isStructuredTypeColumn(columnIndex)) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
     raiseSQLExceptionIfResultSetIsClosed();

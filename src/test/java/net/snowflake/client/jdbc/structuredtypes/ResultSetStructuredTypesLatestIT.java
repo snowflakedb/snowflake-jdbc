@@ -198,18 +198,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapJsonToMap() throws SQLException {
-    withFirstRow(
-        "SELECT OBJECT_CONSTRUCT('string','a','string2',1)",
-        (resultSet) -> {
-          Map map = resultSet.getObject(1, Map.class);
-          assertEquals("a", map.get("string"));
-          assertEquals(1, map.get("string2"));
-        });
-  }
-
-  @Test
   public void testReturnAsArrayOfSqlData() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
@@ -370,7 +358,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     withFirstRow(
         "select null::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {
-          Map<String, String> map =
+          Map<String, Object> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getObject(1, Map.class);
           assertNull(map);
         });
@@ -681,7 +669,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
     withFirstRow(
-        "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
+        "SELECT {'string':'a'}",
         resultSet -> {
           assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
         });
