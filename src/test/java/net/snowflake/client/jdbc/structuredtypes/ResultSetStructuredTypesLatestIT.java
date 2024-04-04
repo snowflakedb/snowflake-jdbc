@@ -227,7 +227,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     SnowflakeObjectTypeFactories.register(FewTypesSqlData.class, FewTypesSqlData::new);
     withFirstRow(
         "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'nullableIntValue', null, 'nullableLongValue', null, "
-            + "'date', null, 'bd', null, 'longValue', null)::OBJECT(string VARCHAR, nullableIntValue INTEGER, nullableLongValue INTEGER, date DATE, bd DOUBLE,longValue INTEGER)",
+            + "'date', null, 'bd', null, 'bytes', null, 'longValue', null)"
+            + "::OBJECT(string VARCHAR, nullableIntValue INTEGER, nullableLongValue INTEGER, date DATE, bd DOUBLE, bytes BINARY, longValue INTEGER)",
         (resultSet) -> {
           FewTypesSqlData result =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getObject(1, FewTypesSqlData.class);
@@ -236,6 +237,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertNull(result.getNullableLongValue());
           assertNull(result.getDate());
           assertNull(result.getBd());
+          assertNull(result.getBytes());
           assertEquals(Long.valueOf(0), result.getLongValue());
         });
   }

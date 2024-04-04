@@ -139,15 +139,15 @@ public class ArrowSqlInput extends BaseSqlInput {
 
   @Override
   public byte[] readBytes() throws SQLException {
-    return withNextValue(
-        (value, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          int columnSubType = fieldMetadata.getType();
-          int scale = fieldMetadata.getScale();
-          return mapSFExceptionToSQLException(
-              () ->
-                  converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
-        });
+    return withNextValue((value, fieldMetadata) -> converToBytes(value, fieldMetadata));
+  }
+
+  private byte[] converToBytes(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    int columnSubType = fieldMetadata.getType();
+    int scale = fieldMetadata.getScale();
+    return mapSFExceptionToSQLException(
+        () -> converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
   }
 
   @Override
@@ -220,11 +220,6 @@ public class ArrowSqlInput extends BaseSqlInput {
 
   @Override
   public <T> T readObject(Class<T> type) throws SQLException {
-    return readObject(type, TimeZone.getDefault());
-  }
-
-  @Override
-  public <T> T readObject(Class<T> type, TimeZone tz) throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
           if (SQLData.class.isAssignableFrom(type)) {
@@ -270,9 +265,11 @@ public class ArrowSqlInput extends BaseSqlInput {
             if (value == null) {
               return null;
             }
-            return (T) formatTimestamp(tz, value, fieldMetadata);
+            return (T) formatTimestamp(TimeZone.getDefault(), value, fieldMetadata);
           } else if (BigDecimal.class.isAssignableFrom(type)) {
             return (T) convertToBigDecimal(value, fieldMetadata);
+          } else if (byte[].class.isAssignableFrom(type)) {
+            return (T) converToBytes(value, fieldMetadata);
           } else {
             logger.debug(
                 "Unsupported type passed to readObject(int columnIndex,Class<T> type): "

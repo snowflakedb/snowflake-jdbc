@@ -150,15 +150,15 @@ public class JsonSqlInput extends BaseSqlInput {
 
   @Override
   public byte[] readBytes() throws SQLException {
-    return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          int columnSubType = fieldMetadata.getType();
-          int scale = fieldMetadata.getScale();
-          return mapSFExceptionToSQLException(
-              () ->
-                  converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
-        });
+    return withNextValue((value, jsonNode, fieldMetadata) -> convertTyoBytes(value, fieldMetadata));
+  }
+
+  private byte[] convertTyoBytes(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    int columnSubType = fieldMetadata.getType();
+    int scale = fieldMetadata.getScale();
+    return mapSFExceptionToSQLException(
+        () -> converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
   }
 
   @Override
@@ -214,7 +214,7 @@ public class JsonSqlInput extends BaseSqlInput {
   }
 
   @Override
-  public <T> T readObject(Class<T> type, TimeZone tz) throws SQLException {
+  public <T> T readObject(Class<T> type) throws SQLException {
     return withNextValue(
         (value, jsonNode, fieldMetadata) -> {
           if (SQLData.class.isAssignableFrom(type)) {
@@ -260,7 +260,12 @@ public class JsonSqlInput extends BaseSqlInput {
             if (value == null) {
               return null;
             }
-            return (T) formatTimestamp(tz, value, fieldMetadata);
+            return (T) formatTimestamp(sessionTimeZone, value, fieldMetadata);
+          } else if (byte[].class.isAssignableFrom(type)) {
+            if (value == null) {
+              return null;
+            }
+            return (T) convertTyoBytes(value, fieldMetadata);
           } else if (BigDecimal.class.isAssignableFrom(type)) {
             return (T) convertBigDecimal(value, fieldMetadata);
           } else {
@@ -298,11 +303,6 @@ public class JsonSqlInput extends BaseSqlInput {
   @Override
   public Object readObject() throws SQLException {
     return withNextValue((value, jsonNode, fieldMetadata) -> value);
-  }
-
-  @Override
-  public <T> T readObject(Class<T> type) throws SQLException {
-    return readObject(type, sessionTimeZone);
   }
 
   public boolean wasNull() {

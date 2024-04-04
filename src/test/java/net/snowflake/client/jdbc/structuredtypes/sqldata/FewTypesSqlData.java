@@ -14,6 +14,7 @@ public class FewTypesSqlData implements SQLData {
   private Long nullableLongValue;
   private Date date;
   private BigDecimal bd;
+  private byte[] bytes;
   private long longValue;
 
   public FewTypesSqlData() {}
@@ -30,6 +31,7 @@ public class FewTypesSqlData implements SQLData {
     nullableLongValue = stream.readObject(Long.class);
     date = stream.readObject(Date.class);
     bd = stream.readBigDecimal();
+    bytes = stream.readObject(byte[].class);
     longValue = stream.readLong();
   }
 
@@ -62,5 +64,9 @@ public class FewTypesSqlData implements SQLData {
 
   public BigDecimal getBd() {
     return bd;
+  }
+
+  public byte[] getBytes() {
+    return bytes;
   }
 }
