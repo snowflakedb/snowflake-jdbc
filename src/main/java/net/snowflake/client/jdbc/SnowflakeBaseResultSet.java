@@ -1355,13 +1355,19 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (StructureTypeHelper.isStructureTypeEnabled()) {
       if (SQLData.class.isAssignableFrom(type)) {
-        SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput = (SQLInput) getObject(columnIndex);
-        instance.readSQL(sqlInput, null);
-        return (T) instance;
+        if (sqlInput == null) {
+          return null;
+        } else {
+          SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+          instance.readSQL(sqlInput, null);
+          return (T) instance;
+        }
       } else if (Map.class.isAssignableFrom(type)) {
         Object object = getObject(columnIndex);
-        if (object instanceof JsonSqlInput) {
+        if (object == null) {
+          return null;
+        } else if (object instanceof JsonSqlInput) {
           JsonNode jsonNode = ((JsonSqlInput) object).getInput();
           return (T)
               OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
@@ -1419,18 +1425,24 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
     int scale = fieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
-    Object[] objects = (Object[]) getArray(columnIndex).getArray();
+    Array array = getArray(columnIndex);
+    if (array == null) {
+      return null;
+    }
+    Object[] objects = (Object[]) array.getArray();
     T[] arr = (T[]) java.lang.reflect.Array.newInstance(type, objects.length);
     int counter = 0;
     for (Object value : objects) {
-      if (type.isAssignableFrom(value.getClass())) {
+      if (value == null) {
+        arr[counter++] = null;
+      } else if (type.isAssignableFrom(value.getClass())) {
         arr[counter++] = (T) value;
       } else {
         if (SQLData.class.isAssignableFrom(type)) {
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
           SQLInput sqlInput =
               sfBaseResultSet.createSqlInputForColumn(
-                  value, objects.getClass(), columnIndex, session);
+                  value, objects.getClass(), columnIndex, session, fieldMetadata.getFields());
           instance.readSQL(sqlInput, null);
           arr[counter++] = (T) instance;
         } else if (String.class.isAssignableFrom(type)) {
@@ -1564,15 +1576,24 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
     Object object = getObject(columnIndex);
+    if (object == null) {
+      return null;
+    }
     Map<String, Object> map =
-        mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
+        (object instanceof JsonSqlInput)
+            ? mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type))
+            : (Map<String, Object>) object;
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         SQLInput sqlInput =
             sfBaseResultSet.createSqlInputForColumn(
-                entry.getValue(), object.getClass(), columnIndex, session);
+                entry.getValue(),
+                object.getClass(),
+                columnIndex,
+                session,
+                valueFieldMetadata.getFields());
         instance.readSQL(sqlInput, null);
         resultMap.put(entry.getKey(), (T) instance);
       } else if (String.class.isAssignableFrom(type)) {

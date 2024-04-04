@@ -373,15 +373,15 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   @Override
   @SnowflakeJdbcInternalApi
   public SQLInput createSqlInputForColumn(
-      Object input, Class<?> parentObjectClass, int columnIndex, SFBaseSession session) {
+      Object input,
+      Class<?> parentObjectClass,
+      int columnIndex,
+      SFBaseSession session,
+      List<FieldMetadata> fields) {
     if (parentObjectClass.equals(JsonSqlInput.class)) {
-      return createJsonSqlInputForColumn(input, columnIndex, session);
+      return createJsonSqlInputForColumn(input, columnIndex, session, fields);
     } else {
-      return new ArrowSqlInput(
-          (Map<String, Object>) input,
-          session,
-          converters,
-          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
+      return new ArrowSqlInput((Map<String, Object>) input, session, converters, fields);
     }
   }
 
@@ -578,6 +578,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
     try {
+      if (obj == null) {
+        return null;
+      }
       JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
       return new JsonSqlInput(
           jsonNode,
@@ -604,6 +607,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
     Object obj = converter.toObject(index);
+    if (obj == null) {
+      return null;
+    }
     if (converter instanceof VarCharConverter) {
       return getJsonArray((String) obj, columnIndex);
     } else if (converter instanceof ArrayConverter) {

@@ -1,10 +1,11 @@
 /*
  * Copyright (c) 2012-2024 Snowflake Computing Inc. All right reserved.
  */
-package net.snowflake.client.jdbc;
+package net.snowflake.client.jdbc.structuredtypes;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
@@ -28,7 +29,13 @@ import net.snowflake.client.ThrowingRunnable;
 import net.snowflake.client.category.TestCategoryStructuredType;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.core.structs.StructureTypeHelper;
+import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.FewTypesSqlData;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -105,6 +112,17 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   public void testMapStructAllTypes() throws SQLException {
     testMapAllTypes(false);
     testMapAllTypes(true);
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testMapNullStruct() throws SQLException {
+    withFirstRow(
+        "select null::OBJECT(string VARCHAR)",
+        (resultSet) -> {
+          SimpleClass object = resultSet.getObject(1, SimpleClass.class);
+          assertNull(object);
+        });
   }
 
   private void testMapAllTypes(boolean registerFactory) throws SQLException {
@@ -205,6 +223,60 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  public void testReturnAsArrayOfNullableFieldsInSqlData() throws SQLException {
+    SnowflakeObjectTypeFactories.register(FewTypesSqlData.class, FewTypesSqlData::new);
+    withFirstRow(
+        "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'nullableIntValue', null, 'nullableLongValue', null, "
+            + "'date', null, 'bd', null, 'bytes', null, 'longValue', null)"
+            + "::OBJECT(string VARCHAR, nullableIntValue INTEGER, nullableLongValue INTEGER, date DATE, bd DOUBLE, bytes BINARY, longValue INTEGER)",
+        (resultSet) -> {
+          FewTypesSqlData result =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getObject(1, FewTypesSqlData.class);
+          assertNull(result.getString());
+          assertNull(result.getNullableIntValue());
+          assertNull(result.getNullableLongValue());
+          assertNull(result.getDate());
+          assertNull(result.getBd());
+          assertNull(result.getBytes());
+          assertEquals(Long.valueOf(0), result.getLongValue());
+        });
+  }
+
+  @Test
+  public void testReturnNullsForAllTpesInSqlData() throws SQLException {
+    SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
+      try (ResultSet resultSet =
+          statement.executeQuery(
+              "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'b', null, 's', null, 'i', null, 'l', null, 'f', null,'d', null, 'bd', null, 'bool', null,"
+                  + " 'timestamp_ltz', null, 'timestamp_ntz', null, 'timestamp_tz', null, 'date', null, 'time', null, 'binary', null, 'simpleClass', null)"
+                  + "::OBJECT(string VARCHAR, b TINYINT, s SMALLINT, i INTEGER, l BIGINT, f FLOAT, d DOUBLE, bd DOUBLE, bool BOOLEAN, timestamp_ltz TIMESTAMP_LTZ, "
+                  + "timestamp_ntz TIMESTAMP_NTZ, timestamp_tz TIMESTAMP_TZ, date DATE, time TIME, binary BINARY, simpleClass OBJECT(string VARCHAR))"); ) {
+        resultSet.next();
+        AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
+        assertNull(object.getString());
+        assertNull(object.getB());
+        assertNull(object.getS());
+        assertNull(object.getI());
+        assertNull(object.getL());
+        assertNull(object.getF());
+        assertNull(object.getD());
+        assertNull(object.getBd());
+        assertNull(object.getTimestampLtz());
+        assertNull(object.getTimestampNtz());
+        assertNull(object.getTimestampTz());
+        assertNull(object.getDate());
+        assertNull(object.getTime());
+        assertNull(object.getBinary());
+        assertNull(object.getBool());
+        assertNull(object.getSimpleClass());
+      }
+    }
+  }
+
+  @Test
   public void testReturnAsArrayOfString() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two','three')::ARRAY(VARCHAR)",
@@ -214,6 +286,31 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", resultArray[0]);
           assertEquals("two", resultArray[1]);
           assertEquals("three", resultArray[2]);
+        });
+  }
+
+  @Test
+  @Ignore // Arrays containing nulls aren't supported: SNOW-720936
+  public void testReturnAsArrayOfNullableString() throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT('one', 'two', null)::ARRAY(VARCHAR)",
+        (resultSet) -> {
+          String[] resultArray =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, String.class);
+          assertEquals("one", resultArray[0]);
+          assertEquals("two", resultArray[1]);
+          assertNull(resultArray[2]);
+        });
+  }
+
+  @Test
+  public void testReturnNullAsArray() throws SQLException {
+    withFirstRow(
+        "SELECT null::ARRAY(VARCHAR)",
+        (resultSet) -> {
+          String[] resultArray =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, String.class);
+          assertNull(resultArray);
         });
   }
 
@@ -241,6 +338,44 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", map.get("x").getString());
           assertEquals("two", map.get("y").getString());
           assertEquals("three", map.get("z").getString());
+        });
+  }
+
+  @Test
+  public void testReturnAsMapWithNullableValues() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
+    withFirstRow(
+        "select {'x':{'string':'one'},'y':null,'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
+        (resultSet) -> {
+          Map<String, SimpleClass> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, SimpleClass.class);
+          assertEquals("one", map.get("x").getString());
+          assertNull(map.get("y"));
+          assertEquals("three", map.get("z").getString());
+        });
+  }
+
+  @Test
+  public void testReturnNullAsObjectOfTypeMap() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
+    withFirstRow(
+        "select null::MAP(VARCHAR, OBJECT(string VARCHAR));",
+        (resultSet) -> {
+          Map<String, String> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getObject(1, Map.class);
+          assertNull(map);
+        });
+  }
+
+  @Test
+  public void testReturnNullAsMap() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
+    withFirstRow(
+        "select null::MAP(VARCHAR, OBJECT(string VARCHAR));",
+        (resultSet) -> {
+          Map<String, SimpleClass> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, SimpleClass.class);
+          assertNull(map);
         });
   }
 

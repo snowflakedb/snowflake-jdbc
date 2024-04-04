@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.jdbc.structuredtypes.sqldata;
 
 import java.sql.SQLData;
 import java.sql.SQLException;

@@ -14,9 +14,11 @@ import java.sql.NClob;
 import java.sql.Ref;
 import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.SQLInput;
 import java.sql.SQLXML;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
@@ -103,4 +105,6 @@ public abstract class BaseSqlInput implements SFSqlInput {
   public RowId readRowId() throws SQLException {
     throw new SnowflakeLoggedFeatureNotSupportedException(session, "readRowId");
   }
+
+  abstract Map<String, Object> convertSqlInputToMap(SQLInput sqlInput);
 }

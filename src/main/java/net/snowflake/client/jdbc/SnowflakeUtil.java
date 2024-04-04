@@ -802,6 +802,9 @@ public class SnowflakeUtil {
   }
 
   public static String getJsonNodeStringValue(JsonNode node) throws SFException {
+    if (node.isNull()) {
+      return null;
+    }
     return node.isValueNode() ? node.asText() : node.toString();
   }
 }
