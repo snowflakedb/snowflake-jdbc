@@ -85,7 +85,7 @@ public class DateConverterTest extends BaseConverterTest {
       j++;
     }
 
-    ArrowVectorConverter converter = new DateConverter(vector, 0, this);
+    ArrowVectorConverter converter = new DateConverter(vector, 0, this, false);
     int rowCount = j;
     i = 0;
     j = 0;
@@ -144,7 +144,7 @@ public class DateConverterTest extends BaseConverterTest {
       }
     }
 
-    ArrowVectorConverter converter = new DateConverter(vector, 0, this);
+    ArrowVectorConverter converter = new DateConverter(vector, 0, this, false);
 
     for (int i = 0; i < rowCount; i++) {
       int intVal = converter.toInt(i);
@@ -161,5 +161,33 @@ public class DateConverterTest extends BaseConverterTest {
         assertThat(obj.getTime(), is(oldObj.getTime()));
       }
     }
+  }
+
+  @Test
+  public void testTimezoneDates() throws SFException {
+    int testDay = 16911;
+    String testDate = "2016-04-20";
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "DATE");
+    // test normal date
+    FieldType fieldType =
+            new FieldType(true, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
+
+    DateDayVector vector = new DateDayVector("date", fieldType, allocator);
+
+    vector.setSafe(0, testDay);
+
+    // Test JDBC_FORMAT_DATE_WITH_TIMEZONE=TRUE with different session timezones
+    ArrowVectorConverter converter = new DateConverter(vector, 0, this, true);
+    Object obj = converter.toObject(0);
+    Object oldObj =
+            ArrowResultUtil.getDate(testDay, TimeZone.getTimeZone("UTC"), TimeZone.getDefault());
+
+    assertThat(((Date) obj).getTime(), is(((Date) oldObj).getTime()));
+    assertThat(obj.toString(), is(testDate));
+    assertThat(((Date) obj).getTime(), is(((Date) oldObj).getTime()));
+    assertThat(oldObj.toString(), is(testDate));
+
+    vector.clear();
   }
 }

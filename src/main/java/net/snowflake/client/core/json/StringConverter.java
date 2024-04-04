@@ -108,7 +108,11 @@ public class StringConverter {
     Date date =
         converters
             .getDateTimeConverter()
-            .getDate(obj, columnType, columnSubType, TimeZone.getTimeZone("UTC"), scale);
+            .getDate(obj,
+              columnType,
+              columnSubType,
+              this.session.getUseSessionTimezone() ? sessionTimeZone : TimeZone.getDefault(),
+              scale);
 
     if (dateFormatter == null) {
       throw new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter");
