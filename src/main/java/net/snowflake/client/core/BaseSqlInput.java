@@ -4,7 +4,6 @@
 
 package net.snowflake.client.core;
 
-
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
