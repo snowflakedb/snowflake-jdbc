@@ -363,13 +363,13 @@ public class RestRequestTest {
   public void testExceptionAuthBasedTimeoutFor429ErrorCode() throws IOException {
     CloseableHttpClient client = mock(CloseableHttpClient.class);
     when(client.execute(any(HttpUriRequest.class)))
-            .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryLoginResponse());
+        .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryLoginResponse());
 
     try {
       execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false);
     } catch (SnowflakeSQLException ex) {
       assertThat(
-              ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
+          ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
     }
   }
 
