@@ -31,7 +31,6 @@ import java.util.TimeZone;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.structs.StructureTypeHelper;
 
 /** Snowflake ResultSet implementation */
 public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
@@ -273,7 +272,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   }
 
   public Array getArray(int columnIndex) throws SQLException {
-    if (!StructureTypeHelper.isStructureTypeEnabled()) {
+    if (resultSetMetaData.getSfResultSetMetaData().isStructuredTypeColumn(columnIndex)) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
     raiseSQLExceptionIfResultSetIsClosed();

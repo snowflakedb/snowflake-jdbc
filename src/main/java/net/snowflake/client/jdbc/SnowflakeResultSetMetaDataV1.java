@@ -249,4 +249,8 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   public int getColumnDisplaySize(int column) throws SQLException {
     return resultSetMetaData.getColumnDisplaySize(column);
   }
+
+  public SFResultSetMetaData getSfResultSetMetaData() {
+    return resultSetMetaData;
+  }
 }

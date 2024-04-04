@@ -27,7 +27,6 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.ThrowingConsumer;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
-import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
