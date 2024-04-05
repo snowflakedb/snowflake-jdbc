@@ -13,10 +13,12 @@ import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -115,6 +117,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   public Array getArray(int columnIndex) throws SFException {
     Object obj = getObjectInternal(columnIndex);
+    if (obj == null) {
+      return null;
+    }
     return getJsonArray((String) obj, columnIndex);
   }
 
@@ -249,8 +254,12 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @Override
   @SnowflakeJdbcInternalApi
   public SQLInput createSqlInputForColumn(
-      Object input, Class<?> parentObjectClass, int columnIndex, SFBaseSession session) {
-    return createJsonSqlInputForColumn(input, columnIndex, session);
+      Object input,
+      Class<?> parentObjectClass,
+      int columnIndex,
+      SFBaseSession session,
+      List<FieldMetadata> fields) {
+    return createJsonSqlInputForColumn(input, columnIndex, session, fields);
   }
 
   @Override

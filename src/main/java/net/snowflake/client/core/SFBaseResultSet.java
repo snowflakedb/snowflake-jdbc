@@ -236,7 +236,11 @@ public abstract class SFBaseResultSet {
 
   @SnowflakeJdbcInternalApi
   public SQLInput createSqlInputForColumn(
-      Object input, Class<?> parentObjectClass, int columnIndex, SFBaseSession session) {
+      Object input,
+      Class<?> parentObjectClass,
+      int columnIndex,
+      SFBaseSession session,
+      List<FieldMetadata> fields) {
     throw new UnsupportedOperationException();
   }
 
@@ -258,19 +262,14 @@ public abstract class SFBaseResultSet {
 
   @SnowflakeJdbcInternalApi
   protected SQLInput createJsonSqlInputForColumn(
-      Object input, int columnIndex, SFBaseSession session) {
+      Object input, int columnIndex, SFBaseSession session, List<FieldMetadata> fields) {
     JsonNode inputNode;
     if (input instanceof JsonNode) {
       inputNode = (JsonNode) input;
     } else {
       inputNode = OBJECT_MAPPER.convertValue(input, JsonNode.class);
     }
-    return new JsonSqlInput(
-        inputNode,
-        session,
-        getConverters(),
-        resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
-        sessionTimeZone);
+    return new JsonSqlInput(inputNode, session, getConverters(), fields, sessionTimeZone);
   }
 
   @SnowflakeJdbcInternalApi

@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.15.1-SNAPSHOT</version>
+  <version>3.15.1</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -64,7 +64,7 @@
     <metrics.version>2.2.0</metrics.version>
     <mockito.version>4.11.0</mockito.version>
     <netty.version>4.1.100.Final</netty.version>
-    <nimbusds.version>9.21</nimbusds.version>
+    <nimbusds.version>9.37.3</nimbusds.version>
     <opencensus.version>0.31.1</opencensus.version>
     <plexus.container.version>1.0-alpha-9-stable-1</plexus.container.version>
     <plexus.utils.version>3.4.2</plexus.utils.version>
