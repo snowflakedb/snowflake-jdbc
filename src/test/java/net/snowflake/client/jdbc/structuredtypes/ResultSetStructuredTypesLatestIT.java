@@ -20,6 +20,7 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -380,12 +381,20 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMapOfTimestampsNtz() throws SQLException {
     withFirstRow(
-        "SELECT {'x': TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), 'y': TO_TIMESTAMP_NTZ('2021-12-24 09:55:55')}::MAP(VARCHAR, TIMESTAMP)",
+        "SELECT {'x': TO_TIMESTAMP_NTZ('2021-12-23 09:44:45'), 'y': TO_TIMESTAMP_NTZ('2021-12-24 09:55:55')}::MAP(VARCHAR, TIMESTAMP)",
         (resultSet) -> {
           Map<String, Timestamp> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
-          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), map.get("x"));
-          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 9, 55, 55)), map.get("y"));
+          assertEquals(
+              LocalDateTime.of(2021, 12, 23, 9, 44, 45)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("x").toInstant());
+          assertEquals(
+              LocalDateTime.of(2021, 12, 24, 9, 55, 55)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("y").toInstant());
         });
   }
 
