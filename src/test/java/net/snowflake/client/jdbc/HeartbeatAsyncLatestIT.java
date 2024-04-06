@@ -8,12 +8,14 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.Properties;
 import java.util.logging.Logger;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.QueryStatus;
+import static org.awaitility.Awaitility.await;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -54,15 +56,12 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
               .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 5))");
       Thread.sleep(61000); // sleep 61 seconds to await original session expiration time
       QueryStatus qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
-      int retry = 0;
-      int MAX_RETRY = 20;
       // Ensure query succeeded. Avoid flaky test failure by waiting until query is complete to
       // assert the query status is a success.
-      while (QueryStatus.isStillRunning(qs) && retry < MAX_RETRY) {
-        Thread.sleep(3000);
-        retry++;
-        qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
-      }
+      SnowflakeResultSet rs = resultSet.unwrap(SnowflakeResultSet.class);
+      await()
+        .atMost(Duration.ofSeconds(60))
+        .until(() -> !QueryStatus.isStillRunning(rs.getStatus()));
       // Query should succeed eventually. Assert this is the case.
       assertEquals(QueryStatus.SUCCESS, qs);
 

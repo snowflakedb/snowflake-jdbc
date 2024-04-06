@@ -4,6 +4,7 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AnyOf.anyOf;
 
@@ -14,6 +15,7 @@ import java.net.URL;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +25,8 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import static org.awaitility.Awaitility.await;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -167,21 +171,15 @@ public class SFTrustManagerIT extends BaseJDBCTest {
   }
 
   private static void accessHost(String host, HttpClient client) throws IOException {
-    final int maxRetry = 10;
     int statusCode = -1;
-    for (int retry = 0; retry < maxRetry; ++retry) {
-      HttpGet httpRequest = new HttpGet(String.format("https://%s:443/", host));
-      HttpResponse response = client.execute(httpRequest);
-      statusCode = response.getStatusLine().getStatusCode();
-      if (statusCode != 503 && statusCode != 504) {
-        break;
-      }
-      try {
-        Thread.sleep(1000L);
-      } catch (InterruptedException ex) {
-        // nop
-      }
-    }
+
+    HttpGet httpRequest = new HttpGet(String.format("https://%s:443/", host));
+    HttpResponse response = client.execute(httpRequest);
+    statusCode = response.getStatusLine().getStatusCode();
+
+    await()
+      .atMost(Duration.ofSeconds(10))
+      .until(() -> response.getStatusLine().getStatusCode(), not(equalTo(-1)));
     assertThat(
         String.format("response code for %s", host),
         statusCode,
