@@ -10,9 +10,9 @@ import static net.snowflake.client.jdbc.ConnectionIT.WAIT_FOR_TELEMETRY_REPORT_I
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AnyOf.anyOf;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -263,8 +263,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     SnowflakeResultSet sfrs = rs1.unwrap(SnowflakeResultSet.class);
     await()
-      .atMost(Duration.ofSeconds(5))
-      .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
+        .atMost(Duration.ofSeconds(5))
+        .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
     statusV2 = sfrs.getStatusV2();
     // Query should take 60 seconds so should be running
     assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
@@ -300,11 +300,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // when GS response is slow, allow up to 1 second of retries to get final query status
     SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
     await()
-      .atMost(10, TimeUnit.SECONDS)
-      .until(() -> {
-        QueryStatus qs = sfrs1.getStatusV2().getStatus();
-        return !(qs == QueryStatus.NO_DATA || qs == QueryStatus.RUNNING);
-      });
+        .atMost(10, TimeUnit.SECONDS)
+        .until(
+            () -> {
+              QueryStatus qs = sfrs1.getStatusV2().getStatus();
+              return !(qs == QueryStatus.NO_DATA || qs == QueryStatus.RUNNING);
+            });
     // If GS response is too slow to return data, do nothing to avoid flaky test failure. If
     // response has returned,
     // assert it is the error message that we are expecting.

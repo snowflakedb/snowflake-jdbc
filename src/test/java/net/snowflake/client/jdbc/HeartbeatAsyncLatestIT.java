@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -15,7 +16,6 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.QueryStatus;
-import static org.awaitility.Awaitility.await;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -60,8 +60,8 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
       // assert the query status is a success.
       SnowflakeResultSet rs = resultSet.unwrap(SnowflakeResultSet.class);
       await()
-        .atMost(Duration.ofSeconds(60))
-        .until(() -> !QueryStatus.isStillRunning(rs.getStatus()));
+          .atMost(Duration.ofSeconds(60))
+          .until(() -> !QueryStatus.isStillRunning(rs.getStatus()));
       // Query should succeed eventually. Assert this is the case.
       assertEquals(QueryStatus.SUCCESS, qs);
 

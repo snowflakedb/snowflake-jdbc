@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -25,8 +26,6 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import static org.awaitility.Awaitility.await;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -178,8 +177,8 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     statusCode = response.getStatusLine().getStatusCode();
 
     await()
-      .atMost(Duration.ofSeconds(10))
-      .until(() -> response.getStatusLine().getStatusCode(), not(equalTo(-1)));
+        .atMost(Duration.ofSeconds(10))
+        .until(() -> response.getStatusLine().getStatusCode(), not(equalTo(-1)));
     assertThat(
         String.format("response code for %s", host),
         statusCode,
