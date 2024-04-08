@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
@@ -476,5 +477,18 @@ public class SFResultSetMetaData {
   @SnowflakeJdbcInternalApi
   public List<SnowflakeColumnMetadata> getColumnMetadata() {
     return columnMetadata;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public List<FieldMetadata> getColumnFields(int column) throws SFException {
+    if (column < 1 || column > columnMetadata.size()) {
+      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
+    }
+
+    if (columnMetadata.get(column - 1) == null) {
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column fields for column " + column);
+    }
+
+    return columnMetadata.get(column - 1).getFields();
   }
 }
