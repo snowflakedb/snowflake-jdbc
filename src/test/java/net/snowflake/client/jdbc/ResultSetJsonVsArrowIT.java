@@ -106,20 +106,22 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   @Test
   public void testGSResultScan() throws SQLException {
     Connection con = init();
+    String queryId = null;
     try (Statement statement = con.createStatement()) {
       statement.execute("create or replace table t (a text)");
       statement.execute("insert into t values ('test')");
       try (ResultSet rs = statement.executeQuery("select count(*) from t;")) {
         rs.next();
         assertEquals(1, rs.getInt(1));
-        String queryId = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-        rs =
-            con.createStatement()
-                .executeQuery("select * from table(result_scan('" + queryId + "'))");
-        rs.next();
-        assertEquals(1, rs.getInt(1));
+        queryId = rs.unwrap(SnowflakeResultSet.class).getQueryID();
       }
-    }
+       try(ResultSet rs =
+            con.createStatement()
+                .executeQuery("select * from table(result_scan('" + queryId + "'))")) {
+         rs.next();
+         assertEquals(1, rs.getInt(1));
+       }
+      }
     finish("t", con);
   }
 
