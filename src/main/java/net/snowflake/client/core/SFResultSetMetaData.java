@@ -475,11 +475,6 @@ public class SFResultSetMetaData {
   }
 
   @SnowflakeJdbcInternalApi
-  public List<SnowflakeColumnMetadata> getColumnMetadata() {
-    return columnMetadata;
-  }
-
-  @SnowflakeJdbcInternalApi
   public List<FieldMetadata> getColumnFields(int column) throws SFException {
     if (column < 1 || column > columnMetadata.size()) {
       throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);

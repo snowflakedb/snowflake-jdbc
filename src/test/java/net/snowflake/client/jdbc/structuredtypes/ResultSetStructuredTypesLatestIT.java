@@ -651,11 +651,11 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
+  public void testColumnTypeWhenStructureTypeIsNotreturned() throws Exception {
     withStructureTypeTemporaryDisabled(
         () -> {
           withFirstRow(
-              "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
+              "SELECT {'string':'a'}",
               resultSet -> {
                 assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
               });
@@ -664,7 +664,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testColumnTypeAndFieldsWhenStructureTypeIsEnabled() throws Exception {
+  public void testColumnTypeAndFieldsWhenStructureTypeIsReturned() throws Exception {
     withStructureTypeTemporaryEnabled(
         () -> {
           withFirstRow(
