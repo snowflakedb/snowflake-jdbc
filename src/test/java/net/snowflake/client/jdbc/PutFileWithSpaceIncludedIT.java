@@ -49,9 +49,9 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
     TarArchiveEntry tarEntry;
     while ((tarEntry = tis.getNextTarEntry()) != null) {
       File outputFile = new File(dataFolder, tarEntry.getName());
-      FileOutputStream fos = new FileOutputStream(outputFile);
-      IOUtils.copy(tis, fos);
-      fos.close();
+      try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+        IOUtils.copy(tis, fos);
+      }
     }
 
     try (Connection con = getConnection()) {
@@ -66,13 +66,12 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
                   + AWS_SECRET_KEY
                   + "')");
 
-      {
-        ResultSet resultSet =
-            con.createStatement()
-                .executeQuery(
-                    "put file://"
-                        + dataFolder.getCanonicalPath()
-                        + "/* @snow13400 auto_compress=false");
+      try (ResultSet resultSet =
+          con.createStatement()
+              .executeQuery(
+                  "put file://"
+                      + dataFolder.getCanonicalPath()
+                      + "/* @snow13400 auto_compress=false")) {
         int cnt = 0;
         while (resultSet.next()) {
           cnt++;
@@ -81,8 +80,7 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
       }
       con.createStatement().execute("create or replace table snow13400(a string)");
       con.createStatement().execute("copy into snow13400 from @snow13400");
-      {
-        ResultSet resultSet = con.createStatement().executeQuery("select * from snow13400");
+      try (ResultSet resultSet = con.createStatement().executeQuery("select * from snow13400")) {
         int cnt = 0;
         String output = null;
         while (resultSet.next()) {

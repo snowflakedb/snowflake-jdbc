@@ -44,16 +44,16 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
   public static Connection getConnection(int injectSocketTimeout) throws SQLException {
     Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
 
-    Statement statement = connection.createStatement();
-    statement.execute(
-        "alter session set "
-            + "TIMEZONE='America/Los_Angeles',"
-            + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
-            + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-            + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-            + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-            + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-    statement.close();
+    try (Statement statement = connection.createStatement()) {
+      statement.execute(
+          "alter session set "
+              + "TIMEZONE='America/Los_Angeles',"
+              + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
+              + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
+              + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
+              + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
+              + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+    }
     return connection;
   }
 
@@ -65,10 +65,11 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
 
   private Connection init(String table, String column, String values) throws SQLException {
     Connection con = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    con.createStatement()
-        .execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    con.createStatement().execute("create or replace table " + table + " " + column);
-    con.createStatement().execute("insert into " + table + " values " + values);
+    try (Statement statement = con.createStatement()) {
+      statement.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+      statement.execute("create or replace table " + table + " " + column);
+      statement.execute("insert into " + table + " values " + values);
+    }
     return con;
   }
 
@@ -117,19 +118,20 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     Connection con = init(table, column, values);
-    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
-    int i = 0;
-    while (i < cases.length) {
-      rs.next();
-      if (i == cases.length - 2) {
-        assertEquals("0001-01-01", rs.getDate(1).toString());
-      } else {
-        assertEquals(cases[i], rs.getDate(1).toString());
+    try (ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
+      int i = 0;
+      while (i < cases.length) {
+        rs.next();
+        if (i == cases.length - 2) {
+          assertEquals("0001-01-01", rs.getDate(1).toString());
+        } else {
+          assertEquals(cases[i], rs.getDate(1).toString());
+        }
+        i++;
       }
-      i++;
+      rs.next();
+      assertNull(rs.getString(1));
     }
-    rs.next();
-    assertNull(rs.getString(1));
     finish(table, con);
   }
 
@@ -138,15 +140,16 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a time(" + scale + "))";
     String values = "('" + StringUtils.join(times, "'),('") + "'), (null)";
 
-    Connection con = init(table, column, values);
-    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
-    for (int i = 0; i < times.length; i++) {
+    try (Connection con = init(table, column, values);
+        ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
+      for (int i = 0; i < times.length; i++) {
+        rs.next();
+        // Java Time class does not have nanoseconds
+        assertEquals("00:01:23", rs.getString(1));
+      }
       rs.next();
-      // Java Time class does not have nanoseconds
-      assertEquals("00:01:23", rs.getString(1));
+      assertNull(rs.getTime(1));
     }
-    rs.next();
-    assertNull(rs.getTime(1));
   }
 
   @Test
@@ -185,14 +188,15 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     Connection con = init(table, column, values);
-    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
-    int i = 0;
-    while (i < cases.length) {
+    try (ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
+      int i = 0;
+      while (i < cases.length) {
+        rs.next();
+        assertEquals(results[i++], rs.getString(1));
+      }
       rs.next();
-      assertEquals(results[i++], rs.getString(1));
+      assertNull(rs.getString(1));
     }
-    rs.next();
-    assertNull(rs.getString(1));
     finish(table, con);
   }
 
@@ -215,14 +219,15 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     Connection con = init(table, column, values);
-    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
-    int i = 0;
-    while (i < cases.length) {
+    try (ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
+      int i = 0;
+      while (i < cases.length) {
+        rs.next();
+        assertEquals(cases[i++], rs.getTimestamp(1).toString());
+      }
       rs.next();
-      assertEquals(cases[i++], rs.getTimestamp(1).toString());
+      assertNull(rs.getString(1));
     }
-    rs.next();
-    assertNull(rs.getString(1));
     finish(table, con);
   }
 }

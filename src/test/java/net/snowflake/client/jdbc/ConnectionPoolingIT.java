@@ -50,21 +50,19 @@ public class ConnectionPoolingIT {
 
   @Before
   public void setUp() throws SQLException {
-    Connection connection = BaseJDBCTest.getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute("create or replace table test_pooling(colA string)");
-    statement.execute("insert into test_pooling values('test_str')");
-    statement.close();
-    connection.close();
+    try (Connection connection = BaseJDBCTest.getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table test_pooling(colA string)");
+      statement.execute("insert into test_pooling values('test_str')");
+    }
   }
 
   @After
   public void tearDown() throws SQLException {
-    Connection connection = BaseJDBCTest.getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute("drop table if exists TEST_POOLING");
-    statement.close();
-    connection.close();
+    try (Connection connection = BaseJDBCTest.getConnection();
+        Statement statement = connection.createStatement(); ) {
+      statement.execute("drop table if exists TEST_POOLING");
+    }
   }
 
   /*  Testing DBCP Library */
@@ -185,11 +183,11 @@ public class ConnectionPoolingIT {
           con = hds.getConnection();
         }
 
-        Statement st = con.createStatement();
-        ResultSet resultSet = st.executeQuery("SELECT * FROM test_pooling");
-
-        while (resultSet.next()) {
-          assertEquals("test_str", resultSet.getString(1));
+        try (Statement st = con.createStatement();
+            ResultSet resultSet = st.executeQuery("SELECT * FROM test_pooling")) {
+          while (resultSet.next()) {
+            assertEquals("test_str", resultSet.getString(1));
+          }
         }
       } catch (Exception e) {
         System.out.println(e);

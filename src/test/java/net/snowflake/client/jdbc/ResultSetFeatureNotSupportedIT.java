@@ -20,8 +20,9 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
   public void testQueryResultSetNotSupportedException() throws Throwable {
     try (Connection connection = getConnection()) {
       try (Statement statement = connection.createStatement()) {
-        ResultSet resultSet = statement.executeQuery("select 1");
-        checkFeatureNotSupportedException(resultSet);
+        try (ResultSet resultSet = statement.executeQuery("select 1")) {
+          checkFeatureNotSupportedException(resultSet);
+        }
       }
     }
   }

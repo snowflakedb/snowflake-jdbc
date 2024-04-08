@@ -106,13 +106,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // Disable QCC via prop
     Properties props = new Properties();
     props.put("disableQueryContextCache", "true");
-    Connection con = getConnection(props);
-    Statement statement = con.createStatement();
-    statement.execute("select 1");
-    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    // if QCC disable, this should be null
-    assertNull(session.getQueryContextDTO());
-    con.close();
+    try (Connection con = getConnection(props);
+        Statement statement = con.createStatement()) {
+      statement.execute("select 1");
+      SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      // if QCC disable, this should be null
+      assertNull(session.getQueryContextDTO());
+    }
   }
 
   /**
@@ -123,21 +123,22 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   public void testHeartbeatFrequencyValidValue() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 1800);
-    Connection connection = getConnection(paramProperties);
+    try (Connection connection = getConnection(paramProperties)) {
+      for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
+        String key = (String) enums.nextElement();
+        try (ResultSet rs =
+            connection
+                .createStatement()
+                .executeQuery(String.format("show parameters like '%s'", key))) {
+          rs.next();
+          String value = rs.getString("value");
 
-    for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
-      String key = (String) enums.nextElement();
-      ResultSet rs =
-          connection
-              .createStatement()
-              .executeQuery(String.format("show parameters like '%s'", key));
-      rs.next();
-      String value = rs.getString("value");
-
-      assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+          assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+        }
+      }
+      SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      assertEquals(1800, session.getHeartbeatFrequency());
     }
-    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    assertEquals(1800, session.getHeartbeatFrequency());
   }
 
   /**
@@ -148,22 +149,23 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   public void testHeartbeatFrequencyTooSmall() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 2);
-    Connection connection = getConnection(paramProperties);
+    try (Connection connection = getConnection(paramProperties)) {
+      for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
+        String key = (String) enums.nextElement();
+        try (ResultSet rs =
+            connection
+                .createStatement()
+                .executeQuery(String.format("show parameters like '%s'", key))) {
+          rs.next();
+          String value = rs.getString("value");
 
-    for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
-      String key = (String) enums.nextElement();
-      ResultSet rs =
-          connection
-              .createStatement()
-              .executeQuery(String.format("show parameters like '%s'", key));
-      rs.next();
-      String value = rs.getString("value");
+          assertThat(key, value, equalTo("900"));
+        }
+      }
 
-      assertThat(key, value, equalTo("900"));
+      SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      assertEquals(900, session.getHeartbeatFrequency());
     }
-
-    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    assertEquals(900, session.getHeartbeatFrequency());
   }
 
   /**
@@ -176,33 +178,38 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void putGetStatementsHaveQueryID() throws Throwable {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-    File destFolder = tmpFolder.newFolder();
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-    SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
-    String createStageQueryId = snowflakeStatement.getQueryID();
-    TestUtil.assertValidQueryId(createStageQueryId);
-    String putStatement = "PUT file://" + sourceFilePath + " @testPutGet_stage";
-    ResultSet resultSet = snowflakeStatement.executeAsyncQuery(putStatement);
-    String statementPutQueryId = snowflakeStatement.getQueryID();
-    TestUtil.assertValidQueryId(statementPutQueryId);
-    assertNotEquals(
-        "create query id is override by put query id", createStageQueryId, statementPutQueryId);
-    String resultSetPutQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    TestUtil.assertValidQueryId(resultSetPutQueryId);
-    assertEquals(resultSetPutQueryId, statementPutQueryId);
-    resultSet =
-        snowflakeStatement.executeAsyncQuery(
-            "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
-    String statementGetQueryId = snowflakeStatement.getQueryID();
-    String resultSetGetQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    TestUtil.assertValidQueryId(resultSetGetQueryId);
-    assertNotEquals(
-        "put and get query id should be different", resultSetGetQueryId, resultSetPutQueryId);
-    assertEquals(resultSetGetQueryId, statementGetQueryId);
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+      File destFolder = tmpFolder.newFolder();
+      String destFolderCanonicalPath = destFolder.getCanonicalPath();
+      statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+      SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
+      String createStageQueryId = snowflakeStatement.getQueryID();
+      TestUtil.assertValidQueryId(createStageQueryId);
+      String putStatement = "PUT file://" + sourceFilePath + " @testPutGet_stage";
+      String resultSetPutQueryId = "";
+      try (ResultSet resultSet = snowflakeStatement.executeAsyncQuery(putStatement)) {
+        String statementPutQueryId = snowflakeStatement.getQueryID();
+        TestUtil.assertValidQueryId(statementPutQueryId);
+        assertNotEquals(
+            "create query id is override by put query id", createStageQueryId, statementPutQueryId);
+        resultSetPutQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+        TestUtil.assertValidQueryId(resultSetPutQueryId);
+        assertEquals(resultSetPutQueryId, statementPutQueryId);
+      }
+
+      try (ResultSet resultSet =
+          snowflakeStatement.executeAsyncQuery(
+              "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8")) {
+        String statementGetQueryId = snowflakeStatement.getQueryID();
+        String resultSetGetQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+        TestUtil.assertValidQueryId(resultSetGetQueryId);
+        assertNotEquals(
+            "put and get query id should be different", resultSetGetQueryId, resultSetPutQueryId);
+        assertEquals(resultSetGetQueryId, statementGetQueryId);
+      }
+    }
   }
 
   /** Added in > 3.14.4 */
@@ -250,145 +257,151 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   public void testAsyncQueryOpenAndCloseConnection()
       throws SQLException, IOException, InterruptedException {
     // open connection and run asynchronous query
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    ResultSet rs1 =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery("CALL SYSTEM$WAIT(60, 'SECONDS')");
-    // Retrieve query ID for part 2 of test, check status of query
-    String queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
     QueryStatusV2 statusV2 = null;
-    for (int retry = 0; retry < 5; ++retry) {
-      Thread.sleep(100);
-      statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
-      // Sometimes 100 millis is too short for GS to get query status with provided queryID, in
-      // which case we will get NO_DATA.
-      if (statusV2.getStatus() != QueryStatus.NO_DATA) {
-        break;
+    String queryID = null;
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement();
+        ResultSet rs1 =
+            statement
+                .unwrap(SnowflakeStatement.class)
+                .executeAsyncQuery("CALL SYSTEM$WAIT(60, 'SECONDS')")) {
+      // Retrieve query ID for part 2 of test, check status of query
+      queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
+
+      for (int retry = 0; retry < 5; ++retry) {
+        Thread.sleep(100);
+        statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
+        // Sometimes 100 millis is too short for GS to get query status with provided queryID, in
+        // which case we will get NO_DATA.
+        if (statusV2.getStatus() != QueryStatus.NO_DATA) {
+          break;
+        }
+      }
+      // Query should take 60 seconds so should be running
+      assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
+      assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
+    }
+    // close connection and wait for 1 minute while query finishes running
+    Thread.sleep(1000 * 60);
+    // Create a new connection and new instance of a resultSet using query ID
+    try (Connection con = getConnection()) {
+      try {
+        ResultSet rs =
+            con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID");
+        fail("Query ID should be rejected");
+      } catch (SQLException e) {
+        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+      }
+      try (ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID)) {
+        statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
+        // Assert status of query is a success
+        assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
+        assertEquals("No error reported", statusV2.getErrorMessage());
+        assertEquals(0, statusV2.getErrorCode());
+        assertEquals(1, getSizeOfResultSet(rs));
+      }
+      try (Statement statement = con.createStatement();
+          // Create another query that will not be successful (querying table that does not exist)
+          ResultSet rs1 =
+              statement
+                  .unwrap(SnowflakeStatement.class)
+                  .executeAsyncQuery("select * from nonexistentTable")) {
+        Thread.sleep(100);
+        statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
+        // when GS response is slow, allow up to 1 second of retries to get final query status
+        int counter = 0;
+        while ((statusV2.getStatus() == QueryStatus.NO_DATA
+                || statusV2.getStatus() == QueryStatus.RUNNING)
+            && counter < 10) {
+          counter++;
+          Thread.sleep(100);
+          statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
+        }
+        // If GS response is too slow to return data, do nothing to avoid flaky test failure. If
+        // response has returned,
+        // assert it is the error message that we are expecting.
+        if (statusV2.getStatus() != QueryStatus.NO_DATA) {
+          assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
+          assertEquals(2003, statusV2.getErrorCode());
+          assertEquals(
+              "SQL compilation error:\n"
+                  + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
+              statusV2.getErrorMessage());
+        }
       }
     }
-    // Query should take 60 seconds so should be running
-    assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
-    assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
-    // close connection and wait for 1 minute while query finishes running
-    statement.close();
-    con.close();
-    Thread.sleep(1000 * 70);
-    // Create a new connection and new instance of a resultSet using query ID
-    con = getConnection();
-    try {
-      ResultSet rs =
-          con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID");
-      fail("Query ID should be rejected");
-    } catch (SQLException e) {
-      assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-    }
-    ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID);
-    statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
-    // Assert status of query is a success
-    assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
-    assertEquals("No error reported", statusV2.getErrorMessage());
-    assertEquals(0, statusV2.getErrorCode());
-    assertEquals(1, getSizeOfResultSet(rs));
-    statement = con.createStatement();
-    // Create another query that will not be successful (querying table that does not exist)
-    rs1 =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery("select * from nonexistentTable");
-    Thread.sleep(100);
-    statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
-    // when GS response is slow, allow up to 1 second of retries to get final query status
-    int counter = 0;
-    while ((statusV2.getStatus() == QueryStatus.NO_DATA
-            || statusV2.getStatus() == QueryStatus.RUNNING)
-        && counter < 10) {
-      counter++;
-      Thread.sleep(100);
-      statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
-    }
-    // If GS response is too slow to return data, do nothing to avoid flaky test failure. If
-    // response has returned,
-    // assert it is the error message that we are expecting.
-    if (statusV2.getStatus() != QueryStatus.NO_DATA) {
-      assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
-      assertEquals(2003, statusV2.getErrorCode());
-      assertEquals(
-          "SQL compilation error:\n"
-              + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
-          statusV2.getErrorMessage());
-    }
-    statement.close();
-    con.close();
   }
 
   @Test
   public void testGetErrorMessageFromAsyncQuery() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    // Create another query that will not be successful (querying table that does not exist)
-    ResultSet rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("bad query!");
-    try {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      // Create another query that will not be successful (querying table that does not exist)
+      ResultSet rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("bad query!");
+      try {
+        rs1.next();
+      } catch (SQLException ex) {
+        assertEquals(
+            "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
+                + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
+            ex.getMessage());
+        assertEquals(
+            "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
+            rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+      }
+      rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1");
       rs1.next();
-    } catch (SQLException ex) {
+      // Assert there is no error message when query is successful
       assertEquals(
-          "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
-              + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
-          ex.getMessage());
-      assertEquals(
-          "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
-          rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+          "No error reported", rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+      rs1.close();
     }
-    rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1");
-    rs1.next();
-    // Assert there is no error message when query is successful
-    assertEquals("No error reported", rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
-    rs1.close();
-    statement.close();
-    con.close();
   }
 
   @Test
   public void testAsyncAndSynchronousQueries() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    // execute some statements that you want to be synchronous
-    statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
-    statement.execute("create or replace table smallTable (colA string, colB int)");
-    statement.execute("create or replace table uselessTable (colA string, colB int)");
-    statement.execute("insert into smallTable values ('row1', 1), ('row2', 2), ('row3', 3)");
-    statement.execute("insert into uselessTable values ('row1', 1), ('row2', 2), ('row3', 3)");
-    // Select from uselessTable asynchronously; drop it synchronously afterwards
-    ResultSet rs =
-        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from smallTable");
-    // execute a query that you don't want to wait for
-    ResultSet rs1 =
-        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from uselessTable");
-    // Drop the table that was queried asynchronously. Should not drop until after async query
-    // finishes, because this
-    // query IS synchronous
-    ResultSet rs2 = statement.executeQuery("drop table uselessTable");
-    while (rs2.next()) {
-      assertEquals("USELESSTABLE successfully dropped.", rs2.getString(1));
-    }
-    // able to successfully fetch results in spite of table being dropped
-    assertEquals(3, getSizeOfResultSet(rs1));
-    statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      // execute some statements that you want to be synchronous
+      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
+      statement.execute("create or replace table smallTable (colA string, colB int)");
+      statement.execute("create or replace table uselessTable (colA string, colB int)");
+      statement.execute("insert into smallTable values ('row1', 1), ('row2', 2), ('row3', 3)");
+      statement.execute("insert into uselessTable values ('row1', 1), ('row2', 2), ('row3', 3)");
+      // Select from uselessTable asynchronously; drop it synchronously afterwards
+      try (ResultSet rs =
+              statement
+                  .unwrap(SnowflakeStatement.class)
+                  .executeAsyncQuery("select * from smallTable");
+          // execute a query that you don't want to wait for
+          ResultSet rs1 =
+              statement
+                  .unwrap(SnowflakeStatement.class)
+                  .executeAsyncQuery("select * from uselessTable");
+          // Drop the table that was queried asynchronously. Should not drop until after async query
+          // finishes, because this
+          // query IS synchronous
+          ResultSet rs2 = statement.executeQuery("drop table uselessTable")) {
+        while (rs2.next()) {
+          assertEquals("USELESSTABLE successfully dropped.", rs2.getString(1));
+        }
+        // able to successfully fetch results in spite of table being dropped
+        assertEquals(3, getSizeOfResultSet(rs1));
+        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
 
-    // come back to the asynchronously executed result set after finishing other things
-    rs.next();
-    assertEquals(rs.getString(1), "row1");
-    assertEquals(rs.getInt(2), 1);
-    rs.next();
-    assertEquals(rs.getString(1), "row2");
-    assertEquals(rs.getInt(2), 2);
-    rs.next();
-    assertEquals(rs.getString(1), "row3");
-    assertEquals(rs.getInt(2), 3);
-    statement.execute("drop table smallTable");
-    statement.close();
-    con.close();
+        // come back to the asynchronously executed result set after finishing other things
+        rs.next();
+        assertEquals(rs.getString(1), "row1");
+        assertEquals(rs.getInt(2), 1);
+        rs.next();
+        assertEquals(rs.getString(1), "row2");
+        assertEquals(rs.getInt(2), 2);
+        rs.next();
+        assertEquals(rs.getString(1), "row3");
+        assertEquals(rs.getInt(2), 3);
+        statement.execute("drop table smallTable");
+      }
+    }
   }
 
   /** Can be used in > 3.14.4 (when {@link QueryStatusV2} was added) */

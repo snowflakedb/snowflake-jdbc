@@ -100,50 +100,53 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     String values = "('" + StringUtils.join(cases, "'),('") + "')";
     Connection con = init(table, column, values);
 
-    Statement statement = con.createStatement();
+    try (Statement statement = con.createStatement()) {
 
-    // use initialized ltz output format
-    ResultSet rs = statement.executeQuery("select * from " + table);
-    for (int i = 0; i < cases.length; i++) {
-      rs.next();
-      assertEquals(times[i], rs.getTimestamp(1).getTime());
-      String weekday = rs.getString(1).split(",")[0];
-      assertEquals(3, weekday.length());
+      // use initialized ltz output format
+      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
+        for (int i = 0; i < cases.length; i++) {
+          rs.next();
+          assertEquals(times[i], rs.getTimestamp(1).getTime());
+          String weekday = rs.getString(1).split(",")[0];
+          assertEquals(3, weekday.length());
+        }
+      }
+      // change ltz output format
+      statement.execute(
+          "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS TZH:TZM'");
+      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
+        for (int i = 0; i < cases.length; i++) {
+          rs.next();
+          assertEquals(times[i], rs.getTimestamp(1).getTime());
+          String year = rs.getString(1).split("-")[0];
+          assertEquals(4, year.length());
+        }
+      }
+
+      // unset ltz output format, then it should use timestamp_output_format
+      statement.execute("alter session unset TIMESTAMP_LTZ_OUTPUT_FORMAT");
+      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
+        for (int i = 0; i < cases.length; i++) {
+          rs.next();
+          assertEquals(times[i], rs.getTimestamp(1).getTime());
+          String weekday = rs.getString(1).split(",")[0];
+          assertEquals(3, weekday.length());
+        }
+      }
+      // set ltz output format back to init value
+      statement.execute(
+          "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
+        for (int i = 0; i < cases.length; i++) {
+          rs.next();
+          assertEquals(times[i], rs.getTimestamp(1).getTime());
+          String weekday = rs.getString(1).split(",")[0];
+          assertEquals(3, weekday.length());
+        }
+      }
     }
-
-    // change ltz output format
-    statement.execute(
-        "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS TZH:TZM'");
-    rs = statement.executeQuery("select * from " + table);
-    for (int i = 0; i < cases.length; i++) {
-      rs.next();
-      assertEquals(times[i], rs.getTimestamp(1).getTime());
-      String year = rs.getString(1).split("-")[0];
-      assertEquals(4, year.length());
-    }
-
-    // unset ltz output format, then it should use timestamp_output_format
-    statement.execute("alter session unset TIMESTAMP_LTZ_OUTPUT_FORMAT");
-    rs = statement.executeQuery("select * from " + table);
-    for (int i = 0; i < cases.length; i++) {
-      rs.next();
-      assertEquals(times[i], rs.getTimestamp(1).getTime());
-      String weekday = rs.getString(1).split(",")[0];
-      assertEquals(3, weekday.length());
-    }
-
-    // set ltz output format back to init value
-    statement.execute(
-        "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-    rs = statement.executeQuery("select * from " + table);
-    for (int i = 0; i < cases.length; i++) {
-      rs.next();
-      assertEquals(times[i], rs.getTimestamp(1).getTime());
-      String weekday = rs.getString(1).split(",")[0];
-      assertEquals(3, weekday.length());
-    }
-
     finish(table, con);
+    // ??
   }
 
   @Test

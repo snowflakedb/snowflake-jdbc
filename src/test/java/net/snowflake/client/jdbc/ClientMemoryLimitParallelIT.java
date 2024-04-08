@@ -64,16 +64,17 @@ public class ClientMemoryLimitParallelIT {
 
   @Before
   public void setUp() throws SQLException {
-    Connection con = getConnection();
-    con.createStatement().execute(createTestTableSQL);
-    con.close();
+    try (Connection con = getConnection()) {
+      con.createStatement().execute(createTestTableSQL);
+    }
   }
 
   @After
   public void tearDown() throws SQLException {
-    Connection con = getConnection();
-    con.createStatement().execute("drop table if exists testtable_cml");
-    con.close();
+    try (Connection con = getConnection()) {
+      con.createStatement().execute("drop table if exists testtable_cml");
+    }
+    ;
   }
 
   /**
@@ -88,14 +89,10 @@ public class ClientMemoryLimitParallelIT {
           public void run() {
             try {
               Properties paramProperties = new Properties();
-              Connection connection = getConnection(paramProperties);
-              // create statement
-              Statement statement = connection.createStatement();
-
-              queryRows(statement, 100, 48);
-              // close
-              statement.close();
-              connection.close();
+              try (Connection connection = getConnection(paramProperties);
+                  Statement statement = connection.createStatement()) {
+                queryRows(statement, 100, 48);
+              }
             } catch (SQLException e) {
               // do not expect exception in test
               assertEquals(null, e);
@@ -128,14 +125,10 @@ public class ClientMemoryLimitParallelIT {
   @Test
   public void testQueryNotHanging() throws SQLException {
     Properties paramProperties = new Properties();
-    Connection connection = getConnection(paramProperties);
-    // create statement
-    Statement statement = connection.createStatement();
-
-    queryRows(statement, 100, 160);
-    // close
-    statement.close();
-    connection.close();
+    try (Connection connection = getConnection(paramProperties);
+        Statement statement = connection.createStatement()) {
+      queryRows(statement, 100, 160);
+    }
   }
 
   private static void queryRows(Statement stmt, int limit, int chunkSize) throws SQLException {

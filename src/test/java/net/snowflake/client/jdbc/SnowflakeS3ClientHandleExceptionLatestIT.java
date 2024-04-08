@@ -50,9 +50,10 @@ public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   public void setup() throws SQLException {
     connection = getConnection("s3testaccount");
     sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    Statement statement = connection.createStatement();
-    sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
-    statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+    try (Statement statement = connection.createStatement()) {
+      sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+      statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+    }
     command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage";
     SnowflakeFileTransferAgent agent =
         new SnowflakeFileTransferAgent(command, sfSession, sfStatement);

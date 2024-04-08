@@ -32,23 +32,24 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
     try (Connection con = getConnection()) {
       long expectedUpdateRows = (long) Integer.MAX_VALUE + 10L;
       con.createStatement().execute("create or replace table  test_large_update(c1 boolean)");
-      PreparedStatement st =
-          con.prepareStatement(
-              "insert into test_large_update select true from table(generator(rowcount=>"
-                  + expectedUpdateRows
-                  + "))");
-      PreparedStatement spyp = spy(st);
-      // Mock internal method which returns rowcount
-      Mockito.doReturn(expectedUpdateRows)
-          .when((SnowflakePreparedStatementV1) spyp)
-          .executeUpdateInternal(
-              Mockito.any(String.class),
-              Mockito.any(Map.class),
-              Mockito.any(boolean.class),
-              Mockito.any(ExecTimeTelemetryData.class));
-      long updatedRows = spyp.executeLargeUpdate();
-      assertEquals(expectedUpdateRows, updatedRows);
-      con.createStatement().execute("drop table if exists test_large_update");
+      try (PreparedStatement st =
+              con.prepareStatement(
+                  "insert into test_large_update select true from table(generator(rowcount=>"
+                      + expectedUpdateRows
+                      + "))");
+          PreparedStatement spyp = spy(st)) {
+        // Mock internal method which returns rowcount
+        Mockito.doReturn(expectedUpdateRows)
+            .when((SnowflakePreparedStatementV1) spyp)
+            .executeUpdateInternal(
+                Mockito.any(String.class),
+                Mockito.any(Map.class),
+                Mockito.any(boolean.class),
+                Mockito.any(ExecTimeTelemetryData.class));
+        long updatedRows = spyp.executeLargeUpdate();
+        assertEquals(expectedUpdateRows, updatedRows);
+        con.createStatement().execute("drop table if exists test_large_update");
+      }
     }
   }
 
@@ -64,22 +65,24 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
       connection
           .createStatement()
           .execute("create or replace table over_int_table (val string, id int)");
-      PreparedStatement pstmt = connection.prepareStatement("UPDATE over_int_table SET ID=200");
-      PreparedStatement spyp = spy(pstmt);
-      long numRows = Integer.MAX_VALUE + 10L;
-      // Mock internal method which returns rowcount
-      Mockito.doReturn(numRows)
-          .when((SnowflakePreparedStatementV1) spyp)
-          .executeUpdateInternal(
-              Mockito.any(String.class),
-              Mockito.any(Map.class),
-              Mockito.any(boolean.class),
-              Mockito.any(ExecTimeTelemetryData.class));
-      pstmt.addBatch();
-      long[] queryResult = spyp.executeLargeBatch();
-      assertEquals(1, queryResult.length);
-      assertEquals(numRows, queryResult[0]);
-      connection.createStatement().execute("drop table if exists over_int_table");
+      try (PreparedStatement pstmt =
+              connection.prepareStatement("UPDATE over_int_table SET ID=200");
+          PreparedStatement spyp = spy(pstmt)) {
+        long numRows = Integer.MAX_VALUE + 10L;
+        // Mock internal method which returns rowcount
+        Mockito.doReturn(numRows)
+            .when((SnowflakePreparedStatementV1) spyp)
+            .executeUpdateInternal(
+                Mockito.any(String.class),
+                Mockito.any(Map.class),
+                Mockito.any(boolean.class),
+                Mockito.any(ExecTimeTelemetryData.class));
+        pstmt.addBatch();
+        long[] queryResult = spyp.executeLargeBatch();
+        assertEquals(1, queryResult.length);
+        assertEquals(numRows, queryResult[0]);
+        connection.createStatement().execute("drop table if exists over_int_table");
+      }
     }
   }
 }

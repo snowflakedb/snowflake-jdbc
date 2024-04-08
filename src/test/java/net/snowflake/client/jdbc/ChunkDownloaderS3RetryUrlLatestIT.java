@@ -27,33 +27,34 @@ import org.junit.experimental.categories.Category;
 @Category(TestCategoryOthers.class)
 public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
 
-  private Connection connection;
+  //  private Connection connection;
   private SFStatement sfStatement;
   private SFBaseSession sfBaseSession;
   private ChunkDownloadContext sfContext;
 
   @Before
   public void setup() throws SQLException, InterruptedException {
-    connection = getConnection();
-    sfBaseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
-    Statement statement = connection.createStatement();
-    sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
-    int rowCount = 170000;
-    ResultSet rs =
-        statement.executeQuery(
-            "select randstr(100, random()) from table(generator(rowcount => " + rowCount + "))");
-    List<SnowflakeResultSetSerializable> resultSetSerializables =
-        ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
-    SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
-    SnowflakeChunkDownloader downloader =
-        new SnowflakeChunkDownloader((SnowflakeResultSetSerializableV1) resultSetSerializable);
-    SnowflakeResultChunk chunk = downloader.getNextChunkToConsume();
-    String qrmk = ((SnowflakeResultSetSerializableV1) resultSetSerializable).getQrmk();
-    Map<String, String> chunkHeadersMap =
-        ((SnowflakeResultSetSerializableV1) resultSetSerializable).getChunkHeadersMap();
-    sfContext =
-        new ChunkDownloadContext(
-            downloader, chunk, qrmk, 0, chunkHeadersMap, 0, 0, 0, 7, sfBaseSession);
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      sfBaseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+      sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+      int rowCount = 170000;
+      ResultSet rs =
+          statement.executeQuery(
+              "select randstr(100, random()) from table(generator(rowcount => " + rowCount + "))");
+      List<SnowflakeResultSetSerializable> resultSetSerializables =
+          ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
+      SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
+      SnowflakeChunkDownloader downloader =
+          new SnowflakeChunkDownloader((SnowflakeResultSetSerializableV1) resultSetSerializable);
+      SnowflakeResultChunk chunk = downloader.getNextChunkToConsume();
+      String qrmk = ((SnowflakeResultSetSerializableV1) resultSetSerializable).getQrmk();
+      Map<String, String> chunkHeadersMap =
+          ((SnowflakeResultSetSerializableV1) resultSetSerializable).getChunkHeadersMap();
+      sfContext =
+          new ChunkDownloadContext(
+              downloader, chunk, qrmk, 0, chunkHeadersMap, 0, 0, 0, 7, sfBaseSession);
+    }
   }
 
   /**

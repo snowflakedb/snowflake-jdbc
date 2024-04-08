@@ -233,8 +233,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDoubleQuotedDatabaseInGetSchemas() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       // Create a database with double quotes inside the database name
       statement.execute("create or replace database \"\"\"quoteddb\"\"\"");
       // Create a database, lowercase, with no double quotes inside the database name
@@ -253,51 +253,48 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       rs = metaData.getSchemas("\"unquoteddb\"", null);
       assertEquals(0, getSizeOfResultSet(rs));
       rs.close();
-      statement.close();
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDoubleQuotedDatabaseInGetTables() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       // Create a database with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a table with two columns
       statement.execute(
           "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\" (col1 string, col2 string)");
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getTables("dbwith\"quotes", "schemawith\"quotes", null, null);
-      assertEquals(1, getSizeOfResultSet(rs));
-      rs.close();
-      statement.close();
+      try (ResultSet rs = metaData.getTables("dbwith\"quotes", "schemawith\"quotes", null, null)) {
+        assertEquals(1, getSizeOfResultSet(rs));
+      }
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDoubleQuotedDatabaseInGetColumns() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a table with two columns
       statement.execute(
           "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\"  (col1 string, col2 string)");
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getColumns("dbwith\"quotes", "schemawith\"quotes", null, null);
-      assertEquals(2, getSizeOfResultSet(rs));
-      rs.close();
-      statement.close();
+      try (ResultSet rs = metaData.getColumns("dbwith\"quotes", "schemawith\"quotes", null, null)) {
+        assertEquals(2, getSizeOfResultSet(rs));
+      }
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeys() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a table with a primary key constraint
@@ -315,7 +312,6 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       // Assert 2 rows are returned for foreign key constraint
       assertEquals(2, getSizeOfResultSet(rs));
       rs.close();
-      statement.close();
     }
   }
 
@@ -355,8 +351,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDoubleQuotedDatabaseInGetProcedures() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a procedure
@@ -364,28 +360,26 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       statement.execute(
           "USE DATABASE \"dbwith\"\"quotes\"; USE SCHEMA \"schemawith\"\"quotes\"; " + TEST_PROC);
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getProcedures("dbwith\"quotes", null, "TESTPROC");
-      assertEquals(1, getSizeOfResultSet(rs));
-      rs.close();
-      statement.close();
+      try (ResultSet rs = metaData.getProcedures("dbwith\"quotes", null, "TESTPROC")) {
+        assertEquals(1, getSizeOfResultSet(rs));
+      }
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDoubleQuotedDatabaseInGetTablePrivileges() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a table under the current user and role
       statement.execute(
           "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"testtable\" (col1 string, col2 string)");
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getTablePrivileges("dbwith\"quotes", null, "%");
-      assertEquals(1, getSizeOfResultSet(rs));
-      rs.close();
-      statement.close();
+      try (ResultSet rs = metaData.getTablePrivileges("dbwith\"quotes", null, "%")) {
+        assertEquals(1, getSizeOfResultSet(rs));
+      }
     }
   }
 
@@ -484,46 +478,48 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     }
     // test out connection parameter stringsQuoted to remove strings from quotes
     properties.put("stringsQuotedForColumnDef", "true");
-    Connection connection = DriverManager.getConnection(params.get("uri"), properties);
-    String database = connection.getCatalog();
-    String schema = connection.getSchema();
-    final String targetTable = "T0";
+    try (Connection connection = DriverManager.getConnection(params.get("uri"), properties)) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
+      final String targetTable = "T0";
 
-    connection
-        .createStatement()
-        .execute(
-            "create or replace table "
-                + targetTable
-                + "(C1 string, C2 string default '', C3 string default 'apples', C4 string default"
-                + " '\"apples\"', C5 int, C6 int default 5, C7 string default '''', C8 string"
-                + " default '''apples''''', C9  string default '%')");
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table "
+                  + targetTable
+                  + "(C1 string, C2 string default '', C3 string default 'apples', C4 string default"
+                  + " '\"apples\"', C5 int, C6 int default 5, C7 string default '''', C8 string"
+                  + " default '''apples''''', C9  string default '%')");
 
-    DatabaseMetaData metaData = connection.getMetaData();
+      DatabaseMetaData metaData = connection.getMetaData();
 
-    ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%");
-    assertTrue(resultSet.next());
-    assertNull(resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("''", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'apples'", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'\"apples\"'", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertNull(resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("5", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("''''", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'''apples'''''", resultSet.getString("COLUMN_DEF"));
-    assertTrue(resultSet.next());
-    assertEquals("'%'", resultSet.getString("COLUMN_DEF"));
+      try (ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%")) {
+        assertTrue(resultSet.next());
+        assertNull(resultSet.getString("COLUMN_DEF"));
+        assertTrue(resultSet.next());
+        assertEquals("''", resultSet.getString("COLUMN_DEF"));
+        assertTrue(resultSet.next());
+        assertEquals("'apples'", resultSet.getString("COLUMN_DEF"));
+        assertTrue(resultSet.next());
+        assertEquals("'\"apples\"'", resultSet.getString("COLUMN_DEF"));
+        assertTrue(resultSet.next());
+        assertNull(resultSet.getString("COLUMN_DEF"));
+        assertTrue(resultSet.next());
+        assertEquals("5", resultSet.getString("COLUMN_DEF"));
+        assertTrue(resultSet.next());
+        assertEquals("''''", resultSet.getString("COLUMN_DEF"));
+        assertTrue(resultSet.next());
+        assertEquals("'''apples'''''", resultSet.getString("COLUMN_DEF"));
+        assertTrue(resultSet.next());
+        assertEquals("'%'", resultSet.getString("COLUMN_DEF"));
+      }
+    }
   }
 
   @Test
   public void testGetColumnsNullable() throws Throwable {
-    try (Connection connection = getConnection(); ) {
+    try (Connection connection = getConnection()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
@@ -539,12 +535,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
       DatabaseMetaData metaData = connection.getMetaData();
 
-      ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%");
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_COLUMNS);
+      try (ResultSet resultSet = metaData.getColumns(database, schema, targetTable, "%")) {
+        verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_COLUMNS);
 
-      // C1 metadata
-      assertTrue(resultSet.next());
-      assertTrue(resultSet.getBoolean("NULLABLE"));
+        // C1 metadata
+        assertTrue(resultSet.next());
+        assertTrue(resultSet.getBoolean("NULLABLE"));
+      }
     }
   }
 
@@ -1129,8 +1126,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
   @Test
   public void testTimestampWithTimezoneDataType() throws Exception {
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       statement.executeQuery("create or replace table ts_test(ts timestamp_tz)");
       String database = connection.getCatalog();
       String schema = connection.getSchema();
@@ -1606,8 +1603,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   public void testGetProceduresWithReaderAccount() throws SQLException {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metadata = connection.getMetaData();
-      ResultSet rs = metadata.getProcedures(null, null, null);
-      assertEquals(0, getSizeOfResultSet(rs));
+      try (ResultSet rs = metadata.getProcedures(null, null, null)) {
+        assertEquals(0, getSizeOfResultSet(rs));
+      }
     }
   }
 
@@ -1622,42 +1620,44 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       /* Call getProcedureColumns with no parameters for procedure name or column. This should return  all procedures
       in the current database and schema. It will return all rows as well (1 row per result and 1 row per parameter
       for each procedure) */
-      ResultSet resultSet = metaData.getProcedureColumns(database, schema, "GETPI", "%");
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS);
-      resultSet.next();
-      assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
-      assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
-      assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
-      assertEquals("", resultSet.getString("COLUMN_NAME"));
-      assertEquals(DatabaseMetaData.procedureColumnReturn, resultSet.getInt("COLUMN_TYPE"));
-      assertEquals(Types.FLOAT, resultSet.getInt("DATA_TYPE"));
-      assertEquals("FLOAT", resultSet.getString("TYPE_NAME"));
-      assertEquals(38, resultSet.getInt("PRECISION"));
-      // length column is not supported and will always be 0
-      assertEquals(0, resultSet.getInt("LENGTH"));
-      assertEquals(0, resultSet.getShort("SCALE"));
-      // radix column is not supported and will always be default of 10 (assumes base 10 system)
-      assertEquals(10, resultSet.getInt("RADIX"));
-      // nullable column is not supported and always returns NullableUnknown
-      assertEquals(DatabaseMetaData.procedureNoNulls, resultSet.getInt("NULLABLE"));
-      assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
-      assertNull(resultSet.getString("COLUMN_DEF"));
-      assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
-      assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
-      // char octet length column is not supported and always returns 0
-      assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
-      assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
-      // is_nullable column is not supported and always returns empty string
-      assertEquals("NO", resultSet.getString("IS_NULLABLE"));
-      assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
-      connection.createStatement().execute("drop procedure if exists GETPI()");
+      try (ResultSet resultSet = metaData.getProcedureColumns(database, schema, "GETPI", "%")) {
+        verifyResultSetMetaDataColumns(
+            resultSet, DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS);
+        resultSet.next();
+        assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+        assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+        assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+        assertEquals("", resultSet.getString("COLUMN_NAME"));
+        assertEquals(DatabaseMetaData.procedureColumnReturn, resultSet.getInt("COLUMN_TYPE"));
+        assertEquals(Types.FLOAT, resultSet.getInt("DATA_TYPE"));
+        assertEquals("FLOAT", resultSet.getString("TYPE_NAME"));
+        assertEquals(38, resultSet.getInt("PRECISION"));
+        // length column is not supported and will always be 0
+        assertEquals(0, resultSet.getInt("LENGTH"));
+        assertEquals(0, resultSet.getShort("SCALE"));
+        // radix column is not supported and will always be default of 10 (assumes base 10 system)
+        assertEquals(10, resultSet.getInt("RADIX"));
+        // nullable column is not supported and always returns NullableUnknown
+        assertEquals(DatabaseMetaData.procedureNoNulls, resultSet.getInt("NULLABLE"));
+        assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+        assertNull(resultSet.getString("COLUMN_DEF"));
+        assertEquals(0, resultSet.getInt("SQL_DATA_TYPE"));
+        assertEquals(0, resultSet.getInt("SQL_DATETIME_SUB"));
+        // char octet length column is not supported and always returns 0
+        assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
+        // is_nullable column is not supported and always returns empty string
+        assertEquals("NO", resultSet.getString("IS_NULLABLE"));
+        assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
+        connection.createStatement().execute("drop procedure if exists GETPI()");
+      }
     }
   }
 
   @Test
   public void testGetProcedureColumnsReturnsResultSet() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       statement.execute(
           "create or replace table testtable (id int, name varchar(20), address varchar(20));");
       statement.execute(
@@ -1671,39 +1671,37 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
               + "    return table(res);\n"
               + "  end';");
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "PROCTEST", "%");
-      res.next();
-      assertEquals("PROCTEST", res.getString("PROCEDURE_NAME"));
-      assertEquals("id", res.getString("COLUMN_NAME"));
-      assertEquals(
-          DatabaseMetaData.procedureColumnResult,
-          res.getInt("COLUMN_TYPE")); // procedureColumnResult
-      assertEquals(Types.NUMERIC, res.getInt("DATA_TYPE"));
-      assertEquals("NUMBER", res.getString("TYPE_NAME"));
-      assertEquals(1, res.getInt("ORDINAL_POSITION")); // result set column 1
-      res.next();
-      assertEquals("name", res.getString("COLUMN_NAME"));
-      assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
-      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
-      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
-      assertEquals(2, res.getInt("ORDINAL_POSITION")); // result set column 2
-      res.next();
-      assertEquals("address", res.getString("COLUMN_NAME"));
-      assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
-      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
-      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
-      assertEquals(3, res.getInt("ORDINAL_POSITION")); // result set column 3
-
-      res.close();
+      try (ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "PROCTEST", "%")) {
+        res.next();
+        assertEquals("PROCTEST", res.getString("PROCEDURE_NAME"));
+        assertEquals("id", res.getString("COLUMN_NAME"));
+        assertEquals(
+            DatabaseMetaData.procedureColumnResult,
+            res.getInt("COLUMN_TYPE")); // procedureColumnResult
+        assertEquals(Types.NUMERIC, res.getInt("DATA_TYPE"));
+        assertEquals("NUMBER", res.getString("TYPE_NAME"));
+        assertEquals(1, res.getInt("ORDINAL_POSITION")); // result set column 1
+        res.next();
+        assertEquals("name", res.getString("COLUMN_NAME"));
+        assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
+        assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+        assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+        assertEquals(2, res.getInt("ORDINAL_POSITION")); // result set column 2
+        res.next();
+        assertEquals("address", res.getString("COLUMN_NAME"));
+        assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
+        assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+        assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+        assertEquals(3, res.getInt("ORDINAL_POSITION")); // result set column 3
+      }
       statement.execute("drop table if exists testtable");
-      statement.close();
     }
   }
 
   @Test
   public void testGetProcedureColumnsReturnsValue() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement(); ) {
       DatabaseMetaData metaData = con.getMetaData();
       // create a procedure with no parameters that has a return value
       statement.execute(PI_PROCEDURE);
@@ -1737,14 +1735,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(1, res.getInt("ORDINAL_POSITION"));
 
       res.close();
-      statement.close();
     }
   }
 
   @Test
   public void testGetProcedureColumnsReturnsNull() throws SQLException {
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement(); ) {
       DatabaseMetaData metaData = con.getMetaData();
       // The CREATE PROCEDURE statement must include a RETURNS clause that defines a return type,
       // even
@@ -1759,17 +1756,19 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
               + "`insert into testtable (id, name, address) values (1, \\'Tom\\', \\'Pacific Avenue\\');` \n"
               + "snowflake.execute({sqlText: sqlcommand}); \n"
               + "';");
-      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "INSERTPROC", "%");
-      res.next();
-      // the procedure will return null as the value but column type will be varchar.
-      assertEquals("INSERTPROC", res.getString("PROCEDURE_NAME"));
-      assertEquals("", res.getString("COLUMN_NAME"));
-      assertEquals(
-          DatabaseMetaData.procedureColumnReturn,
-          res.getInt("COLUMN_TYPE")); // procedureColumnReturn
-      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
-      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
-      assertEquals(0, res.getInt("ORDINAL_POSITION"));
+      try (ResultSet res =
+          metaData.getProcedureColumns(con.getCatalog(), null, "INSERTPROC", "%")) {
+        res.next();
+        // the procedure will return null as the value but column type will be varchar.
+        assertEquals("INSERTPROC", res.getString("PROCEDURE_NAME"));
+        assertEquals("", res.getString("COLUMN_NAME"));
+        assertEquals(
+            DatabaseMetaData.procedureColumnReturn,
+            res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+        assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+        assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+        assertEquals(0, res.getInt("ORDINAL_POSITION"));
+      }
     }
   }
 

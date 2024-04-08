@@ -198,14 +198,15 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   public void testGetTableTypes() throws Throwable {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
-      ResultSet resultSet = metaData.getTableTypes();
-      Set<String> types = new HashSet<>();
-      while (resultSet.next()) {
-        types.add(resultSet.getString(1));
+      try (ResultSet resultSet = metaData.getTableTypes()) {
+        Set<String> types = new HashSet<>();
+        while (resultSet.next()) {
+          types.add(resultSet.getString(1));
+        }
+        assertEquals(2, types.size());
+        assertTrue(types.contains("TABLE"));
+        assertTrue(types.contains("VIEW"));
       }
-      assertEquals(2, types.size());
-      assertTrue(types.contains("TABLE"));
-      assertTrue(types.contains("VIEW"));
     }
   }
 
@@ -396,25 +397,26 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
       DatabaseMetaData metaData = connection.getMetaData();
 
-      ResultSet resultSet = metaData.getExportedKeys(database, schema, targetTable1);
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
+      try (ResultSet resultSet = metaData.getExportedKeys(database, schema, targetTable1)) {
+        verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
 
-      assertTrue(resultSet.next());
-      assertEquals(database, resultSet.getString("PKTABLE_CAT"));
-      assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
-      assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
-      assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
-      assertEquals(database, resultSet.getString("FKTABLE_CAT"));
-      assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
-      assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
-      assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
-      assertEquals(1, resultSet.getInt("KEY_SEQ"));
-      assertNotEquals("", resultSet.getString("PK_NAME"));
-      assertNotEquals("", resultSet.getString("FK_NAME"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
-
+        assertTrue(resultSet.next());
+        assertEquals(database, resultSet.getString("PKTABLE_CAT"));
+        assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
+        assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
+        assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
+        assertEquals(database, resultSet.getString("FKTABLE_CAT"));
+        assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
+        assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
+        assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
+        assertEquals(1, resultSet.getInt("KEY_SEQ"));
+        assertNotEquals("", resultSet.getString("PK_NAME"));
+        assertNotEquals("", resultSet.getString("FK_NAME"));
+        assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+        assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+        assertEquals(
+            DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+      }
       connection.createStatement().execute("drop table if exists " + targetTable1);
       connection.createStatement().execute("drop table if exists " + targetTable2);
     }
@@ -442,27 +444,28 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
       DatabaseMetaData metaData = connection.getMetaData();
 
-      ResultSet resultSet =
+      try (ResultSet resultSet =
           metaData.getCrossReference(
-              database, schema, targetTable1, database, schema, targetTable2);
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
+              database, schema, targetTable1, database, schema, targetTable2)) {
+        verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
 
-      assertTrue(resultSet.next());
-      assertEquals(database, resultSet.getString("PKTABLE_CAT"));
-      assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
-      assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
-      assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
-      assertEquals(database, resultSet.getString("FKTABLE_CAT"));
-      assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
-      assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
-      assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
-      assertEquals(1, resultSet.getInt("KEY_SEQ"));
-      assertNotEquals("", resultSet.getString("PK_NAME"));
-      assertNotEquals("", resultSet.getString("FK_NAME"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
-
+        assertTrue(resultSet.next());
+        assertEquals(database, resultSet.getString("PKTABLE_CAT"));
+        assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
+        assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
+        assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
+        assertEquals(database, resultSet.getString("FKTABLE_CAT"));
+        assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
+        assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
+        assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
+        assertEquals(1, resultSet.getInt("KEY_SEQ"));
+        assertNotEquals("", resultSet.getString("PK_NAME"));
+        assertNotEquals("", resultSet.getString("FK_NAME"));
+        assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+        assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+        assertEquals(
+            DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+      }
       connection.createStatement().execute("drop table if exists " + targetTable1);
       connection.createStatement().execute("drop table if exists " + targetTable2);
     }
@@ -615,17 +618,18 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       connection.createStatement().execute(PI_PROCEDURE);
       DatabaseMetaData metaData = connection.getMetaData();
       /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
-      ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI");
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURES);
-      resultSet.next();
-      assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
-      assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
-      assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
-      assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
-      assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
-      assertEquals(procedureReturnsResult, resultSet.getShort("PROCEDURE_TYPE"));
-      assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
-      connection.createStatement().execute("drop procedure if exists GETPI()");
+      try (ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI")) {
+        verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURES);
+        resultSet.next();
+        assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+        assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+        assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+        assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+        assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+        assertEquals(procedureReturnsResult, resultSet.getShort("PROCEDURE_TYPE"));
+        assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
+        connection.createStatement().execute("drop procedure if exists GETPI()");
+      }
     }
   }
 

@@ -40,16 +40,17 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection(properties)) {
       Statement statement = connection.createStatement();
       // execute a query that will require chunk downloading
-      ResultSet resultSet =
+      try (ResultSet resultSet =
           statement.executeQuery(
-              "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
-      List<SnowflakeResultSetSerializable> resultSetSerializables =
-          ((SnowflakeResultSet) resultSet).getResultSetSerializables(100 * 1024 * 1024);
-      SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
-      SnowflakeChunkDownloader downloader =
-          new SnowflakeChunkDownloader((SnowflakeResultSetSerializableV1) resultSetSerializable);
-      snowflakeChunkDownloaderSpy = Mockito.spy(downloader);
-      snowflakeChunkDownloaderSpy.getNextChunkToConsume();
+              "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))")) {
+        List<SnowflakeResultSetSerializable> resultSetSerializables =
+            ((SnowflakeResultSet) resultSet).getResultSetSerializables(100 * 1024 * 1024);
+        SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
+        SnowflakeChunkDownloader downloader =
+            new SnowflakeChunkDownloader((SnowflakeResultSetSerializableV1) resultSetSerializable);
+        snowflakeChunkDownloaderSpy = Mockito.spy(downloader);
+        snowflakeChunkDownloaderSpy.getNextChunkToConsume();
+      }
     } catch (SnowflakeSQLException exception) {
       // verify that request was retried twice before reaching max retries
       Mockito.verify(snowflakeChunkDownloaderSpy, Mockito.times(2)).getResultStreamProvider();

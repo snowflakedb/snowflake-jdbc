@@ -51,35 +51,38 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetMetaDataUseConnectionCtx() throws SQLException {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
 
-    // setup: reset session db and schema, enable the parameter
-    statement.execute("use database JDBC_DB1");
-    statement.execute("use schema JDBC_SCHEMA11");
-    statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
+      // setup: reset session db and schema, enable the parameter
+      statement.execute("use database JDBC_DB1");
+      statement.execute("use schema JDBC_SCHEMA11");
+      statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
 
-    DatabaseMetaData databaseMetaData = connection.getMetaData();
+      DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-    // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
-    ResultSet resultSet = databaseMetaData.getTables(null, null, null, null);
-    // Assert the tables are retrieved at schema level
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString(1));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString(2));
-    // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
-    resultSet = databaseMetaData.getColumns(null, null, null, null);
-    // Assert the columns are retrieved at schema level
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString(1));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString(2));
+      // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
+      try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
+        // Assert the tables are retrieved at schema level
+        resultSet.next();
+        assertEquals("JDBC_DB1", resultSet.getString(1));
+        assertEquals("JDBC_SCHEMA11", resultSet.getString(2));
+      }
+      // Searches for tables only in database JDBC_DB1 and schema JDBC_SCHEMA11
+      try (ResultSet resultSet = databaseMetaData.getColumns(null, null, null, null); ) {
+        // Assert the columns are retrieved at schema level
+        resultSet.next();
+        assertEquals("JDBC_DB1", resultSet.getString(1));
+        assertEquals("JDBC_SCHEMA11", resultSet.getString(2));
+      }
+    }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetFunctionColumns() throws SQLException {
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       statement.execute(
           "create or replace function JDBC_DB1.JDBC_SCHEMA11.FUNC111 "
               + "(a number, b number) RETURNS NUMBER COMMENT='multiply numbers' as 'a*b'");
@@ -239,7 +242,6 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
       resultSet = databaseMetaData.getFunctionColumns("%", "%", "%", "%");
       assertEquals(0, getSizeOfResultSet(resultSet));
       resultSet.close();
-      statement.close();
     }
   }
 
