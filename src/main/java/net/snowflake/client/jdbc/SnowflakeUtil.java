@@ -791,11 +791,20 @@ public class SnowflakeUtil {
     return defaultValue;
   }
 
-  public static <T> T mapExceptions(ThrowingCallable<T, SFException> action) throws SQLException {
+  @SnowflakeJdbcInternalApi
+  public static <T> T mapSFExceptionToSQLException(ThrowingCallable<T, SFException> action)
+      throws SQLException {
     try {
       return action.call();
     } catch (SFException e) {
       throw new SQLException(e);
     }
+  }
+
+  public static String getJsonNodeStringValue(JsonNode node) throws SFException {
+    if (node.isNull()) {
+      return null;
+    }
+    return node.isValueNode() ? node.asText() : node.toString();
   }
 }
