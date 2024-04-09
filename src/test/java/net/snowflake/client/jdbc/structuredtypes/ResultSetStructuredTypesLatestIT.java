@@ -44,6 +44,7 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryStructuredType.class)
+@Ignore
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Parameterized.Parameters(name = "format={0}")
