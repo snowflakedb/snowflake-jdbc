@@ -24,7 +24,11 @@ public class DateConverter extends AbstractArrowVectorConverter {
 
   private boolean useDateFormat;
 
-  public DateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context, boolean useDateFormat) {
+  public DateConverter(
+      ValueVector fieldVector,
+      int columnIndex,
+      DataConversionContext context,
+      boolean useDateFormat) {
     super(SnowflakeType.DATE.name(), fieldVector, columnIndex, context);
     this.dateVector = (DateDayVector) fieldVector;
     this.useDateFormat = useDateFormat;
@@ -102,16 +106,20 @@ public class DateConverter extends AbstractArrowVectorConverter {
     if (context.getDateFormatter() == null) {
       throw new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter");
     }
-    Date date = getDate(
-      index,
-      this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(),
-      this.useDateFormat);
+    Date date =
+        getDate(
+            index,
+            this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(),
+            this.useDateFormat);
     return date == null ? null : ResultUtil.getDateAsString(date, context.getDateFormatter());
   }
 
   @Override
   public Object toObject(int index) throws SFException {
-    return toDate(index, this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(), this.useDateFormat);
+    return toDate(
+        index,
+        this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(),
+        this.useDateFormat);
   }
 
   @Override
