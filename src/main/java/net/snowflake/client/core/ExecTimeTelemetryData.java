@@ -8,7 +8,6 @@ import net.minidev.json.JSONObject;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.util.TimeMeasurement;
 
-@SnowflakeJdbcInternalApi
 public class ExecTimeTelemetryData {
   private final TimeMeasurement query = new TimeMeasurement();
   private final TimeMeasurement bind = new TimeMeasurement();
@@ -165,8 +164,7 @@ public class ExecTimeTelemetryData {
       value.put("RetryLocations", this.retryLocations);
       value.put("ocspEnabled", this.ocspEnabled);
       value.put("ElapsedQueryTime", getTotalQueryTime());
-      value.put(
-          "ElapsedResultProcessTime", getResultProcessingTime());
+      value.put("ElapsedResultProcessTime", getResultProcessingTime());
       value.put("Urgent", true);
       valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
       TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
@@ -175,15 +173,29 @@ public class ExecTimeTelemetryData {
     return "";
   }
 
+  @SnowflakeJdbcInternalApi
   public String getLogString() {
-    return "Query id: " + this.queryId
-            + ", query function: " + this.queryFunction
-            + ", batch id: " + this.batchId
-            + ", request id: " + this.requestId
-            + ", total query time: " + getTotalQueryTime() / 1000 + " ms"
-            + ", result processing time: " + getResultProcessingTime() / 1000 + " ms"
-            + ", result set creation time: " + getResultSetCreationTime() / 1000 + " ms"
-            + ", http request time: " + getHttpRequestTime() / 1000 + " ms"
-            + ", retry count: " + this.retryCount;
+    return "Query id: "
+        + this.queryId
+        + ", query function: "
+        + this.queryFunction
+        + ", batch id: "
+        + this.batchId
+        + ", request id: "
+        + this.requestId
+        + ", total query time: "
+        + getTotalQueryTime() / 1000
+        + " ms"
+        + ", result processing time: "
+        + getResultProcessingTime() / 1000
+        + " ms"
+        + ", result set creation time: "
+        + getResultSetCreationTime() / 1000
+        + " ms"
+        + ", http request time: "
+        + getHttpRequestTime() / 1000
+        + " ms"
+        + ", retry count: "
+        + this.retryCount;
   }
 }
