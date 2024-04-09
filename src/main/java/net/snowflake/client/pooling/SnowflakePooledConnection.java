@@ -17,7 +17,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /** Snowflake implementation of pooled connection */
 public class SnowflakePooledConnection implements PooledConnection {
-  static final SFLogger LOGGER = SFLoggerFactory.getLogger(SnowflakePooledConnection.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakePooledConnection.class);
 
   /** physical connection, an instance of SnowflakeConnectionV1 class */
   private Connection physicalConnection;
@@ -29,7 +29,7 @@ public class SnowflakePooledConnection implements PooledConnection {
     this.physicalConnection = physicalConnection;
 
     SnowflakeConnectionV1 sfConnection = physicalConnection.unwrap(SnowflakeConnectionV1.class);
-    LOGGER.debug("Creating new pooled connection with session id: {}", sfConnection.getSessionID());
+    logger.debug("Creating new pooled connection with session id: {}", sfConnection.getSessionID());
 
     this.eventListeners = new HashSet<>();
   }
@@ -37,7 +37,7 @@ public class SnowflakePooledConnection implements PooledConnection {
   @Override
   public Connection getConnection() throws SQLException {
     SnowflakeConnectionV1 sfConnection = physicalConnection.unwrap(SnowflakeConnectionV1.class);
-    LOGGER.debug(
+    logger.debug(
         "Creating new Logical Connection based on pooled connection with session id: {}",
         sfConnection.getSessionID());
     return new LogicalConnection(this);
@@ -69,7 +69,7 @@ public class SnowflakePooledConnection implements PooledConnection {
   public void close() throws SQLException {
     if (this.physicalConnection != null) {
       SnowflakeConnectionV1 sfConnection = physicalConnection.unwrap(SnowflakeConnectionV1.class);
-      LOGGER.debug("Closing pooled connection with session id: {}", sfConnection.getSessionID());
+      logger.debug("Closing pooled connection with session id: {}", sfConnection.getSessionID());
       this.physicalConnection.close();
       this.physicalConnection = null;
     }

@@ -31,7 +31,7 @@ import net.snowflake.client.log.SFLoggerFactory;
  * delegated to SnowflakeConnectionV1 except for close method
  */
 class LogicalConnection implements Connection {
-  static final SFLogger LOGGER = SFLoggerFactory.getLogger(LogicalConnection.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(LogicalConnection.class);
 
   /** physical connection to snowflake, instance SnowflakeConnectionV1 */
   private final Connection physicalConnection;
@@ -154,7 +154,7 @@ class LogicalConnection implements Connection {
       return;
     }
     SnowflakeConnectionV1 sfConnection = physicalConnection.unwrap(SnowflakeConnectionV1.class);
-    LOGGER.debug("Closing logical connection with session id: {}", sfConnection.getSessionID());
+    logger.debug("Closing logical connection with session id: {}", sfConnection.getSessionID());
     pooledConnection.fireConnectionCloseEvent();
     isClosed = true;
   }
