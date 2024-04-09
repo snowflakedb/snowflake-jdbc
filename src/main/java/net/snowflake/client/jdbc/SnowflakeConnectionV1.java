@@ -46,6 +46,7 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 
 /** Snowflake connection implementation */
@@ -136,11 +137,19 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   private void initConnectionWithImpl(
       SFConnectionHandler sfConnectionHandler, String url, Properties info) throws SQLException {
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
+    logger.info("Initializing new connection");
     this.sfConnectionHandler = sfConnectionHandler;
     sfConnectionHandler.initializeConnection(url, info);
     this.sfSession = sfConnectionHandler.getSFSession();
     missingProperties = sfSession.checkProperties();
     this.showStatementParameters = sfSession.getPreparedStatementLogging();
+    stopwatch.stop();
+    logger.info(
+        "Connection initialized successfully in {} ms. Session id: {}",
+        stopwatch.elapsedMillis(),
+        sfSession.getSessionId());
   }
 
   public List<DriverPropertyInfo> returnMissingProperties() {
@@ -219,9 +228,19 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   @Override
   public void close() throws SQLException {
-    logger.debug(" public void close()", false);
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
+    String sessionId = null;
+
+    if (sfSession != null) {
+      sessionId = sfSession.getSessionId();
+      logger.info("Closing connection with session id: {}", sessionId);
+    } else {
+      logger.debug("Closing connection without associated session");
+    }
 
     if (isClosed) {
+      logger.debug("Connection is already closed");
       // No exception is raised even if the connection is closed.
       return;
     }
@@ -233,6 +252,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
         sfSession = null;
       }
       // make sure to close all created statements
+      if (!openStatements.isEmpty()) {
+        logger.debug("Closing {} opened statements", openStatements.size());
+      }
       for (Statement stmt : openStatements) {
         if (stmt != null && !stmt.isClosed()) {
           if (stmt.isWrapperFor(SnowflakeStatementV1.class)) {
@@ -242,12 +264,20 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           }
         }
       }
+      if (!openStatements.isEmpty()) {
+        logger.debug("Statements closed successfully");
+      }
       openStatements.clear();
 
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
           sfSession, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
+    stopwatch.stop();
+    logger.info(
+        "Connection with session id: {} closed successfully in {} ms",
+        sessionId,
+        stopwatch.elapsedMillis());
   }
 
   public String getSessionID() throws SQLException {
