@@ -3,7 +3,9 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.sql.Date;
 import java.util.HashMap;
@@ -28,7 +30,7 @@ public class DateConverterTest extends BaseConverterTest {
   @Parameterized.Parameters
   public static Object[][] data() {
     return new Object[][] {
-      // {"UTC"},
+      {"UTC"},
       {"America/Los_Angeles"},
       {"America/New_York"},
       {"Pacific/Honolulu"},
