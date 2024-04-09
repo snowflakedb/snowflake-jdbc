@@ -28,7 +28,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
     this.dateVector = (DateDayVector) fieldVector;
     this.useDateFormat = false;
   }
-  
+
   public DateConverter(
       ValueVector fieldVector,
       int columnIndex,

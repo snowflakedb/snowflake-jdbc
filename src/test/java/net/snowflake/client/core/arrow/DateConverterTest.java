@@ -30,13 +30,13 @@ public class DateConverterTest extends BaseConverterTest {
   @Parameterized.Parameters
   public static Object[][] data() {
     return new Object[][] {
-            {"UTC"},
-            {"America/Los_Angeles"},
-            {"America/New_York"},
-            {"Pacific/Honolulu"},
-            {"Asia/Singapore"},
-            {"MEZ"},
-            {"MESZ"}
+      {"UTC"},
+      {"America/Los_Angeles"},
+      {"America/New_York"},
+      {"Pacific/Honolulu"},
+      {"Asia/Singapore"},
+      {"MEZ"},
+      {"MESZ"}
     };
   }
 
@@ -53,15 +53,15 @@ public class DateConverterTest extends BaseConverterTest {
   int[] testDates = {-8865, -719162, -354285, -244712, -208156, -171664, -135107, 0, 16911};
 
   String[] expectedDates = {
-          "1945-09-24",
-          "0001-01-01",
-          "1000-01-01",
-          "1300-01-01",
-          "1400-02-02",
-          "1500-01-01",
-          "1600-02-03",
-          "1970-01-01",
-          "2016-04-20"
+    "1945-09-24",
+    "0001-01-01",
+    "1000-01-01",
+    "1300-01-01",
+    "1400-02-02",
+    "1500-01-01",
+    "1600-02-03",
+    "1970-01-01",
+    "2016-04-20"
   };
 
   public static final int MILLIS_IN_ONE_HOUR = 3600000;
@@ -73,7 +73,7 @@ public class DateConverterTest extends BaseConverterTest {
     Set<Integer> nullValIndex = new HashSet<>();
     // test normal date
     FieldType fieldType =
-            new FieldType(true, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
+        new FieldType(true, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
 
     DateDayVector vector = new DateDayVector("date", fieldType, allocator);
     int i = 0, j = 0;
@@ -102,7 +102,7 @@ public class DateConverterTest extends BaseConverterTest {
         assertTrue(converter.isNull(j));
       }
       Object oldObj =
-              ArrowResultUtil.getDate(intVal, TimeZone.getTimeZone("UTC"), TimeZone.getDefault());
+          ArrowResultUtil.getDate(intVal, TimeZone.getTimeZone("UTC"), TimeZone.getDefault());
       if (nullValIndex.contains(j)) {
         assertThat(intVal, is(0));
         assertThat(obj, is(nullValue()));
@@ -132,7 +132,7 @@ public class DateConverterTest extends BaseConverterTest {
     Set<Integer> nullValIndex = new HashSet<>();
     // test normal date
     FieldType fieldType =
-            new FieldType(true, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
+        new FieldType(true, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
 
     DateDayVector vector = new DateDayVector("date", fieldType, allocator);
     int[] rawDates = new int[rowCount];
@@ -173,7 +173,7 @@ public class DateConverterTest extends BaseConverterTest {
     customFieldMeta.put("logicalType", "DATE");
     // test normal date
     FieldType fieldType =
-            new FieldType(true, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
+        new FieldType(true, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
 
     DateDayVector vector = new DateDayVector("date", fieldType, allocator);
 
@@ -186,10 +186,10 @@ public class DateConverterTest extends BaseConverterTest {
     converter.setSessionTimeZone(TimeZone.getTimeZone(System.getProperty("user.timezone")));
     Object obj = converter.toObject(0);
     Object utcObj =
-            ArrowResultUtil.getDate(
-                    testDay,
-                    TimeZone.getTimeZone("UTC"),
-                    TimeZone.getTimeZone(System.getProperty("user.timezone")));
+        ArrowResultUtil.getDate(
+            testDay,
+            TimeZone.getTimeZone("UTC"),
+            TimeZone.getTimeZone(System.getProperty("user.timezone")));
 
     String tz = System.getProperty("user.timezone");
     switch (System.getProperty("user.timezone")) {
@@ -202,25 +202,25 @@ public class DateConverterTest extends BaseConverterTest {
         assertThat(obj.toString(), is("2016-04-20"));
         assertThat(utcObj.toString(), is("2016-04-20"));
         assertThat(
-                ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (7 * MILLIS_IN_ONE_HOUR)));
+            ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (7 * MILLIS_IN_ONE_HOUR)));
         break;
       case ("America/New_York"):
         assertThat(obj.toString(), is("2016-04-20"));
         assertThat(utcObj.toString(), is("2016-04-20"));
         assertThat(
-                ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (4 * MILLIS_IN_ONE_HOUR)));
+            ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (4 * MILLIS_IN_ONE_HOUR)));
         break;
       case ("Pacific/Honolulu"):
         assertThat(obj.toString(), is("2016-04-20"));
         assertThat(utcObj.toString(), is("2016-04-20"));
         assertThat(
-                ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (10 * MILLIS_IN_ONE_HOUR)));
+            ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (10 * MILLIS_IN_ONE_HOUR)));
         break;
       case ("Asia/Singapore"):
         assertThat(obj.toString(), is("2016-04-20"));
         assertThat(utcObj.toString(), is("2016-04-19"));
         assertThat(
-                ((Date) obj).getTime(), is(((Date) utcObj).getTime() + (8 * MILLIS_IN_ONE_HOUR)));
+            ((Date) obj).getTime(), is(((Date) utcObj).getTime() + (8 * MILLIS_IN_ONE_HOUR)));
         break;
       case ("MEZ"):
         assertThat(obj.toString(), is("2016-04-20"));
