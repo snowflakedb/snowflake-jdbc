@@ -115,13 +115,13 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(1, rs.getInt(1));
         queryId = rs.unwrap(SnowflakeResultSet.class).getQueryID();
       }
-       try(ResultSet rs =
-            con.createStatement()
-                .executeQuery("select * from table(result_scan('" + queryId + "'))")) {
-         rs.next();
-         assertEquals(1, rs.getInt(1));
-       }
+      try (ResultSet rs =
+          con.createStatement()
+              .executeQuery("select * from table(result_scan('" + queryId + "'))")) {
+        rs.next();
+        assertEquals(1, rs.getInt(1));
       }
+    }
     finish("t", con);
   }
 

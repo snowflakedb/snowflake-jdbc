@@ -4,9 +4,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.sql.Connection;
-import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -33,10 +33,10 @@ public class FlatfileReadMultithreadIT {
   @BeforeClass
   public static void setUpClass() throws Throwable {
     try (Connection testConnection = AbstractDriverIT.getConnection();
-         // NOTE: the stage object must be created right after the connection
-         // because the Loader API assumes the stage object exists in the default
-         // namespace of the connection.
-         Statement statement = testConnection.createStatement()) {
+        // NOTE: the stage object must be created right after the connection
+        // because the Loader API assumes the stage object exists in the default
+        // namespace of the connection.
+        Statement statement = testConnection.createStatement()) {
       statement.execute(String.format("CREATE OR REPLACE STAGE %s", TARGET_STAGE));
       TARGET_SCHEMA = testConnection.getSchema();
       TARGET_DB = testConnection.getCatalog();
@@ -46,7 +46,7 @@ public class FlatfileReadMultithreadIT {
   @AfterClass
   public static void tearDownClass() throws Throwable {
     try (Connection testConnection = AbstractDriverIT.getConnection();
-         Statement statement = testConnection.createStatement()) {
+        Statement statement = testConnection.createStatement()) {
       statement.execute(String.format("DROP STAGE IF EXISTS %s", TARGET_STAGE));
     }
   }
@@ -60,37 +60,36 @@ public class FlatfileReadMultithreadIT {
   public void testIssueSimpleDateFormat() throws Throwable {
     final String targetTable = "TABLE_ISSUE_SIMPLEDATEFORMAT";
     try (Connection testConnection = AbstractDriverIT.getConnection();
-         Statement statement = testConnection.createStatement()) {
+        Statement statement = testConnection.createStatement()) {
       try {
         statement.execute(
-                String.format(
-                        "CREATE OR REPLACE TABLE %s.%s.%s (" + "ID int, " + "C1 timestamp)",
-                        TARGET_DB, TARGET_SCHEMA, targetTable));
+            String.format(
+                "CREATE OR REPLACE TABLE %s.%s.%s (" + "ID int, " + "C1 timestamp)",
+                TARGET_DB, TARGET_SCHEMA, targetTable));
         Thread t1 =
-                new Thread(
-                        new FlatfileRead(NUM_RECORDS, TARGET_DB, TARGET_SCHEMA, TARGET_STAGE, targetTable));
+            new Thread(
+                new FlatfileRead(NUM_RECORDS, TARGET_DB, TARGET_SCHEMA, TARGET_STAGE, targetTable));
         Thread t2 =
-                new Thread(
-                        new FlatfileRead(NUM_RECORDS, TARGET_DB, TARGET_SCHEMA, TARGET_STAGE, targetTable));
+            new Thread(
+                new FlatfileRead(NUM_RECORDS, TARGET_DB, TARGET_SCHEMA, TARGET_STAGE, targetTable));
 
         t1.start();
         t2.start();
         t1.join();
         t2.join();
         try (ResultSet rs =
-                     testConnection
-                             .createStatement()
-                             .executeQuery(
-                                     String.format(
-                                             "select count(*) from %s.%s.%s", TARGET_DB, TARGET_SCHEMA, targetTable))) {
+            testConnection
+                .createStatement()
+                .executeQuery(
+                    String.format(
+                        "select count(*) from %s.%s.%s", TARGET_DB, TARGET_SCHEMA, targetTable))) {
           rs.next();
           assertThat("total number of records", rs.getInt(1), equalTo(NUM_RECORDS * 2));
         }
 
       } finally {
         statement.execute(
-                String.format(
-                        "DROP TABLE IF EXISTS %s.%s.%s", TARGET_DB, TARGET_SCHEMA, targetTable));
+            String.format("DROP TABLE IF EXISTS %s.%s.%s", TARGET_DB, TARGET_SCHEMA, targetTable));
       }
     }
   }
@@ -103,7 +102,7 @@ public class FlatfileReadMultithreadIT {
     private final String stageName;
 
     FlatfileRead(
-            int totalRows, String dbName, String schemaName, String stageName, String tableName) {
+        int totalRows, String dbName, String schemaName, String stageName, String tableName) {
       this.totalRows = totalRows;
       this.dbName = dbName;
       this.schemaName = schemaName;
@@ -114,7 +113,7 @@ public class FlatfileReadMultithreadIT {
     @Override
     public void run() {
       try (Connection testConnection = AbstractDriverIT.getConnection();
-           Connection putConnection = AbstractDriverIT.getConnection()) {
+          Connection putConnection = AbstractDriverIT.getConnection()) {
 
         ResultListener _resultListener = new ResultListener();
 
@@ -127,7 +126,7 @@ public class FlatfileReadMultithreadIT {
         prop.put(LoaderProperty.operation, Operation.INSERT);
 
         StreamLoader underTest =
-                (StreamLoader) LoaderFactory.createLoader(prop, putConnection, testConnection);
+            (StreamLoader) LoaderFactory.createLoader(prop, putConnection, testConnection);
         underTest.setProperty(LoaderProperty.startTransaction, true);
         underTest.setProperty(LoaderProperty.truncateTable, false);
 
@@ -154,7 +153,9 @@ public class FlatfileReadMultithreadIT {
         underTest.close();
         assertThat("must be no error", _resultListener.getErrorCount(), equalTo(0));
         assertThat(
-                "total number of rows", _resultListener.getSubmittedRowCount(), equalTo(this.totalRows));
+            "total number of rows",
+            _resultListener.getSubmittedRowCount(),
+            equalTo(this.totalRows));
       } catch (SQLException e) {
         e.printStackTrace();
       }

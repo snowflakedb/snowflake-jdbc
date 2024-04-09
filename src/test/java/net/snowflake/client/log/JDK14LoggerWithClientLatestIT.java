@@ -30,7 +30,7 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
       Files.write(configFilePath, configJson.getBytes());
       Properties properties = new Properties();
       properties.put("client_config_file", configFilePath.toString());
-      try(Connection connection = getConnection(properties);
+      try (Connection connection = getConnection(properties);
           Statement statement = connection.createStatement()) {
         statement.executeQuery("select 1");
 
@@ -52,7 +52,7 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     Path configFilePath = Paths.get("invalid.json");
     Properties properties = new Properties();
     properties.put("client_config_file", configFilePath.toString());
-    try(Connection connection = getConnection(properties)) {
+    try (Connection connection = getConnection(properties)) {
       connection.createStatement().executeQuery("select 1");
     }
   }
