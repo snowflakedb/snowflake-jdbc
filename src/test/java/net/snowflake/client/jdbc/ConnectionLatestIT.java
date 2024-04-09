@@ -300,7 +300,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // when GS response is slow, allow up to 1 second of retries to get final query status
     SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
     await()
-        .atMost(10, TimeUnit.SECONDS)
+        .atMost(Duration.ofSeconds(10))
         .until(
             () -> {
               QueryStatus qs = sfrs1.getStatusV2().getStatus();
