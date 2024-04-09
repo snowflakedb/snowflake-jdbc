@@ -21,9 +21,14 @@ import org.apache.arrow.vector.ValueVector;
 public class DateConverter extends AbstractArrowVectorConverter {
   private DateDayVector dateVector;
   private static TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
-
   private boolean useDateFormat;
 
+  public DateConverter(ValueVector fieldVector, int columnIndex, DataConversionContext context) {
+    super(SnowflakeType.DATE.name(), fieldVector, columnIndex, context);
+    this.dateVector = (DateDayVector) fieldVector;
+    this.useDateFormat = false;
+  }
+  
   public DateConverter(
       ValueVector fieldVector,
       int columnIndex,
