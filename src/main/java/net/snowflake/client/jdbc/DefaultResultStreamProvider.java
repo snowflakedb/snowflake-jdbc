@@ -62,7 +62,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
           SqlState.IO_ERROR,
           ErrorCode.NETWORK_ERROR.getMessageCode(),
           "Error encountered when downloading a result chunk: HTTP "
-              + "status="
+              + "status: "
               + ((response != null) ? response.getStatusLine().getStatusCode() : "null response"));
     }
 
@@ -107,7 +107,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     }
 
     SnowflakeResultSetSerializableV1.logger.debug(
-        "Thread {} Fetching result #chunk{}: {}",
+        "Thread {} Fetching result chunk#{}: {}",
         Thread.currentThread().getId(),
         context.getChunkIndex(),
         context.getResultChunk().getScrubbedUrl());
@@ -134,7 +134,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
             new ExecTimeTelemetryData());
 
     SnowflakeResultSetSerializableV1.logger.debug(
-        "Thread {} Call #chunk{} returned for URL: {}, response={}",
+        "Thread {} Call chunk#{} returned for URL: {}, response: {}",
         Thread.currentThread().getId(),
         context.getChunkIndex(),
         (ArgSupplier) () -> SecretDetector.maskSASToken(context.getResultChunk().getUrl()),

@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import org.junit.After;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 
@@ -27,28 +28,35 @@ public class SFClientConfigParserTest {
   private static final String CONFIG_JSON_WITH_UNKNOWN_PROPS =
       "{\"common\":{\"log_level\":\"info\",\"log_path\":\"/jdbc.log\",\"unknown_inside\":\"/unknown\"},\"unknown_outside\":\"/unknown\"}";
 
+  private Path configFilePath;
+
+  @After
+  public void cleanup() throws IOException {
+    if (configFilePath != null) {
+      Files.deleteIfExists(configFilePath);
+    }
+
+    systemUnsetEnv(SF_CLIENT_CONFIG_ENV_NAME);
+  }
+
   @Test
   public void testLoadSFClientConfigValidPath() throws IOException {
-    Path configFilePath = Paths.get("config.json");
+    configFilePath = Paths.get("config.json");
     Files.write(configFilePath, CONFIG_JSON.getBytes());
     SFClientConfig actualConfig =
         SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
     assertEquals("info", actualConfig.getCommonProps().getLogLevel());
     assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
-
-    Files.delete(configFilePath);
   }
 
   @Test
   public void testLoadSFClientConfigValidPathWithUnknownProperties() throws IOException {
-    Path configFilePath = Paths.get("config.json");
+    configFilePath = Paths.get("config.json");
     Files.write(configFilePath, CONFIG_JSON_WITH_UNKNOWN_PROPS.getBytes());
     SFClientConfig actualConfig =
         SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
     assertEquals("info", actualConfig.getCommonProps().getLogLevel());
     assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
-
-    Files.delete(configFilePath);
   }
 
   @Test
@@ -67,7 +75,7 @@ public class SFClientConfigParserTest {
   public void testLoadSFClientConfigInValidJson() {
     try {
       String invalidJson = "invalidJson";
-      Path configFilePath = Paths.get("config.json");
+      configFilePath = Paths.get("config.json");
       Files.write(configFilePath, invalidJson.getBytes());
       SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
 
@@ -79,28 +87,23 @@ public class SFClientConfigParserTest {
 
   @Test
   public void testLoadSFClientConfigWithEnvVar() throws IOException {
-    Path configFilePath = Paths.get("config.json");
+    configFilePath = Paths.get("config.json");
     Files.write(configFilePath, CONFIG_JSON.getBytes());
     systemSetEnv(SF_CLIENT_CONFIG_ENV_NAME, "config.json");
     SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
     assertEquals("info", actualConfig.getCommonProps().getLogLevel());
     assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
-
-    Files.delete(configFilePath);
-    systemUnsetEnv(SF_CLIENT_CONFIG_ENV_NAME);
   }
 
   @Test
   public void testLoadSFClientConfigWithDriverLocation() throws IOException {
     String configLocation =
         Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
-    Path configFilePath = Paths.get(configLocation);
+    configFilePath = Paths.get(configLocation);
     Files.write(configFilePath, CONFIG_JSON.getBytes());
     SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
     assertEquals("info", actualConfig.getCommonProps().getLogLevel());
     assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
-
-    Files.delete(configFilePath);
   }
 
   @Test
@@ -110,13 +113,11 @@ public class SFClientConfigParserTest {
       // mocking this as Jenkins/GH Action doesn't have write permissions on user.home directory.
       mockedSnowflakeUtil.when(() -> systemGetProperty("user.home")).thenReturn(tmpDirectory);
 
-      Path configFilePath = Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME);
+      configFilePath = Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME);
       Files.write(configFilePath, CONFIG_JSON.getBytes());
       SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
-
-      Files.delete(configFilePath);
     }
   }
 
