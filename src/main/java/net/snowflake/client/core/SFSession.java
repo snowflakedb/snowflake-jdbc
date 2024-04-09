@@ -45,6 +45,7 @@ import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
@@ -510,14 +511,12 @@ public class SFSession extends SFBaseSession {
             + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
             + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
             + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
-            + " query timeout: {}, tracing: {}, private key file: {}, private key file pwd: {}"
+            + " query timeout: {}, tracing: {}, private key file: {}, private key file pwd is {},"
             + " session parameters: client store temporary credential: {}, gzip disabled: {}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
-        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
-            ? "provided"
-            : "not provided",
+        SFLoggerUtil.isVariableProvided((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD)),
         connectionPropertiesMap.get(SFSessionProperty.ROLE),
         connectionPropertiesMap.get(SFSessionProperty.DATABASE),
         connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
@@ -526,12 +525,8 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
         getOCSPMode().name(),
         connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
-        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
-            ? "provided"
-            : "not provided",
-        connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY) != null
-            ? "provided"
-            : "not provided",
+        SFLoggerUtil.isVariableProvided((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE)),
+        SFLoggerUtil.isVariableProvided(connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY)),
         connectionPropertiesMap.get(SFSessionProperty.DISABLE_SOCKS_PROXY),
         connectionPropertiesMap.get(SFSessionProperty.APPLICATION),
         connectionPropertiesMap.get(SFSessionProperty.APP_ID),
@@ -542,10 +537,7 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.TRACING),
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
-        !Strings.isNullOrEmpty(
-                (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
-            ? "provided"
-            : "not provided",
+        SFLoggerUtil.isVariableProvided((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
         connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
 
@@ -557,9 +549,7 @@ public class SFSession extends SFBaseSession {
         httpClientSettingsKey.getProxyHost(),
         httpClientSettingsKey.getProxyPort(),
         httpClientSettingsKey.getProxyUser(),
-        !Strings.isNullOrEmpty(httpClientSettingsKey.getProxyPassword())
-            ? "provided"
-            : "not provided",
+        SFLoggerUtil.isVariableProvided(httpClientSettingsKey.getProxyPassword()),
         httpClientSettingsKey.getNonProxyHosts(),
         httpClientSettingsKey.getProxyHttpProtocol());
 
