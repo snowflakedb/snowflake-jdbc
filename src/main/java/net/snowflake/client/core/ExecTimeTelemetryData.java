@@ -5,24 +5,19 @@ package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
 import net.minidev.json.JSONObject;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.util.TimeMeasurement;
 
+@SnowflakeJdbcInternalApi
 public class ExecTimeTelemetryData {
-  private long queryStart;
-  private long bindStart;
-  private long bindEnd;
-  private long gzipStart;
-  private long gzipEnd;
-  private long httpClientStart;
-  private long httpClientEnd;
-  private long responseIOStreamStart;
-  private long responseIOStreamEnd;
-  private long processResultChunkStart;
-  private long processResultChunkEnd;
-  private long createResultSetStart;
-  private long createResultSetEnd;
-  private long queryEnd;
+  private final TimeMeasurement query = new TimeMeasurement();
+  private final TimeMeasurement bind = new TimeMeasurement();
+  private final TimeMeasurement gzip = new TimeMeasurement();
+  private final TimeMeasurement httpClient = new TimeMeasurement();
+  private final TimeMeasurement responseIOStream = new TimeMeasurement();
+  private final TimeMeasurement processResultChunk = new TimeMeasurement();
+  private final TimeMeasurement createResultSet = new TimeMeasurement();
+
   private String batchId;
   private String queryId;
   private String queryFunction;
@@ -34,7 +29,7 @@ public class ExecTimeTelemetryData {
   private String requestId;
 
   public ExecTimeTelemetryData(String queryFunction, String batchId) {
-    this.queryStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    this.query.setStart();
     this.queryFunction = queryFunction;
     this.batchId = batchId;
     if (!TelemetryService.getInstance().isHTAPEnabled()) {
@@ -47,7 +42,7 @@ public class ExecTimeTelemetryData {
   }
 
   public void setBindStart() {
-    this.bindStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    bind.setStart();
   }
 
   public void setOCSPStatus(Boolean ocspEnabled) {
@@ -55,27 +50,27 @@ public class ExecTimeTelemetryData {
   }
 
   public void setBindEnd() {
-    this.bindEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    this.bind.setEnd();
   }
 
   public void setHttpClientStart() {
-    this.httpClientStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    httpClient.setStart();
   }
 
   public void setHttpClientEnd() {
-    this.httpClientEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    httpClient.setEnd();
   }
 
   public void setGzipStart() {
-    this.gzipStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    gzip.setStart();
   }
 
   public void setGzipEnd() {
-    this.gzipEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    gzip.setEnd();
   }
 
   public void setQueryEnd() {
-    this.queryEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    query.setEnd();
   }
 
   public void setQueryId(String queryId) {
@@ -83,27 +78,27 @@ public class ExecTimeTelemetryData {
   }
 
   public void setProcessResultChunkStart() {
-    this.processResultChunkStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    processResultChunk.setStart();
   }
 
   public void setProcessResultChunkEnd() {
-    this.processResultChunkEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    processResultChunk.setEnd();
   }
 
   public void setResponseIOStreamStart() {
-    this.responseIOStreamStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    responseIOStream.setStart();
   }
 
   public void setResponseIOStreamEnd() {
-    this.responseIOStreamEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    responseIOStream.setEnd();
   }
 
   public void setCreateResultSetStart() {
-    this.createResultSetStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    createResultSet.setStart();
   }
 
   public void setCreateResultSetEnd() {
-    this.createResultSetEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    createResultSet.setEnd();
   }
 
   public void incrementRetryCount() {
@@ -122,36 +117,24 @@ public class ExecTimeTelemetryData {
     }
   }
 
-  public long getTotalQueryTime() {
-    if (queryStart == 0 || queryEnd == 0) {
-      return -1;
-    }
-
-    return queryEnd - queryStart;
+  long getTotalQueryTime() {
+    return query.getTime();
   }
 
-  public long getResultProcessingTime() {
-    if (createResultSetEnd == 0 || processResultChunkStart == 0) {
+  long getResultProcessingTime() {
+    if (createResultSet.getEnd() == 0 || processResultChunk.getStart() == 0) {
       return -1;
     }
 
-    return createResultSetEnd - processResultChunkStart;
+    return createResultSet.getEnd() - processResultChunk.getStart();
   }
 
-  public long getHttpRequestTime() {
-    if (httpClientStart == 0 || httpClientEnd == 0) {
-      return -1;
-    }
-
-    return httpClientEnd - httpClientStart;
+  long getHttpRequestTime() {
+    return httpClient.getTime();
   }
 
-  public long getResultSetCreationTime() {
-    if (createResultSetStart == 0 || createResultSetEnd == 0) {
-      return -1;
-    }
-
-    return createResultSetEnd - createResultSetStart;
+  long getResultSetCreationTime() {
+    return createResultSet.getTime();
   }
 
   public String generateTelemetry() {
@@ -160,20 +143,20 @@ public class ExecTimeTelemetryData {
       JSONObject value = new JSONObject();
       String valueStr;
       value.put("eventType", eventType);
-      value.put("QueryStart", this.queryStart);
-      value.put("BindStart", this.bindStart);
-      value.put("BindEnd", this.bindEnd);
-      value.put("GzipStart", this.gzipStart);
-      value.put("GzipEnd", this.gzipEnd);
-      value.put("HttpClientStart", this.httpClientStart);
-      value.put("HttpClientEnd", this.httpClientEnd);
-      value.put("ResponseIOStreamStart", this.responseIOStreamStart);
-      value.put("ResponseIOStreamEnd", this.responseIOStreamEnd);
-      value.put("ProcessResultChunkStart", this.processResultChunkStart);
-      value.put("ProcessResultChunkEnd", this.processResultChunkEnd);
-      value.put("CreateResultSetStart", this.createResultSetStart);
-      value.put("CreatResultSetEnd", this.createResultSetEnd);
-      value.put("QueryEnd", this.queryEnd);
+      value.put("QueryStart", this.query.getStart());
+      value.put("BindStart", this.bind.getStart());
+      value.put("BindEnd", this.bind.getEnd());
+      value.put("GzipStart", this.gzip.getStart());
+      value.put("GzipEnd", this.gzip.getEnd());
+      value.put("HttpClientStart", this.httpClient.getStart());
+      value.put("HttpClientEnd", this.httpClient.getEnd());
+      value.put("ResponseIOStreamStart", this.responseIOStream.getStart());
+      value.put("ResponseIOStreamEnd", this.responseIOStream.getEnd());
+      value.put("ProcessResultChunkStart", this.processResultChunk.getStart());
+      value.put("ProcessResultChunkEnd", this.processResultChunk.getEnd());
+      value.put("CreateResultSetStart", this.createResultSet.getStart());
+      value.put("CreatResultSetEnd", this.createResultSet.getEnd());
+      value.put("QueryEnd", this.query.getEnd());
       value.put("BatchID", this.batchId);
       value.put("QueryID", this.queryId);
       value.put("RequestID", this.requestId);
