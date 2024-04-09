@@ -823,7 +823,8 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
               logger.debug("Executor did not terminate in the specified time.", false);
               List<Runnable> droppedTasks = executor.shutdownNow(); // optional **
               logger.debug(
-                  "Executor was abruptly shut down. {} tasks will not be executed.", droppedTasks.size()); // optional **
+                  "Executor was abruptly shut down. {} tasks will not be executed.",
+                  droppedTasks.size()); // optional **
             }
           }
           // Normal flow will never hit here. This is only for testing purposes
@@ -844,7 +845,7 @@ public class SnowflakeChunkDownloader implements ChunkDownloader {
             "Completed processing {} {} chunks for query {} in {} ms. Download took {} ms (average: {} ms),"
                 + " parsing took {} ms (average: {} ms). Chunks uncompressed size: {} MB (average: {} MB),"
                 + " rows in chunks: {} (total: {}, average in chunk: {}), total memory used: {} MB",
-                chunksSize,
+            chunksSize,
             queryResultFormat == QueryResultFormat.ARROW ? "ARROW" : "JSON",
             queryId,
             totalMillisParsingChunks.get() + totalMillisDownloadingChunks.get(),
