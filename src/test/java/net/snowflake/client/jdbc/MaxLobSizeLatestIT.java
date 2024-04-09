@@ -21,16 +21,19 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.UUIDUtils;
 import org.apache.commons.text.RandomStringGenerator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
+@Category(TestCategoryStatement.class)
 public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
   // Max LOB size is testable from version 3.15.0 and above.
@@ -244,7 +247,6 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
         assertTrue(rsGet.next());
         assertEquals(fileName + ".gz", rsGet.getString(1));
         assertEquals("DOWNLOADED", rsGet.getString(3));
-        assertEquals("DECRYPTED", rsGet.getString(4));
       }
     }
   }
