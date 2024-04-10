@@ -180,17 +180,19 @@ public class StatementLatestIT extends BaseJDBCTest {
   public void testExecuteOpenResultSets() throws SQLException {
     try (Connection con = getConnection()) {
       try (Statement statement = con.createStatement()) {
-
         for (int i = 0; i < 10; i++) {
           statement.execute("select 1");
           statement.getResultSet();
         }
 
         assertEquals(9, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+      }
+
+      try (Statement statement = con.createStatement()) {
         for (int i = 0; i < 10; i++) {
           statement.execute("select 1");
-          //          resultSet = statement.getResultSet();
-          //          resultSet.close();
+          ResultSet resultSet = statement.getResultSet();
+          resultSet.close();
         }
 
         assertEquals(0, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
@@ -201,41 +203,40 @@ public class StatementLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPreparedStatementLogging() throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement stmt = con.createStatement()) {
-        try {
-          SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-          sfSession.setPreparedStatementLogging(true);
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement()) {
+      try {
+        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        sfSession.setPreparedStatementLogging(true);
 
-          stmt.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
-          stmt.executeQuery(
-              "create or replace table mytab(cola int, colb int, colc int, cold int, cole int"
-                  + ", colf int, colg int, colh int)");
-          PreparedStatement pstatement =
-              con.prepareStatement(
-                  "INSERT INTO mytab(cola, colb, colc, cold, cole, colf, colg, colh) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        stmt.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        stmt.executeQuery(
+            "create or replace table mytab(cola int, colb int, colc int, cold int, cole int"
+                + ", colf int, colg int, colh int)");
+        PreparedStatement pstatement =
+            con.prepareStatement(
+                "INSERT INTO mytab(cola, colb, colc, cold, cole, colf, colg, colh) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 
-          for (int i = 1; i <= 1001; i++) {
-            pstatement.setInt(1, i);
-            pstatement.setInt(2, i);
-            pstatement.setInt(3, i);
-            pstatement.setInt(4, i);
-            pstatement.setInt(5, i);
-            pstatement.setInt(6, i);
-            pstatement.setInt(7, i);
-            pstatement.setInt(8, i);
-            pstatement.addBatch();
-          }
-
-          Map<String, ParameterBindingDTO> bindings =
-              pstatement.unwrap(SnowflakePreparedStatementV1.class).getBatchParameterBindings();
-          assertTrue(bindings.size() > 0);
-          int bindValues = BindUploader.arrayBindValueCount(bindings);
-          assertEquals(8008, bindValues);
-          pstatement.executeBatch();
-        } finally {
-          stmt.execute("drop table if exists mytab");
+        for (int i = 1; i <= 1001; i++) {
+          pstatement.setInt(1, i);
+          pstatement.setInt(2, i);
+          pstatement.setInt(3, i);
+          pstatement.setInt(4, i);
+          pstatement.setInt(5, i);
+          pstatement.setInt(6, i);
+          pstatement.setInt(7, i);
+          pstatement.setInt(8, i);
+          pstatement.addBatch();
         }
+
+        Map<String, ParameterBindingDTO> bindings =
+            pstatement.unwrap(SnowflakePreparedStatementV1.class).getBatchParameterBindings();
+        assertTrue(bindings.size() > 0);
+        int bindValues = BindUploader.arrayBindValueCount(bindings);
+        assertEquals(8008, bindValues);
+        pstatement.executeBatch();
+      } finally {
+        stmt.execute("drop table if exists mytab");
       }
     }
   }
@@ -257,17 +258,16 @@ public class StatementLatestIT extends BaseJDBCTest {
   /** Added in > 3.14.4 */
   @Test
   public void testQueryIdIsSetOnFailedQueryExecute() throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement stmt = con.createStatement()) {
-        assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
-        try {
-          stmt.execute("use database not_existing_database");
-          fail("Statement should fail with exception");
-        } catch (SnowflakeSQLException e) {
-          String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
-          TestUtil.assertValidQueryId(queryID);
-          assertEquals(queryID, e.getQueryId());
-        }
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement()) {
+      assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+      try {
+        stmt.execute("use database not_existing_database");
+        fail("Statement should fail with exception");
+      } catch (SnowflakeSQLException e) {
+        String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
+        TestUtil.assertValidQueryId(queryID);
+        assertEquals(queryID, e.getQueryId());
       }
     }
   }
@@ -275,17 +275,16 @@ public class StatementLatestIT extends BaseJDBCTest {
   /** Added in > 3.14.4 */
   @Test
   public void testQueryIdIsSetOnFailedExecuteUpdate() throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement stmt = con.createStatement()) {
-        assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
-        try {
-          stmt.executeUpdate("update not_existing_table set a = 1 where id = 42");
-          fail("Statement should fail with exception");
-        } catch (SnowflakeSQLException e) {
-          String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
-          TestUtil.assertValidQueryId(queryID);
-          assertEquals(queryID, e.getQueryId());
-        }
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement()) {
+      assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+      try {
+        stmt.executeUpdate("update not_existing_table set a = 1 where id = 42");
+        fail("Statement should fail with exception");
+      } catch (SnowflakeSQLException e) {
+        String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
+        TestUtil.assertValidQueryId(queryID);
+        assertEquals(queryID, e.getQueryId());
       }
     }
   }
@@ -293,17 +292,16 @@ public class StatementLatestIT extends BaseJDBCTest {
   /** Added in > 3.14.4 */
   @Test
   public void testQueryIdIsSetOnFailedExecuteQuery() throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement stmt = con.createStatement()) {
-        assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
-        try {
-          stmt.executeQuery("select * from not_existing_table");
-          fail("Statement should fail with exception");
-        } catch (SnowflakeSQLException e) {
-          String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
-          TestUtil.assertValidQueryId(queryID);
-          assertEquals(queryID, e.getQueryId());
-        }
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement()) {
+      assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+      try {
+        stmt.executeQuery("select * from not_existing_table");
+        fail("Statement should fail with exception");
+      } catch (SnowflakeSQLException e) {
+        String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
+        TestUtil.assertValidQueryId(queryID);
+        assertEquals(queryID, e.getQueryId());
       }
     }
   }

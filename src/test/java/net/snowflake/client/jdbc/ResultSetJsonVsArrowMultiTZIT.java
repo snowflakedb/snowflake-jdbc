@@ -73,11 +73,11 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     return con;
   }
 
-  //  private void finish(String table, Connection con) throws SQLException {
-  //    con.createStatement().execute("drop table " + table);
-  //    con.close();
-  //    System.clearProperty("user.timezone");
-  //  }
+  private void finish(String table, Connection con) throws SQLException {
+    con.createStatement().execute("drop table " + table);
+    con.close();
+    System.clearProperty("user.timezone");
+  }
 
   @Test
   public void testTime() throws SQLException {
@@ -118,9 +118,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement();
-        ResultSet rs = statement.executeQuery("select * from " + table)) {
-      try {
+        Statement statement = con.createStatement()) {
+      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
           rs.next();
@@ -133,10 +132,9 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
         }
         rs.next();
         assertNull(rs.getString(1));
-      } finally {
-        statement.execute("drop table if exists" + table);
-        System.clearProperty("user.timezone");
       }
+      statement.execute("drop table " + table);
+      System.clearProperty("user.timezone");
     }
   }
 
@@ -146,7 +144,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String values = "('" + StringUtils.join(times, "'),('") + "'), (null)";
 
     try (Connection con = init(table, column, values);
-        ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
+        Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select * from " + table)) {
       for (int i = 0; i < times.length; i++) {
         rs.next();
         // Java Time class does not have nanoseconds
@@ -193,9 +192,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement();
-        ResultSet rs = statement.executeQuery("select * from " + table)) {
-      try {
+        Statement statement = con.createStatement()) {
+      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
           rs.next();
@@ -203,10 +201,9 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
         }
         rs.next();
         assertNull(rs.getString(1));
-      } finally {
-        statement.execute("drop table if exists" + table);
-        System.clearProperty("user.timezone");
       }
+      statement.execute("drop table " + table);
+      System.clearProperty("user.timezone");
     }
   }
 
@@ -229,9 +226,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement();
-        ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
-      try {
+        Statement statement = con.createStatement()) {
+      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
           rs.next();
@@ -239,10 +235,9 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
         }
         rs.next();
         assertNull(rs.getString(1));
-      } finally {
-        statement.execute("drop table if exists" + table);
-        System.clearProperty("user.timezone");
       }
+      statement.execute("drop table " + table);
+      System.clearProperty("user.timezone");
     }
   }
 }
