@@ -15,11 +15,14 @@ import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.json.DateTimeConverter;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -63,6 +66,19 @@ public class DateConverterTest extends BaseConverterTest {
     "2016-04-20"
   };
 
+  public static final int MILLIS_IN_ONE_HOUR = 3600000;
+  private TimeZone defaultTimeZone;
+
+  @Before
+  public void getDefaultTimeZone() {
+    this.defaultTimeZone = TimeZone.getDefault();
+  }
+
+  @After
+  public void restoreDefaultTimeZone() {
+    TimeZone.setDefault(defaultTimeZone);
+  }
+
   @Test
   public void testDate() throws SFException {
     Map<String, String> customFieldMeta = new HashMap<>();
@@ -85,7 +101,7 @@ public class DateConverterTest extends BaseConverterTest {
       j++;
     }
 
-    ArrowVectorConverter converter = new DateConverter(vector, 0, this);
+    ArrowVectorConverter converter = new DateConverter(vector, 0, this, false);
     int rowCount = j;
     i = 0;
     j = 0;
@@ -144,7 +160,7 @@ public class DateConverterTest extends BaseConverterTest {
       }
     }
 
-    ArrowVectorConverter converter = new DateConverter(vector, 0, this);
+    ArrowVectorConverter converter = new DateConverter(vector, 0, this, false);
 
     for (int i = 0; i < rowCount; i++) {
       int intVal = converter.toInt(i);
@@ -161,5 +177,86 @@ public class DateConverterTest extends BaseConverterTest {
         assertThat(obj.getTime(), is(oldObj.getTime()));
       }
     }
+  }
+
+  @Test
+  public void testTimezoneDates() throws SFException {
+    int testDay = 16911;
+    Map<String, String> customFieldMeta = new HashMap<>();
+    customFieldMeta.put("logicalType", "DATE");
+    // test normal date
+    FieldType fieldType =
+        new FieldType(true, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
+
+    DateDayVector vector = new DateDayVector("date", fieldType, allocator);
+
+    vector.setSafe(0, testDay);
+
+    // Test JDBC_FORMAT_DATE_WITH_TIMEZONE=TRUE with different session timezones
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    String tz = System.getProperty("user.timezone");
+    ArrowVectorConverter converter = new DateConverter(vector, 0, this, true);
+    converter.setUseSessionTimezone(true);
+    converter.setSessionTimeZone(TimeZone.getTimeZone(tz));
+    Object obj = converter.toObject(0);
+    DateTimeConverter jsonConverter =
+        new DateTimeConverter(
+            TimeZone.getTimeZone(tz), this.getSession(), 0, true, false, true, true);
+    Date jsonDate =
+        jsonConverter.getDate(Integer.toString(testDay), 91, 91, TimeZone.getTimeZone(tz), 0);
+    Object utcObj =
+        ArrowResultUtil.getDate(testDay, TimeZone.getTimeZone("UTC"), TimeZone.getTimeZone(tz));
+
+    switch (tz) {
+      case ("UTC"):
+        assertThat(obj.toString(), is("2016-04-20"));
+        assertThat(jsonDate.toString(), is(obj.toString()));
+        assertThat(utcObj.toString(), is("2016-04-20"));
+        assertThat(((Date) obj).getTime(), is(((Date) utcObj).getTime()));
+        break;
+      case ("America/Los_Angeles"):
+        assertThat(obj.toString(), is("2016-04-20"));
+        assertThat(jsonDate.toString(), is(obj.toString()));
+        assertThat(utcObj.toString(), is("2016-04-20"));
+        assertThat(
+            ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (7 * MILLIS_IN_ONE_HOUR)));
+        break;
+      case ("America/New_York"):
+        assertThat(obj.toString(), is("2016-04-20"));
+        assertThat(jsonDate.toString(), is(obj.toString()));
+        assertThat(utcObj.toString(), is("2016-04-20"));
+        assertThat(
+            ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (4 * MILLIS_IN_ONE_HOUR)));
+        break;
+      case ("Pacific/Honolulu"):
+        assertThat(obj.toString(), is("2016-04-20"));
+        assertThat(jsonDate.toString(), is(obj.toString()));
+        assertThat(utcObj.toString(), is("2016-04-20"));
+        assertThat(
+            ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (10 * MILLIS_IN_ONE_HOUR)));
+        break;
+      case ("Asia/Singapore"):
+        assertThat(obj.toString(), is("2016-04-20"));
+        assertThat(jsonDate.toString(), is(obj.toString()));
+        assertThat(utcObj.toString(), is("2016-04-19"));
+        assertThat(
+            ((Date) obj).getTime(), is(((Date) utcObj).getTime() + (8 * MILLIS_IN_ONE_HOUR)));
+        break;
+      case ("MEZ"):
+        assertThat(obj.toString(), is("2016-04-20"));
+        assertThat(jsonDate.toString(), is(obj.toString()));
+        assertThat(utcObj.toString(), is("2016-04-20"));
+        assertThat(((Date) obj).getTime(), is(((Date) utcObj).getTime()));
+        break;
+      case ("MESZ"):
+        assertThat(obj.toString(), is("2016-04-20"));
+        assertThat(jsonDate.toString(), is(obj.toString()));
+        assertThat(utcObj.toString(), is("2016-04-20"));
+        assertThat(((Date) obj).getTime(), is(((Date) utcObj).getTime()));
+        break;
+      default:
+        System.console().printf("Untested timezone: " + tz);
+    }
+    vector.clear();
   }
 }
