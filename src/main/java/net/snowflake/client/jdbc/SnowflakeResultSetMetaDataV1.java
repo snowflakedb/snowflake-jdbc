@@ -79,6 +79,12 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   }
 
   @Override
+  public List<FieldMetadata> getColumnFields(int column) throws SQLException {
+    return SnowflakeUtil.mapSFExceptionToSQLException(
+        () -> resultSetMetaData.getColumnFields(column));
+  }
+
+  @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
     logger.debug("public <T> T unwrap(Class<T> iface)", false);
 

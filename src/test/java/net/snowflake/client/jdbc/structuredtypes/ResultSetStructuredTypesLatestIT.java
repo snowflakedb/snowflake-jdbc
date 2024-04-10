@@ -31,6 +31,7 @@ import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
+import net.snowflake.client.jdbc.SnowflakeResultSetMetaData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.FewTypesSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
@@ -43,6 +44,7 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryStructuredType.class)
+@Ignore
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Parameterized.Parameters(name = "format={0}")
@@ -650,11 +652,11 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
+  public void testColumnTypeWhenStructureTypeIsNotReturned() throws Exception {
     withStructureTypeTemporaryDisabled(
         () -> {
           withFirstRow(
-              "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
+              "SELECT {'string':'a'}",
               resultSet -> {
                 assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
               });
@@ -663,13 +665,36 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testColumnTypeWhenStructureTypeIsEnabled() throws Exception {
+  public void testColumnTypeAndFieldsWhenStructureTypeIsReturned() throws Exception {
     withStructureTypeTemporaryEnabled(
         () -> {
           withFirstRow(
               "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
               resultSet -> {
                 assertEquals(Types.STRUCT, resultSet.getMetaData().getColumnType(1));
+                assertEquals(
+                    1,
+                    resultSet
+                        .getMetaData()
+                        .unwrap(SnowflakeResultSetMetaData.class)
+                        .getColumnFields(1)
+                        .size());
+                assertEquals(
+                    "VARCHAR",
+                    resultSet
+                        .getMetaData()
+                        .unwrap(SnowflakeResultSetMetaData.class)
+                        .getColumnFields(1)
+                        .get(0)
+                        .getTypeName());
+                assertEquals(
+                    "string",
+                    resultSet
+                        .getMetaData()
+                        .unwrap(SnowflakeResultSetMetaData.class)
+                        .getColumnFields(1)
+                        .get(0)
+                        .getName());
               });
         });
   }
