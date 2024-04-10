@@ -652,7 +652,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testColumnTypeWhenStructureTypeIsNotreturned() throws Exception {
+  public void testColumnTypeWhenStructureTypeIsNotReturned() throws Exception {
     withStructureTypeTemporaryDisabled(
         () -> {
           withFirstRow(
