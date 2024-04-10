@@ -27,7 +27,6 @@ import org.junit.experimental.categories.Category;
 @Category(TestCategoryOthers.class)
 public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
 
-  //  private Connection connection;
   private SFStatement sfStatement;
   private SFBaseSession sfBaseSession;
   private ChunkDownloadContext sfContext;

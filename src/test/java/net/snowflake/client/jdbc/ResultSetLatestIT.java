@@ -142,13 +142,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
       // open multiple statements concurrently to overwhelm current memory allocation
       Statement stmt = connection.createStatement();
       for (int i = 0; i < stmtCount; ++i) {
-        try (ResultSet resultSet =
+        ResultSet resultSet =
             stmt.executeQuery(
                 "select randstr(100, random()) from table(generator(rowcount => "
                     + rowCount
-                    + "))")) {
-          rsList.add(resultSet);
-        }
+                    + "))");
+        rsList.add(resultSet);
       }
       // Assert that all resultSets exist and can successfully download the needed chunks without
       // hanging
@@ -355,43 +354,45 @@ public class ResultSetLatestIT extends ResultSet0IT {
     final Map<String, String> params = getConnectionParameters();
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
-
-      statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
-      statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
-      ResultSet resultSet = statement.executeQuery("select * from test_rsmd");
-      ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-      assertEquals(
-          params.get("database").toUpperCase(), resultSetMetaData.getCatalogName(1).toUpperCase());
-      assertEquals(
-          params.get("schema").toUpperCase(), resultSetMetaData.getSchemaName(1).toUpperCase());
-      assertEquals("TEST_RSMD", resultSetMetaData.getTableName(1));
-      assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
-      assertEquals(2, resultSetMetaData.getColumnCount());
-      assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
-      assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
-      assertEquals("COLA", resultSetMetaData.getColumnName(1));
-      assertEquals(3, resultSetMetaData.getColumnType(1));
-      assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
-      assertEquals(20, resultSetMetaData.getPrecision(1));
-      assertEquals(5, resultSetMetaData.getScale(1));
-      assertFalse(resultSetMetaData.isAutoIncrement(1));
-      assertFalse(resultSetMetaData.isCaseSensitive(1));
-      assertFalse(resultSetMetaData.isCurrency(1));
-      assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-      assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
-      assertTrue(resultSetMetaData.isReadOnly(1));
-      assertTrue(resultSetMetaData.isSearchable(1));
-      assertTrue(resultSetMetaData.isSigned(1));
-      SnowflakeResultSetMetaData secretMetaData =
-          resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
-      List<String> colNames = secretMetaData.getColumnNames();
-      assertEquals("COLA", colNames.get(0));
-      assertEquals("COLB", colNames.get(1));
-      assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
-      assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
-      TestUtil.assertValidQueryId(secretMetaData.getQueryID());
-
-      statement.execute("drop table if exists test_rsmd");
+      try {
+        statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
+        statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
+        ResultSet resultSet = statement.executeQuery("select * from test_rsmd");
+        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+        assertEquals(
+            params.get("database").toUpperCase(),
+            resultSetMetaData.getCatalogName(1).toUpperCase());
+        assertEquals(
+            params.get("schema").toUpperCase(), resultSetMetaData.getSchemaName(1).toUpperCase());
+        assertEquals("TEST_RSMD", resultSetMetaData.getTableName(1));
+        assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
+        assertEquals(2, resultSetMetaData.getColumnCount());
+        assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
+        assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
+        assertEquals("COLA", resultSetMetaData.getColumnName(1));
+        assertEquals(3, resultSetMetaData.getColumnType(1));
+        assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
+        assertEquals(20, resultSetMetaData.getPrecision(1));
+        assertEquals(5, resultSetMetaData.getScale(1));
+        assertFalse(resultSetMetaData.isAutoIncrement(1));
+        assertFalse(resultSetMetaData.isCaseSensitive(1));
+        assertFalse(resultSetMetaData.isCurrency(1));
+        assertFalse(resultSetMetaData.isDefinitelyWritable(1));
+        assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
+        assertTrue(resultSetMetaData.isReadOnly(1));
+        assertTrue(resultSetMetaData.isSearchable(1));
+        assertTrue(resultSetMetaData.isSigned(1));
+        SnowflakeResultSetMetaData secretMetaData =
+            resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
+        List<String> colNames = secretMetaData.getColumnNames();
+        assertEquals("COLA", colNames.get(0));
+        assertEquals("COLB", colNames.get(1));
+        assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
+        assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
+        TestUtil.assertValidQueryId(secretMetaData.getQueryID());
+      } finally {
+        statement.execute("drop table if exists test_rsmd");
+      }
     }
   }
 
@@ -592,10 +593,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
         "99999999999999999999999999999999999999", "-99999999999999999999999999999999999999"
       };
       for (int i = 0; i < extremeNumbers.length; i++) {
-        ResultSet resultSet = statement.executeQuery("select " + extremeNumbers[i]);
-        resultSet.next();
-        assertEquals(Types.BIGINT, resultSet.getMetaData().getColumnType(1));
-        assertEquals(new BigDecimal(extremeNumbers[i]), resultSet.getObject(1));
+        try (ResultSet resultSet = statement.executeQuery("select " + extremeNumbers[i])) {
+          resultSet.next();
+          assertEquals(Types.BIGINT, resultSet.getMetaData().getColumnType(1));
+          assertEquals(new BigDecimal(extremeNumbers[i]), resultSet.getObject(1));
+        }
       }
     }
   }
@@ -737,8 +739,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testCallStatementType() throws SQLException {
     Properties props = new Properties();
     props.put("USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS", "true");
-    try (Connection connection = getConnection(props)) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection(props);
+        Statement statement = connection.createStatement()) {
+      try {
         String sp =
             "CREATE OR REPLACE PROCEDURE \"SP_ZSDLEADTIME_ARCHIVE_DAILY\"()\n"
                 + "RETURNS VARCHAR(16777216)\n"
@@ -792,7 +795,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
           assertEquals(0, resultSetMetaData.getScale(1));
           assertEquals(16777216, resultSetMetaData.getPrecision(1));
         }
-
+      } finally {
         statement.execute("drop procedure if exists SP_ZSDLEADTIME_ARCHIVE_DAILY()");
         statement.execute("drop table if exists MYTABLE1");
         statement.execute("drop table if exists MYCSVTABLE");
@@ -819,8 +822,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
   @Test
   public void testGetObjectJsonResult() throws SQLException {
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("alter session set jdbc_query_result_format ='json'");
         statement.execute("create or replace table testObj (colA double, colB boolean)");
 
@@ -835,8 +839,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
           assertEquals(22.2, resultSet.getObject(1));
           assertEquals(true, resultSet.getObject(2));
         }
+      } finally {
+        statement.execute("drop table if exists testObj");
       }
-      connection.createStatement().execute("drop table if exists testObj");
     }
   }
 
@@ -942,19 +947,21 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
   @Test
   public void testGranularTimeFunctionsInSessionTimezone() throws SQLException {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("create or replace table testGranularTime(t time)");
         statement.execute("insert into testGranularTime values ('10:10:10')");
-        ResultSet resultSet = statement.executeQuery("select * from testGranularTime");
-        resultSet.next();
-        assertEquals(Time.valueOf("10:10:10"), resultSet.getTime(1));
-        assertEquals(10, resultSet.getTime(1).getHours());
-        assertEquals(10, resultSet.getTime(1).getMinutes());
-        assertEquals(10, resultSet.getTime(1).getSeconds());
-        resultSet.close();
+        try (ResultSet resultSet = statement.executeQuery("select * from testGranularTime")) {
+          resultSet.next();
+          assertEquals(Time.valueOf("10:10:10"), resultSet.getTime(1));
+          assertEquals(10, resultSet.getTime(1).getHours());
+          assertEquals(10, resultSet.getTime(1).getMinutes());
+          assertEquals(10, resultSet.getTime(1).getSeconds());
+        }
+      } finally {
+        statement.execute("drop table if exists testGranularTime");
       }
-      connection.createStatement().execute("drop table if exists testGranularTime");
     }
   }
 
@@ -964,20 +971,23 @@ public class ResultSetLatestIT extends ResultSet0IT {
     try (Connection connection = getConnection()) {
       TimeZone origTz = TimeZone.getDefault();
       try (Statement statement = connection.createStatement()) {
-        TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
-        statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
-        statement.execute("create or replace table testGranularTime(t time)");
-        statement.execute("insert into testGranularTime values ('10:10:10')");
-        try (ResultSet resultSet = statement.executeQuery("select * from testGranularTime")) {
-          resultSet.next();
-          assertEquals(Time.valueOf("02:10:10"), resultSet.getTime(1));
-          assertEquals(02, resultSet.getTime(1).getHours());
-          assertEquals(10, resultSet.getTime(1).getMinutes());
-          assertEquals(10, resultSet.getTime(1).getSeconds());
+        try {
+          TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
+          statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=false");
+          statement.execute("create or replace table testGranularTime(t time)");
+          statement.execute("insert into testGranularTime values ('10:10:10')");
+          try (ResultSet resultSet = statement.executeQuery("select * from testGranularTime")) {
+            resultSet.next();
+            assertEquals(Time.valueOf("02:10:10"), resultSet.getTime(1));
+            assertEquals(02, resultSet.getTime(1).getHours());
+            assertEquals(10, resultSet.getTime(1).getMinutes());
+            assertEquals(10, resultSet.getTime(1).getSeconds());
+          }
+        } finally {
+          TimeZone.setDefault(origTz);
+          connection.createStatement().execute("drop table if exists testGranularTime");
         }
       }
-      TimeZone.setDefault(origTz);
-      connection.createStatement().execute("drop table if exists testGranularTime");
     }
   }
 

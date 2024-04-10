@@ -55,8 +55,9 @@ public class PutUnescapeBackslashIT extends AbstractDriverIT {
         writer.write("1,test1");
       }
       // run PUT command
-      try (Connection connection = getConnection()) {
-        try (Statement statement = connection.createStatement()) {
+      try (Connection connection = getConnection();
+          Statement statement = connection.createStatement()) {
+        try {
           String sql =
               String.format("PUT 'file://%s' @~/%s/", dataFile.getCanonicalPath(), remoteSubDir);
 
@@ -73,8 +74,9 @@ public class PutUnescapeBackslashIT extends AbstractDriverIT {
                   startsWith(String.format("%s/%s", remoteSubDir, testDataFileName)));
             }
           }
+        } finally {
+          statement.execute(String.format("RM @~/%s", remoteSubDir));
         }
-        connection.createStatement().execute(String.format("RM @~/%s", remoteSubDir));
       }
     } finally {
       FileUtils.deleteDirectory(topDataDir.toFile());

@@ -64,9 +64,10 @@ public class CustomProxyLatestIT {
         DriverManager.getConnection(
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
       Statement stmt = con1.createStatement();
-      ResultSet rs = stmt.executeQuery("select 1");
-      rs.next();
-      assertEquals(1, rs.getInt(1));
+      try (ResultSet rs = stmt.executeQuery("select 1")) {
+        rs.next();
+        assertEquals(1, rs.getInt(1));
+      }
     }
 
     // Change the proxy settings for the 2nd connection, but all other properties can be re-used.
@@ -439,11 +440,12 @@ public class CustomProxyLatestIT {
                     + getFullPathFileInResource("orders_100.csv")
                     + " @testPutGet_stage"));
         String sql = "select $1 from values(1),(3),(5),(7)";
-        ResultSet res = stmt.executeQuery(sql);
-        while (res.next()) {
-          System.out.println("value: " + res.getInt(1));
+        try (ResultSet res = stmt.executeQuery(sql)) {
+          while (res.next()) {
+            System.out.println("value: " + res.getInt(1));
+          }
+          System.out.println("OK - " + counter);
         }
-        System.out.println("OK - " + counter);
       }
       counter++;
       break;
@@ -712,14 +714,14 @@ public class CustomProxyLatestIT {
     Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
 
     String fileName = "test_copy.csv";
-    try (Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties)) {
-      Statement stmt = con.createStatement();
-      stmt.execute("create or replace warehouse MEGTEST");
-      stmt.execute("use database MEGDB");
-      stmt.execute("use schema MEGSCHEMA");
-      stmt.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-
+    try (Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);
+        Statement stmt = con.createStatement()) {
       try {
+        stmt.execute("create or replace warehouse MEGTEST");
+        stmt.execute("use database MEGDB");
+        stmt.execute("use schema MEGSCHEMA");
+        stmt.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+
         String TEST_DATA_FILE = "orders_100.csv";
         String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
         File destFolder = tmpFolder.newFolder();
@@ -750,10 +752,8 @@ public class CustomProxyLatestIT {
         assert (original.length() == unzipped.length());
       } catch (Throwable t) {
         t.printStackTrace();
-      } finally {
-        stmt.execute("DROP STAGE IF EXISTS testGetPut_stage");
-        stmt.close();
       }
+      stmt.execute("DROP STAGE IF EXISTS testGetPut_stage");
     }
   }
 }

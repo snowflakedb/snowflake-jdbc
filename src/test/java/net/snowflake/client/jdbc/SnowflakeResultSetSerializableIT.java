@@ -163,7 +163,6 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
           ObjectInputStream si = new ObjectInputStream(fi)) {
         SnowflakeResultSetSerializableV1 resultSetChunk =
             (SnowflakeResultSetSerializableV1) si.readObject();
-        fi.close();
 
         if (developPrint) {
           System.out.println(
@@ -188,38 +187,39 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
         }
 
         // Read data from object
-        ResultSet rs =
+        try (ResultSet rs =
             resultSetChunk.getResultSet(
                 SnowflakeResultSetSerializable.ResultSetRetrieveConfig.Builder.newInstance()
                     .setProxyProperties(props)
                     .setSfFullURL(sfFullURL)
-                    .build());
+                    .build())) {
 
-        // print result set meta data
-        ResultSetMetaData metadata = rs.getMetaData();
-        int colCount = metadata.getColumnCount();
-        if (developPrint) {
-          for (int j = 1; j <= colCount; j++) {
-            System.out.print(" table: " + metadata.getTableName(j));
-            System.out.print(" schema: " + metadata.getSchemaName(j));
-            System.out.print(" type: " + metadata.getColumnTypeName(j));
-            System.out.print(" name: " + metadata.getColumnName(j));
-            System.out.print(" precision: " + metadata.getPrecision(j));
-            System.out.println(" scale:" + metadata.getScale(j));
-          }
-        }
-
-        // Print and count data
-        while (rs.next()) {
-          for (int i = 1; i <= colCount; i++) {
-            rs.getObject(i);
-            if (rs.wasNull()) {
-              builder.append("\"").append("null").append("\",");
-            } else {
-              builder.append("\"").append(rs.getString(i)).append("\",");
+          // print result set meta data
+          ResultSetMetaData metadata = rs.getMetaData();
+          int colCount = metadata.getColumnCount();
+          if (developPrint) {
+            for (int j = 1; j <= colCount; j++) {
+              System.out.print(" table: " + metadata.getTableName(j));
+              System.out.print(" schema: " + metadata.getSchemaName(j));
+              System.out.print(" type: " + metadata.getColumnTypeName(j));
+              System.out.print(" name: " + metadata.getColumnName(j));
+              System.out.print(" precision: " + metadata.getPrecision(j));
+              System.out.println(" scale:" + metadata.getScale(j));
             }
           }
-          builder.append("\n");
+
+          // Print and count data
+          while (rs.next()) {
+            for (int i = 1; i <= colCount; i++) {
+              rs.getObject(i);
+              if (rs.wasNull()) {
+                builder.append("\"").append("null").append("\",");
+              } else {
+                builder.append("\"").append(rs.getString(i)).append("\",");
+              }
+            }
+            builder.append("\n");
+          }
         }
       }
     }
@@ -631,8 +631,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
         int testCount = 5;
         while (testCount-- > 0) {
           String sqlSelect = "select * from table_basic ";
-          ResultSet rs = statement.executeQuery(sqlSelect);
-          rs.close();
+          try (ResultSet rs = statement.executeQuery(sqlSelect)) {}
+          ;
         }
       } finally {
         statement.execute("drop table if exists table_basic");

@@ -207,9 +207,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
-    try (Connection connection = getConnection("gcpaccount")) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = getConnection("gcpaccount");
+        Statement statement = connection.createStatement()) {
+      try {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
@@ -274,8 +274,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // they should be gzip compressed
         assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
         assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+      } finally {
+        statement.execute("DROP STAGE if exists " + testStageName);
       }
-      connection.createStatement().execute("DROP STAGE if exists " + testStageName);
     }
   }
 
@@ -288,9 +289,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
     for (String accountName : supportedAccounts) {
-      try (Connection connection = getConnection(accountName)) {
-        try (Statement statement = connection.createStatement()) {
-
+      try (Connection connection = getConnection(accountName);
+          Statement statement = connection.createStatement()) {
+        try {
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
@@ -362,8 +363,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           // they should be gzip compressed
           assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
           assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+        } finally {
+          statement.execute("DROP STAGE if exists " + testStageName);
         }
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
       }
     }
   }
@@ -374,8 +376,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   public void testGCPFileTransferMetadataNegativeOnlySupportPut() throws Throwable {
     int expectExceptionCount = 1;
     int actualExceptionCount = -1;
-    try (Connection connection = getConnection("gcpaccount")) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection("gcpaccount");
+        Statement statement = connection.createStatement()) {
+      try {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
@@ -405,8 +408,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       } catch (Exception ex) {
         System.out.println("Negative test to hit expected exception: " + ex.getMessage());
         actualExceptionCount++;
+      } finally {
+        statement.execute("DROP STAGE if exists " + testStageName);
       }
-      connection.createStatement().execute("DROP STAGE if exists " + testStageName);
     }
     assertEquals(expectExceptionCount, actualExceptionCount);
   }
@@ -504,9 +508,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
-      try (Connection connection = getConnection(accounts.get(i), paramProperties)) {
-        try (Statement statement = connection.createStatement()) {
-
+      try (Connection connection = getConnection(accounts.get(i), paramProperties);
+          Statement statement = connection.createStatement()) {
+        try {
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE testing_stage");
           assertTrue(
@@ -543,8 +547,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           // 2nd file should never be uploaded
           File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
           assertTrue(FileUtils.contentEqualsIgnoreEOL(file1, unzipped, null));
+        } finally {
+          statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
         }
-        connection.createStatement().execute("DROP TABLE IF EXISTS testLoadToLocalFS");
       }
     }
   }
@@ -621,8 +626,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testSnow76376() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement regularStatement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement regularStatement = connection.createStatement()) {
+      try {
         regularStatement.execute(
             "create or replace table t(a int) as select * from values" + "(1),(2),(8),(10)");
 
@@ -775,8 +781,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                     + "LIMIT set to empty string");
           }
         }
+      } finally {
+        regularStatement.execute("drop table t");
       }
-      connection.createStatement().execute("drop table t");
     }
   }
 
@@ -795,8 +802,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
     paramProperties.put("ENABLE_GEOGRAPHY_TYPE", true);
 
-    try (Connection connection = getConnection(paramProperties)) {
-      try (Statement regularStatement = connection.createStatement()) {
+    try (Connection connection = getConnection(paramProperties);
+        Statement regularStatement = connection.createStatement()) {
+      try {
         regularStatement.execute("create or replace table t_geo(geo geography);");
 
         regularStatement.execute(
@@ -817,8 +825,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         testGeoOutputTypeSingle(regularStatement, false, "wkb", "BINARY", "[B", Types.BINARY);
 
         testGeoOutputTypeSingle(regularStatement, true, "wkb", "GEOGRAPHY", "[B", Types.BINARY);
+      } finally {
+        regularStatement.execute("drop table t_geo");
       }
-      connection.createStatement().execute("drop table t_geo");
     }
   }
 
@@ -855,9 +864,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     paramProperties.put("ENABLE_FIX_182763", true);
 
-    try (Connection connection = getConnection(paramProperties)) {
-
-      try (Statement regularStatement = connection.createStatement()) {
+    try (Connection connection = getConnection(paramProperties);
+        Statement regularStatement = connection.createStatement()) {
+      try {
         regularStatement.execute("create or replace table t_geo(geo geography);");
 
         testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
@@ -871,8 +880,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
 
         testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
+      } finally {
+        regularStatement.execute("drop table t_geo");
       }
-      connection.createStatement().execute("drop table t_geo");
     }
   }
 
@@ -906,9 +916,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
     paramProperties.put("ENABLE_GEOMETRY_TYPE", true);
 
-    try (Connection connection = getConnection(paramProperties)) {
-      try (Statement regularStatement = connection.createStatement()) {
-
+    try (Connection connection = getConnection(paramProperties);
+        Statement regularStatement = connection.createStatement()) {
+      try {
         regularStatement.execute("create or replace table t_geo2(geo geometry);");
 
         regularStatement.execute(
@@ -919,8 +929,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         testGeometryOutputTypeSingle(
             regularStatement, true, "wkt", "GEOMETRY", "java.lang.String", Types.VARCHAR);
+      } finally {
+        regularStatement.execute("drop table t_geo2");
       }
-      connection.createStatement().execute("drop table t_geo2");
     }
   }
 
@@ -957,16 +968,17 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     Properties paramProperties = new Properties();
 
-    try (Connection connection = getConnection(paramProperties)) {
-      try (Statement regularStatement = connection.createStatement()) {
-
+    try (Connection connection = getConnection(paramProperties);
+        Statement regularStatement = connection.createStatement()) {
+      try {
         regularStatement.execute("create or replace table t_geo2(geo geometry);");
 
         testGeometryMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
 
         testGeometryMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+      } finally {
+        regularStatement.execute("drop table t_geo2");
       }
-      connection.createStatement().execute("drop table t_geo2");
     }
   }
 
@@ -1076,8 +1088,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   public void testPutGetLargeFileGCSDownscopedCredential() throws Throwable {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
-    try (Connection connection = getConnection("gcpaccount", paramProperties)) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
         File destFolder = tmpFolder.newFolder();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
@@ -1139,8 +1152,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
         assert (largeTempFile.length() == unzipped.length());
         assert (FileUtils.contentEquals(largeTempFile, unzipped));
-      }
-      try (Statement statement = connection.createStatement()) {
+      } finally {
         statement.execute("DROP STAGE IF EXISTS largefile_stage");
         statement.execute("DROP STAGE IF EXISTS extra_stage");
         statement.execute("DROP TABLE IF EXISTS large_table");
@@ -1152,9 +1164,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetLargeFileAzure() throws Throwable {
     Properties paramProperties = new Properties();
-    try (Connection connection = getConnection("azureaccount", paramProperties)) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = getConnection("azureaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
         File destFolder = tmpFolder.newFolder();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
@@ -1216,8 +1228,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
         assert (largeTempFile.length() == unzipped.length());
         assert (FileUtils.contentEquals(largeTempFile, unzipped));
-      }
-      try (Statement statement = connection.createStatement()) {
+      } finally {
         statement.execute("DROP STAGE IF EXISTS largefile_stage");
         statement.execute("DROP STAGE IF EXISTS extra_stage");
         statement.execute("DROP TABLE IF EXISTS large_table");
@@ -1251,9 +1262,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
     for (String accountName : supportedAccounts) {
-      try (Connection connection = getConnection(accountName)) {
-        try (Statement statement = connection.createStatement()) {
-
+      try (Connection connection = getConnection(accountName);
+          Statement statement = connection.createStatement()) {
+        try {
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
@@ -1341,8 +1352,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           // they should be gzip compressed
           assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
           assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+        } finally {
+          statement.execute("DROP STAGE if exists " + testStageName);
         }
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
       }
     }
   }
@@ -1358,9 +1370,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     String clientKey = "clientKey";
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
     for (String accountName : supportedAccounts) {
-      try (Connection connection = getConnection(accountName)) {
-        try (Statement statement = connection.createStatement()) {
-
+      try (Connection connection = getConnection(accountName);
+          Statement statement = connection.createStatement()) {
+        try {
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
@@ -1408,8 +1420,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             assertEquals(clientName, client.getStreamingIngestClientName(meta));
             assertEquals(clientKey, client.getStreamingIngestClientKey(meta));
           }
+        } finally {
+          statement.execute("DROP STAGE if exists " + testStageName);
         }
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
       }
     }
   }
@@ -1421,29 +1434,32 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       try (Connection connection = getConnection(accountName)) {
         SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
         try (Statement statement = connection.createStatement()) {
-          SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
-          statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-          statement.execute(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");
-          String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
-          SnowflakeFileTransferAgent sfAgent =
-              new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
-          StageInfo info = sfAgent.getStageInfo();
-          SnowflakeStorageClient client =
-              StorageClientFactory.getFactory().createClient(info, 1, null, /* session= */ null);
+          try {
+            SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+            statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+            statement.execute(
+                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");
+            String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
+            SnowflakeFileTransferAgent sfAgent =
+                new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+            StageInfo info = sfAgent.getStageInfo();
+            SnowflakeStorageClient client =
+                StorageClientFactory.getFactory().createClient(info, 1, null, /* session= */ null);
 
-          client.handleStorageException(
-              new StorageException(
-                  client.getMaxRetries(),
-                  Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
-                  new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
-              client.getMaxRetries(),
-              "download",
-              null,
-              command,
-              null);
+            client.handleStorageException(
+                new StorageException(
+                    client.getMaxRetries(),
+                    Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                    new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+                client.getMaxRetries(),
+                "download",
+                null,
+                command,
+                null);
+          } finally {
+            statement.execute("DROP STAGE if exists testPutGet_stage");
+          }
         }
-        connection.createStatement().execute("DROP STAGE if exists testPutGet_stage");
       }
     }
   }
@@ -1456,9 +1472,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     // set parameter for presignedUrl upload instead of downscoped token
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
-    try (Connection connection = getConnection("gcpaccount", paramProperties)) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
@@ -1490,8 +1506,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             statement.execute(
                 "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
         assert (isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
+      } finally {
+        statement.execute("DROP STAGE if exists " + testStageName);
       }
-      connection.createStatement().execute("DROP STAGE if exists " + testStageName);
     }
   }
 

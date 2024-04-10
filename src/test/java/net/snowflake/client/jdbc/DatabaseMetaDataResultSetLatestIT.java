@@ -24,11 +24,12 @@ public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
       List<String> columnNames = Arrays.asList("float");
       List<String> columnTypeNames = Arrays.asList("FLOAT");
       List<Integer> columnTypes = Arrays.asList(Types.FLOAT);
-      ResultSet resultSet =
+      try (ResultSet resultSet =
           new SnowflakeDatabaseMetaDataResultSet(
-              columnNames, columnTypeNames, columnTypes, rows, st);
-      resultSet.next();
-      assertEquals(1.2F, resultSet.getObject(1));
+              columnNames, columnTypeNames, columnTypes, rows, st)) {
+        resultSet.next();
+        assertEquals(1.2F, resultSet.getObject(1));
+      }
     }
   }
 }

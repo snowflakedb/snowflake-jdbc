@@ -66,8 +66,9 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetColumnClassNameForBinary() throws Throwable {
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("create or replace table bintable (b binary)");
         statement.execute("insert into bintable values ('00f1f2')");
         try (ResultSet resultSet = statement.executeQuery("select * from bintable")) {
@@ -83,8 +84,9 @@ public class ResultSetIT extends ResultSet0IT {
           assertEquals(ret[1], (byte) -15);
           assertEquals(ret[2], (byte) -14);
         }
+      } finally {
+        statement.execute("drop table if exists bintable");
       }
-      connection.createStatement().execute("drop table if exists bintable");
     }
   }
 
@@ -102,52 +104,55 @@ public class ResultSetIT extends ResultSet0IT {
       Clob clob = connection.createClob();
       clob.setString(1, "hello world");
       try (Statement statement = connection.createStatement()) {
-        statement.execute(
-            "create or replace table test_get(colA integer, colB number, colC number, "
-                + "colD string, colE double, colF float, colG boolean, colH text)");
+        try {
+          statement.execute(
+              "create or replace table test_get(colA integer, colB number, colC number, "
+                  + "colD string, colE double, colF float, colG boolean, colH text)");
 
-        try (PreparedStatement prepStatement = connection.prepareStatement(prepInsertString)) {
-          prepStatement.setInt(1, bigInt);
-          prepStatement.setLong(2, bigLong);
-          prepStatement.setLong(3, bigShort);
-          prepStatement.setString(4, str);
-          prepStatement.setDouble(5, bigDouble);
-          prepStatement.setFloat(6, bigFloat);
-          prepStatement.setBoolean(7, true);
-          prepStatement.setClob(8, clob);
-          prepStatement.execute();
+          try (PreparedStatement prepStatement = connection.prepareStatement(prepInsertString)) {
+            prepStatement.setInt(1, bigInt);
+            prepStatement.setLong(2, bigLong);
+            prepStatement.setLong(3, bigShort);
+            prepStatement.setString(4, str);
+            prepStatement.setDouble(5, bigDouble);
+            prepStatement.setFloat(6, bigFloat);
+            prepStatement.setBoolean(7, true);
+            prepStatement.setClob(8, clob);
+            prepStatement.execute();
 
-          statement.execute("select * from test_get");
-          try (ResultSet resultSet = statement.getResultSet()) {
-            resultSet.next();
-            assertEquals(bigInt, resultSet.getInt(1));
-            assertEquals(bigInt, resultSet.getInt("COLA"));
-            assertEquals(bigLong, resultSet.getLong(2));
-            assertEquals(bigLong, resultSet.getLong("COLB"));
-            assertEquals(bigShort, resultSet.getShort(3));
-            assertEquals(bigShort, resultSet.getShort("COLC"));
-            assertEquals(str, resultSet.getString(4));
-            assertEquals(str, resultSet.getString("COLD"));
-            Reader reader = resultSet.getCharacterStream("COLD");
-            char[] sample = new char[str.length()];
+            statement.execute("select * from test_get");
+            try (ResultSet resultSet = statement.getResultSet()) {
+              resultSet.next();
+              assertEquals(bigInt, resultSet.getInt(1));
+              assertEquals(bigInt, resultSet.getInt("COLA"));
+              assertEquals(bigLong, resultSet.getLong(2));
+              assertEquals(bigLong, resultSet.getLong("COLB"));
+              assertEquals(bigShort, resultSet.getShort(3));
+              assertEquals(bigShort, resultSet.getShort("COLC"));
+              assertEquals(str, resultSet.getString(4));
+              assertEquals(str, resultSet.getString("COLD"));
+              Reader reader = resultSet.getCharacterStream("COLD");
+              char[] sample = new char[str.length()];
 
-            assertEquals(str.length(), reader.read(sample));
-            assertEquals(str.charAt(0), sample[0]);
-            assertEquals(str, new String(sample));
+              assertEquals(str.length(), reader.read(sample));
+              assertEquals(str.charAt(0), sample[0]);
+              assertEquals(str, new String(sample));
 
-            // assertEquals(bigDouble, resultSet.getDouble(5), 0);
-            // assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
-            assertEquals(bigFloat, resultSet.getFloat(6), 0);
-            assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
-            assertTrue(resultSet.getBoolean(7));
-            assertTrue(resultSet.getBoolean("COLG"));
-            assertEquals("hello world", resultSet.getClob("COLH").toString());
+              // assertEquals(bigDouble, resultSet.getDouble(5), 0);
+              // assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
+              assertEquals(bigFloat, resultSet.getFloat(6), 0);
+              assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
+              assertTrue(resultSet.getBoolean(7));
+              assertTrue(resultSet.getBoolean("COLG"));
+              assertEquals("hello world", resultSet.getClob("COLH").toString());
 
-            // test getStatement method
-            assertEquals(statement, resultSet.getStatement());
+              // test getStatement method
+              assertEquals(statement, resultSet.getStatement());
+            }
           }
+        } finally {
+          statement.execute("drop table if exists table_get");
         }
-        statement.execute("drop table if exists table_get");
       }
     }
   }
@@ -460,19 +465,20 @@ public class ResultSetIT extends ResultSet0IT {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
       statement.execute(selectAllSQL);
-      ResultSet resultSet = statement.getResultSet();
-      resultSet.next();
-      assertTrue(resultSet.isFirst());
-      assertEquals(1, resultSet.getRow());
-      resultSet.next();
-      assertFalse(resultSet.isFirst());
-      assertEquals(2, resultSet.getRow());
-      assertFalse(resultSet.isLast());
-      resultSet.next();
-      assertEquals(3, resultSet.getRow());
-      assertTrue(resultSet.isLast());
-      resultSet.next();
-      assertTrue(resultSet.isAfterLast());
+      try (ResultSet resultSet = statement.getResultSet()) {
+        resultSet.next();
+        assertTrue(resultSet.isFirst());
+        assertEquals(1, resultSet.getRow());
+        resultSet.next();
+        assertFalse(resultSet.isFirst());
+        assertEquals(2, resultSet.getRow());
+        assertFalse(resultSet.isLast());
+        resultSet.next();
+        assertEquals(3, resultSet.getRow());
+        assertTrue(resultSet.isLast());
+        resultSet.next();
+        assertTrue(resultSet.isAfterLast());
+      }
     }
   }
 
@@ -484,22 +490,26 @@ public class ResultSetIT extends ResultSet0IT {
   @Test
   public void testGetBytes() throws SQLException {
     Properties props = new Properties();
-    try (Connection connection = init(props)) {
-      ingestBinaryTestData(connection);
+    try (Connection connection = init(props);
+        Statement statement = connection.createStatement()) {
+      try {
+        ingestBinaryTestData(connection);
 
-      // Get results in hex format (default).
-      try (ResultSet resultSet = connection.createStatement().executeQuery("select * from bin")) {
-        resultSet.next();
-        assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
-        assertEquals("", resultSet.getString(1));
-        resultSet.next();
-        assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
-        assertEquals("ABCD12", resultSet.getString(1));
-        resultSet.next();
-        assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
-        assertEquals("00FF4201", resultSet.getString(1));
+        // Get results in hex format (default).
+        try (ResultSet resultSet = statement.executeQuery("select * from bin")) {
+          resultSet.next();
+          assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
+          assertEquals("", resultSet.getString(1));
+          resultSet.next();
+          assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
+          assertEquals("ABCD12", resultSet.getString(1));
+          resultSet.next();
+          assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
+          assertEquals("00FF4201", resultSet.getString(1));
+        }
+      } finally {
+        statement.execute("drop table if exists bin");
       }
-      connection.createStatement().execute("drop table if exists bin");
     }
   }
 
@@ -529,30 +539,34 @@ public class ResultSetIT extends ResultSet0IT {
   public void testGetBytesInBase64() throws Exception {
     Properties props = new Properties();
     props.setProperty("binary_output_format", "BAse64");
-    try (Connection connection = init(props)) {
-      ingestBinaryTestData(connection);
+    try (Connection connection = init(props);
+        Statement statement = connection.createStatement()) {
+      try {
+        ingestBinaryTestData(connection);
 
-      try (ResultSet resultSet = connection.createStatement().executeQuery("select * from bin")) {
-        resultSet.next();
-        assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
-        assertEquals("", resultSet.getString(1));
-        resultSet.next();
-        assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
-        assertEquals("q80S", resultSet.getString(1));
-        resultSet.next();
-        assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
-        assertEquals("AP9CAQ==", resultSet.getString(1));
+        try (ResultSet resultSet = statement.executeQuery("select * from bin")) {
+          resultSet.next();
+          assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
+          assertEquals("", resultSet.getString(1));
+          resultSet.next();
+          assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
+          assertEquals("q80S", resultSet.getString(1));
+          resultSet.next();
+          assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
+          assertEquals("AP9CAQ==", resultSet.getString(1));
+        }
+      } finally {
+        statement.execute("drop table if exists bin");
       }
-      connection.createStatement().execute("drop table if exists bin");
     }
   }
 
   // SNOW-31647
   @Test
   public void testColumnMetaWithZeroPrecision() throws SQLException {
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute(
             "create or replace table testColDecimal(cola number(38, 0), " + "colb number(17, 5))");
 
@@ -564,6 +578,7 @@ public class ResultSetIT extends ResultSet0IT {
           assertThat(resultSetMetaData.isSigned(1), is(true));
           assertThat(resultSetMetaData.isSigned(2), is(true));
         }
+      } finally {
         statement.execute("drop table if exists testColDecimal");
       }
     }
@@ -573,79 +588,89 @@ public class ResultSetIT extends ResultSet0IT {
   public void testGetObjectOnFixedView() throws Exception {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "create or replace table testFixedView"
+                + "(C1 STRING NOT NULL COMMENT 'JDBC', "
+                + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
+                + "C7 STRING, C8 STRING, C9 STRING) "
+                + "stage_file_format = (field_delimiter='|' "
+                + "error_on_column_count_mismatch=false)");
 
-      statement.execute(
-          "create or replace table testFixedView"
-              + "(C1 STRING NOT NULL COMMENT 'JDBC', "
-              + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
-              + "C7 STRING, C8 STRING, C9 STRING) "
-              + "stage_file_format = (field_delimiter='|' "
-              + "error_on_column_count_mismatch=false)");
+        // put files
+        assertTrue(
+            "Failed to put a file",
+            statement.execute(
+                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%testFixedView"));
 
-      // put files
-      assertTrue(
-          "Failed to put a file",
-          statement.execute(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%testFixedView"));
+        try (ResultSet resultSet =
+            statement.executeQuery(
+                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%testFixedView")) {
 
-      try (ResultSet resultSet =
-          statement.executeQuery(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%testFixedView")) {
-
-        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-        while (resultSet.next()) {
-          for (int i = 0; i < resultSetMetaData.getColumnCount(); i++) {
-            assertNotNull(resultSet.getObject(i + 1));
+          ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+          while (resultSet.next()) {
+            for (int i = 0; i < resultSetMetaData.getColumnCount(); i++) {
+              assertNotNull(resultSet.getObject(i + 1));
+            }
           }
         }
+      } finally {
+        statement.execute("drop table if exists testFixedView");
       }
-      statement.execute("drop table if exists testFixedView");
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetColumnDisplaySizeAndPrecision() throws SQLException {
-    Connection connection = init();
-    Statement statement = connection.createStatement();
+    ResultSetMetaData resultSetMetaData = null;
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
 
-    ResultSet resultSet = statement.executeQuery("select cast(1 as char)");
-    ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-    assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals(1, resultSetMetaData.getPrecision(1));
+      try (ResultSet resultSet = statement.executeQuery("select cast(1 as char)")) {
+        resultSetMetaData = resultSet.getMetaData();
+        assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
+        assertEquals(1, resultSetMetaData.getPrecision(1));
+      }
 
-    resultSet = statement.executeQuery("select cast(1 as number(38, 0))");
-    resultSetMetaData = resultSet.getMetaData();
-    assertEquals(39, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals(38, resultSetMetaData.getPrecision(1));
+      try (ResultSet resultSet = statement.executeQuery("select cast(1 as number(38, 0))")) {
+        resultSetMetaData = resultSet.getMetaData();
+        assertEquals(39, resultSetMetaData.getColumnDisplaySize(1));
+        assertEquals(38, resultSetMetaData.getPrecision(1));
+      }
 
-    resultSet = statement.executeQuery("select cast(1 as decimal(25, 15))");
-    resultSetMetaData = resultSet.getMetaData();
-    assertEquals(27, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals(25, resultSetMetaData.getPrecision(1));
+      try (ResultSet resultSet = statement.executeQuery("select cast(1 as decimal(25, 15))")) {
+        resultSetMetaData = resultSet.getMetaData();
+        assertEquals(27, resultSetMetaData.getColumnDisplaySize(1));
+        assertEquals(25, resultSetMetaData.getPrecision(1));
+      }
 
-    resultSet = statement.executeQuery("select cast(1 as string)");
-    resultSetMetaData = resultSet.getMetaData();
-    assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals(1, resultSetMetaData.getPrecision(1));
+      try (ResultSet resultSet = statement.executeQuery("select cast(1 as string)")) {
+        resultSetMetaData = resultSet.getMetaData();
+        assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
+        assertEquals(1, resultSetMetaData.getPrecision(1));
+      }
 
-    resultSet = statement.executeQuery("select cast(1 as string(30))");
-    resultSetMetaData = resultSet.getMetaData();
-    assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals(1, resultSetMetaData.getPrecision(1));
+      try (ResultSet resultSet = statement.executeQuery("select cast(1 as string(30))")) {
+        resultSetMetaData = resultSet.getMetaData();
+        assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
+        assertEquals(1, resultSetMetaData.getPrecision(1));
+      }
 
-    resultSet = statement.executeQuery("select to_date('2016-12-13', 'YYYY-MM-DD')");
-    resultSetMetaData = resultSet.getMetaData();
-    assertEquals(10, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals(10, resultSetMetaData.getPrecision(1));
+      try (ResultSet resultSet =
+          statement.executeQuery("select to_date('2016-12-13', 'YYYY-MM-DD')")) {
+        resultSetMetaData = resultSet.getMetaData();
+        assertEquals(10, resultSetMetaData.getColumnDisplaySize(1));
+        assertEquals(10, resultSetMetaData.getPrecision(1));
+      }
 
-    resultSet = statement.executeQuery("select to_time('12:34:56', 'HH24:MI:SS')");
-    resultSetMetaData = resultSet.getMetaData();
-    assertEquals(8, resultSetMetaData.getColumnDisplaySize(1));
-    assertEquals(8, resultSetMetaData.getPrecision(1));
-
-    statement.close();
-    connection.close();
+      try (ResultSet resultSet =
+          statement.executeQuery("select to_time('12:34:56', 'HH24:MI:SS')")) {
+        resultSetMetaData = resultSet.getMetaData();
+        assertEquals(8, resultSetMetaData.getColumnDisplaySize(1));
+        assertEquals(8, resultSetMetaData.getPrecision(1));
+      }
+    }
   }
 
   @Test
@@ -902,13 +927,14 @@ public class ResultSetIT extends ResultSet0IT {
   @Test
   public void testTreatDecimalAsInt() throws Exception {
     ResultSetMetaData metaData;
-    try (Connection con = init()) {
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
       try (ResultSet ret = con.createStatement().executeQuery("select 1")) {
 
         metaData = ret.getMetaData();
         assertThat(metaData.getColumnType(1), equalTo(Types.BIGINT));
       }
-      con.createStatement().execute("alter session set jdbc_treat_decimal_as_int = false");
+      statement.execute("alter session set jdbc_treat_decimal_as_int = false");
 
       try (ResultSet ret = con.createStatement().executeQuery("select 1")) {
         metaData = ret.getMetaData();
@@ -972,26 +998,29 @@ public class ResultSetIT extends ResultSet0IT {
   public void testUpdateCountOnCopyCmd() throws Exception {
     try (Connection con = init();
         Statement statement = con.createStatement()) {
-      statement.execute("create or replace table testcopy(cola string)");
+      try {
+        statement.execute("create or replace table testcopy(cola string)");
 
-      // stage table has no file. Should return 0.
-      int rowCount = statement.executeUpdate("copy into testcopy");
-      assertThat(rowCount, is(0));
+        // stage table has no file. Should return 0.
+        int rowCount = statement.executeUpdate("copy into testcopy");
+        assertThat(rowCount, is(0));
 
-      // copy one file into table stage
-      statement.execute("copy into @%testcopy from (select 'test_string')");
-      rowCount = statement.executeUpdate("copy into testcopy");
-      assertThat(rowCount, is(1));
-
-      // cleanup
-      statement.execute("drop table if exists testcopy");
+        // copy one file into table stage
+        statement.execute("copy into @%testcopy from (select 'test_string')");
+        rowCount = statement.executeUpdate("copy into testcopy");
+        assertThat(rowCount, is(1));
+      } finally {
+        // cleanup
+        statement.execute("drop table if exists testcopy");
+      }
     }
   }
 
   @Test
   public void testGetTimeNullTimestampAndTimestampNullTime() throws Throwable {
-    try (Connection con = init()) {
-      try (Statement statement = con.createStatement()) {
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
+      try {
         statement.execute("create or replace table testnullts(c1 timestamp, c2 time)");
         statement.execute("insert into testnullts(c1, c2) values(null, null)");
         try (ResultSet rs = con.createStatement().executeQuery("select * from testnullts")) {
@@ -999,8 +1028,9 @@ public class ResultSetIT extends ResultSet0IT {
           assertNull("return value must be null", rs.getTime(1));
           assertNull("return value must be null", rs.getTimestamp(2));
         }
+      } finally {
+        con.createStatement().execute("drop table if exists testnullts");
       }
-      con.createStatement().execute("drop table if exists testnullts");
     }
   }
 

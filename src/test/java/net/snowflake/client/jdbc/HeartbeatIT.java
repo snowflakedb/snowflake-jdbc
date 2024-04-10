@@ -46,14 +46,13 @@ public class HeartbeatIT extends AbstractDriverIT {
   @BeforeClass
   public static void setUpClass() throws Exception {
     if (!RunningOnGithubAction.isRunningOnGithubAction()) {
-      try (Connection connection = getSnowflakeAdminConnection()) {
-        connection
-            .createStatement()
-            .execute(
-                "alter system set"
-                    + " master_token_validity=60"
-                    + ",session_token_validity=20"
-                    + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=1");
+      try (Connection connection = getSnowflakeAdminConnection();
+          Statement statement = connection.createStatement()) {
+        statement.execute(
+            "alter system set"
+                + " master_token_validity=60"
+                + ",session_token_validity=20"
+                + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=1");
       }
     }
   }
@@ -65,14 +64,13 @@ public class HeartbeatIT extends AbstractDriverIT {
   @AfterClass
   public static void tearDownClass() throws Exception {
     if (!RunningOnGithubAction.isRunningOnGithubAction()) {
-      try (Connection connection = getSnowflakeAdminConnection()) {
-        connection
-            .createStatement()
-            .execute(
-                "alter system set"
-                    + " master_token_validity=default"
-                    + ",session_token_validity=default"
-                    + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=default");
+      try (Connection connection = getSnowflakeAdminConnection();
+          Statement statement = connection.createStatement()) {
+        statement.execute(
+            "alter system set"
+                + " master_token_validity=default"
+                + ",session_token_validity=default"
+                + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=default");
       }
     }
   }

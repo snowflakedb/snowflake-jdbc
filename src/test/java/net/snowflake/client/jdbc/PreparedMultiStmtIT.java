@@ -31,39 +31,42 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   public void testExecuteUpdateCount() throws Exception {
     try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
         Statement statement = connection.createStatement()) {
-      statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
-      statement.execute("create or replace table test_multi_bind(c1 number)");
+      try {
+        statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
+        statement.execute("create or replace table test_multi_bind(c1 number)");
 
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement(
-              "insert into test_multi_bind(c1) values(?); insert into "
-                  + "test_multi_bind values (?), (?)")) {
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement(
+                "insert into test_multi_bind(c1) values(?); insert into "
+                    + "test_multi_bind values (?), (?)")) {
 
-        assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(3));
+          assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(3));
 
-        preparedStatement.setInt(1, 20);
-        preparedStatement.setInt(2, 30);
-        preparedStatement.setInt(3, 40);
+          preparedStatement.setInt(1, 20);
+          preparedStatement.setInt(2, 30);
+          preparedStatement.setInt(3, 40);
 
-        // first statement
-        int rowCount = preparedStatement.executeUpdate();
-        assertThat(rowCount, is(1));
-        assertThat(preparedStatement.getResultSet(), is(nullValue()));
-        assertThat(preparedStatement.getUpdateCount(), is(1));
+          // first statement
+          int rowCount = preparedStatement.executeUpdate();
+          assertThat(rowCount, is(1));
+          assertThat(preparedStatement.getResultSet(), is(nullValue()));
+          assertThat(preparedStatement.getUpdateCount(), is(1));
 
-        // second statement
-        assertThat(preparedStatement.getMoreResults(), is(false));
-        assertThat(preparedStatement.getUpdateCount(), is(2));
+          // second statement
+          assertThat(preparedStatement.getMoreResults(), is(false));
+          assertThat(preparedStatement.getUpdateCount(), is(2));
 
-        ResultSet resultSet =
-            statement.executeQuery("select c1 from test_multi_bind order by c1 asc");
-        resultSet.next();
-        assertThat(resultSet.getInt(1), is(20));
-        resultSet.next();
-        assertThat(resultSet.getInt(1), is(30));
-        resultSet.next();
-        assertThat(resultSet.getInt(1), is(40));
-
+          try (ResultSet resultSet =
+              statement.executeQuery("select c1 from test_multi_bind order by c1 asc")) {
+            resultSet.next();
+            assertThat(resultSet.getInt(1), is(20));
+            resultSet.next();
+            assertThat(resultSet.getInt(1), is(30));
+            resultSet.next();
+            assertThat(resultSet.getInt(1), is(40));
+          }
+        }
+      } finally {
         statement.execute("drop table if exists test_multi_bind");
       }
     }
@@ -74,28 +77,30 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   public void testExecuteLessBindings() throws Exception {
     try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
         Statement statement = connection.createStatement()) {
-      statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
-      statement.execute("create or replace table test_multi_bind(c1 number)");
+      try {
+        statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
+        statement.execute("create or replace table test_multi_bind(c1 number)");
 
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement(
-              "insert into test_multi_bind(c1) values(?); insert into "
-                  + "test_multi_bind values (?), (?)")) {
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement(
+                "insert into test_multi_bind(c1) values(?); insert into "
+                    + "test_multi_bind values (?), (?)")) {
 
-        assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(3));
+          assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(3));
 
-        preparedStatement.setInt(1, 20);
-        preparedStatement.setInt(2, 30);
+          preparedStatement.setInt(1, 20);
+          preparedStatement.setInt(2, 30);
 
-        // first statement
-        try {
-          preparedStatement.executeUpdate();
-          Assert.fail();
-        } catch (SQLException e) {
-          // error code comes from xp, which is js execution failed.
-          assertThat(e.getErrorCode(), is(100132));
+          // first statement
+          try {
+            preparedStatement.executeUpdate();
+            Assert.fail();
+          } catch (SQLException e) {
+            // error code comes from xp, which is js execution failed.
+            assertThat(e.getErrorCode(), is(100132));
+          }
         }
-
+      } finally {
         statement.execute("drop table if exists test_multi_bind");
       }
     }
@@ -105,43 +110,45 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   public void testExecuteMoreBindings() throws Exception {
     try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
         Statement statement = connection.createStatement()) {
-      statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
-      statement.execute("create or replace table test_multi_bind(c1 number)");
+      try {
+        statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
+        statement.execute("create or replace table test_multi_bind(c1 number)");
 
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement(
-              "insert into test_multi_bind(c1) values(?); insert into "
-                  + "test_multi_bind values (?), (?)")) {
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement(
+                "insert into test_multi_bind(c1) values(?); insert into "
+                    + "test_multi_bind values (?), (?)")) {
 
-        assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(3));
+          assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(3));
 
-        preparedStatement.setInt(1, 20);
-        preparedStatement.setInt(2, 30);
-        preparedStatement.setInt(3, 40);
-        // 4th binding should be ignored
-        preparedStatement.setInt(4, 50);
+          preparedStatement.setInt(1, 20);
+          preparedStatement.setInt(2, 30);
+          preparedStatement.setInt(3, 40);
+          // 4th binding should be ignored
+          preparedStatement.setInt(4, 50);
 
-        // first statement
-        int rowCount = preparedStatement.executeUpdate();
-        assertThat(rowCount, is(1));
-        assertThat(preparedStatement.getResultSet(), is(nullValue()));
-        assertThat(preparedStatement.getUpdateCount(), is(1));
+          // first statement
+          int rowCount = preparedStatement.executeUpdate();
+          assertThat(rowCount, is(1));
+          assertThat(preparedStatement.getResultSet(), is(nullValue()));
+          assertThat(preparedStatement.getUpdateCount(), is(1));
 
-        // second statement
-        assertThat(preparedStatement.getMoreResults(), is(false));
-        assertThat(preparedStatement.getUpdateCount(), is(2));
+          // second statement
+          assertThat(preparedStatement.getMoreResults(), is(false));
+          assertThat(preparedStatement.getUpdateCount(), is(2));
 
-        try (ResultSet resultSet =
-            statement.executeQuery("select c1 from test_multi_bind order by c1 asc")) {
-          resultSet.next();
-          assertThat(resultSet.getInt(1), is(20));
-          resultSet.next();
-          assertThat(resultSet.getInt(1), is(30));
-          resultSet.next();
-          assertThat(resultSet.getInt(1), is(40));
-
-          statement.execute("drop table if exists test_multi_bind");
+          try (ResultSet resultSet =
+              statement.executeQuery("select c1 from test_multi_bind order by c1 asc")) {
+            resultSet.next();
+            assertThat(resultSet.getInt(1), is(20));
+            resultSet.next();
+            assertThat(resultSet.getInt(1), is(30));
+            resultSet.next();
+            assertThat(resultSet.getInt(1), is(40));
+          }
         }
+      } finally {
+        statement.execute("drop table if exists test_multi_bind");
       }
     }
   }

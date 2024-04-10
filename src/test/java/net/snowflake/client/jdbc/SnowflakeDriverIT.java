@@ -268,11 +268,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   @Test
   public void testDDLs() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("CREATE OR REPLACE TABLE testDDLs(version number, name string)");
+      } finally {
+        statement.execute("DROP TABLE testDDLs");
       }
-      connection.createStatement().execute("DROP TABLE testDDLs");
     }
   }
 
@@ -293,9 +295,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   /** Tests autocommit */
   @Test
   public void testAutocommit() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         // 1. test commit
         connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
         assertEquals(Connection.TRANSACTION_READ_COMMITTED, connection.getTransactionIsolation());
@@ -335,8 +337,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           assertTrue(resultSet.next());
           assertEquals(1, resultSet.getInt(1));
         }
+      } finally {
+        statement.execute("DROP TABLE AUTOCOMMIT_API_TEST");
       }
-      connection.createStatement().execute("DROP TABLE AUTOCOMMIT_API_TEST");
     }
   }
 
@@ -374,8 +377,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @Test
   public void testBoolean() throws Throwable {
 
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
 
         DatabaseMetaData metadata = connection.getMetaData();
@@ -415,8 +419,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           assertTrue(columnMetaDataResultSet.next());
           assertEquals(Types.BOOLEAN, columnMetaDataResultSet.getInt(5));
         }
+      } finally {
+        statement.execute("drop table testBooleanT1");
       }
-      connection.createStatement().execute("drop table testBooleanT1");
     }
   }
 
@@ -424,8 +429,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testConstraints() throws Throwable {
     ResultSet manualResultSet = null;
 
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
 
         DatabaseMetaData metadata = connection.getMetaData();
@@ -515,8 +521,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             manualResultSet.next());
         manualResultSet.close();
         manualResultSet.next();
-      }
-      try (Statement statement = connection.createStatement()) {
+      } finally {
         statement.execute("DROP TABLE TESTCONSTRAINTSF1");
         statement.execute("DROP TABLE TESTCONSTRAINTSF2");
         statement.execute("DROP TABLE TESTCONSTRAINTSP1");
@@ -742,10 +747,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     _connectionProperties.put("inject_wait_in_put", 5);
     _connectionProperties.put("ssl", "off");
     try (Connection connection =
-        getConnection(
-            DONT_INJECT_SOCKET_TIMEOUT, _connectionProperties, false, false, "gcpaccount")) {
-      try (Statement statement = connection.createStatement()) {
-
+            getConnection(
+                DONT_INJECT_SOCKET_TIMEOUT, _connectionProperties, false, false, "gcpaccount");
+        Statement statement = connection.createStatement()) {
+      try {
         String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
         // replace file name with wildcard character
         sourceFilePath = sourceFilePath.replace("orders_100.csv", "orders_10*.csv");
@@ -785,8 +790,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           assert (original.length() == unzipped.length());
           assert (FileUtils.contentEquals(original, unzipped));
         }
+      } finally {
+        statement.execute("DROP STAGE IF EXISTS wildcard_stage");
       }
-      connection.createStatement().execute("DROP STAGE IF EXISTS wildcard_stage");
     }
   }
 
@@ -811,20 +817,20 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetLargeFileGCP() throws Throwable {
-    try (Connection connection = getConnection("gcpaccount")) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = getConnection("gcpaccount");
+        Statement statement = connection.createStatement()) {
+      try {
         File destFolder = tmpFolder.newFolder();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
         File largeTempFile = tmpFolder.newFile("largeFile.csv");
-        BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile));
-        bw.write("Creating large test file for GCP PUT/GET test");
-        bw.write(System.lineSeparator());
-        bw.write("Creating large test file for GCP PUT/GET test");
-        bw.write(System.lineSeparator());
-        bw.close();
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile))) {
+          bw.write("Creating large test file for GCP PUT/GET test");
+          bw.write(System.lineSeparator());
+          bw.write("Creating large test file for GCP PUT/GET test");
+          bw.write(System.lineSeparator());
+        }
         File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
 
         String sourceFilePath = largeTempFile.getCanonicalPath();
@@ -877,8 +883,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
         assert (largeTempFile.length() == unzipped.length());
         assert (FileUtils.contentEquals(largeTempFile, unzipped));
-      }
-      try (Statement statement = connection.createStatement()) {
+      } finally {
         statement.execute("DROP STAGE IF EXISTS largefile_stage");
         statement.execute("DROP STAGE IF EXISTS extra_stage");
         statement.execute("DROP TABLE IF EXISTS large_table");
@@ -909,8 +914,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
-      try (Connection connection = getConnection(accounts.get(i))) {
-        try (Statement statement = connection.createStatement()) {
+      try (Connection connection = getConnection(accounts.get(i));
+          Statement statement = connection.createStatement()) {
+        try {
           statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
 
           // create a stage to put the file in
@@ -948,8 +954,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
           assert (FileUtils.contentEqualsIgnoreEOL(file2, unzipped, null));
+        } finally {
+          statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
         }
-        connection.createStatement().execute("DROP TABLE IF EXISTS testLoadToLocalFS");
       }
     }
   }
@@ -960,9 +967,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
-      try (Connection connection = getConnection(accounts.get(i))) {
-        try (Statement statement = connection.createStatement()) {
-
+      try (Connection connection = getConnection(accounts.get(i));
+          Statement statement = connection.createStatement()) {
+        try {
           // load file test
           // create a unique data file name by using current timestamp in millis
           statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
@@ -1021,8 +1028,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             // assert we get 0 row
             assertFalse(resultSet.next());
           }
+        } finally {
+          statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
         }
-        connection.createStatement().execute("DROP TABLE IF EXISTS testLoadToLocalFS");
       }
     }
   }
@@ -1164,9 +1172,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   @Test
   public void testUpdateCount() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         // create test table
         statement.execute("CREATE OR REPLACE TABLE testUpdateCount(version number, name string)");
 
@@ -1175,15 +1183,17 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             statement.executeUpdate("INSERT INTO testUpdateCount values (1, 'a'), (2, 'b')");
 
         assertEquals("Unexpected number of rows inserted: " + numRows, 2, numRows);
+      } finally {
+        statement.execute("DROP TABLE if exists testUpdateCount");
       }
-      connection.createStatement().execute("DROP TABLE if exists testUpdateCount");
     }
   }
 
   @Test
   public void testSnow4245() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         // set timestamp format
         statement.execute("alter session set timestamp_input_format = 'YYYY-MM-DD HH24:MI:SS';");
 
@@ -1225,8 +1235,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             i = i + 1;
           }
         }
+      } finally {
+        statement.execute("drop table testSnow4245");
       }
-      connection.createStatement().execute("drop table testSnow4245");
     }
   }
 
@@ -1236,9 +1247,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     String tableName =
         String.format("snow4394_%s", UUID.randomUUID().toString()).replaceAll("-", "_");
 
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-        // create test table
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      // create test table
+      try {
         statement.execute(String.format("CREATE OR REPLACE TABLE %s(str string)", tableName));
 
         String data = "What is \ud83d\ude12?";
@@ -1256,8 +1268,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           }
           assertEquals("Unexpected string value: " + ret, data, ret);
         }
+      } finally {
+        statement.execute(String.format("DROP TABLE if exists %s", tableName));
       }
-      connection.createStatement().execute(String.format("DROP TABLE if exists %s", tableName));
     }
   }
 
@@ -1663,122 +1676,121 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testTableBind() throws Throwable {
     ResultSetMetaData resultSetMetaData = null;
 
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement regularStatement = connection.createStatement()) {
+      try {
+        // select * from table(?)
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("SELECT * from table(?)")) {
+          resultSetMetaData = preparedStatement.getMetaData();
+          // we do not have any metadata, without a specified table
+          assertEquals(0, resultSetMetaData.getColumnCount());
 
-      // select * from table(?)
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement("SELECT * from table(?)")) {
-        resultSetMetaData = preparedStatement.getMetaData();
-        // we do not have any metadata, without a specified table
-        assertEquals(0, resultSetMetaData.getColumnCount());
-
-        preparedStatement.setString(1, ORDERS_JDBC);
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-          resultSetMetaData = resultSet.getMetaData();
-          assertEquals(9, resultSetMetaData.getColumnCount());
-          // assert we have 73 rows
-          for (int i = 0; i < 73; i++) {
-            assertTrue(resultSet.next());
+          preparedStatement.setString(1, ORDERS_JDBC);
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            resultSetMetaData = resultSet.getMetaData();
+            assertEquals(9, resultSetMetaData.getColumnCount());
+            // assert we have 73 rows
+            for (int i = 0; i < 73; i++) {
+              assertTrue(resultSet.next());
+            }
+            assertFalse(resultSet.next());
           }
-          assertFalse(resultSet.next());
         }
-      }
 
-      // select * from table(?) where c1 = 1
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement("SELECT * from table(?) where c1 = 1")) {
-        preparedStatement.setString(1, ORDERS_JDBC);
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-          resultSetMetaData = resultSet.getMetaData();
+        // select * from table(?) where c1 = 1
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("SELECT * from table(?) where c1 = 1")) {
+          preparedStatement.setString(1, ORDERS_JDBC);
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            resultSetMetaData = resultSet.getMetaData();
 
-          assertEquals(9, resultSetMetaData.getColumnCount());
-          assertTrue(resultSet.next());
-          assertFalse(resultSet.next());
-        }
-      }
-
-      // select * from table(?) where c1 = 2 order by c3
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement("SELECT * from table(?) order by c3")) {
-        preparedStatement.setString(1, ORDERS_JDBC);
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-          resultSetMetaData = resultSet.getMetaData();
-
-          assertEquals(9, resultSetMetaData.getColumnCount());
-          // assert we have 73 rows
-          for (int i = 0; i < 73; i++) {
+            assertEquals(9, resultSetMetaData.getColumnCount());
             assertTrue(resultSet.next());
+            assertFalse(resultSet.next());
           }
-          assertFalse(resultSet.next());
         }
-      }
 
-      try (Statement regularStatement = connection.createStatement()) {
+        // select * from table(?) where c1 = 2 order by c3
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("SELECT * from table(?) order by c3")) {
+          preparedStatement.setString(1, ORDERS_JDBC);
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            resultSetMetaData = resultSet.getMetaData();
+
+            assertEquals(9, resultSetMetaData.getColumnCount());
+            // assert we have 73 rows
+            for (int i = 0; i < 73; i++) {
+              assertTrue(resultSet.next());
+            }
+            assertFalse(resultSet.next());
+          }
+        }
+
         regularStatement.execute("create or replace table testTableBind(c integer, d string)");
-      }
-      // insert into table
-      try (Statement regularStatement = connection.createStatement()) {
+        // insert into table
         regularStatement.executeUpdate("insert into testTableBind (c, d) values (1, 'one')");
-      }
-      // select c1, c from table(?), testTableBind
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement("SELECT * from table(?), testTableBind")) {
-        preparedStatement.setString(1, ORDERS_JDBC);
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-          resultSetMetaData = resultSet.getMetaData();
+        // select c1, c from table(?), testTableBind
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("SELECT * from table(?), testTableBind")) {
+          preparedStatement.setString(1, ORDERS_JDBC);
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            resultSetMetaData = resultSet.getMetaData();
 
-          assertEquals(11, resultSetMetaData.getColumnCount());
-          // assert we have 73 rows
-          for (int i = 0; i < 73; i++) {
-            assertTrue(resultSet.next());
+            assertEquals(11, resultSetMetaData.getColumnCount());
+            // assert we have 73 rows
+            for (int i = 0; i < 73; i++) {
+              assertTrue(resultSet.next());
+            }
+            assertFalse(resultSet.next());
           }
-          assertFalse(resultSet.next());
         }
-      }
 
-      // select * from table(?), table(?)
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement("SELECT * from table(?), table(?)")) {
-        preparedStatement.setString(1, ORDERS_JDBC);
-        preparedStatement.setString(2, "testTableBind");
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-          resultSetMetaData = resultSet.getMetaData();
+        // select * from table(?), table(?)
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("SELECT * from table(?), table(?)")) {
+          preparedStatement.setString(1, ORDERS_JDBC);
+          preparedStatement.setString(2, "testTableBind");
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            resultSetMetaData = resultSet.getMetaData();
 
-          assertEquals(11, resultSetMetaData.getColumnCount());
-          // assert we have 73 rows
-          for (int i = 0; i < 73; i++) {
-            assertTrue(resultSet.next());
+            assertEquals(11, resultSetMetaData.getColumnCount());
+            // assert we have 73 rows
+            for (int i = 0; i < 73; i++) {
+              assertTrue(resultSet.next());
+            }
+            assertFalse(resultSet.next());
           }
-          assertFalse(resultSet.next());
         }
-      }
 
-      // select tab1.c1, tab2.c from table(?) as a, table(?) as b
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement("SELECT a.c1, b.c from table(?) as a, table(?) as b")) {
-        preparedStatement.setString(1, ORDERS_JDBC);
-        preparedStatement.setString(2, "testTableBind");
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-          resultSetMetaData = resultSet.getMetaData();
+        // select tab1.c1, tab2.c from table(?) as a, table(?) as b
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("SELECT a.c1, b.c from table(?) as a, table(?) as b")) {
+          preparedStatement.setString(1, ORDERS_JDBC);
+          preparedStatement.setString(2, "testTableBind");
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            resultSetMetaData = resultSet.getMetaData();
 
-          assertEquals(2, resultSetMetaData.getColumnCount());
-          // assert we have 73 rows
-          for (int i = 0; i < 73; i++) {
-            assertTrue(resultSet.next());
+            assertEquals(2, resultSetMetaData.getColumnCount());
+            // assert we have 73 rows
+            for (int i = 0; i < 73; i++) {
+              assertTrue(resultSet.next());
+            }
+            assertFalse(resultSet.next());
           }
-          assertFalse(resultSet.next());
         }
+      } finally {
+        regularStatement.execute("DROP TABLE testTableBind");
       }
-      connection.createStatement().execute("DROP TABLE testTableBind");
     }
   }
 
   @Test
   public void testBindInWithClause() throws Throwable {
-    try (Connection connection = getConnection()) {
-
-      // create a test table
-      try (Statement regularStatement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement regularStatement = connection.createStatement()) {
+      try {
+        // create a test table
         regularStatement.execute(
             "create or replace table testBind2(a int, b string, c double, "
                 + "d date, e timestamp, f time, g date)");
@@ -1799,18 +1811,19 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             assertTrue(resultSet.next());
           }
         }
+      } finally {
+        regularStatement.execute("DROP TABLE testBind2");
       }
-      connection.createStatement().execute("DROP TABLE testBind2");
     }
   }
 
   @Test
   public void testBindTimestampNTZ() throws Throwable {
 
-    try (Connection connection = getConnection()) {
-
-      // create a test table
-      try (Statement regularStatement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement regularStatement = connection.createStatement()) {
+      try {
+        // create a test table
         regularStatement.executeUpdate(
             "create or replace table testBindTimestampNTZ(a timestamp_ntz)");
 
@@ -1854,16 +1867,18 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             assertTrue(resultSet.next());
           }
         }
+      } finally {
+        regularStatement.execute("DROP TABLE testBindTimestampNTZ");
       }
-      connection.createStatement().execute("DROP TABLE testBindTimestampNTZ");
     }
   }
 
   @Test
   public void testNullBind() throws Throwable {
 
-    try (Connection connection = getConnection()) {
-      try (Statement regularStatement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement regularStatement = connection.createStatement()) {
+      try {
         regularStatement.execute("create or replace table testNullBind(a double)");
 
         // array bind with nulls
@@ -1943,8 +1958,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                 ex.getErrorCode());
           }
         }
+      } finally {
+        regularStatement.execute("DROP TABLE testNullBind");
       }
-      connection.createStatement().execute("DROP TABLE testNullBind");
     }
   }
 
@@ -2025,9 +2041,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   /** SNOW-6290: timestamp value is shifted by local timezone */
   @Test
   public void testSnow6290() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         // create test table
         statement.execute("CREATE OR REPLACE TABLE testSnow6290(ts timestamp)");
 
@@ -2046,8 +2062,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         Timestamp tsFromDB = res.getTimestamp(1);
 
         assertEquals("timestamp mismatch", ts.getTime(), tsFromDB.getTime());
+      } finally {
+        statement.execute("DROP TABLE if exists testSnow6290");
       }
-      connection.createStatement().execute("DROP TABLE if exists testSnow6290");
     }
   }
 
@@ -2059,7 +2076,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
       // execute DDLs
       statement.executeQuery(null);
-      statement.close();
 
       fail("expected exception, but no exception");
 
@@ -2178,9 +2194,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   @Test
   public void testPutViaExecuteQuery() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         // load file test
         // create a unique data file name by using current timestamp in millis
         // test external table load
@@ -2202,8 +2218,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             assertTrue(resultSet.next());
           }
         }
+      } finally {
+        connection.createStatement().execute("DROP TABLE IF EXISTS testPutViaExecuteQuery");
       }
-      connection.createStatement().execute("DROP TABLE IF EXISTS testPutViaExecuteQuery");
     }
   }
 
@@ -2212,9 +2229,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testSnow16332() throws Throwable {
     // use v1 query request API and inject 200ms socket timeout for first
     // http request to simulate network failure
-    try (Connection conn = getConnection()) {
-      try (Statement stmt = conn.createStatement()) {
-
+    try (Connection conn = getConnection();
+        Statement stmt = conn.createStatement()) {
+      try {
         // create a table
         stmt.execute("CREATE OR REPLACE TABLE SNOW16332 (i int)");
 
@@ -2245,8 +2262,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                     + "FROM table(generator(timeLimit => 1))");
           }
         }
+      } finally {
+        stmt.executeQuery("DROP TABLE SNOW16332");
       }
-      conn.createStatement().executeQuery("DROP TABLE SNOW16332");
     }
   }
 
@@ -2255,40 +2273,37 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     ResultSetMetaData resultSetMetaData = null;
     // use v1 query request API and inject 200ms socket timeout for first
     // http request to simulate network failure
-    try (Connection connection = getConnection(200)) { // inject socket timeout = 200ms
+    try (Connection connection = getConnection(200); // inject socket timeout = 200m
+        Statement statement = connection.createStatement()) {
 
-      try (Statement statement = connection.createStatement()) {
+      // execute query
+      try (ResultSet resultSet =
+          statement.executeQuery("SELECT count(*) FROM table(generator(rowCount => 100000000))")) {
+        resultSetMetaData = resultSet.getMetaData();
 
-        // execute query
-        try (ResultSet resultSet =
-            statement.executeQuery(
-                "SELECT count(*) FROM table(generator(rowCount => 100000000))")) {
-          resultSetMetaData = resultSet.getMetaData();
+        // assert column count
+        assertEquals(1, resultSetMetaData.getColumnCount());
 
-          // assert column count
-          assertEquals(1, resultSetMetaData.getColumnCount());
-
-          // assert we get 1 row
-          for (int i = 0; i < 1; i++) {
-            assertTrue(resultSet.next());
-            assertTrue(resultSet.getInt(1) > 0);
-          }
+        // assert we get 1 row
+        for (int i = 0; i < 1; i++) {
+          assertTrue(resultSet.next());
+          assertTrue(resultSet.getInt(1) > 0);
         }
+      }
 
-        // Test parsing for timestamp with timezone value that has new encoding
-        // where timezone index follows timestamp value
-        try (ResultSet resultSet =
-            statement.executeQuery("SELECT 'Fri, 23 Oct 2015 12:35:38 -0700'::timestamp_tz")) {
-          resultSetMetaData = resultSet.getMetaData();
+      // Test parsing for timestamp with timezone value that has new encoding
+      // where timezone index follows timestamp value
+      try (ResultSet resultSet =
+          statement.executeQuery("SELECT 'Fri, 23 Oct 2015 12:35:38 -0700'::timestamp_tz")) {
+        resultSetMetaData = resultSet.getMetaData();
 
-          // assert column count
-          assertEquals(1, resultSetMetaData.getColumnCount());
+        // assert column count
+        assertEquals(1, resultSetMetaData.getColumnCount());
 
-          // assert we get 1 row
-          for (int i = 0; i < 1; i++) {
-            assertTrue(resultSet.next());
-            assertEquals("Fri, 23 Oct 2015 12:35:38 -0700", resultSet.getString(1));
-          }
+        // assert we get 1 row
+        for (int i = 0; i < 1; i++) {
+          assertTrue(resultSet.next());
+          assertEquals("Fri, 23 Oct 2015 12:35:38 -0700", resultSet.getString(1));
         }
       }
     }
@@ -2398,44 +2413,47 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testSnow19819() throws Throwable {
     try (Connection connection = getConnection()) {
       try (Statement regularStatement = connection.createStatement()) {
-        regularStatement.execute(
-            "create or replace table testSnow19819(\n"
-                + "s string,\n"
-                + "v variant,\n"
-                + "t timestamp_ltz)\n");
+        try {
+          regularStatement.execute(
+              "create or replace table testSnow19819(\n"
+                  + "s string,\n"
+                  + "v variant,\n"
+                  + "t timestamp_ltz)\n");
 
-        try (PreparedStatement preparedStatement =
-            connection.prepareStatement(
-                "insert into testSnow19819 (s, v, t)\n"
-                    + "select ?, parse_json(?), to_timestamp(?)")) {
+          try (PreparedStatement preparedStatement =
+              connection.prepareStatement(
+                  "insert into testSnow19819 (s, v, t)\n"
+                      + "select ?, parse_json(?), to_timestamp(?)")) {
 
-          preparedStatement.setString(1, "foo");
-          preparedStatement.setString(2, "{ }");
-          preparedStatement.setString(3, "2016-05-12 12:15:00");
-          preparedStatement.addBatch();
+            preparedStatement.setString(1, "foo");
+            preparedStatement.setString(2, "{ }");
+            preparedStatement.setString(3, "2016-05-12 12:15:00");
+            preparedStatement.addBatch();
 
-          preparedStatement.setString(1, "foo2");
-          preparedStatement.setString(2, "{ \"a\": 1 }");
-          preparedStatement.setString(3, "2016-05-12 12:16:00");
-          preparedStatement.addBatch();
+            preparedStatement.setString(1, "foo2");
+            preparedStatement.setString(2, "{ \"a\": 1 }");
+            preparedStatement.setString(3, "2016-05-12 12:16:00");
+            preparedStatement.addBatch();
 
-          preparedStatement.executeBatch();
+            preparedStatement.executeBatch();
 
-          try (ResultSet resultSet =
-              connection
-                  .createStatement()
-                  .executeQuery("SELECT s, v, t FROM testSnow19819 ORDER BY 1")) {
-            assertThat("next result", resultSet.next());
-            assertThat("String", resultSet.getString(1), equalTo("foo"));
-            assertThat("Variant", resultSet.getString(2), equalTo("{}"));
-            assertThat("next result", resultSet.next());
-            assertThat("String", resultSet.getString(1), equalTo("foo2"));
-            assertThat("Variant", resultSet.getString(2), equalTo("{\n  \"a\": 1\n}"));
-            assertThat("no more result", !resultSet.next());
+            try (ResultSet resultSet =
+                connection
+                    .createStatement()
+                    .executeQuery("SELECT s, v, t FROM testSnow19819 ORDER BY 1")) {
+              assertThat("next result", resultSet.next());
+              assertThat("String", resultSet.getString(1), equalTo("foo"));
+              assertThat("Variant", resultSet.getString(2), equalTo("{}"));
+              assertThat("next result", resultSet.next());
+              assertThat("String", resultSet.getString(1), equalTo("foo2"));
+              assertThat("Variant", resultSet.getString(2), equalTo("{\n  \"a\": 1\n}"));
+              assertThat("no more result", !resultSet.next());
+            }
           }
+        } finally {
+          regularStatement.execute("DROP TABLE testSnow19819");
         }
       }
-      connection.createStatement().execute("DROP TABLE testSnow19819");
     }
   }
 
@@ -2494,9 +2512,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testSnow26503() throws Throwable {
     ResultSetMetaData resultSetMetaData;
     String queryId = null;
-    try (Connection connection = getConnection()) {
-      // create a test table
-      try (Statement regularStatement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        // create a test table
+        Statement regularStatement = connection.createStatement()) {
+      try {
         regularStatement.execute(
             "create or replace table testBind2(a int) as select * from values(1),(2),(8),(10)");
 
@@ -2544,8 +2563,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           }
           snowflakeConnection.createStatement().execute("DROP warehouse wh26503");
         }
+      } finally {
+        regularStatement.execute("DROP TABLE testBind2");
       }
-      connection.createStatement().execute("DROP TABLE testBind2");
     }
   }
 
@@ -2555,8 +2575,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
    */
   @Test
   public void testSnow28530() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement regularStatement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement regularStatement = connection.createStatement()) {
+      try {
         regularStatement.execute("create or replace table t(a number, b number)");
 
         /////////////////////////////////////////
@@ -2594,8 +2615,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         } catch (SnowflakeSQLException e) {
           assertEquals(ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
         }
+      } finally {
+        regularStatement.execute("drop table t");
       }
-      connection.createStatement().execute("drop table t");
     }
   }
 
@@ -2608,13 +2630,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     Properties paramProperties = new Properties();
     paramProperties.put("TYPESYSTEM_WIDEN_CONSTANTS_EXACTLY", Boolean.TRUE.toString());
-    try (Connection connection = getConnection(paramProperties)) {
-      try (Statement regularStatement = connection.createStatement()) {
-        // Repeat a couple of test cases from snow-31104.sql
-        // We don't need to repeat all of them; we just need to verify
-        // that string bind refs and null bind refs are treated the same as
-        // string and null constants.
-
+    try (Connection connection = getConnection(paramProperties);
+        Statement regularStatement = connection.createStatement()) {
+      // Repeat a couple of test cases from snow-31104.sql
+      // We don't need to repeat all of them; we just need to verify
+      // that string bind refs and null bind refs are treated the same as
+      // string and null constants.
+      try {
         regularStatement.execute("create or replace table t(n number)");
 
         regularStatement.executeUpdate(
@@ -2643,8 +2665,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             assertNull(resultSet.getObject(2));
           }
         }
+      } finally {
+        regularStatement.execute("drop table t");
       }
-      connection.createStatement().execute("drop table t");
     }
   }
 
@@ -2654,8 +2677,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
-      try (Connection connection = getConnection(accounts.get(i))) {
-        try (Statement statement = connection.createStatement()) {
+      try (Connection connection = getConnection(accounts.get(i));
+          Statement statement = connection.createStatement()) {
+        try {
           String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
 
           File destFolder = tmpFolder.newFolder();
@@ -2689,8 +2713,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           File original = new File(sourceFilePath);
           File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
           assert (original.length() == unzipped.length());
+        } finally {
+          statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
         }
-        connection.createStatement().execute("DROP STAGE IF EXISTS testGetPut_stage");
       }
     }
   }
@@ -2707,9 +2732,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
-      try (Connection connection = getConnection(accounts.get(i))) {
-        try (Statement statement = connection.createStatement()) {
-
+      try (Connection connection = getConnection(accounts.get(i));
+          Statement statement = connection.createStatement()) {
+        try {
           String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
 
           File destFolder = tmpFolder.newFolder();
@@ -2747,8 +2772,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           File original = new File(sourceFilePath);
           File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
           assert (original.length() == unzipped.length());
+        } finally {
+          statement.execute("DROP STAGE IF EXISTS testPutGet_unencstage");
         }
-        connection.createStatement().execute("DROP STAGE IF EXISTS testPutGet_unencstage");
       }
     }
   }

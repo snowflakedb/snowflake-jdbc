@@ -125,17 +125,19 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   @After
   public void tearDown() throws SQLException {
     System.clearProperty("user.timezone");
-    try (Connection con = init()) {
-      con.createStatement().execute("drop table if exists orders_jdbc");
-      con.createStatement().execute("drop table if exists test_rs");
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
+      statement.execute("drop table if exists orders_jdbc");
+      statement.execute("drop table if exists test_rs");
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetDateAndTime() throws SQLException {
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("create or replace table dateTime(colA Date, colB Timestamp, colC Time)");
 
         java.util.Date today = new java.util.Date();
@@ -181,8 +183,9 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
             assertEquals(date, resultSet.getDate("COLA"));
           }
         }
+      } finally {
+        statement.execute("drop table if exists datetime");
       }
-      connection.createStatement().execute("drop table if exists datetime");
     }
   }
 
@@ -191,8 +194,9 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimeRange() throws SQLException {
     final String insertTime = "insert into timeTest values (?), (?), (?), (?)";
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("create or replace table timeTest (c1 time)");
 
         long ms1 = -2202968667333L; // 1900-03-11 09:15:33.667
@@ -234,8 +238,9 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
           assertNotEquals(tm4, resultSet.getTime(1));
           assertEquals(new Time((ms4 % M + M) % M), resultSet.getTime(1));
         }
+      } finally {
+        statement.execute("drop table if exists timeTest");
       }
-      connection.createStatement().execute("drop table if exists timeTest");
     }
   }
 
@@ -248,39 +253,45 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
       assertFalse(connection.createStatement().execute("alter session set TIMEZONE='UTC'"));
 
       try (Statement statement = connection.createStatement()) {
-        statement.execute("create or replace table datetime (d date, ts timestamp, tm time)");
-        try (PreparedStatement prepStatement = connection.prepareStatement(insertTime)) {
+        try {
+          statement.execute("create or replace table datetime (d date, ts timestamp, tm time)");
+          try (PreparedStatement prepStatement = connection.prepareStatement(insertTime)) {
 
-          long currentMillis = System.currentTimeMillis();
-          Date currentDate = new Date(currentMillis);
-          Timestamp currentTS = new Timestamp(currentMillis);
-          Time currentTime = new Time(currentMillis);
+            long currentMillis = System.currentTimeMillis();
+            Date currentDate = new Date(currentMillis);
+            Timestamp currentTS = new Timestamp(currentMillis);
+            Time currentTime = new Time(currentMillis);
 
-          prepStatement.setDate(1, currentDate);
-          prepStatement.setTimestamp(2, currentTS);
-          prepStatement.setTime(3, currentTime);
+            prepStatement.setDate(1, currentDate);
+            prepStatement.setTimestamp(2, currentTS);
+            prepStatement.setTime(3, currentTime);
 
-          prepStatement.execute();
+            prepStatement.execute();
 
-          try (ResultSet resultSet = statement.executeQuery("select ts::date = d from datetime")) {
-            resultSet.next();
-            assertTrue(resultSet.getBoolean(1));
+            try (ResultSet resultSet =
+                statement.executeQuery("select ts::date = d from datetime")) {
+              resultSet.next();
+              assertTrue(resultSet.getBoolean(1));
+            }
+            try (ResultSet resultSet =
+                statement.executeQuery("select ts::time = tm from datetime")) {
+              resultSet.next();
+              assertTrue(resultSet.getBoolean(1));
+            }
           }
-          try (ResultSet resultSet = statement.executeQuery("select ts::time = tm from datetime")) {
-            resultSet.next();
-            assertTrue(resultSet.getBoolean(1));
-          }
+        } finally {
+          statement.execute("drop table if exists datetime");
         }
       }
-      connection.createStatement().execute("drop table if exists datetime");
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBindTimestampTZ() throws SQLException {
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute(
             "create or replace table testBindTimestampTZ(" + "cola int, colb timestamp_tz)");
 
@@ -299,17 +310,18 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
           assertThat("integer", resultSet.getInt(1), equalTo(123));
           assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
         }
+      } finally {
+        statement.execute("drop table if exists testBindTimestampTZ");
       }
-      connection.createStatement().execute("drop table if exists testBindTimestampTZ");
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetOldDate() throws SQLException {
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
-
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("create or replace table testOldDate(d date)");
         statement.execute(
             "insert into testOldDate values ('0001-01-01'), "
@@ -336,8 +348,9 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
           assertEquals("1600-02-03", resultSet.getString(1));
           assertEquals(Date.valueOf("1600-02-03"), resultSet.getDate(1));
         }
+      } finally {
+        statement.execute("drop table if exists testOldDate");
       }
-      connection.createStatement().execute("drop table if exists testOldDate");
     }
   }
 
@@ -361,8 +374,9 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDateTimeRelatedTypeConversion() throws SQLException {
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute(
             "create or replace table testDateTime"
                 + "(colDate DATE, colTS timestamp_ltz, colTime TIME, colString string)");
@@ -418,33 +432,36 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
             assertEquals(new Time(ts.getTime()), resultSet.getTime("COLTS"));
           }
         }
+      } finally {
+        statement.execute("drop table if exists testDateTime");
       }
-      connection.createStatement().execute("drop table if exists testDateTime");
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetOldTimestamp() throws SQLException {
-    try (Connection con = init()) {
-      try (Statement statement = con.createStatement()) {
-
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
+      try {
         statement.execute("create or replace table testOldTs(cola timestamp_ntz)");
         statement.execute(
             "insert into testOldTs values ('1582-06-22 17:00:00'), " + "('1000-01-01 17:00:00')");
 
-        ResultSet resultSet = statement.executeQuery("select * from testOldTs");
+        try (ResultSet resultSet = statement.executeQuery("select * from testOldTs")) {
 
-        resultSet.next();
+          resultSet.next();
 
-        assertThat(resultSet.getTimestamp(1).toString(), equalTo("1582-06-22 17:00:00.0"));
-        assertThat(resultSet.getString(1), equalTo("Fri, 22 Jun 1582 17:00:00 Z"));
+          assertThat(resultSet.getTimestamp(1).toString(), equalTo("1582-06-22 17:00:00.0"));
+          assertThat(resultSet.getString(1), equalTo("Fri, 22 Jun 1582 17:00:00 Z"));
 
-        resultSet.next();
-        assertThat(resultSet.getTimestamp(1).toString(), equalTo("1000-01-01 17:00:00.0"));
-        assertThat(resultSet.getString(1), equalTo("Mon, 01 Jan 1000 17:00:00 Z"));
+          resultSet.next();
+          assertThat(resultSet.getTimestamp(1).toString(), equalTo("1000-01-01 17:00:00.0"));
+          assertThat(resultSet.getString(1), equalTo("Mon, 01 Jan 1000 17:00:00 Z"));
+        }
+      } finally {
+        statement.execute("drop table if exists testOldTs");
       }
-      con.createStatement().execute("drop table if exists testOldTs");
     }
   }
 
@@ -453,9 +470,9 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   public void testPrepareOldTimestamp() throws SQLException {
     TimeZone origTz = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    try (Connection con = init()) {
-      try (Statement statement = con.createStatement()) {
-
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
+      try {
         statement.execute("create or replace table testPrepOldTs(cola timestamp_ntz, colb date)");
         statement.execute("alter session set client_timestamp_type_mapping=timestamp_ntz");
         PreparedStatement ps = con.prepareStatement("insert into testPrepOldTs values (?, ?)");
@@ -469,8 +486,10 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
         resultSet.next();
         assertThat(resultSet.getTimestamp(1).toString(), equalTo("0001-01-01 08:00:00.0"));
         assertThat(resultSet.getDate(2).toString(), equalTo("0001-01-01"));
+      } finally {
+
+        statement.execute("drop table if exists testPrepOldTs");
       }
-      con.createStatement().execute("drop table if exists testPrepOldTs");
     }
     TimeZone.setDefault(origTz);
   }

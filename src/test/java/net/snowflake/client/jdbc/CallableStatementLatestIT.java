@@ -61,17 +61,18 @@ public class CallableStatementLatestIT extends CallableStatementIT {
       callableStatement.getParameterMetaData().getParameterTypeName(1);
       assertThat(callableStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
       callableStatement.setFloat(1, 7.0f);
-      ResultSet rs = callableStatement.executeQuery();
-      rs.next();
-      assertEquals(49.0f, rs.getFloat(1), 1.0f);
-
+      try (ResultSet rs = callableStatement.executeQuery()) {
+        rs.next();
+        assertEquals(49.0f, rs.getFloat(1), 1.0f);
+      }
       // test CallableStatement with 2 binding parameters
       callableStatement = connection.prepareCall("{call add_nums(?,?)}");
       callableStatement.setDouble(1, 32);
       callableStatement.setDouble(2, 15);
-      rs = callableStatement.executeQuery();
-      rs.next();
-      assertEquals(47, rs.getDouble(1), .5);
+      try (ResultSet rs = callableStatement.executeQuery()) {
+        rs.next();
+        assertEquals(47, rs.getDouble(1), .5);
+      }
     }
   }
 }

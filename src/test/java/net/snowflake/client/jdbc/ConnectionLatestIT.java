@@ -198,7 +198,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         TestUtil.assertValidQueryId(resultSetPutQueryId);
         assertEquals(resultSetPutQueryId, statementPutQueryId);
       }
-
       try (ResultSet resultSet =
           snowflakeStatement.executeAsyncQuery(
               "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8")) {
@@ -267,7 +266,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                 .executeAsyncQuery("CALL SYSTEM$WAIT(60, 'SECONDS')")) {
       // Retrieve query ID for part 2 of test, check status of query
       queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
-
       for (int retry = 0; retry < 5; ++retry) {
         Thread.sleep(100);
         statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
@@ -285,9 +283,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     Thread.sleep(1000 * 60);
     // Create a new connection and new instance of a resultSet using query ID
     try (Connection con = getConnection()) {
-      try {
-        ResultSet rs =
-            con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID");
+      try (ResultSet rs =
+          con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID")) {
         fail("Query ID should be rejected");
       } catch (SQLException e) {
         assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
@@ -349,12 +346,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
             rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
       }
-      rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1");
-      rs1.next();
-      // Assert there is no error message when query is successful
-      assertEquals(
-          "No error reported", rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
-      rs1.close();
+      try (ResultSet rs2 =
+          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1")) {
+        rs2.next();
+        // Assert there is no error message when query is successful
+        assertEquals(
+            "No error reported", rs2.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+      }
     }
   }
 
@@ -363,42 +361,46 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       // execute some statements that you want to be synchronous
-      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
-      statement.execute("create or replace table smallTable (colA string, colB int)");
-      statement.execute("create or replace table uselessTable (colA string, colB int)");
-      statement.execute("insert into smallTable values ('row1', 1), ('row2', 2), ('row3', 3)");
-      statement.execute("insert into uselessTable values ('row1', 1), ('row2', 2), ('row3', 3)");
-      // Select from uselessTable asynchronously; drop it synchronously afterwards
-      try (ResultSet rs =
-              statement
-                  .unwrap(SnowflakeStatement.class)
-                  .executeAsyncQuery("select * from smallTable");
-          // execute a query that you don't want to wait for
-          ResultSet rs1 =
-              statement
-                  .unwrap(SnowflakeStatement.class)
-                  .executeAsyncQuery("select * from uselessTable");
-          // Drop the table that was queried asynchronously. Should not drop until after async query
-          // finishes, because this
-          // query IS synchronous
-          ResultSet rs2 = statement.executeQuery("drop table uselessTable")) {
-        while (rs2.next()) {
-          assertEquals("USELESSTABLE successfully dropped.", rs2.getString(1));
-        }
-        // able to successfully fetch results in spite of table being dropped
-        assertEquals(3, getSizeOfResultSet(rs1));
-        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
+      try {
+        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
+        statement.execute("create or replace table smallTable (colA string, colB int)");
+        statement.execute("create or replace table uselessTable (colA string, colB int)");
+        statement.execute("insert into smallTable values ('row1', 1), ('row2', 2), ('row3', 3)");
+        statement.execute("insert into uselessTable values ('row1', 1), ('row2', 2), ('row3', 3)");
+        // Select from uselessTable asynchronously; drop it synchronously afterwards
+        try (ResultSet rs =
+                statement
+                    .unwrap(SnowflakeStatement.class)
+                    .executeAsyncQuery("select * from smallTable");
+            // execute a query that you don't want to wait for
+            ResultSet rs1 =
+                statement
+                    .unwrap(SnowflakeStatement.class)
+                    .executeAsyncQuery("select * from uselessTable");
+            // Drop the table that was queried asynchronously. Should not drop until after async
+            // query
+            // finishes, because this
+            // query IS synchronous
+            ResultSet rs2 = statement.executeQuery("drop table uselessTable")) {
+          while (rs2.next()) {
+            assertEquals("USELESSTABLE successfully dropped.", rs2.getString(1));
+          }
+          // able to successfully fetch results in spite of table being dropped
+          assertEquals(3, getSizeOfResultSet(rs1));
+          statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
 
-        // come back to the asynchronously executed result set after finishing other things
-        rs.next();
-        assertEquals(rs.getString(1), "row1");
-        assertEquals(rs.getInt(2), 1);
-        rs.next();
-        assertEquals(rs.getString(1), "row2");
-        assertEquals(rs.getInt(2), 2);
-        rs.next();
-        assertEquals(rs.getString(1), "row3");
-        assertEquals(rs.getInt(2), 3);
+          // come back to the asynchronously executed result set after finishing other things
+          rs.next();
+          assertEquals(rs.getString(1), "row1");
+          assertEquals(rs.getInt(2), 1);
+          rs.next();
+          assertEquals(rs.getString(1), "row2");
+          assertEquals(rs.getInt(2), 2);
+          rs.next();
+          assertEquals(rs.getString(1), "row3");
+          assertEquals(rs.getInt(2), 3);
+        }
+      } finally {
         statement.execute("drop table smallTable");
       }
     }

@@ -79,7 +79,7 @@ public class ConnectionIT extends BaseJDBCTest {
     }
     con.close();
     assertTrue(con.isClosed());
-    //    con.close(); // ensure no exception
+    con.close(); // ensure no exception
   }
 
   @Test
@@ -194,18 +194,19 @@ public class ConnectionIT extends BaseJDBCTest {
         int resultSize = 1000000 + i;
         try (Statement statement = connection.createStatement()) {
           statement.execute("ALTER SESSION SET CLIENT_MEMORY_LIMIT=10");
-          ResultSet resultSet =
+          try (ResultSet resultSet =
               statement.executeQuery(
                   "select randstr(80, random()) from table(generator(rowcount => "
                       + resultSize
-                      + "))");
+                      + "))")) {
 
-          int size = 0;
-          while (resultSet.next()) {
-            size++;
+            int size = 0;
+            while (resultSet.next()) {
+              size++;
+            }
+            System.out.println("Total records: " + size);
+            assert (size == resultSize);
           }
-          System.out.println("Total records: " + size);
-          assert (size == resultSize);
         }
       }
     }
@@ -341,8 +342,8 @@ public class ConnectionIT extends BaseJDBCTest {
     ds.setSsl("on".equals(ssl));
     ds.setAccount(account);
     ds.setPortNumber(Integer.parseInt(port));
-    try (Connection connection = ds.getConnection(params.get("user"), params.get("password"))) {
-      ResultSet resultSet = connection.createStatement().executeQuery("select 1");
+    try (Connection connection = ds.getConnection(params.get("user"), params.get("password"));
+        ResultSet resultSet = connection.createStatement().executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
     }
@@ -363,7 +364,7 @@ public class ConnectionIT extends BaseJDBCTest {
     ds.setPassword(params.get("ssoPassword"));
     ds.setAuthenticator("https://snowflakecomputing.okta.com/");
     try (Connection con = ds.getConnection();
-        ResultSet resultSet = con.createStatement().executeQuery("select 1"); ) {
+        ResultSet resultSet = con.createStatement().executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
       File serializedFile = tmpFolder.newFile("serializedStuff.ser");
@@ -401,6 +402,7 @@ public class ConnectionIT extends BaseJDBCTest {
     KeyPair keyPair = keyPairGenerator.generateKeyPair();
     PublicKey publicKey = keyPair.getPublic();
     PrivateKey privateKey = keyPair.getPrivate();
+    PublicKey publicKey2 = null;
 
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -422,32 +424,31 @@ public class ConnectionIT extends BaseJDBCTest {
 
     // test correct private key one
     properties.put("privateKey", privateKey);
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
-    ;
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
 
-    // test datasource connection using private key
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-    ds.setUrl(uri);
-    ds.setAccount(parameters.get("account"));
-    ds.setUser(parameters.get("user"));
-    ds.setSsl("on".equals(parameters.get("ssl")));
-    ds.setPortNumber(Integer.valueOf(parameters.get("port")));
-    ds.setPrivateKey(privateKey);
-    try (Connection con = ds.getConnection()) {}
-    ;
+      // test datasource connection using private key
+      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+      ds.setUrl(uri);
+      ds.setAccount(parameters.get("account"));
+      ds.setUser(parameters.get("user"));
+      ds.setSsl("on".equals(parameters.get("ssl")));
+      ds.setPortNumber(Integer.valueOf(parameters.get("port")));
+      ds.setPrivateKey(privateKey);
 
-    // test wrong private key
-    keyPair = keyPairGenerator.generateKeyPair();
-    PublicKey publicKey2 = keyPair.getPublic();
-    PrivateKey privateKey2 = keyPair.getPrivate();
-    properties.put("privateKey", privateKey2);
-    try {
-      DriverManager.getConnection(uri, properties);
-      fail();
-    } catch (SQLException e) {
-      Assert.assertEquals(390144, e.getErrorCode());
+      try (Connection con = ds.getConnection()) {
+        // test wrong private key
+        keyPair = keyPairGenerator.generateKeyPair();
+        publicKey2 = keyPair.getPublic();
+        PrivateKey privateKey2 = keyPair.getPrivate();
+        properties.put("privateKey", privateKey2);
+        try {
+          DriverManager.getConnection(uri, properties);
+          fail();
+        } catch (SQLException e) {
+          Assert.assertEquals(390144, e.getErrorCode());
+        }
+      }
     }
-
     // test multiple key pair
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -591,13 +592,14 @@ public class ConnectionIT extends BaseJDBCTest {
     try (Connection connection = getConnection(paramProperties)) {
       for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
         String key = (String) enums.nextElement();
-        ResultSet rs =
+        try (ResultSet rs =
             connection
                 .createStatement()
-                .executeQuery(String.format("show parameters like '%s'", key));
-        rs.next();
-        String value = rs.getString("value");
-        assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+                .executeQuery(String.format("show parameters like '%s'", key))) {
+          rs.next();
+          String value = rs.getString("value");
+          assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+        }
       }
     }
   }
@@ -667,13 +669,14 @@ public class ConnectionIT extends BaseJDBCTest {
     try (Connection connection = getConnection(paramProperties)) {
       for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
         String key = (String) enums.nextElement();
-        ResultSet rs =
+        try (ResultSet rs =
             connection
                 .createStatement()
-                .executeQuery(String.format("show parameters like '%s'", key));
-        rs.next();
-        String value = rs.getString("value");
-        assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+                .executeQuery(String.format("show parameters like '%s'", key))) {
+          rs.next();
+          String value = rs.getString("value");
+          assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+        }
       }
     }
     System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
@@ -942,10 +945,11 @@ public class ConnectionIT extends BaseJDBCTest {
     props.put("role", "accountadmin");
     props.put("timezone", "UTC");
     try (Connection con =
-        DriverManager.getConnection(
-            "jdbc:snowflake://amoghorgurl-keypairauth_test_alias.testdns.snowflakecomputing.com",
-            props)) {
-      con.createStatement().execute("select 1");
+            DriverManager.getConnection(
+                "jdbc:snowflake://amoghorgurl-keypairauth_test_alias.testdns.snowflakecomputing.com",
+                props);
+        Statement statement = con.createStatement()) {
+      statement.execute("select 1");
     }
   }
 
@@ -987,8 +991,8 @@ public class ConnectionIT extends BaseJDBCTest {
     props.remove("password");
     // test correct private key one
     props.put("privateKey", privateKey);
-    Connection connection = DriverManager.getConnection(uri, props);
-    connection.close();
+    try (Connection connection = DriverManager.getConnection(uri, props)) {}
+    ;
   }
 
   private Properties kvMap2Properties(

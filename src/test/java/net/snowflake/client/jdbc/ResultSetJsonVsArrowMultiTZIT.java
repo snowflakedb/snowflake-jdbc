@@ -73,11 +73,11 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     return con;
   }
 
-  private void finish(String table, Connection con) throws SQLException {
-    con.createStatement().execute("drop table " + table);
-    con.close();
-    System.clearProperty("user.timezone");
-  }
+  //  private void finish(String table, Connection con) throws SQLException {
+  //    con.createStatement().execute("drop table " + table);
+  //    con.close();
+  //    System.clearProperty("user.timezone");
+  //  }
 
   @Test
   public void testTime() throws SQLException {
@@ -117,22 +117,27 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a date)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    Connection con = init(table, column, values);
-    try (ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
-      int i = 0;
-      while (i < cases.length) {
-        rs.next();
-        if (i == cases.length - 2) {
-          assertEquals("0001-01-01", rs.getDate(1).toString());
-        } else {
-          assertEquals(cases[i], rs.getDate(1).toString());
+    try (Connection con = init(table, column, values);
+        Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select * from " + table)) {
+      try {
+        int i = 0;
+        while (i < cases.length) {
+          rs.next();
+          if (i == cases.length - 2) {
+            assertEquals("0001-01-01", rs.getDate(1).toString());
+          } else {
+            assertEquals(cases[i], rs.getDate(1).toString());
+          }
+          i++;
         }
-        i++;
+        rs.next();
+        assertNull(rs.getString(1));
+      } finally {
+        statement.execute("drop table if exists" + table);
+        System.clearProperty("user.timezone");
       }
-      rs.next();
-      assertNull(rs.getString(1));
     }
-    finish(table, con);
   }
 
   public void testTimeWithScale(String[] times, int scale) throws SQLException {
@@ -187,17 +192,22 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a timestamp_ntz(" + scale + "))";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    Connection con = init(table, column, values);
-    try (ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
-      int i = 0;
-      while (i < cases.length) {
+    try (Connection con = init(table, column, values);
+        Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select * from " + table)) {
+      try {
+        int i = 0;
+        while (i < cases.length) {
+          rs.next();
+          assertEquals(results[i++], rs.getString(1));
+        }
         rs.next();
-        assertEquals(results[i++], rs.getString(1));
+        assertNull(rs.getString(1));
+      } finally {
+        statement.execute("drop table if exists" + table);
+        System.clearProperty("user.timezone");
       }
-      rs.next();
-      assertNull(rs.getString(1));
     }
-    finish(table, con);
   }
 
   @Test
@@ -218,16 +228,21 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a timestamp_ntz)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    Connection con = init(table, column, values);
-    try (ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
-      int i = 0;
-      while (i < cases.length) {
+    try (Connection con = init(table, column, values);
+        Statement statement = con.createStatement();
+        ResultSet rs = con.createStatement().executeQuery("select * from " + table)) {
+      try {
+        int i = 0;
+        while (i < cases.length) {
+          rs.next();
+          assertEquals(cases[i++], rs.getTimestamp(1).toString());
+        }
         rs.next();
-        assertEquals(cases[i++], rs.getTimestamp(1).toString());
+        assertNull(rs.getString(1));
+      } finally {
+        statement.execute("drop table if exists" + table);
+        System.clearProperty("user.timezone");
       }
-      rs.next();
-      assertNull(rs.getString(1));
     }
-    finish(table, con);
   }
 }

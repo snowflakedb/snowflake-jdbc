@@ -154,8 +154,9 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteInsert() throws SQLException {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("create or replace table test_insert(cola number)");
 
         String insertSQL = "insert into test_insert values(2),(3)";
@@ -180,8 +181,9 @@ public class StatementIT extends BaseJDBCTest {
           rs0.next();
           assertEquals(rs0.getInt(1), 1);
         }
+      } finally {
+        statement.execute("drop table if exists test_insert");
       }
-      connection.createStatement().execute("drop table if exists test_insert");
     }
   }
 
@@ -510,6 +512,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testTelemetryBatch() throws SQLException {
+    Telemetry telemetryClient = null;
     try (Connection connection = getConnection()) {
       try (Statement statement = connection.createStatement()) {
 
@@ -526,20 +529,19 @@ public class StatementIT extends BaseJDBCTest {
           assertEquals(3, getSizeOfResultSet(rs));
         }
 
-        Telemetry telemetryClient =
+        telemetryClient =
             ((SnowflakeStatementV1) statement).connection.getSfSession().getTelemetryClient();
 
         // there should be logs ready to be sent
         assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
-
-        // closing the statement should flush the buffer, however, flush is async,
-        // sleep some time before check buffer size
-        try {
-          Thread.sleep(1000);
-        } catch (Throwable e) {
-        }
-        assertEquals(((TelemetryClient) telemetryClient).bufferSize(), 0);
       }
+      // closing the statement should flush the buffer, however, flush is async,
+      // sleep some time before check buffer size
+      try {
+        Thread.sleep(1000);
+      } catch (Throwable e) {
+      }
+      assertEquals(((TelemetryClient) telemetryClient).bufferSize(), 0);
     }
   }
 

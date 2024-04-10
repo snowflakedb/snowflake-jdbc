@@ -125,51 +125,66 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             // this should only return `customSchema` schema and tables
             statement.execute("use schema " + customSchema);
 
-            ResultSet resultSet = databaseMetaData.getSchemas(null, null);
-            assertEquals(1, getSizeOfResultSet(resultSet));
+            try (ResultSet resultSet = databaseMetaData.getSchemas(null, null)) {
+              assertEquals(1, getSizeOfResultSet(resultSet));
+            }
 
-            resultSet = databaseMetaData.getTables(null, null, null, null);
-            assertEquals(3, getSizeOfResultSet(resultSet));
+            try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
+              assertEquals(3, getSizeOfResultSet(resultSet));
+            }
 
-            resultSet = databaseMetaData.getColumns(null, null, null, null);
-            assertEquals(13, getSizeOfResultSet(resultSet));
+            try (ResultSet resultSet = databaseMetaData.getColumns(null, null, null, null)) {
+              assertEquals(13, getSizeOfResultSet(resultSet));
+            }
 
-            resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
-            assertEquals(1, getSizeOfResultSet(resultSet));
+            try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, null)) {
+              assertEquals(1, getSizeOfResultSet(resultSet));
+            }
 
-            resultSet = databaseMetaData.getImportedKeys(null, null, null);
-            assertEquals(1, getSizeOfResultSet(resultSet));
+            try (ResultSet resultSet = databaseMetaData.getImportedKeys(null, null, null)) {
+              assertEquals(1, getSizeOfResultSet(resultSet));
+            }
 
-            resultSet = databaseMetaData.getExportedKeys(null, null, null);
-            assertEquals(1, getSizeOfResultSet(resultSet));
+            try (ResultSet resultSet = databaseMetaData.getExportedKeys(null, null, null)) {
+              assertEquals(1, getSizeOfResultSet(resultSet));
+            }
 
-            resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
-            assertEquals(1, getSizeOfResultSet(resultSet));
-
+            try (ResultSet resultSet =
+                databaseMetaData.getCrossReference(null, null, null, null, null, null)) {
+              assertEquals(1, getSizeOfResultSet(resultSet));
+            }
             // Now compare results to setting client metadata to false.
             statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=false");
             databaseMetaData = connection.getMetaData();
 
-            resultSet = databaseMetaData.getSchemas(null, null);
-            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            try (ResultSet resultSet = databaseMetaData.getSchemas(null, null)) {
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            }
 
-            resultSet = databaseMetaData.getTables(null, null, null, null);
-            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
+            try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
+            }
 
-            resultSet = databaseMetaData.getColumns(null, null, null, null);
-            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
+            try (ResultSet resultSet = databaseMetaData.getColumns(null, null, null, null)) {
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
+            }
 
-            resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
-            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, null)) {
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            }
 
-            resultSet = databaseMetaData.getImportedKeys(null, null, null);
-            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            try (ResultSet resultSet = databaseMetaData.getImportedKeys(null, null, null)) {
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            }
 
-            resultSet = databaseMetaData.getExportedKeys(null, null, null);
-            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            try (ResultSet resultSet = databaseMetaData.getExportedKeys(null, null, null)) {
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            }
 
-            resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
-            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            try (ResultSet resultSet =
+                databaseMetaData.getCrossReference(null, null, null, null, null, null)) {
+              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+            }
           });
     }
   }
@@ -210,19 +225,23 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
                 "create or replace table \"TESTTABLE_\"\"WITH_QUOTES\"\"\" (AMOUNT number,"
                     + " \"COL_\"\"QUOTED\"\"\" string)");
             DatabaseMetaData metaData = con.getMetaData();
-            ResultSet rs = metaData.getTables(database, querySchema, queryTable, null);
-            // Assert 1 row returned for the testtable_"with_quotes"
-            assertEquals(1, getSizeOfResultSet(rs));
-            rs = metaData.getColumns(database, querySchema, queryTable, null);
-            // Assert 2 rows returned for the 2 rows in testtable_"with_quotes"
-            assertEquals(2, getSizeOfResultSet(rs));
-            rs = metaData.getColumns(database, querySchema, queryTable, "COL\\_\"QUOTED\"");
-            // Assert 1 row returned for the column col_"quoted"
-            assertEquals(1, getSizeOfResultSet(rs));
-            rs = metaData.getSchemas(database, querySchema);
-            // Assert 1 row returned for the schema test_schema_"with_quotes"
-            assertEquals(1, getSizeOfResultSet(rs));
-            rs.close();
+            try (ResultSet rs = metaData.getTables(database, querySchema, queryTable, null)) {
+              // Assert 1 row returned for the testtable_"with_quotes"
+              assertEquals(1, getSizeOfResultSet(rs));
+            }
+            try (ResultSet rs = metaData.getColumns(database, querySchema, queryTable, null)) {
+              // Assert 2 rows returned for the 2 rows in testtable_"with_quotes"
+              assertEquals(2, getSizeOfResultSet(rs));
+            }
+            try (ResultSet rs =
+                metaData.getColumns(database, querySchema, queryTable, "COL\\_\"QUOTED\"")) {
+              // Assert 1 row returned for the column col_"quoted"
+              assertEquals(1, getSizeOfResultSet(rs));
+            }
+            try (ResultSet rs = metaData.getSchemas(database, querySchema)) {
+              // Assert 1 row returned for the schema test_schema_"with_quotes"
+              assertEquals(1, getSizeOfResultSet(rs));
+            }
           });
     }
   }
@@ -305,13 +324,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       statement.execute(
           "create or replace table \"dbwith\"\"quotes\".\"schemawith\"\"quotes\".\"test2\" (col_a integer not null, col_b integer not null, constraint fkey_1 foreign key (col_a, col_b) references \"test1\" (col1, col2) not enforced)");
       DatabaseMetaData metaData = con.getMetaData();
-      ResultSet rs = metaData.getPrimaryKeys("dbwith\"quotes", "schemawith\"quotes", null);
-      // Assert 2 rows are returned for primary key constraint for table and schema with quotes
-      assertEquals(2, getSizeOfResultSet(rs));
-      rs = metaData.getImportedKeys("dbwith\"quotes", "schemawith\"quotes", null);
-      // Assert 2 rows are returned for foreign key constraint
-      assertEquals(2, getSizeOfResultSet(rs));
-      rs.close();
+      try (ResultSet rs = metaData.getPrimaryKeys("dbwith\"quotes", "schemawith\"quotes", null)) {
+        // Assert 2 rows are returned for primary key constraint for table and schema with quotes
+        assertEquals(2, getSizeOfResultSet(rs));
+      }
+      try (ResultSet rs = metaData.getImportedKeys("dbwith\"quotes", "schemawith\"quotes", null)) {
+        // Assert 2 rows are returned for foreign key constraint
+        assertEquals(2, getSizeOfResultSet(rs));
+      }
     }
   }
 
@@ -1554,44 +1574,47 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       final String targetTable = "T0";
       String tableName = database + "." + schema + "." + targetTable;
 
-      Statement statement = con.createStatement();
-      statement.execute("create or replace table " + targetTable + "(C1 int)");
-      statement.execute("create or replace stream " + targetStream + " on table " + targetTable);
+      try (Statement statement = con.createStatement()) {
+        try {
+          statement.execute("create or replace table " + targetTable + "(C1 int)");
+          statement.execute(
+              "create or replace stream " + targetStream + " on table " + targetTable);
 
-      DatabaseMetaData metaData = con.getMetaData();
+          DatabaseMetaData metaData = con.getMetaData();
 
-      // match stream
-      ResultSet resultSet =
-          metaData.unwrap(SnowflakeDatabaseMetaData.class).getStreams(database, schema, "%");
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_STREAMS);
-      Set<String> streams = new HashSet<>();
-      while (resultSet.next()) {
-        streams.add(resultSet.getString(1));
+          // match stream
+          try (ResultSet resultSet =
+              metaData.unwrap(SnowflakeDatabaseMetaData.class).getStreams(database, schema, "%")) {
+            verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_STREAMS);
+            Set<String> streams = new HashSet<>();
+            while (resultSet.next()) {
+              streams.add(resultSet.getString(1));
+            }
+            assertTrue(streams.contains("S0"));
+          }
+          // match exact stream
+          try (ResultSet resultSet =
+              metaData
+                  .unwrap(SnowflakeDatabaseMetaData.class)
+                  .getStreams(database, schema, targetStream)) {
+            resultSet.next();
+            assertEquals(targetStream, resultSet.getString(1));
+            assertEquals(database, resultSet.getString(2));
+            assertEquals(schema, resultSet.getString(3));
+            assertEquals(owner, resultSet.getString(4));
+            assertEquals("", resultSet.getString(5));
+            assertEquals(tableName, resultSet.getString(6));
+            assertEquals("Table", resultSet.getString(7));
+            assertEquals(tableName, resultSet.getString(8));
+            assertEquals("DELTA", resultSet.getString(9));
+            assertEquals("false", resultSet.getString(10));
+            assertEquals("DEFAULT", resultSet.getString(11));
+          }
+        } finally {
+          statement.execute("drop table if exists " + targetTable);
+          statement.execute("drop stream if exists " + targetStream);
+        }
       }
-      assertTrue(streams.contains("S0"));
-
-      // match exact stream
-      resultSet =
-          metaData
-              .unwrap(SnowflakeDatabaseMetaData.class)
-              .getStreams(database, schema, targetStream);
-      resultSet.next();
-      assertEquals(targetStream, resultSet.getString(1));
-      assertEquals(database, resultSet.getString(2));
-      assertEquals(schema, resultSet.getString(3));
-      assertEquals(owner, resultSet.getString(4));
-      assertEquals("", resultSet.getString(5));
-      assertEquals(tableName, resultSet.getString(6));
-      assertEquals("Table", resultSet.getString(7));
-      assertEquals(tableName, resultSet.getString(8));
-      assertEquals("DELTA", resultSet.getString(9));
-      assertEquals("false", resultSet.getString(10));
-      assertEquals("DEFAULT", resultSet.getString(11));
-
-      con.createStatement().execute("drop table if exists " + targetTable);
-      con.createStatement().execute("drop stream if exists " + targetStream);
-      resultSet.close();
-      statement.close();
     }
   }
 
@@ -1705,36 +1728,37 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       DatabaseMetaData metaData = con.getMetaData();
       // create a procedure with no parameters that has a return value
       statement.execute(PI_PROCEDURE);
-      ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "GETPI", "%");
-      res.next();
-      assertEquals("GETPI", res.getString("PROCEDURE_NAME"));
-      assertEquals("", res.getString("COLUMN_NAME"));
-      assertEquals(5, res.getInt("COLUMN_TYPE")); // procedureColumnReturn
-      assertEquals(Types.FLOAT, res.getInt("DATA_TYPE"));
-      assertEquals("FLOAT", res.getString("TYPE_NAME"));
-      assertEquals(0, res.getInt("ORDINAL_POSITION"));
+      try (ResultSet res = metaData.getProcedureColumns(con.getCatalog(), null, "GETPI", "%")) {
+        res.next();
+        assertEquals("GETPI", res.getString("PROCEDURE_NAME"));
+        assertEquals("", res.getString("COLUMN_NAME"));
+        assertEquals(5, res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+        assertEquals(Types.FLOAT, res.getInt("DATA_TYPE"));
+        assertEquals("FLOAT", res.getString("TYPE_NAME"));
+        assertEquals(0, res.getInt("ORDINAL_POSITION"));
+      }
 
       // create a procedure that returns the value of the argument that is passed in
       statement.execute(MESSAGE_PROCEDURE);
-      res = metaData.getProcedureColumns(con.getCatalog(), null, "MESSAGE_PROC", "%");
-      res.next();
-      assertEquals("MESSAGE_PROC", res.getString("PROCEDURE_NAME"));
-      assertEquals("", res.getString("COLUMN_NAME"));
-      assertEquals(
-          DatabaseMetaData.procedureColumnReturn,
-          res.getInt("COLUMN_TYPE")); // procedureColumnReturn
-      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
-      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
-      assertEquals(0, res.getInt("ORDINAL_POSITION"));
-      res.next();
-      assertEquals("MESSAGE", res.getString("COLUMN_NAME"));
-      assertEquals(
-          DatabaseMetaData.procedureColumnIn, res.getInt("COLUMN_TYPE")); // procedureColumnIn
-      assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
-      assertEquals("VARCHAR", res.getString("TYPE_NAME"));
-      assertEquals(1, res.getInt("ORDINAL_POSITION"));
-
-      res.close();
+      try (ResultSet res =
+          metaData.getProcedureColumns(con.getCatalog(), null, "MESSAGE_PROC", "%")) {
+        res.next();
+        assertEquals("MESSAGE_PROC", res.getString("PROCEDURE_NAME"));
+        assertEquals("", res.getString("COLUMN_NAME"));
+        assertEquals(
+            DatabaseMetaData.procedureColumnReturn,
+            res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+        assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+        assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+        assertEquals(0, res.getInt("ORDINAL_POSITION"));
+        res.next();
+        assertEquals("MESSAGE", res.getString("COLUMN_NAME"));
+        assertEquals(
+            DatabaseMetaData.procedureColumnIn, res.getInt("COLUMN_TYPE")); // procedureColumnIn
+        assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
+        assertEquals("VARCHAR", res.getString("TYPE_NAME"));
+        assertEquals(1, res.getInt("ORDINAL_POSITION"));
+      }
     }
   }
 

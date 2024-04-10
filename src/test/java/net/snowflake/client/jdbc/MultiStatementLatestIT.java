@@ -59,15 +59,16 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
       // third statement
       assertTrue(statement.getMoreResults());
       assertEquals(-1, statement.getUpdateCount());
-      ResultSet rs = statement.getResultSet();
-      assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
-      assertTrue(rs.next());
-      assertEquals(2, rs.getInt(1));
-      assertFalse(rs.next());
+      try (ResultSet rs = statement.getResultSet()) {
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertTrue(rs.next());
+        assertEquals(2, rs.getInt(1));
+        assertFalse(rs.next());
 
-      assertFalse(statement.getMoreResults());
-      assertEquals(-1, statement.getUpdateCount());
+        assertFalse(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
+      }
     }
   }
 
@@ -75,42 +76,45 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
   public void testMultiStmtTransaction() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
-      statement.execute(
-          "create or replace table test_multi_txn(c1 number, c2 string)" + " as select 10, 'z'");
+      try {
+        statement.execute(
+            "create or replace table test_multi_txn(c1 number, c2 string)" + " as select 10, 'z'");
 
-      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
-      String multiStmtQuery =
-          "begin;\n"
-              + "delete from test_multi_txn;\n"
-              + "insert into test_multi_txn values (1, 'a'), (2, 'b');\n"
-              + "commit";
+        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
+        String multiStmtQuery =
+            "begin;\n"
+                + "delete from test_multi_txn;\n"
+                + "insert into test_multi_txn values (1, 'a'), (2, 'b');\n"
+                + "commit";
 
-      boolean hasResultSet = statement.execute(multiStmtQuery);
-      // first statement
-      assertFalse(hasResultSet);
-      assertNull(statement.getResultSet());
-      assertEquals(0, statement.getUpdateCount());
+        boolean hasResultSet = statement.execute(multiStmtQuery);
+        // first statement
+        assertFalse(hasResultSet);
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
-      // second statement
-      assertTrue(statement.getMoreResults());
-      assertNull(statement.getResultSet());
-      assertEquals(1, statement.getUpdateCount());
+        // second statement
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(1, statement.getUpdateCount());
 
-      // third statement
-      assertTrue(statement.getMoreResults());
-      assertNull(statement.getResultSet());
-      assertEquals(2, statement.getUpdateCount());
+        // third statement
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(2, statement.getUpdateCount());
 
-      // fourth statement
-      assertFalse(statement.getMoreResults());
-      assertNull(statement.getResultSet());
-      assertEquals(0, statement.getUpdateCount());
+        // fourth statement
+        assertFalse(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
-      assertFalse(statement.getMoreResults());
-      assertEquals(-1, statement.getUpdateCount());
+        assertFalse(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
 
-      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
-      statement.execute("drop table if exists test_multi_txn");
+      } finally {
+        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
+        statement.execute("drop table if exists test_multi_txn");
+      }
     }
   }
 
@@ -138,15 +142,16 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
       // third statement
       assertTrue(statement.getMoreResults());
       assertEquals(-1, statement.getUpdateCount());
-      ResultSet rs = statement.getResultSet();
-      assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
-      assertTrue(rs.next());
-      assertEquals(2, rs.getInt(1));
-      assertFalse(rs.next());
+      try (ResultSet rs = statement.getResultSet()) {
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertTrue(rs.next());
+        assertEquals(2, rs.getInt(1));
+        assertFalse(rs.next());
 
-      assertFalse(statement.getMoreResults());
-      assertEquals(-1, statement.getUpdateCount());
+        assertFalse(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
+      }
     }
   }
 
@@ -154,46 +159,49 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
   public void testMultiStmtTransactionRollback() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "create or replace table test_multi_txn_rb(c1 number, c2 string)"
+                + " as select 10, 'z'");
 
-      statement.execute(
-          "create or replace table test_multi_txn_rb(c1 number, c2 string)" + " as select 10, 'z'");
+        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
+        String multiStmtQuery =
+            "begin;\n"
+                + "delete from test_multi_txn_rb;\n"
+                + "rollback;\n"
+                + "select count(*) from test_multi_txn_rb";
 
-      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
-      String multiStmtQuery =
-          "begin;\n"
-              + "delete from test_multi_txn_rb;\n"
-              + "rollback;\n"
-              + "select count(*) from test_multi_txn_rb";
+        boolean hasResultSet = statement.execute(multiStmtQuery);
+        // first statement
+        assertFalse(hasResultSet);
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
-      boolean hasResultSet = statement.execute(multiStmtQuery);
-      // first statement
-      assertFalse(hasResultSet);
-      assertNull(statement.getResultSet());
-      assertEquals(0, statement.getUpdateCount());
+        // second statement
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(1, statement.getUpdateCount());
 
-      // second statement
-      assertTrue(statement.getMoreResults());
-      assertNull(statement.getResultSet());
-      assertEquals(1, statement.getUpdateCount());
+        // third statement
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
-      // third statement
-      assertTrue(statement.getMoreResults());
-      assertNull(statement.getResultSet());
-      assertEquals(0, statement.getUpdateCount());
+        // fourth statement
+        assertTrue(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
+        try (ResultSet rs = statement.getResultSet()) {
+          assertTrue(rs.next());
+          assertEquals(1, rs.getInt(1));
+          assertFalse(rs.next());
 
-      // fourth statement
-      assertTrue(statement.getMoreResults());
-      assertEquals(-1, statement.getUpdateCount());
-      ResultSet rs = statement.getResultSet();
-      assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
-      assertFalse(rs.next());
-
-      assertFalse(statement.getMoreResults());
-      assertEquals(-1, statement.getUpdateCount());
-
-      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
-      statement.execute("drop table if exists test_multi_txn_rb");
+          assertFalse(statement.getMoreResults());
+          assertEquals(-1, statement.getUpdateCount());
+        }
+      } finally {
+        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
+        statement.execute("drop table if exists test_multi_txn_rb");
+      }
     }
   }
 
@@ -208,37 +216,39 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
               + "select cola from test_multi order by cola asc";
 
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
-      ResultSet rs = statement.executeQuery(multiStmtQuery);
-      // first statement
-      assertNotNull(rs);
-      assertNotNull(statement.getResultSet());
-      assertEquals(-1, statement.getUpdateCount());
-      assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
-      assertFalse(rs.next());
+      try (ResultSet rs = statement.executeQuery(multiStmtQuery)) {
+        // first statement
+        assertNotNull(rs);
+        assertNotNull(statement.getResultSet());
+        assertEquals(-1, statement.getUpdateCount());
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertFalse(rs.next());
 
-      // second statement
-      assertTrue(statement.getMoreResults());
-      assertNull(statement.getResultSet());
-      assertEquals(0, statement.getUpdateCount());
+        // second statement
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
-      // third statement
-      assertTrue(statement.getMoreResults());
-      assertNull(statement.getResultSet());
-      assertEquals(2, statement.getUpdateCount());
+        // third statement
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(2, statement.getUpdateCount());
 
-      // fourth statement
-      assertTrue(statement.getMoreResults());
-      assertEquals(-1, statement.getUpdateCount());
-      rs = statement.getResultSet();
-      assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
-      assertTrue(rs.next());
-      assertEquals(2, rs.getInt(1));
-      assertFalse(rs.next());
+        // fourth statement
+        assertTrue(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
+      }
+      try (ResultSet rs = statement.getResultSet()) {
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertTrue(rs.next());
+        assertEquals(2, rs.getInt(1));
+        assertFalse(rs.next());
 
-      assertFalse(statement.getMoreResults());
-      assertEquals(-1, statement.getUpdateCount());
+        assertFalse(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
+      }
     }
   }
 
@@ -289,9 +299,10 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
       for (int i = 0; i < multistatementcount - 1; i++) {
         assertTrue(statement.getMoreResults());
       }
-      ResultSet rs = statement.getResultSet();
-      assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
+      try (ResultSet rs = statement.getResultSet()) {
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+      }
 
       // Test anonymous block in the middle of other queries in multistatement
       multiStmtQuery =
@@ -309,9 +320,9 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
       for (int i = 0; i < multistatementcount - 1; i++) {
         assertTrue(statement.getMoreResults());
       }
-      rs = statement.getResultSet();
-      assertEquals(4, getSizeOfResultSet(rs));
-      rs.close();
+      try (ResultSet rs = statement.getResultSet()) {
+        assertEquals(4, getSizeOfResultSet(rs));
+      }
     }
   }
 }

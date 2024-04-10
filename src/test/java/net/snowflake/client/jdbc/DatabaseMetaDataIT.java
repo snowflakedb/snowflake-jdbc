@@ -377,48 +377,48 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetExportedKeys() throws Throwable {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement(); ) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
+      try {
+        statement.execute(
+            "create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
+        statement.execute(
+            "create or replace table "
+                + targetTable2
+                + "(C1 int primary key, C2 string, C3 int references "
+                + targetTable1
+                + ")");
 
-      connection
-          .createStatement()
-          .execute("create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table "
-                  + targetTable2
-                  + "(C1 int primary key, C2 string, C3 int references "
-                  + targetTable1
-                  + ")");
+        DatabaseMetaData metaData = connection.getMetaData();
 
-      DatabaseMetaData metaData = connection.getMetaData();
+        try (ResultSet resultSet = metaData.getExportedKeys(database, schema, targetTable1)) {
+          verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
 
-      try (ResultSet resultSet = metaData.getExportedKeys(database, schema, targetTable1)) {
-        verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
-
-        assertTrue(resultSet.next());
-        assertEquals(database, resultSet.getString("PKTABLE_CAT"));
-        assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
-        assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
-        assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
-        assertEquals(database, resultSet.getString("FKTABLE_CAT"));
-        assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
-        assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
-        assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
-        assertEquals(1, resultSet.getInt("KEY_SEQ"));
-        assertNotEquals("", resultSet.getString("PK_NAME"));
-        assertNotEquals("", resultSet.getString("FK_NAME"));
-        assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-        assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-        assertEquals(
-            DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+          assertTrue(resultSet.next());
+          assertEquals(database, resultSet.getString("PKTABLE_CAT"));
+          assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
+          assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
+          assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
+          assertEquals(database, resultSet.getString("FKTABLE_CAT"));
+          assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
+          assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
+          assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
+          assertEquals(1, resultSet.getInt("KEY_SEQ"));
+          assertNotEquals("", resultSet.getString("PK_NAME"));
+          assertNotEquals("", resultSet.getString("FK_NAME"));
+          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+          assertEquals(
+              DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+        }
+      } finally {
+        statement.execute("drop table if exists " + targetTable1);
+        statement.execute("drop table if exists " + targetTable2);
       }
-      connection.createStatement().execute("drop table if exists " + targetTable1);
-      connection.createStatement().execute("drop table if exists " + targetTable2);
     }
   }
 
@@ -610,25 +610,29 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetProcedures() throws SQLException {
-    try (Connection connection = getConnection()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        String database = connection.getCatalog();
+        String schema = connection.getSchema();
 
-      /* Create a procedure and put values into it */
-      connection.createStatement().execute(PI_PROCEDURE);
-      DatabaseMetaData metaData = connection.getMetaData();
-      /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
-      try (ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI")) {
-        verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURES);
-        resultSet.next();
-        assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
-        assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
-        assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
-        assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
-        assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
-        assertEquals(procedureReturnsResult, resultSet.getShort("PROCEDURE_TYPE"));
-        assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
-        connection.createStatement().execute("drop procedure if exists GETPI()");
+        /* Create a procedure and put values into it */
+        statement.execute(PI_PROCEDURE);
+        DatabaseMetaData metaData = connection.getMetaData();
+        /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
+        try (ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI")) {
+          verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURES);
+          resultSet.next();
+          assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+          assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+          assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+          assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+          assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+          assertEquals(procedureReturnsResult, resultSet.getShort("PROCEDURE_TYPE"));
+          assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
+        }
+      } finally {
+        statement.execute("drop procedure if exists GETPI()");
       }
     }
   }

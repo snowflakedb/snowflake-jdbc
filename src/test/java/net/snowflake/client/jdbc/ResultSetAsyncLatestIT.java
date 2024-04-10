@@ -21,19 +21,22 @@ public class ResultSetAsyncLatestIT extends BaseJDBCTest {
   @Test
   public void testAsyncResultSet() throws SQLException {
     String queryID;
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
         statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
         String createTableSql = "select * from test_rsmd";
         try (ResultSet rs =
             statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(createTableSql)) {
           queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-          statement.execute("drop table if exists test_rsmd");
         }
+      } finally {
+        statement.execute("drop table if exists test_rsmd");
       }
-      // Close and reopen connection
     }
+    // Close and reopen connection
+
     try (Connection connection = getConnection();
         // open a new connection and create a result set
         ResultSet resultSet =

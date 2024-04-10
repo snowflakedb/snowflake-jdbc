@@ -192,10 +192,10 @@ public class MultiStatementIT extends BaseJDBCTest {
 
       assertEquals("PUBLIC", session.getSchema());
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
-      ResultSet rs = statement.executeQuery("select current_schema()");
-      rs.next();
-      assertEquals("PUBLIC", rs.getString(1));
-
+      try (ResultSet rs = statement.executeQuery("select current_schema()")) {
+        rs.next();
+        assertEquals("PUBLIC", rs.getString(1));
+      }
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute(String.format("use schema %s; select 1", originalSchema));
       // current schema change should persist outside of the above statement
@@ -203,9 +203,10 @@ public class MultiStatementIT extends BaseJDBCTest {
       session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
       assertEquals(originalSchema, session.getSchema());
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
-      rs = statement.executeQuery("select current_schema()");
-      rs.next();
-      assertEquals(originalSchema, rs.getString(1));
+      try (ResultSet rs = statement.executeQuery("select current_schema()")) {
+        rs.next();
+        assertEquals(originalSchema, rs.getString(1));
+      }
     }
   }
 
@@ -269,9 +270,10 @@ public class MultiStatementIT extends BaseJDBCTest {
       statement.execute("insert into test_multi values ('def'); commit");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("rollback");
-      ResultSet rs = statement.executeQuery("select count(*) from test_multi");
-      assertTrue(rs.next());
-      assertEquals(2, rs.getInt(1));
+      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+        assertTrue(rs.next());
+        assertEquals(2, rs.getInt(1));
+      }
 
       statement.execute("create or replace table test_multi (cola string)");
       statement.execute("begin");
@@ -281,10 +283,10 @@ public class MultiStatementIT extends BaseJDBCTest {
       statement.execute("insert into test_multi values ('def'); rollback");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("commit");
-      rs = statement.executeQuery("select count(*) from test_multi");
-      assertTrue(rs.next());
-      assertEquals(0, rs.getInt(1));
-
+      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+        assertTrue(rs.next());
+        assertEquals(0, rs.getInt(1));
+      }
       statement.execute("create or replace table test_multi (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
@@ -292,10 +294,10 @@ public class MultiStatementIT extends BaseJDBCTest {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("insert into test_multi values ('def')");
       statement.execute("commit");
-      rs = statement.executeQuery("select count(*) from test_multi");
-      assertTrue(rs.next());
-      assertEquals(2, rs.getInt(1));
-
+      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+        assertTrue(rs.next());
+        assertEquals(2, rs.getInt(1));
+      }
       statement.execute("create or replace table test_multi (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
@@ -303,9 +305,10 @@ public class MultiStatementIT extends BaseJDBCTest {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("insert into test_multi values ('def')");
       statement.execute("rollback");
-      rs = statement.executeQuery("select count(*) from test_multi");
-      assertTrue(rs.next());
-      assertEquals(0, rs.getInt(1));
+      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+        assertTrue(rs.next());
+        assertEquals(0, rs.getInt(1));
+      }
     }
   }
 
@@ -322,9 +325,10 @@ public class MultiStatementIT extends BaseJDBCTest {
         statement.execute("insert into test_multi values ('def'); commit");
         statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
         statement.execute("rollback");
-        ResultSet rs = statement.executeQuery("select count(*) from test_multi");
-        assertTrue(rs.next());
-        assertEquals(2, rs.getInt(1));
+        try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+          assertTrue(rs.next());
+          assertEquals(2, rs.getInt(1));
+        }
 
         statement.execute("create or replace table test_multi (cola string)");
         statement.execute("insert into test_multi values ('abc')");
@@ -333,9 +337,10 @@ public class MultiStatementIT extends BaseJDBCTest {
         statement.execute("insert into test_multi values ('def'); rollback");
         statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
         statement.execute("commit");
-        rs = statement.executeQuery("select count(*) from test_multi");
-        assertTrue(rs.next());
-        assertEquals(0, rs.getInt(1));
+        try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+          assertTrue(rs.next());
+          assertEquals(0, rs.getInt(1));
+        }
 
         statement.execute("create or replace table test_multi (cola string)");
         // open transaction inside multistatement continues after
@@ -344,10 +349,10 @@ public class MultiStatementIT extends BaseJDBCTest {
             "insert into test_multi values ('abc'); insert into test_multi values ('def')");
         statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
         statement.execute("commit");
-        rs = statement.executeQuery("select count(*) from test_multi");
-        assertTrue(rs.next());
-        assertEquals(2, rs.getInt(1));
-
+        try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+          assertTrue(rs.next());
+          assertEquals(2, rs.getInt(1));
+        }
         statement.execute("create or replace table test_multi (cola string)");
         // open transaction inside multistatement continues after
         statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
@@ -355,9 +360,10 @@ public class MultiStatementIT extends BaseJDBCTest {
             "insert into test_multi values ('abc'); insert into test_multi values ('def')");
         statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
         statement.execute("rollback");
-        rs = statement.executeQuery("select count(*) from test_multi");
-        assertTrue(rs.next());
-        assertEquals(0, rs.getInt(1));
+        try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+          assertTrue(rs.next());
+          assertEquals(0, rs.getInt(1));
+        }
       }
     }
   }
@@ -378,17 +384,18 @@ public class MultiStatementIT extends BaseJDBCTest {
 
       assertTrue(statement.execute(multiStmtBuilder.toString()));
       for (int i = 0; i < 100; i++) {
-        ResultSet rs = statement.getResultSet();
-        assertNotNull(rs);
-        assertEquals(-1, statement.getUpdateCount());
-        assertTrue(rs.next());
-        assertEquals(i, rs.getInt(1));
-        assertFalse(rs.next());
+        try (ResultSet rs = statement.getResultSet()) {
+          assertNotNull(rs);
+          assertEquals(-1, statement.getUpdateCount());
+          assertTrue(rs.next());
+          assertEquals(i, rs.getInt(1));
+          assertFalse(rs.next());
 
-        if (i != 99) {
-          assertTrue(statement.getMoreResults());
-        } else {
-          assertFalse(statement.getMoreResults());
+          if (i != 99) {
+            assertTrue(statement.getMoreResults());
+          } else {
+            assertFalse(statement.getMoreResults());
+          }
         }
       }
     }
@@ -422,16 +429,20 @@ public class MultiStatementIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testInvalidParameterCount() throws SQLException {
+    String userName = null;
+    String accountName = null;
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
 
-      ResultSet rs = statement.executeQuery("select current_account_locator()");
-      rs.next();
-      String accountName = rs.getString(1);
+      try (ResultSet rs = statement.executeQuery("select current_account_locator()")) {
+        rs.next();
+        accountName = rs.getString(1);
+      }
 
-      rs = statement.executeQuery("select current_user()");
-      rs.next();
-      String userName = rs.getString(1);
+      try (ResultSet rs = statement.executeQuery("select current_user()")) {
+        rs.next();
+        userName = rs.getString(1);
+      }
 
       String[] testSuites = new String[5];
       testSuites[0] =

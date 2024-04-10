@@ -55,16 +55,16 @@ public class ResultSet0IT extends BaseJDBCTest {
 
   @Before
   public void setUp() throws SQLException {
-    try (Connection con = init()) {
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
 
       // TEST_RS
-      con.createStatement().execute("create or replace table test_rs (colA string)");
-      con.createStatement().execute("insert into test_rs values('rowOne')");
-      con.createStatement().execute("insert into test_rs values('rowTwo')");
-      con.createStatement().execute("insert into test_rs values('rowThree')");
+      statement.execute("create or replace table test_rs (colA string)");
+      statement.execute("insert into test_rs values('rowOne')");
+      statement.execute("insert into test_rs values('rowTwo')");
+      statement.execute("insert into test_rs values('rowThree')");
 
       // ORDERS_JDBC
-      Statement statement = con.createStatement();
       statement.execute(
           "create or replace table orders_jdbc"
               + "(C1 STRING NOT NULL COMMENT 'JDBC', "
@@ -90,9 +90,10 @@ public class ResultSet0IT extends BaseJDBCTest {
 
   @After
   public void tearDown() throws SQLException {
-    try (Connection con = init()) {
-      con.createStatement().execute("drop table if exists orders_jdbc");
-      con.createStatement().execute("drop table if exists test_rs");
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
+      statement.execute("drop table if exists orders_jdbc");
+      statement.execute("drop table if exists test_rs");
     }
   }
 
