@@ -118,10 +118,11 @@ public class TelemetryClient implements Telemetry {
     this.logBatch = new LinkedList<>();
     this.isClosed = false;
     this.forceFlushSize = flushSize;
-    logger.debug("Initializing telemetry client with telemetry url: {}, flush size: {}, auth type: {}",
-            telemetryUrl,
-            forceFlushSize,
-            authType);
+    logger.debug(
+        "Initializing telemetry client with telemetry url: {}, flush size: {}, auth type: {}",
+        telemetryUrl,
+        forceFlushSize,
+        authType);
   }
 
   /**
@@ -379,9 +380,10 @@ public class TelemetryClient implements Telemetry {
                     0,
                     this.session.getHttpClientKey());
         stopwatch.stop();
-        logger.debug("Sending telemetry took {} ms. Batch size: {}",
-                stopwatch.elapsedMillis(),
-                tmpList.size());
+        logger.debug(
+            "Sending telemetry took {} ms. Batch size: {}",
+            stopwatch.elapsedMillis(),
+            tmpList.size());
       } catch (SnowflakeSQLException e) {
         disableTelemetry(); // when got error like 404 or bad request, disable telemetry in this
         // telemetry instance

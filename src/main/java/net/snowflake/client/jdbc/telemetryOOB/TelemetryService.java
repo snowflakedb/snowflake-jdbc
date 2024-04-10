@@ -487,13 +487,15 @@ public class TelemetryService {
         success = false;
       } finally {
         stopwatch.stop();
-        logger.debug("Telemetry request success: {} and clean the current queue. It took {} ms." +
-                     " Total successful events: {}, client failures: {}, server failures: {})",
-                success,
-                stopwatch.elapsedMillis(),
-                instance.eventCnt,
-                instance.clientFailureCnt,
-                instance.serverFailureCnt);
+        logger.debug(
+            "Telemetry request success: {} and clean the current queue. It took {} ms."
+                + " Total successful events: {}, total unsuccessful events: {} (client failures: {}, server failures: {})",
+            success,
+            stopwatch.elapsedMillis(),
+            instance.eventCnt,
+            instance.clientFailureCnt.get() + instance.serverFailureCnt.get(),
+            instance.clientFailureCnt,
+            instance.serverFailureCnt);
       }
     }
   }
