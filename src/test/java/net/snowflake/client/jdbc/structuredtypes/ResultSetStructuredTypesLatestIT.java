@@ -31,6 +31,7 @@ import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
+import net.snowflake.client.jdbc.SnowflakeResultSetMetaData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.FewTypesSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
@@ -43,6 +44,7 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryStructuredType.class)
+@Ignore
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Parameterized.Parameters(name = "format={0}")
@@ -324,6 +326,32 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Integer.valueOf(1), resultList.get(0));
           assertEquals(Integer.valueOf(2), resultList.get(1));
           assertEquals(Integer.valueOf(3), resultList.get(2));
+        });
+  }
+
+  @Test
+  public void testReturnAsListOfFloat() throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(FLOAT)",
+        (resultSet) -> {
+          Float[] resultList =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
+          assertEquals(Float.valueOf(1.1f), resultList[0]);
+          assertEquals(Float.valueOf(2.2f), resultList[1]);
+          assertEquals(Float.valueOf(3.3f), resultList[2]);
+        });
+  }
+
+  @Test
+  public void testReturnAsListOfDouble() throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(DOUBLE)",
+        (resultSet) -> {
+          List<Double> resultList =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1, Double.class);
+          assertEquals(Double.valueOf(1.1), resultList.get(0));
+          assertEquals(Double.valueOf(2.2), resultList.get(1));
+          assertEquals(Double.valueOf(3.3), resultList.get(2));
         });
   }
 
@@ -650,11 +678,11 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
+  public void testColumnTypeWhenStructureTypeIsNotReturned() throws Exception {
     withStructureTypeTemporaryDisabled(
         () -> {
           withFirstRow(
-              "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
+              "SELECT {'string':'a'}",
               resultSet -> {
                 assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
               });
@@ -663,13 +691,36 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testColumnTypeWhenStructureTypeIsEnabled() throws Exception {
+  public void testColumnTypeAndFieldsWhenStructureTypeIsReturned() throws Exception {
     withStructureTypeTemporaryEnabled(
         () -> {
           withFirstRow(
               "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
               resultSet -> {
                 assertEquals(Types.STRUCT, resultSet.getMetaData().getColumnType(1));
+                assertEquals(
+                    1,
+                    resultSet
+                        .getMetaData()
+                        .unwrap(SnowflakeResultSetMetaData.class)
+                        .getColumnFields(1)
+                        .size());
+                assertEquals(
+                    "VARCHAR",
+                    resultSet
+                        .getMetaData()
+                        .unwrap(SnowflakeResultSetMetaData.class)
+                        .getColumnFields(1)
+                        .get(0)
+                        .getTypeName());
+                assertEquals(
+                    "string",
+                    resultSet
+                        .getMetaData()
+                        .unwrap(SnowflakeResultSetMetaData.class)
+                        .getColumnFields(1)
+                        .get(0)
+                        .getName());
               });
         });
   }

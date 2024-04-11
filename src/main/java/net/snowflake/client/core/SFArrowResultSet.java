@@ -34,7 +34,6 @@ import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
-import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
@@ -586,19 +585,17 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           jsonNode,
           session,
           converters,
-          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
+          resultSetMetaData.getColumnFields(columnIndex),
           sessionTimeZone);
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 
-  private Object createArrowSqlInput(int columnIndex, Map<String, Object> input) {
+  private Object createArrowSqlInput(int columnIndex, Map<String, Object> input)
+      throws SFException {
     return new ArrowSqlInput(
-        input,
-        session,
-        converters,
-        resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields());
+        input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }
 
   @Override
@@ -621,10 +618,13 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   private SfSqlArray getArrowArray(List<Object> elements, int columnIndex) throws SFException {
     try {
-      SnowflakeColumnMetadata arrayMetadata =
-          resultSetMetaData.getColumnMetadata().get(columnIndex - 1);
-      FieldMetadata fieldMetadata = arrayMetadata.getFields().get(0);
-
+      List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
+      if (fieldMetadataList.size() != 1) {
+        throw new SFException(
+            ErrorCode.INVALID_STRUCT_DATA,
+            "Wrong size of fields for array type " + fieldMetadataList.size());
+      }
+      FieldMetadata fieldMetadata = fieldMetadataList.get(0);
       int columnSubType = fieldMetadata.getType();
       int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
       int scale = fieldMetadata.getScale();

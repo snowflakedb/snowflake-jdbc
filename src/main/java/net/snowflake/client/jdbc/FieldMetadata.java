@@ -4,9 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import java.util.List;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
-@SnowflakeJdbcInternalApi
 public class FieldMetadata {
 
   private String name;
