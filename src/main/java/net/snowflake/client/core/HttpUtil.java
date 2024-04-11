@@ -39,6 +39,7 @@ import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
@@ -425,7 +426,7 @@ public class HttpUtil {
           logger.debug(
               "Using user: {}, password is {} for proxy host: {}, port: {}",
               key.getProxyUser(),
-              key.getProxyPassword().isEmpty() ? "not provided" : "provided",
+              SFLoggerUtil.isVariableProvided(key.getProxyPassword()),
               key.getProxyHost(),
               key.getProxyPort());
           credentialsProvider.setCredentials(authScope, credentials);

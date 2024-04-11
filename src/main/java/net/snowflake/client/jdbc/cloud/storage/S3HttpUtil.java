@@ -17,6 +17,7 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.log.SFLoggerUtil;
 
 @SnowflakeJdbcInternalApi
 public class S3HttpUtil {
@@ -50,7 +51,7 @@ public class S3HttpUtil {
             ", user: "
                 + key.getProxyUser()
                 + ", password is "
-                + (key.getProxyPassword().isEmpty() ? "not provided" : "provided");
+                + SFLoggerUtil.isVariableProvided(key.getProxyPassword());
         clientConfig.setProxyUsername(key.getProxyUser());
         clientConfig.setProxyPassword(key.getProxyPassword());
       }
