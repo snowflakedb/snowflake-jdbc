@@ -15,10 +15,9 @@ import net.snowflake.client.log.SFLoggerFactory;
 @SnowflakeJdbcInternalApi
 public class FileUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(FileUtil.class);
-
-  static final Collection<PosixFilePermission> WRITE_BY_OTHERS =
+  private static final Collection<PosixFilePermission> WRITE_BY_OTHERS =
       Arrays.asList(PosixFilePermission.GROUP_WRITE, PosixFilePermission.OTHERS_WRITE);
-  static final Collection<PosixFilePermission> READ_BY_OTHERS =
+  private static final Collection<PosixFilePermission> READ_BY_OTHERS =
       Arrays.asList(PosixFilePermission.GROUP_READ, PosixFilePermission.OTHERS_READ);
 
   public static void logFileUsage(Path filePath, String context, boolean logReadAccess) {
