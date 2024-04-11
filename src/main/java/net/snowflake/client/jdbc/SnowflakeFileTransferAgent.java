@@ -47,6 +47,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.FileUtil;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -562,6 +563,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                   SnowflakeFileTransferAgent.injectedFileTransferException;
             }
 
+            FileUtil.logFileUsage(srcFilePath, "Get file to upload", false);
             uploadStream = new FileInputStream(srcFilePath);
           } catch (FileNotFoundException ex) {
             metadata.resultStatus = ResultStatus.ERROR;

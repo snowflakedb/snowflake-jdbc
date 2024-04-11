@@ -87,6 +87,7 @@ class FileCacheManager {
     this.cacheFile = newCacheFile;
     this.cacheDir = newCacheFile.getParentFile();
     this.baseCacheFileName = newCacheFile.getName();
+    FileUtil.logFileUsage(cacheFile, "Override cache file", true);
   }
 
   FileCacheManager build() {
@@ -103,7 +104,7 @@ class FileCacheManager {
                 : null;
       } catch (Throwable ex) {
         logger.debug(
-            "Cannot get environment variable for cache directory, " + "skip using cache", false);
+            "Cannot get environment variable for cache directory, skip using cache", false);
         // In Boomi cloud, System.getenv is not allowed due to policy,
         // so we catch the exception and skip cache completely
         return this;
@@ -159,6 +160,7 @@ class FileCacheManager {
       } else {
         logger.debug("Cache file already exists {}", cacheFileTmp);
       }
+      FileUtil.logFileUsage(cacheFileTmp, "Cache file creation", false);
       this.cacheFile = cacheFileTmp.getCanonicalFile();
       this.cacheLockFile =
           new File(this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
@@ -182,6 +184,7 @@ class FileCacheManager {
 
       try (Reader reader =
           new InputStreamReader(new FileInputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
+        FileUtil.logFileUsage(cacheFile, "Read cache", false);
         return OBJECT_MAPPER.readTree(reader);
       }
     } catch (IOException ex) {
@@ -191,7 +194,7 @@ class FileCacheManager {
   }
 
   void writeCacheFile(JsonNode input) {
-    logger.debug("Writing cache file. File={}", cacheFile);
+    logger.debug("Writing cache file. File: {}", cacheFile);
     if (cacheFile == null || !tryLockCacheFile()) {
       // no cache file or it failed to lock file
       logger.debug(
@@ -205,6 +208,7 @@ class FileCacheManager {
       }
       try (Writer writer =
           new OutputStreamWriter(new FileOutputStream(cacheFile), DEFAULT_FILE_ENCODING)) {
+        FileUtil.logFileUsage(cacheFile, "Write to cache", false);
         writer.write(input.toString());
       }
     } catch (IOException ex) {
@@ -217,7 +221,7 @@ class FileCacheManager {
   }
 
   void deleteCacheFile() {
-    logger.debug("Deleting cache file. File={}, Lock File={}", cacheFile, cacheLockFile);
+    logger.debug("Deleting cache file. File: {}, lock file: {}", cacheFile, cacheLockFile);
 
     if (cacheFile == null) {
       return;
