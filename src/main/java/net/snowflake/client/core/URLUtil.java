@@ -23,7 +23,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 
 public class URLUtil {
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(URLUtil.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(URLUtil.class);
   static final String validURLPattern =
       "^http(s?)\\:\\/\\/[0-9a-zA-Z]([-.\\w]*[0-9a-zA-Z@:])*(:(0-9)*)*(\\/?)([a-zA-Z0-9\\-\\.\\?\\,\\&\\(\\)\\/\\\\\\+&%\\$#_=@]*)?$";
   static final Pattern pattern = Pattern.compile(validURLPattern);

@@ -35,7 +35,7 @@ import net.snowflake.common.core.SqlState;
  * @author jhuang
  */
 public class SFResultSet extends SFJsonResultSet {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
 
   private int columnCount = 0;
 

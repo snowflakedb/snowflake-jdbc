@@ -60,7 +60,7 @@ public class SFSession extends SFBaseSession {
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
   public static final String SF_HEADER_TOKEN_TAG = "Token";
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
   private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";

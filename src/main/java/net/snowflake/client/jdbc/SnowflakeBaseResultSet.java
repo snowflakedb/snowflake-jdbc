@@ -40,7 +40,7 @@ import net.snowflake.common.core.SqlState;
 
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
   private final int resultSetType;
   private final int resultSetConcurrency;
   private final int resultSetHoldability;

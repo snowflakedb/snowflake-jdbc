@@ -35,7 +35,7 @@ import net.snowflake.common.core.SqlState;
 
 /** Snowflake statement */
 class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeStatementV1.class);
 
   private static final String NOOP_MESSAGE =
       "This is a dummy SnowflakeStatement, " + "no member function should be called for it.";

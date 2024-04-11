@@ -52,7 +52,7 @@ import net.snowflake.common.util.Wildcard;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDatabaseMetaData.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDatabaseMetaData.class);
 
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 

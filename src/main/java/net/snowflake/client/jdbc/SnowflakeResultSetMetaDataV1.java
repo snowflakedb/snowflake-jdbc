@@ -22,7 +22,8 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     SYNC
   };
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetMetaDataV1.class);
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SnowflakeResultSetMetaDataV1.class);
 
   private SFResultSetMetaData resultSetMetaData;
   private String queryId;

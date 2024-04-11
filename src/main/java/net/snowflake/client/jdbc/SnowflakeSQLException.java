@@ -14,7 +14,7 @@ import net.snowflake.common.core.ResourceBundleManager;
  * @author jhuang
  */
 public class SnowflakeSQLException extends SQLException {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeSQLException.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeSQLException.class);
 
   private static final long serialVersionUID = 1L;
 

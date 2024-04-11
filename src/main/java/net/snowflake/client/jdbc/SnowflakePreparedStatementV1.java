@@ -50,7 +50,8 @@ import net.snowflake.common.core.SqlState;
 
 class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     implements PreparedStatement, SnowflakePreparedStatement {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakePreparedStatementV1.class);
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SnowflakePreparedStatementV1.class);
   /** Error code returned when describing a statement that is binding table name */
   private static final Integer ERROR_CODE_TABLE_BIND_VARIABLE_NOT_SET = 2128;
   /** Error code when preparing statement with binding object names */
