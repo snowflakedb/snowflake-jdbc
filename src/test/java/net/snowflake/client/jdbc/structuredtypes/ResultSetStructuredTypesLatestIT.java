@@ -330,6 +330,32 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  public void testReturnAsListOfFloat() throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(FLOAT)",
+        (resultSet) -> {
+          List<Float> resultList =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1, Float.class);
+          assertEquals(Float.valueOf(1.1f), resultList.get(0));
+          assertEquals(Float.valueOf(2.2f), resultList.get(1));
+          assertEquals(Float.valueOf(3.3f), resultList.get(2));
+        });
+  }
+
+  @Test
+  public void testReturnAsListOfDouble() throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(DOUBLE)",
+        (resultSet) -> {
+          List<Double> resultList =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1, Double.class);
+          assertEquals(Double.valueOf(1.1), resultList.get(0));
+          assertEquals(Double.valueOf(2.2), resultList.get(1));
+          assertEquals(Double.valueOf(3.3), resultList.get(2));
+        });
+  }
+
+  @Test
   public void testReturnAsMap() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
