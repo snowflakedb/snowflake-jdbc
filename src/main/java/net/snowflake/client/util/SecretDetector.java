@@ -19,8 +19,6 @@ import java.util.regex.Pattern;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONStyle;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /** Search for credentials in sql and/or other text */
 public class SecretDetector {
@@ -72,12 +70,8 @@ public class SecretDetector {
           "(token|assertion content)" + "(['\"\\s:=]+)" + "([a-z0-9=/_\\-+]{8,})",
           Pattern.CASE_INSENSITIVE);
 
-  private static final int LOOK_AHEAD = 10;
-
   // only attempt to find secrets in its leading 100Kb SNOW-30961
   private static final int MAX_LENGTH = 100 * 1000;
-
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SecretDetector.class);
 
   private static String[] SENSITIVE_NAMES = {
     "access_key_id",
