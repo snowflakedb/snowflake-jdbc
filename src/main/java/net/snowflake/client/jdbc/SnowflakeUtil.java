@@ -282,6 +282,7 @@ public class SnowflakeUtil {
         break;
 
       case ARRAY:
+      case VECTOR:
         columnTypeInfo =
             new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
