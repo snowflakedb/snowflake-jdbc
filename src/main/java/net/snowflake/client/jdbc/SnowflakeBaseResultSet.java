@@ -1369,8 +1369,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         } else if (object instanceof JsonSqlInput) {
           JsonNode jsonNode = ((JsonSqlInput) object).getInput();
           return (T)
-                  OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {
-                  });
+              OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
         } else {
           return (T) ((ArrowSqlInput) object).getInput();
         }
