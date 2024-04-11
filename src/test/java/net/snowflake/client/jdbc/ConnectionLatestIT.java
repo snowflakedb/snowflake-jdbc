@@ -1163,17 +1163,17 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setPassword(params.get("ssoPassword"));
     ds.setAuthenticator("<okta address>");
     Runnable r =
-            () -> {
-              try {
-                ds.getConnection();
-              } catch (SQLException e) {
-                throw new RuntimeException(e);
-              }
-            };
+        () -> {
+          try {
+            ds.getConnection();
+          } catch (SQLException e) {
+            throw new RuntimeException(e);
+          }
+        };
     List<Thread> threadList = new ArrayList<>();
     for (int i = 0;
-         i < 30;
-         ++i) { // https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-use#http-429-errors
+        i < 30;
+        ++i) { // https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-use#http-429-errors
       threadList.add(new Thread(r));
     }
     threadList.forEach(Thread::start);
