@@ -20,7 +20,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 @SnowflakeJdbcInternalApi
 public class S3HttpUtil {
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(HttpUtil.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 
   /**
    * A static function to set S3 proxy params when there is a valid session
@@ -54,9 +54,9 @@ public class S3HttpUtil {
         clientConfig.setProxyUsername(key.getProxyUser());
         clientConfig.setProxyPassword(key.getProxyPassword());
       }
-      LOGGER.debug(logMessage);
+      logger.debug(logMessage);
     } else {
-      LOGGER.debug("Omitting S3 proxy setup");
+      logger.debug("Omitting S3 proxy setup");
     }
   }
 
@@ -120,12 +120,12 @@ public class S3HttpUtil {
           clientConfig.setProxyUsername(proxyUser);
           clientConfig.setProxyPassword(proxyPassword);
         }
-        LOGGER.debug(logMessage);
+        logger.debug(logMessage);
       } else {
-        LOGGER.debug("Omitting sessionless S3 proxy setup as proxy is disabled");
+        logger.debug("Omitting sessionless S3 proxy setup as proxy is disabled");
       }
     } else {
-      LOGGER.debug("Omitting sessionless S3 proxy setup");
+      logger.debug("Omitting sessionless S3 proxy setup");
     }
   }
 }

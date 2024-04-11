@@ -61,7 +61,7 @@ public class StmtUtil {
   // twice as much as our default socket timeout
   static final int SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS = 600000; // 10 min
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(StmtUtil.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(StmtUtil.class);
 
   /** Input for executing a statement on server */
   static class StmtInput {

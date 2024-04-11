@@ -20,7 +20,7 @@ public abstract class SFBaseStatement {
   // maximum number of parameters for the statement; if this threshold is exceeded,
   // we throw an exception
   protected static final int MAX_STATEMENT_PARAMETERS = 1000;
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseStatement.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseStatement.class);
   // statement level parameters; just a string-key, object-value map.
   protected final Map<String, Object> statementParametersMap = new HashMap<>();
   // timeout in seconds for queries

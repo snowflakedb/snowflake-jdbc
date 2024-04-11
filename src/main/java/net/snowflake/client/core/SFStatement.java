@@ -44,7 +44,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 /** Snowflake statement */
 public class SFStatement extends SFBaseStatement {
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
 
   private SFSession session;
 

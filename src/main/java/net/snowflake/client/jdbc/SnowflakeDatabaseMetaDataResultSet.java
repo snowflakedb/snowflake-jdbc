@@ -31,7 +31,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   private String queryId;
 
-  static final SFLogger logger =
+  private static final SFLogger logger =
       SFLoggerFactory.getLogger(SnowflakeDatabaseMetaDataResultSet.class);
 
   /**

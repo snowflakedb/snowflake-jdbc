@@ -18,9 +18,13 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 final class SnowflakeCallableStatementV1 extends SnowflakePreparedStatementV1
     implements CallableStatement, SnowflakeCallableStatement {
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SnowflakeCallableStatementV1.class);
 
   /**
    * Construct SnowflakePreparedStatementV1

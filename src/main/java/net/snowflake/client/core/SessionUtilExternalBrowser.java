@@ -46,7 +46,8 @@ import org.apache.http.entity.StringEntity;
  * user can type IdP username and password. 4. Return token and proof key to the GS to gain access.
  */
 public class SessionUtilExternalBrowser {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilExternalBrowser.class);
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SessionUtilExternalBrowser.class);
 
   public interface AuthExternalBrowserHandlers {
     // build a HTTP post object

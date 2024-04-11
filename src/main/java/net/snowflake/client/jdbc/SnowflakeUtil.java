@@ -50,7 +50,7 @@ import org.apache.http.HttpResponse;
  */
 public class SnowflakeUtil {
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;

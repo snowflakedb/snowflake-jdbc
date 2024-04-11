@@ -77,7 +77,7 @@ public class SecretDetector {
   // only attempt to find secrets in its leading 100Kb SNOW-30961
   private static final int MAX_LENGTH = 100 * 1000;
 
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(SecretDetector.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SecretDetector.class);
 
   private static String[] SENSITIVE_NAMES = {
     "access_key_id",

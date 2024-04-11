@@ -28,7 +28,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 class FileCacheManager {
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(FileCacheManager.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(FileCacheManager.class);
 
   /** Object mapper for JSON encoding and decoding */
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
@@ -102,7 +102,7 @@ class FileCacheManager {
                 ? systemGetEnv(this.cacheDirectoryEnvironmentVariable)
                 : null;
       } catch (Throwable ex) {
-        LOGGER.debug(
+        logger.debug(
             "Cannot get environment variable for cache directory, " + "skip using cache", false);
         // In Boomi cloud, System.getenv is not allowed due to policy,
         // so we catch the exception and skip cache completely
@@ -122,7 +122,7 @@ class FileCacheManager {
         // Checking if home directory is writable.
         File homeFile = new File(homeDir);
         if (!homeFile.canWrite()) {
-          LOGGER.debug("Home directory not writeable, using tmpdir", false);
+          logger.debug("Home directory not writeable, using tmpdir", false);
           homeDir = systemGetProperty("java.io.tmpdir");
         }
       }
@@ -142,11 +142,11 @@ class FileCacheManager {
     }
 
     if (!this.cacheDir.mkdirs() && !this.cacheDir.exists()) {
-      LOGGER.debug(
+      logger.debug(
           "Cannot create the cache directory {}. Giving up.", this.cacheDir.getAbsolutePath());
       return this;
     }
-    LOGGER.debug("Verified Directory {}", this.cacheDir.getAbsolutePath());
+    logger.debug("Verified Directory {}", this.cacheDir.getAbsolutePath());
 
     File cacheFileTmp = new File(this.cacheDir, this.baseCacheFileName).getAbsoluteFile();
     try {
@@ -155,15 +155,15 @@ class FileCacheManager {
       // In this particular case, it doesn't matter as long as the file is
       // writable.
       if (cacheFileTmp.createNewFile()) {
-        LOGGER.debug("Successfully created a cache file {}", cacheFileTmp);
+        logger.debug("Successfully created a cache file {}", cacheFileTmp);
       } else {
-        LOGGER.debug("Cache file already exists {}", cacheFileTmp);
+        logger.debug("Cache file already exists {}", cacheFileTmp);
       }
       this.cacheFile = cacheFileTmp.getCanonicalFile();
       this.cacheLockFile =
           new File(this.cacheFile.getParentFile(), this.baseCacheFileName + ".lck");
     } catch (IOException | SecurityException ex) {
-      LOGGER.info("Failed to touch the cache file. Ignored. {}", cacheFileTmp.getAbsoluteFile());
+      logger.info("Failed to touch the cache file. Ignored. {}", cacheFileTmp.getAbsoluteFile());
     }
     return this;
   }
@@ -176,7 +176,7 @@ class FileCacheManager {
     }
     try {
       if (!cacheFile.exists()) {
-        LOGGER.debug("Cache file doesn't exists. File: {}", cacheFile);
+        logger.debug("Cache file doesn't exists. File: {}", cacheFile);
         return null;
       }
 
@@ -185,16 +185,16 @@ class FileCacheManager {
         return OBJECT_MAPPER.readTree(reader);
       }
     } catch (IOException ex) {
-      LOGGER.debug("Failed to read the cache file. No worry. File: {}, Err: {}", cacheFile, ex);
+      logger.debug("Failed to read the cache file. No worry. File: {}, Err: {}", cacheFile, ex);
     }
     return null;
   }
 
   void writeCacheFile(JsonNode input) {
-    LOGGER.debug("Writing cache file. File={}", cacheFile);
+    logger.debug("Writing cache file. File={}", cacheFile);
     if (cacheFile == null || !tryLockCacheFile()) {
       // no cache file or it failed to lock file
-      LOGGER.debug(
+      logger.debug(
           "No cache file exists or failed to lock the file. Skipping writing the cache", false);
       return;
     }
@@ -208,16 +208,16 @@ class FileCacheManager {
         writer.write(input.toString());
       }
     } catch (IOException ex) {
-      LOGGER.debug("Failed to write the cache file. File: {}", cacheFile);
+      logger.debug("Failed to write the cache file. File: {}", cacheFile);
     } finally {
       if (!unlockCacheFile()) {
-        LOGGER.debug("Failed to unlock cache file", false);
+        logger.debug("Failed to unlock cache file", false);
       }
     }
   }
 
   void deleteCacheFile() {
-    LOGGER.debug("Deleting cache file. File={}, Lock File={}", cacheFile, cacheLockFile);
+    logger.debug("Deleting cache file. File={}, Lock File={}", cacheFile, cacheLockFile);
 
     if (cacheFile == null) {
       return;
@@ -225,7 +225,7 @@ class FileCacheManager {
 
     unlockCacheFile();
     if (!cacheFile.delete()) {
-      LOGGER.debug("Failed to delete the file: {}", cacheFile);
+      logger.debug("Failed to delete the file: {}", cacheFile);
     }
   }
 
@@ -246,7 +246,7 @@ class FileCacheManager {
       ++cnt;
     }
     if (!locked) {
-      LOGGER.debug("Failed to lock the cache file.", false);
+      logger.debug("Failed to lock the cache file.", false);
     }
     return locked;
   }
@@ -276,7 +276,7 @@ class FileCacheManager {
     if (!cacheLockFile.exists()
         && cacheFileTs > 0
         && currentTime - this.cacheExpirationInMilliseconds <= cacheFileTs) {
-      LOGGER.debug("No cache file lock directory exists and cache file is up to date.", false);
+      logger.debug("No cache file lock directory exists and cache file is up to date.", false);
       return true;
     }
 
@@ -288,13 +288,13 @@ class FileCacheManager {
     if (lockFileTs < currentTime - this.cacheFileLockExpirationInMilliseconds) {
       // old lock file
       if (!cacheLockFile.delete()) {
-        LOGGER.debug("Failed to delete the directory. Dir: {}", cacheLockFile);
+        logger.debug("Failed to delete the directory. Dir: {}", cacheLockFile);
         return false;
       }
-      LOGGER.debug("Deleted the cache lock directory, because it was old.", false);
+      logger.debug("Deleted the cache lock directory, because it was old.", false);
       return currentTime - this.cacheExpirationInMilliseconds <= cacheFileTs;
     }
-    LOGGER.debug("Failed to lock the file. Ignored.", false);
+    logger.debug("Failed to lock the file. Ignored.", false);
     return false;
   }
 
@@ -305,7 +305,7 @@ class FileCacheManager {
    */
   private static long fileCreationTime(File targetFile) {
     if (!targetFile.exists()) {
-      LOGGER.debug("File not exists. File: {}", targetFile);
+      logger.debug("File not exists. File: {}", targetFile);
       return -1;
     }
     try {
@@ -313,7 +313,7 @@ class FileCacheManager {
       BasicFileAttributes attr = Files.readAttributes(cacheFileLockPath, BasicFileAttributes.class);
       return attr.creationTime().toMillis();
     } catch (IOException ex) {
-      LOGGER.debug("Failed to get creation time. File/Dir: {}, Err: {}", targetFile, ex);
+      logger.debug("Failed to get creation time. File/Dir: {}, Err: {}", targetFile, ex);
     }
     return -1;
   }

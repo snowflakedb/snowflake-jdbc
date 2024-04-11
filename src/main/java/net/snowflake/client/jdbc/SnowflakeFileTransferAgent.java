@@ -80,7 +80,8 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
  * @author jhuang
  */
 public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
 
   static final StorageClientFactory storageFactory = StorageClientFactory.getFactory();
 

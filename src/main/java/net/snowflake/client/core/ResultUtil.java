@@ -29,7 +29,7 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.util.TimeUtil;
 
 public class ResultUtil {
-  static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
 
   public static final int MILLIS_IN_ONE_DAY = 86400000;
   public static final int DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS =

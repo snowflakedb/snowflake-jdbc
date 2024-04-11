@@ -21,11 +21,15 @@ import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
 
 /** SFAsyncResultSet implementation. Note: For Snowflake internal use */
 public class SFAsyncResultSet extends SnowflakeBaseResultSet
     implements SnowflakeResultSet, ResultSet {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFAsyncResultSet.class);
+
   private final SFBaseResultSet sfBaseResultSet;
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;

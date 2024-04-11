@@ -74,7 +74,8 @@ public class SnowflakeResultSetSerializableV1
     implements SnowflakeResultSetSerializable, Serializable {
   private static final long serialVersionUID = 1L;
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetSerializableV1.class);
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SnowflakeResultSetSerializableV1.class);
 
   static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final long LOW_MAX_MEMORY = GB;

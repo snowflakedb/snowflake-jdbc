@@ -46,7 +46,7 @@ import net.snowflake.client.log.SFLoggerFactory;
  * which signals whether to enable client telemetry
  */
 public abstract class SFBaseSession {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
   private final Properties clientInfo = new Properties();
   private final AtomicBoolean autoCommit = new AtomicBoolean(true);
   // Injected delay for the purpose of connection timeout testing

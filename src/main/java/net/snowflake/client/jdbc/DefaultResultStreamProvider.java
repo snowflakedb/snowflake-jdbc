@@ -11,6 +11,8 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.Header;
@@ -21,6 +23,8 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 public class DefaultResultStreamProvider implements ResultStreamProvider {
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(DefaultResultStreamProvider.class);
   // SSE-C algorithm header
   private static final String SSE_C_ALGORITHM = "x-amz-server-side-encryption-customer-algorithm";
 
@@ -53,10 +57,9 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
      * means failure.
      */
     if (response == null || response.getStatusLine().getStatusCode() != 200) {
-      SnowflakeResultSetSerializableV1.logger.error(
-          "Error fetching chunk from: {}", context.getResultChunk().getScrubbedUrl());
+      logger.error("Error fetching chunk from: {}", context.getResultChunk().getScrubbedUrl());
 
-      SnowflakeUtil.logResponseDetails(response, SnowflakeResultSetSerializableV1.logger);
+      SnowflakeUtil.logResponseDetails(response, logger);
 
       throw new SnowflakeSQLException(
           SqlState.IO_ERROR,
@@ -72,7 +75,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
       // read the chunk data
       inputStream = detectContentEncodingAndGetInputStream(response, entity.getContent());
     } catch (Exception ex) {
-      SnowflakeResultSetSerializableV1.logger.error("Failed to decompress data: {}", response);
+      logger.error("Failed to decompress data: {}", response);
 
       throw new SnowflakeSQLLoggedException(
           context.getSession(),
@@ -82,7 +85,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     }
 
     // trace the response if requested
-    SnowflakeResultSetSerializableV1.logger.debug("Json response: {}", response);
+    logger.debug("Json response: {}", response);
 
     return inputStream;
   }
@@ -94,8 +97,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
 
     if (context.getChunkHeadersMap() != null && context.getChunkHeadersMap().size() != 0) {
       for (Map.Entry<String, String> entry : context.getChunkHeadersMap().entrySet()) {
-        SnowflakeResultSetSerializableV1.logger.debug(
-            "Adding header key={}, value={}", entry.getKey(), entry.getValue());
+        logger.debug("Adding header key={}, value={}", entry.getKey(), entry.getValue());
         httpRequest.addHeader(entry.getKey(), entry.getValue());
       }
     }
@@ -103,10 +105,10 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
     else if (context.getQrmk() != null) {
       httpRequest.addHeader(SSE_C_ALGORITHM, SSE_C_AES);
       httpRequest.addHeader(SSE_C_KEY, context.getQrmk());
-      SnowflakeResultSetSerializableV1.logger.debug("Adding SSE-C headers", false);
+      logger.debug("Adding SSE-C headers", false);
     }
 
-    SnowflakeResultSetSerializableV1.logger.debug(
+    logger.debug(
         "Thread {} Fetching result chunk#{}: {}",
         Thread.currentThread().getId(),
         context.getChunkIndex(),
@@ -133,7 +135,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
             true, // no retry on http request
             new ExecTimeTelemetryData());
 
-    SnowflakeResultSetSerializableV1.logger.debug(
+    logger.debug(
         "Thread {} Call chunk#{} returned for URL: {}, response: {}",
         Thread.currentThread().getId(),
         context.getChunkIndex(),

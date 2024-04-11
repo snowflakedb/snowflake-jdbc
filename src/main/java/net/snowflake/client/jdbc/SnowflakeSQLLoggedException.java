@@ -25,6 +25,8 @@ import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryEvent;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.LoginInfoDTO;
 import net.snowflake.common.core.SqlState;
 
@@ -36,7 +38,8 @@ import net.snowflake.common.core.SqlState;
  *     exception with OOB telemetry.
  */
 public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
-
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SnowflakeSQLLoggedException.class);
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
   /**

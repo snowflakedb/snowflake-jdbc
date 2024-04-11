@@ -42,7 +42,7 @@ import org.bouncycastle.util.io.pem.PemReader;
 /** Class used to compute jwt token for key pair authentication Created by hyu on 1/16/18. */
 class SessionUtilKeyPair {
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilKeyPair.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilKeyPair.class);
 
   // user name in upper case
   private final String userName;
