@@ -390,40 +390,6 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
-  public void testDataSourceOktaGenerates429StatusCode() throws Exception {
-    // test with username/password authentication
-    // set up DataSource object and ensure connection works
-    Map<String, String> params = getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-    ds.setServerName(params.get("host"));
-    ds.setSsl("on".equals(params.get("ssl")));
-    ds.setAccount(params.get("account"));
-    ds.setPortNumber(Integer.parseInt(params.get("port")));
-    ds.setUser(params.get("ssoUser"));
-    ds.setPassword(params.get("ssoPassword"));
-    ds.setAuthenticator("<okta address>");
-    Runnable r =
-        () -> {
-          try {
-            ds.getConnection();
-          } catch (SQLException e) {
-            throw new RuntimeException(e);
-          }
-        };
-    List<Thread> threadList = new ArrayList<>();
-    for (int i = 0;
-        i < 30;
-        ++i) { // https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-use#http-429-errors
-      threadList.add(new Thread(r));
-    }
-    threadList.forEach(Thread::start);
-    for (Thread thread : threadList) {
-      thread.join();
-    }
-  }
-
-  @Test
   @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testConnectUsingKeyPair() throws Exception {
     Map<String, String> parameters = getConnectionParameters();

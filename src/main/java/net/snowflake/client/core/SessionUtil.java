@@ -1390,7 +1390,7 @@ public class SessionUtil {
         // This error gets thrown if the okta request encountered a retry-able error that
         // requires getting a new one-time token.
         if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
-          logger.debug("Failed to get Okta SAML response. Retrying.");
+          logger.debug("Failed to get Okta SAML response. Retrying without changing retry count.");
         } else {
           throw ex;
         }

@@ -37,10 +37,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -59,10 +56,7 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
@@ -1150,6 +1144,41 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // Next, assert session is no longer async (just fetches size of activeQueriesMap with no
       // other action)
       assertFalse(snowflakeConnection.getSfSession().isAsyncSession());
+    }
+  }
+
+  // Test for regenerating okta one-time token for versions > 3.15.1
+  @Test
+  @Ignore
+  public void testDataSourceOktaGenerates429StatusCode() throws Exception {
+    // test with username/password authentication
+    // set up DataSource object and ensure connection works
+    Map<String, String> params = getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setSsl("on".equals(params.get("ssl")));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("ssoUser"));
+    ds.setPassword(params.get("ssoPassword"));
+    ds.setAuthenticator("<okta address>");
+    Runnable r =
+            () -> {
+              try {
+                ds.getConnection();
+              } catch (SQLException e) {
+                throw new RuntimeException(e);
+              }
+            };
+    List<Thread> threadList = new ArrayList<>();
+    for (int i = 0;
+         i < 30;
+         ++i) { // https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-use#http-429-errors
+      threadList.add(new Thread(r));
+    }
+    threadList.forEach(Thread::start);
+    for (Thread thread : threadList) {
+      thread.join();
     }
   }
 }

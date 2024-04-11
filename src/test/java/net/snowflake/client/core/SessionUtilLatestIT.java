@@ -407,7 +407,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   }
 
   // Testing retry with Okta calls the service to get a new unique token. This is valid after
-  // version 3.15.0.
+  // version 3.15.1.
   @Test
   public void testOktaAuthRetry() throws Throwable {
     SFLoginInput loginInput = createOktaLoginInput();
