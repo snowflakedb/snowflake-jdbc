@@ -334,11 +334,11 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(FLOAT)",
         (resultSet) -> {
-          List<Float> resultList =
-              resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1, Float.class);
-          assertEquals(Float.valueOf(1.1f), resultList.get(0));
-          assertEquals(Float.valueOf(2.2f), resultList.get(1));
-          assertEquals(Float.valueOf(3.3f), resultList.get(2));
+          Float[] resultList =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
+          assertEquals(Float.valueOf(1.1f), resultList[0]);
+          assertEquals(Float.valueOf(2.2f), resultList[1]);
+          assertEquals(Float.valueOf(3.3f), resultList[2]);
         });
   }
 
