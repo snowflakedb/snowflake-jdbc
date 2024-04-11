@@ -16,6 +16,7 @@ import com.nimbusds.jwt.SignedJWT;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -134,7 +135,9 @@ class SessionUtilKeyPair {
   private PrivateKey extractPrivateKeyFromFile(String privateKeyFile, String privateKeyFilePwd)
       throws SFException {
     try {
-      String privateKeyContent = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
+      Path privKeyPath = Paths.get(privateKeyFile);
+      FileUtil.logFileUsage(privKeyPath, "Extract private key from file", true);
+      String privateKeyContent = new String(Files.readAllBytes(privKeyPath));
       if (Strings.isNullOrEmpty(privateKeyFilePwd)) {
         // unencrypted private key file
         PemReader pr = new PemReader(new StringReader(privateKeyContent));
