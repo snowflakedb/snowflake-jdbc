@@ -84,33 +84,33 @@ public class CallableStatementIT extends BaseJDBCTest {
   @Test
   public void testPrepareCall() throws SQLException {
     // test CallableStatement with no binding parameters
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      CallableStatement callableStatement = connection.prepareCall("call square_it(5)");
-      assertThat(callableStatement.getParameterMetaData().getParameterCount(), is(0));
-
+    try (Connection connection = getConnection()) {
+      try(CallableStatement callableStatement = connection.prepareCall("call square_it(5)")) {
+        assertThat(callableStatement.getParameterMetaData().getParameterCount(), is(0));
+      }
       // test CallableStatement with 1 binding parameter
-      callableStatement = connection.prepareCall("call square_it(?)");
-      // test that getParameterMetaData works with CallableStatement. At this point, it always
-      // returns
-      // the type as "text."
-      assertThat(callableStatement.getParameterMetaData().getParameterType(1), is(Types.VARCHAR));
-      callableStatement.getParameterMetaData().getParameterTypeName(1);
-      assertThat(callableStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
-      callableStatement.setFloat(1, 7.0f);
-      try (ResultSet rs = callableStatement.executeQuery()) {
-        rs.next();
-        assertEquals(49.0f, rs.getFloat(1), 1.0f);
-
+      try(CallableStatement callableStatement = connection.prepareCall("call square_it(?)")) {
+        // test that getParameterMetaData works with CallableStatement. At this point, it always
+        // returns
+        // the type as "text."
+        assertThat(callableStatement.getParameterMetaData().getParameterType(1), is(Types.VARCHAR));
+        callableStatement.getParameterMetaData().getParameterTypeName(1);
+        assertThat(callableStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
+        callableStatement.setFloat(1, 7.0f);
+        try (ResultSet rs = callableStatement.executeQuery()) {
+          rs.next();
+          assertEquals(49.0f, rs.getFloat(1), 1.0f);
+        }
+      }
         // test CallableStatement with 2 binding parameters
-        callableStatement = connection.prepareCall("call add_nums(?,?)");
-        callableStatement.setDouble(1, 32);
-        callableStatement.setDouble(2, 15);
-      }
-      try (ResultSet rs = callableStatement.executeQuery()) {
-        rs.next();
-        assertEquals(47, rs.getDouble(1), .5);
-      }
+       try(CallableStatement callableStatement = connection.prepareCall("call add_nums(?,?)")) {
+         callableStatement.setDouble(1, 32);
+         callableStatement.setDouble(2, 15);
+         try (ResultSet rs = callableStatement.executeQuery()) {
+           rs.next();
+           assertEquals(47, rs.getDouble(1), .5);
+         }
+       }
     }
   }
 

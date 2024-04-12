@@ -72,8 +72,8 @@ public class ConnectionIT extends BaseJDBCTest {
   @Test
   public void testSimpleConnection() throws SQLException {
     Connection con = getConnection();
-    try (Statement statement = con.createStatement()) {
-      ResultSet resultSet = statement.executeQuery("show parameters");
+    try (Statement statement = con.createStatement();
+      ResultSet resultSet = statement.executeQuery("show parameters")){
       assertTrue(resultSet.next());
       assertFalse(con.isClosed());
     }
