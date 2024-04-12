@@ -486,4 +486,9 @@ public class SFResultSetMetaData {
 
     return columnMetadata.get(column - 1).getFields();
   }
+
+  public boolean isStructuredTypeColumn(int columnIndex) {
+    return columnMetadata.get(columnIndex - 1).getFields() != null
+        && !columnMetadata.get(columnIndex - 1).getFields().isEmpty();
+  }
 }

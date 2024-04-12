@@ -16,6 +16,7 @@ import static org.hamcrest.core.AnyOf.anyOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -38,8 +39,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +55,7 @@ import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.ClientAuthnDTO;
@@ -62,6 +66,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -100,6 +105,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       TelemetryService.disable();
     }
     service.resetNumOfRetryToTriggerTelemetry();
+    System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
   }
 
   @Test
@@ -873,6 +879,14 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
+  // This will only work with JDBC driver versions higher than 3.15.1
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPrivateKeyInConnectionStringWithBouncyCastle() throws SQLException, IOException {
+    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    testPrivateKeyInConnectionString();
+  }
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicDataSourceSerialization() throws Exception {
@@ -1199,6 +1213,154 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // Next, assert session is no longer async (just fetches size of activeQueriesMap with no
       // other action)
       assertFalse(snowflakeConnection.getSfSession().isAsyncSession());
+    }
+  }
+
+  private Boolean isPbes2KeySupported() throws SQLException, IOException, SecurityException {
+
+    final String privateKeyFileNameEnv = "SNOWFLAKE_PRIVATE_KEY_FILENAME";
+    final String publicKeyFileNameEnv = "SNOWFLAKE_PUBLIC_KEY_FILENAME";
+    final String passphraseEnv = "SNOWFLAKE_TEST_PASSPHRASE";
+
+    String privateKeyFile = System.getenv(privateKeyFileNameEnv);
+    String publicKeyFile = System.getenv(publicKeyFileNameEnv);
+    String passphrase = System.getenv(passphraseEnv);
+
+    assertNotNull(
+        privateKeyFileNameEnv
+            + " environment variable can't be empty. "
+            + "Please provide the filename for your private key located in the resource folder",
+        passphrase);
+
+    assertNotNull(
+        publicKeyFileNameEnv
+            + " environment variable can't be empty. "
+            + "Please provide the filename for your public key located in the resource folder",
+        passphrase);
+
+    assertNotNull(
+        passphraseEnv + " environment variable is required to decrypt private key.", passphrase);
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+    Properties properties = new Properties();
+    properties.put("account", parameters.get("account"));
+    properties.put("user", testUser);
+    properties.put("ssl", parameters.get("ssl"));
+    properties.put("port", parameters.get("port"));
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    statement.execute("use role accountadmin");
+    String pathFile = getFullPathFileInResource(publicKeyFile);
+    String pubKey = new String(Files.readAllBytes(Paths.get(pathFile)));
+    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+    pubKey = pubKey.replace("\n", "");
+    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    connection.close();
+    String privateKeyLocation = getFullPathFileInResource(privateKeyFile);
+    String uri =
+        parameters.get("uri")
+            + "/?private_key_file_pwd="
+            + passphrase
+            + "&private_key_file="
+            + privateKeyLocation;
+    try (Connection conn = DriverManager.getConnection(uri, properties)) {
+    } catch (SQLException e) {
+      return false;
+    }
+
+    // clean up
+    connection = getConnection();
+    statement = connection.createStatement();
+    statement.execute("use role accountadmin");
+    statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
+    connection.close();
+    return true;
+  }
+
+  /**
+   * Added in > 3.15.1. This test is ignored and won't run until you explicitly uncomment the Ignore
+   * annotation. You can only run this test locally, i.e.: mvn -DjenkinsIT
+   * -DtestCategory=net.snowflake.client.category.TestCategoryConnection verify
+   *
+   * <p>In order to run the test successfully, you need to first do the following: 1.) Generate a
+   * private and public key using OpenSSL v3: openssl genrsa 2048 | openssl pkcs8 -topk8 -v2 aes256
+   * -inform PEM -out rsa-key-aes256.p8 openssl rsa -in rsa-key-aes256.p8 -pubout -out
+   * rsa-key-aes256.pub 2.) Export the following environment variables: export
+   * SNOWFLAKE_TEST_PASSPHRASE=your_key's_passphrase export
+   * SNOWFLAKE_PRIVATE_KEY_FILENAME=rsa-key-aes256.p8 export
+   * SNOWFLAKE_PUBLIC_KEY_FILENAME=rsa-key-aes256.pub 3.) Move the private and public keys to the
+   * src/test/resources folder 4.) After the test is complete, remove the files from the resources
+   * folder
+   *
+   * <p>We're testing if we can decrypt a private key generated using OpenSSL v3. This was failing
+   * with an invalid private key error before SNOW-896618 added the ability to decrypt private keys
+   * with the JVM argument {@value
+   * net.snowflake.client.core.SecurityUtil#ENABLE_BOUNCYCASTLE_PROVIDER_JVM}
+   *
+   * @throws SQLException
+   * @throws IOException
+   */
+  @Test
+  @Ignore
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPbes2Support() throws SQLException, IOException {
+    System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
+    boolean pbes2Supported = isPbes2KeySupported();
+
+    // The expectation is that this is going to fail (meaning the test passes when pbes2Supported is
+    // false) when we use the default JDK security providers without Bouncy Castle added.
+    // If the time comes when the JDK's default providers finally support PBES2 then this test will
+    // fail letting us know that we don't need the Bouncy Castle dependency anymore for private key
+    // decryption.
+    String failureMessage =
+        "The failure means that the JDK version can decrypt a private key generated by OpenSSL v3 and "
+            + "BouncyCastle shouldn't be needed anymore";
+    assertFalse(failureMessage, pbes2Supported);
+
+    // The expectation is that this is going to pass once we add Bouncy Castle in the list of
+    // providers
+    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    pbes2Supported = isPbes2KeySupported();
+    failureMessage =
+        "Bouncy Castle Provider should have been loaded with the -D"
+            + SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM
+            + "JVM argument and this should have decrypted the private key generated by OpenSSL v3";
+    assertTrue(failureMessage, pbes2Supported);
+  }
+
+  // Test for regenerating okta one-time token for versions > 3.15.1
+  @Test
+  @Ignore
+  public void testDataSourceOktaGenerates429StatusCode() throws Exception {
+    // test with username/password authentication
+    // set up DataSource object and ensure connection works
+    Map<String, String> params = getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setSsl("on".equals(params.get("ssl")));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("ssoUser"));
+    ds.setPassword(params.get("ssoPassword"));
+    ds.setAuthenticator("<okta address>");
+    Runnable r =
+        () -> {
+          try {
+            ds.getConnection();
+          } catch (SQLException e) {
+            throw new RuntimeException(e);
+          }
+        };
+    List<Thread> threadList = new ArrayList<>();
+    for (int i = 0;
+        i < 30;
+        ++i) { // https://docs.snowflake.com/en/user-guide/admin-security-fed-auth-use#http-429-errors
+      threadList.add(new Thread(r));
+    }
+    threadList.forEach(Thread::start);
+    for (Thread thread : threadList) {
+      thread.join();
     }
   }
 }

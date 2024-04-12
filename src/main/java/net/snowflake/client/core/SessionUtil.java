@@ -651,16 +651,31 @@ public class SessionUtil {
                   loginInput.getHttpClientSettingsKey());
         } catch (SnowflakeSQLException ex) {
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
-            if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
-              SessionUtilKeyPair s =
-                  new SessionUtilKeyPair(
-                      loginInput.getPrivateKey(),
-                      loginInput.getPrivateKeyFile(),
-                      loginInput.getPrivateKeyFilePwd(),
-                      loginInput.getAccountName(),
-                      loginInput.getUserName());
+            if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT
+                || authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
 
-              data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
+              if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+                SessionUtilKeyPair s =
+                    new SessionUtilKeyPair(
+                        loginInput.getPrivateKey(),
+                        loginInput.getPrivateKeyFile(),
+                        loginInput.getPrivateKeyFilePwd(),
+                        loginInput.getAccountName(),
+                        loginInput.getUserName());
+
+                data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
+              } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
+                logger.debug("Retrieve new token for Okta authentication.");
+                // If we need to retry, we need to get a new Okta token
+                tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
+                data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
+                authnData.setData(data);
+                String updatedJson = mapper.writeValueAsString(authnData);
+
+                StringEntity updatedInput = new StringEntity(updatedJson, StandardCharsets.UTF_8);
+                updatedInput.setContentType("application/json");
+                postRequest.setEntity(updatedInput);
+              }
 
               long elapsedSeconds = ex.getElapsedSeconds();
 
@@ -690,7 +705,8 @@ public class SessionUtil {
                 }
               }
 
-              // JWT renew should not count as a retry, so we pass back the current retry count.
+              // JWT or Okta renew should not count as a retry, so we pass back the current retry
+              // count.
               retryCount = ex.getRetryCount();
 
               continue;
@@ -1362,12 +1378,24 @@ public class SessionUtil {
    */
   private static String getSamlResponseUsingOkta(SFLoginInput loginInput)
       throws SnowflakeSQLException {
-    JsonNode dataNode = federatedFlowStep1(loginInput);
-    String tokenUrl = dataNode.path("tokenUrl").asText();
-    String ssoUrl = dataNode.path("ssoUrl").asText();
-    federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
-    final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
-    return federatedFlowStep4(loginInput, ssoUrl, oneTimeToken);
+    while (true) {
+      try {
+        JsonNode dataNode = federatedFlowStep1(loginInput);
+        String tokenUrl = dataNode.path("tokenUrl").asText();
+        String ssoUrl = dataNode.path("ssoUrl").asText();
+        federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
+        final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
+        return federatedFlowStep4(loginInput, ssoUrl, oneTimeToken);
+      } catch (SnowflakeSQLException ex) {
+        // This error gets thrown if the okta request encountered a retry-able error that
+        // requires getting a new one-time token.
+        if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
+          logger.debug("Failed to get Okta SAML response. Retrying without changing retry count.");
+        } else {
+          throw ex;
+        }
+      }
+    }
   }
 
   /**
