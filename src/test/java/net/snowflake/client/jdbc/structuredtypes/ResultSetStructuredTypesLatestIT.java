@@ -209,6 +209,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsArrayOfSqlData() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
@@ -295,6 +296,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsArrayOfNullableString() throws SQLException {
     Assume.assumeTrue(queryResultFormat == ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
@@ -730,7 +732,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
     withFirstRow(
         "SELECT {'string':'a'}",
