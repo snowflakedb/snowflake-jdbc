@@ -1042,32 +1042,27 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String queryID = null;
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
-      try {
-        String multiStmtQuery = "select 1; call system$wait(10); select 2";
+      String multiStmtQuery = "select 1; call system$wait(10); select 2";
 
-        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
-        try (ResultSet rs =
-            statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery)) {
-          queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-        }
-        try {
-          connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-          fail("The getChildQueryIds() should fail because query is running");
-        } catch (SQLException ex) {
-          String msg = ex.getMessage();
-          if (!msg.contains("Status of query associated with resultSet is")
-              || !msg.contains("Results not generated.")) {
-            ex.printStackTrace();
-            QueryStatus qs =
-                connection
-                    .unwrap(SnowflakeConnectionV1.class)
-                    .getSfSession()
-                    .getQueryStatus(queryID);
-            fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
-          }
+      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+      try (ResultSet rs =
+          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery)) {
+        queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+      }
+      try {
+        connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+        fail("The getChildQueryIds() should fail because query is running");
+      } catch (SQLException ex) {
+        String msg = ex.getMessage();
+        if (!msg.contains("Status of query associated with resultSet is")
+            || !msg.contains("Results not generated.")) {
+          ex.printStackTrace();
+          QueryStatus qs =
+              connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getQueryStatus(queryID);
+          fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
         }
       } finally {
-        statement.execute("select system$cancel_query('" + queryID + "')");
+        connection.createStatement().execute("select system$cancel_query('" + queryID + "')");
       }
     }
   }
