@@ -290,7 +290,7 @@ public abstract class SFBaseResultSet {
       ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(obj);
       Iterator<JsonNode> nodeElements = arrayNode.elements();
 
-      switch (columnSubType) {
+      switch (columnType) {
         case Types.INTEGER:
           return new SfSqlArray(
               columnSubType,

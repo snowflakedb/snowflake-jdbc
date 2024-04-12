@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.sql.SQLInput;
 import java.sql.SQLOutput;
 
-public class FewTypesSqlData implements SQLData {
+public class NullableFieldsSqlData implements SQLData {
 
   private String string;
   private Integer nullableIntValue;
@@ -17,7 +17,7 @@ public class FewTypesSqlData implements SQLData {
   private byte[] bytes;
   private long longValue;
 
-  public FewTypesSqlData() {}
+  public NullableFieldsSqlData() {}
 
   @Override
   public String getSQLTypeName() throws SQLException {

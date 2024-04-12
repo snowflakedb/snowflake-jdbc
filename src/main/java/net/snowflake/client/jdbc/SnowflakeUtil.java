@@ -39,7 +39,6 @@ import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.ThrowingCallable;
@@ -178,15 +177,21 @@ public class SnowflakeUtil {
         && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
       extColTypeName = extColTypeNameNode.asText();
     }
+    List<FieldMetadata> fieldsMetadata = getFieldMetadata(jdbcTreatDecimalAsInt, colNode);
 
     int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
     ColumnTypeInfo columnTypeInfo =
-        getSnowflakeType(internalColTypeName, extColTypeName, udtOutputType, session, fixedColType);
+        getSnowflakeType(
+            internalColTypeName,
+            extColTypeName,
+            udtOutputType,
+            session,
+            fixedColType,
+            fieldsMetadata.size() > 0);
 
     String colSrcDatabase = colNode.path("database").asText();
     String colSrcSchema = colNode.path("schema").asText();
     String colSrcTable = colNode.path("table").asText();
-    List<FieldMetadata> fieldsMetadata = getFieldMetadata(jdbcTreatDecimalAsInt, colNode);
 
     boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
 
@@ -212,7 +217,8 @@ public class SnowflakeUtil {
       String extColTypeName,
       JsonNode udtOutputType,
       SFBaseSession session,
-      int fixedColType)
+      int fixedColType,
+      boolean isStructuredType)
       throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
     ColumnTypeInfo columnTypeInfo = null;
@@ -286,7 +292,7 @@ public class SnowflakeUtil {
         break;
 
       case OBJECT:
-        if (StructureTypeHelper.isStructureTypeEnabled()) {
+        if (isStructuredType) {
           boolean isGeoType =
               "GEOMETRY".equals(extColTypeName) || "GEOGRAPHY".equals(extColTypeName);
           int type = isGeoType ? Types.VARCHAR : Types.STRUCT;
@@ -363,7 +369,13 @@ public class SnowflakeUtil {
         extColTypeName = extColTypeNameNode.asText();
       }
       ColumnTypeInfo columnTypeInfo =
-          getSnowflakeType(internalColTypeName, extColTypeName, outputType, null, fixedColType);
+          getSnowflakeType(
+              internalColTypeName,
+              extColTypeName,
+              outputType,
+              null,
+              fixedColType,
+              internalFields.size() > 0);
       fields.add(
           new FieldMetadata(
               colName,
