@@ -26,7 +26,6 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
-import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.arrow.VectorTypeConverter;
 import net.snowflake.client.core.json.Converters;
@@ -569,8 +568,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (type == Types.STRUCT && isStructuredType) {
       if (converter instanceof VarCharConverter) {
         return createJsonSqlInput(columnIndex, obj);
-      } else if (converter instanceof StructConverter) {
-        return createArrowSqlInput(columnIndex, (Map<String, Object>) obj);
+      } else {
+        throw new SFException(
+            ErrorCode.FEATURE_UNSUPPORTED,
+            "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
       }
     }
     return obj;
@@ -595,6 +596,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   private Object createArrowSqlInput(int columnIndex, Map<String, Object> input)
       throws SFException {
+    if (input == null) {
+      return null;
+    }
     return new ArrowSqlInput(
         input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }

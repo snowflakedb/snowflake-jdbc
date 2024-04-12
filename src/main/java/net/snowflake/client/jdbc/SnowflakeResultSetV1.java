@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
@@ -263,11 +265,18 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
 
   public Object getObject(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    try {
-      return sfBaseResultSet.getObject(columnIndex);
-    } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    Object object =
+        SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
+    if (object == null) {
+      return null;
+    } else if (object instanceof JsonSqlInput) {
+      try {
+        return SnowflakeUtil.mapJson(((JsonSqlInput) object).getInput());
+      } catch (JsonProcessingException e) {
+        throw new SQLException("Struct object couldn't be returned as String.", e);
+      }
+    } else {
+      return object;
     }
   }
 
