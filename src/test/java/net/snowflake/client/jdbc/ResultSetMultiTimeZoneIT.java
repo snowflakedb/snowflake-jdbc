@@ -88,37 +88,36 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
   @Before
   public void setUp() throws SQLException {
-    try (Connection con = init()) {
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
 
       // TEST_RS
-      con.createStatement().execute("create or replace table test_rs (colA string)");
-      con.createStatement().execute("insert into test_rs values('rowOne')");
-      con.createStatement().execute("insert into test_rs values('rowTwo')");
-      con.createStatement().execute("insert into test_rs values('rowThree')");
+      statement.execute("create or replace table test_rs (colA string)");
+      statement.execute("insert into test_rs values('rowOne')");
+      statement.execute("insert into test_rs values('rowTwo')");
+      statement.execute("insert into test_rs values('rowThree')");
 
       // ORDERS_JDBC
-      try (Statement statement = con.createStatement()) {
-        statement.execute(
-            "create or replace table orders_jdbc"
-                + "(C1 STRING NOT NULL COMMENT 'JDBC', "
-                + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
-                + "C7 STRING, C8 STRING, C9 STRING) "
-                + "stage_file_format = (field_delimiter='|' "
-                + "error_on_column_count_mismatch=false)");
-        // put files
-        assertTrue(
-            "Failed to put a file",
-            statement.execute(
-                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
-        assertTrue(
-            "Failed to put a file",
-            statement.execute(
-                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
+      statement.execute(
+          "create or replace table orders_jdbc"
+              + "(C1 STRING NOT NULL COMMENT 'JDBC', "
+              + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
+              + "C7 STRING, C8 STRING, C9 STRING) "
+              + "stage_file_format = (field_delimiter='|' "
+              + "error_on_column_count_mismatch=false)");
+      // put files
+      assertTrue(
+          "Failed to put a file",
+          statement.execute(
+              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
+      assertTrue(
+          "Failed to put a file",
+          statement.execute(
+              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
 
-        int numRows = statement.executeUpdate("copy into orders_jdbc");
+      int numRows = statement.executeUpdate("copy into orders_jdbc");
 
-        assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
-      }
+      assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
     }
   }
 
@@ -487,7 +486,6 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
         assertThat(resultSet.getTimestamp(1).toString(), equalTo("0001-01-01 08:00:00.0"));
         assertThat(resultSet.getDate(2).toString(), equalTo("0001-01-01"));
       } finally {
-
         statement.execute("drop table if exists testPrepOldTs");
       }
     }

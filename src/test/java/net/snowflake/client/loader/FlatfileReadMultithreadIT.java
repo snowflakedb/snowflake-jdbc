@@ -78,11 +78,9 @@ public class FlatfileReadMultithreadIT {
         t1.join();
         t2.join();
         try (ResultSet rs =
-            testConnection
-                .createStatement()
-                .executeQuery(
-                    String.format(
-                        "select count(*) from %s.%s.%s", TARGET_DB, TARGET_SCHEMA, targetTable))) {
+            statement.executeQuery(
+                String.format(
+                    "select count(*) from %s.%s.%s", TARGET_DB, TARGET_SCHEMA, targetTable))) {
           rs.next();
           assertThat("total number of records", rs.getInt(1), equalTo(NUM_RECORDS * 2));
         }

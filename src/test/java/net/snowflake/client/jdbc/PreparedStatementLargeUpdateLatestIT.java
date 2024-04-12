@@ -53,7 +53,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
           assertEquals(expectedUpdateRows, updatedRows);
         }
       } finally {
-        con.createStatement().execute("drop table if exists test_large_update");
+        statement.execute("drop table if exists test_large_update");
       }
     }
   }
@@ -88,7 +88,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
           assertEquals(numRows, queryResult[0]);
         }
       } finally {
-        connection.createStatement().execute("drop table if exists over_int_table");
+        statement.execute("drop table if exists over_int_table");
       }
     }
   }

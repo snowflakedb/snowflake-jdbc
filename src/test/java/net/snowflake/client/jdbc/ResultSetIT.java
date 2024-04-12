@@ -435,8 +435,9 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetBigDecimalNegative() throws SQLException {
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("create or replace table test_dec(colA time)");
         try (PreparedStatement preparedStatement =
             connection.prepareStatement("insert into test_dec values(?)")) {
@@ -455,8 +456,9 @@ public class ResultSetIT extends ResultSet0IT {
             }
           }
         }
+      } finally {
+        statement.execute("drop table if exists test_dec");
       }
-      connection.createStatement().execute("drop table if exists test_dec");
     }
   }
 
@@ -520,13 +522,15 @@ public class ResultSetIT extends ResultSet0IT {
    * @throws SQLException arises if any exception occurs
    */
   private void ingestBinaryTestData(Connection connection) throws SQLException {
-    connection.createStatement().execute("create or replace table bin (b Binary)");
-    try (PreparedStatement prepStatement =
-        connection.prepareStatement("insert into bin values (?), (?), (?)")) {
-      prepStatement.setBytes(1, byteArrayTestCase1);
-      prepStatement.setBytes(2, byteArrayTestCase2);
-      prepStatement.setBytes(3, byteArrayTestCase3);
-      prepStatement.execute();
+    try (Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table bin (b Binary)");
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into bin values (?), (?), (?)")) {
+        prepStatement.setBytes(1, byteArrayTestCase1);
+        prepStatement.setBytes(2, byteArrayTestCase2);
+        prepStatement.setBytes(3, byteArrayTestCase3);
+        prepStatement.execute();
+      }
     }
   }
 
@@ -796,17 +800,18 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testReleaseDownloaderCurrentMemoryUsage() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Connection connection = init()) {
       final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
 
-      statement.executeQuery(
-          "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>1000000))");
+      try (Statement statement = connection.createStatement()) {
 
-      assertThat(
-          "hold memory usage for the resultSet before close",
-          SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
-      statement.close();
+        statement.executeQuery(
+            "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>1000000))");
+
+        assertThat(
+            "hold memory usage for the resultSet before close",
+            SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
+      }
       assertThat(
           "closing statement didn't release memory allocated for result",
           SnowflakeChunkDownloader.getCurrentMemoryUsage(),
@@ -906,16 +911,16 @@ public class ResultSetIT extends ResultSet0IT {
   /** SNOW-28390 */
   @Test
   public void testParseInfAndNaNNumber() throws Exception {
-    try (Connection con = init()) {
-      try (ResultSet ret =
-          con.createStatement().executeQuery("select to_double('inf'), to_double('-inf')")) {
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
+      try (ResultSet ret = statement.executeQuery("select to_double('inf'), to_double('-inf')")) {
         ret.next();
         assertThat("Positive Infinite Number", ret.getDouble(1), equalTo(Double.POSITIVE_INFINITY));
         assertThat("Negative Infinite Number", ret.getDouble(2), equalTo(Double.NEGATIVE_INFINITY));
         assertThat("Positive Infinite Number", ret.getFloat(1), equalTo(Float.POSITIVE_INFINITY));
         assertThat("Negative Infinite Number", ret.getFloat(2), equalTo(Float.NEGATIVE_INFINITY));
       }
-      try (ResultSet ret = con.createStatement().executeQuery("select to_double('nan')")) {
+      try (ResultSet ret = statement.executeQuery("select to_double('nan')")) {
         ret.next();
         assertThat("Parse NaN", ret.getDouble(1), equalTo(Double.NaN));
         assertThat("Parse NaN", ret.getFloat(1), equalTo(Float.NaN));
@@ -929,14 +934,14 @@ public class ResultSetIT extends ResultSet0IT {
     ResultSetMetaData metaData;
     try (Connection con = init();
         Statement statement = con.createStatement()) {
-      try (ResultSet ret = con.createStatement().executeQuery("select 1")) {
+      try (ResultSet ret = statement.executeQuery("select 1")) {
 
         metaData = ret.getMetaData();
         assertThat(metaData.getColumnType(1), equalTo(Types.BIGINT));
       }
       statement.execute("alter session set jdbc_treat_decimal_as_int = false");
 
-      try (ResultSet ret = con.createStatement().executeQuery("select 1")) {
+      try (ResultSet ret = statement.executeQuery("select 1")) {
         metaData = ret.getMetaData();
         assertThat(metaData.getColumnType(1), equalTo(Types.DECIMAL));
       }
@@ -945,8 +950,9 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testIsLast() throws Exception {
-    try (Connection con = init()) {
-      try (ResultSet ret = con.createStatement().executeQuery("select * from orders_jdbc")) {
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
+      try (ResultSet ret = statement.executeQuery("select * from orders_jdbc")) {
         assertTrue("should be before the first", ret.isBeforeFirst());
         assertFalse("should not be the first", ret.isFirst());
 
@@ -972,8 +978,8 @@ public class ResultSetIT extends ResultSet0IT {
       }
       // PUT one file
       try (ResultSet ret =
-          con.createStatement()
-              .executeQuery("PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~")) {
+          statement.executeQuery(
+              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~")) {
 
         assertTrue("should be before the first", ret.isBeforeFirst());
         assertFalse("should not be the first", ret.isFirst());
@@ -1023,13 +1029,13 @@ public class ResultSetIT extends ResultSet0IT {
       try {
         statement.execute("create or replace table testnullts(c1 timestamp, c2 time)");
         statement.execute("insert into testnullts(c1, c2) values(null, null)");
-        try (ResultSet rs = con.createStatement().executeQuery("select * from testnullts")) {
+        try (ResultSet rs = statement.executeQuery("select * from testnullts")) {
           assertTrue("should return result", rs.next());
           assertNull("return value must be null", rs.getTime(1));
           assertNull("return value must be null", rs.getTimestamp(2));
         }
       } finally {
-        con.createStatement().execute("drop table if exists testnullts");
+        statement.execute("drop table if exists testnullts");
       }
     }
   }

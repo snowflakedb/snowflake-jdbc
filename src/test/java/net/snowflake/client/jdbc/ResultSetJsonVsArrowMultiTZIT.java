@@ -73,12 +73,6 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     return con;
   }
 
-  private void finish(String table, Connection con) throws SQLException {
-    con.createStatement().execute("drop table " + table);
-    con.close();
-    System.clearProperty("user.timezone");
-  }
-
   @Test
   public void testTime() throws SQLException {
     String[] times = {

@@ -120,8 +120,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           queryId = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         }
         try (ResultSet rs =
-            con.createStatement()
-                .executeQuery("select * from table(result_scan('" + queryId + "'))")) {
+            statement.executeQuery("select * from table(result_scan('" + queryId + "'))")) {
           rs.next();
           assertEquals(1, rs.getInt(1));
         }
@@ -276,11 +275,6 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   private boolean isJSON() {
     return queryResultFormat.equalsIgnoreCase("json");
   }
-
-  //  private void finish(String table, Connection con) throws SQLException {
-  //    con.createStatement().execute("drop table " + table);
-  //    con.close();
-  //  }
 
   /**
    * compare behaviors (json vs arrow)

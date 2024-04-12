@@ -346,21 +346,22 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
   public void testEmptyResultSet() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
-      ResultSet rs =
-          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from empty_table");
-      // if user never calls getMetadata() or next(), empty result set is used to get results.
-      // empty ResultSet returns all nulls, 0s, and empty values.
-      assertFalse(rs.isClosed());
-      assertEquals(0, rs.getInt(1));
-      try {
-        rs.getInt("col1");
-        fail("Fetching from a column name that does not exist should return a SQLException");
-      } catch (SQLException e) {
-        // findColumn fails with empty metadata with exception "Column not found".
-        assertEquals(SqlState.UNDEFINED_COLUMN, e.getSQLState());
+      try (ResultSet rs =
+          statement
+              .unwrap(SnowflakeStatement.class)
+              .executeAsyncQuery("select * from empty_table")) {
+        // if user never calls getMetadata() or next(), empty result set is used to get results.
+        // empty ResultSet returns all nulls, 0s, and empty values.
+        assertFalse(rs.isClosed());
+        assertEquals(0, rs.getInt(1));
+        try {
+          rs.getInt("col1");
+          fail("Fetching from a column name that does not exist should return a SQLException");
+        } catch (SQLException e) {
+          // findColumn fails with empty metadata with exception "Column not found".
+          assertEquals(SqlState.UNDEFINED_COLUMN, e.getSQLState());
+        }
       }
-      rs.close(); // close empty result set
-      assertTrue(rs.isClosed());
     }
   }
 }

@@ -280,8 +280,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
    */
   @Test
   public void testGetCharacterStreamNull() throws SQLException {
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       statement.execute("create or replace table JDBC_NULL_CHARSTREAM (col1 varchar(16))");
       statement.execute("insert into JDBC_NULL_CHARSTREAM values(NULL)");
       try (ResultSet rs = statement.executeQuery("select * from JDBC_NULL_CHARSTREAM")) {
@@ -985,7 +985,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
           }
         } finally {
           TimeZone.setDefault(origTz);
-          connection.createStatement().execute("drop table if exists testGranularTime");
+          statement.execute("drop table if exists testGranularTime");
         }
       }
     }

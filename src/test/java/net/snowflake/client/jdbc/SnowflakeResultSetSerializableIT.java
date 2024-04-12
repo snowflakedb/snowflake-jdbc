@@ -369,63 +369,49 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       throws Throwable {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    try (Connection connection = init()) {
-      connection
-          .createStatement()
-          .execute("alter session set DATE_OUTPUT_FORMAT = '" + format_date + "'");
-      connection
-          .createStatement()
-          .execute("alter session set TIME_OUTPUT_FORMAT = '" + format_time + "'");
-      connection
-          .createStatement()
-          .execute("alter session set TIMESTAMP_NTZ_OUTPUT_FORMAT = '" + format_ntz + "'");
-      connection
-          .createStatement()
-          .execute("alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT = '" + format_ltz + "'");
-      connection
-          .createStatement()
-          .execute("alter session set TIMESTAMP_TZ_OUTPUT_FORMAT = '" + format_tz + "'");
-      connection.createStatement().execute("alter session set TIMEZONE = '" + timezone + "'");
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      statement.execute("alter session set DATE_OUTPUT_FORMAT = '" + format_date + "'");
+      statement.execute("alter session set TIME_OUTPUT_FORMAT = '" + format_time + "'");
+      statement.execute("alter session set TIMESTAMP_NTZ_OUTPUT_FORMAT = '" + format_ntz + "'");
+      statement.execute("alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT = '" + format_ltz + "'");
+      statement.execute("alter session set TIMESTAMP_TZ_OUTPUT_FORMAT = '" + format_tz + "'");
+      statement.execute("alter session set TIMEZONE = '" + timezone + "'");
 
-      try (Statement statement = connection.createStatement()) {
+      statement.execute(
+          "Create or replace table all_timestamps ("
+              + "int_c int, date_c date, "
+              + "time_c time, time_c0 time(0), time_c3 time(3), time_c6 time(6), "
+              + "ts_ltz_c timestamp_ltz, ts_ltz_c0 timestamp_ltz(0), "
+              + "ts_ltz_c3 timestamp_ltz(3), ts_ltz_c6 timestamp_ltz(6), "
+              + "ts_ntz_c timestamp_ntz, ts_ntz_c0 timestamp_ntz(0), "
+              + "ts_ntz_c3 timestamp_ntz(3), ts_ntz_c6 timestamp_ntz(6) "
+              + ", ts_tz_c timestamp_tz, ts_tz_c0 timestamp_tz(0), "
+              + "ts_tz_c3 timestamp_tz(3), ts_tz_c6 timestamp_tz(6) "
+              + ")");
 
+      if (rowCount > 0) {
         statement.execute(
-            "Create or replace table all_timestamps ("
-                + "int_c int, date_c date, "
-                + "time_c time, time_c0 time(0), time_c3 time(3), time_c6 time(6), "
-                + "ts_ltz_c timestamp_ltz, ts_ltz_c0 timestamp_ltz(0), "
-                + "ts_ltz_c3 timestamp_ltz(3), ts_ltz_c6 timestamp_ltz(6), "
-                + "ts_ntz_c timestamp_ntz, ts_ntz_c0 timestamp_ntz(0), "
-                + "ts_ntz_c3 timestamp_ntz(3), ts_ntz_c6 timestamp_ntz(6) "
-                + ", ts_tz_c timestamp_tz, ts_tz_c0 timestamp_tz(0), "
-                + "ts_tz_c3 timestamp_tz(3), ts_tz_c6 timestamp_tz(6) "
-                + ")");
+            "insert into all_timestamps "
+                + "select seq4(), '2015-10-25' , "
+                + "'23:59:59.123456789', '23:59:59', '23:59:59.123', '23:59:59.123456', "
+                + "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13',"
+                + "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456',"
+                + "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13',"
+                + "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456',"
+                + "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13',"
+                + "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456'"
+                + " from table(generator(rowcount=>"
+                + rowCount
+                + "))");
+      }
 
-        if (rowCount > 0) {
-          connection
-              .createStatement()
-              .execute(
-                  "insert into all_timestamps "
-                      + "select seq4(), '2015-10-25' , "
-                      + "'23:59:59.123456789', '23:59:59', '23:59:59.123', '23:59:59.123456', "
-                      + "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13',"
-                      + "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456',"
-                      + "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13',"
-                      + "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456',"
-                      + "   '2014-01-11 06:12:13.123456789', '2014-01-11 06:12:13',"
-                      + "   '2014-01-11 06:12:13.123', '2014-01-11 06:12:13.123456'"
-                      + " from table(generator(rowcount=>"
-                      + rowCount
-                      + "))");
-        }
+      String sqlSelect = "select * from all_timestamps " + whereClause;
+      try (ResultSet rs = statement.executeQuery(sqlSelect)) {
 
-        String sqlSelect = "select * from all_timestamps " + whereClause;
-        try (ResultSet rs = statement.executeQuery(sqlSelect)) {
+        fileNameList = serializeResultSet((SnowflakeResultSet) rs, maxSizeInBytes, "txt");
 
-          fileNameList = serializeResultSet((SnowflakeResultSet) rs, maxSizeInBytes, "txt");
-
-          originalResultCSVString = generateCSVResult(rs);
-        }
+        originalResultCSVString = generateCSVResult(rs);
       }
     }
 
@@ -464,31 +450,30 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   public void testBasicTableWithSerializeObjectsAfterReadResultSet() throws Throwable {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
-        statement.execute("create or replace schema testschema");
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace schema testschema");
 
-        statement.execute(
-            "create or replace table table_basic " + " (int_c int, string_c string(128))");
+      statement.execute(
+          "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-        int rowCount = 30000;
-        statement.execute(
-            "insert into table_basic select "
-                + "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
-                + " from table(generator(rowcount=>"
-                + rowCount
-                + "))");
+      int rowCount = 30000;
+      statement.execute(
+          "insert into table_basic select "
+              + "seq4(), 'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
+              + " from table(generator(rowcount=>"
+              + rowCount
+              + "))");
 
-        String sqlSelect = "select * from table_basic ";
-        try (ResultSet rs = statement.executeQuery(sqlSelect)) {
+      String sqlSelect = "select * from table_basic ";
+      try (ResultSet rs = statement.executeQuery(sqlSelect)) {
 
-          originalResultCSVString = generateCSVResult(rs);
+        originalResultCSVString = generateCSVResult(rs);
 
-          // In previous test, the serializable objects are serialized before
-          // reading the ResultSet. This test covers the case that serializes the
-          // object after reading the result set.
-          fileNameList = serializeResultSet((SnowflakeResultSet) rs, 1 * 1024 * 1024, "txt");
-        }
+        // In previous test, the serializable objects are serialized before
+        // reading the ResultSet. This test covers the case that serializes the
+        // object after reading the result set.
+        fileNameList = serializeResultSet((SnowflakeResultSet) rs, 1 * 1024 * 1024, "txt");
       }
     }
 
@@ -549,27 +534,26 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
     int rowCount = 90000;
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
 
-        statement.execute(
-            "create or replace table table_basic " + " (int_c int, string_c string(128))");
+      statement.execute(
+          "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-        statement.execute(
-            "insert into table_basic select "
-                + "seq4(), "
-                + "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
-                + " from table(generator(rowcount=>"
-                + rowCount
-                + "))");
+      statement.execute(
+          "insert into table_basic select "
+              + "seq4(), "
+              + "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
+              + " from table(generator(rowcount=>"
+              + rowCount
+              + "))");
 
-        String sqlSelect = "select * from table_basic ";
-        try (ResultSet rs = statement.executeQuery(sqlSelect)) {
+      String sqlSelect = "select * from table_basic ";
+      try (ResultSet rs = statement.executeQuery(sqlSelect)) {
 
-          fileNameList = serializeResultSet((SnowflakeResultSet) rs, 100 * 1024 * 1024, "txt");
+        fileNameList = serializeResultSet((SnowflakeResultSet) rs, 100 * 1024 * 1024, "txt");
 
-          originalResultCSVString = generateCSVResult(rs);
-        }
+        originalResultCSVString = generateCSVResult(rs);
       }
     }
 

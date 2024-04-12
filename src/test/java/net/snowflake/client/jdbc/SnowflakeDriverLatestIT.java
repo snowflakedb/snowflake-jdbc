@@ -1755,7 +1755,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         assertTrue(
             "downloaded content does not equal uploaded content", content.equals(downloadedFile));
       } finally {
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
+        statement.execute("DROP STAGE if exists " + testStageName);
       }
     }
   }
