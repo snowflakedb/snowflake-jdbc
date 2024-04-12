@@ -60,9 +60,6 @@ public class CallableStatementIT extends BaseJDBCTest {
   private final String deleteStoredProcedure = "drop procedure if exists square_it(FLOAT)";
   private final String deleteSecondStoredProcedure = "drop procedure if exists add_nums(INT, INT)";
 
-  //  protected Connection connection = null;
-  //  protected Statement statement = null;
-
   @Before
   public void setUp() throws SQLException {
     try (Connection con = getConnection();
