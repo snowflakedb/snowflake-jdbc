@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ import java.sql.Ref;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.RowId;
+import java.sql.SQLData;
 import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Time;
@@ -36,11 +38,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.FieldSchemaCreator;
+import net.snowflake.client.core.JsonSqlOutput;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFPreparedStatementMetaData;
+import net.snowflake.client.core.SfSqlArray;
 import net.snowflake.client.core.StmtUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -324,6 +329,16 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
+  private void setObjectInternal(int parameterIndex, SQLData x) throws SQLException {
+    logger.debug("setObjectInternal(parameterIndex: {}, SqlData x)", parameterIndex);
+
+    JsonSqlOutput stream = new JsonSqlOutput(x, connection.getSFBaseSession());
+    x.writeSQL(stream);
+    ParameterBindingDTO binding =
+        new ParameterBindingDTO("json", "OBJECT", stream.getJsonString(), stream.getSchema());
+    parameterBindings.put(String.valueOf(parameterIndex), binding);
+  }
+
   @Override
   public void setDate(int parameterIndex, Date x) throws SQLException {
     logger.debug("setDate(parameterIndex: {}, Date x)", parameterIndex);
@@ -435,6 +450,9 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
         || targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
       setTimestampWithType(parameterIndex, (Timestamp) x, targetSqlType);
+    } else if (targetSqlType == Types.STRUCT) {
+      ParameterBindingDTO binding = new ParameterBindingDTO("TEXT", String.valueOf(x));
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
     } else {
       logger.debug(
           "setObject(parameterIndex: {}, Object x, sqlType: {})",
@@ -479,6 +497,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setBoolean(parameterIndex, (Boolean) x);
     } else if (x instanceof byte[]) {
       setBytes(parameterIndex, (byte[]) x);
+    } else if (x instanceof SQLData) {
+      setObjectInternal(parameterIndex, (SQLData) x);
     } else {
       throw new SnowflakeSQLLoggedException(
           connection.getSFBaseSession(),
@@ -601,7 +621,39 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
   @Override
   public void setArray(int parameterIndex, Array x) throws SQLException {
-    throw new SnowflakeLoggedFeatureNotSupportedException(connection.getSFBaseSession());
+    SfSqlArray sfArray = (SfSqlArray) x;
+    ParameterBindingDTO binding =
+        new ParameterBindingDTO("json", "ARRAY", sfArray.getJsonString(), sfArray.getSchema());
+    parameterBindings.put(String.valueOf(parameterIndex), binding);
+  }
+
+  @Override
+  public <T> void setMap(int parameterIndex, Map<String, T> map, int type) throws SQLException {
+    BindingParameterMetadata valueTypeSchema;
+    if (Types.STRUCT == type) {
+      SQLData sqlData = (SQLData) map.values().stream().findFirst().orElse(null);
+      JsonSqlOutput stream = new JsonSqlOutput(sqlData, connection.getSFBaseSession());
+      sqlData.writeSQL(stream);
+      valueTypeSchema = stream.getSchema();
+    } else {
+      valueTypeSchema = FieldSchemaCreator.buildBindingSchemaForType(type, false);
+    }
+
+    BindingParameterMetadata schema =
+        BindingParameterMetadata.BindingParameterMetadataBuilder.bindingParameterMetadata()
+            .withType("MAP")
+            .withFields(
+                Arrays.asList(
+                    FieldSchemaCreator.buildBindingSchemaForType(Types.VARCHAR, false),
+                    valueTypeSchema))
+            .build();
+    ParameterBindingDTO binding = null;
+    try {
+      binding = new ParameterBindingDTO("json", "OBJECT", SnowflakeUtil.mapJson(map), schema);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
   @Override

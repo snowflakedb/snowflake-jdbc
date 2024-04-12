@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 
 public interface SnowflakePreparedStatement {
   /**
@@ -26,4 +27,12 @@ public interface SnowflakePreparedStatement {
    * @throws SQLException
    */
   void setBigInteger(int parameterIndex, BigInteger x) throws SQLException;
+  /**
+   * Sets the designated parameter to the given Map instance.
+   *
+   * @param parameterIndex
+   * @param map
+   * @throws SQLException
+   */
+  <T> void setMap(int parameterIndex, Map<String, T> map, int type) throws SQLException;
 }

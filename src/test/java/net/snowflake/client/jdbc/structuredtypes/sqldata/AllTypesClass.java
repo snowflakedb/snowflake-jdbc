@@ -8,6 +8,7 @@ import java.sql.SQLInput;
 import java.sql.SQLOutput;
 import java.sql.Time;
 import java.sql.Timestamp;
+import net.snowflake.client.jdbc.SnowflakeColumn;
 
 public class AllTypesClass implements SQLData {
   private String string;
@@ -20,12 +21,54 @@ public class AllTypesClass implements SQLData {
   private BigDecimal bd;
   private Boolean bool;
   private Timestamp timestampLtz;
+
+  @SnowflakeColumn(type = "timestamp_ntz")
   private Timestamp timestampNtz;
+
+  @SnowflakeColumn(type = "timestamp_tz")
   private Timestamp timestampTz;
+
   private Date date;
   private Time time;
   private byte[] binary;
   private SimpleClass simpleClass;
+
+  public AllTypesClass() {}
+
+  public AllTypesClass(
+      String string,
+      Byte b,
+      Short s,
+      Integer i,
+      Long l,
+      Float f,
+      Double d,
+      BigDecimal bd,
+      Boolean bool,
+      Timestamp timestampLtz,
+      Timestamp timestampNtz,
+      Timestamp timestampTz,
+      Date date,
+      Time time,
+      byte[] binary,
+      SimpleClass simpleClass) {
+    this.string = string;
+    this.b = b;
+    this.s = s;
+    this.i = i;
+    this.l = l;
+    this.f = f;
+    this.d = d;
+    this.bd = bd;
+    this.bool = bool;
+    this.timestampLtz = timestampLtz;
+    this.timestampNtz = timestampNtz;
+    this.timestampTz = timestampTz;
+    this.date = date;
+    this.time = time;
+    this.binary = binary;
+    this.simpleClass = simpleClass;
+  }
 
   @Override
   public String getSQLTypeName() throws SQLException {
@@ -77,7 +120,24 @@ public class AllTypesClass implements SQLData {
   }
 
   @Override
-  public void writeSQL(SQLOutput stream) throws SQLException {}
+  public void writeSQL(SQLOutput stream) throws SQLException {
+    stream.writeString(string);
+    stream.writeByte(b);
+    stream.writeShort(s);
+    stream.writeInt(i);
+    stream.writeLong(l);
+    stream.writeFloat(f);
+    stream.writeDouble(d);
+    stream.writeBigDecimal(bd);
+    stream.writeBoolean(bool);
+    stream.writeTimestamp(timestampLtz);
+    stream.writeTimestamp(timestampNtz);
+    stream.writeTimestamp(timestampTz);
+    stream.writeDate(date);
+    stream.writeTime(time);
+    stream.writeBytes(binary);
+    stream.writeObject(simpleClass);
+  }
 
   public String getString() {
     return string;
@@ -138,7 +198,7 @@ public class AllTypesClass implements SQLData {
   public byte[] getBinary() {
     return binary;
   }
-
+  //
   public SimpleClass getSimpleClass() {
     return simpleClass;
   }
