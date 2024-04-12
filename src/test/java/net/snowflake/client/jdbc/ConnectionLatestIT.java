@@ -823,7 +823,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             + privateKeyLocation;
 
     try (Connection connection = DriverManager.getConnection(uri, properties)) {}
-    ;
     // test with incorrect password for private key
     uri =
         parameters.get("uri")
