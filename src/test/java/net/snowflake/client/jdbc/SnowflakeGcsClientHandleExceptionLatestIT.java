@@ -27,6 +27,7 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeGcsClient handle exception function, only work with latest driver */
+// refactor??
 @Category(TestCategoryOthers.class)
 public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
