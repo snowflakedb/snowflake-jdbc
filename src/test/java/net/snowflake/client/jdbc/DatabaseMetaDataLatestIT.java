@@ -125,66 +125,51 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             // this should only return `customSchema` schema and tables
             statement.execute("use schema " + customSchema);
 
-            try (ResultSet resultSet = databaseMetaData.getSchemas(null, null)) {
-              assertEquals(1, getSizeOfResultSet(resultSet));
-            }
+            ResultSet resultSet = databaseMetaData.getSchemas(null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
 
-            try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
-              assertEquals(3, getSizeOfResultSet(resultSet));
-            }
+            resultSet = databaseMetaData.getTables(null, null, null, null);
+            assertEquals(3, getSizeOfResultSet(resultSet));
 
-            try (ResultSet resultSet = databaseMetaData.getColumns(null, null, null, null)) {
-              assertEquals(13, getSizeOfResultSet(resultSet));
-            }
+            resultSet = databaseMetaData.getColumns(null, null, null, null);
+            assertEquals(13, getSizeOfResultSet(resultSet));
 
-            try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, null)) {
-              assertEquals(1, getSizeOfResultSet(resultSet));
-            }
+            resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
 
-            try (ResultSet resultSet = databaseMetaData.getImportedKeys(null, null, null)) {
-              assertEquals(1, getSizeOfResultSet(resultSet));
-            }
+            resultSet = databaseMetaData.getImportedKeys(null, null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
 
-            try (ResultSet resultSet = databaseMetaData.getExportedKeys(null, null, null)) {
-              assertEquals(1, getSizeOfResultSet(resultSet));
-            }
+            resultSet = databaseMetaData.getExportedKeys(null, null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
 
-            try (ResultSet resultSet =
-                databaseMetaData.getCrossReference(null, null, null, null, null, null)) {
-              assertEquals(1, getSizeOfResultSet(resultSet));
-            }
+            resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
+            assertEquals(1, getSizeOfResultSet(resultSet));
+
             // Now compare results to setting client metadata to false.
             statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=false");
             databaseMetaData = connection.getMetaData();
 
-            try (ResultSet resultSet = databaseMetaData.getSchemas(null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-            }
+            resultSet = databaseMetaData.getSchemas(null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
-            try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
-            }
+            resultSet = databaseMetaData.getTables(null, null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
 
-            try (ResultSet resultSet = databaseMetaData.getColumns(null, null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
-            }
+            resultSet = databaseMetaData.getColumns(null, null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
 
-            try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-            }
+            resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
-            try (ResultSet resultSet = databaseMetaData.getImportedKeys(null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-            }
+            resultSet = databaseMetaData.getImportedKeys(null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
-            try (ResultSet resultSet = databaseMetaData.getExportedKeys(null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-            }
+            resultSet = databaseMetaData.getExportedKeys(null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
 
-            try (ResultSet resultSet =
-                databaseMetaData.getCrossReference(null, null, null, null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
-            }
+            resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
+            assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
           });
     }
   }
