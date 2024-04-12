@@ -60,38 +60,43 @@ public class CustomProxyLatestIT {
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8080");
     // Set up the first connection and proxy
-    Connection con1 =
+    try (Connection con1 =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    Statement stmt = con1.createStatement();
-    ResultSet rs = stmt.executeQuery("select 1");
-    rs.next();
-    assertEquals(1, rs.getInt(1));
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
+      Statement stmt = con1.createStatement();
+      try (ResultSet rs = stmt.executeQuery("select 1")) {
+        rs.next();
+        assertEquals(1, rs.getInt(1));
+      }
+    }
+
     // Change the proxy settings for the 2nd connection, but all other properties can be re-used.
     // Set up the second connection.
     props.put("proxyPort", "8081");
-    Connection con2 =
-        DriverManager.getConnection(
-            "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com", props);
-    rs = con2.createStatement().executeQuery("select 2");
-    rs.next();
-    assertEquals(2, rs.getInt(1));
-    // To ensure that the http client map is functioning properly, make a third connection with the
-    // same properties and proxy as the first connection.
+    try (Connection con2 =
+            DriverManager.getConnection(
+                "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com", props);
+        ResultSet rs = con2.createStatement().executeQuery("select 2")) {
+      rs.next();
+      assertEquals(2, rs.getInt(1));
+      // To ensure that the http client map is functioning properly, make a third connection with
+      // the
+      // same properties and proxy as the first connection.
+    }
+
     props.put("proxyPort", "8080");
-    Connection con3 =
-        DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    stmt = con3.createStatement();
-    rs = stmt.executeQuery("select 1");
-    rs.next();
-    assertEquals(1, rs.getInt(1));
-    // Assert that although there are 3 connections, 2 of them (1st and 3rd) use the same httpclient
-    // object in the map. The total map size should be 2 for the 3 connections.
-    assertEquals(2, HttpUtil.httpClient.size());
-    con2.close();
-    con1.close();
-    con3.close();
+    try (Connection con3 =
+            DriverManager.getConnection(
+                "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+        Statement stmt = con3.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      rs.next();
+      assertEquals(1, rs.getInt(1));
+      // Assert that although there are 3 connections, 2 of them (1st and 3rd) use the same
+      // httpclient
+      // object in the map. The total map size should be 2 for the 3 connections.
+      assertEquals(2, HttpUtil.httpClient.size());
+    }
   }
 
   /**
@@ -113,26 +118,28 @@ public class CustomProxyLatestIT {
     props.put("proxyPort", "3128");
     // protocol must be specified for https (default is http)
     props.put("proxyProtocol", "https");
-    Connection con1 =
-        DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    Statement stmt = con1.createStatement();
-    ResultSet rs = stmt.executeQuery("select 1");
-    rs.next();
-    assertEquals(1, rs.getInt(1));
+    try (Connection con1 =
+            DriverManager.getConnection(
+                "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+        Statement stmt = con1.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      rs.next();
+      assertEquals(1, rs.getInt(1));
+    }
 
     // Test with jvm properties instead
     props.put("useProxy", false);
     System.setProperty("http.useProxy", "true");
     System.setProperty("http.proxyHost", "localhost");
     System.setProperty("http.proxyPort", "3128");
-    con1 =
-        DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    stmt = con1.createStatement();
-    rs = stmt.executeQuery("select 1");
-    rs.next();
-    assertEquals(1, rs.getInt(1));
+    try (Connection con1 =
+            DriverManager.getConnection(
+                "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+        Statement stmt = con1.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      rs.next();
+      assertEquals(1, rs.getInt(1));
+    }
   }
 
   /**
@@ -153,14 +160,14 @@ public class CustomProxyLatestIT {
     System.setProperty("https.proxyHost", "localhost");
     System.setProperty("https.proxyPort", "3128");
     System.setProperty("http.nonProxyHosts", "*");
-    Connection con =
-        DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    Statement stmt = con.createStatement();
-    ResultSet rs = stmt.executeQuery("select 1");
-    rs.next();
-    assertEquals(1, rs.getInt(1));
-    con.close();
+    try (Connection con =
+            DriverManager.getConnection(
+                "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      rs.next();
+      assertEquals(1, rs.getInt(1));
+    }
   }
 
   /** Test TLS issue against S3 client to ensure proxy works with PUT/GET statements */
@@ -196,36 +203,37 @@ public class CustomProxyLatestIT {
     props.put("proxyPort", "8080");
     props.put("nonProxyHosts", "*.snowflakecomputing.com");
     // Set up the first connection and proxy
-    Connection con1 =
-        DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    Statement stmt = con1.createStatement();
-    ResultSet rs = stmt.executeQuery("select 1");
-    rs.next();
-    assertEquals(1, rs.getInt(1));
-    // Assert that nonProxyHosts string is correct for initial value
-    HttpUtil.httpClient
-        .entrySet()
-        .forEach((entry) -> assertEquals(".foo.com|.baz.com", entry.getKey().getNonProxyHosts()));
+    try (Connection con1 =
+            DriverManager.getConnection(
+                "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+        Statement stmt = con1.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      rs.next();
+      assertEquals(1, rs.getInt(1));
+      // Assert that nonProxyHosts string is correct for initial value
+      HttpUtil.httpClient
+          .entrySet()
+          .forEach((entry) -> assertEquals(".foo.com|.baz.com", entry.getKey().getNonProxyHosts()));
+    }
     // Now make 2nd connection with all the same settings except different nonProxyHosts field
     props.put("nonProxyHosts", "*.snowflakecomputing.com");
     // Manually check here that nonProxyHost setting works by checking that nothing else goes
     // through proxy from this point onward. *.snowflakecomputing.com should ensure that proxy is
     // skipped.
-    Connection con2 =
-        DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    rs = stmt.executeQuery("select 2");
-    rs.next();
-    assertEquals(2, rs.getInt(1));
-    assertEquals(1, HttpUtil.httpClient.size());
-    // Assert that the entry contains the correct updated value for nonProxyHosts string
-    HttpUtil.httpClient
-        .entrySet()
-        .forEach(
-            (entry) -> assertEquals("*.snowflakecomputing.com", entry.getKey().getNonProxyHosts()));
-    con1.close();
-    con2.close();
+    try (Connection con2 =
+            DriverManager.getConnection(
+                "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+        ResultSet rs = con2.createStatement().executeQuery("select 2")) {
+      rs.next();
+      assertEquals(2, rs.getInt(1));
+      assertEquals(1, HttpUtil.httpClient.size());
+      // Assert that the entry contains the correct updated value for nonProxyHosts string
+      HttpUtil.httpClient
+          .entrySet()
+          .forEach(
+              (entry) ->
+                  assertEquals("*.snowflakecomputing.com", entry.getKey().getNonProxyHosts()));
+    }
   }
 
   /**
@@ -240,31 +248,33 @@ public class CustomProxyLatestIT {
     props.put("user", "USER");
     props.put("password", "PASSWORD");
     // Set up the first connection and proxy
-    Connection con1 =
-        DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    Statement stmt = con1.createStatement();
-    ResultSet rs = stmt.executeQuery("select 1");
-    rs.next();
-    assertEquals(1, rs.getInt(1));
+    try (Connection con1 =
+            DriverManager.getConnection(
+                "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+        Statement stmt = con1.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      rs.next();
+      assertEquals(1, rs.getInt(1));
+    }
+
     // put in some fake properties that won't get picked up because useProxy=false
     props.put("useProxy", false);
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8080");
-    Connection con2 =
+    try (Connection con2 =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    // Assert that the HttpClient table has only 1 entry for both non-proxy entries
-    assertEquals(1, HttpUtil.httpClient.size());
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
+      // Assert that the HttpClient table has only 1 entry for both non-proxy entries
+      assertEquals(1, HttpUtil.httpClient.size());
+    }
+
     props.put("ocspFailOpen", "false");
-    Connection con3 =
+    try (Connection con3 =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    // Table should grow in size by 1 when OCSP mode changes
-    assertEquals(2, HttpUtil.httpClient.size());
-    con1.close();
-    con2.close();
-    con3.close();
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
+      // Table should grow in size by 1 when OCSP mode changes
+      assertEquals(2, HttpUtil.httpClient.size());
+    }
   }
 
   @Test
@@ -381,12 +391,12 @@ public class CustomProxyLatestIT {
     // Set JVM properties.
     System.setProperty("proxyHost", "localhost");
     System.setProperty("proxyPort", "3128");
-    Connection con =
+    try (Connection con =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    assertEquals(System.getProperty("proxyHost"), null);
-    assertEquals(System.getProperty("proxyPort"), null);
-    con.close();
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
+      assertEquals(System.getProperty("proxyHost"), null);
+      assertEquals(System.getProperty("proxyPort"), null);
+    }
   }
 
   public void runProxyConnection(String connectionUrl) throws ClassNotFoundException, SQLException {
@@ -419,21 +429,24 @@ public class CustomProxyLatestIT {
     Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
     long counter = 0;
     while (true) {
-      Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);
-      Statement stmt = con.createStatement();
-      stmt.execute("use warehouse TINY_WAREHOUSE");
-      stmt.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-      assertTrue(
-          "Failed to put a file",
-          stmt.execute(
-              "PUT file://" + getFullPathFileInResource("orders_100.csv") + " @testPutGet_stage"));
-      String sql = "select $1 from values(1),(3),(5),(7)";
-      ResultSet res = stmt.executeQuery(sql);
-      while (res.next()) {
-        System.out.println("value: " + res.getInt(1));
+      try (Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);
+          Statement stmt = con.createStatement()) {
+        stmt.execute("use warehouse TINY_WAREHOUSE");
+        stmt.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+        assertTrue(
+            "Failed to put a file",
+            stmt.execute(
+                "PUT file://"
+                    + getFullPathFileInResource("orders_100.csv")
+                    + " @testPutGet_stage"));
+        String sql = "select $1 from values(1),(3),(5),(7)";
+        try (ResultSet res = stmt.executeQuery(sql)) {
+          while (res.next()) {
+            System.out.println("value: " + res.getInt(1));
+          }
+          System.out.println("OK - " + counter);
+        }
       }
-      System.out.println("OK - " + counter);
-      con.close();
       counter++;
       break;
     }
@@ -595,13 +608,13 @@ public class CustomProxyLatestIT {
     System.setProperty("http.proxyPort", "3128");
     System.setProperty("http.nonProxyHosts", "*");
     System.setProperty("http.proxyProtocol", "http");
-    Connection con =
+    try (Connection con =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
-    assertEquals(HttpProtocol.HTTP, clientSettingsKey.getProxyHttpProtocol());
-    con.close();
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
+      assertEquals(HttpProtocol.HTTP, clientSettingsKey.getProxyHttpProtocol());
+    }
   }
 
   /**
@@ -621,13 +634,13 @@ public class CustomProxyLatestIT {
     System.setProperty("https.proxyPort", "3128");
     System.setProperty("http.nonProxyHosts", "*");
     System.setProperty("http.proxyProtocol", "https");
-    Connection con =
+    try (Connection con =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
-    assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
-    con.close();
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
+      assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
+    }
   }
 
   /**
@@ -646,13 +659,13 @@ public class CustomProxyLatestIT {
     System.setProperty("https.proxyPort", "3128");
     System.setProperty("http.nonProxyHosts", "*");
 
-    Connection con =
+    try (Connection con =
         DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
-    assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
-    con.close();
+            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      HttpClientSettingsKey clientSettingsKey = sfSession.getHttpClientKey();
+      assertEquals(HttpProtocol.HTTPS, clientSettingsKey.getProxyHttpProtocol());
+    }
   }
 
   public void runAzureProxyConnection(
@@ -701,47 +714,47 @@ public class CustomProxyLatestIT {
     Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
 
     String fileName = "test_copy.csv";
-    Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);
-    Statement stmt = con.createStatement();
-    stmt.execute("create or replace warehouse MEGTEST");
-    stmt.execute("use database MEGDB");
-    stmt.execute("use schema MEGSCHEMA");
-    stmt.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+    try (Connection con = DriverManager.getConnection(connectionUrl, _connectionProperties);
+        Statement stmt = con.createStatement()) {
+      try {
+        stmt.execute("create or replace warehouse MEGTEST");
+        stmt.execute("use database MEGDB");
+        stmt.execute("use schema MEGSCHEMA");
+        stmt.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
-    try {
-      String TEST_DATA_FILE = "orders_100.csv";
-      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      File destFolder = tmpFolder.newFolder();
-      String destFolderCanonicalPath = destFolder.getCanonicalPath();
-      String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
-      assertTrue(
-          "Failed to put a file",
-          stmt.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
-      findFile(stmt, "ls @testPutGet_stage/");
+        String TEST_DATA_FILE = "orders_100.csv";
+        String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+        File destFolder = tmpFolder.newFolder();
+        String destFolderCanonicalPath = destFolder.getCanonicalPath();
+        String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+        assertTrue(
+            "Failed to put a file",
+            stmt.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
+        findFile(stmt, "ls @testPutGet_stage/");
 
-      // download the file we just uploaded to stage
-      assertTrue(
-          "Failed to get a file",
-          stmt.execute(
-              "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+        // download the file we just uploaded to stage
+        assertTrue(
+            "Failed to get a file",
+            stmt.execute(
+                "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
 
-      // Make sure that the downloaded file exists, it should be gzip compressed
-      File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-      assert (downloaded.exists());
+        // Make sure that the downloaded file exists, it should be gzip compressed
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+        assert (downloaded.exists());
 
-      Process p =
-          Runtime.getRuntime()
-              .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-      p.waitFor();
+        Process p =
+            Runtime.getRuntime()
+                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
+        p.waitFor();
 
-      File original = new File(sourceFilePath);
-      File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
-      assert (original.length() == unzipped.length());
-    } catch (Throwable t) {
-      t.printStackTrace();
-    } finally {
-      stmt.execute("DROP STAGE IF EXISTS testGetPut_stage");
-      stmt.close();
+        File original = new File(sourceFilePath);
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
+        assert (original.length() == unzipped.length());
+      } catch (Throwable t) {
+        t.printStackTrace();
+      } finally {
+        stmt.execute("DROP STAGE IF EXISTS testGetPut_stage");
+      }
     }
   }
 }
