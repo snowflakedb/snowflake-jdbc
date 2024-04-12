@@ -29,7 +29,6 @@ import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -565,7 +564,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setSessionTimeZone(sessionTimeZone);
     Object obj = converter.toObject(index);
     int type = resultSetMetaData.getColumnType(columnIndex);
-    if (type == Types.STRUCT && StructureTypeHelper.isStructureTypeEnabled()) {
+    boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
+    if (type == Types.STRUCT && isStructuredType) {
       if (converter instanceof VarCharConverter) {
         return createJsonSqlInput(columnIndex, obj);
       } else if (converter instanceof StructConverter) {
@@ -629,7 +629,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
       int scale = fieldMetadata.getScale();
 
-      switch (columnSubType) {
+      switch (columnType) {
         case Types.INTEGER:
           return new SfSqlArray(
               columnSubType,

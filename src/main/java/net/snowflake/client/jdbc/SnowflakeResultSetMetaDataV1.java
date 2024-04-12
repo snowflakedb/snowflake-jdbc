@@ -255,4 +255,8 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   public int getColumnDisplaySize(int column) throws SQLException {
     return resultSetMetaData.getColumnDisplaySize(column);
   }
+
+  boolean isStructuredTypeColumn(int column) {
+    return resultSetMetaData.isStructuredTypeColumn(column);
+  }
 }
