@@ -195,7 +195,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                 .atZone(ZoneId.of("Europe/Warsaw"))
                 .toInstant(),
             object.getTimestampTz().toInstant());
-        // TODO uncomment after merge SNOW-928973: Date field is returning one day less when getting through getString method
+        // TODO uncomment after merge SNOW-928973: Date field is returning one day less when getting
+        // through getString method
         //                assertEquals(
         //                    Date.valueOf(LocalDate.of(2023, 12, 24)).toString(),
         //         object.getDate().toString());
