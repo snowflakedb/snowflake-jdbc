@@ -254,9 +254,10 @@ public class BindingDataIT extends AbstractDriverIT {
             connection.prepareStatement("select * from test_bind_time_calendar where c1 = ?")) {
           preparedStatement.setTime(1, timeVal, laCal);
 
-          ResultSet resultSet = preparedStatement.executeQuery();
-          assertThat(resultSet.next(), is(true));
-          assertThat(resultSet.getTime("C1", utcCal), is(timeVal));
+          try(ResultSet resultSet = preparedStatement.executeQuery()) {
+            assertThat(resultSet.next(), is(true));
+            assertThat(resultSet.getTime("C1", utcCal), is(timeVal));
+          }
         }
       } finally {
         statement.execute("drop table if exists test_bind_time_calendar");
@@ -346,9 +347,10 @@ public class BindingDataIT extends AbstractDriverIT {
             connection.prepareStatement("select * from test_bind_date where c1 = ?")) {
           preparedStatement.setDate(1, dateValue);
 
-          ResultSet resultSet = preparedStatement.executeQuery();
-          assertThat(resultSet.next(), is(true));
-          assertThat(resultSet.getDate("C1"), is(dateValue));
+          try(ResultSet resultSet = preparedStatement.executeQuery()) {
+            assertThat(resultSet.next(), is(true));
+            assertThat(resultSet.getDate("C1"), is(dateValue));
+          }
         }
       } finally {
         statement.execute("drop table if exists test_bind_date");
