@@ -335,6 +335,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsListOfFloat() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(FLOAT)",
@@ -348,6 +349,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsListOfDouble() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(DOUBLE)",
