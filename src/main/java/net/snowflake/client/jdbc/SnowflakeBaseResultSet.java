@@ -46,7 +46,6 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
-import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -1353,7 +1352,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
-    if (StructureTypeHelper.isStructureTypeEnabled()) {
+    if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLInput sqlInput = (SQLInput) getObject(columnIndex);
         if (sqlInput == null) {
@@ -1370,7 +1369,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         } else if (object instanceof JsonSqlInput) {
           JsonNode jsonNode = ((JsonSqlInput) object).getInput();
           return (T)
-              OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+                  OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {
+                  });
         } else {
           return (T) ((ArrowSqlInput) object).getInput();
         }
@@ -1410,13 +1410,17 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
+    logger.debug("public <T> List<T> getList(int columnIndex, Class<T> type)", false);
+    if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
+      throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    }
     T[] sqlInputs = getArray(columnIndex, type);
     return Arrays.asList(sqlInputs);
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T[] getArray(int columnIndex, Class<T> type)", false);
-    if (!StructureTypeHelper.isStructureTypeEnabled()) {
+    if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
     List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
@@ -1569,7 +1573,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> Map<String, T> getMap(int columnIndex, Class<T> type)", false);
-    if (!StructureTypeHelper.isStructureTypeEnabled()) {
+    if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
     List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
@@ -1587,9 +1591,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return null;
     }
     Map<String, Object> map =
-        (object instanceof JsonSqlInput)
-            ? mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type))
-            : (Map<String, Object>) object;
+        mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {

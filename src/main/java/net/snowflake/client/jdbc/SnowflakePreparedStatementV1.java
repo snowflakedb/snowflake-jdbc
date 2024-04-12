@@ -556,8 +556,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
                 connection.getSFBaseSession(),
                 ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
                 SqlState.FEATURE_NOT_SUPPORTED,
-                SnowflakeType.getJavaType(SnowflakeType.fromString(prevType)).name(),
-                SnowflakeType.getJavaType(SnowflakeType.fromString(newType)).name(),
+                SnowflakeType.getJavaType(SnowflakeType.fromString(prevType), false).name(),
+                SnowflakeType.getJavaType(SnowflakeType.fromString(newType), false).name(),
                 binding.getKey(),
                 row);
           }
