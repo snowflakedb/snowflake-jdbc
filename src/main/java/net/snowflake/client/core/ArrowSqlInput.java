@@ -14,6 +14,8 @@ import java.sql.SQLException;
 import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -21,6 +23,7 @@ import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.util.ThrowingBiFunction;
+import org.apache.arrow.vector.util.JsonStringArrayList;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
 @SnowflakeJdbcInternalApi
@@ -45,27 +48,26 @@ public class ArrowSqlInput extends BaseSqlInput {
 
   @Override
   public String readString() throws SQLException {
-    return withNextValue(
-        ((value, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          int columnSubType = fieldMetadata.getType();
-          int scale = fieldMetadata.getScale();
-          return mapSFExceptionToSQLException(
-              () ->
-                  converters
-                      .getStringConverter()
-                      .getString(value, columnType, columnSubType, scale));
-        }));
+    return withNextValue(((value, fieldMetadata) -> convertString(value, fieldMetadata)));
+  }
+
+  private String convertString(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    int columnSubType = fieldMetadata.getType();
+    int scale = fieldMetadata.getScale();
+    return mapSFExceptionToSQLException(
+        () -> converters.getStringConverter().getString(value, columnType, columnSubType, scale));
   }
 
   @Override
   public boolean readBoolean() throws SQLException {
-    return withNextValue(
-        (value, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getBooleanConverter().getBoolean(value, columnType));
-        });
+    return withNextValue((value, fieldMetadata) -> convertBoolean(value, fieldMetadata));
+  }
+
+  private Boolean convertBoolean(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getBooleanConverter().getBoolean(value, columnType));
   }
 
   @Override
@@ -79,50 +81,67 @@ public class ArrowSqlInput extends BaseSqlInput {
   public short readShort() throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getShort(value, columnType));
+          return convertShort(value, fieldMetadata);
         });
+  }
+
+  private Short convertShort(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getShort(value, columnType));
   }
 
   @Override
   public int readInt() throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getInt(value, columnType));
+          return convertInt(value, fieldMetadata);
         });
+  }
+
+  private Integer convertInt(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getInt(value, columnType));
   }
 
   @Override
   public long readLong() throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getLong(value, columnType));
+          return convertLong(value, fieldMetadata);
         });
+  }
+
+  private Long convertLong(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getLong(value, columnType));
   }
 
   @Override
   public float readFloat() throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getFloat(value, columnType));
+          return convertFloat(value, fieldMetadata);
         });
+  }
+
+  private Float convertFloat(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getFloat(value, columnType));
   }
 
   @Override
   public double readDouble() throws SQLException {
-    return withNextValue(
-        (value, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getDouble(value, columnType));
-        });
+    return withNextValue((value, fieldMetadata) -> convertDouble(value, fieldMetadata));
+  }
+
+  private Double convertDouble(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getDouble(value, columnType));
   }
 
   @Override
@@ -139,10 +158,10 @@ public class ArrowSqlInput extends BaseSqlInput {
 
   @Override
   public byte[] readBytes() throws SQLException {
-    return withNextValue((value, fieldMetadata) -> converToBytes(value, fieldMetadata));
+    return withNextValue((value, fieldMetadata) -> convertBytes(value, fieldMetadata));
   }
 
-  private byte[] converToBytes(Object value, FieldMetadata fieldMetadata) throws SQLException {
+  private byte[] convertBytes(Object value, FieldMetadata fieldMetadata) throws SQLException {
     int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
     int columnSubType = fieldMetadata.getType();
     int scale = fieldMetadata.getScale();
@@ -157,11 +176,11 @@ public class ArrowSqlInput extends BaseSqlInput {
           if (value == null) {
             return null;
           }
-          return formatDate((int) value);
+          return convertDate((int) value);
         });
   }
 
-  private Date formatDate(int value) throws SQLException {
+  private Date convertDate(int value) throws SQLException {
     return mapSFExceptionToSQLException(
         () ->
             converters.getStructuredTypeDateTimeConverter().getDate(value, TimeZone.getDefault()));
@@ -174,11 +193,11 @@ public class ArrowSqlInput extends BaseSqlInput {
           if (value == null) {
             return null;
           }
-          return formatTime((long) value, fieldMetadata);
+          return convertTime((long) value, fieldMetadata);
         });
   }
 
-  private Time formatTime(long value, FieldMetadata fieldMetadata) throws SQLException {
+  private Time convertTime(long value, FieldMetadata fieldMetadata) throws SQLException {
     return mapSFExceptionToSQLException(
         () -> {
           int scale = fieldMetadata.getScale();
@@ -188,10 +207,10 @@ public class ArrowSqlInput extends BaseSqlInput {
 
   @Override
   public Timestamp readTimestamp(TimeZone tz) throws SQLException {
-    return withNextValue((value, fieldMetadata) -> formatTimestamp(tz, value, fieldMetadata));
+    return withNextValue((value, fieldMetadata) -> convertTimestamp(tz, value, fieldMetadata));
   }
 
-  private Timestamp formatTimestamp(TimeZone tz, Object value, FieldMetadata fieldMetadata)
+  private Timestamp convertTimestamp(TimeZone tz, Object value, FieldMetadata fieldMetadata)
       throws SQLException {
     if (value == null) {
       return null;
@@ -220,54 +239,117 @@ public class ArrowSqlInput extends BaseSqlInput {
 
   @Override
   public <T> T readObject(Class<T> type) throws SQLException {
+    return readObject(type, TimeZone.getDefault());
+  }
+
+  @Override
+  public <T> T readObject(Class<T> type, TimeZone tz) throws SQLException {
+    return withNextValue((value, fieldMetadata) -> convertObject(type, tz, value, fieldMetadata));
+  }
+
+  private <T> T convertObject(Class<T> type, TimeZone tz, Object value, FieldMetadata fieldMetadata)
+      throws SQLException {
+    if (value == null) {
+      return null;
+    } else if (SQLData.class.isAssignableFrom(type)) {
+      ArrowSqlInput sqlInput =
+          new ArrowSqlInput(
+              (Map<String, Object>) value, session, converters, fieldMetadata.getFields());
+      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+      instance.readSQL(sqlInput, null);
+      return (T) instance;
+    } else if (Map.class.isAssignableFrom(type)) {
+      return (T) convertSqlInputToMap((SQLInput) value);
+    } else if (String.class.isAssignableFrom(type)) {
+      return (T) convertString(value, fieldMetadata);
+    } else if (Boolean.class.isAssignableFrom(type)) {
+      return (T) convertBoolean(value, fieldMetadata);
+    } else if (Byte.class.isAssignableFrom(type)) {
+      return (T) convertBytes(value, fieldMetadata);
+    } else if (Short.class.isAssignableFrom(type)) {
+      return (T) convertShort(value, fieldMetadata);
+    } else if (Integer.class.isAssignableFrom(type)) {
+      return (T) convertInt(value, fieldMetadata);
+    } else if (Long.class.isAssignableFrom(type)) {
+      return (T) convertLong(value, fieldMetadata);
+    } else if (Float.class.isAssignableFrom(type)) {
+      return (T) convertFloat(value, fieldMetadata);
+    } else if (Double.class.isAssignableFrom(type)) {
+      return (T) convertDouble(value, fieldMetadata);
+    } else if (Date.class.isAssignableFrom(type)) {
+      return (T) convertDate((int) value);
+    } else if (Time.class.isAssignableFrom(type)) {
+      return (T) convertTime((long) value, fieldMetadata);
+    } else if (Timestamp.class.isAssignableFrom(type)) {
+      return (T) convertTimestamp(tz, value, fieldMetadata);
+    } else if (BigDecimal.class.isAssignableFrom(type)) {
+      return (T) convertToBigDecimal(value, fieldMetadata);
+    } else if (byte[].class.isAssignableFrom(type)) {
+      return (T) convertBytes(value, fieldMetadata);
+    } else {
+      logger.debug(
+          "Unsupported type passed to readObject(int columnIndex,Class<T> type): "
+              + type.getName());
+      throw new SQLException(
+          "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+              + type.getName());
+    }
+  }
+
+  @Override
+  public <T> List<T> readList(Class<T> type) throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
-          if (SQLData.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            } else {
-              ArrowSqlInput sqlInput =
-                  new ArrowSqlInput(
-                      (Map<String, Object>) value, session, converters, fieldMetadata.getFields());
-              SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-              instance.readSQL(sqlInput, null);
-              return (T) instance;
-            }
-          } else if (value == null) {
+          if (value == null) {
             return null;
-          } else if (Map.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            } else {
-              return (T) convertSqlInputToMap((SQLInput) value);
-            }
-          } else if (String.class.isAssignableFrom(type)
-              || Boolean.class.isAssignableFrom(type)
-              || Byte.class.isAssignableFrom(type)
-              || Short.class.isAssignableFrom(type)
-              || Integer.class.isAssignableFrom(type)
-              || Long.class.isAssignableFrom(type)
-              || Float.class.isAssignableFrom(type)
-              || Double.class.isAssignableFrom(type)) {
-            return (T) value;
-          } else if (Date.class.isAssignableFrom(type)) {
-            return (T) formatDate((int) value);
-          } else if (Time.class.isAssignableFrom(type)) {
-            return (T) formatTime((long) value, fieldMetadata);
-          } else if (Timestamp.class.isAssignableFrom(type)) {
-            return (T) formatTimestamp(TimeZone.getDefault(), value, fieldMetadata);
-          } else if (BigDecimal.class.isAssignableFrom(type)) {
-            return (T) convertToBigDecimal(value, fieldMetadata);
-          } else if (byte[].class.isAssignableFrom(type)) {
-            return (T) converToBytes(value, fieldMetadata);
-          } else {
-            logger.debug(
-                "Unsupported type passed to readObject(int columnIndex,Class<T> type): "
-                    + type.getName());
-            throw new SQLException(
-                "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
-                    + type.getName());
           }
+          List<T> result = new ArrayList();
+          JsonStringArrayList<Map> value1 = (JsonStringArrayList) value;
+          for (Object ob : value1) {
+            result.add(
+                convertObject(type, TimeZone.getDefault(), ob, fieldMetadata.getFields().get(0)));
+          }
+          return result;
+        });
+  }
+
+  @Override
+  public <T> T[] readArray(Class<T> type) throws SQLException {
+    return withNextValue(
+        (value, fieldMetadata) -> {
+          if (value == null) {
+            return null;
+          }
+          JsonStringArrayList<Map> internalValues = (JsonStringArrayList) value;
+          T[] array = (T[]) java.lang.reflect.Array.newInstance(type, internalValues.size());
+          int counter = 0;
+          for (Object ob : internalValues) {
+            array[counter++] =
+                convertObject(type, TimeZone.getDefault(), ob, fieldMetadata.getFields().get(0));
+          }
+          return array;
+        });
+  }
+
+  @Override
+  public <T> Map<String, T> readMap(Class<T> type) throws SQLException {
+    return withNextValue(
+        (value, fieldMetadata) -> {
+          if (value == null) {
+            return null;
+          }
+          Map<String, T> result = new HashMap();
+          JsonStringArrayList<Map> value1 = (JsonStringArrayList) value;
+          for (Map map : value1) {
+            result.put(
+                map.get("key").toString(),
+                convertObject(
+                    type,
+                    TimeZone.getDefault(),
+                    map.get("value"),
+                    fieldMetadata.getFields().get(1)));
+          }
+          return result;
         });
   }
 
