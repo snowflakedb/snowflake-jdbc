@@ -164,7 +164,7 @@ public class CustomProxyLatestIT {
             DriverManager.getConnection(
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
         Statement stmt = con.createStatement();
-        ResultSet rs = stmt.executeQuery("select 1"); ) {
+        ResultSet rs = stmt.executeQuery("select 1")) {
       rs.next();
       assertEquals(1, rs.getInt(1));
     }
@@ -752,8 +752,9 @@ public class CustomProxyLatestIT {
         assert (original.length() == unzipped.length());
       } catch (Throwable t) {
         t.printStackTrace();
+      } finally {
+        stmt.execute("DROP STAGE IF EXISTS testGetPut_stage");
       }
-      stmt.execute("DROP STAGE IF EXISTS testGetPut_stage");
     }
   }
 }

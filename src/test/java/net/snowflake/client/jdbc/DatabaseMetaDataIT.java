@@ -213,80 +213,84 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTables() throws Throwable {
-    try (Connection connection = getConnection()) {
+    Set<String> tables = null;
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
       final String targetView = "V0";
+      try {
+        statement.execute("create or replace table " + targetTable + "(C1 int)");
+        statement.execute("create or replace view " + targetView + " as select 1 as C");
 
-      connection.createStatement().execute("create or replace table " + targetTable + "(C1 int)");
-      connection
-          .createStatement()
-          .execute("create or replace view " + targetView + " as select 1 as C");
+        DatabaseMetaData metaData = connection.getMetaData();
 
-      DatabaseMetaData metaData = connection.getMetaData();
+        // match table
+        try (ResultSet resultSet =
+            metaData.getTables(database, schema, "%", new String[] {"TABLE"})) {
+          verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_TABLES);
+          tables = new HashSet<>();
+          while (resultSet.next()) {
+            tables.add(resultSet.getString(3));
+          }
+          assertTrue(tables.contains("T0"));
+        }
+        // exact match table
+        try (ResultSet resultSet =
+            metaData.getTables(database, schema, targetTable, new String[] {"TABLE"})) {
+          tables = new HashSet<>();
+          while (resultSet.next()) {
+            tables.add(resultSet.getString(3));
+          }
+          assertEquals(targetTable, tables.iterator().next());
+        }
+        // match view
+        try (ResultSet resultSet =
+            metaData.getTables(database, schema, "%", new String[] {"VIEW"})) {
+          Set<String> views = new HashSet<>();
+          while (resultSet.next()) {
+            views.add(resultSet.getString(3));
+          }
+          assertTrue(views.contains(targetView));
+        }
 
-      ResultSet resultSet;
-
-      // match table
-      resultSet = metaData.getTables(database, schema, "%", new String[] {"TABLE"});
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_TABLES);
-      Set<String> tables = new HashSet<>();
-      while (resultSet.next()) {
-        tables.add(resultSet.getString(3));
+        try (ResultSet resultSet = metaData.getTablePrivileges(database, schema, targetTable)) {
+          assertEquals(1, getSizeOfResultSet(resultSet));
+        }
+      } finally {
+        statement.execute("drop table if exists " + targetTable);
+        statement.execute("drop view if exists " + targetView);
       }
-      assertTrue(tables.contains("T0"));
-
-      // exact match table
-      resultSet = metaData.getTables(database, schema, targetTable, new String[] {"TABLE"});
-      tables = new HashSet<>();
-      while (resultSet.next()) {
-        tables.add(resultSet.getString(3));
-      }
-      assertEquals(targetTable, tables.iterator().next());
-
-      // match view
-      resultSet = metaData.getTables(database, schema, "%", new String[] {"VIEW"});
-      Set<String> views = new HashSet<>();
-      while (resultSet.next()) {
-        views.add(resultSet.getString(3));
-      }
-      assertTrue(views.contains(targetView));
-
-      resultSet = metaData.getTablePrivileges(database, schema, targetTable);
-      assertEquals(1, getSizeOfResultSet(resultSet));
-
-      connection.createStatement().execute("drop table if exists " + targetTable);
-      connection.createStatement().execute("drop view if exists " + targetView);
     }
   }
 
   @Test
   public void testGetPrimarykeys() throws Throwable {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
+      try {
+        statement.execute(
+            "create or replace table " + targetTable + "(C1 int primary key, C2 string)");
 
-      connection
-          .createStatement()
-          .execute("create or replace table " + targetTable + "(C1 int primary key, C2 string)");
+        DatabaseMetaData metaData = connection.getMetaData();
 
-      DatabaseMetaData metaData = connection.getMetaData();
-
-      ResultSet resultSet;
-
-      resultSet = metaData.getPrimaryKeys(database, schema, targetTable);
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PRIMARY_KEYS);
-      assertTrue(resultSet.next());
-      assertEquals(database, resultSet.getString("TABLE_CAT"));
-      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
-      assertEquals(targetTable, resultSet.getString("TABLE_NAME"));
-      assertEquals("C1", resultSet.getString("COLUMN_NAME"));
-      assertEquals(1, resultSet.getInt("KEY_SEQ"));
-      assertNotEquals("", resultSet.getString("PK_NAME"));
-
-      connection.createStatement().execute("drop table if exists " + targetTable);
+        try (ResultSet resultSet = metaData.getPrimaryKeys(database, schema, targetTable)) {
+          verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PRIMARY_KEYS);
+          assertTrue(resultSet.next());
+          assertEquals(database, resultSet.getString("TABLE_CAT"));
+          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+          assertEquals(targetTable, resultSet.getString("TABLE_NAME"));
+          assertEquals("C1", resultSet.getString("COLUMN_NAME"));
+          assertEquals(1, resultSet.getInt("KEY_SEQ"));
+          assertNotEquals("", resultSet.getString("PK_NAME"));
+        }
+      } finally {
+        statement.execute("drop table if exists " + targetTable);
+      }
     }
   }
 
@@ -332,46 +336,47 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetImportedKeys() throws Throwable {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
+      try {
+        statement.execute(
+            "create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
+        statement.execute(
+            "create or replace table "
+                + targetTable2
+                + "(C1 int primary key, C2 string, C3 int references "
+                + targetTable1
+                + ")");
 
-      connection
-          .createStatement()
-          .execute("create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table "
-                  + targetTable2
-                  + "(C1 int primary key, C2 string, C3 int references "
-                  + targetTable1
-                  + ")");
+        DatabaseMetaData metaData = connection.getMetaData();
 
-      DatabaseMetaData metaData = connection.getMetaData();
-
-      ResultSet resultSet = metaData.getImportedKeys(database, schema, targetTable2);
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
-      assertTrue(resultSet.next());
-      assertEquals(database, resultSet.getString("PKTABLE_CAT"));
-      assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
-      assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
-      assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
-      assertEquals(database, resultSet.getString("FKTABLE_CAT"));
-      assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
-      assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
-      assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
-      assertEquals(1, resultSet.getInt("KEY_SEQ"));
-      assertNotEquals("", resultSet.getString("PK_NAME"));
-      assertNotEquals("", resultSet.getString("FK_NAME"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-      assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
-
-      connection.createStatement().execute("drop table if exists " + targetTable1);
-      connection.createStatement().execute("drop table if exists " + targetTable2);
+        try (ResultSet resultSet = metaData.getImportedKeys(database, schema, targetTable2)) {
+          verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
+          assertTrue(resultSet.next());
+          assertEquals(database, resultSet.getString("PKTABLE_CAT"));
+          assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
+          assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
+          assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
+          assertEquals(database, resultSet.getString("FKTABLE_CAT"));
+          assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
+          assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
+          assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
+          assertEquals(1, resultSet.getInt("KEY_SEQ"));
+          assertNotEquals("", resultSet.getString("PK_NAME"));
+          assertNotEquals("", resultSet.getString("FK_NAME"));
+          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+          assertEquals(
+              DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+        }
+      } finally {
+        statement.execute("drop table if exists " + targetTable1);
+        statement.execute("drop table if exists " + targetTable2);
+      }
     }
   }
 
@@ -424,103 +429,117 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetCrossReferences() throws Throwable {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
+      try {
+        statement.execute(
+            "create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
+        statement.execute(
+            "create or replace table "
+                + targetTable2
+                + "(C1 int primary key, C2 string, C3 int references "
+                + targetTable1
+                + ")");
 
-      connection
-          .createStatement()
-          .execute("create or replace table " + targetTable1 + "(C1 int primary key, C2 string)");
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table "
-                  + targetTable2
-                  + "(C1 int primary key, C2 string, C3 int references "
-                  + targetTable1
-                  + ")");
+        DatabaseMetaData metaData = connection.getMetaData();
 
-      DatabaseMetaData metaData = connection.getMetaData();
+        try (ResultSet resultSet =
+            metaData.getCrossReference(
+                database, schema, targetTable1, database, schema, targetTable2)) {
+          verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
 
-      try (ResultSet resultSet =
-          metaData.getCrossReference(
-              database, schema, targetTable1, database, schema, targetTable2)) {
-        verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
-
-        assertTrue(resultSet.next());
-        assertEquals(database, resultSet.getString("PKTABLE_CAT"));
-        assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
-        assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
-        assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
-        assertEquals(database, resultSet.getString("FKTABLE_CAT"));
-        assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
-        assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
-        assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
-        assertEquals(1, resultSet.getInt("KEY_SEQ"));
-        assertNotEquals("", resultSet.getString("PK_NAME"));
-        assertNotEquals("", resultSet.getString("FK_NAME"));
-        assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-        assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-        assertEquals(
-            DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+          assertTrue(resultSet.next());
+          assertEquals(database, resultSet.getString("PKTABLE_CAT"));
+          assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
+          assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
+          assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
+          assertEquals(database, resultSet.getString("FKTABLE_CAT"));
+          assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
+          assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
+          assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
+          assertEquals(1, resultSet.getInt("KEY_SEQ"));
+          assertNotEquals("", resultSet.getString("PK_NAME"));
+          assertNotEquals("", resultSet.getString("FK_NAME"));
+          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+          assertEquals(
+              DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+        }
+      } finally {
+        statement.execute("drop table if exists " + targetTable1);
+        statement.execute("drop table if exists " + targetTable2);
       }
-      connection.createStatement().execute("drop table if exists " + targetTable1);
-      connection.createStatement().execute("drop table if exists " + targetTable2);
     }
   }
 
   @Test
   public void testGetObjectsDoesNotExists() throws Throwable {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
       final String targetTable = "T0";
       final String targetView = "V0";
+      try {
+        statement.execute("create or replace table " + targetTable + "(C1 int)");
+        statement.execute("create or replace view " + targetView + " as select 1 as C");
 
-      connection.createStatement().execute("create or replace table " + targetTable + "(C1 int)");
-      connection
-          .createStatement()
-          .execute("create or replace view " + targetView + " as select 1 as C");
+        DatabaseMetaData metaData = connection.getMetaData();
 
-      DatabaseMetaData metaData = connection.getMetaData();
+        // sanity check if getTables really works.
+        try (ResultSet resultSet = metaData.getTables(database, schema, "%", null)) {
+          assertTrue(getSizeOfResultSet(resultSet) > 0);
+        }
 
-      // sanity check if getTables really works.
-      ResultSet resultSet = metaData.getTables(database, schema, "%", null);
-      assertTrue(getSizeOfResultSet(resultSet) > 0);
+        // invalid object type. empty result is expected.
+        try (ResultSet resultSet =
+            metaData.getTables(database, schema, "%", new String[] {"INVALID_TYPE"})) {
+          assertEquals(0, getSizeOfResultSet(resultSet));
+        }
 
-      // invalid object type. empty result is expected.
-      resultSet = metaData.getTables(database, schema, "%", new String[] {"INVALID_TYPE"});
-      assertEquals(0, getSizeOfResultSet(resultSet));
+        // rest of the cases should return empty results.
+        try (ResultSet resultSet = metaData.getSchemas("DB_NOT_EXIST", "SCHEMA_NOT_EXIST")) {
+          assertFalse(resultSet.next());
+          assertTrue(resultSet.isClosed());
+        }
 
-      // rest of the cases should return empty results.
-      resultSet = metaData.getSchemas("DB_NOT_EXIST", "SCHEMA_NOT_EXIST");
-      assertFalse(resultSet.next());
-      assertTrue(resultSet.isClosed());
+        try (ResultSet resultSet =
+            metaData.getTables("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", null)) {
+          assertFalse(resultSet.next());
+        }
 
-      resultSet = metaData.getTables("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", null);
-      assertFalse(resultSet.next());
+        try (ResultSet resultSet =
+            metaData.getTables(database, "SCHEMA\\_NOT\\_EXIST", "%", null)) {
+          assertFalse(resultSet.next());
+        }
 
-      resultSet = metaData.getTables(database, "SCHEMA\\_NOT\\_EXIST", "%", null);
-      assertFalse(resultSet.next());
+        try (ResultSet resultSet =
+            metaData.getColumns("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", "%")) {
+          assertFalse(resultSet.next());
+        }
 
-      resultSet = metaData.getColumns("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", "%");
-      assertFalse(resultSet.next());
+        try (ResultSet resultSet =
+            metaData.getColumns(database, "SCHEMA\\_NOT\\_EXIST", "%", "%")) {
+          assertFalse(resultSet.next());
+        }
 
-      resultSet = metaData.getColumns(database, "SCHEMA\\_NOT\\_EXIST", "%", "%");
-      assertFalse(resultSet.next());
-
-      resultSet = metaData.getColumns(database, schema, "TBL\\_NOT\\_EXIST", "%");
-      assertFalse(resultSet.next());
-      connection.createStatement().execute("drop table if exists " + targetTable);
-      connection.createStatement().execute("drop view if exists " + targetView);
+        try (ResultSet resultSet =
+            metaData.getColumns(database, schema, "TBL\\_NOT\\_EXIST", "%")) {
+          assertFalse(resultSet.next());
+        }
+      } finally {
+        statement.execute("drop table if exists " + targetTable);
+        statement.execute("drop view if exists " + targetView);
+      }
     }
   }
 
   @Test
   public void testTypeInfo() throws SQLException {
-
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       ResultSet resultSet = metaData.getTypeInfo();
@@ -551,60 +570,68 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals("procedure", metaData.getProcedureTerm());
       // no stored procedure support
       assertTrue(metaData.supportsStoredProcedures());
-      ResultSet resultSet;
-      resultSet = metaData.getProcedureColumns("%", "%", "%", "%");
-      assertEquals(0, getSizeOfResultSet(resultSet));
-      resultSet = metaData.getProcedures("%", "%", "%");
-      assertEquals(0, getSizeOfResultSet(resultSet));
+      try (ResultSet resultSet = metaData.getProcedureColumns("%", "%", "%", "%")) {
+        assertEquals(0, getSizeOfResultSet(resultSet));
+      }
+      try (ResultSet resultSet = metaData.getProcedures("%", "%", "%")) {
+        assertEquals(0, getSizeOfResultSet(resultSet));
+      }
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTablePrivileges() throws Exception {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String database = connection.getCatalog();
       String schema = connection.getSchema();
-      connection
-          .createStatement()
-          .execute(
-              "create or replace table PRIVTEST(colA string, colB number, colC " + "timestamp)");
-      DatabaseMetaData metaData = connection.getMetaData();
-      ResultSet resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST");
-      verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES);
-      resultSet.next();
-      assertEquals(database, resultSet.getString("TABLE_CAT"));
-      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
-      assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-      assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-      assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
-      assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
-      assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
-      // grant select privileges to table for role security admin and test that a new row of table
-      // privileges is added
-      connection.createStatement().execute("grant select on table PRIVTEST to role securityadmin");
-      resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST");
-      resultSet.next();
-      assertEquals(database, resultSet.getString("TABLE_CAT"));
-      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
-      assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-      assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-      assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
-      assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
-      assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
-      resultSet.next();
-      assertEquals(database, resultSet.getString("TABLE_CAT"));
-      assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
-      assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-      assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-      assertEquals("SECURITYADMIN", resultSet.getString("GRANTEE"));
-      assertEquals("SELECT", resultSet.getString("PRIVILEGE"));
-      assertEquals("NO", resultSet.getString("IS_GRANTABLE"));
-      // if tableNamePattern is null, empty resultSet is returned.
-      resultSet = metaData.getTablePrivileges(null, null, null);
-      assertEquals(7, resultSet.getMetaData().getColumnCount());
-      assertEquals(0, getSizeOfResultSet(resultSet));
-      connection.createStatement().execute("drop table if exists PRIVTEST");
+      try {
+        statement.execute(
+            "create or replace table PRIVTEST(colA string, colB number, colC " + "timestamp)");
+        DatabaseMetaData metaData = connection.getMetaData();
+        try (ResultSet resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST")) {
+          verifyResultSetMetaDataColumns(
+              resultSet, DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES);
+          resultSet.next();
+          assertEquals(database, resultSet.getString("TABLE_CAT"));
+          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+          assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
+          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
+          assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+          assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
+          assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
+        }
+        // grant select privileges to table for role security admin and test that a new row of table
+        // privileges is added
+        statement.execute("grant select on table PRIVTEST to role securityadmin");
+        try (ResultSet resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST")) {
+          resultSet.next();
+          assertEquals(database, resultSet.getString("TABLE_CAT"));
+          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+          assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
+          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
+          assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+          assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
+          assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
+          resultSet.next();
+          assertEquals(database, resultSet.getString("TABLE_CAT"));
+          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+          assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
+          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
+          assertEquals("SECURITYADMIN", resultSet.getString("GRANTEE"));
+          assertEquals("SELECT", resultSet.getString("PRIVILEGE"));
+          assertEquals("NO", resultSet.getString("IS_GRANTABLE"));
+        }
+
+        // if tableNamePattern is null, empty resultSet is returned.
+        try (ResultSet resultSet = metaData.getTablePrivileges(null, null, null)) {
+          assertEquals(7, resultSet.getMetaData().getColumnCount());
+          assertEquals(0, getSizeOfResultSet(resultSet));
+        }
+      } finally {
+        statement.execute("drop table if exists PRIVTEST");
+      }
     }
   }
 
@@ -802,14 +829,14 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
 
-      ResultSet resultSet;
       // index is not supported.
-      resultSet = metaData.getIndexInfo(null, null, null, true, true);
-      assertEquals(0, getSizeOfResultSet(resultSet));
-
+      try (ResultSet resultSet = metaData.getIndexInfo(null, null, null, true, true)) {
+        assertEquals(0, getSizeOfResultSet(resultSet));
+      }
       // UDT is not supported.
-      resultSet = metaData.getUDTs(null, null, null, new int[] {});
-      assertEquals(0, getSizeOfResultSet(resultSet));
+      try (ResultSet resultSet = metaData.getUDTs(null, null, null, new int[] {})) {
+        assertEquals(0, getSizeOfResultSet(resultSet));
+      }
     }
   }
 

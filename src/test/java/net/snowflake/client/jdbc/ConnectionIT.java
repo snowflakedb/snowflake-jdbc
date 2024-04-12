@@ -165,14 +165,15 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Test
   public void testSetCatalogSchema() throws Throwable {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String db = connection.getCatalog();
       String schema = connection.getSchema();
       connection.setCatalog(db);
       connection.setSchema("PUBLIC");
 
       // get the current schema
-      try (ResultSet rst = connection.createStatement().executeQuery("select current_schema()")) {
+      try (ResultSet rst = statement.executeQuery("select current_schema()")) {
         assertTrue(rst.next());
         assertEquals("PUBLIC", rst.getString(1));
         assertEquals(db, connection.getCatalog());
@@ -180,7 +181,7 @@ public class ConnectionIT extends BaseJDBCTest {
       }
       // get the current schema
       connection.setSchema(schema);
-      try (ResultSet rst = connection.createStatement().executeQuery("select current_schema()")) {
+      try (ResultSet rst = statement.executeQuery("select current_schema()")) {
         assertTrue(rst.next());
         assertEquals(schema, rst.getString(1));
       }
@@ -215,37 +216,37 @@ public class ConnectionIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testConnectionGetAndSetDBAndSchema() throws SQLException {
+    final String SECOND_DATABASE = "SECOND_DATABASE";
+    final String SECOND_SCHEMA = "SECOND_SCHEMA";
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
+      try {
+        final String database = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").toUpperCase();
+        final String schema = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").toUpperCase();
 
-      final String database = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").toUpperCase();
-      final String schema = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").toUpperCase();
+        assertEquals(database, con.getCatalog());
+        assertEquals(schema, con.getSchema());
 
-      assertEquals(database, con.getCatalog());
-      assertEquals(schema, con.getSchema());
+        statement.execute(String.format("create or replace database %s", SECOND_DATABASE));
+        statement.execute(String.format("create or replace schema %s", SECOND_SCHEMA));
+        statement.execute(String.format("use database %s", database));
 
-      final String SECOND_DATABASE = "SECOND_DATABASE";
-      final String SECOND_SCHEMA = "SECOND_SCHEMA";
+        // TODO: use the other database and schema
+        con.setCatalog(SECOND_DATABASE);
+        assertEquals(SECOND_DATABASE, con.getCatalog());
+        assertEquals("PUBLIC", con.getSchema());
 
-      statement.execute(String.format("create or replace database %s", SECOND_DATABASE));
-      statement.execute(String.format("create or replace schema %s", SECOND_SCHEMA));
-      statement.execute(String.format("use database %s", database));
+        con.setSchema(SECOND_SCHEMA);
+        assertEquals(SECOND_SCHEMA, con.getSchema());
 
-      // TODO: use the other database and schema
-      con.setCatalog(SECOND_DATABASE);
-      assertEquals(SECOND_DATABASE, con.getCatalog());
-      assertEquals("PUBLIC", con.getSchema());
+        statement.execute(String.format("use database %s", database));
+        statement.execute(String.format("use schema %s", schema));
 
-      con.setSchema(SECOND_SCHEMA);
-      assertEquals(SECOND_SCHEMA, con.getSchema());
-
-      statement.execute(String.format("use database %s", database));
-      statement.execute(String.format("use schema %s", schema));
-
-      assertEquals(database, con.getCatalog());
-      assertEquals(schema, con.getSchema());
-
-      statement.execute(String.format("drop database if exists %s", SECOND_DATABASE));
+        assertEquals(database, con.getCatalog());
+        assertEquals(schema, con.getSchema());
+      } finally {
+        statement.execute(String.format("drop database if exists %s", SECOND_DATABASE));
+      }
     }
   }
 
@@ -329,8 +330,8 @@ public class ConnectionIT extends BaseJDBCTest {
     ds.setAccount(account);
     ds.setSsl("on".equals(ssl));
 
-    try (Connection connection = ds.getConnection(user, password)) {
-      ResultSet resultSet = connection.createStatement().executeQuery("select 1");
+    try (Connection connection = ds.getConnection(user, password);
+        ResultSet resultSet = connection.createStatement().executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
     }
@@ -589,13 +590,12 @@ public class ConnectionIT extends BaseJDBCTest {
     paramProperties.put("CLIENT_PREFETCH_THREADS", "6");
     paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 48);
     paramProperties.put("CLIENT_MEMORY_LIMIT", 1000);
-    try (Connection connection = getConnection(paramProperties)) {
+    try (Connection connection = getConnection(paramProperties);
+        Statement statement = connection.createStatement()) {
       for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
         String key = (String) enums.nextElement();
         try (ResultSet rs =
-            connection
-                .createStatement()
-                .executeQuery(String.format("show parameters like '%s'", key))) {
+            statement.executeQuery(String.format("show parameters like '%s'", key))) {
           rs.next();
           String value = rs.getString("value");
           assertThat(key, value, equalTo(paramProperties.get(key).toString()));
@@ -623,13 +623,11 @@ public class ConnectionIT extends BaseJDBCTest {
         "net.snowflake.jdbc.clientMemoryLimit",
         paramProperties.get("CLIENT_MEMORY_LIMIT").toString());
 
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
         String key = (String) enums.nextElement();
-        ResultSet rs =
-            connection
-                .createStatement()
-                .executeQuery(String.format("show parameters like '%s'", key));
+        ResultSet rs = statement.executeQuery(String.format("show parameters like '%s'", key));
         rs.next();
         String value = rs.getString("value");
         assertThat(key, value, equalTo(paramProperties.get(key).toString()));
@@ -666,13 +664,12 @@ public class ConnectionIT extends BaseJDBCTest {
     paramProperties.put("CLIENT_RESULT_CHUNK_SIZE", 64);
     paramProperties.put("CLIENT_MEMORY_LIMIT", 2000L);
 
-    try (Connection connection = getConnection(paramProperties)) {
+    try (Connection connection = getConnection(paramProperties);
+        Statement statement = connection.createStatement()) {
       for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
         String key = (String) enums.nextElement();
         try (ResultSet rs =
-            connection
-                .createStatement()
-                .executeQuery(String.format("show parameters like '%s'", key))) {
+            statement.executeQuery(String.format("show parameters like '%s'", key))) {
           rs.next();
           String value = rs.getString("value");
           assertThat(key, value, equalTo(paramProperties.get(key).toString()));
@@ -692,15 +689,14 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testHeartbeatFrequencyTooLarge() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 4000);
-    try (Connection connection = getConnection(paramProperties)) {
+    try (Connection connection = getConnection(paramProperties);
+        Statement statement = connection.createStatement()) {
       connection.getClientInfo(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY);
 
       for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
         String key = (String) enums.nextElement();
         try (ResultSet rs =
-            connection
-                .createStatement()
-                .executeQuery(String.format("show parameters like '%s'", key))) {
+            statement.executeQuery(String.format("show parameters like '%s'", key))) {
           rs.next();
           String value = rs.getString("value");
 
@@ -982,7 +978,7 @@ public class ConnectionIT extends BaseJDBCTest {
     props.put("role", "accountadmin");
     props.put("timezone", "UTC");
     try (Connection connection = DriverManager.getConnection(uri, props);
-        Statement statement = connection.createStatement(); ) {
+        Statement statement = connection.createStatement()) {
       String encodePublicKey = Base64.encodeBase64String(publicKey.getEncoded());
       statement.execute(
           String.format("alter user %s set rsa_public_key='%s'", "admin", encodePublicKey));
@@ -1024,29 +1020,22 @@ public class ConnectionIT extends BaseJDBCTest {
     Properties connProps = kvMap2Properties(kvParams, false);
     String uri = kvParams.get("uri");
 
-    Connection con = DriverManager.getConnection(uri, connProps);
-    con.createStatement().execute("select 1");
-    con.close();
+    try (Connection con = DriverManager.getConnection(uri, connProps)) {
+      con.createStatement().execute("select 1");
+    }
   }
 
   private class ConcurrentConnections implements Runnable {
-    Connection con = null;
 
     ConcurrentConnections() {}
 
     @Override
     public void run() {
-      try {
-        con = getConnection();
-        con.createStatement().executeQuery("select * from bigTable");
-        con.close();
+      try (Connection con = getConnection();
+          Statement statement = con.createStatement()) {
+        statement.executeQuery("select * from bigTable");
 
       } catch (SQLException ex) {
-        try {
-          con.close();
-        } catch (SQLException e) {
-          e.printStackTrace();
-        }
         ex.printStackTrace();
       }
     }

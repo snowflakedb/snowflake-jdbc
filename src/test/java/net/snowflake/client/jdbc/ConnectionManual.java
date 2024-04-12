@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SessionUtil;
@@ -94,29 +95,31 @@ public class ConnectionManual {
   }
 
   private void setTokenValidityForTest() throws Throwable {
-    Connection con = getAdminConnection();
-    con.createStatement()
-        .execute(
-            "alter system set "
-                + "MASTER_TOKEN_VALIDITY=60, "
-                + "SESSION_TOKEN_VALIDITY=30, "
-                + "ID_TOKEN_VALIDITY=60");
+    try (Connection con = getAdminConnection();
+        Statement statement = con.createStatement()) {
+      statement.execute(
+          "alter system set "
+              + "MASTER_TOKEN_VALIDITY=60, "
+              + "SESSION_TOKEN_VALIDITY=30, "
+              + "ID_TOKEN_VALIDITY=60");
 
-    // ALLOW_UNPROTECTED_ID_TOKEN will be deprecated in the future
-    // con.createStatement().execute("alter account testaccount set " +
-    //                                "ALLOW_UNPROTECTED_ID_TOKEN=true;");
-    con.createStatement().execute("alter account testaccount set ID_TOKEN_FEATURE_ENABLED=true;");
-    con.createStatement().execute("alter account testaccount set ALLOW_ID_TOKEN=true;");
+      // ALLOW_UNPROTECTED_ID_TOKEN will be deprecated in the future
+      // con.createStatement().execute("alter account testaccount set " +
+      //                                "ALLOW_UNPROTECTED_ID_TOKEN=true;");
+      statement.execute("alter account testaccount set ID_TOKEN_FEATURE_ENABLED=true;");
+      statement.execute("alter account testaccount set ALLOW_ID_TOKEN=true;");
+    }
   }
 
   private void resetTokenValidity() throws Throwable {
-    Connection con = getAdminConnection();
-    con.createStatement()
-        .execute(
-            "alter system set "
-                + "MASTER_TOKEN_VALIDITY=default, "
-                + "SESSION_TOKEN_VALIDITY=default, "
-                + "ID_TOKEN_VALIDITY=default");
+    try (Connection con = getAdminConnection()) {
+      con.createStatement()
+          .execute(
+              "alter system set "
+                  + "MASTER_TOKEN_VALIDITY=default, "
+                  + "SESSION_TOKEN_VALIDITY=default, "
+                  + "ID_TOKEN_VALIDITY=default");
+    }
   }
 
   private void testSSO() throws Throwable {
@@ -134,61 +137,62 @@ public class ConnectionManual {
     System.out.println(
         "[INFO] 1st connection gets id token and stores in the cache file. "
             + "This popup a browser to SSO login");
-    Connection con1 = DriverManager.getConnection(url, properties);
-    assert database.equalsIgnoreCase(con1.getCatalog());
-    assert schema1.equalsIgnoreCase(con1.getSchema());
-    con1.close();
+    try (Connection con1 = DriverManager.getConnection(url, properties)) {
+      assert database.equalsIgnoreCase(con1.getCatalog());
+      assert schema1.equalsIgnoreCase(con1.getSchema());
+    }
 
     System.out.println(
         "[INFO] 2nd connection reads the cache file and uses the id token. "
             + "This should not popups a browser.");
     properties.setProperty("database", database);
     properties.setProperty("schema", schema1);
-    Connection con2 = DriverManager.getConnection(url, properties);
-    assert database.equalsIgnoreCase(con2.getCatalog());
-    assert schema1.equalsIgnoreCase(con2.getSchema());
+    try (Connection con2 = DriverManager.getConnection(url, properties);
+        Statement statement = con2.createStatement()) {
+      assert database.equalsIgnoreCase(con2.getCatalog());
+      assert schema1.equalsIgnoreCase(con2.getSchema());
 
-    System.out.println("[INFO] Running a statement... 10 seconds");
-    con2.createStatement().execute("select seq8() from table(generator(timelimit=>10))");
-    assert database.equalsIgnoreCase(con2.getCatalog());
-    assert schema1.equalsIgnoreCase(con2.getSchema());
+      System.out.println("[INFO] Running a statement... 10 seconds");
+      statement.execute("select seq8() from table(generator(timelimit=>10))");
+      assert database.equalsIgnoreCase(con2.getCatalog());
+      assert schema1.equalsIgnoreCase(con2.getSchema());
 
-    System.out.println("[INFO] Running a statement... 1 second");
-    con2.createStatement().execute("select seq8() from table(generator(timelimit=>1))");
-    assert database.equalsIgnoreCase(con2.getCatalog());
-    assert schema1.equalsIgnoreCase(con2.getSchema());
+      System.out.println("[INFO] Running a statement... 1 second");
+      statement.execute("select seq8() from table(generator(timelimit=>1))");
+      assert database.equalsIgnoreCase(con2.getCatalog());
+      assert schema1.equalsIgnoreCase(con2.getSchema());
 
-    System.out.println("[INFO] Running a statement... 90 seconds");
-    con2.createStatement().execute("select seq8() from table(generator(timelimit=>90))");
-    assert database.equalsIgnoreCase(con2.getCatalog());
-    assert schema1.equalsIgnoreCase(con2.getSchema());
-    con2.close();
+      System.out.println("[INFO] Running a statement... 90 seconds");
+      statement.execute("select seq8() from table(generator(timelimit=>90))");
+      assert database.equalsIgnoreCase(con2.getCatalog());
+      assert schema1.equalsIgnoreCase(con2.getSchema());
+    }
 
     System.out.println(
         "[INFO] 3rd connection reads the cache file and uses the id token. "
             + "This should work even after closing the previous connections. "
             + "A specified schema should be set in the connection object.");
     properties.setProperty("schema", schema2);
-    Connection con3 = DriverManager.getConnection(url, properties);
-    assert database.equalsIgnoreCase(con3.getCatalog());
-    assert schema2.equalsIgnoreCase(con3.getSchema());
-    con3.close();
+    try (Connection con3 = DriverManager.getConnection(url, properties)) {
+      assert database.equalsIgnoreCase(con3.getCatalog());
+      assert schema2.equalsIgnoreCase(con3.getSchema());
+    }
 
     System.out.println(
         "[INFO] 4th connection reads the cache file and tries to use the id token. "
             + "However we manually banned IdToken by set some parameters. "
             + "So a web browser pop up is expected to show up here.");
-    Connection conAdmin = getAdminConnection();
-    // ALLOW_UNPROTECTED_ID_TOKEN will be deprecated in the future
-    // conAdmin.createStatement().execute("alter account testaccount set " +
-    //                                "ALLOW_UNPROTECTED_ID_TOKEN=false;");
-    conAdmin
-        .createStatement()
-        .execute("alter account testaccount set ID_TOKEN_FEATURE_ENABLED=false;");
-    conAdmin.createStatement().execute("alter account testaccount set ALLOW_ID_TOKEN=false;");
-    Connection con4 = DriverManager.getConnection(url, properties);
-
-    System.out.println(
-        "Finished. You might need to close login page in web browser to exit this test.");
+    try (Connection conAdmin = getAdminConnection();
+        Statement statement = conAdmin.createStatement()) {
+      // ALLOW_UNPROTECTED_ID_TOKEN will be deprecated in the future
+      // conAdmin.createStatement().execute("alter account testaccount set " +
+      //                                "ALLOW_UNPROTECTED_ID_TOKEN=false;");
+      statement.execute("alter account testaccount set ID_TOKEN_FEATURE_ENABLED=false;");
+      statement.execute("alter account testaccount set ALLOW_ID_TOKEN=false;");
+      try (Connection con4 = DriverManager.getConnection(url, properties)) {
+        System.out.println(
+            "Finished. You might need to close login page in web browser to exit this test.");
+      }
+    }
   }
 }

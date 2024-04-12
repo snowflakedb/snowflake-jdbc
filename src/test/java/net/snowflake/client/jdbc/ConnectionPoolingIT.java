@@ -191,12 +191,6 @@ public class ConnectionPoolingIT {
         }
       } catch (Exception e) {
         System.out.println(e);
-      } finally {
-        try {
-          con.close();
-        } catch (Exception e) {
-          System.out.println(e);
-        }
       }
     }
   }
