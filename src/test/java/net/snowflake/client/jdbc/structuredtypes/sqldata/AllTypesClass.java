@@ -1,4 +1,4 @@
-package net.snowflake.client.jdbc;
+package net.snowflake.client.jdbc.structuredtypes.sqldata;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -35,14 +35,38 @@ public class AllTypesClass implements SQLData {
   @Override
   public void readSQL(SQLInput sqlInput, String typeName) throws SQLException {
     string = sqlInput.readString();
+    if (sqlInput.wasNull()) {
+      string = null;
+    }
     b = sqlInput.readByte();
+    if (sqlInput.wasNull()) {
+      b = null;
+    }
     s = sqlInput.readShort();
+    if (sqlInput.wasNull()) {
+      s = null;
+    }
     i = sqlInput.readInt();
+    if (sqlInput.wasNull()) {
+      i = null;
+    }
     l = sqlInput.readLong();
+    if (sqlInput.wasNull()) {
+      l = null;
+    }
     f = sqlInput.readFloat();
+    if (sqlInput.wasNull()) {
+      f = null;
+    }
     d = sqlInput.readDouble();
+    if (sqlInput.wasNull()) {
+      d = null;
+    }
     bd = sqlInput.readBigDecimal();
     bool = sqlInput.readBoolean();
+    if (sqlInput.wasNull()) {
+      bool = null;
+    }
     timestampLtz = sqlInput.readTimestamp();
     timestampNtz = sqlInput.readTimestamp();
     timestampTz = sqlInput.readTimestamp();

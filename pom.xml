@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.15.1-SNAPSHOT</version>
+    <version>3.15.2-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.15.1-SNAPSHOT</version>
+  <version>3.15.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -669,6 +669,10 @@
                       <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>
                     </relocation>
                     <relocation>
+                      <pattern>mozilla</pattern>
+                      <shadedPattern>${shadeBase}.mozilla</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>org.apache.arrow</pattern>
                       <shadedPattern>${shadeBase}.apache.arrow</shadedPattern>
                     </relocation>
@@ -799,6 +803,10 @@
                 <phase>package</phase>
                 <configuration>
                   <relocations>
+                    <relocation>
+                      <pattern>mozilla</pattern>
+                      <shadedPattern>${shadeBase}.mozilla</shadedPattern>
+                    </relocation>
                     <relocation>
                       <pattern>net.snowflake.common</pattern>
                       <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>

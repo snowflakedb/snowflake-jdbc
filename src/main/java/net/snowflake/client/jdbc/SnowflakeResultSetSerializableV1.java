@@ -599,7 +599,7 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.parameters =
         SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
     if (resultSetSerializable.parameters.isEmpty()) {
-      resultSetSerializable.parameters = sfSession.getCommonParameters();
+      resultSetSerializable.parameters = new HashMap<>(sfSession.getCommonParameters());
       resultSetSerializable.setStatemementLevelParameters(sfStatement.getStatementParameters());
     }
 
