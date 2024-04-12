@@ -256,8 +256,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   public void testAsyncQueryOpenAndCloseConnection()
       throws SQLException, IOException, InterruptedException {
     // open connection and run asynchronous query
-    QueryStatusV2 statusV2 = null;
     String queryID = null;
+    QueryStatusV2 statusV2 = null;
     try (Connection con = getConnection();
         Statement statement = con.createStatement();
         ResultSet rs1 =
@@ -266,21 +266,19 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                 .executeAsyncQuery("CALL SYSTEM$WAIT(60, 'SECONDS')")) {
       // Retrieve query ID for part 2 of test, check status of query
       queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
-      for (int retry = 0; retry < 5; ++retry) {
-        Thread.sleep(100);
-        statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
-        // Sometimes 100 millis is too short for GS to get query status with provided queryID, in
-        // which case we will get NO_DATA.
-        if (statusV2.getStatus() != QueryStatus.NO_DATA) {
-          break;
-        }
-      }
+
+      SnowflakeResultSet sfrs = rs1.unwrap(SnowflakeResultSet.class);
+      await()
+          .atMost(Duration.ofSeconds(5))
+          .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
+      statusV2 = sfrs.getStatusV2();
       // Query should take 60 seconds so should be running
       assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
       assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
+      // close connection and wait for 1 minute while query finishes running
     }
-    // close connection and wait for 1 minute while query finishes running
-    Thread.sleep(1000 * 60);
+
+    Thread.sleep(1000 * 70);
     // Create a new connection and new instance of a resultSet using query ID
     try (Connection con = getConnection()) {
       try (ResultSet rs =
@@ -296,34 +294,34 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         assertEquals("No error reported", statusV2.getErrorMessage());
         assertEquals(0, statusV2.getErrorCode());
         assertEquals(1, getSizeOfResultSet(rs));
-      }
-      try (Statement statement = con.createStatement();
-          // Create another query that will not be successful (querying table that does not exist)
-          ResultSet rs1 =
-              statement
-                  .unwrap(SnowflakeStatement.class)
-                  .executeAsyncQuery("select * from nonexistentTable")) {
-        Thread.sleep(100);
-        statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
-        // when GS response is slow, allow up to 1 second of retries to get final query status
-        int counter = 0;
-        while ((statusV2.getStatus() == QueryStatus.NO_DATA
-                || statusV2.getStatus() == QueryStatus.RUNNING)
-            && counter < 10) {
-          counter++;
+        try (Statement statement = con.createStatement();
+            // Create another query that will not be successful (querying table that does not exist)
+            ResultSet rs1 =
+                statement
+                    .unwrap(SnowflakeStatement.class)
+                    .executeAsyncQuery("select * from nonexistentTable")) {
           Thread.sleep(100);
           statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
-        }
-        // If GS response is too slow to return data, do nothing to avoid flaky test failure. If
-        // response has returned,
-        // assert it is the error message that we are expecting.
-        if (statusV2.getStatus() != QueryStatus.NO_DATA) {
-          assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
-          assertEquals(2003, statusV2.getErrorCode());
-          assertEquals(
-              "SQL compilation error:\n"
-                  + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
-              statusV2.getErrorMessage());
+          // when GS response is slow, allow up to 1 second of retries to get final query status
+          SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
+          await()
+              .atMost(Duration.ofSeconds(10))
+              .until(
+                  () -> {
+                    QueryStatus qs = sfrs1.getStatusV2().getStatus();
+                    return !(qs == QueryStatus.NO_DATA || qs == QueryStatus.RUNNING);
+                  });
+          // If GS response is too slow to return data, do nothing to avoid flaky test failure. If
+          // response has returned,
+          // assert it is the error message that we are expecting.
+          if (statusV2.getStatus() != QueryStatus.NO_DATA) {
+            assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
+            assertEquals(2003, statusV2.getErrorCode());
+            assertEquals(
+                "SQL compilation error:\n"
+                    + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
+                statusV2.getErrorMessage());
+          }
         }
       }
     }

@@ -85,7 +85,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   /** Trigger default stage array binding threshold so that it can be run on travis */
   @Test
   public void testInsertStageArrayBind() throws SQLException {
-    try (Connection connection = init()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       connection
           .createStatement()
           .execute("create or replace table testStageArrayBind(c1 integer)");
@@ -98,14 +99,12 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         }
         prepStatement.executeBatch();
 
-        try (Statement statement = connection.createStatement()) {
-          try (ResultSet resultSet =
-              statement.executeQuery("select * from testStageArrayBind order by c1 asc")) {
-            int count = 0;
-            while (resultSet.next()) {
-              assertThat(resultSet.getInt(1), is(count));
-              count++;
-            }
+        try (ResultSet resultSet =
+            statement.executeQuery("select * from testStageArrayBind order by c1 asc")) {
+          int count = 0;
+          while (resultSet.next()) {
+            assertThat(resultSet.getInt(1), is(count));
+            count++;
           }
         }
       }
@@ -227,16 +226,15 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testStageBatchNull() throws SQLException {
-    try (Connection connection = init()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       int[] thresholds = {0, 6}; // disabled, enabled
 
       for (int threshold : thresholds) {
-        connection.createStatement().execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
-        connection
-            .createStatement()
-            .execute(
-                String.format(
-                    "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
+        statement.execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
+        statement.execute(
+            String.format(
+                "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
         try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
           prepStatement.setNull(1, Types.INTEGER);
           prepStatement.setNull(2, Types.DOUBLE);
@@ -250,8 +248,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           assertEquals(1, countResult[0]);
         }
 
-        try (ResultSet resultSet =
-            connection.createStatement().executeQuery("SELECT * FROM TEST_PREPST")) {
+        try (ResultSet resultSet = statement.executeQuery("SELECT * FROM TEST_PREPST")) {
           resultSet.next();
           String errorMessage =
               "Column should be null (" + (threshold > 0 ? "stage" : "non-stage") + ")";
@@ -275,19 +272,18 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testStageString() throws SQLException {
-    try (Connection connection = init()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       int[] thresholds = {0, 6}; // disabled, enabled
       String[] rows = {
         null, "", "\"", ",", "\n", "\r\n", "\"\"", "null", "\\\n", "\",", "\\\",\\\""
       };
 
       for (int threshold : thresholds) {
-        connection.createStatement().execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
-        connection
-            .createStatement()
-            .execute(
-                String.format(
-                    "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
+        statement.execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
+        statement.execute(
+            String.format(
+                "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
         try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
           for (int i = 0; i < rows.length; i++) {
             bindOneParamSet(prepStatement, i, 0.0, 0.0f, rows[i], 0, (short) 0);
@@ -296,9 +292,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           prepStatement.executeBatch();
 
           try (ResultSet resultSet =
-              connection
-                  .createStatement()
-                  .executeQuery("SELECT colC FROM TEST_PREPST ORDER BY id ASC")) {
+              statement.executeQuery("SELECT colC FROM TEST_PREPST ORDER BY id ASC")) {
             String errorMessage =
                 "Strings should match (" + (threshold > 0 ? "stage" : "non-stage") + ")";
             for (String row : rows) {
@@ -314,16 +308,15 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testIncorrectTypes() throws SQLException {
-    try (Connection connection = init()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       int[] thresholds = {0, 6}; // disabled, enabled
 
       for (int threshold : thresholds) {
-        connection.createStatement().execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
-        connection
-            .createStatement()
-            .execute(
-                String.format(
-                    "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
+        statement.execute("DELETE FROM TEST_PREPST WHERE 1=1"); // clear table
+        statement.execute(
+            String.format(
+                "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = %d", threshold));
         try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
 
           prepStatement.setString(1, "notAnInt"); // should cause error
@@ -348,7 +341,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testStageBatchTimestamps() throws SQLException {
-    try (Connection connection = init()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       Timestamp tsEpoch = new Timestamp(0L);
       Timestamp tsEpochMinusOneSec = new Timestamp(-1000L); // negative epoch no fraction of seconds
       Timestamp tsPast = new Timestamp(-2208988800100L); // very large negative epoch
@@ -363,22 +357,14 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
       try {
         // Test that stage and non-stage bindings are consistent for each timestamp type
         for (String tsType : tsTypes) {
-          connection
-              .createStatement()
-              .execute("ALTER SESSION SET TIMESTAMP_TYPE_MAPPING = " + tsType);
-          connection
-              .createStatement()
-              .execute("ALTER SESSION SET CLIENT_TIMESTAMP_TYPE_MAPPING = " + tsType);
+          statement.execute("ALTER SESSION SET TIMESTAMP_TYPE_MAPPING = " + tsType);
+          statement.execute("ALTER SESSION SET CLIENT_TIMESTAMP_TYPE_MAPPING = " + tsType);
 
-          connection
-              .createStatement()
-              .execute("CREATE OR REPLACE TABLE test_prepst_ts (id INTEGER, tz TIMESTAMP)");
+          statement.execute("CREATE OR REPLACE TABLE test_prepst_ts (id INTEGER, tz TIMESTAMP)");
           try (PreparedStatement prepStatement =
               connection.prepareStatement("INSERT INTO test_prepst_ts(id, tz) VALUES(?,?)")) {
             // First, run with non-stage binding
-            connection
-                .createStatement()
-                .executeQuery("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
+            statement.executeQuery("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
             for (int i = 0; i < timestamps.length; i++) {
               prepStatement.setInt(1, i);
               prepStatement.setTimestamp(2, timestamps[i]);
@@ -390,22 +376,18 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
             }
 
             Timestamp[] nonStageResult = new Timestamp[timestamps.length];
-            ResultSet rsNonStage =
-                connection
-                    .createStatement()
-                    .executeQuery("SELECT * FROM test_prepst_ts ORDER BY id ASC");
-            for (int i = 0; i < nonStageResult.length; i++) {
-              rsNonStage.next();
-              nonStageResult[i] = rsNonStage.getTimestamp(2);
+            try (ResultSet rsNonStage =
+                statement.executeQuery("SELECT * FROM test_prepst_ts ORDER BY id ASC")) {
+              for (int i = 0; i < nonStageResult.length; i++) {
+                rsNonStage.next();
+                nonStageResult[i] = rsNonStage.getTimestamp(2);
+              }
             }
-
-            connection.createStatement().execute("DELETE FROM test_prepst_ts WHERE 1=1");
+            statement.execute("DELETE FROM test_prepst_ts WHERE 1=1");
 
             // Now, run with stage binding
-            connection
-                .createStatement()
-                .execute(
-                    "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage
+            statement.execute(
+                "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage
             // bind
             for (int i = 0; i < timestamps.length; i++) {
               prepStatement.setInt(1, i);
@@ -418,27 +400,26 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
             }
 
             Timestamp[] stageResult = new Timestamp[timestamps.length];
-            ResultSet rsStage =
-                connection
-                    .createStatement()
-                    .executeQuery("SELECT * FROM test_prepst_ts ORDER BY id ASC");
-            for (int i = 0; i < stageResult.length; i++) {
-              rsStage.next();
-              stageResult[i] = rsStage.getTimestamp(2);
-            }
+            try (ResultSet rsStage =
+                statement.executeQuery("SELECT * FROM test_prepst_ts ORDER BY id ASC")) {
+              for (int i = 0; i < stageResult.length; i++) {
+                rsStage.next();
+                stageResult[i] = rsStage.getTimestamp(2);
+              }
 
-            for (int i = 0; i < timestamps.length; i++) {
-              assertEquals(
-                  "Stage binding timestamp should match non-stage binding timestamp ("
-                      + tsType
-                      + ")",
-                  nonStageResult[i],
-                  stageResult[i]);
+              for (int i = 0; i < timestamps.length; i++) {
+                assertEquals(
+                    "Stage binding timestamp should match non-stage binding timestamp ("
+                        + tsType
+                        + ")",
+                    nonStageResult[i],
+                    stageResult[i]);
+              }
             }
           }
         }
       } finally {
-        connection.createStatement().execute("DROP TABLE IF EXISTS test_prepst_ts");
+        statement.execute("DROP TABLE IF EXISTS test_prepst_ts");
       }
     }
   }

@@ -119,12 +119,11 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetObjectMetadataWithGCS() throws Exception {
-    Connection connection = null;
-    try {
-      Properties paramProperties = new Properties();
-      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
-      connection = getConnection("gcpaccount", paramProperties);
-      try (Statement statement = connection.createStatement()) {
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
         String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
@@ -145,11 +144,8 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         String path = location.substring(idx + 1) + TEST_DATA_FILE + ".gz";
         StorageObjectMetadata metadata = client.getObjectMetadata(remoteStageLocation, path);
         Assert.assertEquals("gzip", metadata.getContentEncoding());
-      }
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
-        connection.close();
+      } finally {
+        statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
       }
     }
   }
@@ -157,12 +153,11 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetObjectMetadataFileNotFoundWithGCS() throws Exception {
-    Connection connection = null;
-    try {
-      Properties paramProperties = new Properties();
-      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
-      connection = getConnection("gcpaccount", paramProperties);
-      try (Statement statement = connection.createStatement()) {
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
         String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
@@ -183,16 +178,13 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         String path = location.substring(idx + 1) + "wrong_file.csv.gz";
         client.getObjectMetadata(remoteStageLocation, path);
         fail("should raise exception");
-      }
-    } catch (Exception ex) {
-      assertTrue(
-          "Wrong type of exception. Message: " + ex.getMessage(),
-          ex instanceof StorageProviderException);
-      assertTrue(ex.getMessage().matches(".*Blob.*not found in bucket.*"));
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
-        connection.close();
+      } catch (Exception ex) {
+        assertTrue(
+            "Wrong type of exception. Message: " + ex.getMessage(),
+            ex instanceof StorageProviderException);
+        assertTrue(ex.getMessage().matches(".*Blob.*not found in bucket.*"));
+      } finally {
+        statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
       }
     }
   }
@@ -200,12 +192,11 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetObjectMetadataStorageExceptionWithGCS() throws Exception {
-    Connection connection = null;
-    try {
-      Properties paramProperties = new Properties();
-      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
-      connection = getConnection("gcpaccount", paramProperties);
-      try (Statement statement = connection.createStatement()) {
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
         statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
         String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
@@ -225,16 +216,14 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         String remoteStageLocation = location.substring(0, idx);
         client.getObjectMetadata(remoteStageLocation, "");
         fail("should raise exception");
-      }
-    } catch (Exception ex) {
-      assertTrue(
-          "Wrong type of exception. Message: " + ex.getMessage(),
-          ex instanceof StorageProviderException);
-      assertTrue(ex.getMessage().matches(".*Permission.*denied.*"));
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
-        connection.close();
+
+      } catch (Exception ex) {
+        assertTrue(
+            "Wrong type of exception. Message: " + ex.getMessage(),
+            ex instanceof StorageProviderException);
+        assertTrue(ex.getMessage().matches(".*Permission.*denied.*"));
+      } finally {
+        statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
       }
     }
   }
@@ -243,12 +232,15 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   public void testGetFileTransferCommandType() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
-      statement.execute("CREATE OR REPLACE STAGE testStage");
-      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      SnowflakeFileTransferAgent sfAgent =
-          new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
-      assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, sfAgent.getCommandType());
-      statement.execute("drop stage if exists testStage");
+      try {
+        statement.execute("CREATE OR REPLACE STAGE testStage");
+        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        SnowflakeFileTransferAgent sfAgent =
+            new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+        assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, sfAgent.getCommandType());
+      } finally {
+        statement.execute("drop stage if exists testStage");
+      }
     }
   }
 
@@ -256,9 +248,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   public void testNullCommand() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
-      statement.execute("create or replace stage testStage");
-      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
       try {
+        statement.execute("create or replace stage testStage");
+        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(null, sfSession, new SFStatement(sfSession));
       } catch (SnowflakeSQLException err) {
@@ -266,20 +258,20 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         Assert.assertTrue(
             err.getMessage()
                 .contains("JDBC driver internal error: Missing sql for statement execution"));
+      } finally {
+        statement.execute("drop stage if exists testStage");
       }
-      statement.execute("drop stage if exists testStage");
     }
   }
 
   @Test
   public void testCompressStreamWithGzipException() throws Exception {
-    Connection con = null;
     // inject the NoSuchAlgorithmException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(new NoSuchAlgorithmException());
 
-    try {
-      con = getConnection();
-      try (Statement statement = con.createStatement()) {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      try {
         statement.execute("create or replace stage testStage");
         SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
@@ -302,16 +294,14 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
                 .setSFSession(sfSession)
                 .setCommand(PUT_COMMAND)
                 .build());
-      }
-    } catch (SnowflakeSQLException err) {
-      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      Assert.assertTrue(
-          err.getMessage()
-              .contains("JDBC driver internal error: error encountered for compression"));
-    } finally {
-      if (con != null) {
-        con.createStatement().execute("DROP STAGE if exists testStage");
-        con.close();
+
+      } catch (SnowflakeSQLException err) {
+        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+        Assert.assertTrue(
+            err.getMessage()
+                .contains("JDBC driver internal error: error encountered for compression"));
+      } finally {
+        statement.execute("DROP STAGE if exists testStage");
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
@@ -319,13 +309,12 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testCompressStreamWithGzipNoDigestException() throws Exception {
-    Connection con = null;
     // inject the IOException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(new IOException());
 
-    try {
-      con = getConnection();
-      try (Statement statement = con.createStatement()) {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      try {
         statement.execute("create or replace stage testStage");
         SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
@@ -350,16 +339,13 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
                 .setSFSession(sfSession)
                 .setCommand(PUT_COMMAND)
                 .build());
-      }
-    } catch (SnowflakeSQLException err) {
-      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      Assert.assertTrue(
-          err.getMessage()
-              .contains("JDBC driver internal error: error encountered for compression"));
-    } finally {
-      if (con != null) {
-        con.createStatement().execute("DROP STAGE if exists testStage");
-        con.close();
+      } catch (SnowflakeSQLException err) {
+        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+        Assert.assertTrue(
+            err.getMessage()
+                .contains("JDBC driver internal error: error encountered for compression"));
+      } finally {
+        statement.execute("DROP STAGE if exists testStage");
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
@@ -412,7 +398,6 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testInitFileMetadataFileNotFound() throws Exception {
-
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       try {
@@ -530,7 +515,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         assertEquals("orders_100.csv.gz", sfAgent2.getNextRow().get(0).toString());
 
       } finally {
-        con.createStatement().execute("DROP STAGE if exists testStage");
+        statement.execute("DROP STAGE if exists testStage");
       }
     }
   }
@@ -780,7 +765,6 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
           assertEquals(1360, s3Metadata.getContentLength());
           assertEquals("gzip", s3Metadata.getContentEncoding());
         }
-
       } finally {
         statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
       }
