@@ -7,20 +7,21 @@ import org.apache.arrow.vector.complex.FixedSizeListVector;
 
 public class VectorTypeConverter extends AbstractArrowVectorConverter {
 
-    private final FixedSizeListVector vector;
+  private final FixedSizeListVector vector;
 
-    public VectorTypeConverter(FixedSizeListVector valueVector, int vectorIndex, DataConversionContext context) {
-        super(SnowflakeType.ARRAY.name(), valueVector, vectorIndex, context);
-        this.vector = valueVector;
-    }
+  public VectorTypeConverter(
+      FixedSizeListVector valueVector, int vectorIndex, DataConversionContext context) {
+    super(SnowflakeType.ARRAY.name(), valueVector, vectorIndex, context);
+    this.vector = valueVector;
+  }
 
-    @Override
-    public Object toObject(int index) throws SFException {
-        return vector.getObject(index);
-    }
+  @Override
+  public Object toObject(int index) throws SFException {
+    return vector.getObject(index);
+  }
 
-    @Override
-    public String toString(int index) throws SFException {
-        return vector.getObject(index).toString();
-    }
+  @Override
+  public String toString(int index) throws SFException {
+    return vector.getObject(index).toString();
+  }
 }
