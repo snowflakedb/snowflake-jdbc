@@ -1419,8 +1419,11 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     if (!StructureTypeHelper.isStructureTypeEnabled()) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
-    FieldMetadata fieldMetadata =
-        sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields().get(0);
+    List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
+    if (fieldMetadataList.size() != 1) {
+      throw new SQLException("Wrong size of fields for array type " + fieldMetadataList.size());
+    }
+    FieldMetadata fieldMetadata = fieldMetadataList.get(0);
     int columnSubType = fieldMetadata.getType();
     int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
     int scale = fieldMetadata.getScale();
@@ -1569,8 +1572,12 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     if (!StructureTypeHelper.isStructureTypeEnabled()) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
-    FieldMetadata valueFieldMetadata =
-        sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields().get(1);
+    List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
+    if (fieldMetadataList.size() != 2) {
+      throw new SQLException(
+          "Wrong size of fields metadata for map type " + fieldMetadataList.size());
+    }
+    FieldMetadata valueFieldMetadata = fieldMetadataList.get(1);
     int columnSubType = valueFieldMetadata.getType();
     int columnType = ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
     int scale = valueFieldMetadata.getScale();
