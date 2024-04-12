@@ -112,13 +112,13 @@ public class ConnectionManual {
   }
 
   private void resetTokenValidity() throws Throwable {
-    try (Connection con = getAdminConnection()) {
-      con.createStatement()
-          .execute(
-              "alter system set "
-                  + "MASTER_TOKEN_VALIDITY=default, "
-                  + "SESSION_TOKEN_VALIDITY=default, "
-                  + "ID_TOKEN_VALIDITY=default");
+    try (Connection con = getAdminConnection();
+        Statement statement = con.createStatement()) {
+      statement.execute(
+          "alter system set "
+              + "MASTER_TOKEN_VALIDITY=default, "
+              + "SESSION_TOKEN_VALIDITY=default, "
+              + "ID_TOKEN_VALIDITY=default");
     }
   }
 

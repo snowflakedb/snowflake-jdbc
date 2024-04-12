@@ -331,7 +331,8 @@ public class ConnectionIT extends BaseJDBCTest {
     ds.setSsl("on".equals(ssl));
 
     try (Connection connection = ds.getConnection(user, password);
-        ResultSet resultSet = connection.createStatement().executeQuery("select 1")) {
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
     }
@@ -344,7 +345,8 @@ public class ConnectionIT extends BaseJDBCTest {
     ds.setAccount(account);
     ds.setPortNumber(Integer.parseInt(port));
     try (Connection connection = ds.getConnection(params.get("user"), params.get("password"));
-        ResultSet resultSet = connection.createStatement().executeQuery("select 1")) {
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
     }
@@ -365,7 +367,8 @@ public class ConnectionIT extends BaseJDBCTest {
     ds.setPassword(params.get("ssoPassword"));
     ds.setAuthenticator("https://snowflakecomputing.okta.com/");
     try (Connection con = ds.getConnection();
-        ResultSet resultSet = con.createStatement().executeQuery("select 1")) {
+        Statement statement = con.createStatement();
+        ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
       File serializedFile = tmpFolder.newFile("serializedStuff.ser");
@@ -382,7 +385,8 @@ public class ConnectionIT extends BaseJDBCTest {
 
         // test connection a second time
         try (Connection connection = ds2.getConnection();
-            ResultSet resultSet2 = connection.createStatement().executeQuery("select 1")) {
+            Statement statement2 = connection.createStatement();
+            ResultSet resultSet2 = statement2.executeQuery("select 1")) {
           resultSet2.next();
           assertThat("select 1", resultSet2.getInt(1), equalTo(1));
         }
@@ -1022,8 +1026,9 @@ public class ConnectionIT extends BaseJDBCTest {
     Properties connProps = kvMap2Properties(kvParams, false);
     String uri = kvParams.get("uri");
 
-    try (Connection con = DriverManager.getConnection(uri, connProps)) {
-      con.createStatement().execute("select 1");
+    try (Connection con = DriverManager.getConnection(uri, connProps);
+        Statement statement = con.createStatement()) {
+      statement.execute("select 1");
     }
   }
 

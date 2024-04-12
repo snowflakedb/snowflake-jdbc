@@ -793,7 +793,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("ssl", parameters.get("ssl"));
     properties.put("port", parameters.get("port"));
     try (Connection connection = DriverManager.getConnection(uri, properties)) {}
-    ;
 
     // PKCS #1
     privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
@@ -805,7 +804,6 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("port", parameters.get("port"));
     properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.toString());
     try (Connection connection = DriverManager.getConnection(uri, properties)) {}
-    ;
 
     // test with password-protected private key file (.p8)
     try (Connection connection = getConnection();
