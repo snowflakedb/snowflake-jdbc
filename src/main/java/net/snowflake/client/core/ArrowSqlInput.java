@@ -304,8 +304,8 @@ public class ArrowSqlInput extends BaseSqlInput {
             return null;
           }
           List<T> result = new ArrayList();
-          JsonStringArrayList<Map> value1 = (JsonStringArrayList) value;
-          for (Object ob : value1) {
+          JsonStringArrayList<Map> maps = (JsonStringArrayList) value;
+          for (Object ob : maps) {
             result.add(
                 convertObject(type, TimeZone.getDefault(), ob, fieldMetadata.getFields().get(0)));
           }
@@ -339,8 +339,8 @@ public class ArrowSqlInput extends BaseSqlInput {
             return null;
           }
           Map<String, T> result = new HashMap();
-          JsonStringArrayList<Map> value1 = (JsonStringArrayList) value;
-          for (Map map : value1) {
+          JsonStringArrayList<Map> maps = (JsonStringArrayList) value;
+          for (Map map : maps) {
             result.put(
                 map.get("key").toString(),
                 convertObject(
