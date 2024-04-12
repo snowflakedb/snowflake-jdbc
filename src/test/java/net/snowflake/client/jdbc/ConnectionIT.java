@@ -73,7 +73,7 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testSimpleConnection() throws SQLException {
     Connection con = getConnection();
     try (Statement statement = con.createStatement();
-      ResultSet resultSet = statement.executeQuery("show parameters")){
+        ResultSet resultSet = statement.executeQuery("show parameters")) {
       assertTrue(resultSet.next());
       assertFalse(con.isClosed());
     }
@@ -382,7 +382,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
         // test connection a second time
         try (Connection connection = ds2.getConnection();
-            ResultSet resultSet2 = con.createStatement().executeQuery("select 1")) {
+            ResultSet resultSet2 = connection.createStatement().executeQuery("select 1")) {
           resultSet2.next();
           assertThat("select 1", resultSet2.getInt(1), equalTo(1));
         }
@@ -627,10 +627,12 @@ public class ConnectionIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
       for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
         String key = (String) enums.nextElement();
-        ResultSet rs = statement.executeQuery(String.format("show parameters like '%s'", key));
-        rs.next();
-        String value = rs.getString("value");
-        assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+        try (ResultSet rs =
+            statement.executeQuery(String.format("show parameters like '%s'", key))) {
+          rs.next();
+          String value = rs.getString("value");
+          assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+        }
       }
     }
     System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");

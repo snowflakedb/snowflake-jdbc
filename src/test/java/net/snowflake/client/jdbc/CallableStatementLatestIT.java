@@ -8,7 +8,6 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Test;
@@ -47,12 +46,12 @@ public class CallableStatementLatestIT extends CallableStatementIT {
   @Test
   public void testPrepareCallWithCurlyBracketSyntax() throws SQLException {
     // test CallableStatement with no binding parameters
-    try (Connection connection = getConnection()){
-      try(CallableStatement callableStatement = connection.prepareCall("{call square_it(5)}")) {
+    try (Connection connection = getConnection()) {
+      try (CallableStatement callableStatement = connection.prepareCall("{call square_it(5)}")) {
         assertThat(callableStatement.getParameterMetaData().getParameterCount(), is(0));
       }
       // test CallableStatement with 1 binding parameter
-      try(CallableStatement callableStatement = connection.prepareCall("{call square_it(?)}")) {
+      try (CallableStatement callableStatement = connection.prepareCall("{call square_it(?)}")) {
         // test that getParameterMetaData works with CallableStatement. At this point, it always
         // returns
         // the type as "text."
@@ -66,7 +65,7 @@ public class CallableStatementLatestIT extends CallableStatementIT {
         }
       }
       // test CallableStatement with 2 binding parameters
-      try(CallableStatement callableStatement = connection.prepareCall("{call add_nums(?,?)}")) {
+      try (CallableStatement callableStatement = connection.prepareCall("{call add_nums(?,?)}")) {
         callableStatement.setDouble(1, 32);
         callableStatement.setDouble(2, 15);
         try (ResultSet rs = callableStatement.executeQuery()) {

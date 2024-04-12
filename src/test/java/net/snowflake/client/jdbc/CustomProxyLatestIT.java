@@ -61,13 +61,12 @@ public class CustomProxyLatestIT {
     props.put("proxyPort", "8080");
     // Set up the first connection and proxy
     try (Connection con1 =
-        DriverManager.getConnection(
-            "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
-      Statement stmt = con1.createStatement();
-      try (ResultSet rs = stmt.executeQuery("select 1")) {
-        rs.next();
-        assertEquals(1, rs.getInt(1));
-      }
+            DriverManager.getConnection(
+                "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
+        Statement stmt = con1.createStatement();
+        ResultSet rs = stmt.executeQuery("select 1")) {
+      rs.next();
+      assertEquals(1, rs.getInt(1));
     }
 
     // Change the proxy settings for the 2nd connection, but all other properties can be re-used.
@@ -76,7 +75,8 @@ public class CustomProxyLatestIT {
     try (Connection con2 =
             DriverManager.getConnection(
                 "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com", props);
-        ResultSet rs = con2.createStatement().executeQuery("select 2")) {
+        Statement statement = con2.createStatement();
+        ResultSet rs = statement.executeQuery("select 2")) {
       rs.next();
       assertEquals(2, rs.getInt(1));
       // To ensure that the http client map is functioning properly, make a third connection with
@@ -223,7 +223,8 @@ public class CustomProxyLatestIT {
     try (Connection con2 =
             DriverManager.getConnection(
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-        ResultSet rs = con2.createStatement().executeQuery("select 2")) {
+        Statement statement = con2.createStatement();
+        ResultSet rs = statement.executeQuery("select 2")) {
       rs.next();
       assertEquals(2, rs.getInt(1));
       assertEquals(1, HttpUtil.httpClient.size());

@@ -254,7 +254,7 @@ public class BindingDataIT extends AbstractDriverIT {
             connection.prepareStatement("select * from test_bind_time_calendar where c1 = ?")) {
           preparedStatement.setTime(1, timeVal, laCal);
 
-          try(ResultSet resultSet = preparedStatement.executeQuery()) {
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
             assertThat(resultSet.next(), is(true));
             assertThat(resultSet.getTime("C1", utcCal), is(timeVal));
           }
@@ -347,7 +347,7 @@ public class BindingDataIT extends AbstractDriverIT {
             connection.prepareStatement("select * from test_bind_date where c1 = ?")) {
           preparedStatement.setDate(1, dateValue);
 
-          try(ResultSet resultSet = preparedStatement.executeQuery()) {
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
             assertThat(resultSet.next(), is(true));
             assertThat(resultSet.getDate("C1"), is(dateValue));
           }
@@ -440,8 +440,7 @@ public class BindingDataIT extends AbstractDriverIT {
         }
       }
 
-      try (ResultSet result =
-          connection.createStatement().executeQuery("select * from TEST_BIND_ALL_TYPES")) {
+      try (ResultSet result = statement.executeQuery("select * from TEST_BIND_ALL_TYPES")) {
         while (result.next()) {
           String testType = result.getString(1);
           for (int i = 2; i <= 13; ++i) {

@@ -64,15 +64,17 @@ public class ClientMemoryLimitParallelIT {
 
   @Before
   public void setUp() throws SQLException {
-    try (Connection con = getConnection()) {
-      con.createStatement().execute(createTestTableSQL);
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      statement.execute(createTestTableSQL);
     }
   }
 
   @After
   public void tearDown() throws SQLException {
-    try (Connection con = getConnection()) {
-      con.createStatement().execute("drop table if exists testtable_cml");
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      statement.execute("drop table if exists testtable_cml");
     }
     ;
   }
