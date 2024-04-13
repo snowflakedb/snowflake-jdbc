@@ -513,7 +513,6 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         // check that files are sorted on download
         assertEquals(2, sfAgent2.statusRows.size());
         assertEquals("orders_100.csv.gz", sfAgent2.getNextRow().get(0).toString());
-
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -827,7 +826,6 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
               assertEquals("UPLOADED", resultSet.getString("status"));
             }
           }
-
         } finally {
           statement.execute("drop stage if exists testStage");
         }
@@ -840,9 +838,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   @Test
   public void testUploadWithTildeInPath() throws SQLException, IOException {
     Path subDir = null;
-
     try {
-
       String homeDir = systemGetProperty("user.home");
 
       // create sub directory where the name includes ~
