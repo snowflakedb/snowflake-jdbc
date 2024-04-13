@@ -132,7 +132,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testChunkDownloaderNoHang() throws SQLException {
     int stmtCount = 30;
     int rowCount = 170000;
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+         Statement stmt = connection.createStatement()){
       List<ResultSet> rsList = new ArrayList<>();
       // Set memory limit to low number
       connection
@@ -140,14 +141,14 @@ public class ResultSetLatestIT extends ResultSet0IT {
           .getSFBaseSession()
           .setMemoryLimitForTesting(2000000);
       // open multiple statements concurrently to overwhelm current memory allocation
-      Statement stmt = connection.createStatement();
       for (int i = 0; i < stmtCount; ++i) {
-        ResultSet resultSet =
+        try(ResultSet resultSet =
             stmt.executeQuery(
                 "select randstr(100, random()) from table(generator(rowcount => "
                     + rowCount
-                    + "))");
-        rsList.add(resultSet);
+                    + "))")) {
+          rsList.add(resultSet);
+        }
       }
       // Assert that all resultSets exist and can successfully download the needed chunks without
       // hanging
