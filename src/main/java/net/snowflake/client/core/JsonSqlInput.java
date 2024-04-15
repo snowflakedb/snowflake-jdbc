@@ -59,26 +59,12 @@ public class JsonSqlInput extends BaseSqlInput {
 
   @Override
   public String readString() throws SQLException {
-    return withNextValue(((value, fieldMetadata) -> convertString(value, fieldMetadata)));
-  }
-
-  private String convertString(Object value, FieldMetadata fieldMetadata) throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    int columnSubType = fieldMetadata.getType();
-    int scale = fieldMetadata.getScale();
-    return mapSFExceptionToSQLException(
-        () -> converters.getStringConverter().getString(value, columnType, columnSubType, scale));
+    return withNextValue((this::convertString));
   }
 
   @Override
   public boolean readBoolean() throws SQLException {
-    return withNextValue((value, fieldMetadata) -> convertBoolean(value, fieldMetadata));
-  }
-
-  private Boolean convertBoolean(Object value, FieldMetadata fieldMetadata) throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    return mapSFExceptionToSQLException(
-        () -> converters.getBooleanConverter().getBoolean(value, columnType));
+    return withNextValue(this::convertBoolean);
   }
 
   @Override
@@ -90,82 +76,37 @@ public class JsonSqlInput extends BaseSqlInput {
 
   @Override
   public short readShort() throws SQLException {
-    return withNextValue((value, fieldMetadata) -> convertShort(value, fieldMetadata));
-  }
-
-  private Short convertShort(Object value, FieldMetadata fieldMetadata) throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    return mapSFExceptionToSQLException(
-        () -> converters.getNumberConverter().getShort(value, columnType));
+    return withNextValue(this::convertShort);
   }
 
   @Override
   public int readInt() throws SQLException {
-    return withNextValue((value, fieldMetadata) -> convertInt(value, fieldMetadata));
-  }
-
-  private Integer convertInt(Object value, FieldMetadata fieldMetadata) throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    return mapSFExceptionToSQLException(
-        () -> converters.getNumberConverter().getInt(value, columnType));
+    return withNextValue(this::convertInt);
   }
 
   @Override
   public long readLong() throws SQLException {
-    return withNextValue((value, fieldMetadata) -> convertLong(value, fieldMetadata));
-  }
-
-  private Long convertLong(Object value, FieldMetadata fieldMetadata) throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    return mapSFExceptionToSQLException(
-        () -> converters.getNumberConverter().getLong(value, columnType));
+    return withNextValue(this::convertLong);
   }
 
   @Override
   public float readFloat() throws SQLException {
-    return withNextValue((value, fieldMetadata) -> convertFloat(value, fieldMetadata));
-  }
-
-  private Float convertFloat(Object value, FieldMetadata fieldMetadata) throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    return mapSFExceptionToSQLException(
-        () -> converters.getNumberConverter().getFloat(value, columnType));
+    return withNextValue(this::convertFloat);
   }
 
   @Override
   public double readDouble() throws SQLException {
-    return withNextValue((value, fieldMetadata) -> convertDouble(value, fieldMetadata));
-  }
-
-  private Double convertDouble(Object value, FieldMetadata fieldMetadata) throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    return mapSFExceptionToSQLException(
-        () -> converters.getNumberConverter().getDouble(value, columnType));
+    return withNextValue(this::convertDouble);
   }
 
   @Override
   public BigDecimal readBigDecimal() throws SQLException {
-    return withNextValue((value, fieldMetadata) -> convertBigDecimal(value, fieldMetadata));
-  }
-
-  private BigDecimal convertBigDecimal(Object value, FieldMetadata fieldMetadata)
-      throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    return mapSFExceptionToSQLException(
-        () -> converters.getNumberConverter().getBigDecimal(value, columnType));
+    return withNextValue(this::convertBigDecimal);
   }
 
   @Override
   public byte[] readBytes() throws SQLException {
-    return withNextValue((value, fieldMetadata) -> convertBytes(value, fieldMetadata));
-  }
-
-  private byte[] convertBytes(Object value, FieldMetadata fieldMetadata) throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    int columnSubType = fieldMetadata.getType();
-    int scale = fieldMetadata.getScale();
-    return mapSFExceptionToSQLException(
-        () -> converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
+    return withNextValue(this::convertBytes);
   }
 
   @Override
