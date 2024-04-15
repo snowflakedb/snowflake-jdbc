@@ -101,7 +101,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
     logger.debug(
-        "Initializing Snowflake S3 client with encryption: {}", encMat != null ? "true" : "false");
+        "Initializing Snowflake GCS client with encryption: {}", encMat != null ? "true" : "false");
     SnowflakeGCSClient sfGcsClient = new SnowflakeGCSClient();
     sfGcsClient.setupGCSClient(stage, encMat, session);
 
@@ -380,7 +380,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
-                "S3 file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
+                "GCS file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
                 stageFilePath,
                 localFile.getAbsolutePath(),
                 downloadMillis + decryptMillis,
@@ -398,7 +398,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           }
         } else {
           logger.info(
-              "S3 file {} downloaded to {}. It took {} ms with {} retries",
+              "GCS file {} downloaded to {}. It took {} ms with {} retries",
               stageFilePath,
               localFile.getAbsolutePath(),
               downloadMillis,

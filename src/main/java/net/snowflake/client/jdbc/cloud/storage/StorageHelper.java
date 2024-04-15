@@ -5,7 +5,7 @@ import java.io.InputStream;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 
 class StorageHelper {
-  protected static String getStartUploadLog(
+  static String getStartUploadLog(
       String serviceName,
       boolean uploadFromStream,
       InputStream inputStream,
