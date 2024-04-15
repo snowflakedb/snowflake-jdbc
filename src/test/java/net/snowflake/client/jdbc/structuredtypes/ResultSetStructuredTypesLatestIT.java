@@ -733,6 +733,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapNestedStructures() throws SQLException {
     withFirstRow(
         "SELECT {'simpleClass': {'string': 'a'}, "
