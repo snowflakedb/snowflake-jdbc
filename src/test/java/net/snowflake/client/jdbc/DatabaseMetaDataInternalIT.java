@@ -450,7 +450,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTables() throws SQLException {
-   String getAllTable = "select count(*) from db.information_schema.tables";
+    String getAllTable = "select count(*) from db.information_schema.tables";
     String getAllBaseTable =
         "select count(*) from db.information_schema." + "tables where table_type = 'BASE TABLE'";
     String getAllView =
