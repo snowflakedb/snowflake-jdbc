@@ -32,6 +32,7 @@ import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
 import net.snowflake.client.jdbc.SnowflakeResultSetMetaData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.NestedStructSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.NullableFieldsSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import org.junit.Assume;
@@ -728,6 +729,56 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(firstEntry.get("y").toString(), "1");
           assertEquals(secondEntry.get("x").toString(), "def");
           assertEquals(secondEntry.get("y").toString(), "2");
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testMapNestedStructures() throws SQLException {
+    withFirstRow(
+        "SELECT {'simpleClass': {'string': 'a'}, "
+            + "'simpleClasses': ARRAY_CONSTRUCT({'string': 'a'}, {'string': 'b'}), "
+            + "'arrayOfSimpleClasses': ARRAY_CONSTRUCT({'string': 'a'}, {'string': 'b'}), "
+            + "'mapOfSimpleClasses':{'x':{'string': 'c'}, 'y':{'string': 'd'}},"
+            + "'texts': ARRAY_CONSTRUCT('string', 'a'), "
+            + "'arrayOfDates': ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD')), "
+            + "'mapOfIntegers':{'x':3, 'y':4}}"
+            + "::OBJECT(simpleClass OBJECT(string VARCHAR), "
+            + "simpleClasses ARRAY(OBJECT(string VARCHAR)),"
+            + "arrayOfSimpleClasses ARRAY(OBJECT(string VARCHAR)),"
+            + "mapOfSimpleClasses MAP(VARCHAR, OBJECT(string VARCHAR)),"
+            + "texts ARRAY(VARCHAR),"
+            + "arrayOfDates ARRAY(DATE),"
+            + "mapOfIntegers MAP(VARCHAR, INTEGER))",
+        (resultSet) -> {
+          NestedStructSqlData nestedStructSqlData =
+              resultSet.getObject(1, NestedStructSqlData.class);
+          ;
+          assertEquals("a", nestedStructSqlData.getSimpleClass().getString());
+
+          assertEquals("a", nestedStructSqlData.getSimpleClassses().get(0).getString());
+          assertEquals("b", nestedStructSqlData.getSimpleClassses().get(1).getString());
+
+          assertEquals("a", nestedStructSqlData.getArrayOfSimpleClasses()[0].getString());
+          assertEquals("b", nestedStructSqlData.getArrayOfSimpleClasses()[1].getString());
+
+          assertEquals("c", nestedStructSqlData.getMapOfSimpleClasses().get("x").getString());
+          assertEquals("d", nestedStructSqlData.getMapOfSimpleClasses().get("y").getString());
+
+          assertEquals("string", nestedStructSqlData.getTexts().get(0));
+          assertEquals("a", nestedStructSqlData.getTexts().get(1));
+
+          // TODO uncomment after merge SNOW-928973: Date field is returning one day less when
+          // getting
+          //          assertEquals(
+          //              Date.valueOf(LocalDate.of(2023, 12, 24)).toString(),
+          //              nestedStructSqlData.getArrayOfDates()[0].toString());
+          //          assertEquals(
+          //              Date.valueOf(LocalDate.of(2023, 12, 25)).toString(),
+          //              nestedStructSqlData.getArrayOfDates()[1].toString());
+
+          assertEquals(Integer.valueOf(3), nestedStructSqlData.getMapOfIntegers().get("x"));
+          assertEquals(Integer.valueOf(4), nestedStructSqlData.getMapOfIntegers().get("y"));
         });
   }
 

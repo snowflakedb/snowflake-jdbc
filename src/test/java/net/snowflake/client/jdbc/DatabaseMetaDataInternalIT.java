@@ -88,9 +88,14 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     statement = connection.createStatement();
     databaseMetaData = connection.getMetaData();
 
+    // Exclude SNOWFLAKE system database from DatabaseMetadata
+    ResultSet snowflakeResultSet = databaseMetaData.getColumns("SNOWFLAKE", null, null, null);
+    int numSnowflakeColumns = getSizeOfResultSet(snowflakeResultSet);
+
     resultSet = databaseMetaData.getColumns(null, null, null, null);
     assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllColumnsCount), getSizeOfResultSet(resultSet));
+        getAllObjectCountInDBViaInforSchema(getAllColumnsCount),
+        getSizeOfResultSet(resultSet) - numSnowflakeColumns);
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA11", null, null);
     assertEquals(3, getSizeOfResultSet(resultSet));
@@ -242,13 +247,19 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     databaseMetaData = connection.getMetaData();
     assertEquals("schema", databaseMetaData.getSchemaTerm());
 
+    // Exclude SNOWFLAKE system database from DatabaseMetadata
+    ResultSet snowflakeResultSet = databaseMetaData.getSchemas("SNOWFLAKE", null);
+    int numSnowflakeSchemas = getSizeOfResultSet(snowflakeResultSet);
+
     resultSet = databaseMetaData.getSchemas();
     assertEquals(
-        getAllObjectCountInDBViaInforSchema(getSchemaCount), getSizeOfResultSet(resultSet));
+        getAllObjectCountInDBViaInforSchema(getSchemaCount),
+        getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
 
     resultSet = databaseMetaData.getSchemas(null, null);
     assertEquals(
-        getAllObjectCountInDBViaInforSchema(getSchemaCount), getSizeOfResultSet(resultSet));
+        getAllObjectCountInDBViaInforSchema(getSchemaCount),
+        getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
 
     resultSet = databaseMetaData.getSchemas("JDBC_DB1", "%");
     resultSet.next();
@@ -439,7 +450,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTables() throws SQLException {
-    String getAllTable = "select count(*) from db.information_schema.tables";
+   String getAllTable = "select count(*) from db.information_schema.tables";
     String getAllBaseTable =
         "select count(*) from db.information_schema." + "tables where table_type = 'BASE TABLE'";
     String getAllView =
@@ -538,7 +549,6 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
         assertEquals("", resultSet.getString(5));
         stmt.execute("alter session unset ENABLE_KEY_VALUE_TABLE;");
       }
-
       try (ResultSet resultSet =
           databaseMetaData.getTables("JDBC_DB1", null, "JDBC_TBL211", new String[] {"TABLE"})) {
         assertEquals(0, getSizeOfResultSet(resultSet));
