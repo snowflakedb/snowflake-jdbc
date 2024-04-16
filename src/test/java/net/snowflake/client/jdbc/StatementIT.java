@@ -442,8 +442,7 @@ public class StatementIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testExecuteUpdateZeroCount() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection()){
 
       String[] testCommands = {
         "use role accountadmin",
@@ -468,15 +467,18 @@ public class StatementIT extends BaseJDBCTest {
       };
       try {
         for (String testCommand : testCommands) {
-          int updateCount = statement.executeUpdate(testCommand);
-          assertThat(updateCount, is(0));
-          statement.close();
+          try(Statement statement = connection.createStatement()) {
+            int updateCount = statement.executeUpdate(testCommand);
+            assertThat(updateCount, is(0));
+          }
         }
       } finally {
-        statement.execute("use role accountadmin");
-        statement.execute("drop table if exists testExecuteUpdate");
-        statement.execute("drop role if exists testrole");
-        statement.execute("drop user if exists testuser");
+        try(Statement statement = connection.createStatement()) {
+          statement.execute("use role accountadmin");
+          statement.execute("drop table if exists testExecuteUpdate");
+          statement.execute("drop role if exists testrole");
+          statement.execute("drop user if exists testuser");
+        }
       }
     }
   }

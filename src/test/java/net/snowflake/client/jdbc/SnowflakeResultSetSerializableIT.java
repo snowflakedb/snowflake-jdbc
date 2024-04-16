@@ -697,7 +697,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
                 + "))");
 
         String sqlSelect = "select * from table_basic ";
-        try (ResultSet rs = statement.executeQuery(sqlSelect)) {
+        ResultSet rs = statement.executeQuery(sqlSelect);
+        rs.close();
 
           // The getResultSetSerializables() can only be called for unclosed
           // result set.
@@ -708,7 +709,6 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
           } catch (SQLException ex) {
             System.out.println("Negative test hits expected error: " + ex.getMessage());
           }
-        }
       }
     }
   }
