@@ -682,33 +682,32 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testNegativeWithClosedResultSet() throws Throwable {
     try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+      Statement statement = connection.createStatement();
 
-        statement.execute(
-            "create or replace table table_basic " + " (int_c int, string_c string(128))");
+      statement.execute(
+          "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-        int rowCount = 300;
-        statement.execute(
-            "insert into table_basic select "
-                + "seq4(), "
-                + "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
-                + " from table(generator(rowcount=>"
-                + rowCount
-                + "))");
+      int rowCount = 300;
+      statement.execute(
+          "insert into table_basic select "
+              + "seq4(), "
+              + "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
+              + " from table(generator(rowcount=>"
+              + rowCount
+              + "))");
 
-        String sqlSelect = "select * from table_basic ";
-        ResultSet rs = statement.executeQuery(sqlSelect);
-        rs.close();
+      String sqlSelect = "select * from table_basic ";
+      ResultSet rs = statement.executeQuery(sqlSelect);
+      rs.close();
 
-        // The getResultSetSerializables() can only be called for unclosed
-        // result set.
-        try {
-          List<SnowflakeResultSetSerializable> resultSetSerializables =
-              ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
-          fail("error should happen when accessing closed result set.");
-        } catch (SQLException ex) {
-          System.out.println("Negative test hits expected error: " + ex.getMessage());
-        }
+      // The getResultSetSerializables() can only be called for unclosed
+      // result set.
+      try {
+        List<SnowflakeResultSetSerializable> resultSetSerializables =
+            ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
+        fail("error should happen when accessing closed result set.");
+      } catch (SQLException ex) {
+        System.out.println("Negative test hits expected error: " + ex.getMessage());
       }
     }
   }
