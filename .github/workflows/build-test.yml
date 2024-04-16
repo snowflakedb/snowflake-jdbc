@@ -57,7 +57,6 @@ jobs:
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_CATEGORY: ${{ matrix.category }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
-                MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
               run: ./ci/test.sh
 
     test-linux-old-driver:
@@ -79,6 +78,5 @@ jobs:
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
                 JDBC_TEST_CATEGORY: ${{ matrix.category }}
-                MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
                 is_old_driver: ${{ matrix.is_old_driver }}
               run: ./ci/test.sh
