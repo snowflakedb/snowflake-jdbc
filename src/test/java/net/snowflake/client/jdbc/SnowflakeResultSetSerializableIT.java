@@ -700,15 +700,15 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
         ResultSet rs = statement.executeQuery(sqlSelect);
         rs.close();
 
-          // The getResultSetSerializables() can only be called for unclosed
-          // result set.
-          try {
-            List<SnowflakeResultSetSerializable> resultSetSerializables =
-                ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
-            fail("error should happen when accessing closed result set.");
-          } catch (SQLException ex) {
-            System.out.println("Negative test hits expected error: " + ex.getMessage());
-          }
+        // The getResultSetSerializables() can only be called for unclosed
+        // result set.
+        try {
+          List<SnowflakeResultSetSerializable> resultSetSerializables =
+              ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
+          fail("error should happen when accessing closed result set.");
+        } catch (SQLException ex) {
+          System.out.println("Negative test hits expected error: " + ex.getMessage());
+        }
       }
     }
   }
