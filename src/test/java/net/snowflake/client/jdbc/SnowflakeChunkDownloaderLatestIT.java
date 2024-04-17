@@ -37,8 +37,8 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
 
     SnowflakeChunkDownloader snowflakeChunkDownloaderSpy = null;
 
-    try (Connection connection = getConnection(properties)) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = getConnection(properties);
+         Statement statement = connection.createStatement()){
       // execute a query that will require chunk downloading
       try (ResultSet resultSet =
           statement.executeQuery(

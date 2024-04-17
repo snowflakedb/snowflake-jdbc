@@ -443,7 +443,6 @@ public class StatementIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testExecuteUpdateZeroCount() throws SQLException {
     try (Connection connection = getConnection()) {
-
       String[] testCommands = {
         "use role accountadmin",
         "use database testdb",
