@@ -467,10 +467,10 @@ public class StatementIT extends BaseJDBCTest {
       };
       try {
         for (String testCommand : testCommands) {
-          try (Statement statement = connection.createStatement()) {
-            int updateCount = statement.executeUpdate(testCommand);
-            assertThat(updateCount, is(0));
-          }
+          Statement statement = connection.createStatement();
+          int updateCount = statement.executeUpdate(testCommand);
+          assertThat(updateCount, is(0));
+          statement.close();
         }
       } finally {
         try (Statement statement = connection.createStatement()) {
