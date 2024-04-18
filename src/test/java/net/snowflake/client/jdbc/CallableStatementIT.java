@@ -86,24 +86,25 @@ public class CallableStatementIT extends BaseJDBCTest {
         assertThat(callableStatement.getParameterMetaData().getParameterCount(), is(0));
       }
       // test CallableStatement with 1 binding parameter
-      try (CallableStatement callableStatement = connection.prepareCall("call square_it(?)")) {
+      try (CallableStatement callableStatement1 = connection.prepareCall("call square_it(?)")) {
         // test that getParameterMetaData works with CallableStatement. At this point, it always
         // returns
         // the type as "text."
-        assertThat(callableStatement.getParameterMetaData().getParameterType(1), is(Types.VARCHAR));
-        callableStatement.getParameterMetaData().getParameterTypeName(1);
-        assertThat(callableStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
-        callableStatement.setFloat(1, 7.0f);
-        try (ResultSet rs = callableStatement.executeQuery()) {
+        assertThat(
+            callableStatement1.getParameterMetaData().getParameterType(1), is(Types.VARCHAR));
+        callableStatement1.getParameterMetaData().getParameterTypeName(1);
+        assertThat(callableStatement1.getParameterMetaData().getParameterTypeName(1), is("text"));
+        callableStatement1.setFloat(1, 7.0f);
+        try (ResultSet rs = callableStatement1.executeQuery()) {
           rs.next();
           assertEquals(49.0f, rs.getFloat(1), 1.0f);
         }
       }
       // test CallableStatement with 2 binding parameters
-      try (CallableStatement callableStatement = connection.prepareCall("call add_nums(?,?)")) {
-        callableStatement.setDouble(1, 32);
-        callableStatement.setDouble(2, 15);
-        try (ResultSet rs = callableStatement.executeQuery()) {
+      try (CallableStatement callableStatement2 = connection.prepareCall("call add_nums(?,?)")) {
+        callableStatement2.setDouble(1, 32);
+        callableStatement2.setDouble(2, 15);
+        try (ResultSet rs = callableStatement2.executeQuery()) {
           rs.next();
           assertEquals(47, rs.getDouble(1), .5);
         }

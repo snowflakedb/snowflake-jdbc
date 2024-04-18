@@ -190,24 +190,23 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Test
   public void testDataCompletenessInLowMemory() throws Exception {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       for (int i = 0; i < 6; i++) {
         int resultSize = 1000000 + i;
-        try (Statement statement = connection.createStatement()) {
-          statement.execute("ALTER SESSION SET CLIENT_MEMORY_LIMIT=10");
-          try (ResultSet resultSet =
-              statement.executeQuery(
-                  "select randstr(80, random()) from table(generator(rowcount => "
-                      + resultSize
-                      + "))")) {
+        statement.execute("ALTER SESSION SET CLIENT_MEMORY_LIMIT=10");
+        try (ResultSet resultSet =
+            statement.executeQuery(
+                "select randstr(80, random()) from table(generator(rowcount => "
+                    + resultSize
+                    + "))")) {
 
-            int size = 0;
-            while (resultSet.next()) {
-              size++;
-            }
-            System.out.println("Total records: " + size);
-            assert (size == resultSize);
+          int size = 0;
+          while (resultSet.next()) {
+            size++;
           }
+          System.out.println("Total records: " + size);
+          assert (size == resultSize);
         }
       }
     }
@@ -429,31 +428,30 @@ public class ConnectionIT extends BaseJDBCTest {
 
     // test correct private key one
     properties.put("privateKey", privateKey);
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
 
-      // test datasource connection using private key
-      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-      ds.setUrl(uri);
-      ds.setAccount(parameters.get("account"));
-      ds.setUser(parameters.get("user"));
-      ds.setSsl("on".equals(parameters.get("ssl")));
-      ds.setPortNumber(Integer.valueOf(parameters.get("port")));
-      ds.setPrivateKey(privateKey);
+    // test datasource connection using private key
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setUrl(uri);
+    ds.setAccount(parameters.get("account"));
+    ds.setUser(parameters.get("user"));
+    ds.setSsl("on".equals(parameters.get("ssl")));
+    ds.setPortNumber(Integer.valueOf(parameters.get("port")));
+    ds.setPrivateKey(privateKey);
 
-      try (Connection con = ds.getConnection()) {
-        // test wrong private key
-        keyPair = keyPairGenerator.generateKeyPair();
-        publicKey2 = keyPair.getPublic();
-        PrivateKey privateKey2 = keyPair.getPrivate();
-        properties.put("privateKey", privateKey2);
-        try {
-          DriverManager.getConnection(uri, properties);
-          fail();
-        } catch (SQLException e) {
-          Assert.assertEquals(390144, e.getErrorCode());
-        }
-      }
+    try (Connection con = ds.getConnection()) {}
+    // test wrong private key
+    keyPair = keyPairGenerator.generateKeyPair();
+    publicKey2 = keyPair.getPublic();
+    PrivateKey privateKey2 = keyPair.getPrivate();
+    properties.put("privateKey", privateKey2);
+    try {
+      DriverManager.getConnection(uri, properties);
+      fail();
+    } catch (SQLException e) {
+      Assert.assertEquals(390144, e.getErrorCode());
     }
+
     // test multiple key pair
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
