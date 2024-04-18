@@ -428,28 +428,30 @@ public class ConnectionIT extends BaseJDBCTest {
 
     // test correct private key one
     properties.put("privateKey", privateKey);
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
 
-    // test datasource connection using private key
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-    ds.setUrl(uri);
-    ds.setAccount(parameters.get("account"));
-    ds.setUser(parameters.get("user"));
-    ds.setSsl("on".equals(parameters.get("ssl")));
-    ds.setPortNumber(Integer.valueOf(parameters.get("port")));
-    ds.setPrivateKey(privateKey);
+      // test datasource connection using private key
+      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+      ds.setUrl(uri);
+      ds.setAccount(parameters.get("account"));
+      ds.setUser(parameters.get("user"));
+      ds.setSsl("on".equals(parameters.get("ssl")));
+      ds.setPortNumber(Integer.valueOf(parameters.get("port")));
+      ds.setPrivateKey(privateKey);
 
-    try (Connection con = ds.getConnection()) {}
-    // test wrong private key
-    keyPair = keyPairGenerator.generateKeyPair();
-    publicKey2 = keyPair.getPublic();
-    PrivateKey privateKey2 = keyPair.getPrivate();
-    properties.put("privateKey", privateKey2);
-    try {
-      DriverManager.getConnection(uri, properties);
-      fail();
-    } catch (SQLException e) {
-      Assert.assertEquals(390144, e.getErrorCode());
+      try (Connection con = ds.getConnection()) {
+        // test wrong private key
+        keyPair = keyPairGenerator.generateKeyPair();
+        publicKey2 = keyPair.getPublic();
+        PrivateKey privateKey2 = keyPair.getPrivate();
+        properties.put("privateKey", privateKey2);
+        try {
+          DriverManager.getConnection(uri, properties);
+          fail();
+        } catch (SQLException e) {
+          Assert.assertEquals(390144, e.getErrorCode());
+        }
+      }
     }
 
     // test multiple key pair
