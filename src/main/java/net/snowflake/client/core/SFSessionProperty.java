@@ -84,7 +84,7 @@ public enum SFSessionProperty {
 
   JDBC_ARROW_TREAT_DECIMAL_AS_INT("JDBC_ARROW_TREAT_DECIMAL_AS_INT", false, Boolean.class),
 
-  JDBC_USE_HARDCODED_TIMEZONE("JDBC_USE_HARDCODED_TIMEZONE", true, Boolean.class);
+  JDBC_USE_HARDCODED_TIMEZONE("JDBC_USE_HARDCODED_TIMEZONE", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
