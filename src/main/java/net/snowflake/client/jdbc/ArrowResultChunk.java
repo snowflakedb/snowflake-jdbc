@@ -238,9 +238,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
             break;
 
           case DATE:
-            converters.add(
-                new DateConverter(
-                    vector, i, context, context.getSession().getFormatDateWithTimezone()));
+            boolean getFormatDateWithTimeZone = false;
+            if (context.getSession() != null) {
+              getFormatDateWithTimeZone = context.getSession().getFormatDateWithTimezone();
+            }
+            converters.add(new DateConverter(vector, i, context, getFormatDateWithTimeZone));
             break;
 
           case FIXED:
