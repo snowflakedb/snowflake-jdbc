@@ -79,6 +79,7 @@ public abstract class SFBaseSession {
   private boolean enableCombineDescribe;
   private boolean clientTelemetryEnabled = false;
   private boolean useSessionTimezone;
+  private boolean useHardcodedTimezone = true;
   // The server can read array binds from a stage instead of query payload.
   // When there as many bind values as this threshold, we should upload them to a stage.
   private int arrayBindStageThreshold = 0;
@@ -648,8 +649,16 @@ public abstract class SFBaseSession {
     return useSessionTimezone;
   }
 
+  public boolean getUseHardcodedTimezone() {
+    return useHardcodedTimezone;
+  }
+
   public void setUseSessionTimezone(boolean useSessionTimezone) {
     this.useSessionTimezone = useSessionTimezone;
+  }
+
+  public void setUseHardcodedTimezone(boolean useHardcodedTimezone) {
+    this.useHardcodedTimezone = useHardcodedTimezone;
   }
 
   public boolean getEnableCombineDescribe() {
