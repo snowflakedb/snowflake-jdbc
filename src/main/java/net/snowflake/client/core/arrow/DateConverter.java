@@ -121,7 +121,11 @@ public class DateConverter extends AbstractArrowVectorConverter {
         getDate(
             index,
             this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(),
-            this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat);
+            this.context.getSession() == null
+                ? false
+                : (this.context.getSession().getUseHardcodedTimezone()
+                    ? false
+                    : this.useDateFormat));
     return date == null ? null : ResultUtil.getDateAsString(date, context.getDateFormatter());
   }
 
