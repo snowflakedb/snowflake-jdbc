@@ -234,8 +234,12 @@ public class JsonSqlInput extends BaseSqlInput {
           List<T> result = new ArrayList();
           if (ArrayNode.class.isAssignableFrom(value.getClass())) {
             for (JsonNode node : (ArrayNode) value) {
-
-              result.add(convertObject(type, TimeZone.getDefault(), getValue(node), fieldMetadata));
+              result.add(
+                  convertObject(
+                      type,
+                      TimeZone.getDefault(),
+                      getValue(node),
+                      fieldMetadata.getFields().get(0)));
             }
             return result;
           } else {
@@ -259,7 +263,11 @@ public class JsonSqlInput extends BaseSqlInput {
             int counter = 0;
             for (JsonNode node : valueNodes) {
               array[counter++] =
-                  convertObject(type, TimeZone.getDefault(), getValue(node), fieldMetadata);
+                  convertObject(
+                      type,
+                      TimeZone.getDefault(),
+                      getValue(node),
+                      fieldMetadata.getFields().get(0));
             }
             return array;
           } else {

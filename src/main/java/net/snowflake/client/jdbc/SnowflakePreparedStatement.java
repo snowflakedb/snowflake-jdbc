@@ -27,6 +27,7 @@ public interface SnowflakePreparedStatement {
    * @throws SQLException
    */
   void setBigInteger(int parameterIndex, BigInteger x) throws SQLException;
+
   /**
    * Sets the designated parameter to the given Map instance.
    *

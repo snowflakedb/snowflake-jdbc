@@ -329,13 +329,17 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
-  private void setObjectInternal(int parameterIndex, SQLData x) throws SQLException {
-    logger.debug("setObjectInternal(parameterIndex: {}, SqlData x)", parameterIndex);
+  private void setObjectInternal(int parameterIndex, SQLData sqlData) throws SQLException {
+    logger.debug("setObjectInternal(parameterIndex: {}, SqlData sqlData)", parameterIndex);
 
-    JsonSqlOutput stream = new JsonSqlOutput(x, connection.getSFBaseSession());
-    x.writeSQL(stream);
+    JsonSqlOutput stream = new JsonSqlOutput(sqlData, connection.getSFBaseSession());
+    sqlData.writeSQL(stream);
     ParameterBindingDTO binding =
-        new ParameterBindingDTO("json", "OBJECT", stream.getJsonString(), stream.getSchema());
+        new ParameterBindingDTO(
+            "json",
+            SnowflakeUtil.javaTypeToSFTypeString(Types.STRUCT, connection.getSFBaseSession()),
+            stream.getJsonString(),
+            stream.getSchema());
     parameterBindings.put(String.valueOf(parameterIndex), binding);
   }
 
@@ -450,9 +454,6 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     } else if (targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ
         || targetSqlType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
       setTimestampWithType(parameterIndex, (Timestamp) x, targetSqlType);
-    } else if (targetSqlType == Types.STRUCT) {
-      ParameterBindingDTO binding = new ParameterBindingDTO("TEXT", String.valueOf(x));
-      parameterBindings.put(String.valueOf(parameterIndex), binding);
     } else {
       logger.debug(
           "setObject(parameterIndex: {}, Object x, sqlType: {})",
@@ -620,11 +621,26 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   }
 
   @Override
-  public void setArray(int parameterIndex, Array x) throws SQLException {
-    SfSqlArray sfArray = (SfSqlArray) x;
-    ParameterBindingDTO binding =
-        new ParameterBindingDTO("json", "ARRAY", sfArray.getJsonString(), sfArray.getSchema());
-    parameterBindings.put(String.valueOf(parameterIndex), binding);
+  public void setArray(int parameterIndex, Array array) throws SQLException {
+    if (array instanceof SfSqlArray) {
+      SfSqlArray sfArray = (SfSqlArray) array;
+      ParameterBindingDTO binding =
+          new ParameterBindingDTO(
+              "json",
+              SnowflakeUtil.javaTypeToSFTypeString(Types.ARRAY, connection.getSFBaseSession()),
+              sfArray.getJsonString(),
+              sfArray.getSchema());
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    } else {
+      SfSqlArray sfArray = new SfSqlArray(Types.INTEGER, array);
+      ParameterBindingDTO binding =
+          new ParameterBindingDTO(
+              "json",
+              SnowflakeUtil.javaTypeToSFTypeString(Types.ARRAY, connection.getSFBaseSession()),
+              sfArray.getJsonString(),
+              sfArray.getSchema());
+      parameterBindings.put(String.valueOf(parameterIndex), binding);
+    }
   }
 
   @Override
@@ -641,7 +657,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     BindingParameterMetadata schema =
         BindingParameterMetadata.BindingParameterMetadataBuilder.bindingParameterMetadata()
-            .withType("MAP")
+            .withType("map")
             .withFields(
                 Arrays.asList(
                     FieldSchemaCreator.buildBindingSchemaForType(Types.VARCHAR, false),
@@ -649,7 +665,12 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
             .build();
     ParameterBindingDTO binding = null;
     try {
-      binding = new ParameterBindingDTO("json", "OBJECT", SnowflakeUtil.mapJson(map), schema);
+      binding =
+          new ParameterBindingDTO(
+              "json",
+              SnowflakeUtil.javaTypeToSFTypeString(Types.STRUCT, connection.getSFBaseSession()),
+              SnowflakeUtil.mapJson(map),
+              schema);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }

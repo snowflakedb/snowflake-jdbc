@@ -20,6 +20,8 @@ public class AllTypesClass implements SQLData {
   private Double d;
   private BigDecimal bd;
   private Boolean bool;
+
+  @SnowflakeColumn(type = "timestamp_ltz")
   private Timestamp timestampLtz;
 
   @SnowflakeColumn(type = "timestamp_ntz")
@@ -198,7 +200,7 @@ public class AllTypesClass implements SQLData {
   public byte[] getBinary() {
     return binary;
   }
-  //
+
   public SimpleClass getSimpleClass() {
     return simpleClass;
   }

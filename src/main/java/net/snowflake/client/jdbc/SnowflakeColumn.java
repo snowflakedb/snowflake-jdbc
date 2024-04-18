@@ -27,7 +27,7 @@ public @interface SnowflakeColumn {
   /**
    * (Optional) The snowflake nullable flag for a column
    *
-   * <p>The default value is true Provided type can override default nullable value
+   * <p>The default value is true Provided value can override default nullable value
    */
   boolean nullable() default true;
 

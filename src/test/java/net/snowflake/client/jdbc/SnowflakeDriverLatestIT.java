@@ -841,7 +841,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           regularStatement, false, "geoJson", "OBJECT", "java.lang.String", Types.VARCHAR);
 
       testGeoOutputTypeSingle(
-          regularStatement, true, "geoJson", "GEOGRAPHY", "java.lang.String", Types.STRUCT);
+          regularStatement, true, "geoJson", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
 
       testGeoOutputTypeSingle(
           regularStatement, false, "wkt", "VARCHAR", "java.lang.String", Types.VARCHAR);
@@ -989,10 +989,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           "insert into t_geo2 values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
 
       testGeometryOutputTypeSingle(
-          regularStatement, true, "geoJson", "GEOMETRY", "java.lang.String", Types.STRUCT);
+          regularStatement, true, "geoJson", "GEOMETRY", "java.lang.String", Types.VARCHAR);
 
       testGeometryOutputTypeSingle(
-          regularStatement, true, "wkt", "GEOMETRY", "java.lang.String", Types.STRUCT);
+          regularStatement, true, "wkt", "GEOMETRY", "java.lang.String", Types.VARCHAR);
 
     } finally {
       if (regularStatement != null) {

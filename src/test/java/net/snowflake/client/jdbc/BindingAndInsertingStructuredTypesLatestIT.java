@@ -11,6 +11,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -21,6 +22,9 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,7 +32,6 @@ import java.util.stream.Stream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.core.SfSqlArray;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
@@ -47,6 +50,8 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_BINDS = enable");
       stmt.execute("alter session set ENABLE_OBJECT_TYPED_BINDS = true");
       stmt.execute("alter session set enable_structured_types_in_fdn_tables=true");
+      stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
+      stmt.execute("alter session set jdbc_query_result_format = 'JSON'");
     }
     return conn;
   }
@@ -62,35 +67,36 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteObject() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
+    SimpleClass sc = new SimpleClass("text1", 2);
+    SimpleClass sc2 = new SimpleClass("text2", 3);
     try (Connection connection = init()) {
       Statement statement = connection.createStatement();
       statement.execute(
           "CREATE OR REPLACE TABLE test_table (ob OBJECT(string varchar, intValue NUMBER))");
+      try (SnowflakePreparedStatementV1 stmt =
+              (SnowflakePreparedStatementV1)
+                  connection.prepareStatement("insert into test_table select ?");
+          SnowflakePreparedStatementV1 stmt3 =
+              (SnowflakePreparedStatementV1)
+                  connection.prepareStatement("SELECT ob FROM test_table where ob = ?"); ) {
 
-      SnowflakePreparedStatementV1 stmt =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("insert into test_table select ?");
-      SimpleClass sc = new SimpleClass("text1", 2);
-      stmt.setObject(1, sc);
-      stmt.executeUpdate();
+        stmt.setObject(1, sc);
+        stmt.executeUpdate();
 
-      SnowflakePreparedStatementV1 stmt2 =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("insert into test_table select ?");
-      SimpleClass sc2 = new SimpleClass("text2", 3);
-      stmt2.setObject(1, sc2);
-      stmt2.executeUpdate();
+        stmt.setObject(1, sc2);
+        stmt.executeUpdate();
 
-      SnowflakePreparedStatementV1 stmt3 =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("SELECT ob FROM test_table where ob = ?");
-      stmt3.setObject(1, sc);
-      ResultSet resultSet = stmt3.executeQuery();
-      resultSet.next();
-      SimpleClass object = resultSet.getObject(1, SimpleClass.class);
-      assertEquals("text1", object.getString());
-      assertEquals(Integer.valueOf("2"), object.getIntValue());
-      assertFalse(resultSet.next());
+        stmt3.setObject(1, sc2);
+
+        try (ResultSet resultSet = stmt3.executeQuery()) {
+
+          resultSet.next();
+          SimpleClass object = resultSet.getObject(1, SimpleClass.class);
+          assertEquals("text2", object.getString());
+          assertEquals(Integer.valueOf("3"), object.getIntValue());
+          assertFalse(resultSet.next());
+        }
+      }
     }
   }
 
@@ -98,21 +104,24 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteNullObject() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmtement2 =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("insert into test_table select null");
+        SnowflakePreparedStatementV1 statement3 =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("SELECT * FROM test_table"); ) {
+
       statement.execute(
           "CREATE OR REPLACE TABLE test_table (ob OBJECT(string varchar, intValue NUMBER))");
 
-      SnowflakePreparedStatementV1 stmt =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("insert into test_table select null");
-      stmt.executeUpdate();
+      stmtement2.executeUpdate();
 
-      SnowflakePreparedStatementV1 stmt2 =
-          (SnowflakePreparedStatementV1) connection.prepareStatement("SELECT * FROM test_table");
-      ResultSet resultSet = stmt2.executeQuery();
-      assertTrue(resultSet.next());
-      assertNull(resultSet.getObject(1));
+      try (ResultSet resultSet = statement3.executeQuery()) {
+        assertTrue(resultSet.next());
+        assertNull(resultSet.getObject(1));
+      }
     }
   }
 
@@ -120,23 +129,23 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteObjectBindingNull() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("insert into test_table select ?");
+        SnowflakePreparedStatementV1 stmt2 =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("SELECT * FROM test_table"); ) {
       statement.execute(
           "CREATE OR REPLACE TABLE test_table (ob OBJECT(string varchar, intValue NUMBER))");
-
-      SnowflakePreparedStatementV1 stmt =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("insert into test_table select ?");
       stmt.setObject(1, null);
       stmt.executeUpdate();
-
-      SnowflakePreparedStatementV1 stmt2 =
-          (SnowflakePreparedStatementV1) connection.prepareStatement("SELECT * FROM test_table");
-      ResultSet resultSet = stmt2.executeQuery();
-      resultSet.next();
-      SimpleClass object = resultSet.getObject(1, SimpleClass.class);
-      assertNull(object);
+      try (ResultSet resultSet = stmt2.executeQuery()) {
+        resultSet.next();
+        SimpleClass object = resultSet.getObject(1, SimpleClass.class);
+        assertNull(object);
+      }
     }
   }
 
@@ -144,8 +153,15 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteObjectAllTypes() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("insert into test_all_types_object select ?");
+        SnowflakePreparedStatementV1 stmt2 =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("select * from test_all_types_object where ob=?"); ) {
+
       statement.execute(
           " CREATE OR REPLACE TABLE test_all_types_object ("
               + "                 ob OBJECT(string VARCHAR, "
@@ -166,9 +182,6 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
               + "                  simpleClass OBJECT(string VARCHAR, intValue INTEGER)"
               + "                  ) )");
 
-      SnowflakePreparedStatementV1 stmt =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("insert into test_all_types_object select ?");
       AllTypesClass allTypeInstance =
           new AllTypesClass(
               "string",
@@ -180,9 +193,9 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
               2.24,
               new BigDecimal("3.3"),
               Boolean.TRUE,
-              Timestamp.valueOf("2021-12-22 09:43:44"),
-              Timestamp.valueOf("2021-12-23 09:44:44"),
-              Timestamp.valueOf("2021-12-24 09:45:45"),
+              Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
+              toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("UTC"))),
+              toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
               Date.valueOf("2023-12-24"),
               Time.valueOf("12:34:56"),
               new byte[] {'a', 'b', 'c'},
@@ -191,9 +204,6 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       stmt.executeUpdate();
       statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
 
-      SnowflakePreparedStatementV1 stmt2 =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("select * from test_all_types_object where ob=?");
       stmt2.setObject(1, allTypeInstance);
       try (ResultSet resultSet = stmt2.executeQuery()) {
         resultSet.next();
@@ -212,9 +222,11 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
         assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
         assertEquals(
-            Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 9, 45, 45)), object.getTimestampTz());
+            toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
+            object.getTimestampTz());
         assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), object.getDate());
-        assertEquals(Time.valueOf("12:34:56"), object.getTime());
+        // Ime type is without offset that's why the value is 1 hour before (Warsaw timezone)
+        assertEquals(Time.valueOf(LocalTime.of(11, 34, 56)), object.getTime());
         assertArrayEquals(new byte[] {'a', 'b', 'c'}, object.getBinary());
         assertEquals("testString", object.getSimpleClass().getString());
         assertEquals(Integer.valueOf("2"), object.getSimpleClass().getIntValue());
@@ -222,18 +234,25 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
     }
   }
 
+  public static Timestamp toTimestamp(ZonedDateTime dateTime) {
+    return new Timestamp(dateTime.toInstant().getEpochSecond() * 1000L);
+  }
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteArray() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement(
+                    "INSERT INTO array_of_integers (arrayInt) SELECT ?;"); ) {
+
       statement.execute(" CREATE OR REPLACE TABLE array_of_integers(arrayInt ARRAY(INTEGER))");
 
-      SnowflakePreparedStatementV1 stmt =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("INSERT INTO array_of_integers (arrayInt) SELECT ?;");
-      stmt.setArray(1, new SfSqlArray(Types.INTEGER, new Integer[] {1, 2, 3}));
+      Array array = connection.createArrayOf("INTEGER", new Integer[] {1, 2, 3});
+      stmt.setArray(1, array);
       stmt.executeUpdate();
 
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
@@ -251,14 +270,15 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteArrayNoBinds() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement(
+                    "insert into array_of_integers select ([1, 2, 3]::array(integer));"); ) {
+
       statement.execute(" CREATE OR REPLACE TABLE array_of_integers(arrayInt ARRAY(INTEGER))");
 
-      SnowflakePreparedStatementV1 stmt =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement(
-                  "insert into array_of_integers select ([1, 2, 3]::array(integer));");
       stmt.executeUpdate();
 
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
@@ -274,8 +294,15 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteMapOfSqlData() throws SQLException {
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+        SnowflakePreparedStatementV1 stmt2 =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+
       statement.execute(
           " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, OBJECT(string VARCHAR, intValue INTEGER)))");
 
@@ -287,15 +314,9 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
                   })
               .collect(Collectors.toMap(data -> (String) data[0], data -> (SimpleClass) data[1]));
 
-      SnowflakePreparedStatementV1 stmt =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
       stmt.setMap(1, mapStruct, Types.STRUCT);
       stmt.executeUpdate();
 
-      SnowflakePreparedStatementV1 stmt2 =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("select * from map_of_objects where mapp=?");
       stmt2.setMap(1, mapStruct, Types.STRUCT);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {
@@ -309,23 +330,24 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteMapOfInteger() throws SQLException {
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+        SnowflakePreparedStatementV1 stmt2 =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+
       statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, INTEGER))");
 
       Map<String, Integer> mapStruct = new HashMap<>();
       mapStruct.put("x", 1);
       mapStruct.put("y", 2);
 
-      SnowflakePreparedStatementV1 stmt =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
       stmt.setMap(1, mapStruct, Types.INTEGER);
       stmt.executeUpdate();
 
-      SnowflakePreparedStatementV1 stmt2 =
-          (SnowflakePreparedStatementV1)
-              connection.prepareStatement("select * from map_of_objects where mapp=?");
       stmt2.setMap(1, mapStruct, Types.INTEGER);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {

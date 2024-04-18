@@ -735,67 +735,20 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testMapNestedStructures() throws SQLException {
-    withFirstRow(
-        "SELECT {'simpleClass': {'string': 'a'}, "
-            + "'simpleClasses': ARRAY_CONSTRUCT({'string': 'a'}, {'string': 'b'}), "
-            + "'arrayOfSimpleClasses': ARRAY_CONSTRUCT({'string': 'a'}, {'string': 'b'}), "
-            + "'mapOfSimpleClasses':{'x':{'string': 'c'}, 'y':{'string': 'd'}},"
-            + "'texts': ARRAY_CONSTRUCT('string', 'a'), "
-            + "'arrayOfDates': ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD')), "
-            + "'mapOfIntegers':{'x':3, 'y':4}}"
-            + "::OBJECT(simpleClass OBJECT(string VARCHAR), "
-            + "simpleClasses ARRAY(OBJECT(string VARCHAR)),"
-            + "arrayOfSimpleClasses ARRAY(OBJECT(string VARCHAR)),"
-            + "mapOfSimpleClasses MAP(VARCHAR, OBJECT(string VARCHAR)),"
-            + "texts ARRAY(VARCHAR),"
-            + "arrayOfDates ARRAY(DATE),"
-            + "mapOfIntegers MAP(VARCHAR, INTEGER))",
-        (resultSet) -> {
-          NestedStructSqlData nestedStructSqlData =
-              resultSet.getObject(1, NestedStructSqlData.class);
-          ;
-          assertEquals("a", nestedStructSqlData.getSimpleClass().getString());
-
-          assertEquals("a", nestedStructSqlData.getSimpleClassses().get(0).getString());
-          assertEquals("b", nestedStructSqlData.getSimpleClassses().get(1).getString());
-
-          assertEquals("a", nestedStructSqlData.getArrayOfSimpleClasses()[0].getString());
-          assertEquals("b", nestedStructSqlData.getArrayOfSimpleClasses()[1].getString());
-
-          assertEquals("c", nestedStructSqlData.getMapOfSimpleClasses().get("x").getString());
-          assertEquals("d", nestedStructSqlData.getMapOfSimpleClasses().get("y").getString());
-
-          assertEquals("string", nestedStructSqlData.getTexts().get(0));
-          assertEquals("a", nestedStructSqlData.getTexts().get(1));
-
-          assertEquals(
-              Date.valueOf(LocalDate.of(2023, 12, 24)).toString(),
-              nestedStructSqlData.getArrayOfDates()[0].toString());
-          assertEquals(
-              Date.valueOf(LocalDate.of(2023, 12, 25)).toString(),
-              nestedStructSqlData.getArrayOfDates()[1].toString());
-
-          assertEquals(Integer.valueOf(3), nestedStructSqlData.getMapOfIntegers().get("x"));
-          assertEquals(Integer.valueOf(4), nestedStructSqlData.getMapOfIntegers().get("y"));
-        });
-  }
-
-  @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapNestedStructures() throws SQLException {
     withFirstRow(
-        "SELECT {'simpleClass': {'string': 'a'}, "
-            + "'simpleClasses': ARRAY_CONSTRUCT({'string': 'a'}, {'string': 'b'}), "
-            + "'arrayOfSimpleClasses': ARRAY_CONSTRUCT({'string': 'a'}, {'string': 'b'}), "
-            + "'mapOfSimpleClasses':{'x':{'string': 'c'}, 'y':{'string': 'd'}},"
+        "SELECT {'simpleClass': {'string': 'a', 'intValue': 2}, "
+            + "'simpleClasses': ARRAY_CONSTRUCT({'string': 'a', 'intValue': 2}, {'string': 'b', 'intValue': 2}), "
+            + "'arrayOfSimpleClasses': ARRAY_CONSTRUCT({'string': 'a', 'intValue': 2}, {'string': 'b', 'intValue': 2}), "
+            + "'mapOfSimpleClasses':{'x':{'string': 'c', 'intValue': 2}, 'y':{'string': 'd', 'intValue': 2}},"
             + "'texts': ARRAY_CONSTRUCT('string', 'a'), "
             + "'arrayOfDates': ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD')), "
             + "'mapOfIntegers':{'x':3, 'y':4}}"
-            + "::OBJECT(simpleClass OBJECT(string VARCHAR), "
-            + "simpleClasses ARRAY(OBJECT(string VARCHAR)),"
-            + "arrayOfSimpleClasses ARRAY(OBJECT(string VARCHAR)),"
-            + "mapOfSimpleClasses MAP(VARCHAR, OBJECT(string VARCHAR)),"
+            + "::OBJECT(simpleClass OBJECT(string VARCHAR, intValue INTEGER), "
+            + "simpleClasses ARRAY(OBJECT(string VARCHAR, intValue INTEGER)),"
+            + "arrayOfSimpleClasses ARRAY(OBJECT(string VARCHAR, intValue INTEGER)),"
+            + "mapOfSimpleClasses MAP(VARCHAR, OBJECT(string VARCHAR, intValue INTEGER)),"
             + "texts ARRAY(VARCHAR),"
             + "arrayOfDates ARRAY(DATE),"
             + "mapOfIntegers MAP(VARCHAR, INTEGER))",
@@ -804,15 +757,30 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               resultSet.getObject(1, NestedStructSqlData.class);
           ;
           assertEquals("a", nestedStructSqlData.getSimpleClass().getString());
+          assertEquals(Integer.valueOf(2), nestedStructSqlData.getSimpleClass().getIntValue());
 
           assertEquals("a", nestedStructSqlData.getSimpleClassses().get(0).getString());
+          assertEquals(
+              Integer.valueOf(2), nestedStructSqlData.getSimpleClassses().get(0).getIntValue());
           assertEquals("b", nestedStructSqlData.getSimpleClassses().get(1).getString());
+          assertEquals(
+              Integer.valueOf(2), nestedStructSqlData.getSimpleClassses().get(1).getIntValue());
 
           assertEquals("a", nestedStructSqlData.getArrayOfSimpleClasses()[0].getString());
+          assertEquals(
+              Integer.valueOf(2), nestedStructSqlData.getArrayOfSimpleClasses()[0].getIntValue());
           assertEquals("b", nestedStructSqlData.getArrayOfSimpleClasses()[1].getString());
+          assertEquals(
+              Integer.valueOf(2), nestedStructSqlData.getArrayOfSimpleClasses()[1].getIntValue());
 
           assertEquals("c", nestedStructSqlData.getMapOfSimpleClasses().get("x").getString());
+          assertEquals(
+              Integer.valueOf(2),
+              nestedStructSqlData.getMapOfSimpleClasses().get("x").getIntValue());
           assertEquals("d", nestedStructSqlData.getMapOfSimpleClasses().get("y").getString());
+          assertEquals(
+              Integer.valueOf(2),
+              nestedStructSqlData.getMapOfSimpleClasses().get("y").getIntValue());
 
           assertEquals("string", nestedStructSqlData.getTexts().get(0));
           assertEquals("a", nestedStructSqlData.getTexts().get(1));

@@ -91,7 +91,7 @@ public class SfSqlArray implements Array {
 
   public BindingParameterMetadata getSchema() throws SQLException {
     return BindingParameterMetadata.BindingParameterMetadataBuilder.bindingParameterMetadata()
-        .withType("ARRAY")
+        .withType("array")
         .withFields(Arrays.asList(buildBindingSchemaForType(getBaseType(), false)))
         .build();
   }

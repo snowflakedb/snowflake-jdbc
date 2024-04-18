@@ -6,9 +6,12 @@ import java.util.Optional;
 import net.snowflake.client.jdbc.BindingParameterMetadata;
 import net.snowflake.client.jdbc.SnowflakeColumn;
 import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
+@SnowflakeJdbcInternalApi
 public class FieldSchemaCreator {
-
+  static final SFLogger logger = SFLoggerFactory.getLogger(FieldSchemaCreator.class);
   public static final int MAX_TEXT_COLUMN_SIZE = 134217728;
   public static final int MAX_BINARY_COLUMN_SIZE = 8388608;
 
@@ -69,7 +72,7 @@ public class FieldSchemaCreator {
       case Types.DOUBLE:
       case Types.DECIMAL:
         return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
-            name, "real", 0, 0, Optional.empty());
+            name, "real", 9, 38, Optional.empty());
       case Types.NUMERIC:
       case Types.INTEGER:
       case Types.SMALLINT:
@@ -78,14 +81,16 @@ public class FieldSchemaCreator {
         return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
             null, "fixed", 0, 38, Optional.empty());
       case Types.BOOLEAN:
-      case Types.DATE:
         return FieldSchemaCreator.buildSchemaTypeAndNameOnly(name, "boolean", Optional.empty());
+      case Types.DATE:
+        return FieldSchemaCreator.buildSchemaTypeAndNameOnly(name, "date", Optional.empty());
       case Types.TIMESTAMP:
       case Types.TIME:
         return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
             name, "timestamp", 9, 0, Optional.empty());
       default:
-        throw new SQLException();
+        logger.error("Could not create schema for type : " + baseType);
+        throw new SQLException("Could not create schema for type : " + baseType);
     }
   }
 }

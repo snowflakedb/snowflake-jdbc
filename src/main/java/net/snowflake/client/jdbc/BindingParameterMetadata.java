@@ -15,7 +15,7 @@ public class BindingParameterMetadata {
   private Integer precision;
   private Integer scale;
 
-  private Boolean nullable = true;
+  private boolean nullable = true;
   private List<BindingParameterMetadata> fields;
 
   public BindingParameterMetadata(String type) {

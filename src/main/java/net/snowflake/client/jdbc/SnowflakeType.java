@@ -447,6 +447,9 @@ public enum SnowflakeType {
       case Types.STRUCT:
         return OBJECT;
 
+      case Types.ARRAY:
+        return ARRAY;
+
       case Types.NULL:
         return ANY;
 

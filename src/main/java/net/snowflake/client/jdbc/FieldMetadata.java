@@ -129,10 +129,4 @@ public class FieldMetadata {
   public void setFields(List<FieldMetadata> fields) {
     this.fields = fields;
   }
-
-  public static FieldMetadata withTypeName(String typeName) {
-    FieldMetadata fieldMetadata = new FieldMetadata();
-    fieldMetadata.setTypeName(typeName);
-    return fieldMetadata;
-  }
 }
