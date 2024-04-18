@@ -9,6 +9,8 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLExcepti
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLData;
@@ -18,6 +20,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +29,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
-import net.snowflake.client.util.ThrowingTriFunction;
+import net.snowflake.client.util.ThrowingBiFunction;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
@@ -55,124 +59,68 @@ public class JsonSqlInput extends BaseSqlInput {
 
   @Override
   public String readString() throws SQLException {
-    return withNextValue(
-        ((value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          int columnSubType = fieldMetadata.getType();
-          int scale = fieldMetadata.getScale();
-          return mapSFExceptionToSQLException(
-              () ->
-                  converters
-                      .getStringConverter()
-                      .getString(value, columnType, columnSubType, scale));
-        }));
+    return withNextValue((this::convertString));
   }
 
   @Override
   public boolean readBoolean() throws SQLException {
-    return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getBooleanConverter().getBoolean(value, columnType));
-        });
+    return withNextValue(this::convertBoolean);
   }
 
   @Override
   public byte readByte() throws SQLException {
     return withNextValue(
-        (value, jsonNode, fieldMetadata) ->
+        (value, fieldMetadata) ->
             mapSFExceptionToSQLException(() -> converters.getNumberConverter().getByte(value)));
   }
 
   @Override
   public short readShort() throws SQLException {
-    return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getShort(value, columnType));
-        });
+    return withNextValue(this::convertShort);
   }
 
   @Override
   public int readInt() throws SQLException {
-    return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getInt(value, columnType));
-        });
+    return withNextValue(this::convertInt);
   }
 
   @Override
   public long readLong() throws SQLException {
-    return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getLong(value, columnType));
-        });
+    return withNextValue(this::convertLong);
   }
 
   @Override
   public float readFloat() throws SQLException {
-    return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getFloat(value, columnType));
-        });
+    return withNextValue(this::convertFloat);
   }
 
   @Override
   public double readDouble() throws SQLException {
-    return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
-          int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-          return mapSFExceptionToSQLException(
-              () -> converters.getNumberConverter().getDouble(value, columnType));
-        });
+    return withNextValue(this::convertDouble);
   }
 
   @Override
   public BigDecimal readBigDecimal() throws SQLException {
-    return withNextValue(
-        (value, jsonNode, fieldMetadata) -> convertBigDecimal(value, fieldMetadata));
-  }
-
-  private BigDecimal convertBigDecimal(Object value, FieldMetadata fieldMetadata)
-      throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    return mapSFExceptionToSQLException(
-        () -> converters.getNumberConverter().getBigDecimal(value, columnType));
+    return withNextValue(this::convertBigDecimal);
   }
 
   @Override
   public byte[] readBytes() throws SQLException {
-    return withNextValue((value, jsonNode, fieldMetadata) -> convertToBytes(value, fieldMetadata));
-  }
-
-  private byte[] convertToBytes(Object value, FieldMetadata fieldMetadata) throws SQLException {
-    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
-    int columnSubType = fieldMetadata.getType();
-    int scale = fieldMetadata.getScale();
-    return mapSFExceptionToSQLException(
-        () -> converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
+    return withNextValue(this::convertBytes);
   }
 
   @Override
   public Date readDate() throws SQLException {
     return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
+        (value, fieldMetadata) -> {
           if (value == null) {
             return null;
           }
-          return formatDate((String) value);
+          return convertDate((String) value);
         });
   }
 
-  private Date formatDate(String value) {
+  private Date convertDate(String value) {
     SnowflakeDateTimeFormat formatter = getFormat(session, "DATE_OUTPUT_FORMAT");
     SFTimestamp timestamp = formatter.parse(value);
     return Date.valueOf(
@@ -182,15 +130,15 @@ public class JsonSqlInput extends BaseSqlInput {
   @Override
   public Time readTime() throws SQLException {
     return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
+        (value, fieldMetadata) -> {
           if (value == null) {
             return null;
           }
-          return formatTime((String) value);
+          return convertTime((String) value);
         });
   }
 
-  private Time formatTime(String value) {
+  private Time convertTime(String value) {
     SnowflakeDateTimeFormat formatter = getFormat(session, "TIME_OUTPUT_FORMAT");
     SFTimestamp timestamp = formatter.parse(value);
     return Time.valueOf(
@@ -205,68 +153,151 @@ public class JsonSqlInput extends BaseSqlInput {
   @Override
   public Timestamp readTimestamp(TimeZone tz) throws SQLException {
     return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
+        (value, fieldMetadata) -> {
           if (value == null) {
             return null;
           }
-          return formatTimestamp(tz, value, fieldMetadata);
+          return convertTimestamp(tz, value, fieldMetadata);
         });
   }
 
   @Override
-  public <T> T readObject(Class<T> type) throws SQLException {
+  public <T> T readObject(Class<T> type, TimeZone tz) throws SQLException {
+    return withNextValue((value, fieldMetadata) -> convertObject(type, tz, value, fieldMetadata));
+  }
+
+  private <T> T convertObject(Class<T> type, TimeZone tz, Object value, FieldMetadata fieldMetadata)
+      throws SQLException {
+    if (value == null) {
+      return null;
+    } else if (SQLData.class.isAssignableFrom(type)) {
+      if (!JsonNode.class.isAssignableFrom(value.getClass())) {
+        logger.error("Object of class JsonNode is expected to convert to SqlData");
+        return null;
+      }
+      JsonNode jsonNode = (JsonNode) value;
+      SQLInput sqlInput =
+          new JsonSqlInput(
+              jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone);
+      SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+      instance.readSQL(sqlInput, null);
+      return (T) instance;
+    } else if (Map.class.isAssignableFrom(type)) {
+      if (value == null) {
+        return null;
+      } else {
+        return (T) convertSqlInputToMap((SQLInput) value);
+      }
+    } else if (String.class.isAssignableFrom(type)) {
+      return (T) convertString(value, fieldMetadata);
+    } else if (Boolean.class.isAssignableFrom(type)) {
+      return (T) convertBoolean(value, fieldMetadata);
+    } else if (Byte.class.isAssignableFrom(type)) {
+      return (T) convertString(value, fieldMetadata);
+    } else if (Short.class.isAssignableFrom(type)) {
+      return (T) convertShort(value, fieldMetadata);
+    } else if (Integer.class.isAssignableFrom(type)) {
+      return (T) convertInt(value, fieldMetadata);
+    } else if (Long.class.isAssignableFrom(type)) {
+      return (T) convertLong(value, fieldMetadata);
+    } else if (Float.class.isAssignableFrom(type)) {
+      return (T) convertFloat(value, fieldMetadata);
+    } else if (Double.class.isAssignableFrom(type)) {
+      return (T) convertFloat(value, fieldMetadata);
+    } else if (Date.class.isAssignableFrom(type)) {
+      return (T) convertDate((String) value);
+    } else if (Time.class.isAssignableFrom(type)) {
+      return (T) convertTime((String) value);
+    } else if (Timestamp.class.isAssignableFrom(type)) {
+      return (T) convertTimestamp(tz, value, fieldMetadata);
+    } else if (BigDecimal.class.isAssignableFrom(type)) {
+      return (T) convertBigDecimal(value, fieldMetadata);
+    } else if (byte[].class.isAssignableFrom(type)) {
+      return (T) convertBytes(value, fieldMetadata);
+    } else {
+      logger.debug(
+          "Unsupported type passed to readObject(int columnIndex,Class<T> type): "
+              + type.getName());
+      throw new SQLException(
+          "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
+              + type.getName());
+    }
+  }
+
+  @Override
+  public <T> List<T> readList(Class<T> type) throws SQLException {
     return withNextValue(
-        (value, jsonNode, fieldMetadata) -> {
-          if (SQLData.class.isAssignableFrom(type)) {
-            if (jsonNode.isNull()) {
-              return null;
-            } else {
-              SQLInput sqlInput =
-                  new JsonSqlInput(
-                      jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone);
-              SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
-              instance.readSQL(sqlInput, null);
-              return (T) instance;
-            }
-          } else if (Map.class.isAssignableFrom(type)) {
-            if (value == null) {
-              return null;
-            } else {
-              return (T) convertSqlInputToMap((SQLInput) value);
-            }
-          } else if (value == null) {
+        (value, fieldMetadata) -> {
+          if (value == null) {
             return null;
-          } else if (String.class.isAssignableFrom(type)
-              || Boolean.class.isAssignableFrom(type)
-              || Byte.class.isAssignableFrom(type)
-              || Short.class.isAssignableFrom(type)
-              || Integer.class.isAssignableFrom(type)
-              || Long.class.isAssignableFrom(type)
-              || Float.class.isAssignableFrom(type)
-              || Double.class.isAssignableFrom(type)) {
-            return (T) value;
-          } else if (Date.class.isAssignableFrom(type)) {
-            return (T) formatDate((String) value);
-          } else if (Time.class.isAssignableFrom(type)) {
-            return (T) formatTime((String) value);
-          } else if (Timestamp.class.isAssignableFrom(type)) {
-            return (T) formatTimestamp(sessionTimeZone, value, fieldMetadata);
-          } else if (Byte[].class.isAssignableFrom(type)) {
-            return (T) convertToBytes(value, fieldMetadata);
-          } else if (BigDecimal.class.isAssignableFrom(type)) {
-            return (T) convertBigDecimal(value, fieldMetadata);
+          }
+          List<T> result = new ArrayList();
+          if (ArrayNode.class.isAssignableFrom(value.getClass())) {
+            for (JsonNode node : (ArrayNode) value) {
+
+              result.add(convertObject(type, TimeZone.getDefault(), getValue(node), fieldMetadata));
+            }
+            return result;
           } else {
-            logger.debug(
-                "Unsupported type passed to readObject(int columnIndex,Class<T> type): "
-                    + type.getName());
+            logger.debug("Given object could not be converted to List of type: " + type.getName());
             throw new SQLException(
-                "Type passed to 'getObject(int columnIndex,Class<T> type)' is unsupported. Type: "
-                    + type.getName());
+                "Given object could not be converted to List of type: " + type.getName());
           }
         });
   }
 
-  private Timestamp formatTimestamp(TimeZone tz, Object value, FieldMetadata fieldMetadata)
+  @Override
+  public <T> T[] readArray(Class<T> type) throws SQLException {
+    return withNextValue(
+        (value, fieldMetadata) -> {
+          if (value == null) {
+            return null;
+          }
+          if (ArrayNode.class.isAssignableFrom(value.getClass())) {
+            ArrayNode valueNodes = (ArrayNode) value;
+            T[] array = (T[]) java.lang.reflect.Array.newInstance(type, valueNodes.size());
+            int counter = 0;
+            for (JsonNode node : valueNodes) {
+              array[counter++] =
+                  convertObject(type, TimeZone.getDefault(), getValue(node), fieldMetadata);
+            }
+            return array;
+          } else {
+            logger.debug("Given object could not be converted to Array of type: " + type.getName());
+            throw new SQLException(
+                "Given object could not be converted to List of type: " + type.getName());
+          }
+        });
+  }
+
+  @Override
+  public <T> Map<String, T> readMap(Class<T> type) throws SQLException {
+    return withNextValue(
+        (value, fieldMetadata) -> {
+          if (value == null) {
+            return null;
+          }
+          if (ObjectNode.class.isAssignableFrom(value.getClass())) {
+            Map<String, T> result = new HashMap<>();
+            ObjectNode arrayNode = (ObjectNode) value;
+            for (Iterator<String> it = arrayNode.fieldNames(); it.hasNext(); ) {
+              String key = it.next();
+              result.put(
+                  key,
+                  convertObject(
+                      type, TimeZone.getDefault(), getValue(arrayNode.get(key)), fieldMetadata));
+            }
+            return result;
+          } else {
+            logger.debug(
+                "Given object could not be converted to Map of String and type: " + type.getName());
+            throw new SQLException(
+                "Given object could not be converted to Map of String and type: " + type.getName());
+          }
+        });
+  }
+
+  private Timestamp convertTimestamp(TimeZone tz, Object value, FieldMetadata fieldMetadata)
       throws SQLException {
     if (value == null) {
       return null;
@@ -289,7 +320,12 @@ public class JsonSqlInput extends BaseSqlInput {
 
   @Override
   public Object readObject() throws SQLException {
-    return withNextValue((value, jsonNode, fieldMetadata) -> value);
+    return withNextValue((value, fieldMetadata) -> value);
+  }
+
+  @Override
+  public <T> T readObject(Class<T> type) throws SQLException {
+    return readObject(type, sessionTimeZone);
   }
 
   public boolean wasNull() {
@@ -302,13 +338,12 @@ public class JsonSqlInput extends BaseSqlInput {
         ((JsonSqlInput) sqlInput).getInput(), new TypeReference<Map<String, Object>>() {});
   }
 
-  private <T> T withNextValue(
-      ThrowingTriFunction<Object, JsonNode, FieldMetadata, T, SQLException> action)
+  private <T> T withNextValue(ThrowingBiFunction<Object, FieldMetadata, T, SQLException> action)
       throws SQLException {
     JsonNode jsonNode = elements.next();
     Object value = getValue(jsonNode);
     wasNull = value == null;
-    return action.apply(value, jsonNode, fields.get(currentIndex++));
+    return action.apply(value, fields.get(currentIndex++));
   }
 
   private Object getValue(JsonNode jsonNode) {
@@ -318,6 +353,8 @@ public class JsonSqlInput extends BaseSqlInput {
       return jsonNode.booleanValue();
     } else if (jsonNode.isNumber()) {
       return jsonNode.numberValue();
+    } else if (jsonNode.isObject() || jsonNode.isArray()) {
+      return jsonNode;
     }
     return null;
   }

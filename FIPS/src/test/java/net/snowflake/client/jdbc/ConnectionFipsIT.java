@@ -23,6 +23,7 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubActions;
 import net.snowflake.client.category.TestCategoryFips;
+import net.snowflake.client.core.SecurityUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.fips.FipsStatus;
@@ -161,7 +162,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     }
 
     // attempts an SSL connection to Google
-    //connectToGoogle();
+    // connectToGoogle();
   }
 
   @AfterClass
@@ -205,9 +206,10 @@ public class ConnectionFipsIT extends AbstractDriverIT {
           JAVA_SYSTEM_PROPERTY_SSL_TRUSTSTORE_TYPE,
           JAVA_SYSTEM_PROPERTY_SSL_TRUSTSTORE_TYPE_ORIGINAL_VALUE);
     }
+    System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
 
     // attempts an SSL connection to Google
-    //connectToGoogle();
+    // connectToGoogle();
   }
 
   @Test
@@ -317,6 +319,22 @@ public class ConnectionFipsIT extends AbstractDriverIT {
       }
       assertEquals(cnt, 1);
     }
+  }
+
+  /** Added in > 3.15.1 */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
+  public void connectWithFipsKeyPairWithBouncyCastle() throws Exception {
+    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    connectWithFipsKeyPair();
+  }
+
+  /** Added in > 3.15.1 */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
+  public void testConnectUsingKeyPairWithBouncyCastle() throws Exception {
+    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    testConnectUsingKeyPair();
   }
 
   private static void connectToGoogle() throws Exception {
