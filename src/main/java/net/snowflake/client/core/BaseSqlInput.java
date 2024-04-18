@@ -4,8 +4,11 @@
 
 package net.snowflake.client.core;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
+
 import java.io.InputStream;
 import java.io.Reader;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
@@ -107,4 +110,63 @@ public abstract class BaseSqlInput implements SFSqlInput {
   }
 
   abstract Map<String, Object> convertSqlInputToMap(SQLInput sqlInput);
+
+  protected String convertString(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    int columnSubType = fieldMetadata.getType();
+    int scale = fieldMetadata.getScale();
+    return mapSFExceptionToSQLException(
+        () -> converters.getStringConverter().getString(value, columnType, columnSubType, scale));
+  }
+
+  protected Boolean convertBoolean(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getBooleanConverter().getBoolean(value, columnType));
+  }
+
+  protected Short convertShort(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getShort(value, columnType));
+  }
+
+  protected Integer convertInt(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getInt(value, columnType));
+  }
+
+  protected Long convertLong(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getLong(value, columnType));
+  }
+
+  protected Float convertFloat(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getFloat(value, columnType));
+  }
+
+  protected Double convertDouble(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getDouble(value, columnType));
+  }
+
+  protected BigDecimal convertBigDecimal(Object value, FieldMetadata fieldMetadata)
+      throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    return mapSFExceptionToSQLException(
+        () -> converters.getNumberConverter().getBigDecimal(value, columnType));
+  }
+
+  protected byte[] convertBytes(Object value, FieldMetadata fieldMetadata) throws SQLException {
+    int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
+    int columnSubType = fieldMetadata.getType();
+    int scale = fieldMetadata.getScale();
+    return mapSFExceptionToSQLException(
+        () -> converters.getBytesConverter().getBytes(value, columnType, columnSubType, scale));
+  }
 }

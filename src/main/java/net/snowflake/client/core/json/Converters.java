@@ -153,12 +153,12 @@ public class Converters {
 
   @SnowflakeJdbcInternalApi
   public Converter floatConverter(int columnType) {
-    return value -> getNumberConverter().getBigDecimal(value, columnType);
+    return value -> getNumberConverter().getFloat(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi
   public Converter doubleConverter(int columnType) {
-    return value -> getNumberConverter().getBigDecimal(value, columnType);
+    return value -> getNumberConverter().getDouble(value, columnType);
   }
 
   @SnowflakeJdbcInternalApi

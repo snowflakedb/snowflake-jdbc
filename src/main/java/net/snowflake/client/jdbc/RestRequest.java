@@ -399,6 +399,16 @@ public class RestRequest {
           break;
         }
 
+        // If this was a request for an Okta one-time token that failed with a retry-able error,
+        // throw exception to renew the token before trying again.
+        if (String.valueOf(httpRequest.getURI()).contains("okta.com/api/v1/authn")) {
+          throw new SnowflakeSQLException(
+              ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
+              retryCount,
+              true,
+              elapsedMilliForTransientIssues / 1000);
+        }
+
         // Make sure that any authenticator specific info that needs to be
         // updated get's updated before the next retry. Ex - JWT token
         // Check to see if customer set socket/connect timeout has been reached,

@@ -46,7 +46,6 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
-import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -1357,7 +1356,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
-    if (StructureTypeHelper.isStructureTypeEnabled()) {
+    if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLInput sqlInput = (SQLInput) getObject(columnIndex);
         if (sqlInput == null) {
@@ -1414,17 +1413,24 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
+    logger.debug("public <T> List<T> getList(int columnIndex, Class<T> type)", false);
+    if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
+      throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    }
     T[] sqlInputs = getArray(columnIndex, type);
     return Arrays.asList(sqlInputs);
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> T[] getArray(int columnIndex, Class<T> type)", false);
-    if (!StructureTypeHelper.isStructureTypeEnabled()) {
+    if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
-    FieldMetadata fieldMetadata =
-        sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields().get(0);
+    List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
+    if (fieldMetadataList.size() != 1) {
+      throw new SQLException("Wrong size of fields for array type " + fieldMetadataList.size());
+    }
+    FieldMetadata fieldMetadata = fieldMetadataList.get(0);
     int columnSubType = fieldMetadata.getType();
     int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
     int scale = fieldMetadata.getScale();
@@ -1570,11 +1576,15 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
     logger.debug("public <T> Map<String, T> getMap(int columnIndex, Class<T> type)", false);
-    if (!StructureTypeHelper.isStructureTypeEnabled()) {
+    if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
-    FieldMetadata valueFieldMetadata =
-        sfBaseResultSet.getMetaData().getColumnMetadata().get(columnIndex - 1).getFields().get(1);
+    List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
+    if (fieldMetadataList.size() != 2) {
+      throw new SQLException(
+          "Wrong size of fields metadata for map type " + fieldMetadataList.size());
+    }
+    FieldMetadata valueFieldMetadata = fieldMetadataList.get(1);
     int columnSubType = valueFieldMetadata.getType();
     int columnType = ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
     int scale = valueFieldMetadata.getScale();
@@ -1584,9 +1594,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return null;
     }
     Map<String, Object> map =
-        (object instanceof JsonSqlInput)
-            ? mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type))
-            : (Map<String, Object>) object;
+        mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {

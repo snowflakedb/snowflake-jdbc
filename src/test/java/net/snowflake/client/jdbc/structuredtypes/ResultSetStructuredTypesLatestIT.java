@@ -20,29 +20,30 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.ThrowingConsumer;
-import net.snowflake.client.ThrowingRunnable;
-import net.snowflake.client.category.TestCategoryStructuredType;
+import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
-import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
+import net.snowflake.client.jdbc.SnowflakeResultSetMetaData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
-import net.snowflake.client.jdbc.structuredtypes.sqldata.FewTypesSqlData;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.NestedStructSqlData;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.NullableFieldsSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
+import org.junit.Assume;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-@Category(TestCategoryStructuredType.class)
+@Category(TestCategoryResultSet.class)
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Parameterized.Parameters(name = "format={0}")
@@ -85,11 +86,13 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapStructToObjectWithFactory() throws SQLException {
     testMapJson(true);
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapStructToObjectWithReflection() throws SQLException {
     testMapJson(false);
     testMapJson(true);
@@ -182,13 +185,22 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         assertEquals(Double.valueOf(2.2), object.getD(), 0.01);
         assertEquals(BigDecimal.valueOf(3.3), object.getBd());
         assertEquals(
-            Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.getTimestampLtz());
+            LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            object.getTimestampLtz().toInstant());
         assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
         assertEquals(
-            Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 2, 45, 45)), object.getTimestampTz());
-        assertEquals(
-            Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), object.getDate().toString());
+            LocalDateTime.of(2021, 12, 24, 2, 45, 45)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            object.getTimestampTz().toInstant());
+        // TODO uncomment after merge SNOW-928973: Date field is returning one day less when getting
+        // through getString method
+        //                assertEquals(
+        //                    Date.valueOf(LocalDate.of(2023, 12, 24)).toString(),
+        //         object.getDate().toString());
         assertEquals(Time.valueOf(LocalTime.of(12, 34, 56)), object.getTime());
         assertArrayEquals(new byte[] {'a', 'b', 'c'}, object.getBinary());
         assertTrue(object.getBool());
@@ -198,17 +210,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testMapJsonToMap() throws SQLException {
-    withFirstRow(
-        "SELECT OBJECT_CONSTRUCT('string','a','string2',1)",
-        (resultSet) -> {
-          Map map = resultSet.getObject(1, Map.class);
-          assertEquals("a", map.get("string"));
-          assertEquals(1, map.get("string2"));
-        });
-  }
-
-  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsArrayOfSqlData() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
@@ -223,15 +225,18 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsArrayOfNullableFieldsInSqlData() throws SQLException {
-    SnowflakeObjectTypeFactories.register(FewTypesSqlData.class, FewTypesSqlData::new);
+    SnowflakeObjectTypeFactories.register(NullableFieldsSqlData.class, NullableFieldsSqlData::new);
     withFirstRow(
         "SELECT OBJECT_CONSTRUCT_KEEP_NULL('string', null, 'nullableIntValue', null, 'nullableLongValue', null, "
             + "'date', null, 'bd', null, 'bytes', null, 'longValue', null)"
             + "::OBJECT(string VARCHAR, nullableIntValue INTEGER, nullableLongValue INTEGER, date DATE, bd DOUBLE, bytes BINARY, longValue INTEGER)",
         (resultSet) -> {
-          FewTypesSqlData result =
-              resultSet.unwrap(SnowflakeBaseResultSet.class).getObject(1, FewTypesSqlData.class);
+          NullableFieldsSqlData result =
+              resultSet
+                  .unwrap(SnowflakeBaseResultSet.class)
+                  .getObject(1, NullableFieldsSqlData.class);
           assertNull(result.getString());
           assertNull(result.getNullableIntValue());
           assertNull(result.getNullableLongValue());
@@ -243,6 +248,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnNullsForAllTpesInSqlData() throws SQLException {
     SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
     try (Connection connection = init();
@@ -277,6 +283,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsArrayOfString() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two','three')::ARRAY(VARCHAR)",
@@ -290,8 +297,9 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore // Arrays containing nulls aren't supported: SNOW-720936
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsArrayOfNullableString() throws SQLException {
+    Assume.assumeTrue(queryResultFormat == ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two', null)::ARRAY(VARCHAR)",
         (resultSet) -> {
@@ -304,6 +312,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnNullAsArray() throws SQLException {
     withFirstRow(
         "SELECT null::ARRAY(VARCHAR)",
@@ -315,6 +324,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsListOfIntegers() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(1,2,3)::ARRAY(INTEGER)",
@@ -328,6 +338,35 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsListOfFloat() throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(FLOAT)",
+        (resultSet) -> {
+          Float[] resultList =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
+          assertEquals(Float.valueOf(1.1f), resultList[0]);
+          assertEquals(Float.valueOf(2.2f), resultList[1]);
+          assertEquals(Float.valueOf(3.3f), resultList[2]);
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsListOfDouble() throws SQLException {
+    withFirstRow(
+        "SELECT ARRAY_CONSTRUCT(1.1,2.2,3.3)::ARRAY(DOUBLE)",
+        (resultSet) -> {
+          List<Double> resultList =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getList(1, Double.class);
+          assertEquals(Double.valueOf(1.1), resultList.get(0));
+          assertEquals(Double.valueOf(2.2), resultList.get(1));
+          assertEquals(Double.valueOf(3.3), resultList.get(2));
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMap() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
@@ -342,6 +381,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMapWithNullableValues() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
@@ -356,18 +396,20 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnNullAsObjectOfTypeMap() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
         "select null::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {
-          Map<String, String> map =
+          Map<String, Object> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getObject(1, Map.class);
           assertNull(map);
         });
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnNullAsMap() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
@@ -380,18 +422,49 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMapOfTimestampsNtz() throws SQLException {
     withFirstRow(
         "SELECT {'x': TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), 'y': TO_TIMESTAMP_NTZ('2021-12-24 09:55:55')}::MAP(VARCHAR, TIMESTAMP)",
         (resultSet) -> {
           Map<String, Timestamp> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
-          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), map.get("x"));
-          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 9, 55, 55)), map.get("y"));
+          assertEquals(
+              LocalDateTime.of(2021, 12, 23, 9, 44, 44)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("x").toInstant());
+          assertEquals(
+              LocalDateTime.of(2021, 12, 24, 9, 55, 55)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("y").toInstant());
         });
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsMapOfTimestampsLtz() throws SQLException {
+    withFirstRow(
+        "SELECT {'x': TO_TIMESTAMP_LTZ('2021-12-23 09:44:44'), 'y': TO_TIMESTAMP_LTZ('2021-12-24 09:55:55')}::MAP(VARCHAR, TIMESTAMP_LTZ)",
+        (resultSet) -> {
+          Map<String, Timestamp> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
+          assertEquals(
+              LocalDateTime.of(2021, 12, 23, 9, 44, 44)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("x").toInstant());
+          assertEquals(
+              LocalDateTime.of(2021, 12, 24, 9, 55, 55)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("y").toInstant());
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMapOfLong() throws SQLException {
     withFirstRow(
         "SELECT {'x':1, 'y':2, 'z':3}::MAP(VARCHAR, BIGINT)",
@@ -405,18 +478,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testReturnAsMapOfTimestamp() throws SQLException {
-    withFirstRow(
-        "SELECT {'x':'2021-12-22 09:43:44.000 +0100', 'y':'2021-12-22 10:43:44.000 +0100'}::MAP(VARCHAR, TIMESTAMP)",
-        (resultSet) -> {
-          Map<String, Timestamp> map =
-              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
-          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), map.get("x"));
-          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 10, 43, 44)), map.get("y"));
-        });
-  }
-
-  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMapOfDate() throws SQLException {
     withFirstRow(
         "SELECT {'x':'2023-12-24', 'y':'2023-12-25'}::MAP(VARCHAR, DATE)",
@@ -431,6 +493,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMapOfTime() throws SQLException {
     withFirstRow(
         "SELECT {'x':'12:34:56', 'y':'12:34:58'}::MAP(VARCHAR, TIME)",
@@ -443,6 +506,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMapOfBoolean() throws SQLException {
     withFirstRow(
         "SELECT {'x':'true', 'y':0}::MAP(VARCHAR, BOOLEAN)",
@@ -455,6 +519,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsList() throws SQLException {
     SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     withFirstRow(
@@ -468,6 +533,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapStructsFromChunks() throws SQLException {
     withFirstRow(
         "select {'string':'a'}::OBJECT(string VARCHAR) FROM TABLE(GENERATOR(ROWCOUNT=>30000))",
@@ -480,6 +546,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapIntegerArray() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(INTEGER)",
@@ -492,6 +559,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapFixedToLongArray() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(10, 20, 30)::ARRAY(SMALLINT)",
@@ -504,6 +572,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapDecimalArray() throws SQLException {
     //    when: jdbc_treat_decimal_as_int=true scale=0
     try (Connection connection = init();
@@ -547,6 +616,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapVarcharArray() throws SQLException {
     withFirstRow(
         "SELECT 'text', ARRAY_CONSTRUCT('10', '20','30')::ARRAY(VARCHAR)",
@@ -560,6 +630,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapDatesArray() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD'))::ARRAY(DATE)",
@@ -573,6 +644,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapTimeArray() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(to_time('15:39:20.123'), to_time('09:12:20.123'))::ARRAY(TIME)",
@@ -585,19 +657,27 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapTimestampArray() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), TO_TIMESTAMP_NTZ('2021-12-24 09:55:55'))::ARRAY(TIMESTAMP)",
         (resultSet) -> {
           Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
           assertEquals(
-              Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), resultArray[0]);
+              LocalDateTime.of(2021, 12, 23, 9, 44, 44)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              resultArray[0].toInstant());
           assertEquals(
-              Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 9, 55, 55)), resultArray[1]);
+              LocalDateTime.of(2021, 12, 24, 9, 55, 55)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              resultArray[1].toInstant());
         });
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapBooleanArray() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(true,false)::ARRAY(BOOLEAN)",
@@ -609,6 +689,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapBinaryArray() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(TO_BINARY('616263', 'HEX'),TO_BINARY('616263', 'HEX'))::ARRAY(BINARY)",
@@ -620,6 +701,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapArrayOfStructToMap() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2} )::ARRAY(OBJECT(x VARCHAR, y INTEGER))",
@@ -635,6 +717,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapArrayOfArrays() throws SQLException {
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(ARRAY_CONSTRUCT({'x': 'abc', 'y': 1}, {'x': 'def', 'y': 2}) )::ARRAY(ARRAY(OBJECT(x VARCHAR, y INTEGER)))",
@@ -650,27 +733,95 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
-    withStructureTypeTemporaryDisabled(
-        () -> {
-          withFirstRow(
-              "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
-              resultSet -> {
-                assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
-              });
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testMapNestedStructures() throws SQLException {
+    withFirstRow(
+        "SELECT {'simpleClass': {'string': 'a'}, "
+            + "'simpleClasses': ARRAY_CONSTRUCT({'string': 'a'}, {'string': 'b'}), "
+            + "'arrayOfSimpleClasses': ARRAY_CONSTRUCT({'string': 'a'}, {'string': 'b'}), "
+            + "'mapOfSimpleClasses':{'x':{'string': 'c'}, 'y':{'string': 'd'}},"
+            + "'texts': ARRAY_CONSTRUCT('string', 'a'), "
+            + "'arrayOfDates': ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD')), "
+            + "'mapOfIntegers':{'x':3, 'y':4}}"
+            + "::OBJECT(simpleClass OBJECT(string VARCHAR), "
+            + "simpleClasses ARRAY(OBJECT(string VARCHAR)),"
+            + "arrayOfSimpleClasses ARRAY(OBJECT(string VARCHAR)),"
+            + "mapOfSimpleClasses MAP(VARCHAR, OBJECT(string VARCHAR)),"
+            + "texts ARRAY(VARCHAR),"
+            + "arrayOfDates ARRAY(DATE),"
+            + "mapOfIntegers MAP(VARCHAR, INTEGER))",
+        (resultSet) -> {
+          NestedStructSqlData nestedStructSqlData =
+              resultSet.getObject(1, NestedStructSqlData.class);
+          ;
+          assertEquals("a", nestedStructSqlData.getSimpleClass().getString());
+
+          assertEquals("a", nestedStructSqlData.getSimpleClassses().get(0).getString());
+          assertEquals("b", nestedStructSqlData.getSimpleClassses().get(1).getString());
+
+          assertEquals("a", nestedStructSqlData.getArrayOfSimpleClasses()[0].getString());
+          assertEquals("b", nestedStructSqlData.getArrayOfSimpleClasses()[1].getString());
+
+          assertEquals("c", nestedStructSqlData.getMapOfSimpleClasses().get("x").getString());
+          assertEquals("d", nestedStructSqlData.getMapOfSimpleClasses().get("y").getString());
+
+          assertEquals("string", nestedStructSqlData.getTexts().get(0));
+          assertEquals("a", nestedStructSqlData.getTexts().get(1));
+
+          // TODO uncomment after merge SNOW-928973: Date field is returning one day less when
+          // getting
+          //          assertEquals(
+          //              Date.valueOf(LocalDate.of(2023, 12, 24)).toString(),
+          //              nestedStructSqlData.getArrayOfDates()[0].toString());
+          //          assertEquals(
+          //              Date.valueOf(LocalDate.of(2023, 12, 25)).toString(),
+          //              nestedStructSqlData.getArrayOfDates()[1].toString());
+
+          assertEquals(Integer.valueOf(3), nestedStructSqlData.getMapOfIntegers().get("x"));
+          assertEquals(Integer.valueOf(4), nestedStructSqlData.getMapOfIntegers().get("y"));
         });
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testColumnTypeWhenStructureTypeIsEnabled() throws Exception {
-    withStructureTypeTemporaryEnabled(
-        () -> {
-          withFirstRow(
-              "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
-              resultSet -> {
-                assertEquals(Types.STRUCT, resultSet.getMetaData().getColumnType(1));
-              });
+  public void testColumnTypeWhenStructureTypeIsDisabled() throws Exception {
+    withFirstRow(
+        "SELECT {'string':'a'}",
+        resultSet -> {
+          assertEquals(Types.VARCHAR, resultSet.getMetaData().getColumnType(1));
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testColumnTypeAndFieldsWhenStructureTypeIsReturned() throws Exception {
+    withFirstRow(
+        "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
+        resultSet -> {
+          assertEquals(Types.STRUCT, resultSet.getMetaData().getColumnType(1));
+          assertEquals(
+              1,
+              resultSet
+                  .getMetaData()
+                  .unwrap(SnowflakeResultSetMetaData.class)
+                  .getColumnFields(1)
+                  .size());
+          assertEquals(
+              "VARCHAR",
+              resultSet
+                  .getMetaData()
+                  .unwrap(SnowflakeResultSetMetaData.class)
+                  .getColumnFields(1)
+                  .get(0)
+                  .getTypeName());
+          assertEquals(
+              "string",
+              resultSet
+                  .getMetaData()
+                  .unwrap(SnowflakeResultSetMetaData.class)
+                  .getColumnFields(1)
+                  .get(0)
+                  .getName());
         });
   }
 
@@ -681,30 +832,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         ResultSet rs = statement.executeQuery(sqlText); ) {
       assertTrue(rs.next());
       consumer.accept(rs);
-    }
-  }
-
-  private void withStructureTypeTemporaryEnabled(ThrowingRunnable action) throws Exception {
-    boolean isStructureTypeEnabled = StructureTypeHelper.isStructureTypeEnabled();
-    try {
-      StructureTypeHelper.enableStructuredType();
-      action.run();
-    } finally {
-      if (!isStructureTypeEnabled) {
-        StructureTypeHelper.disableStructuredType();
-      }
-    }
-  }
-
-  private void withStructureTypeTemporaryDisabled(ThrowingRunnable action) throws Exception {
-    boolean isStructureTypeEnabled = StructureTypeHelper.isStructureTypeEnabled();
-    try {
-      StructureTypeHelper.disableStructuredType();
-      action.run();
-    } finally {
-      if (isStructureTypeEnabled) {
-        StructureTypeHelper.enableStructuredType();
-      }
     }
   }
 

@@ -32,7 +32,6 @@ import java.util.stream.StreamSupport;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
-import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -275,9 +274,14 @@ public abstract class SFBaseResultSet {
   @SnowflakeJdbcInternalApi
   protected SfSqlArray getJsonArray(String obj, int columnIndex) throws SFException {
     try {
-      SnowflakeColumnMetadata arrayMetadata =
-          resultSetMetaData.getColumnMetadata().get(columnIndex - 1);
-      FieldMetadata fieldMetadata = arrayMetadata.getFields().get(0);
+      List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
+      if (fieldMetadataList.size() != 1) {
+        throw new SFException(
+            ErrorCode.FEATURE_UNSUPPORTED,
+            "Wrong size of fields for array type " + fieldMetadataList.size());
+      }
+
+      FieldMetadata fieldMetadata = fieldMetadataList.get(0);
 
       int columnSubType = fieldMetadata.getType();
       int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
@@ -286,7 +290,7 @@ public abstract class SFBaseResultSet {
       ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(obj);
       Iterator<JsonNode> nodeElements = arrayNode.elements();
 
-      switch (columnSubType) {
+      switch (columnType) {
         case Types.INTEGER:
           return new SfSqlArray(
               columnSubType,

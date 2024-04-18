@@ -16,7 +16,6 @@ import java.sql.Types;
 import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.core.structs.StructureTypeHelper;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.log.SFLogger;
@@ -85,13 +84,13 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         return getBoolean(columnIndex);
 
       case Types.STRUCT:
-        if (StructureTypeHelper.isStructureTypeEnabled()) {
+        if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
           return getSqlInput((String) obj, columnIndex);
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
       case Types.ARRAY:
-        if (StructureTypeHelper.isStructureTypeEnabled()) {
+        if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
           return getArray(columnIndex);
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
@@ -302,7 +301,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
           jsonNode,
           session,
           converters,
-          resultSetMetaData.getColumnMetadata().get(columnIndex - 1).getFields(),
+          resultSetMetaData.getColumnFields(columnIndex),
           sessionTimeZone);
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
