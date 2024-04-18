@@ -127,16 +127,21 @@ public class ServiceNameTest {
       props.setProperty(SFSessionProperty.USER.getPropertyKey(), "fakeuser");
       props.setProperty(SFSessionProperty.PASSWORD.getPropertyKey(), "fakepassword");
       props.setProperty(SFSessionProperty.INSECURE_MODE.getPropertyKey(), Boolean.TRUE.toString());
-      SnowflakeConnectionV1 con =
+      try (SnowflakeConnectionV1 con =
           new SnowflakeConnectionV1(
-              "jdbc:snowflake://http://fakeaccount.snowflakecomputing.com", props);
-      assertThat(con.getSfSession().getServiceName(), is(INITIAL_SERVICE_NAME));
+              "jdbc:snowflake://http://fakeaccount.snowflakecomputing.com", props)) {
+        assertThat(con.getSfSession().getServiceName(), is(INITIAL_SERVICE_NAME));
 
-      SnowflakeStatementV1 stmt = (SnowflakeStatementV1) con.createStatement();
-      stmt.execute("SELECT 1");
-      assertThat(
-          stmt.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession().getServiceName(),
-          is(NEW_SERVICE_NAME));
+        try (SnowflakeStatementV1 stmt = (SnowflakeStatementV1) con.createStatement()) {
+          stmt.execute("SELECT 1");
+          assertThat(
+              stmt.getConnection()
+                  .unwrap(SnowflakeConnectionV1.class)
+                  .getSfSession()
+                  .getServiceName(),
+              is(NEW_SERVICE_NAME));
+        }
+      }
     }
   }
 }
