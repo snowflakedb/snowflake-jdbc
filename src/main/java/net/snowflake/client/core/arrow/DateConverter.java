@@ -100,7 +100,11 @@ public class DateConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    Date date = toDate(index, tz, this.context.getSession().getUseHardcodedTimezone() ? true : this.useDateFormat);
+    Date date =
+        toDate(
+            index,
+            tz,
+            this.context.getSession().getUseHardcodedTimezone() ? true : this.useDateFormat);
     if (date == null) {
       return null;
     } else {
@@ -117,7 +121,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
         getDate(
             index,
             this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(),
-                this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat);
+            this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat);
     return date == null ? null : ResultUtil.getDateAsString(date, context.getDateFormatter());
   }
 
@@ -126,7 +130,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
     return toDate(
         index,
         this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(),
-            this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat);
+        this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat);
   }
 
   @Override
@@ -134,7 +138,8 @@ public class DateConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return false;
     }
-    Date val = toDate(
+    Date val =
+        toDate(
             index,
             TimeZone.getDefault(),
             this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat);
