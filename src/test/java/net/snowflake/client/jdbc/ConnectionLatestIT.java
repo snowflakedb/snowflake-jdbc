@@ -735,7 +735,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     try (Connection con = ds.getConnection();
         Statement statement = con.createStatement();
-        ResultSet resultSet = con.createStatement().executeQuery("select 1")) {
+        ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
     }
@@ -900,7 +900,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setPassword(params.get("password"));
     try (Connection con = ds.getConnection();
         Statement statement = con.createStatement();
-        ResultSet resultSet = con.createStatement().executeQuery("select 1")) {
+        ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
       con.close();
@@ -941,9 +941,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String queryID = null;
     String[] queryIDs = null;
     try (Connection connection = getConnection();
-        Connection connection2 = getConnection()) {
-
-      Statement statement = connection.createStatement();
+        Connection connection2 = getConnection();
+        Statement statement = connection.createStatement()) {
       String query0 = "create or replace temporary table test_multi (cola int);";
       String query1 = "insert into test_multi VALUES (111), (222);";
       String query2 = "select cola from test_multi order by cola asc";
@@ -1073,7 +1072,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
         }
       } finally {
-        connection.createStatement().execute("select system$cancel_query('" + queryID + "')");
+        statement.execute("select system$cancel_query('" + queryID + "')");
       }
     }
   }
