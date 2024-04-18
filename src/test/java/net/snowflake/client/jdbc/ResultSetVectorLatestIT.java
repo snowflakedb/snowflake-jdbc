@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.EXTRA_TYPES_VECTOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -51,7 +52,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         Integer[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
         assertEquals(vector, result);
-        assertVectorMetadata(resultSet, 1, Types.BIGINT, 1);
+        assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
     }
   }
@@ -65,7 +66,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         Long[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Long.class);
         assertEquals(vector, result);
-        assertVectorMetadata(resultSet, 1, Types.BIGINT, 1);
+        assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
     }
   }
@@ -80,7 +81,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         Float[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
         assertEquals(vector, result);
-        assertVectorMetadata(resultSet, 1, Types.DOUBLE, 1);
+        assertVectorMetadata(resultSet, 1, Types.FLOAT, 1);
       }
     }
   }
@@ -94,7 +95,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         Integer[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
         assertNull(result);
-        assertVectorMetadata(resultSet, 1, Types.BIGINT, 1);
+        assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
     }
   }
@@ -108,7 +109,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         Integer[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
         assertNull(result);
-        assertVectorMetadata(resultSet, 1, Types.DOUBLE, 1);
+        assertVectorMetadata(resultSet, 1, Types.FLOAT, 1);
       }
     }
   }
@@ -124,7 +125,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         Integer[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
         assertEquals(new Integer[]{3, 7}, result);
-        assertVectorMetadata(resultSet, 1, Types.BIGINT, 2);
+        assertVectorMetadata(resultSet, 1, Types.INTEGER, 2);
       }
     }
   }
@@ -140,7 +141,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         Float[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
         assertEquals(new Float[]{-3f, 7.1f}, result);
-        assertVectorMetadata(resultSet, 1, Types.DOUBLE, 2);
+        assertVectorMetadata(resultSet, 1, Types.FLOAT, 2);
       }
     }
   }
@@ -159,11 +160,11 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   private void assertVectorMetadata(ResultSet resultSet, int vectorColumnIndex, int expectedVectorFieldType, int allColumns) throws SQLException {
     ResultSetMetaData metadata = resultSet.getMetaData();
     assertEquals(allColumns, metadata.getColumnCount());
-    assertEquals(2003, metadata.getColumnType(vectorColumnIndex));
-    assertEquals("ARRAY", metadata.getColumnTypeName(vectorColumnIndex));
+    assertEquals(EXTRA_TYPES_VECTOR, metadata.getColumnType(vectorColumnIndex));
+    assertEquals("VECTOR", metadata.getColumnTypeName(vectorColumnIndex));
     SnowflakeResultSetMetaDataV1 sfMetadata = (SnowflakeResultSetMetaDataV1) metadata;
     assertTrue(sfMetadata.isStructuredTypeColumn(vectorColumnIndex));
-    assertEquals(2003, sfMetadata.getInternalColumnType(vectorColumnIndex));
+    assertEquals(EXTRA_TYPES_VECTOR, sfMetadata.getInternalColumnType(vectorColumnIndex));
     List<FieldMetadata> columnFields = sfMetadata.getColumnFields(vectorColumnIndex);
     assertEquals(1, columnFields.size());
     assertEquals(expectedVectorFieldType, columnFields.get(0).getType());
