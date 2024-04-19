@@ -100,11 +100,11 @@ public class DateConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
-    Date date =
-        toDate(
-            index,
-            tz,
-            this.context.getSession().getUseHardcodedTimezone() ? true : this.useDateFormat);
+    boolean useDateFormat = true;
+    if (this.context.getSession() != null) {
+      useDateFormat = this.context.getSession().getUseHardcodedTimezone() ? true : this.useDateFormat;
+    }
+    Date date = toDate(index, tz, useDateFormat);
     if (date == null) {
       return null;
     } else {
@@ -134,7 +134,11 @@ public class DateConverter extends AbstractArrowVectorConverter {
     return toDate(
         index,
         this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(),
-        this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat);
+            this.context.getSession() == null
+                ? false
+                : (this.context.getSession().getUseHardcodedTimezone()
+                    ? false
+                    : this.useDateFormat));
   }
 
   @Override
@@ -146,7 +150,11 @@ public class DateConverter extends AbstractArrowVectorConverter {
         toDate(
             index,
             TimeZone.getDefault(),
-            this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat);
+                this.context.getSession() == null
+                    ? false
+                    : (this.context.getSession().getUseHardcodedTimezone()
+                        ? false
+                        : this.useDateFormat));
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);

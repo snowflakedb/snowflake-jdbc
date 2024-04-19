@@ -236,6 +236,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
     if (!useDefaultParamSettings) {
       // these are 3 other session params that also alter the session display behavior
+      statement.execute("ALTER SESSION SET TIMEZONE = '" + System.getProperty("user.timezone") + "'");
       statement.execute("alter session set JDBC_TREAT_TIMESTAMP_NTZ_AS_UTC=true");
       statement.execute("alter session set CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ=false");
       statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=true");
