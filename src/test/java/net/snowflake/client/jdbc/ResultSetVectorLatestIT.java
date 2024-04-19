@@ -21,10 +21,10 @@ import org.junit.runners.Parameterized;
 
 /**
  * ResultSet integration tests for the latest JDBC driver. This doesn't work for the oldest
- * supported driver. It works for drivers with version bigger than 3.15.1.
- *  Revisit this tests whenever bumping up the oldest supported driver to examine
- * if the tests still is not applicable. If it is applicable, move tests to ResultSetVectorIT so that both
- * the latest and oldest supported driver run the tests.
+ * supported driver. It works for drivers with version bigger than 3.15.1. Revisit this tests
+ * whenever bumping up the oldest supported driver to examine if the tests still is not applicable.
+ * If it is applicable, move tests to ResultSetVectorIT so that both the latest and oldest supported
+ * driver run the tests.
  */
 @Category(TestCategoryResultSet.class)
 @RunWith(Parameterized.class)
@@ -48,14 +48,16 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
       Integer[] vector = {-1, 5};
-      try(ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "int"))) {
+      try (ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "int"))) {
         assertTrue(resultSet.next());
-        Integer[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
+        Integer[] result =
+            resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
         assertEquals(vector, result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
     }
   }
+
   @Test
   public void testGetIntVectorAsLongArray() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
@@ -89,11 +91,12 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   @Test
   public void testGetNullAsIntVector() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
-         Statement stmt = con.createStatement()) {
+        Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
-      try(ResultSet resultSet = stmt.executeQuery("select null::vector(int, 2)")) {
+      try (ResultSet resultSet = stmt.executeQuery("select null::vector(int, 2)")) {
         assertTrue(resultSet.next());
-        Integer[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
+        Integer[] result =
+            resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
         assertNull(result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
@@ -103,11 +106,12 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   @Test
   public void testGetNullAsFloatVector() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
-         Statement stmt = con.createStatement()) {
+        Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
-      try(ResultSet resultSet = stmt.executeQuery("select null::vector(float, 2)")) {
+      try (ResultSet resultSet = stmt.executeQuery("select null::vector(float, 2)")) {
         assertTrue(resultSet.next());
-        Integer[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
+        Integer[] result =
+            resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
         assertNull(result);
         assertVectorMetadata(resultSet, 1, Types.FLOAT, 1);
       }
@@ -123,8 +127,9 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       stmt.execute("insert into test_vector_int select [3, 7]::vector(int, 2), 15");
       try (ResultSet resultSet = stmt.executeQuery("select x, y from test_vector_int")) {
         assertTrue(resultSet.next());
-        Integer[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
-        assertEquals(new Integer[]{3, 7}, result);
+        Integer[] result =
+            resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
+        assertEquals(new Integer[] {3, 7}, result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 2);
       }
     }
@@ -140,7 +145,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       try (ResultSet resultSet = stmt.executeQuery("select x, y from test_vector_float")) {
         assertTrue(resultSet.next());
         Float[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
-        assertEquals(new Float[]{-3f, 7.1f}, result);
+        assertEquals(new Float[] {-3f, 7.1f}, result);
         assertVectorMetadata(resultSet, 1, Types.FLOAT, 2);
       }
     }
@@ -157,7 +162,9 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
     stmt.execute(sql);
   }
 
-  private void assertVectorMetadata(ResultSet resultSet, int vectorColumnIndex, int expectedVectorFieldType, int allColumns) throws SQLException {
+  private void assertVectorMetadata(
+      ResultSet resultSet, int vectorColumnIndex, int expectedVectorFieldType, int allColumns)
+      throws SQLException {
     ResultSetMetaData metadata = resultSet.getMetaData();
     assertEquals(allColumns, metadata.getColumnCount());
     assertEquals(EXTRA_TYPES_VECTOR, metadata.getColumnType(vectorColumnIndex));

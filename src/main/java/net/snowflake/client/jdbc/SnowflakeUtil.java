@@ -179,7 +179,8 @@ public class SnowflakeUtil {
         && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
       extColTypeName = extColTypeNameNode.asText();
     }
-    List<FieldMetadata> fieldsMetadata = getFieldMetadata(jdbcTreatDecimalAsInt, internalColTypeName, colNode);
+    List<FieldMetadata> fieldsMetadata =
+        getFieldMetadata(jdbcTreatDecimalAsInt, internalColTypeName, colNode);
 
     int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
     ColumnTypeInfo columnTypeInfo =
@@ -243,20 +244,20 @@ public class SnowflakeUtil {
       case FIXED:
         if (isVectorType) {
           columnTypeInfo =
-                  new ColumnTypeInfo(Types.INTEGER, defaultIfNull(extColTypeName, "INTEGER"), baseType);
+              new ColumnTypeInfo(Types.INTEGER, defaultIfNull(extColTypeName, "INTEGER"), baseType);
         } else {
           columnTypeInfo =
-                  new ColumnTypeInfo(fixedColType, defaultIfNull(extColTypeName, "NUMBER"), baseType);
+              new ColumnTypeInfo(fixedColType, defaultIfNull(extColTypeName, "NUMBER"), baseType);
         }
         break;
 
       case REAL:
         if (isVectorType) {
           columnTypeInfo =
-                  new ColumnTypeInfo(Types.FLOAT, defaultIfNull(extColTypeName, "FLOAT"), baseType);
+              new ColumnTypeInfo(Types.FLOAT, defaultIfNull(extColTypeName, "FLOAT"), baseType);
         } else {
           columnTypeInfo =
-                  new ColumnTypeInfo(Types.DOUBLE, defaultIfNull(extColTypeName, "DOUBLE"), baseType);
+              new ColumnTypeInfo(Types.DOUBLE, defaultIfNull(extColTypeName, "DOUBLE"), baseType);
         }
         break;
 
@@ -296,7 +297,9 @@ public class SnowflakeUtil {
         break;
 
       case VECTOR:
-        columnTypeInfo = new ColumnTypeInfo(EXTRA_TYPES_VECTOR, defaultIfNull(extColTypeName, "VECTOR"), baseType);
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                EXTRA_TYPES_VECTOR, defaultIfNull(extColTypeName, "VECTOR"), baseType);
         break;
 
       case ARRAY:
@@ -367,7 +370,8 @@ public class SnowflakeUtil {
   }
 
   static List<FieldMetadata> createFieldsMetadata(
-      ArrayNode fieldsJson, boolean jdbcTreatDecimalAsInt, String parentInternalColumnTypeName) throws SnowflakeSQLLoggedException {
+      ArrayNode fieldsJson, boolean jdbcTreatDecimalAsInt, String parentInternalColumnTypeName)
+      throws SnowflakeSQLLoggedException {
     List<FieldMetadata> fields = new ArrayList<>();
     for (JsonNode node : fieldsJson) {
       String colName = node.path("name").asText();
@@ -378,7 +382,8 @@ public class SnowflakeUtil {
       int length = node.path("length").asInt();
       boolean fixed = node.path("fixed").asBoolean();
       int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
-      List<FieldMetadata> internalFields = getFieldMetadata(jdbcTreatDecimalAsInt, parentInternalColumnTypeName, node);
+      List<FieldMetadata> internalFields =
+          getFieldMetadata(jdbcTreatDecimalAsInt, parentInternalColumnTypeName, node);
       JsonNode outputType = node.path("outputType");
       JsonNode extColTypeNameNode = node.path("extTypeName");
       String extColTypeName = null;
@@ -415,11 +420,13 @@ public class SnowflakeUtil {
     return internalColumnTypeName.equalsIgnoreCase("vector");
   }
 
-  private static List<FieldMetadata> getFieldMetadata(boolean jdbcTreatDecimalAsInt, String internalColumnTypeName, JsonNode node)
+  private static List<FieldMetadata> getFieldMetadata(
+      boolean jdbcTreatDecimalAsInt, String internalColumnTypeName, JsonNode node)
       throws SnowflakeSQLLoggedException {
     if (!node.path("fields").isEmpty()) {
       ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
-      return createFieldsMetadata(internalFieldsJson, jdbcTreatDecimalAsInt, internalColumnTypeName);
+      return createFieldsMetadata(
+          internalFieldsJson, jdbcTreatDecimalAsInt, internalColumnTypeName);
     } else {
       return new ArrayList<>();
     }
