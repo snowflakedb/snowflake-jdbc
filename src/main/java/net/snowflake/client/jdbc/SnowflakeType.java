@@ -191,8 +191,10 @@ public enum SnowflakeType {
       case "object":
         retval = Types.JAVA_OBJECT;
         break;
-      case "array":
       case "vector":
+        retval = SnowflakeUtil.EXTRA_TYPES_VECTOR;
+        break;
+      case "array":
         retval = Types.ARRAY;
         break;
       default:

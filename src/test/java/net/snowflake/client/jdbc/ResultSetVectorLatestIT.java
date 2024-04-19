@@ -163,7 +163,6 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
     assertEquals(EXTRA_TYPES_VECTOR, metadata.getColumnType(vectorColumnIndex));
     assertEquals("VECTOR", metadata.getColumnTypeName(vectorColumnIndex));
     SnowflakeResultSetMetaDataV1 sfMetadata = (SnowflakeResultSetMetaDataV1) metadata;
-    assertTrue(sfMetadata.isStructuredTypeColumn(vectorColumnIndex));
     assertEquals(EXTRA_TYPES_VECTOR, sfMetadata.getInternalColumnType(vectorColumnIndex));
     List<FieldMetadata> columnFields = sfMetadata.getColumnFields(vectorColumnIndex);
     assertEquals(1, columnFields.size());
