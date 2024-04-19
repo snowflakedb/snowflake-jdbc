@@ -432,7 +432,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
       } catch (SnowflakeSQLException err) {
         Assert.assertEquals(200009, err.getErrorCode());
       } finally {
-        con.createStatement().execute("DROP STAGE if exists testStage");
+        statement.execute("DROP STAGE if exists testStage");
       }
     }
   }
@@ -638,7 +638,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
       } catch (Exception err) {
         assertEquals(err.getCause(), instanceOf(FileNotFoundException.class));
       } finally {
-        connection.createStatement().execute("DROP STAGE if exists testStage");
+        statement.execute("DROP STAGE if exists testStage");
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);

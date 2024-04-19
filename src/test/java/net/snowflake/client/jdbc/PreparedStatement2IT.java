@@ -332,134 +332,133 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     long t1Id = 0;
     long t2Id = 0;
 
-    try (Connection conn = init()) {
-      try (Statement stmt = conn.createStatement()) {
+    try (Connection conn = init();
+        Statement stmt = conn.createStatement()) {
 
-        String sqlText = "create or replace table identifier(?) (c1 number)";
-        SnowflakePreparedStatementV1 pStmt =
-            (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        String t1 = "bindObjectTable1";
-        // Bind the table name
-        pStmt.setString(1, t1);
-        ResultSet result = pStmt.executeQuery();
+      String sqlText = "create or replace table identifier(?) (c1 number)";
+      SnowflakePreparedStatementV1 pStmt =
+          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      String t1 = "bindObjectTable1";
+      // Bind the table name
+      pStmt.setString(1, t1);
+      ResultSet result = pStmt.executeQuery();
 
-        // Verify the table has been created and get the table ID
-        stmt.execute("select parse_json(system$dict_id('table', '" + t1 + "')):entityId;");
-        result = stmt.getResultSet();
+      // Verify the table has been created and get the table ID
+      stmt.execute("select parse_json(system$dict_id('table', '" + t1 + "')):entityId;");
+      result = stmt.getResultSet();
 
-        if (result.next()) {
-          t1Id = Long.valueOf(result.getString(1));
-        }
-
-        assertTrue(t1Id != 0);
-
-        // Mix of object literal binds and value binds
-        sqlText = "insert into identifier(?) values (1), (2), (3)";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setParameter("resolve_object_ids", true);
-        // Bind by object IDs
-        pStmt.setLong(1, t1Id);
-
-        result = pStmt.executeQuery();
-
-        // Perform some selection
-        sqlText = "select * from identifier(?) order by 1";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setString(1, t1);
-        result = pStmt.executeQuery();
-        // Verify 3 rows have been inserted
-        for (int i = 0; i < 3; i++) {
-          assertTrue(result.next());
-        }
-        assertFalse(result.next());
-
-        // Alter Table
-        sqlText = "alter table identifier(?) add column c2 number";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setParameter("resolve_object_ids", true);
-        pStmt.setLong(1, t1Id);
-        result = pStmt.executeQuery();
-
-        // Describe
-        sqlText = "desc table identifier(?)";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setString(1, t1);
-        result = pStmt.executeQuery();
-        // Verify two columns have been created
-        for (int i = 0; i < 2; i++) {
-          assertTrue(result.next());
-        }
-        assertFalse(result.next());
-
-        // Create another table
-        String t2 = "bindObjectTable2";
-        sqlText = "create or replace table identifier(?) (c1 number)";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setString(1, t2);
-        result = pStmt.executeQuery();
-
-        // Verify the table has been created and get the table ID
-        stmt.execute("select parse_json(system$dict_id('table', '" + t2 + "')):entityId;");
-        result = stmt.getResultSet();
-
-        if (result.next()) {
-          t2Id = Long.valueOf(result.getString(1));
-        }
-
-        assertTrue(t2Id != 0);
-
-        // Mix object binds with value binds
-        sqlText = "insert into identifier(?) values (?), (?), (?)";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setString(1, t2);
-        pStmt.setInt(2, 1);
-        pStmt.setInt(3, 2);
-        pStmt.setInt(4, 3);
-        result = pStmt.executeQuery();
-
-        // Verify that 3 rows have been inserted
-        sqlText = "select * from identifier(?) order by 1";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setParameter("resolve_object_ids", true);
-        pStmt.setLong(1, t2Id);
-        result = pStmt.executeQuery();
-        for (int i = 0; i < 3; i++) {
-          assertTrue(result.next());
-        }
-        assertFalse(result.next());
-
-        // Multiple Object Binds
-        sqlText =
-            "select t2.c1 from identifier(?) as t1, identifier(?) as t2 "
-                + "where t1.c1 = t2.c1 and t1.c1 > (?)";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setParameter("resolve_object_ids", true);
-        pStmt.setString(1, t1);
-        pStmt.setLong(2, t2Id);
-        pStmt.setInt(3, 1);
-        result = pStmt.executeQuery();
-        for (int i = 0; i < 2; i++) {
-          assertTrue(result.next());
-        }
-        assertFalse(result.next());
-
-        // Drop Tables
-        sqlText = "drop table identifier(?)";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setString(1, "bindObjectTable1");
-        result = pStmt.executeQuery();
-
-        sqlText = "drop table identifier(?)";
-        pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
-        pStmt.setParameter("resolve_object_ids", true);
-        pStmt.setLong(1, t2Id);
-        result = pStmt.executeQuery();
-
-        // Verify that the tables have been dropped
-        stmt.execute("show tables like 'bindobjecttable%'");
-        result = stmt.getResultSet();
-        assertFalse(result.next());
+      if (result.next()) {
+        t1Id = Long.valueOf(result.getString(1));
       }
+
+      assertTrue(t1Id != 0);
+
+      // Mix of object literal binds and value binds
+      sqlText = "insert into identifier(?) values (1), (2), (3)";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      // Bind by object IDs
+      pStmt.setLong(1, t1Id);
+
+      result = pStmt.executeQuery();
+
+      // Perform some selection
+      sqlText = "select * from identifier(?) order by 1";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, t1);
+      result = pStmt.executeQuery();
+      // Verify 3 rows have been inserted
+      for (int i = 0; i < 3; i++) {
+        assertTrue(result.next());
+      }
+      assertFalse(result.next());
+
+      // Alter Table
+      sqlText = "alter table identifier(?) add column c2 number";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      pStmt.setLong(1, t1Id);
+      result = pStmt.executeQuery();
+
+      // Describe
+      sqlText = "desc table identifier(?)";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, t1);
+      result = pStmt.executeQuery();
+      // Verify two columns have been created
+      for (int i = 0; i < 2; i++) {
+        assertTrue(result.next());
+      }
+      assertFalse(result.next());
+
+      // Create another table
+      String t2 = "bindObjectTable2";
+      sqlText = "create or replace table identifier(?) (c1 number)";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, t2);
+      result = pStmt.executeQuery();
+
+      // Verify the table has been created and get the table ID
+      stmt.execute("select parse_json(system$dict_id('table', '" + t2 + "')):entityId;");
+      result = stmt.getResultSet();
+
+      if (result.next()) {
+        t2Id = Long.valueOf(result.getString(1));
+      }
+
+      assertTrue(t2Id != 0);
+
+      // Mix object binds with value binds
+      sqlText = "insert into identifier(?) values (?), (?), (?)";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, t2);
+      pStmt.setInt(2, 1);
+      pStmt.setInt(3, 2);
+      pStmt.setInt(4, 3);
+      result = pStmt.executeQuery();
+
+      // Verify that 3 rows have been inserted
+      sqlText = "select * from identifier(?) order by 1";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      pStmt.setLong(1, t2Id);
+      result = pStmt.executeQuery();
+      for (int i = 0; i < 3; i++) {
+        assertTrue(result.next());
+      }
+      assertFalse(result.next());
+
+      // Multiple Object Binds
+      sqlText =
+          "select t2.c1 from identifier(?) as t1, identifier(?) as t2 "
+              + "where t1.c1 = t2.c1 and t1.c1 > (?)";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      pStmt.setString(1, t1);
+      pStmt.setLong(2, t2Id);
+      pStmt.setInt(3, 1);
+      result = pStmt.executeQuery();
+      for (int i = 0; i < 2; i++) {
+        assertTrue(result.next());
+      }
+      assertFalse(result.next());
+
+      // Drop Tables
+      sqlText = "drop table identifier(?)";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, "bindObjectTable1");
+      result = pStmt.executeQuery();
+
+      sqlText = "drop table identifier(?)";
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      pStmt.setLong(1, t2Id);
+      result = pStmt.executeQuery();
+
+      // Verify that the tables have been dropped
+      stmt.execute("show tables like 'bindobjecttable%'");
+      result = stmt.getResultSet();
+      assertFalse(result.next());
     }
   }
 
@@ -566,8 +565,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
                   + "CASE WHEN t0.C1 IN ('value1', 'value3') THEN t0.C2  ELSE null END,"
                   + "CASE WHEN t0.C1 IN ('value2', 'value3') THEN t0.C2  ELSE null END "
                   + "FROM SNOW41620 t0";
-          try (PreparedStatement pst1 = connection.prepareStatement(DIRECT_QUERY)) {
-            ResultSet directStmtResultSet = pst1.executeQuery();
+          try (PreparedStatement pst1 = connection.prepareStatement(DIRECT_QUERY);
+              ResultSet directStmtResultSet = pst1.executeQuery()) {
 
             checkResultSetEqual(bindStmtResultSet, directStmtResultSet);
 
@@ -650,11 +649,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           assertThat(ret, is(1));
         }
         try (PreparedStatement stmt =
-            con.unwrap(SnowflakeConnectionV1.class).prepareStatement("select * from t", true)) {
-          try (ResultSet rs = stmt.executeQuery()) {
-            assertThat(rs.next(), is(true));
-            assertThat(rs.getInt(1), is(123));
-          }
+                con.unwrap(SnowflakeConnectionV1.class).prepareStatement("select * from t", true);
+            ResultSet rs = stmt.executeQuery()) {
+          assertThat(rs.next(), is(true));
+          assertThat(rs.getInt(1), is(123));
         }
       } finally {
         statement.execute("drop table if exists t");
@@ -765,8 +763,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
   @Test
   public void testInvalidUsageOfApi() throws Exception {
-    try (Connection connection = init()) {
-      final PreparedStatement preparedStatement = connection.prepareStatement("select 1");
+    try (Connection connection = init();
+        PreparedStatement preparedStatement = connection.prepareStatement("select 1")) {
       final int expectedCode =
           ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode();
 
