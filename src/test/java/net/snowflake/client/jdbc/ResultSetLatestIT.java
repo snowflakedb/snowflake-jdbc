@@ -169,7 +169,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testChunkDownloaderSetRetry() throws SQLException {
     int stmtCount = 3;
     int rowCount = 170000;
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement stmt = connection.createStatement()) {
       connection
           .unwrap(SnowflakeConnectionV1.class)
           .getSFBaseSession()
@@ -180,7 +181,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
           .setOtherParameter(SessionUtil.JDBC_CHUNK_DOWNLOADER_MAX_RETRY, 1);
       // Set memory limit to low number
       // open multiple statements concurrently to overwhelm current memory allocation
-      Statement stmt = connection.createStatement();
       for (int i = 0; i < stmtCount; ++i) {
         try (ResultSet resultSet =
             stmt.executeQuery(
