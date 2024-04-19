@@ -98,55 +98,56 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     String column = "(a timestamp_ltz)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "')";
-    Connection con = init(table, column, values);
+    try (Connection con = init(table, column, values);
+        Statement statement = con.createStatement()) {
+      try {
+        // use initialized ltz output format
+        try (ResultSet rs = statement.executeQuery("select * from " + table)) {
+          for (int i = 0; i < cases.length; i++) {
+            rs.next();
+            assertEquals(times[i], rs.getTimestamp(1).getTime());
+            String weekday = rs.getString(1).split(",")[0];
+            assertEquals(3, weekday.length());
+          }
+        }
+        // change ltz output format
+        statement.execute(
+            "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS TZH:TZM'");
+        try (ResultSet rs = statement.executeQuery("select * from " + table)) {
+          for (int i = 0; i < cases.length; i++) {
+            rs.next();
+            assertEquals(times[i], rs.getTimestamp(1).getTime());
+            String year = rs.getString(1).split("-")[0];
+            assertEquals(4, year.length());
+          }
+        }
 
-    try (Statement statement = con.createStatement()) {
-
-      // use initialized ltz output format
-      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
-        for (int i = 0; i < cases.length; i++) {
-          rs.next();
-          assertEquals(times[i], rs.getTimestamp(1).getTime());
-          String weekday = rs.getString(1).split(",")[0];
-          assertEquals(3, weekday.length());
+        // unset ltz output format, then it should use timestamp_output_format
+        statement.execute("alter session unset TIMESTAMP_LTZ_OUTPUT_FORMAT");
+        try (ResultSet rs = statement.executeQuery("select * from " + table)) {
+          for (int i = 0; i < cases.length; i++) {
+            rs.next();
+            assertEquals(times[i], rs.getTimestamp(1).getTime());
+            String weekday = rs.getString(1).split(",")[0];
+            assertEquals(3, weekday.length());
+          }
         }
-      }
-      // change ltz output format
-      statement.execute(
-          "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS TZH:TZM'");
-      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
-        for (int i = 0; i < cases.length; i++) {
-          rs.next();
-          assertEquals(times[i], rs.getTimestamp(1).getTime());
-          String year = rs.getString(1).split("-")[0];
-          assertEquals(4, year.length());
+        // set ltz output format back to init value
+        statement.execute(
+            "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+        try (ResultSet rs = statement.executeQuery("select * from " + table)) {
+          for (int i = 0; i < cases.length; i++) {
+            rs.next();
+            assertEquals(times[i], rs.getTimestamp(1).getTime());
+            String weekday = rs.getString(1).split(",")[0];
+            assertEquals(3, weekday.length());
+          }
         }
-      }
-
-      // unset ltz output format, then it should use timestamp_output_format
-      statement.execute("alter session unset TIMESTAMP_LTZ_OUTPUT_FORMAT");
-      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
-        for (int i = 0; i < cases.length; i++) {
-          rs.next();
-          assertEquals(times[i], rs.getTimestamp(1).getTime());
-          String weekday = rs.getString(1).split(",")[0];
-          assertEquals(3, weekday.length());
-        }
-      }
-      // set ltz output format back to init value
-      statement.execute(
-          "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
-        for (int i = 0; i < cases.length; i++) {
-          rs.next();
-          assertEquals(times[i], rs.getTimestamp(1).getTime());
-          String weekday = rs.getString(1).split(",")[0];
-          assertEquals(3, weekday.length());
-        }
+      } finally {
+        statement.execute("drop table " + table);
+        System.clearProperty("user.timezone");
       }
     }
-    finish(table, con);
-    // ??
   }
 
   @Test
@@ -181,20 +182,26 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     String column = "(a timestamp_ltz)";
 
     String values = "('" + StringUtils.join(cases, "'), (null),('") + "')";
-    Connection con = init(table, column, values);
-    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
-    int i = 0;
-    while (i < 2 * cases.length - 1) {
-      rs.next();
-      if (i % 2 != 0) {
-        assertNull(rs.getTimestamp(1));
-      } else {
-        assertEquals(times[i / 2], rs.getTimestamp(1).getTime());
-        assertEquals(0, rs.getTimestamp(1).getNanos());
+    try (Connection con = init(table, column, values);
+        Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select * from " + table)) {
+      try {
+        int i = 0;
+        while (i < 2 * cases.length - 1) {
+          rs.next();
+          if (i % 2 != 0) {
+            assertNull(rs.getTimestamp(1));
+          } else {
+            assertEquals(times[i / 2], rs.getTimestamp(1).getTime());
+            assertEquals(0, rs.getTimestamp(1).getNanos());
+          }
+          i++;
+        }
+      } finally {
+        statement.execute("drop table " + table);
+        System.clearProperty("user.timezone");
       }
-      i++;
     }
-    finish(table, con);
   }
 
   @Test
@@ -221,16 +228,22 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     String column = "(a timestamp_ltz)";
 
     String values = "('" + StringUtils.join(cases, " Z'),('") + " Z'), (null)";
-    Connection con = init(table, column, values);
-    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
-    int i = 0;
-    while (i < cases.length) {
-      rs.next();
-      assertEquals(times[i], rs.getTimestamp(1).getTime());
-      assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+    try (Connection con = init(table, column, values);
+        Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select * from " + table)) {
+      try {
+        int i = 0;
+        while (i < cases.length) {
+          rs.next();
+          assertEquals(times[i], rs.getTimestamp(1).getTime());
+          assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+        }
+        rs.next();
+        assertNull(rs.getString(1));
+      } finally {
+        statement.execute("drop table " + table);
+        System.clearProperty("user.timezone");
+      }
     }
-    rs.next();
-    assertNull(rs.getString(1));
-    finish(table, con);
   }
 }
