@@ -337,7 +337,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
         String sqlText = "create or replace table identifier(?) (c1 number)";
         SnowflakePreparedStatementV1 pStmt =
-                (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+            (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
         String t1 = "bindObjectTable1";
         // Bind the table name
         pStmt.setString(1, t1);
@@ -430,8 +430,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
         // Multiple Object Binds
         sqlText =
-                "select t2.c1 from identifier(?) as t1, identifier(?) as t2 "
-                        + "where t1.c1 = t2.c1 and t1.c1 > (?)";
+            "select t2.c1 from identifier(?) as t1, identifier(?) as t2 "
+                + "where t1.c1 = t2.c1 and t1.c1 > (?)";
         pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
         pStmt.setParameter("resolve_object_ids", true);
         pStmt.setString(1, t1);
