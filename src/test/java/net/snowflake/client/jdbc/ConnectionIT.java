@@ -376,7 +376,6 @@ public class ConnectionIT extends BaseJDBCTest {
           ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
         out.writeObject(ds);
       }
-      ;
       // deserialize into datasource object again
       try (FileInputStream inputFile = new FileInputStream(serializedFile);
           ObjectInputStream in = new ObjectInputStream(inputFile)) {
@@ -453,14 +452,11 @@ public class ConnectionIT extends BaseJDBCTest {
         }
       }
     }
-
     // test multiple key pair
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       statement.execute("use role accountadmin");
-
       String encodePublicKey2 = Base64.encodeBase64String(publicKey2.getEncoded());
-
       statement.execute(
           String.format("alter user %s set rsa_public_key_2='%s'", testUser, encodePublicKey2));
     }
