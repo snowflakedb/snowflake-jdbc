@@ -427,7 +427,9 @@ public class ConnectionIT extends BaseJDBCTest {
 
     // test correct private key one
     properties.put("privateKey", privateKey);
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
+      assertFalse(connection.isClosed());
+    }
 
     // test datasource connection using private key
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
@@ -438,7 +440,9 @@ public class ConnectionIT extends BaseJDBCTest {
     ds.setPortNumber(Integer.valueOf(parameters.get("port")));
     ds.setPrivateKey(privateKey);
 
-    try (Connection con = ds.getConnection()) {}
+    try (Connection con = ds.getConnection()) {
+      assertFalse(con.isClosed());
+    }
     // test wrong private key
     keyPair = keyPairGenerator.generateKeyPair();
     publicKey2 = keyPair.getPublic();
