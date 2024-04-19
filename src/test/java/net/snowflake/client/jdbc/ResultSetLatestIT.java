@@ -142,13 +142,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
           .setMemoryLimitForTesting(2000000);
       // open multiple statements concurrently to overwhelm current memory allocation
       for (int i = 0; i < stmtCount; ++i) {
-        try (ResultSet resultSet =
+        ResultSet resultSet =
             stmt.executeQuery(
                 "select randstr(100, random()) from table(generator(rowcount => "
                     + rowCount
-                    + "))")) {
-          rsList.add(resultSet);
-        }
+                    + "))");
+        rsList.add(resultSet);
       }
       // Assert that all resultSets exist and can successfully download the needed chunks without
       // hanging
@@ -170,8 +169,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testChunkDownloaderSetRetry() throws SQLException {
     int stmtCount = 3;
     int rowCount = 170000;
-    try (Connection connection = getConnection();
-        Statement stmt = connection.createStatement(); ) {
+    try (Connection connection = getConnection()) {
       connection
           .unwrap(SnowflakeConnectionV1.class)
           .getSFBaseSession()
@@ -182,6 +180,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
           .setOtherParameter(SessionUtil.JDBC_CHUNK_DOWNLOADER_MAX_RETRY, 1);
       // Set memory limit to low number
       // open multiple statements concurrently to overwhelm current memory allocation
+      Statement stmt = connection.createStatement();
       for (int i = 0; i < stmtCount; ++i) {
         try (ResultSet resultSet =
             stmt.executeQuery(
