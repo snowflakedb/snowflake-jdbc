@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.net.URL;
@@ -95,7 +96,7 @@ public class CallableStatementIT extends BaseJDBCTest {
         assertThat(callableStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
         callableStatement.setFloat(1, 7.0f);
         try (ResultSet rs = callableStatement.executeQuery()) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(49.0f, rs.getFloat(1), 1.0f);
         }
       }
@@ -104,7 +105,7 @@ public class CallableStatementIT extends BaseJDBCTest {
         callableStatement.setDouble(1, 32);
         callableStatement.setDouble(2, 15);
         try (ResultSet rs = callableStatement.executeQuery()) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(47, rs.getDouble(1), .5);
         }
       }

@@ -206,7 +206,7 @@ public class ConnectionIT extends BaseJDBCTest {
             size++;
           }
           System.out.println("Total records: " + size);
-          assert (size == resultSize);
+          assertEquals(size, resultSize);
         }
       }
     }
@@ -230,7 +230,6 @@ public class ConnectionIT extends BaseJDBCTest {
         statement.execute(String.format("create or replace schema %s", SECOND_SCHEMA));
         statement.execute(String.format("use database %s", database));
 
-        // TODO: use the other database and schema
         con.setCatalog(SECOND_DATABASE);
         assertEquals(SECOND_DATABASE, con.getCatalog());
         assertEquals("PUBLIC", con.getSchema());
@@ -303,8 +302,8 @@ public class ConnectionIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
       try {
         statement.executeQuery("select count(*) from table(generator(timeLimit => 1000000))");
+        fail("This query should be failed.");
       } catch (SQLException e) {
-        assertTrue(true);
         assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
         assertEquals("SQL execution canceled", e.getMessage());
       }
@@ -405,7 +404,6 @@ public class ConnectionIT extends BaseJDBCTest {
     KeyPair keyPair = keyPairGenerator.generateKeyPair();
     PublicKey publicKey = keyPair.getPublic();
     PrivateKey privateKey = keyPair.getPrivate();
-    PublicKey publicKey2 = null;
 
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -445,7 +443,7 @@ public class ConnectionIT extends BaseJDBCTest {
     }
     // test wrong private key
     keyPair = keyPairGenerator.generateKeyPair();
-    publicKey2 = keyPair.getPublic();
+    PublicKey publicKey2 = keyPair.getPublic();
     PrivateKey privateKey2 = keyPair.getPrivate();
     properties.put("privateKey", privateKey2);
     try {
@@ -461,13 +459,13 @@ public class ConnectionIT extends BaseJDBCTest {
       String encodePublicKey2 = Base64.encodeBase64String(publicKey2.getEncoded());
       statement.execute(
           String.format("alter user %s set rsa_public_key_2='%s'", testUser, encodePublicKey2));
-    }
-
-    try (Connection connection = DriverManager.getConnection(uri, properties);
-        Statement statement = connection.createStatement()) {
-      statement.execute("use role accountadmin");
-      statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
-      statement.execute(String.format("alter user %s unset rsa_public_key_2", testUser));
+    } finally {
+      try (Connection connection = DriverManager.getConnection(uri, properties);
+          Statement statement = connection.createStatement()) {
+        statement.execute("use role accountadmin");
+        statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
+        statement.execute(String.format("alter user %s unset rsa_public_key_2", testUser));
+      }
     }
   }
 
@@ -598,7 +596,7 @@ public class ConnectionIT extends BaseJDBCTest {
         String key = (String) enums.nextElement();
         try (ResultSet rs =
             statement.executeQuery(String.format("show parameters like '%s'", key))) {
-          rs.next();
+          assertTrue(rs.next());
           String value = rs.getString("value");
           assertThat(key, value, equalTo(paramProperties.get(key).toString()));
         }
@@ -631,15 +629,16 @@ public class ConnectionIT extends BaseJDBCTest {
         String key = (String) enums.nextElement();
         try (ResultSet rs =
             statement.executeQuery(String.format("show parameters like '%s'", key))) {
-          rs.next();
+          assertTrue(rs.next());
           String value = rs.getString("value");
           assertThat(key, value, equalTo(paramProperties.get(key).toString()));
         }
       }
+    } finally {
+      System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
+      System.clearProperty("net.snowflake.jdbc.clientResultChunkSize");
+      System.clearProperty("net.snowflake.jdbc.clientMemoryLimit");
     }
-    System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
-    System.clearProperty("net.snowflake.jdbc.clientResultChunkSize");
-    System.clearProperty("net.snowflake.jdbc.clientMemoryLimit");
   }
 
   /**
@@ -674,17 +673,17 @@ public class ConnectionIT extends BaseJDBCTest {
         String key = (String) enums.nextElement();
         try (ResultSet rs =
             statement.executeQuery(String.format("show parameters like '%s'", key))) {
-          rs.next();
+          assertTrue(rs.next());
           String value = rs.getString("value");
           assertThat(key, value, equalTo(paramProperties.get(key).toString()));
         }
       }
+    } finally {
+      System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
+      System.clearProperty("net.snowflake.jdbc.clientResultChunkSize");
+      System.clearProperty("net.snowflake.jdbc.clientMemoryLimit");
     }
-    System.clearProperty("net.snowflake.jdbc.clientPrefetchThreads");
-    System.clearProperty("net.snowflake.jdbc.clientResultChunkSize");
-    System.clearProperty("net.snowflake.jdbc.clientMemoryLimit");
   }
-
   /**
    * Verify the passed heartbeat frequency, which is too large, is changed to the maximum valid
    * value.
@@ -701,7 +700,7 @@ public class ConnectionIT extends BaseJDBCTest {
         String key = (String) enums.nextElement();
         try (ResultSet rs =
             statement.executeQuery(String.format("show parameters like '%s'", key))) {
-          rs.next();
+          assertTrue(rs.next());
           String value = rs.getString("value");
 
           assertThat(key, value, equalTo("3600"));
@@ -992,7 +991,6 @@ public class ConnectionIT extends BaseJDBCTest {
     // test correct private key one
     props.put("privateKey", privateKey);
     try (Connection connection = DriverManager.getConnection(uri, props)) {}
-    ;
   }
 
   private Properties kvMap2Properties(

@@ -65,7 +65,8 @@ public class CustomProxyLatestIT {
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
         Statement stmt = con1.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
-      rs.next();
+      assertTrue(rs.next());
+      ;
       assertEquals(1, rs.getInt(1));
     }
 
@@ -77,7 +78,8 @@ public class CustomProxyLatestIT {
                 "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com", props);
         Statement statement = con2.createStatement();
         ResultSet rs = statement.executeQuery("select 2")) {
-      rs.next();
+      assertTrue(rs.next());
+      ;
       assertEquals(2, rs.getInt(1));
       // To ensure that the http client map is functioning properly, make a third connection with
       // the
@@ -90,7 +92,8 @@ public class CustomProxyLatestIT {
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
         Statement stmt = con3.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
-      rs.next();
+      assertTrue(rs.next());
+      ;
       assertEquals(1, rs.getInt(1));
       // Assert that although there are 3 connections, 2 of them (1st and 3rd) use the same
       // httpclient
@@ -118,12 +121,13 @@ public class CustomProxyLatestIT {
     props.put("proxyPort", "3128");
     // protocol must be specified for https (default is http)
     props.put("proxyProtocol", "https");
-    try (Connection con1 =
+    try (Connection con =
             DriverManager.getConnection(
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-        Statement stmt = con1.createStatement();
+        Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
-      rs.next();
+      assertTrue(rs.next());
+      ;
       assertEquals(1, rs.getInt(1));
     }
 
@@ -132,12 +136,13 @@ public class CustomProxyLatestIT {
     System.setProperty("http.useProxy", "true");
     System.setProperty("http.proxyHost", "localhost");
     System.setProperty("http.proxyPort", "3128");
-    try (Connection con1 =
+    try (Connection con =
             DriverManager.getConnection(
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-        Statement stmt = con1.createStatement();
+        Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
-      rs.next();
+      assertTrue(rs.next());
+      ;
       assertEquals(1, rs.getInt(1));
     }
   }
@@ -165,7 +170,8 @@ public class CustomProxyLatestIT {
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
-      rs.next();
+      assertTrue(rs.next());
+      ;
       assertEquals(1, rs.getInt(1));
     }
   }
@@ -203,12 +209,13 @@ public class CustomProxyLatestIT {
     props.put("proxyPort", "8080");
     props.put("nonProxyHosts", "*.snowflakecomputing.com");
     // Set up the first connection and proxy
-    try (Connection con1 =
+    try (Connection con =
             DriverManager.getConnection(
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-        Statement stmt = con1.createStatement();
+        Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
-      rs.next();
+      assertTrue(rs.next());
+      ;
       assertEquals(1, rs.getInt(1));
       // Assert that nonProxyHosts string is correct for initial value
       HttpUtil.httpClient
@@ -220,12 +227,13 @@ public class CustomProxyLatestIT {
     // Manually check here that nonProxyHost setting works by checking that nothing else goes
     // through proxy from this point onward. *.snowflakecomputing.com should ensure that proxy is
     // skipped.
-    try (Connection con2 =
+    try (Connection con =
             DriverManager.getConnection(
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-        Statement statement = con2.createStatement();
+        Statement statement = con.createStatement();
         ResultSet rs = statement.executeQuery("select 2")) {
-      rs.next();
+      assertTrue(rs.next());
+      ;
       assertEquals(2, rs.getInt(1));
       assertEquals(1, HttpUtil.httpClient.size());
       // Assert that the entry contains the correct updated value for nonProxyHosts string
@@ -249,12 +257,13 @@ public class CustomProxyLatestIT {
     props.put("user", "USER");
     props.put("password", "PASSWORD");
     // Set up the first connection and proxy
-    try (Connection con1 =
+    try (Connection con =
             DriverManager.getConnection(
                 "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props);
-        Statement stmt = con1.createStatement();
+        Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
-      rs.next();
+      assertTrue(rs.next());
+      ;
       assertEquals(1, rs.getInt(1));
     }
 
@@ -262,7 +271,7 @@ public class CustomProxyLatestIT {
     props.put("useProxy", false);
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8080");
-    try (Connection con2 =
+    try (Connection con =
         DriverManager.getConnection(
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
       // Assert that the HttpClient table has only 1 entry for both non-proxy entries
@@ -270,7 +279,7 @@ public class CustomProxyLatestIT {
     }
 
     props.put("ocspFailOpen", "false");
-    try (Connection con3 =
+    try (Connection con =
         DriverManager.getConnection(
             "jdbc:snowflake://s3testaccount.us-east-1.snowflakecomputing.com", props)) {
       // Table should grow in size by 1 when OCSP mode changes

@@ -137,7 +137,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             connection
                 .createStatement()
                 .executeQuery(String.format("show parameters like '%s'", key))) {
-          rs.next();
+          assertTrue(rs.next());
           String value = rs.getString("value");
 
           assertThat(key, value, equalTo(paramProperties.get(key).toString()));
@@ -163,7 +163,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             connection
                 .createStatement()
                 .executeQuery(String.format("show parameters like '%s'", key))) {
-          rs.next();
+          assertTrue(rs.next());
           String value = rs.getString("value");
 
           assertThat(key, value, equalTo("900"));
@@ -397,13 +397,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
 
           // come back to the asynchronously executed result set after finishing other things
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(rs.getString(1), "row1");
           assertEquals(rs.getInt(2), 1);
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(rs.getString(1), "row2");
           assertEquals(rs.getInt(2), 2);
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(rs.getString(1), "row3");
           assertEquals(rs.getInt(2), 3);
         }
@@ -952,7 +952,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         waitForAsyncQueryDone(connection, queryID);
         queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-        assert (queryIDs.length == 1);
+        assertEquals(queryIDs.length, 1);
       }
 
       try (ResultSet rs =
@@ -967,7 +967,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         waitForAsyncQueryDone(connection2, queryID);
         queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-        assert (queryIDs.length == 1);
+        assertEquals(queryIDs.length, 1);
       }
 
       try (ResultSet rs =
@@ -982,7 +982,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         waitForAsyncQueryDone(connection2, queryID);
         queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-        assert (queryIDs.length == 1);
+        assertEquals(queryIDs.length, 1);
       }
 
       try (ResultSet rs =
@@ -1017,7 +1017,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection()) {
       waitForAsyncQueryDone(connection, queryID);
       queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-      assert (queryIDs.length == 3);
+      assertEquals(queryIDs.length, 3);
 
       // First statement ResultSet
       try (ResultSet rs =

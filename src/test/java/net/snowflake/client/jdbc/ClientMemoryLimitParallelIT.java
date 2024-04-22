@@ -76,7 +76,6 @@ public class ClientMemoryLimitParallelIT {
         Statement statement = con.createStatement()) {
       statement.execute("drop table if exists testtable_cml");
     }
-    ;
   }
 
   /**
