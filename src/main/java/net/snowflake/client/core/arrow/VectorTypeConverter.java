@@ -2,11 +2,9 @@ package net.snowflake.client.core.arrow;
 
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.complex.FixedSizeListVector;
 
-@SnowflakeJdbcInternalApi
 public class VectorTypeConverter extends AbstractArrowVectorConverter {
 
   private final FixedSizeListVector vector;
