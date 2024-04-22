@@ -20,7 +20,6 @@ fi
 eval $(jq -r '.testconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
 eval $(jq -r '.orgconnection | to_entries | map("export \(.key)=\(.value|tostring)")|.[]' $PARAMETER_FILE)
 
-
 if [[ -n "$GITHUB_SHA" ]]; then
     # Github Action
     export TARGET_SCHEMA_NAME=${RUNNER_TRACKING_ID//-/_}_${GITHUB_SHA}
@@ -71,7 +70,14 @@ python3 $THIS_DIR/hang_webserver.py 12345&
 IFS=','
 read -ra CATEGORY <<< "$JDBC_TEST_CATEGORY" 
 
+# Avoid connection timeouts
+export MAVEN_OPTS="$MAVEN_OPTS -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
+
 cd $SOURCE_ROOT
+
+# Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
+mvn --batch-mode --show-version dependency:resolve-plugins
+
 for c in "${CATEGORY[@]}"; do
     c=$(echo $c | sed 's/ *$//g')
     if [[ "$is_old_driver" == "true" ]]; then
