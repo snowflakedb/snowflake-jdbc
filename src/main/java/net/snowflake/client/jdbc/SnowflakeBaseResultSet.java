@@ -137,7 +137,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     return getDate(
         columnIndex,
         this.session.getUseSessionTimezone()
-            ? (sfBaseResultSet == null ? TimeZone.getDefault() : sfBaseResultSet.getSessionTimeZone())
+            ? (sfBaseResultSet == null
+                ? TimeZone.getDefault()
+                : sfBaseResultSet.getSessionTimeZone())
             : TimeZone.getDefault());
   }
 

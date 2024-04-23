@@ -253,7 +253,9 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
     int scale = resultSetMetaData.getScale(columnIndex);
-    return converters.getDateTimeConverter().getDate(obj, columnType, columnSubType, TimeZone.getDefault(), scale);
+    return converters
+        .getDateTimeConverter()
+        .getDate(obj, columnType, columnSubType, TimeZone.getDefault(), scale);
   }
 
   @Override
