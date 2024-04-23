@@ -12,7 +12,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 
