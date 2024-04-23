@@ -3,8 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -75,11 +74,11 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
     while (i < cases.length) {
-      rs.next();
+      assertTrue(rs.next());
       assertEquals(times[i++], rs.getTimestamp(1).getTime());
       assertEquals(0, rs.getTimestamp(1).getNanos());
     }
-    rs.next();
+    assertTrue(rs.next());
     assertNull(rs.getString(1));
     finish(table, con);
   }
@@ -104,7 +103,7 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
         // use initialized ltz output format
         try (ResultSet rs = statement.executeQuery("select * from " + table)) {
           for (int i = 0; i < cases.length; i++) {
-            rs.next();
+            assertTrue(rs.next());
             assertEquals(times[i], rs.getTimestamp(1).getTime());
             String weekday = rs.getString(1).split(",")[0];
             assertEquals(3, weekday.length());
@@ -115,7 +114,7 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
             "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS TZH:TZM'");
         try (ResultSet rs = statement.executeQuery("select * from " + table)) {
           for (int i = 0; i < cases.length; i++) {
-            rs.next();
+            assertTrue(rs.next());
             assertEquals(times[i], rs.getTimestamp(1).getTime());
             String year = rs.getString(1).split("-")[0];
             assertEquals(4, year.length());
@@ -126,7 +125,7 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
         statement.execute("alter session unset TIMESTAMP_LTZ_OUTPUT_FORMAT");
         try (ResultSet rs = statement.executeQuery("select * from " + table)) {
           for (int i = 0; i < cases.length; i++) {
-            rs.next();
+            assertTrue(rs.next());
             assertEquals(times[i], rs.getTimestamp(1).getTime());
             String weekday = rs.getString(1).split(",")[0];
             assertEquals(3, weekday.length());
@@ -137,7 +136,7 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
             "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
         try (ResultSet rs = statement.executeQuery("select * from " + table)) {
           for (int i = 0; i < cases.length; i++) {
-            rs.next();
+            assertTrue(rs.next());
             assertEquals(times[i], rs.getTimestamp(1).getTime());
             String weekday = rs.getString(1).split(",")[0];
             assertEquals(3, weekday.length());
@@ -188,7 +187,7 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
       try {
         int i = 0;
         while (i < 2 * cases.length - 1) {
-          rs.next();
+          assertTrue(rs.next());
           if (i % 2 != 0) {
             assertNull(rs.getTimestamp(1));
           } else {
@@ -234,11 +233,11 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
       try {
         int i = 0;
         while (i < cases.length) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(times[i], rs.getTimestamp(1).getTime());
           assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
         }
-        rs.next();
+        assertTrue(rs.next());
         assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);

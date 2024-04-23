@@ -71,7 +71,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
                     + "1000000000000000000000000000000000000, NULL, "
                     + "current_timestamp, current_timestamp(0), current_timestamp(5),"
                     + "current_date, current_time, current_time(0), current_time(5);")) {
-      rs.next();
+      assertTrue(rs.next());
       assertEquals((byte) 1, rs.getByte(1));
       assertEquals((short) 128, rs.getShort(2));
       assertEquals(65500, rs.getInt(3));
@@ -97,7 +97,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         statement.execute("create or replace table t (a real)");
         statement.execute("insert into t values (123.456)");
         try (ResultSet rs = statement.executeQuery("select * from t;")) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(123.456, rs.getFloat(1), 0.001);
         }
       } finally {
@@ -115,13 +115,13 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         statement.execute("create or replace table t (a text)");
         statement.execute("insert into t values ('test')");
         try (ResultSet rs = statement.executeQuery("select count(*) from t;")) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(1, rs.getInt(1));
           queryId = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         }
         try (ResultSet rs =
             statement.executeQuery("select * from table(result_scan('" + queryId + "'))")) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(1, rs.getInt(1));
         }
       } finally {
@@ -141,7 +141,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         }
         statement.execute("insert into t values (1)");
         try (ResultSet rs = statement.executeQuery("select * from t;")) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(1, rs.getInt(1));
         }
       } finally {
@@ -301,7 +301,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         int columnType = rs.getMetaData().getColumnType(1);
         assertEquals(Types.BIGINT, columnType);
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(cases[i], rs.getInt(1));
           assertEquals((short) cases[i], rs.getShort(1));
           assertEquals((long) cases[i], rs.getLong(1));
@@ -317,7 +317,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
           bytes[0] = (byte) cases[i];
           assertArrayEquals(bytes, rs.getBytes(1));
         }
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -364,7 +364,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(Types.DECIMAL, columnType);
 
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           try {
             rs.getInt(1);
             fail();
@@ -416,7 +416,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         }
 
         // null value
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -460,7 +460,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         int columnType = rs.getMetaData().getColumnType(1);
         assertEquals(Types.BIGINT, columnType);
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(cases[i], rs.getInt(1));
           assertEquals(cases[i], rs.getShort(1));
           assertEquals((long) cases[i], rs.getLong(1));
@@ -499,7 +499,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
             assertArrayEquals(bb.array(), rs.getBytes(1));
           }
         }
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -547,7 +547,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(Types.DECIMAL, columnType);
 
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           try {
             rs.getInt(1);
             fail();
@@ -608,7 +608,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         }
 
         // null value
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -655,7 +655,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         int columnType = rs.getMetaData().getColumnType(1);
         assertEquals(Types.BIGINT, columnType);
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(cases[i], rs.getInt(1));
           if (cases[i] >= Short.MIN_VALUE && cases[i] <= Short.MAX_VALUE) {
             assertEquals((short) cases[i], rs.getShort(1));
@@ -708,7 +708,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
             assertArrayEquals(bb.array(), rs.getBytes(1));
           }
         }
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -764,7 +764,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(Types.DECIMAL, columnType);
 
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           try {
             rs.getInt(1);
             fail();
@@ -825,7 +825,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         }
 
         // null value
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -888,7 +888,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         int columnType = rs.getMetaData().getColumnType(1);
         assertEquals(Types.BIGINT, columnType);
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
 
           if (cases[i] >= Integer.MIN_VALUE && cases[i] <= Integer.MAX_VALUE) {
             assertEquals(cases[i], rs.getInt(1));
@@ -952,7 +952,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
             assertEquals(bb.array()[8 - res.length + j], res[j]);
           }
         }
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -1010,7 +1010,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(Types.DECIMAL, columnType);
 
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           try {
             rs.getInt(1);
             fail();
@@ -1071,7 +1071,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         }
 
         // null value
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -1130,7 +1130,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(Types.BIGINT, columnType);
 
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           try {
             rs.getInt(1);
             fail();
@@ -1180,7 +1180,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         }
 
         // null value
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -1238,7 +1238,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(Types.DECIMAL, columnType);
 
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           try {
             rs.getInt(1);
             fail();
@@ -1297,7 +1297,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         }
 
         // null value
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -1357,7 +1357,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         assertEquals(Types.DECIMAL, columnType);
 
         for (int i = 0; i < cases.length; i++) {
-          rs.next();
+          assertTrue(rs.next());
           try {
             rs.getInt(1);
             fail();
@@ -1416,7 +1416,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         }
 
         // null value
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
         assertEquals((short) 0, rs.getShort(1));
         assertEquals((long) 0, rs.getLong(1));
@@ -1524,11 +1524,11 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         statement.execute("set-sf-property sort on");
 
         try (ResultSet rs = statement.executeQuery("select * from " + table)) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals("0", rs.getString(1));
-          rs.next();
+          assertTrue(rs.next());
           assertEquals("1", rs.getString(1));
-          rs.next();
+          assertTrue(rs.next());
           assertEquals("test", rs.getString(3));
         }
       } finally {

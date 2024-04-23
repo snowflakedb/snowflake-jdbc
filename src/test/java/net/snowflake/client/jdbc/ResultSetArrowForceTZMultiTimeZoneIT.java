@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -72,11 +73,11 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
       try {
         int i = 0;
         while (i < cases.length) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(times[i++], rs.getTimestamp(1).getTime());
           assertEquals(0, rs.getTimestamp(1).getNanos());
         }
-        rs.next();
+        assertTrue(rs.next());
         assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
@@ -124,7 +125,7 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
       try {
         int i = 0;
         while (i < cases.length) {
-          rs.next();
+          assertTrue(rs.next());
           if (i == cases.length - 1 && tz.equalsIgnoreCase("utc")) {
             // TODO: Is this a JDBC bug which happens in both arrow and json cases?
             assertEquals("0001-01-01 00:00:01.790870987", rs.getTimestamp(1).toString());
@@ -133,7 +134,7 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
           assertEquals(times[i], rs.getTimestamp(1).getTime());
           assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
         }
-        rs.next();
+        assertTrue(rs.next());
         assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
@@ -183,7 +184,7 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
       try {
         int i = 0;
         while (i < cases.length) {
-          rs.next();
+          assertTrue(rs.next());
           if (i == cases.length - 1 && tz.equalsIgnoreCase("utc")) {
             // TODO: Is this a JDBC bug which happens in both arrow and json cases?
             assertEquals("0001-01-01 00:00:01.79087", rs.getTimestamp(1).toString());
@@ -192,7 +193,7 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
           assertEquals(times[i], rs.getTimestamp(1).getTime());
           assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
         }
-        rs.next();
+        assertTrue(rs.next());
         assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);

@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -94,7 +95,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
               + timeStringValue
               + "')");
       try (ResultSet rs = statement.executeQuery("select * from SRC_DATE_TIME")) {
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(timestampStringValue.substring(0, length - 6), rs.getTimestamp(1).toString());
         assertEquals(timestampStringValue.substring(0, length - 4), rs.getTimestamp(2).toString());
         assertEquals(timestampStringValue, rs.getTimestamp(3).toString());
@@ -117,7 +118,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
       statement.execute(
           "alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_NTZ'," + "TIMEZONE='Europe/London'");
       try (ResultSet rs = statement.executeQuery("select TIMESTAMP '2011-09-04 00:00:00'")) {
-        rs.next();
+        assertTrue(rs.next());
         Timestamp expected = Timestamp.valueOf("2011-09-04 00:00:00");
         assertEquals(expected, rs.getTimestamp(1));
       }
@@ -141,7 +142,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
           statement.executeQuery(
               "SELECT DATE '1970-01-02 00:00:00' as datefield, "
                   + "TIMESTAMP '1970-01-02 00:00:00' as timestampfield")) {
-        rs.next();
+        assertTrue(rs.next());
 
         // Set a timezone for results to be returned in and set a format for date and timestamp
         // objects
@@ -183,7 +184,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
       statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=false");
       try (ResultSet rs =
           statement.executeQuery("SELECT DATE '1945-05-10 00:00:00' as datefield")) {
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(rs.getDate(1, cal), rs.getDate(1));
         assertEquals("1945-05-10 00:00:00", sdf.format(rs.getDate(1, cal)));
       }
@@ -273,7 +274,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
         // (with
         // exceptions for getTimestamp() on date and time objects).
         try (ResultSet rs = statement.executeQuery("select * from datetimetypes")) {
-          rs.next();
+          assertTrue(rs.next());
           // Assert date has no offset. When flag is false, timestamp_ltz and timestamp_ntz will
           // show
           // offset.
@@ -310,7 +311,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
           assertEquals(expectedTime, rs.getTime("COLD").toString());
           // Cannot getTime() for Date column (colE)
 
-          rs.next();
+          assertTrue(rs.next());
           // Assert date has no offset. Offset will never be seen regardless of flag because
           // 01:01:33
           // is
@@ -355,7 +356,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
           prepSt.execute();
 
           try (ResultSet rs = statement.executeQuery("select * from tabletz")) {
-            rs.next();
+            assertTrue(rs.next());
             // Assert timestamp is displayed with no offset when flag is true. Timestamp should look
             // identical to inserted value
             assertEquals(expectedTimestamp, rs.getTimestamp("COLA").toString());
@@ -363,7 +364,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
             assertEquals(expectedTime, rs.getTime("COLA").toString());
             // Date value looks identical to the date portion of inserted timestamp_tz value
             assertEquals(expectedDate, rs.getDate("COLA").toString());
-            rs.next();
+            assertTrue(rs.next());
             // Test that the same results occur for 2nd timestamp_tz value
             assertEquals(expectedTimestamp2, rs.getTimestamp("COLA").toString());
             assertEquals(expectedTime2, rs.getTime("COLA").toString());

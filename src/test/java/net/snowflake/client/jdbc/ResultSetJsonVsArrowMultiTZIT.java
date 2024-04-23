@@ -3,8 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -116,7 +115,7 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
-          rs.next();
+          assertTrue(rs.next());
           if (i == cases.length - 2) {
             assertEquals("0001-01-01", rs.getDate(1).toString());
           } else {
@@ -124,7 +123,7 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
           }
           i++;
         }
-        rs.next();
+        assertTrue(rs.next());
         assertNull(rs.getString(1));
       }
       statement.execute("drop table " + table);
@@ -141,11 +140,11 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
         Statement statement = con.createStatement();
         ResultSet rs = statement.executeQuery("select * from " + table)) {
       for (int i = 0; i < times.length; i++) {
-        rs.next();
+        assertTrue(rs.next());
         // Java Time class does not have nanoseconds
         assertEquals("00:01:23", rs.getString(1));
       }
-      rs.next();
+      assertTrue(rs.next());
       assertNull(rs.getTime(1));
     }
   }
@@ -190,10 +189,10 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(results[i++], rs.getString(1));
         }
-        rs.next();
+        assertTrue(rs.next());
         assertNull(rs.getString(1));
       }
       statement.execute("drop table " + table);
@@ -224,14 +223,15 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(cases[i++], rs.getTimestamp(1).toString());
         }
-        rs.next();
+        assertTrue(rs.next());
         assertNull(rs.getString(1));
+      } finally {
+        statement.execute("drop table " + table);
+        System.clearProperty("user.timezone");
       }
-      statement.execute("drop table " + table);
-      System.clearProperty("user.timezone");
     }
   }
 }

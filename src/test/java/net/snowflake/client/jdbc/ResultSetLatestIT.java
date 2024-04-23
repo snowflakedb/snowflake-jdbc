@@ -514,12 +514,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
   @Test
   public void testBytesCrossTypeTests() throws Exception {
     try (ResultSet resultSet = numberCrossTesting()) {
-      resultSet.next();
+      assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
         assertArrayEquals(null, resultSet.getBytes(i));
       }
-      resultSet.next();
+      assertTrue(resultSet.next());
       assertArrayEquals(intToByteArray(2), resultSet.getBytes(1));
       assertArrayEquals(intToByteArray(5), resultSet.getBytes(2));
       assertArrayEquals(floatToByteArray(3.5f), resultSet.getBytes(3));
@@ -555,7 +555,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
               + "\\t' from table(generator(rowcount=>10000))";
 
       try (ResultSet resultSet = statement.executeQuery(query)) {
-        resultSet.next(); // should finish successfully
+        assertTrue(resultSet.next()); // should finish successfully
       }
 
       try {
@@ -594,7 +594,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       };
       for (int i = 0; i < extremeNumbers.length; i++) {
         try (ResultSet resultSet = statement.executeQuery("select " + extremeNumbers[i])) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(Types.BIGINT, resultSet.getMetaData().getColumnType(1));
           assertEquals(new BigDecimal(extremeNumbers[i]), resultSet.getObject(1));
         }
@@ -631,10 +631,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
         preparedStatement.executeBatch();
 
         try (ResultSet resultSet = statement.executeQuery("select * from test_get")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(null, resultSet.getBigDecimal(1, 5));
           assertEquals(null, resultSet.getBigDecimal("COLA", 5));
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal(1, 5));
           assertEquals(
               bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal("COLA", 5));
@@ -696,7 +696,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
           preparedStatement.execute();
         }
         try (ResultSet resultSet = statement.executeQuery("select * from test_get_clob")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals("hello world", resultSet.getClob(1).toString());
           assertEquals("hello world", resultSet.getClob("COLA").toString());
           assertNull(resultSet.getClob(2));
@@ -727,7 +727,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
         }
 
         try (ResultSet resultSet = statement.executeQuery("select * from test_set_clob")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertNull(resultSet.getClob(1));
           assertNull(resultSet.getClob("COLNULL"));
         }
@@ -835,7 +835,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
           preparedStatement.executeQuery();
         }
         try (ResultSet resultSet = statement.executeQuery("select * from testObj")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(22.2, resultSet.getObject(1));
           assertEquals(true, resultSet.getObject(2));
         }
@@ -911,7 +911,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       statement.execute("insert into auto_inc(name) values('test1')");
 
       try (ResultSet resultSet = statement.executeQuery("select * from auto_inc")) {
-        resultSet.next();
+        assertTrue(resultSet.next());
 
         ResultSetMetaData metaData = resultSet.getMetaData();
         assertTrue(metaData.isAutoIncrement(1));
@@ -935,7 +935,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       statement.execute("insert into auto_inc(name) values('test1')");
 
       try (ResultSet resultSet = statement.executeQuery("select * from auto_inc")) {
-        resultSet.next();
+        assertTrue(resultSet.next());
 
         ResultSetMetaData metaData = resultSet.getMetaData();
         assertTrue(metaData.isAutoIncrement(1));
@@ -953,7 +953,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
         statement.execute("create or replace table testGranularTime(t time)");
         statement.execute("insert into testGranularTime values ('10:10:10')");
         try (ResultSet resultSet = statement.executeQuery("select * from testGranularTime")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(Time.valueOf("10:10:10"), resultSet.getTime(1));
           assertEquals(10, resultSet.getTime(1).getHours());
           assertEquals(10, resultSet.getTime(1).getMinutes());
@@ -977,7 +977,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
           statement.execute("create or replace table testGranularTime(t time)");
           statement.execute("insert into testGranularTime values ('10:10:10')");
           try (ResultSet resultSet = statement.executeQuery("select * from testGranularTime")) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertEquals(Time.valueOf("02:10:10"), resultSet.getTime(1));
             assertEquals(02, resultSet.getTime(1).getHours());
             assertEquals(10, resultSet.getTime(1).getMinutes());
@@ -1171,7 +1171,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       Statement statement, Object expected, String columnName, Class<?> type) throws SQLException {
     try (ResultSet resultSetString =
         statement.executeQuery(String.format("select %s from test_all_types", columnName))) {
-      resultSetString.next();
+      assertTrue(resultSetString.next());
       assertEquals(expected, resultSetString.getObject(1, type));
     }
   }
@@ -1180,7 +1180,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       Statement statement, Object expected, String columnName, Class type) throws SQLException {
     try (ResultSet resultSetString =
         statement.executeQuery(String.format("select %s from test_all_types", columnName))) {
-      resultSetString.next();
+      assertTrue(resultSetString.next());
       assertEquals(expected.toString(), resultSetString.getObject(1, type).toString());
     }
   }
