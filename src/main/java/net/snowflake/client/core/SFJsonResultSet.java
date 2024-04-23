@@ -239,9 +239,11 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   public Date getDate(int columnIndex) throws SFException {
     return getDate(
         columnIndex,
-        this.getSession().getUseSessionTimezone()
-            ? this.getSessionTimeZone()
-            : TimeZone.getDefault());
+        this.getSession() == null
+            ? TimeZone.getDefault()
+            : this.getSession().getUseSessionTimezone()
+                ? this.getSessionTimeZone()
+                : TimeZone.getDefault());
   }
 
   @Override
@@ -251,7 +253,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
     int scale = resultSetMetaData.getScale(columnIndex);
-    return converters.getDateTimeConverter().getDate(obj, columnType, columnSubType, tz, scale);
+    return converters.getDateTimeConverter().getDate(obj, columnType, columnSubType, TimeZone.getDefault(), scale);
   }
 
   @Override
