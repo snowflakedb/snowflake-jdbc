@@ -66,7 +66,6 @@ public class CustomProxyLatestIT {
         Statement stmt = con1.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
       assertTrue(rs.next());
-      ;
       assertEquals(1, rs.getInt(1));
     }
 
@@ -79,7 +78,6 @@ public class CustomProxyLatestIT {
         Statement statement = con2.createStatement();
         ResultSet rs = statement.executeQuery("select 2")) {
       assertTrue(rs.next());
-      ;
       assertEquals(2, rs.getInt(1));
       // To ensure that the http client map is functioning properly, make a third connection with
       // the
@@ -93,7 +91,6 @@ public class CustomProxyLatestIT {
         Statement stmt = con3.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
       assertTrue(rs.next());
-      ;
       assertEquals(1, rs.getInt(1));
       // Assert that although there are 3 connections, 2 of them (1st and 3rd) use the same
       // httpclient
@@ -127,7 +124,6 @@ public class CustomProxyLatestIT {
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
       assertTrue(rs.next());
-      ;
       assertEquals(1, rs.getInt(1));
     }
 
@@ -142,7 +138,6 @@ public class CustomProxyLatestIT {
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
       assertTrue(rs.next());
-      ;
       assertEquals(1, rs.getInt(1));
     }
   }
@@ -171,7 +166,6 @@ public class CustomProxyLatestIT {
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
       assertTrue(rs.next());
-      ;
       assertEquals(1, rs.getInt(1));
     }
   }
@@ -215,7 +209,6 @@ public class CustomProxyLatestIT {
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
       assertTrue(rs.next());
-      ;
       assertEquals(1, rs.getInt(1));
       // Assert that nonProxyHosts string is correct for initial value
       HttpUtil.httpClient
@@ -233,7 +226,6 @@ public class CustomProxyLatestIT {
         Statement statement = con.createStatement();
         ResultSet rs = statement.executeQuery("select 2")) {
       assertTrue(rs.next());
-      ;
       assertEquals(2, rs.getInt(1));
       assertEquals(1, HttpUtil.httpClient.size());
       // Assert that the entry contains the correct updated value for nonProxyHosts string
@@ -263,7 +255,6 @@ public class CustomProxyLatestIT {
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
       assertTrue(rs.next());
-      ;
       assertEquals(1, rs.getInt(1));
     }
 
