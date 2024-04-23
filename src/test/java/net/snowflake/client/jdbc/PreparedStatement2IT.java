@@ -35,8 +35,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import javax.xml.transform.Result;
-
 @Category(TestCategoryStatement.class)
 public class PreparedStatement2IT extends PreparedStatement0IT {
   public PreparedStatement2IT() {
@@ -335,16 +333,15 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     long t2Id = 0;
 
     try (Connection conn = init();
-         Statement stmt = conn.createStatement()) {
+        Statement stmt = conn.createStatement()) {
 
       String sqlText = "create or replace table identifier(?) (c1 number)";
       SnowflakePreparedStatementV1 pStmt =
-              (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
       String t1 = "bindObjectTable1";
       // Bind the table name
       pStmt.setString(1, t1);
-      try (ResultSet result = pStmt.executeQuery()) {
-      }
+      try (ResultSet result = pStmt.executeQuery()) {}
 
       // Verify the table has been created and get the table ID
       stmt.execute("select parse_json(system$dict_id('table', '" + t1 + "')):entityId;");
@@ -362,8 +359,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       // Bind by object IDs
       pStmt.setLong(1, t1Id);
 
-      try (ResultSet result = pStmt.executeQuery()) {
-      }
+      try (ResultSet result = pStmt.executeQuery()) {}
 
       // Perform some selection
       sqlText = "select * from identifier(?) order by 1";
@@ -382,8 +378,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
       pStmt.setParameter("resolve_object_ids", true);
       pStmt.setLong(1, t1Id);
-      try (ResultSet result = pStmt.executeQuery()) {
-      }
+      try (ResultSet result = pStmt.executeQuery()) {}
 
       // Describe
       sqlText = "desc table identifier(?)";
@@ -402,8 +397,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       sqlText = "create or replace table identifier(?) (c1 number)";
       pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
       pStmt.setString(1, t2);
-      try (ResultSet result = pStmt.executeQuery()) {
-      }
+      try (ResultSet result = pStmt.executeQuery()) {}
 
       // Verify the table has been created and get the table ID
       stmt.execute("select parse_json(system$dict_id('table', '" + t2 + "')):entityId;");
@@ -421,8 +415,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       pStmt.setInt(2, 1);
       pStmt.setInt(3, 2);
       pStmt.setInt(4, 3);
-      try (ResultSet result = pStmt.executeQuery()) {
-      }
+      try (ResultSet result = pStmt.executeQuery()) {}
 
       // Verify that 3 rows have been inserted
       sqlText = "select * from identifier(?) order by 1";
@@ -438,8 +431,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
       // Multiple Object Binds
       sqlText =
-              "select t2.c1 from identifier(?) as t1, identifier(?) as t2 "
-                      + "where t1.c1 = t2.c1 and t1.c1 > (?)";
+          "select t2.c1 from identifier(?) as t1, identifier(?) as t2 "
+              + "where t1.c1 = t2.c1 and t1.c1 > (?)";
       pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
       pStmt.setParameter("resolve_object_ids", true);
       pStmt.setString(1, t1);
@@ -456,15 +449,13 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       sqlText = "drop table identifier(?)";
       pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
       pStmt.setString(1, "bindObjectTable1");
-      try (ResultSet result = pStmt.executeQuery()) {
-      }
+      try (ResultSet result = pStmt.executeQuery()) {}
 
       sqlText = "drop table identifier(?)";
       pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
       pStmt.setParameter("resolve_object_ids", true);
       pStmt.setLong(1, t2Id);
-      try (ResultSet result = pStmt.executeQuery()) {
-      }
+      try (ResultSet result = pStmt.executeQuery()) {}
 
       // Verify that the tables have been dropped
       stmt.execute("show tables like 'bindobjecttable%'");

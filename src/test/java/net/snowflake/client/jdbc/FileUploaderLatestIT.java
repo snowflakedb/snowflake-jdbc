@@ -653,17 +653,17 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         statement.execute("CREATE OR REPLACE STAGE testStage");
 
         uploadFileToStageUsingStream(connection, false);
-        try(ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
+        try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
           assertTrue(resultSet.next());
           expectedValue = resultSet.getString("last_modified");
         }
         Thread.sleep(1000); // add 1 sec delay between uploads.
 
         uploadFileToStageUsingStream(connection, false);
-        try(ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
+        try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
           assertTrue(resultSet.next());
-        String actualValue = resultSet.getString("last_modified");
-        assertEquals(expectedValue,actualValue);
+          String actualValue = resultSet.getString("last_modified");
+          assertEquals(expectedValue, actualValue);
         }
 
       } catch (Exception e) {
@@ -683,14 +683,14 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         statement.execute("CREATE OR REPLACE STAGE testStage");
 
         uploadFileToStageUsingStream(connection, true);
-        try(ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
+        try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
           assertTrue(resultSet.next());
           expectedValue = resultSet.getString("last_modified");
         }
         Thread.sleep(1000); // add 1 sec delay between uploads.
 
         uploadFileToStageUsingStream(connection, true);
-        try(ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
+        try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
           assertTrue(resultSet.next());
           String actualValue = resultSet.getString("last_modified");
 

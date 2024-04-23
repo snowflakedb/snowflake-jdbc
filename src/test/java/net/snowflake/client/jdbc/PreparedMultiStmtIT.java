@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,8 +14,6 @@ import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import static org.junit.Assert.assertTrue;
-
 
 @Category(TestCategoryStatement.class)
 public class PreparedMultiStmtIT extends BaseJDBCTest {
