@@ -8,22 +8,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientConnectionException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.config.SFClientConfigParser;
-import net.snowflake.client.core.SFBaseResultSet;
-import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SFBaseStatement;
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SFSession;
-import net.snowflake.client.core.SFSessionProperty;
-import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.core.*;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.JDK14Logger;
 import net.snowflake.client.log.SFLogLevel;
@@ -136,13 +133,16 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     String clientConfigFilePath =
         (String) connectionPropertiesMap.getOrDefault(SFSessionProperty.CLIENT_CONFIG_FILE, null);
 
-    SFClientConfig sfClientConfig;
-    try {
-      sfClientConfig = SFClientConfigParser.loadSFClientConfig(clientConfigFilePath);
-    } catch (IOException e) {
-      throw new SnowflakeSQLLoggedException(sfSession, ErrorCode.INTERNAL_ERROR, e.getMessage());
+    SFClientConfig sfClientConfig = sfSession.getSfClientConfig();
+    if (sfClientConfig == null) {
+      try {
+        sfClientConfig = SFClientConfigParser.loadSFClientConfig(clientConfigFilePath);
+      } catch (IOException e) {
+        throw new SnowflakeSQLLoggedException(
+            sfSession, ErrorCode.INTERNAL_ERROR, e.getMessage(), e.getCause());
+      }
+      sfSession.setSfClientConfig(sfClientConfig);
     }
-    sfSession.setSfClientConfig(sfClientConfig);
   }
 
   /**
@@ -181,6 +181,9 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
       if (logLevel != null && logPattern != null) {
         try {
+          logger.info(
+              String.format(
+                  "Setting logger with log level %s and log pattern %s", logLevel, logPattern));
           JDK14Logger.instantiateLogger(logLevel, logPattern);
         } catch (IOException ex) {
           throw new SnowflakeSQLLoggedException(
@@ -206,11 +209,13 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
     String logPattern = "%t/snowflake_jdbc%u.log"; // java.tmpdir
 
+    Path logPath;
     if (logPathFromConfig != null && !logPathFromConfig.isEmpty()) {
-      Path path = Paths.get(logPathFromConfig, "jdbc");
-      if (!Files.exists(path)) {
+      // Get log path from configuration
+      logPath = Paths.get(logPathFromConfig);
+      if (!Files.exists(logPath)) {
         try {
-          Files.createDirectories(path);
+          Files.createDirectories(logPath);
         } catch (IOException ex) {
           throw new SnowflakeSQLLoggedException(
               sfSession,
@@ -220,9 +225,74 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
                   logPathFromConfig, ex.getMessage()));
         }
       }
-      logPattern = Paths.get(path.toString(), "snowflake_jdbc%u.log").toString();
+    } else {
+      // Get log path from home directory
+      String homePath = systemGetProperty("user.home");
+      if (homePath == null || homePath.isEmpty()) {
+        throw new SnowflakeSQLLoggedException(
+            sfSession,
+            ErrorCode.INTERNAL_ERROR,
+            String.format(
+                "Log path not set in configfile %s and home directory not set.",
+                logPathFromConfig));
+      }
+      logPath = Paths.get(homePath);
     }
+
+    Path path = CreateLogPathSubDirectory(logPath);
+
+    logPattern = Paths.get(path.toString(), "snowflake_jdbc%u.log").toString();
     return logPattern;
+  }
+
+  private Path CreateLogPathSubDirectory(Path logPath) throws SnowflakeSQLLoggedException {
+    Path path = Paths.get(logPath.toString(), "jdbc");
+    if (!Files.exists(path)) {
+      // Create jdbc subfolder
+      try {
+        if (Constants.getOS() == Constants.OS.WINDOWS) {
+          Files.createDirectories(path);
+        } else {
+          Files.createDirectories(
+              path,
+              PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+        }
+      } catch (IOException ex) {
+        throw new SnowflakeSQLLoggedException(
+            sfSession,
+            ErrorCode.INTERNAL_ERROR,
+            String.format(
+                "Un-able to create jdbc subfolder in configfile %s ,%s",
+                logPath.toString(), ex.getMessage()));
+      }
+    } else {
+      // Check if jdbc subfolder has correct permissions
+      if (Constants.getOS() != Constants.OS.WINDOWS) {
+        try {
+          Set<PosixFilePermission> folderPermissions = Files.getPosixFilePermissions(path);
+          if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
+              || folderPermissions.contains(PosixFilePermission.GROUP_READ)
+              || folderPermissions.contains(PosixFilePermission.GROUP_EXECUTE)
+              || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)
+              || folderPermissions.contains(PosixFilePermission.OTHERS_READ)
+              || folderPermissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
+            logger.info(
+                String.format(
+                    "Access permission for the logs directory '%s' is currently %s and is potentially "
+                        + "accessible to users other than the owner of the logs directory.",
+                    path.toString(), folderPermissions.toString()));
+          }
+        } catch (IOException ex) {
+          throw new SnowflakeSQLLoggedException(
+              sfSession,
+              ErrorCode.INTERNAL_ERROR,
+              String.format(
+                  "Un-able to get permissions of log directory %s ,%s",
+                  path.toString(), ex.getMessage()));
+        }
+      }
+    }
+    return path;
   }
 
   private void initSessionProperties(SnowflakeConnectString conStr, String appID, String appVersion)

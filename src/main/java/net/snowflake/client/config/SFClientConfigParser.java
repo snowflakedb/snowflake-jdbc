@@ -8,8 +8,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -33,33 +37,80 @@ public class SFClientConfigParser {
    * @return SFClientConfig
    */
   public static SFClientConfig loadSFClientConfig(String configFilePath) throws IOException {
+    if (configFilePath != null) {
+      logger.info(
+          String.format("Attempting to enable easy logging with file path %s", configFilePath));
+    }
     String derivedConfigFilePath = null;
     if (configFilePath != null && !configFilePath.isEmpty()) {
       // 1. Try to read the file at  configFilePath.
       derivedConfigFilePath = configFilePath;
+      logger.info(
+          String.format(
+              "Using client configuration path from a connection string: %s",
+              derivedConfigFilePath));
     } else if (System.getenv().containsKey(SF_CLIENT_CONFIG_ENV_NAME)) {
       // 2. If SF_CLIENT_CONFIG_ENV_NAME is set, read from env.
       derivedConfigFilePath = systemGetEnv(SF_CLIENT_CONFIG_ENV_NAME);
+      logger.info(
+          String.format(
+              "Using client configuration path from an environment variable: %s",
+              derivedConfigFilePath));
     } else {
       // 3. Read SF_CLIENT_CONFIG_FILE_NAME from where jdbc jar is loaded.
       String driverLocation =
           Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
       if (Files.exists(Paths.get(driverLocation))) {
         derivedConfigFilePath = driverLocation;
+        logger.info(
+            String.format(
+                "Using client configuration path from jar directory: %s", derivedConfigFilePath));
       } else {
         // 4. Read SF_CLIENT_CONFIG_FILE_NAME if it is present in user home directory.
-        String userHomeFilePath =
-            Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME).toString();
-        if (Files.exists(Paths.get(userHomeFilePath))) {
-          derivedConfigFilePath = userHomeFilePath;
+        String homePath = systemGetProperty("user.home");
+        if (homePath != null) {
+          String userHomeFilePath = Paths.get(homePath, SF_CLIENT_CONFIG_FILE_NAME).toString();
+          if (Files.exists(Paths.get(userHomeFilePath))) {
+            derivedConfigFilePath = userHomeFilePath;
+            logger.info(
+                String.format(
+                    "Using client configuration path from home directory: %s",
+                    derivedConfigFilePath));
+          }
         }
       }
     }
     if (derivedConfigFilePath != null) {
       try {
+        if (Constants.getOS() != Constants.OS.WINDOWS) {
+          // Check permissions of config file
+          Set<PosixFilePermission> folderPermissions =
+              Files.getPosixFilePermissions(Paths.get(derivedConfigFilePath));
+          if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
+              || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)) {
+            String error =
+                String.format(
+                    "Error due to other users having permission to modify the config file: %s",
+                    derivedConfigFilePath);
+            throw new IOException(error);
+          }
+        }
         File configFile = new File(derivedConfigFilePath);
         ObjectMapper objectMapper = new ObjectMapper();
         SFClientConfig clientConfig = objectMapper.readValue(configFile, SFClientConfig.class);
+        logger.info(
+            String.format(
+                "Reading values logLevel %s and logPath %s from client configuration",
+                clientConfig.getCommonProps().getLogLevel(),
+                clientConfig.getCommonProps().getLogPath()));
+
+        for (Map.Entry<String, Object> prop :
+            clientConfig.getCommonProps().getUnknownKeys().entrySet()) {
+          logger.info(
+              String.format(
+                  "Unknown configuration entry: %s with value: %s",
+                  prop.getKey(), prop.getValue()));
+        }
         clientConfig.setConfigFilePath(derivedConfigFilePath);
 
         return clientConfig;

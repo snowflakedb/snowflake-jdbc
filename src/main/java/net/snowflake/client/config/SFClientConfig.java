@@ -1,7 +1,10 @@
 package net.snowflake.client.config;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /** POJO class for Snowflake's client config. */
@@ -57,6 +60,8 @@ public class SFClientConfig {
     @JsonProperty("log_path")
     private String logPath;
 
+    @JsonAnySetter private Map<String, Object> unknownKeys = new LinkedHashMap<>();
+
     public CommonProps() {}
 
     public void CommonProps(String logLevel, String logPath) {
@@ -78,6 +83,10 @@ public class SFClientConfig {
 
     public void setLogPath(String logPath) {
       this.logPath = logPath;
+    }
+
+    public Map<String, Object> getUnknownKeys() {
+      return unknownKeys;
     }
 
     @Override
