@@ -478,7 +478,7 @@ public class ResultSetIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         assertEquals(3, resultSet.getRow());
         assertTrue(resultSet.isLast());
-        assertTrue(resultSet.next());
+        assertFalse(resultSet.next());
         assertTrue(resultSet.isAfterLast());
       }
     }
@@ -971,7 +971,7 @@ public class ResultSetIT extends ResultSet0IT {
         }
         assertEquals(72, cnt);
 
-        assertTrue(ret.next());
+        assertFalse(ret.next());
 
         assertFalse("should not be the last", ret.isLast());
         assertTrue("should be afterthe last", ret.isAfterLast());
