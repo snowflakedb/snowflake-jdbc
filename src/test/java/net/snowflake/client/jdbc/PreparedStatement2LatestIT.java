@@ -164,7 +164,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         prepStatement.setInt(1, 10);
         prepStatement.setInt(2, 0);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(1));
           assertThat(resultSet.next(), is(false));
         }
@@ -202,7 +202,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           pstatement.executeLargeBatch();
           con.commit();
           try (ResultSet resultSet = statement.executeQuery("select * from mytab")) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertEquals(4, resultSet.getInt(1));
           }
         }

@@ -13,6 +13,8 @@ import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import static org.junit.Assert.assertTrue;
+
 
 @Category(TestCategoryStatement.class)
 public class PreparedMultiStmtIT extends BaseJDBCTest {
@@ -58,11 +60,11 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
           try (ResultSet resultSet =
               statement.executeQuery("select c1 from test_multi_bind order by c1 asc")) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(20));
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(30));
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(40));
           }
         }
@@ -139,11 +141,11 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
           try (ResultSet resultSet =
               statement.executeQuery("select c1 from test_multi_bind order by c1 asc")) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(20));
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(30));
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(40));
           }
         }
@@ -179,7 +181,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
         // second statement
         assertThat(preparedStatement.getMoreResults(), is(true));
         try (ResultSet resultSet = preparedStatement.getResultSet()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(20));
           assertThat(resultSet.getInt(2), is(30));
         }
@@ -187,7 +189,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
         // third statement
         assertThat(preparedStatement.getMoreResults(), is(true));
         try (ResultSet resultSet = preparedStatement.getResultSet()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(40));
           assertThat(resultSet.getInt(2), is(50));
           assertThat(resultSet.getInt(3), is(60));
@@ -216,7 +218,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
         // second statement
         assertThat(preparedStatement.getMoreResults(), is(true));
         try (ResultSet resultSet = preparedStatement.getResultSet()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(20));
           assertThat(resultSet.getInt(2), is(30));
         }
@@ -224,7 +226,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
         // third statement
         assertThat(preparedStatement.getMoreResults(), is(true));
         try (ResultSet resultSet = preparedStatement.getResultSet()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(40));
           assertThat(resultSet.getInt(2), is(50));
           assertThat(resultSet.getInt(3), is(60));

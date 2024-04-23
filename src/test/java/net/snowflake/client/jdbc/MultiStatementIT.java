@@ -89,7 +89,7 @@ public class MultiStatementIT extends BaseJDBCTest {
 
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select $testvar")) {
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(1, rs.getInt(1));
 
         // selecting unset variable should cause error
@@ -128,7 +128,7 @@ public class MultiStatementIT extends BaseJDBCTest {
       }
 
       try (ResultSet rs = statement.executeQuery("select $testvar")) {
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(1, rs.getInt(1));
       }
     }
@@ -150,7 +150,7 @@ public class MultiStatementIT extends BaseJDBCTest {
 
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select $testvar")) {
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(1, rs.getInt(1));
       }
     }
@@ -170,7 +170,7 @@ public class MultiStatementIT extends BaseJDBCTest {
       // temporary table should persist outside of the above statement
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select * from test_multi")) {
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(entry, rs.getString(1));
       }
     }
@@ -193,7 +193,7 @@ public class MultiStatementIT extends BaseJDBCTest {
       assertEquals("PUBLIC", session.getSchema());
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select current_schema()")) {
-        rs.next();
+        assertTrue(rs.next());
         assertEquals("PUBLIC", rs.getString(1));
       }
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
@@ -204,7 +204,7 @@ public class MultiStatementIT extends BaseJDBCTest {
       assertEquals(originalSchema, session.getSchema());
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select current_schema()")) {
-        rs.next();
+        assertTrue(rs.next());
         assertEquals(originalSchema, rs.getString(1));
       }
     }
@@ -435,12 +435,12 @@ public class MultiStatementIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
 
       try (ResultSet rs = statement.executeQuery("select current_account_locator()")) {
-        rs.next();
+        assertTrue(rs.next());
         accountName = rs.getString(1);
       }
 
       try (ResultSet rs = statement.executeQuery("select current_user()")) {
-        rs.next();
+        assertTrue(rs.next());
         userName = rs.getString(1);
       }
 

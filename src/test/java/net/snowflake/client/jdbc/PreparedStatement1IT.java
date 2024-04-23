@@ -249,7 +249,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         }
 
         try (ResultSet resultSet = statement.executeQuery("SELECT * FROM TEST_PREPST")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           String errorMessage =
               "Column should be null (" + (threshold > 0 ? "stage" : "non-stage") + ")";
           resultSet.getInt(1);
@@ -296,7 +296,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
             String errorMessage =
                 "Strings should match (" + (threshold > 0 ? "stage" : "non-stage") + ")";
             for (String row : rows) {
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(errorMessage, row, resultSet.getString(1));
             }
           }
@@ -379,7 +379,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
             try (ResultSet rsNonStage =
                 statement.executeQuery("SELECT * FROM test_prepst_ts ORDER BY id ASC")) {
               for (int i = 0; i < nonStageResult.length; i++) {
-                rsNonStage.next();
+                assertTrue(rsNonStage.next());
                 nonStageResult[i] = rsNonStage.getTimestamp(2);
               }
             }
@@ -403,7 +403,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
             try (ResultSet rsStage =
                 statement.executeQuery("SELECT * FROM test_prepst_ts ORDER BY id ASC")) {
               for (int i = 0; i < stageResult.length; i++) {
-                rsStage.next();
+                assertTrue(rsStage.next());
                 stageResult[i] = rsStage.getTimestamp(2);
               }
 
@@ -457,7 +457,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           ResultSet rsNonStage =
               statement.executeQuery("SELECT * FROM test_prepst_time ORDER BY id ASC");
           for (int i = 0; i < nonStageResult.length; i++) {
-            rsNonStage.next();
+            assertTrue(rsNonStage.next());
             nonStageResult[i] = rsNonStage.getTime(2);
           }
 
@@ -481,7 +481,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           try (ResultSet rsStage =
               statement.executeQuery("SELECT * FROM test_prepst_time ORDER BY id ASC")) {
             for (int i = 0; i < stageResult.length; i++) {
-              rsStage.next();
+              assertTrue(rsStage.next());
               stageResult[i] = rsStage.getTime(2);
             }
 
@@ -514,7 +514,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         prepStatement.executeUpdate();
 
         try (ResultSet resultSet = connection.createStatement().executeQuery(selectAllSQL)) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(3, resultSet.getInt(1));
           assertFalse(resultSet.next());
         }
@@ -547,7 +547,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         assertThat(batchSize, is(0));
 
         try (ResultSet resultSet = connection.createStatement().executeQuery(selectAllSQL)) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(3, resultSet.getInt(1));
           assertFalse(resultSet.next());
         }
@@ -593,7 +593,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         int count = prepStatement.executeUpdate();
         assertEquals(1, count);
         try (ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals("newString", resultSet.getString(4));
         }
       }
@@ -603,8 +603,8 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         assertEquals(1, prepStatement.getUpdateCount());
         assertEquals(1L, prepStatement.getLargeUpdateCount());
         try (ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
-          resultSet.next();
-          resultSet.next();
+          assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertEquals("newString", resultSet.getString(4));
         }
       }
@@ -706,9 +706,9 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         assertEquals(0, prepStatement.getUpdateCount());
         assertEquals(0L, prepStatement.getLargeUpdateCount());
         try (ResultSet resultSet = connection.createStatement().executeQuery(selectAllSQL)) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getString(4), is("newString"));
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getString(4), is("newString"));
         }
       }
@@ -742,13 +742,13 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         assertEquals(1, countResult[1]);
 
         try (ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(1, resultSet.getInt(1));
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(2, resultSet.getInt(1));
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(3, resultSet.getInt(1));
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(4, resultSet.getInt(1));
           assertFalse(resultSet.next());
         }

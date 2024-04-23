@@ -56,11 +56,11 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       }
 
       try (ResultSet resultSet = statement.executeQuery("select * from test_prepst")) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         assertEquals(resultSet.getInt(1), 1);
-        resultSet.next();
+        assertTrue(resultSet.next());
         assertEquals(resultSet.getInt(1), 1);
-        resultSet.next();
+        assertTrue(resultSet.next());
         assertEquals(resultSet.getInt(1), 100);
       }
 
@@ -69,13 +69,13 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         prepStatement.setInt(1, 1);
         prepStatement.setInt(2, 1);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(resultSet.getInt(2), 2);
           prepStatement.setInt(1, 1);
           prepStatement.setInt(2, 100);
         }
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(resultSet.getInt(2), 101);
         }
       }
@@ -132,7 +132,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         // check results
         try (ResultSet rs = statement.executeQuery("select * from testStageBindTime")) {
           for (Time[] timeValue : timeValues) {
-            rs.next();
+            assertTrue(rs.next());
             assertEquals(timeValue[0].toString(), rs.getTime(1).toString());
             assertEquals(timeValue[1].toString(), rs.getTime(2).toString());
           }
@@ -188,16 +188,15 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
           for (int i = 0; i < testTzs.length; i++) {
             // Assert that the first row of inserts with payload binding matches the second row of
             // inserts that used stage array binding
-            rs.next();
+            assertTrue(rs.next());
             Timestamp expectedNTZTs = rs.getTimestamp(1);
             Timestamp expectedLTZTs = rs.getTimestamp(2);
-            rs.next();
+            assertTrue(rs.next());
             assertEquals(expectedNTZTs, rs.getTimestamp(1));
             assertEquals(expectedLTZTs, rs.getTimestamp(2));
           }
         }
       } finally {
-        // clean up
         statement.execute("ALTER SESSION UNSET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD;");
       }
     }

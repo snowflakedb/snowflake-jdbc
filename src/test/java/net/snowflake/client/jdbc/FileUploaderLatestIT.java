@@ -646,25 +646,26 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testUploadFileStreamWithNoOverwrite() throws Exception {
-
+    String expectedValue = null;
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("CREATE OR REPLACE STAGE testStage");
 
         uploadFileToStageUsingStream(connection, false);
-        ResultSet resultSet = statement.executeQuery("LIST @testStage");
-        resultSet.next();
-        String expectedValue = resultSet.getString("last_modified");
-
+        try(ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
+          assertTrue(resultSet.next());
+          expectedValue = resultSet.getString("last_modified");
+        }
         Thread.sleep(1000); // add 1 sec delay between uploads.
 
         uploadFileToStageUsingStream(connection, false);
-        resultSet = statement.executeQuery("LIST @testStage");
-        resultSet.next();
+        try(ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
+          assertTrue(resultSet.next());
         String actualValue = resultSet.getString("last_modified");
+        assertEquals(expectedValue,actualValue);
+        }
 
-        assertTrue(expectedValue.equals(actualValue));
       } catch (Exception e) {
         Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
       } finally {
@@ -675,25 +676,26 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testUploadFileStreamWithOverwrite() throws Exception {
-
+    String expectedValue = null;
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
         statement.execute("CREATE OR REPLACE STAGE testStage");
 
         uploadFileToStageUsingStream(connection, true);
-        ResultSet resultSet = statement.executeQuery("LIST @testStage");
-        resultSet.next();
-        String expectedValue = resultSet.getString("last_modified");
-
+        try(ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
+          assertTrue(resultSet.next());
+          expectedValue = resultSet.getString("last_modified");
+        }
         Thread.sleep(1000); // add 1 sec delay between uploads.
 
         uploadFileToStageUsingStream(connection, true);
-        resultSet = statement.executeQuery("LIST @testStage");
-        resultSet.next();
-        String actualValue = resultSet.getString("last_modified");
+        try(ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
+          assertTrue(resultSet.next());
+          String actualValue = resultSet.getString("last_modified");
 
-        assertFalse(expectedValue.equals(actualValue));
+          assertFalse(expectedValue.equals(actualValue));
+        }
       } catch (Exception e) {
         Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
       } finally {
