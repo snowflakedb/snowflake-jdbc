@@ -88,15 +88,6 @@ public class ResultSet0IT extends BaseJDBCTest {
     }
   }
 
-  @After
-  public void tearDown() throws SQLException {
-    try (Connection con = init();
-        Statement statement = con.createStatement()) {
-      statement.execute("drop table if exists orders_jdbc");
-      statement.execute("drop table if exists test_rs");
-    }
-  }
-
   ResultSet numberCrossTesting() throws SQLException {
     Connection con = init();
     Statement statement = con.createStatement();
