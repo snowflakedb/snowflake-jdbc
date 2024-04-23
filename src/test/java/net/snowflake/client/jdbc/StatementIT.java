@@ -172,13 +172,13 @@ public class StatementIT extends BaseJDBCTest {
         assertNull(statement.getResultSet());
 
         try (ResultSet rs = statement.executeQuery("select count(*) from test_insert")) {
-          rs.next();
+          assertTrue(rs.next());
           assertEquals(4, rs.getInt(1));
         }
 
         assertTrue(statement.execute("select 1"));
         try (ResultSet rs0 = statement.getResultSet()) {
-          rs0.next();
+          assertTrue(rs0.next());
           assertEquals(rs0.getInt(1), 1);
         }
       } finally {
@@ -346,9 +346,9 @@ public class StatementIT extends BaseJDBCTest {
 
         try (ResultSet resultSet =
             statement.executeQuery("select * from test_batch order by b asc")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt("B"), is(2));
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt("B"), is(7));
           statement.clearBatch();
 

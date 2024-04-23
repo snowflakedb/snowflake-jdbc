@@ -156,7 +156,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       String sessionID = con.unwrap(SnowflakeConnection.class).getSessionID();
       try (Statement statement = con.createStatement();
           ResultSet rset = statement.executeQuery("select current_session()")) {
-        rset.next();
+        assertTrue(rset.next());
         assertEquals(sessionID, rset.getString(1));
       }
     }
@@ -642,13 +642,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(1, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(2, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(8, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(10, resultSet.getInt(1));
             }
           } else {
@@ -662,13 +662,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(1, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(2, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(8, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(10, resultSet.getInt(1));
             }
           } else {
@@ -684,9 +684,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(8, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(10, resultSet.getInt(1));
             }
           } else {
@@ -700,9 +700,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(8, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(10, resultSet.getInt(1));
             }
           } else {
@@ -716,11 +716,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(1, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(2, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(8, resultSet.getInt(1));
             }
           } else {
@@ -734,11 +734,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(1, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(2, resultSet.getInt(1));
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertEquals(8, resultSet.getInt(1));
             }
           } else {
@@ -754,7 +754,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
               for (int i = 0; i < 4; i++) {
-                resultSet.next();
+                assertTrue(resultSet.next());
                 assertEquals(1, resultSet.getInt(1));
               }
             }
@@ -771,7 +771,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
               for (int i = 0; i < 4; i++) {
-                resultSet.next();
+                assertTrue(resultSet.next());
                 assertEquals(1, resultSet.getInt(1));
               }
             }
@@ -1693,7 +1693,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             .unwrap(SnowflakeStatement.class)
             .setParameter("TIMESTAMP_OUTPUT_FORMAT", "YYYY-MM-DD\"T\"HH24:MI:SS");
         try (ResultSet resultSet = statement.executeQuery("select * from timetable")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           // Assert that the values match the format of the specified statement parameter output
           // format
           // values
@@ -1705,7 +1705,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // Set a different statement parameter value for DATE_OUTPUT_FORMAT
         statement.unwrap(SnowflakeStatement.class).setParameter("DATE_OUTPUT_FORMAT", "MM/DD/YYYY");
         try (ResultSet resultSet = statement.executeQuery("select * from timetable")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           // Verify it matches the new statement parameter specified output format
           assertEquals("08/17/2023", resultSet.getString(3));
         }

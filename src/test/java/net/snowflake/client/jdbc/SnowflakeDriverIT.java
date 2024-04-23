@@ -169,7 +169,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
               "select system$it('create_oauth_access_token', 'JDBC_OAUTH_INTEGRATION', '"
                   + role
                   + "')")) {
-        rs.next();
+        assertTrue(rs.next());
         token = rs.getString(1);
       }
     }
@@ -469,7 +469,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // primary key for testConstraintsP2 contains 1 row
         assertConstraintResults(resultSet1, 1, 6, "testConstraintsP2", null);
         resultSet1.close();
-        resultSet1.next();
+        assertFalse(resultSet1.next());
 
         // Show imported keys
         try (ResultSet resultSet = metadata.getImportedKeys(null, null, "TESTCONSTRAINTSF1")) {
@@ -480,7 +480,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         assertConstraintResults(manualResultSet, 3, 14, null, "testConstraintsF2");
         manualResultSet.close();
-        manualResultSet.next();
+        assertFalse(manualResultSet.next());
 
         // show exported keys
         try (ResultSet resultSet = metadata.getExportedKeys(null, null, "TESTCONSTRAINTSP1")) {
@@ -491,7 +491,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         assertConstraintResults(manualResultSet, 1, 14, "testConstraintsP2", null);
         manualResultSet.close();
-        manualResultSet.next();
+        assertFalse(manualResultSet.next());
 
         // show cross references
         try (ResultSet resultSet =
@@ -520,7 +520,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             "cross reference from testConstraintsP2 to " + "testConstraintsF2 should be empty",
             manualResultSet.next());
         manualResultSet.close();
-        manualResultSet.next();
+        assertFalse(manualResultSet.next());
       } finally {
         statement.execute("DROP TABLE TESTCONSTRAINTSF1");
         statement.execute("DROP TABLE TESTCONSTRAINTSF2");
@@ -549,44 +549,41 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testCancelQueryBySystemFunction() throws Throwable {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement getSessionIdStmt = connection.createStatement()) {
+      getSessionIdStmt.setMaxRows(30);
+      try (ResultSet resultSet = getSessionIdStmt.executeQuery("SELECT current_session()")) {
+        assertTrue(resultSet.next());
+        final long sessionId = resultSet.getLong(1);
+        Timer timer = new Timer();
+        timer.schedule(
+            new TimerTask() {
+              @Override
+              public void run() {
+                try {
+                  PreparedStatement cancelAll;
+                  cancelAll = connection.prepareStatement("call system$cancel_all_queries(?)");
 
-      // Get the current session identifier
-      try (Statement getSessionIdStmt = connection.createStatement()) {
-        getSessionIdStmt.setMaxRows(30);
-        try (ResultSet resultSet = getSessionIdStmt.executeQuery("SELECT current_session()")) {
-          assertTrue(resultSet.next());
-          final long sessionId = resultSet.getLong(1);
-          Timer timer = new Timer();
-          timer.schedule(
-              new TimerTask() {
-                @Override
-                public void run() {
-                  try {
-                    PreparedStatement cancelAll;
-                    cancelAll = connection.prepareStatement("call system$cancel_all_queries(?)");
-
-                    // bind integer
-                    cancelAll.setLong(1, sessionId);
-                    cancelAll.executeQuery();
-                  } catch (SQLException ex) {
-                    logger.log(Level.SEVERE, "Cancel failed with exception {}", ex);
-                  }
+                  // bind integer
+                  cancelAll.setLong(1, sessionId);
+                  cancelAll.executeQuery();
+                } catch (SQLException ex) {
+                  logger.log(Level.SEVERE, "Cancel failed with exception {}", ex);
                 }
-              },
-              5000);
-        }
-        // execute a query for 120s
-        try (Statement statement = connection.createStatement()) {
-          statement.setMaxRows(30);
-          ResultSet resultSet =
-              statement.executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120))");
-        }
-        fail("should raise an exception");
-      } catch (SQLException ex) {
-        // assert the sqlstate is what we expect (QUERY CANCELLED)
-        assertEquals("sqlstate mismatch", SqlState.QUERY_CANCELED, ex.getSQLState());
+              }
+            },
+            5000);
       }
+      // execute a query for 120s
+      try (Statement statement = connection.createStatement()) {
+        statement.setMaxRows(30);
+        try (ResultSet resultSet =
+            statement.executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120))")) {}
+      }
+      fail("should raise an exception");
+    } catch (SQLException ex) {
+      // assert the sqlstate is what we expect (QUERY CANCELLED)
+      assertEquals("sqlstate mismatch", SqlState.QUERY_CANCELED, ex.getSQLState());
     }
   }
 
@@ -2353,7 +2350,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       // 30 minutes past daylight saving change (from 2am to 3am)
       try (ResultSet res = statement.executeQuery("select '2015-03-08 03:30:00'::timestamp_ntz")) {
 
-        res.next();
+        assertTrue(res.next());
 
         // get timestamp in UTC
         calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -2376,7 +2373,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       // 30 minutes before daylight saving change
       try (ResultSet res = statement.executeQuery("select '2015-03-08 01:30:00'::timestamp_ntz")) {
 
-        res.next();
+        assertTrue(res.next());
 
         // get timestamp in UTC
         calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -2538,7 +2535,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         try (PreparedStatement preparedStatement =
                 connection.prepareStatement("SELECT last_query_id()");
             ResultSet resultSet = preparedStatement.executeQuery()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           queryId = resultSet.getString(1);
         }
 
@@ -2553,7 +2550,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                         + " parse_json(system$get_bind_values(?)) bv)")) {
               preparedStatement.setString(1, queryId);
               try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                resultSet.next();
+                assertTrue(resultSet.next());
 
                 // check that the bind values are correct
                 assertEquals(3, resultSet.getInt(1));
@@ -2648,9 +2645,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           // this should not produce a user error
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertFalse(resultSet.getBoolean(2));
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertTrue(resultSet.getBoolean(2));
           }
         }
@@ -2659,9 +2656,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           preparedStatement.setString(1, null);
 
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertTrue(resultSet.getBoolean(2));
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertNull(resultSet.getObject(2));
           }
         }

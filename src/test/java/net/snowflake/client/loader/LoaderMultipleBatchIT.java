@@ -5,6 +5,7 @@ package net.snowflake.client.loader;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -45,12 +46,12 @@ public class LoaderMultipleBatchIT extends LoaderBase {
         try (ResultSet rsReference =
             statement.executeQuery(
                 String.format("SELECT hash_agg(*) FROM \"%s\"", TARGET_TABLE_NAME))) {
-          rsReference.next();
+          assertTrue(rsReference.next());
           long hashValueReference = rsReference.getLong(1);
           try (ResultSet rsTarget =
               statement.executeQuery(
                   String.format("SELECT hash_agg(*) FROM \"%s\"", refTableName))) {
-            rsTarget.next();
+            assertTrue(rsTarget.next());
             long hashValueTarget = rsTarget.getLong(1);
             assertThat("hash values", hashValueTarget, equalTo(hashValueReference));
           }

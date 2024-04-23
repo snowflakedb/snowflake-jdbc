@@ -292,13 +292,14 @@ public class TelemetryIT extends AbstractDriverIT {
               + "  oauth_issue_refresh_tokens=true\n"
               + "  enabled=true oauth_refresh_token_validity=86400;");
       String role = parameters.get("role");
-      ResultSet resultSet =
+      try (ResultSet resultSet =
           statement.executeQuery(
               "select system$it('create_oauth_access_token', 'TELEMETRY_OAUTH_INTEGRATION', '"
                   + role
-                  + "')");
-      resultSet.next();
-      token = resultSet.getString(1);
+                  + "')")) {
+        assertTrue(resultSet.next());
+        token = resultSet.getString(1);
+      }
     }
     return token;
   }

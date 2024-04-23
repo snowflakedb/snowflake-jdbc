@@ -5,6 +5,7 @@ package net.snowflake.client.loader;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -103,7 +104,7 @@ public class LoaderTimestampIT extends LoaderBase {
             .createStatement()
             .executeQuery(String.format("SELECT * FROM \"%s\"", targetTableName))) {
 
-      rs.next();
+      assertTrue(rs.next());
       Timestamp ts = rs.getTimestamp("C2");
 
       // format the input TS with the target timezone
