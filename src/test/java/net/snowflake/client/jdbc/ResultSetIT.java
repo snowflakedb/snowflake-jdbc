@@ -992,7 +992,7 @@ public class ResultSetIT extends ResultSet0IT {
         assertTrue("should be the last", ret.isLast());
         assertFalse("should not be after the last", ret.isAfterLast());
 
-        assertTrue(ret.next());
+        assertFalse(ret.next());
 
         assertFalse("should not be the last", ret.isLast());
         assertTrue("should be after the last", ret.isAfterLast());
