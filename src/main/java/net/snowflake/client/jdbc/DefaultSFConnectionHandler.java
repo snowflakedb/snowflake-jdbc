@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
 import net.snowflake.client.config.SFClientConfigParser;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;
