@@ -6,7 +6,6 @@ package net.snowflake.client.core;
 
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.ZoneOffset;
 import java.util.TimeZone;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
@@ -26,11 +25,7 @@ public class SqlInputTimestampUtil {
     } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ
         || columnSubType == Types.TIMESTAMP) {
       return getTimestampFromFormat(
-          "TIMESTAMP_NTZ_OUTPUT_FORMAT",
-          value,
-          session,
-          null,
-          TimeZone.getTimeZone(ZoneOffset.UTC));
+          "TIMESTAMP_NTZ_OUTPUT_FORMAT", value, session, sessionTimeZone, tz);
     } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
       return getTimestampFromFormat(
           "TIMESTAMP_TZ_OUTPUT_FORMAT", value, session, sessionTimeZone, tz);
