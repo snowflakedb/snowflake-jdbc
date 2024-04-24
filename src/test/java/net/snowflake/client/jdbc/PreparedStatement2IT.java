@@ -81,7 +81,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
               statement.executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC")) {
 
             for (int i = 0; i < nonStageResult.length; i++) {
-              rsNonStage.next();
+              assertTrue(rsNonStage.next());
               nonStageResult[i] = rsNonStage.getDate(2);
             }
           }
@@ -105,7 +105,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           try (ResultSet rsStage =
               statement.executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC")) {
             for (int i = 0; i < stageResult.length; i++) {
-              rsStage.next();
+              assertTrue(rsStage.next());
               stageResult[i] = rsStage.getDate(2);
             }
 
@@ -139,7 +139,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         prepStatement.addBatch();
         prepStatement.executeBatch();
         try (ResultSet resultSet = statement.executeQuery("select * from testBindNull")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           Date date = resultSet.getDate(1);
           assertNull(date);
           assertTrue(resultSet.wasNull());
@@ -166,7 +166,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         prepStatement.executeBatch();
 
         try (ResultSet resultSet = statement.executeQuery("select * from testBindNull")) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           Date date = resultSet.getDate(1);
           assertNull(date);
           assertTrue(resultSet.wasNull());
@@ -226,7 +226,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       for (String testCase : testCases) {
         try (PreparedStatement prepStatement = connection.prepareStatement(testCase)) {
           try (ResultSet resultSet = prepStatement.executeQuery()) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertThat(resultSet.getString(1), is("Statement executed successfully."));
           }
         }
@@ -268,7 +268,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
               connection.prepareStatement("select c1 from t order by c1 limit 1")) {
             Thread.sleep(5000);
             try (ResultSet resultSet = prepStatement.executeQuery()) {
-              resultSet.next();
+              assertTrue(resultSet.next());
               assertThat(resultSet.getInt(1), is(1));
             }
           }
@@ -317,7 +317,6 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           connection.prepareStatement("SELECT coalesce(?, NULL) from inc;")) {
         preparedStatement.setInt(1, 0);
         try (ResultSet rs = preparedStatement.executeQuery()) {}
-        ;
       }
     }
   }
@@ -676,11 +675,12 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
               .execute("alter session set timestamp_ntz_output_format='YYYY-MM-DD HH24:MI:SS'"));
       try (PreparedStatement stmt = con.prepareStatement("select to_timestamp_ntz(?, 3)")) {
         stmt.setBigDecimal(1, new BigDecimal("1261440000000"));
-        ResultSet resultSet = stmt.executeQuery();
-        resultSet.next();
+        try (ResultSet resultSet = stmt.executeQuery()) {
+          assertTrue(resultSet.next());
 
-        String res = resultSet.getString(1);
-        assertThat(res, is("2009-12-22 00:00:00"));
+          String res = resultSet.getString(1);
+          assertThat(res, is("2009-12-22 00:00:00"));
+        }
       }
     }
   }
