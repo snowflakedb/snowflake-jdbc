@@ -213,7 +213,7 @@ public class SFSession extends SFBaseSession {
                 loginTimeout,
                 authTimeout,
                 (int) httpClientSocketTimeout.toMillis(),
-                0,
+                maxHttpRetries,
                 getHttpClientKey());
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
