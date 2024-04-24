@@ -40,7 +40,8 @@ public enum SnowflakeType {
   TIMESTAMP_TZ,
   VARIANT,
   GEOGRAPHY,
-  GEOMETRY;
+  GEOMETRY,
+  VECTOR;
 
   public static final String DATE_OR_TIME_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
   public static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.";
@@ -83,6 +84,7 @@ public enum SnowflakeType {
         return JavaDataType.JAVA_BOOLEAN;
       case ARRAY:
       case VARIANT:
+      case VECTOR:
         return JavaDataType.JAVA_STRING;
       case BINARY:
         return JavaDataType.JAVA_BYTES;
@@ -189,6 +191,9 @@ public enum SnowflakeType {
       case "object":
         retval = Types.JAVA_OBJECT;
         break;
+      case "vector":
+        retval = SnowflakeUtil.EXTRA_TYPES_VECTOR;
+        break;
       case "array":
         retval = Types.ARRAY;
         break;
@@ -255,7 +260,8 @@ public enum SnowflakeType {
     TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE),
     TINYINT(Types.TINYINT),
     VARBINARY(Types.VARBINARY),
-    VARCHAR(Types.VARCHAR);
+    VARCHAR(Types.VARCHAR),
+    VECTOR(Types.ARRAY);
 
     private final int type;
     public static final Set<JavaSQLType> ALL_TYPES = new HashSet<>();
@@ -300,6 +306,7 @@ public enum SnowflakeType {
       ALL_TYPES.add(TINYINT);
       ALL_TYPES.add(VARBINARY);
       ALL_TYPES.add(VARCHAR);
+      ALL_TYPES.add(VECTOR);
     }
 
     JavaSQLType(int type) {

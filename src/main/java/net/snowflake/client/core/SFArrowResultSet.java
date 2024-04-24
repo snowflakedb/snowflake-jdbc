@@ -28,6 +28,7 @@ import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.VarCharConverter;
+import net.snowflake.client.core.arrow.VectorTypeConverter;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
@@ -610,6 +611,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (converter instanceof VarCharConverter) {
       return getJsonArray((String) obj, columnIndex);
     } else if (converter instanceof ArrayConverter) {
+      return getArrowArray((List<Object>) obj, columnIndex);
+    } else if (converter instanceof VectorTypeConverter) {
       return getArrowArray((List<Object>) obj, columnIndex);
     } else {
       throw new SFException(ErrorCode.INVALID_STRUCT_DATA);
