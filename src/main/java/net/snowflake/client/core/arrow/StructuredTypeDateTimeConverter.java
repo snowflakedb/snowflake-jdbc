@@ -12,6 +12,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
@@ -56,7 +57,7 @@ public class StructuredTypeDateTimeConverter {
       if (SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ == columnSubType) {
         return convertTimestampLtz(obj, scale);
       } else {
-        return convertTimestampNtz(obj, tz, scale);
+        return convertTimestampNtz(obj, TimeZone.getTimeZone(ZoneOffset.UTC), scale);
       }
     } else if (Types.TIMESTAMP_WITH_TIMEZONE == columnType
         && SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ == columnSubType) {

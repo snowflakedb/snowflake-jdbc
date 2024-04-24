@@ -24,9 +24,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -152,7 +154,8 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteObjectAllTypes() throws SQLException {
-    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
+    SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
+    TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
@@ -225,8 +228,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
             toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
             object.getTimestampTz());
         assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), object.getDate());
-        // Ime type is without offset that's why the value is 1 hour before (Warsaw timezone)
-        assertEquals(Time.valueOf(LocalTime.of(11, 34, 56)), object.getTime());
+        assertEquals(Time.valueOf(LocalTime.of(12, 34, 56)), object.getTime());
         assertArrayEquals(new byte[] {'a', 'b', 'c'}, object.getBinary());
         assertEquals("testString", object.getSimpleClass().getString());
         assertEquals(Integer.valueOf("2"), object.getSimpleClass().getIntValue());

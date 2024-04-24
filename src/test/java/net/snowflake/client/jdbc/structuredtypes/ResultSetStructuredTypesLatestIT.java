@@ -21,8 +21,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.ThrowingConsumer;
@@ -113,13 +115,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMapStructAllTypes() throws SQLException {
-    testMapAllTypes(false);
-    testMapAllTypes(true);
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapNullStruct() throws SQLException {
     withFirstRow(
         "select null::OBJECT(string VARCHAR)",
@@ -129,7 +124,15 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         });
   }
 
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testMapStructAllTypes() throws SQLException {
+    testMapAllTypes(false);
+    testMapAllTypes(true);
+  }
+
   private void testMapAllTypes(boolean registerFactory) throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
     if (registerFactory) {
       SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
     } else {
@@ -426,21 +429,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnAsMapOfTimestampsNtz() throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
     withFirstRow(
         "SELECT {'x': TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), 'y': TO_TIMESTAMP_NTZ('2021-12-24 09:55:55')}::MAP(VARCHAR, TIMESTAMP)",
         (resultSet) -> {
           Map<String, Timestamp> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
-          assertEquals(
-              LocalDateTime.of(2021, 12, 23, 9, 44, 44)
-                  .atZone(ZoneId.of("Europe/Warsaw"))
-                  .toInstant(),
-              map.get("x").toInstant());
-          assertEquals(
-              LocalDateTime.of(2021, 12, 24, 9, 55, 55)
-                  .atZone(ZoneId.of("Europe/Warsaw"))
-                  .toInstant(),
-              map.get("y").toInstant());
+          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), map.get("x"));
+          assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 9, 55, 55)), map.get("y"));
         });
   }
 
@@ -661,20 +657,15 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapTimestampArray() throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT(TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), TO_TIMESTAMP_NTZ('2021-12-24 09:55:55'))::ARRAY(TIMESTAMP)",
         (resultSet) -> {
           Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
           assertEquals(
-              LocalDateTime.of(2021, 12, 23, 9, 44, 44)
-                  .atZone(ZoneId.of("Europe/Warsaw"))
-                  .toInstant(),
-              resultArray[0].toInstant());
+              Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), resultArray[0]);
           assertEquals(
-              LocalDateTime.of(2021, 12, 24, 9, 55, 55)
-                  .atZone(ZoneId.of("Europe/Warsaw"))
-                  .toInstant(),
-              resultArray[1].toInstant());
+              Timestamp.valueOf(LocalDateTime.of(2021, 12, 24, 9, 55, 55)), resultArray[1]);
         });
   }
 
