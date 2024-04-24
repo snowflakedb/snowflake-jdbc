@@ -75,7 +75,7 @@
     <slf4j.version>2.0.6</slf4j.version>
     <snowflake.common.version>5.1.4</snowflake.common.version>
     <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
-    <threeten.version>1.6.8</threeten.version>
+    <threeten.version>1.6.9</threeten.version>
     <tika.version>2.4.1</tika.version>
     <tukaani.version>1.9</tukaani.version>
     <version.maven>3.6.3</version.maven>

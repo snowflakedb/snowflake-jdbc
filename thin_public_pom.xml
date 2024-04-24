@@ -63,6 +63,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <slf4j.version>2.0.6</slf4j.version>
+    <threeten.version>1.6.9</threeten.version>
   </properties>
 
   <dependencyManagement>
@@ -144,6 +145,12 @@
       <groupId>com.google.api</groupId>
       <artifactId>gax</artifactId>
       <version>${google.gax.version}</version>
+    </dependency>
+    <!-- It's google gax transitive dependency and we bump it to avoid vulnerability reported for version 1.6.8 -->
+    <dependency>
+      <groupId>org.threeten</groupId>
+      <artifactId>threetenbp</artifactId>
+      <version>${threeten.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.auth</groupId>
