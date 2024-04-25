@@ -244,6 +244,12 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   }
 
   public SnowflakeSQLLoggedException(
+      String queryId, SFBaseSession session, String SQLState, String reason) {
+    super(reason, SQLState);
+    sendTelemetryData(queryId, SQLState, -1, session, this);
+  }
+
+  public SnowflakeSQLLoggedException(
       SFBaseSession session, int vendorCode, String SQLState, Object... params) {
     this(null, session, vendorCode, SQLState, params);
   }
@@ -282,6 +288,12 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(null, null, -1, session, this);
   }
 
+  public SnowflakeSQLLoggedException(
+      String queryId, SFBaseSession session, ErrorCode errorCode, Object... params) {
+    super(queryId, errorCode, params);
+    sendTelemetryData(queryId, null, -1, session, this);
+  }
+
   public SnowflakeSQLLoggedException(SFBaseSession session, SFException e) {
     super(e);
     sendTelemetryData(null, null, -1, session, this);
@@ -290,5 +302,10 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
   public SnowflakeSQLLoggedException(SFBaseSession session, String reason) {
     super(reason);
     sendTelemetryData(null, null, -1, session, this);
+  }
+
+  public SnowflakeSQLLoggedException(String queryId, SFBaseSession session, String reason) {
+    super(queryId, reason, null);
+    sendTelemetryData(queryId, null, -1, session, this);
   }
 }
