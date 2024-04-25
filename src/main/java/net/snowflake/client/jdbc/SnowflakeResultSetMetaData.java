@@ -6,6 +6,7 @@ import java.util.List;
 public interface SnowflakeResultSetMetaData {
   String getQueryID() throws SQLException;
 
+  // Just a test
   List<String> getColumnNames() throws SQLException;
 
   int getColumnIndex(String columnName) throws SQLException;
