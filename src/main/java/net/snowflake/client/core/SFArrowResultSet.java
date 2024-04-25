@@ -278,7 +278,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           if (currentChunkIterator.next()) {
 
             logger.debug(
-                "Moving to chunk index: {}, row count: {}", nextChunkIndex, nextChunk.getRowCount());
+                "Moving to chunk index: {}, row count: {}",
+                nextChunkIndex,
+                nextChunk.getRowCount());
 
             nextChunkIndex++;
             return true;

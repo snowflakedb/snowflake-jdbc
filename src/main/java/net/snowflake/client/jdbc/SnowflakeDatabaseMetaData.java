@@ -1054,8 +1054,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
-    logger.trace(
-        "public boolean supportsDataDefinitionAndDataManipulationTransactions()", false);
+    logger.trace("public boolean supportsDataDefinitionAndDataManipulationTransactions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }

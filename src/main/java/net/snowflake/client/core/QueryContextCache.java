@@ -125,7 +125,9 @@ public class QueryContextCache {
    */
   void checkCacheCapacity() {
     logger.debug(
-        "checkCacheCapacity() called. treeSet size: {} cache capacity: {}", treeSet.size(), capacity);
+        "checkCacheCapacity() called. treeSet size: {} cache capacity: {}",
+        treeSet.size(),
+        capacity);
     if (treeSet.size() > capacity) {
       // remove elements based on priority
       while (treeSet.size() > capacity) {
