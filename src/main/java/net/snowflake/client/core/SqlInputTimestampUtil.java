@@ -25,7 +25,7 @@ public class SqlInputTimestampUtil {
     } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ
         || columnSubType == Types.TIMESTAMP) {
       return getTimestampFromFormat(
-          "TIMESTAMP_NTZ_OUTPUT_FORMAT", value, session, sessionTimeZone, tz);
+          "TIMESTAMP_NTZ_OUTPUT_FORMAT", value, session, sessionTimeZone, TimeZone.getDefault());
     } else if (columnSubType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
       return getTimestampFromFormat(
           "TIMESTAMP_TZ_OUTPUT_FORMAT", value, session, sessionTimeZone, tz);

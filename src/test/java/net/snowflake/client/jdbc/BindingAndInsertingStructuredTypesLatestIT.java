@@ -53,7 +53,6 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       stmt.execute("alter session set ENABLE_OBJECT_TYPED_BINDS = true");
       stmt.execute("alter session set enable_structured_types_in_fdn_tables=true");
       stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
-      stmt.execute("alter session set jdbc_query_result_format = 'JSON'");
     }
     return conn;
   }
@@ -223,8 +222,9 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
         assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.getTimestampLtz());
         assertEquals(
-            toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Europe/Warsaw"))),
-            object.getTimestampNtz());
+            //            toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0,
+            // ZoneId.of("Europe/Warsaw"))),
+            Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
         assertEquals(
             toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
             object.getTimestampTz());
