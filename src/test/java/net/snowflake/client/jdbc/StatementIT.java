@@ -226,30 +226,28 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteMerge() throws SQLException {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String mergeSQL =
           "merge into target using source on target.id = source.id "
               + "when matched and source.sb =22 then update set ta = 'newStr' "
               + "when not matched then insert (ta, tb) values (source.sa, source.sb)";
-      try (Statement statement = connection.createStatement()) {
+      try {
+        statement.execute("create or replace table target(id integer, ta string, tb integer)");
+        statement.execute("create or replace table source(id integer, sa string, sb integer)");
+        statement.execute("insert into target values(1, 'str', 1)");
+        statement.execute("insert into target values(2, 'str', 2)");
+        statement.execute("insert into target values(3, 'str', 3)");
+        statement.execute("insert into source values(1, 'str1', 11)");
+        statement.execute("insert into source values(2, 'str2', 22)");
+        statement.execute("insert into source values(3, 'str3', 33)");
 
-        try {
-          statement.execute("create or replace table target(id integer, ta string, tb integer)");
-          statement.execute("create or replace table source(id integer, sa string, sb integer)");
-          statement.execute("insert into target values(1, 'str', 1)");
-          statement.execute("insert into target values(2, 'str', 2)");
-          statement.execute("insert into target values(3, 'str', 3)");
-          statement.execute("insert into source values(1, 'str1', 11)");
-          statement.execute("insert into source values(2, 'str2', 22)");
-          statement.execute("insert into source values(3, 'str3', 33)");
+        int updateCount = statement.executeUpdate(mergeSQL);
 
-          int updateCount = statement.executeUpdate(mergeSQL);
-
-          assertEquals(1, updateCount);
-        } finally {
-          statement.execute("drop table if exists target");
-          statement.execute("drop table if exists source");
-        }
+        assertEquals(1, updateCount);
+      } finally {
+        statement.execute("drop table if exists target");
+        statement.execute("drop table if exists source");
       }
     }
   }
@@ -261,27 +259,27 @@ public class StatementIT extends BaseJDBCTest {
    */
   @Test
   public void testAutogenerateKey() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-        statement.execute("create or replace table t(c1 int)");
-        statement.execute("insert into t values(1)", Statement.NO_GENERATED_KEYS);
-        try {
-          statement.execute("insert into t values(2)", Statement.RETURN_GENERATED_KEYS);
-          fail("no autogenerate key is supported");
-        } catch (SQLFeatureNotSupportedException ex) {
-          // nop
-        }
-        // empty result
-        try (ResultSet rset = statement.getGeneratedKeys()) {
-          assertFalse(rset.next());
-        }
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("create or replace table t(c1 int)");
+      statement.execute("insert into t values(1)", Statement.NO_GENERATED_KEYS);
+      try {
+        statement.execute("insert into t values(2)", Statement.RETURN_GENERATED_KEYS);
+        fail("no autogenerate key is supported");
+      } catch (SQLFeatureNotSupportedException ex) {
+        // nop
+      }
+      // empty result
+      try (ResultSet rset = statement.getGeneratedKeys()) {
+        assertFalse(rset.next());
       }
     }
   }
 
   @Test
   public void testExecuteMultiInsert() throws SQLException {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       String multiInsertionSQL =
           " insert all "
               + "into foo "
@@ -289,32 +287,27 @@ public class StatementIT extends BaseJDBCTest {
               + "into bar (b1, b2, b3) values (s3, s2, s1) "
               + "select s1, s2, s3 from source";
 
-      try (Statement statement = connection.createStatement()) {
-        try {
-          assertFalse(
-              statement.execute(
-                  "create or replace table foo (f1 integer, f2 integer, f3 integer)"));
-          assertFalse(
-              statement.execute(
-                  "create or replace table foo1 (f1 integer, f2 integer, f3 integer)"));
-          assertFalse(
-              statement.execute(
-                  "create or replace table bar (b1 integer, b2 integer, b3 integer)"));
-          assertFalse(
-              statement.execute(
-                  "create or replace table source(s1 integer, s2 integer, s3 integer)"));
-          assertFalse(statement.execute("insert into source values(1, 2, 3)"));
-          assertFalse(statement.execute("insert into source values(11, 22, 33)"));
-          assertFalse(statement.execute("insert into source values(111, 222, 333)"));
+      try {
+        assertFalse(
+            statement.execute("create or replace table foo (f1 integer, f2 integer, f3 integer)"));
+        assertFalse(
+            statement.execute("create or replace table foo1 (f1 integer, f2 integer, f3 integer)"));
+        assertFalse(
+            statement.execute("create or replace table bar (b1 integer, b2 integer, b3 integer)"));
+        assertFalse(
+            statement.execute(
+                "create or replace table source(s1 integer, s2 integer, s3 integer)"));
+        assertFalse(statement.execute("insert into source values(1, 2, 3)"));
+        assertFalse(statement.execute("insert into source values(11, 22, 33)"));
+        assertFalse(statement.execute("insert into source values(111, 222, 333)"));
 
-          int updateCount = statement.executeUpdate(multiInsertionSQL);
-          assertEquals(9, updateCount);
-        } finally {
-          statement.execute("drop table if exists foo");
-          statement.execute("drop table if exists foo1");
-          statement.execute("drop table if exists bar");
-          statement.execute("drop table if exists source");
-        }
+        int updateCount = statement.executeUpdate(multiInsertionSQL);
+        assertEquals(9, updateCount);
+      } finally {
+        statement.execute("drop table if exists foo");
+        statement.execute("drop table if exists foo1");
+        statement.execute("drop table if exists bar");
+        statement.execute("drop table if exists source");
       }
     }
   }
@@ -466,10 +459,10 @@ public class StatementIT extends BaseJDBCTest {
       };
       try {
         for (String testCommand : testCommands) {
-          Statement statement = connection.createStatement();
-          int updateCount = statement.executeUpdate(testCommand);
-          assertThat(updateCount, is(0));
-          statement.close();
+          try (Statement statement = connection.createStatement()) {
+            int updateCount = statement.executeUpdate(testCommand);
+            assertThat(updateCount, is(0));
+          }
         }
       } finally {
         try (Statement statement = connection.createStatement()) {
@@ -484,28 +477,27 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteUpdateFail() throws Exception {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-        String[] testCommands = {
-          "list @~",
-          "ls @~",
-          "remove @~/testfile",
-          "rm @~/testfile",
-          "select 1",
-          "show databases",
-          "desc database " + AbstractDriverIT.getConnectionParameters().get("database")
-        };
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      String[] testCommands = {
+        "list @~",
+        "ls @~",
+        "remove @~/testfile",
+        "rm @~/testfile",
+        "select 1",
+        "show databases",
+        "desc database " + AbstractDriverIT.getConnectionParameters().get("database")
+      };
 
-        for (String testCommand : testCommands) {
-          try {
-            statement.executeUpdate(testCommand);
-            fail("TestCommand: " + testCommand + " is expected to be failed to execute");
-          } catch (SQLException e) {
-            assertThat(
-                testCommand,
-                e.getErrorCode(),
-                is(ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode()));
-          }
+      for (String testCommand : testCommands) {
+        try {
+          statement.executeUpdate(testCommand);
+          fail("TestCommand: " + testCommand + " is expected to be failed to execute");
+        } catch (SQLException e) {
+          assertThat(
+              testCommand,
+              e.getErrorCode(),
+              is(ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode()));
         }
       }
     }
@@ -514,36 +506,35 @@ public class StatementIT extends BaseJDBCTest {
   @Test
   public void testTelemetryBatch() throws SQLException {
     Telemetry telemetryClient = null;
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
 
-        String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
-        statement.execute(sqlSelect);
+      String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
+      statement.execute(sqlSelect);
 
-        try (ResultSet rs = statement.getResultSet()) {
-          assertEquals(3, getSizeOfResultSet(rs));
-          assertEquals(-1, statement.getUpdateCount());
-          assertEquals(-1L, statement.getLargeUpdateCount());
-        }
-
-        try (ResultSet rs = statement.executeQuery(sqlSelect)) {
-          assertEquals(3, getSizeOfResultSet(rs));
-        }
-
-        telemetryClient =
-            ((SnowflakeStatementV1) statement).connection.getSfSession().getTelemetryClient();
-
-        // there should be logs ready to be sent
-        assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
+      try (ResultSet rs = statement.getResultSet()) {
+        assertEquals(3, getSizeOfResultSet(rs));
+        assertEquals(-1, statement.getUpdateCount());
+        assertEquals(-1L, statement.getLargeUpdateCount());
       }
-      // closing the statement should flush the buffer, however, flush is async,
-      // sleep some time before check buffer size
-      try {
-        Thread.sleep(1000);
-      } catch (Throwable e) {
+
+      try (ResultSet rs = statement.executeQuery(sqlSelect)) {
+        assertEquals(3, getSizeOfResultSet(rs));
       }
-      assertEquals(((TelemetryClient) telemetryClient).bufferSize(), 0);
+
+      telemetryClient =
+          ((SnowflakeStatementV1) statement).connection.getSfSession().getTelemetryClient();
+
+      // there should be logs ready to be sent
+      assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
     }
+    // closing the statement should flush the buffer, however, flush is async,
+    // sleep some time before check buffer size
+    try {
+      Thread.sleep(1000);
+    } catch (Throwable e) {
+    }
+    assertEquals(((TelemetryClient) telemetryClient).bufferSize(), 0);
   }
 
   @Test
@@ -618,31 +609,29 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testUnwrapper() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-        if (statement.isWrapperFor(SnowflakeStatementV1.class)) {
-          statement.execute("select 1");
-          SnowflakeStatement sfstatement = statement.unwrap(SnowflakeStatement.class);
-          assertNotNull(sfstatement.getQueryID());
-        } else {
-          fail("should be able to unwrap");
-        }
-        try {
-          statement.unwrap(SnowflakeConnectionV1.class);
-          fail("should fail to cast");
-        } catch (SQLException ex) {
-          // nop
-        }
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      if (statement.isWrapperFor(SnowflakeStatementV1.class)) {
+        statement.execute("select 1");
+        SnowflakeStatement sfstatement = statement.unwrap(SnowflakeStatement.class);
+        assertNotNull(sfstatement.getQueryID());
+      } else {
+        fail("should be able to unwrap");
+      }
+      try {
+        statement.unwrap(SnowflakeConnectionV1.class);
+        fail("should fail to cast");
+      } catch (SQLException ex) {
+        // nop
       }
     }
   }
 
   @Test
   public void testQueryIdIsNullOnFreshStatement() throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement stmt = con.createStatement()) {
-        assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
-      }
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement()) {
+      assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
     }
   }
 }

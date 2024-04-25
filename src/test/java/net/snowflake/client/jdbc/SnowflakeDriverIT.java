@@ -116,11 +116,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   @AfterClass
   public static void tearDown() throws SQLException {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-        statement.execute("drop table if exists clustered_jdbc");
-        statement.execute("drop table if exists orders_jdbc");
-      }
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("drop table if exists clustered_jdbc");
+      statement.execute("drop table if exists orders_jdbc");
     }
   }
 
@@ -255,13 +254,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection()) {
       connection.createStatement().execute("alter session set rows_per_resultset=2048");
 
-      try (Statement statement = connection.createStatement()) {
-        try (ResultSet resultSet = statement.executeQuery("SELECT * FROM orders_jdbc")) {
-          ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-          int numColumns = resultSetMetaData.getColumnCount();
-          assertEquals(9, numColumns);
-          assertEquals("number of columns", 73, countRows(resultSet));
-        }
+      try (Statement statement = connection.createStatement();
+          ResultSet resultSet = statement.executeQuery("SELECT * FROM orders_jdbc")) {
+        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+        int numColumns = resultSetMetaData.getColumnCount();
+        assertEquals(9, numColumns);
+        assertEquals("number of columns", 73, countRows(resultSet));
       }
     }
   }
@@ -395,29 +393,27 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             connection.prepareStatement("select c1 from testBooleanT1")) {
 
           // I. Test ResultSetMetaData interface
-          ResultSet resultSet = preparedStatement.executeQuery();
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+            // Verify the column type is Boolean
+            assertEquals(Types.BOOLEAN, resultSetMetaData.getColumnType(1));
 
-          ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+            // II. Test DatabaseMetadata interface
+            try (ResultSet columnMetaDataResultSet =
+                metadata.getColumns(
+                    null, // catalog
+                    null, // schema
+                    "TESTBOOLEANT1", // table
+                    null // column
+                    )) {
+              resultSetMetaData = columnMetaDataResultSet.getMetaData();
+              // assert column count
+              assertEquals(24, resultSetMetaData.getColumnCount());
 
-          // Verify the column type is Boolean
-          assertEquals(Types.BOOLEAN, resultSetMetaData.getColumnType(1));
-
-          // II. Test DatabaseMetadata interface
-          ResultSet columnMetaDataResultSet =
-              metadata.getColumns(
-                  null, // catalog
-                  null, // schema
-                  "TESTBOOLEANT1", // table
-                  null // column
-                  );
-
-          resultSetMetaData = columnMetaDataResultSet.getMetaData();
-
-          // assert column count
-          assertEquals(24, resultSetMetaData.getColumnCount());
-
-          assertTrue(columnMetaDataResultSet.next());
-          assertEquals(Types.BOOLEAN, columnMetaDataResultSet.getInt(5));
+              assertTrue(columnMetaDataResultSet.next());
+              assertEquals(Types.BOOLEAN, columnMetaDataResultSet.getInt(5));
+            }
+          }
         }
       } finally {
         statement.execute("drop table testBooleanT1");
@@ -2085,85 +2081,84 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public void testGetObject() throws Throwable {
     ResultSetMetaData resultSetMetaData;
 
-    try (Connection connection = getConnection()) {
-      try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT ?")) {
-        // bind integer
-        preparedStatement.setInt(1, 1);
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+    try (Connection connection = getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement("SELECT ?")) {
+      // bind integer
+      preparedStatement.setInt(1, 1);
+      try (ResultSet resultSet = preparedStatement.executeQuery()) {
 
-          resultSetMetaData = resultSet.getMetaData();
+        resultSetMetaData = resultSet.getMetaData();
 
-          assertEquals(
-              "column class name=BigDecimal",
-              Long.class.getName(),
-              resultSetMetaData.getColumnClassName(1));
+        assertEquals(
+            "column class name=BigDecimal",
+            Long.class.getName(),
+            resultSetMetaData.getColumnClassName(1));
 
-          // assert we get 1 rows
-          assertTrue(resultSet.next());
+        // assert we get 1 rows
+        assertTrue(resultSet.next());
 
-          assertTrue("integer", resultSet.getObject(1) instanceof Long);
-        }
-        preparedStatement.setString(1, "hello");
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-          resultSetMetaData = resultSet.getMetaData();
+        assertTrue("integer", resultSet.getObject(1) instanceof Long);
+      }
+      preparedStatement.setString(1, "hello");
+      try (ResultSet resultSet = preparedStatement.executeQuery()) {
+        resultSetMetaData = resultSet.getMetaData();
 
-          assertEquals(
-              "column class name=String",
-              String.class.getName(),
-              resultSetMetaData.getColumnClassName(1));
+        assertEquals(
+            "column class name=String",
+            String.class.getName(),
+            resultSetMetaData.getColumnClassName(1));
 
-          // assert we get 1 rows
-          assertTrue(resultSet.next());
+        // assert we get 1 rows
+        assertTrue(resultSet.next());
 
-          assertTrue("string", resultSet.getObject(1) instanceof String);
-        }
+        assertTrue("string", resultSet.getObject(1) instanceof String);
+      }
 
-        preparedStatement.setDouble(1, 1.2);
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+      preparedStatement.setDouble(1, 1.2);
+      try (ResultSet resultSet = preparedStatement.executeQuery()) {
 
-          resultSetMetaData = resultSet.getMetaData();
+        resultSetMetaData = resultSet.getMetaData();
 
-          assertEquals(
-              "column class name=Double",
-              Double.class.getName(),
-              resultSetMetaData.getColumnClassName(1));
+        assertEquals(
+            "column class name=Double",
+            Double.class.getName(),
+            resultSetMetaData.getColumnClassName(1));
 
-          // assert we get 1 rows
-          assertTrue(resultSet.next());
+        // assert we get 1 rows
+        assertTrue(resultSet.next());
 
-          assertTrue("double", resultSet.getObject(1) instanceof Double);
-        }
+        assertTrue("double", resultSet.getObject(1) instanceof Double);
+      }
 
-        preparedStatement.setTimestamp(1, new Timestamp(0));
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
+      preparedStatement.setTimestamp(1, new Timestamp(0));
+      try (ResultSet resultSet = preparedStatement.executeQuery()) {
 
-          resultSetMetaData = resultSet.getMetaData();
+        resultSetMetaData = resultSet.getMetaData();
 
-          assertEquals(
-              "column class name=Timestamp",
-              Timestamp.class.getName(),
-              resultSetMetaData.getColumnClassName(1));
+        assertEquals(
+            "column class name=Timestamp",
+            Timestamp.class.getName(),
+            resultSetMetaData.getColumnClassName(1));
 
-          // assert we get 1 rows
-          assertTrue(resultSet.next());
+        // assert we get 1 rows
+        assertTrue(resultSet.next());
 
-          assertTrue("timestamp", resultSet.getObject(1) instanceof Timestamp);
-        }
+        assertTrue("timestamp", resultSet.getObject(1) instanceof Timestamp);
+      }
 
-        preparedStatement.setDate(1, new java.sql.Date(0));
-        try (ResultSet resultSet = preparedStatement.executeQuery()) {
-          resultSetMetaData = resultSet.getMetaData();
+      preparedStatement.setDate(1, new java.sql.Date(0));
+      try (ResultSet resultSet = preparedStatement.executeQuery()) {
+        resultSetMetaData = resultSet.getMetaData();
 
-          assertEquals(
-              "column class name=Date",
-              java.sql.Date.class.getName(),
-              resultSetMetaData.getColumnClassName(1));
+        assertEquals(
+            "column class name=Date",
+            java.sql.Date.class.getName(),
+            resultSetMetaData.getColumnClassName(1));
 
-          // assert we get 1 rows
-          assertTrue(resultSet.next());
+        // assert we get 1 rows
+        assertTrue(resultSet.next());
 
-          assertTrue("date", resultSet.getObject(1) instanceof java.sql.Date);
-        }
+        assertTrue("date", resultSet.getObject(1) instanceof java.sql.Date);
       }
     }
   }
@@ -2216,7 +2211,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           }
         }
       } finally {
-        connection.createStatement().execute("DROP TABLE IF EXISTS testPutViaExecuteQuery");
+        statement.execute("DROP TABLE IF EXISTS testPutViaExecuteQuery");
       }
     }
   }

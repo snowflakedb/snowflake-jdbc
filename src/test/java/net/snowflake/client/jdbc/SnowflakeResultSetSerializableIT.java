@@ -776,27 +776,26 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   private void generateTestFiles() throws Throwable {
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
 
-        statement.execute(
-            "create or replace table table_basic " + " (int_c int, string_c string(128))");
+      statement.execute(
+          "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-        int rowCount = 60000;
-        statement.execute(
-            "insert into table_basic select "
-                + "seq4(), "
-                + "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
-                + " from table(generator(rowcount=>"
-                + rowCount
-                + "))");
+      int rowCount = 60000;
+      statement.execute(
+          "insert into table_basic select "
+              + "seq4(), "
+              + "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
+              + " from table(generator(rowcount=>"
+              + rowCount
+              + "))");
 
-        String sqlSelect = "select * from table_basic ";
-        try (ResultSet rs = statement.executeQuery(sqlSelect)) {
-          developPrint = true;
-          serializeResultSet((SnowflakeResultSet) rs, 2 * 1024 * 1024, "txt");
-          System.exit(-1);
-        }
+      String sqlSelect = "select * from table_basic ";
+      try (ResultSet rs = statement.executeQuery(sqlSelect)) {
+        developPrint = true;
+        serializeResultSet((SnowflakeResultSet) rs, 2 * 1024 * 1024, "txt");
+        System.exit(-1);
       }
     }
   }
@@ -809,45 +808,44 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     long expectedTotalRowCount = 0;
     long expectedTotalCompressedSize = 0;
     long expectedTotalUncompressedSize = 0;
-    try (Connection connection = init()) {
-      try (Statement statement = connection.createStatement()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
 
-        statement.execute(
-            "create or replace table table_basic " + " (int_c int, string_c string(128))");
+      statement.execute(
+          "create or replace table table_basic " + " (int_c int, string_c string(128))");
 
-        statement.execute(
-            "insert into table_basic select "
-                + "seq4(), "
-                + "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
-                + " from table(generator(rowcount=>"
-                + rowCount
-                + "))");
+      statement.execute(
+          "insert into table_basic select "
+              + "seq4(), "
+              + "'arrow_1234567890arrow_1234567890arrow_1234567890arrow_1234567890'"
+              + " from table(generator(rowcount=>"
+              + rowCount
+              + "))");
 
-        String sqlSelect = "select * from table_basic ";
-        try (ResultSet rs = statement.executeQuery(sqlSelect)) {
-          // Split deserializedResultSet by 3M
-          fileNameList = serializeResultSet((SnowflakeResultSet) rs, 100 * 1024 * 1024, "txt");
+      String sqlSelect = "select * from table_basic ";
+      try (ResultSet rs = statement.executeQuery(sqlSelect)) {
+        // Split deserializedResultSet by 3M
+        fileNameList = serializeResultSet((SnowflakeResultSet) rs, 100 * 1024 * 1024, "txt");
 
-          // Only one serializable object is generated with 100M data.
-          assertEquals(fileNameList.size(), 1);
+        // Only one serializable object is generated with 100M data.
+        assertEquals(fileNameList.size(), 1);
 
-          try (FileInputStream fi = new FileInputStream(fileNameList.get(0));
-              ObjectInputStream si = new ObjectInputStream(fi)) {
-            SnowflakeResultSetSerializableV1 wholeResultSetChunk =
-                (SnowflakeResultSetSerializableV1) si.readObject();
-            expectedTotalRowCount = wholeResultSetChunk.getRowCount();
-            expectedTotalCompressedSize = wholeResultSetChunk.getCompressedDataSizeInBytes();
-            expectedTotalUncompressedSize = wholeResultSetChunk.getUncompressedDataSizeInBytes();
-          }
-          if (developPrint) {
-            System.out.println(
-                "Total statistic: RowCount="
-                    + expectedTotalRowCount
-                    + " CompSize="
-                    + expectedTotalCompressedSize
-                    + " UncompSize="
-                    + expectedTotalUncompressedSize);
-          }
+        try (FileInputStream fi = new FileInputStream(fileNameList.get(0));
+            ObjectInputStream si = new ObjectInputStream(fi)) {
+          SnowflakeResultSetSerializableV1 wholeResultSetChunk =
+              (SnowflakeResultSetSerializableV1) si.readObject();
+          expectedTotalRowCount = wholeResultSetChunk.getRowCount();
+          expectedTotalCompressedSize = wholeResultSetChunk.getCompressedDataSizeInBytes();
+          expectedTotalUncompressedSize = wholeResultSetChunk.getUncompressedDataSizeInBytes();
+        }
+        if (developPrint) {
+          System.out.println(
+              "Total statistic: RowCount="
+                  + expectedTotalRowCount
+                  + " CompSize="
+                  + expectedTotalCompressedSize
+                  + " UncompSize="
+                  + expectedTotalUncompressedSize);
         }
       }
     }

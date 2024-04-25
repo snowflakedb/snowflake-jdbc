@@ -246,12 +246,11 @@ public class StatementLatestIT extends BaseJDBCTest {
     String schemaName =
         TestUtil.GENERATED_SCHEMA_PREFIX
             + SnowflakeUtil.randomAlphaNumeric(255 - TestUtil.GENERATED_SCHEMA_PREFIX.length());
-    try (Connection con = getConnection()) {
-      try (Statement stmt = con.createStatement()) {
-        stmt.execute("create schema " + schemaName);
-        stmt.execute("use schema " + schemaName);
-        stmt.execute("drop schema " + schemaName);
-      }
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement()) {
+      stmt.execute("create schema " + schemaName);
+      stmt.execute("use schema " + schemaName);
+      stmt.execute("drop schema " + schemaName);
     }
   }
 
