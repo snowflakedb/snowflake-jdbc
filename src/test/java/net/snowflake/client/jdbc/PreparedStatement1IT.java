@@ -780,13 +780,14 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         Statement statement = con.createStatement()) {
       statement.executeUpdate("alter session set CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS=true");
       statement.execute(createTableSQL);
-      PreparedStatement prepStatement =
-          con.prepareStatement(insertSQL, Statement.NO_GENERATED_KEYS);
-      bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
-      prepStatement.addBatch();
-      prepStatement.executeBatch();
-      statement.executeUpdate(
-          "alter session set CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS=false");
+      try (PreparedStatement prepStatement =
+                   con.prepareStatement(insertSQL, Statement.NO_GENERATED_KEYS)) {
+        bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
+        prepStatement.addBatch();
+        prepStatement.executeBatch();
+        statement.executeUpdate(
+                "alter session set CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS=false");
+      }
     }
   }
 }
