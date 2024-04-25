@@ -301,15 +301,16 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         java.util.Date today = new java.util.Date();
         java.sql.Date sqldate = new java.sql.Date(today.getDate());
         java.sql.Timestamp todaySQL = new java.sql.Timestamp(today.getTime());
-        PreparedStatement prepSt =
-            connection.prepareStatement("insert into testStageBindTypes values (?, ?, ?)");
-        for (int i = 1; i < 30000; i++) {
-          prepSt.setDate(1, sqldate);
-          prepSt.setDate(2, sqldate);
-          prepSt.setTimestamp(3, todaySQL);
-          prepSt.addBatch();
+        try (PreparedStatement prepSt =
+            connection.prepareStatement("insert into testStageBindTypes values (?, ?, ?)")) {
+          for (int i = 1; i < 30000; i++) {
+            prepSt.setDate(1, sqldate);
+            prepSt.setDate(2, sqldate);
+            prepSt.setTimestamp(3, todaySQL);
+            prepSt.addBatch();
+          }
+          prepSt.executeBatch(); // should not throw a parsing error.
         }
-        prepSt.executeBatch(); // should not throw a parsing error.
       } finally {
         statement.execute("drop table if exists testStageBindTypes");
         statement.execute("alter session unset TIMESTAMP_INPUT_FORMAT");
