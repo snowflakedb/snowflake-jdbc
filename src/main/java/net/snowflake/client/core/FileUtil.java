@@ -37,7 +37,7 @@ public class FileUtil {
   private static void logWarnWhenAccessibleByOthers(
       Path filePath, String context, boolean logReadAccess) {
     // we do not check the permissions for Windows
-    if (System.getProperty("os.name").toLowerCase().startsWith("windows")) {
+    if (Constants.getOS() == Constants.OS.WINDOWS) {
       return;
     }
 
