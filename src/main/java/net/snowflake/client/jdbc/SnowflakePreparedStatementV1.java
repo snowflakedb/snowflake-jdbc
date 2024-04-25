@@ -46,6 +46,7 @@ import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFPreparedStatementMetaData;
 import net.snowflake.client.core.SfSqlArray;
+import net.snowflake.client.core.SfTimestampUtil;
 import net.snowflake.client.core.StmtUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -370,12 +371,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       setNull(parameterIndex, Types.TIME);
     } else {
       // Convert to nanoseconds since midnight using the input time mod 24 hours.
-      final long MS_IN_DAY = 86400 * 1000;
-      long msSinceEpoch = x.getTime();
-      // Use % + % instead of just % to get the nonnegative remainder.
-      // TODO(mkember): Change to use Math.floorMod when Client is on Java 8.
-      long msSinceMidnight = (msSinceEpoch % MS_IN_DAY + MS_IN_DAY) % MS_IN_DAY;
-      long nanosSinceMidnight = msSinceMidnight * 1000 * 1000;
+      long nanosSinceMidnight = SfTimestampUtil.getTimeInNanoseconds(x);
 
       ParameterBindingDTO binding =
           new ParameterBindingDTO(

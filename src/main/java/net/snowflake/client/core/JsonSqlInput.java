@@ -314,7 +314,7 @@ public class JsonSqlInput extends BaseSqlInput {
     int columnSubType = fieldMetadata.getType();
     int scale = fieldMetadata.getScale();
     Timestamp result =
-        SqlInputTimestampUtil.getTimestampFromType(
+        SfTimestampUtil.getTimestampFromType(
             columnSubType, (String) value, session, sessionTimeZone, tz);
     if (result != null) {
       return result;

@@ -173,7 +173,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
               + "                  l BIGINT, "
               + "                  f FLOAT, "
               + "                  d DOUBLE, "
-              + "                  bd DOUBLE, "
+              + "                  bd NUMBER(38,2), "
               + "                  bool BOOLEAN, "
               + "                  timestampLtz TIMESTAMP_LTZ, "
               + "                  timestampNtz TIMESTAMP_NTZ, "
@@ -193,7 +193,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
               Long.valueOf(4),
               1.1f,
               2.24,
-              new BigDecimal("3.3"),
+              new BigDecimal("999999999999999999999999999999999999.55"),
               Boolean.TRUE,
               Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
               toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("UTC"))),
@@ -217,7 +217,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
         assertEquals(4, (long) object.getL());
         assertEquals(1.1, (double) object.getF(), 0.01);
         assertEquals(2.24, (double) object.getD(), 0.01);
-        assertEquals(BigDecimal.valueOf(3.3), object.getBd());
+        assertEquals(new BigDecimal("999999999999999999999999999999999999.55"), object.getBd());
         assertEquals(Boolean.TRUE, object.getBool());
         assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.getTimestampLtz());

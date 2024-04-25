@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core;
 
+import static net.snowflake.client.core.FieldSchemaCreator.buildSchemaTypeAndNameOnly;
 import static net.snowflake.client.core.FieldSchemaCreator.buildSchemaWithScaleAndPrecision;
 
 import java.io.InputStream;
@@ -49,7 +50,7 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 @SnowflakeJdbcInternalApi
 public class JsonSqlOutput implements SQLOutput {
   static final SFLogger logger = SFLoggerFactory.getLogger(JsonSqlOutput.class);
-  private JSONObject json = new JSONObject();
+  private JSONObject json;
   private SQLData original;
   private SFBaseSession session;
   private Iterator<Field> fields;
@@ -63,6 +64,7 @@ public class JsonSqlOutput implements SQLOutput {
     fields = getClassFields(original).iterator();
     schema = new BindingParameterMetadata("object");
     schema.setFields(new ArrayList<>());
+    json = new JSONObject();
   }
 
   private TimeZone getSessionTimezone(SFBaseSession sfBaseSession) {
@@ -85,7 +87,7 @@ public class JsonSqlOutput implements SQLOutput {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
           json.put(fieldName, value);
-          schema.getFields().add(FieldSchemaCreator.buildSchemaForVarchar(fieldName, maybeColumn));
+          schema.getFields().add(FieldSchemaCreator.buildSchemaForText(fieldName, maybeColumn));
         }));
   }
 
@@ -94,10 +96,7 @@ public class JsonSqlOutput implements SQLOutput {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
           json.put(fieldName, value);
-          schema
-              .getFields()
-              .add(
-                  FieldSchemaCreator.buildSchemaTypeAndNameOnly(fieldName, "boolean", maybeColumn));
+          schema.getFields().add(buildSchemaTypeAndNameOnly(fieldName, "boolean", maybeColumn));
         }));
   }
 
@@ -150,9 +149,7 @@ public class JsonSqlOutput implements SQLOutput {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
           json.put(fieldName, value);
-          schema
-              .getFields()
-              .add(buildSchemaWithScaleAndPrecision(fieldName, "real", 0, 0, maybeColumn));
+          schema.getFields().add(buildSchemaTypeAndNameOnly(fieldName, "real", maybeColumn));
         }));
   }
 
@@ -161,9 +158,7 @@ public class JsonSqlOutput implements SQLOutput {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
           json.put(fieldName, value);
-          schema
-              .getFields()
-              .add(buildSchemaWithScaleAndPrecision(fieldName, "real", 0, 0, maybeColumn));
+          schema.getFields().add(buildSchemaTypeAndNameOnly(fieldName, "real", maybeColumn));
         }));
   }
 
@@ -174,7 +169,9 @@ public class JsonSqlOutput implements SQLOutput {
           json.put(fieldName, value);
           schema
               .getFields()
-              .add(buildSchemaWithScaleAndPrecision(fieldName, "real", 0, 0, maybeColumn));
+              .add(
+                  buildSchemaWithScaleAndPrecision(
+                      fieldName, "fixed", value.scale(), 38, maybeColumn));
         }));
   }
 
@@ -196,9 +193,7 @@ public class JsonSqlOutput implements SQLOutput {
           json.put(
               fieldName,
               ResultUtil.getDateAsString(value, getDateTimeFormat("DATE_OUTPUT_FORMAT")));
-          schema
-              .getFields()
-              .add(FieldSchemaCreator.buildSchemaTypeAndNameOnly(fieldName, "date", maybeColumn));
+          schema.getFields().add(buildSchemaTypeAndNameOnly(fieldName, "date", maybeColumn));
         }));
   }
 
@@ -206,10 +201,7 @@ public class JsonSqlOutput implements SQLOutput {
   public void writeTime(Time x) throws SQLException {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
-          final long MS_IN_DAY = 86400 * 1000;
-          long msSinceEpoch = x.getTime();
-          long msSinceMidnight = (msSinceEpoch % MS_IN_DAY + MS_IN_DAY) % MS_IN_DAY;
-          long nanosSinceMidnight = msSinceMidnight * 1000 * 1000;
+          long nanosSinceMidnight = SfTimestampUtil.getTimeInNanoseconds(x);
           String result =
               ResultUtil.getSFTimeAsString(
                   SFTime.fromNanoseconds(nanosSinceMidnight),
@@ -233,24 +225,14 @@ public class JsonSqlOutput implements SQLOutput {
                       .map(cl -> cl.type())
                       .filter(str -> !str.isEmpty())
                       .orElse("TIMESTAMP"));
-          int columnType = SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ;
-          TimeZone timeZone = TimeZone.getDefault();
-          if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ
-              || snowflakeType == SnowflakeType.TIMESTAMP) {
-            columnType = SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ;
-            timeZone = null;
-          } else if (snowflakeType == SnowflakeType.TIMESTAMP_LTZ) {
-            columnType = SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ;
-            timeZone = getSessionTimezone(session);
-          }
-          int finalColumnType = columnType;
-          TimeZone finalTimeZone = timeZone;
+          int columnType = snowflakeTypeToJavaType(snowflakeType);
+          TimeZone timeZone = timeZoneDependOnType(snowflakeType, session, null);
           String timestampAsString =
               SnowflakeUtil.mapSFExceptionToSQLException(
                   () ->
                       ResultUtil.getSFTimestampAsString(
-                          new SFTimestamp(value, finalTimeZone),
-                          finalColumnType,
+                          new SFTimestamp(value, timeZone),
+                          columnType,
                           9,
                           getDateTimeFormat("TIMESTAMP_NTZ_OUTPUT_FORMAT"),
                           getDateTimeFormat("TIMESTAMP_LTZ_OUTPUT_FORMAT"),
@@ -386,5 +368,26 @@ public class JsonSqlOutput implements SQLOutput {
 
   public BindingParameterMetadata getSchema() {
     return schema;
+  }
+
+  private TimeZone timeZoneDependOnType(
+      SnowflakeType snowflakeType, SFBaseSession session, TimeZone tz) {
+    if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ || snowflakeType == SnowflakeType.TIMESTAMP) {
+      return null;
+    } else if (snowflakeType == SnowflakeType.TIMESTAMP_LTZ) {
+      return getSessionTimezone(session);
+    } else if (snowflakeType == SnowflakeType.TIMESTAMP_TZ) {
+      return Optional.ofNullable(tz).orElse(sessionTimezone);
+    }
+    return TimeZone.getDefault();
+  }
+
+  private int snowflakeTypeToJavaType(SnowflakeType snowflakeType) {
+    if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ || snowflakeType == SnowflakeType.TIMESTAMP) {
+      return SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ;
+    } else if (snowflakeType == SnowflakeType.TIMESTAMP_LTZ) {
+      return SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ;
+    }
+    return SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ;
   }
 }

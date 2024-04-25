@@ -13,9 +13,9 @@ import net.snowflake.client.log.SFLoggerFactory;
 public class FieldSchemaCreator {
   static final SFLogger logger = SFLoggerFactory.getLogger(FieldSchemaCreator.class);
   public static final int MAX_TEXT_COLUMN_SIZE = 134217728;
-  public static final int MAX_BINARY_COLUMN_SIZE = 8388608;
+  public static final int MAX_BINARY_COLUMN_SIZE = 67108864;
 
-  public static BindingParameterMetadata buildSchemaForVarchar(
+  public static BindingParameterMetadata buildSchemaForText(
       String fieldName, Optional<SnowflakeColumn> maybeColumn) {
     return BindingParameterMetadata.BindingParameterMetadataBuilder.bindingParameterMetadata()
         .withType(maybeColumn.map(cl -> cl.type()).filter(str -> !str.isEmpty()).orElse("text"))
@@ -29,8 +29,8 @@ public class FieldSchemaCreator {
     return BindingParameterMetadata.BindingParameterMetadataBuilder.bindingParameterMetadata()
         .withType(maybeColumn.map(cl -> cl.type()).filter(str -> !str.isEmpty()).orElse("binary"))
         .withName(maybeColumn.map(cl -> cl.name()).filter(str -> !str.isEmpty()).orElse(fieldName))
-        .withLength(maybeColumn.map(cl -> cl.precision()).orElse(MAX_BINARY_COLUMN_SIZE))
-        .withByteLength(maybeColumn.map(cl -> cl.precision()).orElse(MAX_BINARY_COLUMN_SIZE))
+        .withLength(maybeColumn.map(cl -> cl.precision()).orElse(MAX_TEXT_COLUMN_SIZE))
+        .withByteLength(maybeColumn.map(cl -> cl.byteLength()).orElse(MAX_BINARY_COLUMN_SIZE))
         .build();
   }
 
@@ -67,7 +67,7 @@ public class FieldSchemaCreator {
     switch (baseType) {
       case Types.VARCHAR:
       case Types.CHAR:
-        return FieldSchemaCreator.buildSchemaForVarchar(name, Optional.empty());
+        return FieldSchemaCreator.buildSchemaForText(name, Optional.empty());
       case Types.FLOAT:
       case Types.DOUBLE:
       case Types.DECIMAL:

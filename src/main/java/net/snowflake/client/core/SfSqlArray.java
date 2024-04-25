@@ -81,11 +81,11 @@ public class SfSqlArray implements Array {
   @Override
   public void free() throws SQLException {}
 
-  public String getJsonString() {
+  public String getJsonString() throws SQLException {
     try {
       return SnowflakeUtil.mapJson(elements);
     } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
+      throw new SQLException("There is exception during array to json string.", e);
     }
   }
 

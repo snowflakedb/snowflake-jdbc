@@ -40,6 +40,16 @@ public @interface SnowflakeColumn {
    * <p>The default value {@code -1} indicates that a provider-determined length should be inferred.
    */
   int length() default -1;
+  /**
+   * (Optional) The length for a column of SQL type {@code binary}, or of similar database-native
+   * type.
+   *
+   * <p>Applies only to columns of exact varchar and binary type.
+   *
+   * <p>The default value {@code -1} indicates that a provider-determined byteLength should be
+   * inferred.
+   */
+  int byteLength() default -1;
 
   /**
    * (Optional) The precision for a column of SQL type {@code decimal} or {@code numeric}, or of
