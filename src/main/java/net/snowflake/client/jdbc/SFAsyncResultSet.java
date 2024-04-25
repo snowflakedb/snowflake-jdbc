@@ -30,7 +30,6 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
     implements SnowflakeResultSet, ResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFAsyncResultSet.class);
 
-  private final SFBaseResultSet sfBaseResultSet;
   private ResultSet resultSetForNext = new SnowflakeResultSetV1.EmptyResultSet();
   private boolean resultSetForNextInitialized = false;
   private String queryID;
@@ -51,8 +50,8 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
    * @throws SQLException if failed to construct snowflake result set metadata
    */
   SFAsyncResultSet(SFBaseResultSet sfBaseResultSet, Statement statement) throws SQLException {
+
     super(statement);
-    this.sfBaseResultSet = sfBaseResultSet;
     this.queryID = sfBaseResultSet.getQueryId();
     this.session = sfBaseResultSet.getSession();
     this.extraStatement = statement;
@@ -74,8 +73,6 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
       throws SQLException {
     super(resultSetSerializable);
     this.queryID = sfBaseResultSet.getQueryId();
-    this.sfBaseResultSet = sfBaseResultSet;
-
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
     this.resultSetMetaData.setQueryIdForAsyncResults(this.queryID);
     this.resultSetMetaData.setQueryType(SnowflakeResultSetMetaDataV1.QueryType.ASYNC);
@@ -83,7 +80,6 @@ public class SFAsyncResultSet extends SnowflakeBaseResultSet
 
   public SFAsyncResultSet(String queryID, Statement statement) throws SQLException {
     super(statement);
-    this.sfBaseResultSet = null;
     queryID.trim();
     if (!QueryIdValidator.isValid(queryID)) {
       throw new SQLException(

@@ -38,7 +38,6 @@ import net.snowflake.client.log.SFLoggerFactory;
 public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     implements SnowflakeResultSet, ResultSet {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetV1.class);
-  private final SFBaseResultSet sfBaseResultSet;
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -53,6 +52,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    */
   public SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement)
       throws SQLException {
+
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
@@ -104,7 +104,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
       SFBaseResultSet sfBaseResultSet, SnowflakeResultSetSerializableV1 resultSetSerializable)
       throws SQLException {
     super(resultSetSerializable);
-
     this.sfBaseResultSet = sfBaseResultSet;
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
   }
@@ -269,6 +268,19 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     raiseSQLExceptionIfResultSetIsClosed();
     try {
       return sfBaseResultSet.getObject(columnIndex);
+    } catch (SFException ex) {
+      throw new SnowflakeSQLException(
+          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    }
+  }
+
+  public Array getArray(int columnIndex) throws SQLException {
+    if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
+      throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    }
+    raiseSQLExceptionIfResultSetIsClosed();
+    try {
+      return sfBaseResultSet.getArray(columnIndex);
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());

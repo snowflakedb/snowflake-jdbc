@@ -19,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,8 +28,6 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
@@ -155,9 +152,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final ASN1ObjectIdentifier SHA512RSA =
       new ASN1ObjectIdentifier("1.2.840.113549.1.1.13").intern();
 
-  private static final String DEFAULT_SECURITY_PROVIDER_NAME =
-      "org.bouncycastle.jce.provider.BouncyCastleProvider";
-
   private static final String ALGORITHM_SHA1_NAME = "SHA-1";
   /** Object mapper for JSON encoding and decoding */
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
@@ -175,10 +169,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final int DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT = 10000;
   /** Default OCSP Cache server host name */
   private static final String DEFAULT_OCSP_CACHE_HOST = "http://ocsp.snowflakecomputing.com";
-  /** provider name */
-  private static final String BOUNCY_CASTLE_PROVIDER = "BC";
-  /** provider name for FIPS */
-  private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+
   /** OCSP response file cache directory */
   private static final FileCacheManager fileCacheManager;
   /** Tolerable validity date range ratio. */
@@ -251,37 +242,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     OCSP_RESPONSE_CODE_TO_STRING.put(OCSPResp.TRY_LATER, "tryLater");
     OCSP_RESPONSE_CODE_TO_STRING.put(OCSPResp.SIG_REQUIRED, "sigRequired");
     OCSP_RESPONSE_CODE_TO_STRING.put(OCSPResp.UNAUTHORIZED, "unauthorized");
-  }
-
-  static {
-    // Add Bouncy Castle to the security provider. This is required to
-    // verify the signature on OCSP response and attached certificates.
-    if (Security.getProvider(BOUNCY_CASTLE_PROVIDER) == null
-        && Security.getProvider(BOUNCY_CASTLE_FIPS_PROVIDER) == null) {
-      Security.addProvider(instantiateSecurityProvider());
-    }
-  }
-
-  private static Provider instantiateSecurityProvider() {
-    try {
-      Class klass = Class.forName(DEFAULT_SECURITY_PROVIDER_NAME);
-      return (Provider) klass.getDeclaredConstructor().newInstance();
-    } catch (ExceptionInInitializerError
-        | ClassNotFoundException
-        | NoSuchMethodException
-        | InstantiationException
-        | IllegalAccessException
-        | IllegalArgumentException
-        | InvocationTargetException
-        | SecurityException ex) {
-      String errMsg =
-          String.format(
-              "Failed to load %s, err=%s. If you use Snowflake JDBC for FIPS jar, "
-                  + "import BouncyCastleFipsProvider in the application.",
-              DEFAULT_SECURITY_PROVIDER_NAME, ex.getMessage());
-      logger.error(errMsg, true);
-      throw new RuntimeException(errMsg);
-    }
   }
 
   static {

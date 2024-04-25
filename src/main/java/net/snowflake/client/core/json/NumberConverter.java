@@ -115,7 +115,7 @@ public class NumberConverter {
     if (obj == null) {
       return null;
     }
-    BigDecimal value = new BigDecimal(obj.toString());
+    BigDecimal value = getBigDecimal(obj.toString(), columnType);
     value = value.setScale(scale, RoundingMode.HALF_UP);
     return value;
   }
@@ -180,6 +180,9 @@ public class NumberConverter {
   public Object getBigInt(Object obj, int columnType) throws SFException {
     // If precision is < precision of max long precision, we can automatically convert to long.
     // Otherwise, do a check to ensure it doesn't overflow max long value.
+    if (obj == null) {
+      return null;
+    }
     String numberAsString = obj.toString();
     if (numberAsString.length() >= LONG_PRECISION) {
       BigDecimal bigNum = getBigDecimal(obj, columnType);

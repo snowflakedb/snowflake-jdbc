@@ -11,4 +11,6 @@ public interface SnowflakeResultSetMetaData {
   int getColumnIndex(String columnName) throws SQLException;
 
   int getInternalColumnType(int column) throws SQLException;
+
+  List<FieldMetadata> getColumnFields(int column) throws SQLException;
 }

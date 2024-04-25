@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.common.core.SFBinary;
 import net.snowflake.common.core.SqlState;
 
@@ -29,6 +30,7 @@ public enum SnowflakeType {
   FIXED,
   INTEGER,
   OBJECT,
+  MAP,
   REAL,
   TEXT,
   TIME,
@@ -38,7 +40,8 @@ public enum SnowflakeType {
   TIMESTAMP_TZ,
   VARIANT,
   GEOGRAPHY,
-  GEOMETRY;
+  GEOMETRY,
+  VECTOR;
 
   public static final String DATE_OR_TIME_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
   public static final String TIMESTAMP_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.";
@@ -51,7 +54,14 @@ public enum SnowflakeType {
     return SnowflakeType.valueOf(name.toUpperCase());
   }
 
+  @Deprecated
   public static JavaDataType getJavaType(SnowflakeType type) {
+    return getJavaType(type, false);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static JavaDataType getJavaType(SnowflakeType type, boolean isStructuredType) {
+    // TODO structuredType fill for Array and Map: SNOW-1234216, SNOW-1234214
     switch (type) {
       case TEXT:
         return JavaDataType.JAVA_STRING;
@@ -74,12 +84,18 @@ public enum SnowflakeType {
         return JavaDataType.JAVA_BOOLEAN;
       case ARRAY:
       case VARIANT:
+      case VECTOR:
         return JavaDataType.JAVA_STRING;
       case BINARY:
         return JavaDataType.JAVA_BYTES;
       case ANY:
-      case OBJECT:
         return JavaDataType.JAVA_OBJECT;
+      case OBJECT:
+        if (isStructuredType) {
+          return JavaDataType.JAVA_OBJECT;
+        } else {
+          return JavaDataType.JAVA_STRING;
+        }
       default:
         // Those are not supported, but no reason to panic
         return JavaDataType.JAVA_STRING;
@@ -175,6 +191,9 @@ public enum SnowflakeType {
       case "object":
         retval = Types.JAVA_OBJECT;
         break;
+      case "vector":
+        retval = SnowflakeUtil.EXTRA_TYPES_VECTOR;
+        break;
       case "array":
         retval = Types.ARRAY;
         break;
@@ -241,7 +260,8 @@ public enum SnowflakeType {
     TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE),
     TINYINT(Types.TINYINT),
     VARBINARY(Types.VARBINARY),
-    VARCHAR(Types.VARCHAR);
+    VARCHAR(Types.VARCHAR),
+    VECTOR(Types.ARRAY);
 
     private final int type;
     public static final Set<JavaSQLType> ALL_TYPES = new HashSet<>();
@@ -286,6 +306,7 @@ public enum SnowflakeType {
       ALL_TYPES.add(TINYINT);
       ALL_TYPES.add(VARBINARY);
       ALL_TYPES.add(VARCHAR);
+      ALL_TYPES.add(VECTOR);
     }
 
     JavaSQLType(int type) {

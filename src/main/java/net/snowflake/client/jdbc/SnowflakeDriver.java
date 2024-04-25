@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
+import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
 
@@ -28,7 +29,7 @@ public class SnowflakeDriver implements Driver {
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
-  public static String implementVersion = "3.15.1";
+  public static String implementVersion = "3.15.2";
 
   static int majorVersion = 0;
   static int minorVersion = 0;
@@ -54,6 +55,8 @@ public class SnowflakeDriver implements Driver {
      * Get the manifest properties here.
      */
     initializeClientVersionFromManifest();
+
+    SecurityUtil.addBouncyCastleProvider();
   }
 
   /** try to initialize Arrow support if fails, JDBC is going to use the legacy format */

@@ -215,7 +215,7 @@ public class SFSession extends SFBaseSession {
                 loginTimeout,
                 authTimeout,
                 (int) httpClientSocketTimeout.toMillis(),
-                0,
+                maxHttpRetries,
                 getHttpClientKey());
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
@@ -469,6 +469,17 @@ public class SFSession extends SFBaseSession {
         case ENABLE_PATTERN_SEARCH:
           if (propertyValue != null) {
             setEnablePatternSearch(getBooleanValue(propertyValue));
+          }
+          break;
+        case DISABLE_GCS_DEFAULT_CREDENTIALS:
+          if (propertyValue != null) {
+            setDisableGcsDefaultCredentials(getBooleanValue(propertyValue));
+          }
+          break;
+
+        case JDBC_ARROW_TREAT_DECIMAL_AS_INT:
+          if (propertyValue != null) {
+            setJdbcArrowTreatDecimalAsInt(getBooleanValue(propertyValue));
           }
           break;
 

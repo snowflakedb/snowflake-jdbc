@@ -13,11 +13,10 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 public class SQLDataCreationHelper {
   public static <T> T create(Class<T> type) throws SQLException {
     Optional<Supplier<SQLData>> typeFactory = SnowflakeObjectTypeFactories.get(type);
-    SQLData instance =
+    return (T)
         typeFactory
             .map(Supplier::get)
             .orElseGet(() -> createUsingReflection((Class<SQLData>) type));
-    return (T) instance;
   }
 
   private static SQLData createUsingReflection(Class<? extends SQLData> type) {

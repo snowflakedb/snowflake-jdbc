@@ -80,6 +80,12 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   }
 
   @Override
+  public List<FieldMetadata> getColumnFields(int column) throws SQLException {
+    return SnowflakeUtil.mapSFExceptionToSQLException(
+        () -> resultSetMetaData.getColumnFields(column));
+  }
+
+  @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
     logger.debug("public <T> T unwrap(Class<T> iface)", false);
 
@@ -107,10 +113,11 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     int colType = getColumnType(column);
 
     switch (colType) {
-        // Note: SF types ARRAY, GEOGRAPHY, GEOMETRY are also represented as VARCHAR.
+        // Note: SF types GEOGRAPHY, GEOMETRY are also represented as VARCHAR.
       case Types.VARCHAR:
       case Types.CHAR:
       case Types.STRUCT:
+      case Types.ARRAY:
         return true;
 
       case Types.INTEGER:
@@ -248,5 +255,9 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   @Override
   public int getColumnDisplaySize(int column) throws SQLException {
     return resultSetMetaData.getColumnDisplaySize(column);
+  }
+
+  boolean isStructuredTypeColumn(int column) {
+    return resultSetMetaData.isStructuredTypeColumn(column);
   }
 }

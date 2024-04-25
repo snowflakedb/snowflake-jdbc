@@ -32,11 +32,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
       return null;
     } else {
       int val = dateVector.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
-      if (jvmTz == null || sessionTimeZone == null || !useDateFormat) {
-        return ArrowResultUtil.getDate(val);
-      }
-      // Note: use default time zone to match with current getDate() behavior
-      return ArrowResultUtil.getDate(val, jvmTz, sessionTimeZone);
+      return getDate(val, jvmTz, sessionTimeZone, useDateFormat);
     }
   }
 
@@ -121,5 +117,15 @@ public class DateConverter extends AbstractArrowVectorConverter {
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);
+  }
+
+  public static Date getDate(
+      int value, TimeZone jvmTz, TimeZone sessionTimeZone, boolean useDateFormat)
+      throws SFException {
+    if (jvmTz == null || sessionTimeZone == null || !useDateFormat) {
+      return ArrowResultUtil.getDate(value);
+    }
+    // Note: use default time zone to match with current getDate() behavior
+    return ArrowResultUtil.getDate(value, jvmTz, sessionTimeZone);
   }
 }
