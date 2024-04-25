@@ -96,6 +96,7 @@ public class SFSession extends SFBaseSession {
    * <p>Default:300 seconds
    */
   private int loginTimeout = 300;
+
   /**
    * Amount of milliseconds a user is willing to tolerate for network related issues (e.g. HTTP
    * 503/504) or database transient issues (e.g. GS not responding)
@@ -527,7 +528,8 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
-        SFLoggerUtil.isVariableProvided((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD)),
+        SFLoggerUtil.isVariableProvided(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD)),
         connectionPropertiesMap.get(SFSessionProperty.ROLE),
         connectionPropertiesMap.get(SFSessionProperty.DATABASE),
         connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
@@ -536,7 +538,8 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
         getOCSPMode().name(),
         connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
-        SFLoggerUtil.isVariableProvided((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE)),
+        SFLoggerUtil.isVariableProvided(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE)),
         SFLoggerUtil.isVariableProvided(connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY)),
         connectionPropertiesMap.get(SFSessionProperty.DISABLE_SOCKS_PROXY),
         connectionPropertiesMap.get(SFSessionProperty.APPLICATION),
@@ -548,7 +551,8 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.TRACING),
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
-        SFLoggerUtil.isVariableProvided((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
+        SFLoggerUtil.isVariableProvided(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
         connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
 

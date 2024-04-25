@@ -235,7 +235,8 @@ class SessionUtilKeyPair {
       String privateKeyFile, String privateKeyFilePwd)
       throws IOException, PKCSException, OperatorCreationException {
     Path privKeyPath = Paths.get(privateKeyFile);
-    FileUtil.logFileUsage(privKeyPath, "Extract private key from file using Bouncy Castle provider", true);
+    FileUtil.logFileUsage(
+        privKeyPath, "Extract private key from file using Bouncy Castle provider", true);
     PrivateKeyInfo privateKeyInfo = null;
     PEMParser pemParser = new PEMParser(new FileReader(privKeyPath.toFile()));
     Object pemObject = pemParser.readObject();
