@@ -45,7 +45,7 @@ jobs:
             matrix:
                 image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
                 cloud: [ 'AWS' ]
-                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                category: ['TestCategoryResultSet,TestCategoryStatement', 'TestCategoryOthers,TestCategoryCore', 'TestCategoryArrow,TestCategoryLoader,TestCategoryConnection', 'TestCategoryFips']
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
             - uses: actions/checkout@v1
@@ -67,7 +67,7 @@ jobs:
             matrix:
                 image: [ 'jdbc-centos7-openjdk8' ]
                 cloud: [ 'AWS' ]
-                category: ['TestCategoryResultSet,TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader']
+                category: ['TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader,TestCategoryResultSet']
                 is_old_driver: ['true']
         steps:
             - uses: actions/checkout@v1
