@@ -113,7 +113,7 @@ public class HeartbeatBackground implements Runnable {
 
     // schedule a heartbeat task if none exists
     if (heartbeatFuture == null) {
-      logger.debug("schedule heartbeat task", false);
+      logger.debug("Schedule heartbeat task", false);
       this.scheduleHeartbeat();
     }
     // or reschedule if the master token validity has been reduced (rare event)
@@ -155,7 +155,7 @@ public class HeartbeatBackground implements Runnable {
      */
     long initialDelay = Math.max(heartBeatIntervalInSecs - elapsedSecsSinceLastHeartBeat, 0);
 
-    logger.debug("schedule heartbeat task with initial delay of {} seconds", initialDelay);
+    logger.debug("Schedule heartbeat task with initial delay of {} seconds", initialDelay);
 
     // Creates and executes a periodic action to send heartbeats
     this.heartbeatFuture = this.scheduler.schedule(this, initialDelay, TimeUnit.SECONDS);
@@ -191,7 +191,7 @@ public class HeartbeatBackground implements Runnable {
       try {
         session.heartbeat();
       } catch (Throwable ex) {
-        logger.error("heartbeat error - message=" + ex.getMessage(), ex);
+        logger.error("Heartbeat error - message=" + ex.getMessage(), ex);
       }
     }
 
@@ -203,11 +203,11 @@ public class HeartbeatBackground implements Runnable {
     synchronized (this) {
       // schedule next heartbeat
       if (sessions.size() > 0) {
-        logger.debug("schedule next heartbeat run", false);
+        logger.debug("Schedule next heartbeat run", false);
 
         scheduleHeartbeat();
       } else {
-        logger.debug("no need for heartbeat since no more sessions", false);
+        logger.debug("No need for heartbeat since no more sessions", false);
 
         // no need to heartbeat if no more session
         this.heartbeatFuture = null;

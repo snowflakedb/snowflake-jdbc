@@ -23,7 +23,7 @@ public class FileUploader implements Runnable {
   private final File _file;
 
   FileUploader(StreamLoader loader, String stage, File file) {
-    logger.debug("", false);
+    logger.trace("Creating new FileUploader", false);
     _loader = loader;
     _thread = new Thread(this);
     _thread.setName("FileUploaderThread");
@@ -33,7 +33,7 @@ public class FileUploader implements Runnable {
 
   public synchronized void upload() {
     // throttle up will wait if too many files are uploading
-    logger.debug("", false);
+    logger.trace("Creating new FileUploader", false);
     _loader.throttleUp();
     _thread.start();
   }
@@ -169,7 +169,7 @@ public class FileUploader implements Runnable {
   }
 
   public void join() {
-    logger.debug("", false);
+    logger.trace("Joining threads", false);
     try {
       _thread.join(0);
     } catch (InterruptedException ex) {

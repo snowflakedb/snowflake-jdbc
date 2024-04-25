@@ -109,7 +109,7 @@ public class QueryContextCache {
   /** Sync the newPriorityMap with the priorityMap at the end of current round of merge */
   void syncPriorityMap() {
     logger.debug(
-        "syncPriorityMap called priorityMap size = {}, newPrioirtyMap size = {}",
+        "syncPriorityMap called priorityMap size: {}, newPrioirtyMap size: {}",
         priorityMap.size(),
         newPriorityMap.size());
     for (Map.Entry<Long, QueryContextElement> entry : newPriorityMap.entrySet()) {
@@ -125,7 +125,7 @@ public class QueryContextCache {
    */
   void checkCacheCapacity() {
     logger.debug(
-        "checkCacheCapacity() called. treeSet size {} cache capacity {}", treeSet.size(), capacity);
+        "checkCacheCapacity() called. treeSet size: {} cache capacity: {}", treeSet.size(), capacity);
     if (treeSet.size() > capacity) {
       // remove elements based on priority
       while (treeSet.size() > capacity) {
@@ -135,18 +135,18 @@ public class QueryContextCache {
     }
 
     logger.debug(
-        "checkCacheCapacity() returns. treeSet size {} cache capacity {}",
+        "checkCacheCapacity() returns. treeSet size: {} cache capacity: {}",
         treeSet.size(),
         capacity);
   }
 
   /** Clear the cache. */
   public void clearCache() {
-    logger.debug("clearCache() called");
+    logger.trace("clearCache() called");
     idMap.clear();
     priorityMap.clear();
     treeSet.clear();
-    logger.debug("clearCache() returns. Number of entries in cache now {}", treeSet.size());
+    logger.trace("clearCache() returns. Number of entries in cache now: {}", treeSet.size());
   }
 
   /**
@@ -211,7 +211,7 @@ public class QueryContextCache {
           syncPriorityMap();
         }
       } catch (Exception e) {
-        logger.debug("deserializeQueryContextJson: Exception = {}", e.getMessage());
+        logger.debug("deserializeQueryContextJson: Exception: {}", e.getMessage());
         // Not rethrowing. clear the cache as incomplete merge can lead to unexpected behavior.
         clearCache();
       }
@@ -306,7 +306,7 @@ public class QueryContextCache {
         // round of merge.
         syncPriorityMap();
       } catch (Exception e) {
-        logger.debug("deserializeQueryContextDTO: Exception = {}", e.getMessage());
+        logger.debug("deserializeQueryContextDTO: Exception: {}", e.getMessage());
         // Not rethrowing. clear the cache as incomplete merge can lead to unexpected behavior.
         clearCache();
       }
@@ -359,7 +359,7 @@ public class QueryContextCache {
         return queryContextDTO;
 
       } catch (Exception e) {
-        logger.debug("serializQueryContextDTO(): Exception {}", e.getMessage());
+        logger.debug("serializeQueryContextDTO(): Exception: {}", e.getMessage());
         return null;
       }
     }

@@ -203,14 +203,14 @@ public class SessionUtilExternalBrowser {
               0,
               loginInput.getHttpClientSettingsKey());
 
-      logger.debug("authenticator-request response: {}", theString);
+      logger.debug("Authenticator-request response: {}", theString);
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", theString);
+        logger.debug("Response: {}", theString);
         String errorCode = jsonNode.path("code").asText();
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
@@ -241,7 +241,7 @@ public class SessionUtilExternalBrowser {
 
       String consoleLoginUrl = consoleLoginUriBuilder.build().toURL().toString();
 
-      logger.debug("console login url: {}", consoleLoginUrl);
+      logger.debug("Console login url: {}", consoleLoginUrl);
 
       return consoleLoginUrl;
     } catch (Exception ex) {
@@ -267,7 +267,7 @@ public class SessionUtilExternalBrowser {
     try {
       // main procedure
       int port = this.getLocalPort(ssocket);
-      logger.debug("Listening localhost:{}", port);
+      logger.debug("Listening localhost: {}", port);
 
       if (loginInput.getDisableConsoleLogin()) {
         // Access GS to get SSO URL

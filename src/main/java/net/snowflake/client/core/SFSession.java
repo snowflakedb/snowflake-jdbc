@@ -227,7 +227,7 @@ public class SFSession extends SFBaseSession {
       // Get response as JSON and parse it to get the query status
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", response);
+        logger.debug("Response: {}", response);
 
         int errorCode = jsonNode.path("code").asInt();
         // If the error is due to an expired session token, try renewing the session and trying
@@ -991,14 +991,14 @@ public class SFSession extends SFBaseSession {
 
         JsonNode rootNode;
 
-        logger.debug("connection heartbeat response: {}", theResponse);
+        logger.debug("Connection heartbeat response: {}", theResponse);
 
         rootNode = OBJECT_MAPPER.readTree(theResponse);
 
         // check the response to see if it is session expiration response
         if (rootNode != null
             && (Constants.SESSION_EXPIRED_GS_CODE == rootNode.path("code").asInt())) {
-          logger.debug("renew session and retry", false);
+          logger.debug("Renew session and retry", false);
           this.renewSession(prevSessionToken);
           retry = true;
           continue;
@@ -1014,7 +1014,7 @@ public class SFSession extends SFBaseSession {
           throw (SnowflakeSQLException) ex;
         }
 
-        logger.error("unexpected exception", ex);
+        logger.error("Unexpected exception", ex);
 
         throw new SFException(
             ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("unexpected exception", ex));

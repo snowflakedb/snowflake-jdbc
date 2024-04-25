@@ -83,7 +83,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
    */
   @Override
   public boolean next() throws SFException {
-    logger.debug("next called", false);
+    logger.trace("next called", false);
 
     List<Object> nextRowList;
     try {
@@ -98,7 +98,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
     row++;
 
     if (nextRowList == null) {
-      logger.debug("end of result", false);
+      logger.debug("End of result", false);
       return false;
     }
 
@@ -112,7 +112,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
 
   @Override
   protected Object getObjectInternal(int columnIndex) throws SFException {
-    logger.debug("public Object getObjectInternal(int columnIndex)", false);
+    logger.trace("public Object getObjectInternal(int columnIndex)", false);
 
     if (nextRow == null) {
       throw new SFException(ErrorCode.ROW_DOES_NOT_EXIST);

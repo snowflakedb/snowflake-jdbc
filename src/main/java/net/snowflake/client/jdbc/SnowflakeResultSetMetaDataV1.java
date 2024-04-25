@@ -87,7 +87,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("public <T> T unwrap(Class<T> iface)", false);
+    logger.trace("public <T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(
@@ -98,7 +98,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
+    logger.trace("public boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }
@@ -162,7 +162,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public String getColumnClassName(int column) throws SQLException {
-    logger.debug("public String getColumnClassName(int column)", false);
+    logger.trace("public String getColumnClassName(int column)", false);
 
     int type = this.getColumnType(column);
 

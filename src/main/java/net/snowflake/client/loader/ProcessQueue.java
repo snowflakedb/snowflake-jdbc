@@ -406,7 +406,7 @@ public class ProcessQueue implements Runnable {
   }
 
   public void join() {
-    logger.debug("", false);
+    logger.trace("Joining threads", false);
     try {
       _thread.join(0);
     } catch (InterruptedException ex) {

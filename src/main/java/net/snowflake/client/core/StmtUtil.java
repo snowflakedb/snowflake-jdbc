@@ -310,7 +310,7 @@ public class StmtUtil {
       // don't need to execute the query again
       if (stmtInput.retry && stmtInput.prevGetResultURL != null) {
         logger.debug(
-            "retrying statement execution with get result URL: {}", stmtInput.prevGetResultURL);
+            "Retrying statement execution with get result URL: {}", stmtInput.prevGetResultURL);
       } else {
         URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
 
@@ -522,11 +522,11 @@ public class StmtUtil {
           // simulate client pause before trying to fetch result so that
           // we can test query behavior related to disconnected client
           if (stmtInput.injectClientPause != 0) {
-            logger.debug("inject client pause for {} seconds", stmtInput.injectClientPause);
+            logger.debug("Inject client pause for {} seconds", stmtInput.injectClientPause);
             try {
               Thread.sleep(stmtInput.injectClientPause * 1000);
             } catch (InterruptedException ex) {
-              logger.debug("exception encountered while injecting pause", false);
+              logger.debug("Exception encountered while injecting pause", false);
             }
           }
         }
@@ -606,7 +606,7 @@ public class StmtUtil {
   protected static String getQueryResult(String getResultPath, StmtInput stmtInput)
       throws SFException, SnowflakeSQLException {
     HttpGet httpRequest = null;
-    logger.debug("get query result: {}", getResultPath);
+    logger.debug("Get query result: {}", getResultPath);
 
     try {
       URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
@@ -798,7 +798,7 @@ public class StmtUtil {
     // skip commenting prefixed with //
     while (trimmedSql.startsWith("//")) {
       if (logger.isDebugEnabled()) {
-        logger.debug("skipping // comments in: \n{}", trimmedSql);
+        logger.debug("Skipping // comments in: \n{}", trimmedSql);
       }
 
       if (trimmedSql.indexOf('\n') > 0) {

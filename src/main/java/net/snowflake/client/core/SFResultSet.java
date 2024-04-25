@@ -309,7 +309,7 @@ public class SFResultSet extends SFJsonResultSet {
       }
       return true;
     } else {
-      logger.debug("end of result", false);
+      logger.debug("End of result", false);
 
       /*
        * Here we check if the result has been truncated and throw exception if

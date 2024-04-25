@@ -697,7 +697,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String queryId)
       throws SnowflakeSQLException {
     logger.debug(
-        "createUploadStream({}, {}, {}, {}, {}, {}, {}) " + "keySize={}",
+        "createUploadStream({}, {}, {}, {}, {}, {}, {}) " + "keySize: {}",
         this,
         srcFile,
         uploadFromStream,
