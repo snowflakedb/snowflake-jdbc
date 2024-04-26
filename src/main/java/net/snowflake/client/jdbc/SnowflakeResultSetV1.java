@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.ArrowSqlInput;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
@@ -275,6 +276,9 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
       } catch (JsonProcessingException e) {
         throw new SQLException("Struct object couldn't be returned as String.", e);
       }
+    } else if (object instanceof ArrowSqlInput) {
+      throw new SQLException(
+          "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
     } else {
       return object;
     }

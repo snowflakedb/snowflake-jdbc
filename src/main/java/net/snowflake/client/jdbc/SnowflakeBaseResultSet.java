@@ -1368,12 +1368,17 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         Object object = getObject(columnIndex);
         if (object == null) {
           return null;
-        }
-        try {
-          return (T)
-              OBJECT_MAPPER.readValue((String) object, new TypeReference<Map<String, Object>>() {});
-        } catch (JsonProcessingException e) {
-          throw new SQLException("Value couldn't be converted to Map");
+        } else if (object instanceof Map) {
+          throw new SQLException(
+              "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
+        } else {
+          try {
+            return (T)
+                OBJECT_MAPPER.readValue(
+                    (String) object, new TypeReference<Map<String, Object>>() {});
+          } catch (JsonProcessingException e) {
+            throw new SQLException("Value couldn't be converted to Map");
+          }
         }
       }
     }

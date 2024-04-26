@@ -41,8 +41,10 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
 public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
 
