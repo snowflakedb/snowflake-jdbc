@@ -106,40 +106,17 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTestaccount.class)
   public void testClientInfoConnectionProperty() throws Throwable {
-    Connection connection = null;
-    Statement statement = null;
-    ResultSet res = null;
-
-    try {
-      Properties props = new Properties();
-      props.put(
-          "snowflakeClientInfo",
-          "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\","
-              + " \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\","
-              + " \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
-      connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
-      statement = connection.createStatement();
-      res = statement.executeQuery("select current_session_client_info()");
-      assertTrue(res.next());
-      String clientInfoJSONStr = res.getString(1);
-      JsonNode clientInfoJSON = mapper.readTree(clientInfoJSONStr);
-      // assert that spart version and spark app are found
-      assertEquals("spark version mismatch", "3.0.0", clientInfoJSON.get("spark.version").asText());
-      assertEquals(
-          "spark app mismatch",
-          "SnowflakeSourceSuite",
-          clientInfoJSON.get("spark.app.name").asText());
-      connection.close();
-
-      // Test that when session property is set, connection parameter overrides it
-      System.setProperty(
-          "snowflake.client.info",
-          "{\"spark.version\":\"fake\", \"spark.snowflakedb.version\":\"fake\","
-              + " \"spark.app.name\":\"fake\", \"scala.version\":\"fake\","
-              + " \"java.version\":\"fake\", \"snowflakedb.jdbc.version\":\"fake\"}");
-      connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
-      statement = connection.createStatement();
-      res = statement.executeQuery("select current_session_client_info()");
+    String clientInfoJSONStr = null;
+    JsonNode clientInfoJSON = null;
+    Properties props = new Properties();
+    props.put(
+        "snowflakeClientInfo",
+        "{\"spark.version\":\"3.0.0\", \"spark.snowflakedb.version\":\"2.8.5\","
+            + " \"spark.app.name\":\"SnowflakeSourceSuite\", \"scala.version\":\"2.12.11\","
+            + " \"java.version\":\"1.8.0_221\", \"snowflakedb.jdbc.version\":\"3.13.2\"}");
+    try (Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+        Statement statement = connection.createStatement();
+        ResultSet res = statement.executeQuery("select current_session_client_info()")) {
       assertTrue(res.next());
       clientInfoJSONStr = res.getString(1);
       clientInfoJSON = mapper.readTree(clientInfoJSONStr);
@@ -149,21 +126,39 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           "spark app mismatch",
           "SnowflakeSourceSuite",
           clientInfoJSON.get("spark.app.name").asText());
-
-    } finally {
-      System.clearProperty("snowflake.client.info");
-      closeSQLObjects(res, statement, connection);
     }
+
+    // Test that when session property is set, connection parameter overrides it
+    System.setProperty(
+        "snowflake.client.info",
+        "{\"spark.version\":\"fake\", \"spark.snowflakedb.version\":\"fake\","
+            + " \"spark.app.name\":\"fake\", \"scala.version\":\"fake\","
+            + " \"java.version\":\"fake\", \"snowflakedb.jdbc.version\":\"fake\"}");
+    try (Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
+        Statement statement = connection.createStatement();
+        ResultSet res = statement.executeQuery("select current_session_client_info()")) {
+      assertTrue(res.next());
+      clientInfoJSONStr = res.getString(1);
+      clientInfoJSON = mapper.readTree(clientInfoJSONStr);
+      // assert that spart version and spark app are found
+      assertEquals("spark version mismatch", "3.0.0", clientInfoJSON.get("spark.version").asText());
+      assertEquals(
+          "spark app mismatch",
+          "SnowflakeSourceSuite",
+          clientInfoJSON.get("spark.app.name").asText());
+    }
+    System.clearProperty("snowflake.client.info");
   }
 
   @Test
   public void testGetSessionID() throws Throwable {
-    Connection con = getConnection();
-    String sessionID = con.unwrap(SnowflakeConnection.class).getSessionID();
-    Statement statement = con.createStatement();
-    ResultSet rset = statement.executeQuery("select current_session()");
-    rset.next();
-    assertEquals(sessionID, rset.getString(1));
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement();
+        ResultSet rset = statement.executeQuery("select current_session()")) {
+      String sessionID = con.unwrap(SnowflakeConnection.class).getSessionID();
+      assertTrue(rset.next());
+      assertEquals(sessionID, rset.getString(1));
+    }
   }
 
   @Test
@@ -172,32 +167,33 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection()) {
       // assert that threshold equals default 200 from server side
       SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      Statement statement = connection.createStatement();
-      SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
-      statement.execute("CREATE OR REPLACE STAGE PUTTHRESHOLDSTAGE");
-      String command =
-          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @PUTTHRESHOLDSTAGE";
-      SnowflakeFileTransferAgent agent =
-          new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
-      assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
-      // assert that setting threshold via put statement directly sets the big file threshold
-      // appropriately
-      String commandWithPut = command + " threshold=314572800";
-      agent = new SnowflakeFileTransferAgent(commandWithPut, sfSession, sfStatement);
-      assertEquals(314572800, agent.getBigFileThreshold());
-      // assert that after put statement, threshold goes back to previous session threshold
-      agent = new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
-      assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
-      // Attempt to set threshold to an invalid value such as a negative number
-      String commandWithInvalidThreshold = command + " threshold=-1";
-      try {
-        agent = new SnowflakeFileTransferAgent(commandWithInvalidThreshold, sfSession, sfStatement);
+      try (Statement statement = connection.createStatement()) {
+        SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+        statement.execute("CREATE OR REPLACE STAGE PUTTHRESHOLDSTAGE");
+        String command =
+            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @PUTTHRESHOLDSTAGE";
+        SnowflakeFileTransferAgent agent =
+            new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+        assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
+        // assert that setting threshold via put statement directly sets the big file threshold
+        // appropriately
+        String commandWithPut = command + " threshold=314572800";
+        agent = new SnowflakeFileTransferAgent(commandWithPut, sfSession, sfStatement);
+        assertEquals(314572800, agent.getBigFileThreshold());
+        // assert that after put statement, threshold goes back to previous session threshold
+        agent = new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+        assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
+        // Attempt to set threshold to an invalid value such as a negative number
+        String commandWithInvalidThreshold = command + " threshold=-1";
+        try {
+          agent =
+              new SnowflakeFileTransferAgent(commandWithInvalidThreshold, sfSession, sfStatement);
+        }
+        // assert invalid value causes exception to be thrown of type INVALID_PARAMETER_VALUE
+        catch (SQLException e) {
+          assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+        }
       }
-      // assert invalid value causes exception to be thrown of type INVALID_PARAMETER_VALUE
-      catch (SQLException e) {
-        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-      }
-      statement.close();
     } catch (SQLException ex) {
       throw ex;
     }
@@ -207,99 +203,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @Ignore
   public void testGCPFileTransferMetadataWithOneFile() throws Throwable {
-    Connection connection = null;
-    File destFolder = tmpFolder.newFolder();
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    try {
-      connection = getConnection("gcpaccount");
-      Statement statement = connection.createStatement();
-
-      // create a stage to put the file in
-      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
-
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-
-      // Test put file with internal compression
-      String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
-      SnowflakeFileTransferAgent sfAgent1 =
-          new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
-      List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
-
-      String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
-      for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
-        InputStream inputStream = new FileInputStream(srcPath1);
-
-        assert (oneMetadata.isForOneFile());
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
-            SnowflakeFileTransferConfig.Builder.newInstance()
-                .setSnowflakeFileTransferMetadata(oneMetadata)
-                .setUploadStream(inputStream)
-                .setRequireCompress(true)
-                .setNetworkTimeoutInMilli(0)
-                .setOcspMode(OCSPMode.FAIL_OPEN)
-                .build());
-      }
-
-      // Test Put file with external compression
-      String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
-      SnowflakeFileTransferAgent sfAgent2 =
-          new SnowflakeFileTransferAgent(putCommand2, sfSession, new SFStatement(sfSession));
-      List<SnowflakeFileTransferMetadata> metadatas2 = sfAgent2.getFileTransferMetadatas();
-
-      String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);
-      for (SnowflakeFileTransferMetadata oneMetadata : metadatas2) {
-        String gzfilePath = destFolderCanonicalPath + "/tmp_compress.gz";
-        Process p =
-            Runtime.getRuntime()
-                .exec("cp -fr " + srcPath2 + " " + destFolderCanonicalPath + "/tmp_compress");
-        p.waitFor();
-        p = Runtime.getRuntime().exec("gzip " + destFolderCanonicalPath + "/tmp_compress");
-        p.waitFor();
-
-        InputStream gzInputStream = new FileInputStream(gzfilePath);
-        assert (oneMetadata.isForOneFile());
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
-            SnowflakeFileTransferConfig.Builder.newInstance()
-                .setSnowflakeFileTransferMetadata(oneMetadata)
-                .setUploadStream(gzInputStream)
-                .setRequireCompress(false)
-                .setNetworkTimeoutInMilli(0)
-                .setOcspMode(OCSPMode.FAIL_OPEN)
-                .build());
-      }
-
-      // Download two files and verify their content.
-      assertTrue(
-          "Failed to get files",
-          statement.execute(
-              "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
-
-      // Make sure that the downloaded files are EQUAL,
-      // they should be gzip compressed
-      assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
-      assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-        connection.close();
-      }
-    }
-  }
-
-  /** Test API for Kafka connector for FileTransferMetadata */
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testAzureS3FileTransferMetadataWithOneFile() throws Throwable {
-    Connection connection = null;
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
-    List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
-    for (String accountName : supportedAccounts) {
+    try (Connection connection = getConnection("gcpaccount");
+        Statement statement = connection.createStatement()) {
       try {
-        connection = getConnection(accountName);
-        Statement statement = connection.createStatement();
-
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
@@ -315,6 +224,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
           InputStream inputStream = new FileInputStream(srcPath1);
 
+          assert (oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -322,8 +232,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                   .setRequireCompress(true)
                   .setNetworkTimeoutInMilli(0)
                   .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .setSFSession(sfSession)
-                  .setCommand(putCommand1)
                   .build());
         }
 
@@ -344,7 +252,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           p.waitFor();
 
           InputStream gzInputStream = new FileInputStream(gzfilePath);
-
+          assert (oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -352,8 +260,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                   .setRequireCompress(false)
                   .setNetworkTimeoutInMilli(0)
                   .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .setSFSession(sfSession)
-                  .setCommand(putCommand2)
                   .build());
         }
 
@@ -368,9 +274,96 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
         assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
       } finally {
-        if (connection != null) {
-          connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-          connection.close();
+        statement.execute("DROP STAGE if exists " + testStageName);
+      }
+    }
+  }
+
+  /** Test API for Kafka connector for FileTransferMetadata */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testAzureS3FileTransferMetadataWithOneFile() throws Throwable {
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+
+    List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
+      try (Connection connection = getConnection(accountName);
+          Statement statement = connection.createStatement()) {
+        try {
+          // create a stage to put the file in
+          statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+
+          SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+          // Test put file with internal compression
+          String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
+          SnowflakeFileTransferAgent sfAgent1 =
+              new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
+          List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
+
+          String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
+          for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+            InputStream inputStream = new FileInputStream(srcPath1);
+
+            SnowflakeFileTransferAgent.uploadWithoutConnection(
+                SnowflakeFileTransferConfig.Builder.newInstance()
+                    .setSnowflakeFileTransferMetadata(oneMetadata)
+                    .setUploadStream(inputStream)
+                    .setRequireCompress(true)
+                    .setNetworkTimeoutInMilli(0)
+                    .setOcspMode(OCSPMode.FAIL_OPEN)
+                    .setSFSession(sfSession)
+                    .setCommand(putCommand1)
+                    .build());
+          }
+
+          // Test Put file with external compression
+          String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
+          SnowflakeFileTransferAgent sfAgent2 =
+              new SnowflakeFileTransferAgent(putCommand2, sfSession, new SFStatement(sfSession));
+          List<SnowflakeFileTransferMetadata> metadatas2 = sfAgent2.getFileTransferMetadatas();
+
+          String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);
+          for (SnowflakeFileTransferMetadata oneMetadata : metadatas2) {
+            String gzfilePath = destFolderCanonicalPath + "/tmp_compress.gz";
+            Process p =
+                Runtime.getRuntime()
+                    .exec("cp -fr " + srcPath2 + " " + destFolderCanonicalPath + "/tmp_compress");
+            p.waitFor();
+            p = Runtime.getRuntime().exec("gzip " + destFolderCanonicalPath + "/tmp_compress");
+            p.waitFor();
+
+            InputStream gzInputStream = new FileInputStream(gzfilePath);
+
+            SnowflakeFileTransferAgent.uploadWithoutConnection(
+                SnowflakeFileTransferConfig.Builder.newInstance()
+                    .setSnowflakeFileTransferMetadata(oneMetadata)
+                    .setUploadStream(gzInputStream)
+                    .setRequireCompress(false)
+                    .setNetworkTimeoutInMilli(0)
+                    .setOcspMode(OCSPMode.FAIL_OPEN)
+                    .setSFSession(sfSession)
+                    .setCommand(putCommand2)
+                    .build());
+          }
+
+          // Download two files and verify their content.
+          assertTrue(
+              "Failed to get files",
+              statement.execute(
+                  "GET @"
+                      + testStageName
+                      + " 'file://"
+                      + destFolderCanonicalPath
+                      + "/' parallel=8"));
+
+          // Make sure that the downloaded files are EQUAL,
+          // they should be gzip compressed
+          assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+          assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+        } finally {
+          statement.execute("DROP STAGE if exists " + testStageName);
         }
       }
     }
@@ -380,45 +373,42 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGCPFileTransferMetadataNegativeOnlySupportPut() throws Throwable {
-    Connection connection = null;
     int expectExceptionCount = 1;
     int actualExceptionCount = -1;
-    try {
-      connection = getConnection("gcpaccount");
-      Statement statement = connection.createStatement();
+    try (Connection connection = getConnection("gcpaccount");
+        Statement statement = connection.createStatement()) {
+      try {
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-      // create a stage to put the file in
-      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+        // Put one file to the stage
+        String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
+        statement.execute("put file://" + srcPath + " @" + testStageName);
 
-      // Put one file to the stage
-      String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
-      statement.execute("put file://" + srcPath + " @" + testStageName);
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        File destFolder = tmpFolder.newFolder();
+        String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
-      File destFolder = tmpFolder.newFolder();
-      String destFolderCanonicalPath = destFolder.getCanonicalPath();
+        String getCommand = "get @" + testStageName + " file://" + destFolderCanonicalPath;
 
-      String getCommand = "get @" + testStageName + " file://" + destFolderCanonicalPath;
+        // The GET can be executed in normal way.
+        statement.execute(getCommand);
 
-      // The GET can be executed in normal way.
-      statement.execute(getCommand);
+        // Start negative test for GET.
+        SnowflakeFileTransferAgent sfAgent =
+            new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
 
-      // Start negative test for GET.
-      SnowflakeFileTransferAgent sfAgent =
-          new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
+        // Below function call should fail.
+        actualExceptionCount = 0;
+        sfAgent.getFileTransferMetadatas();
+        fail("Above function should raise exception for GET");
 
-      // Below function call should fail.
-      actualExceptionCount = 0;
-      sfAgent.getFileTransferMetadatas();
-      fail("Above function should raise exception for GET");
-    } catch (Exception ex) {
-      System.out.println("Negative test to hit expected exception: " + ex.getMessage());
-      actualExceptionCount++;
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-        connection.close();
+      } catch (Exception ex) {
+        System.out.println("Negative test to hit expected exception: " + ex.getMessage());
+        actualExceptionCount++;
+      } finally {
+        statement.execute("DROP STAGE if exists " + testStageName);
       }
     }
     assertEquals(expectExceptionCount, actualExceptionCount);
@@ -494,20 +484,17 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutOverwriteFalseNoDigest() throws Throwable {
-    Connection connection = null;
-    Statement statement = null;
 
     // create 2 files: an original, and one that will overwrite the original
     File file1 = tmpFolder.newFile("testfile.csv");
-    BufferedWriter bw = new BufferedWriter(new FileWriter(file1));
-    bw.write("Writing original file content. This should get overwritten.");
-    bw.close();
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(file1))) {
+      bw.write("Writing original file content. This should get overwritten.");
+    }
 
     File file2 = tmpFolder2.newFile("testfile.csv");
-    bw = new BufferedWriter(new FileWriter(file2));
-    bw.write("This is all new! This should be the result of the overwriting.");
-    bw.close();
-
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(file2))) {
+      bw.write("This is all new! This should be the result of the overwriting.");
+    }
     String sourceFilePathOriginal = file1.getCanonicalPath();
     String sourceFilePathOverwrite = file2.getCanonicalPath();
 
@@ -520,50 +507,48 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
-      try {
-        connection = getConnection(accounts.get(i), paramProperties);
+      try (Connection connection = getConnection(accounts.get(i), paramProperties);
+          Statement statement = connection.createStatement()) {
+        try {
+          // create a stage to put the file in
+          statement.execute("CREATE OR REPLACE STAGE testing_stage");
+          assertTrue(
+              "Failed to put a file",
+              statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"));
+          // check that file exists in stage after PUT
+          findFile(statement, "ls @testing_stage/");
 
-        statement = connection.createStatement();
+          // put another file in same stage with same filename with overwrite = true
+          assertTrue(
+              "Failed to put a file",
+              statement.execute(
+                  "PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=false"));
 
-        // create a stage to put the file in
-        statement.execute("CREATE OR REPLACE STAGE testing_stage");
-        assertTrue(
-            "Failed to put a file",
-            statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"));
-        // check that file exists in stage after PUT
-        findFile(statement, "ls @testing_stage/");
+          // check that file exists in stage after PUT
+          findFile(statement, "ls @testing_stage/");
 
-        // put another file in same stage with same filename with overwrite = true
-        assertTrue(
-            "Failed to put a file",
-            statement.execute(
-                "PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=false"));
+          // get file from new stage
+          assertTrue(
+              "Failed to get files",
+              statement.execute(
+                  "GET @testing_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
 
-        // check that file exists in stage after PUT
-        findFile(statement, "ls @testing_stage/");
+          // Make sure that the downloaded file exists; it should be gzip compressed
+          File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
+          assertTrue(downloaded.exists());
 
-        // get file from new stage
-        assertTrue(
-            "Failed to get files",
-            statement.execute(
-                "GET @testing_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+          // unzip the file
+          Process p =
+              Runtime.getRuntime()
+                  .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
+          p.waitFor();
 
-        // Make sure that the downloaded file exists; it should be gzip compressed
-        File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
-        assertTrue(downloaded.exists());
-
-        // unzip the file
-        Process p =
-            Runtime.getRuntime()
-                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
-        p.waitFor();
-
-        // 2nd file should never be uploaded
-        File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
-        assertTrue(FileUtils.contentEqualsIgnoreEOL(file1, unzipped, null));
-      } finally {
-        statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
-        statement.close();
+          // 2nd file should never be uploaded
+          File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
+          assertTrue(FileUtils.contentEqualsIgnoreEOL(file1, unzipped, null));
+        } finally {
+          statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
+        }
       }
     }
   }
@@ -576,14 +561,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutDisable() throws Throwable {
-    Connection connection = null;
-    Statement statement = null;
 
     // create a file
     File file = tmpFolder.newFile("testfile99.csv");
-    BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-    bw.write("This content won't be uploaded as PUT is disabled.");
-    bw.close();
+    try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+      bw.write("This content won't be uploaded as PUT is disabled.");
+    }
 
     String sourceFilePathOriginal = file.getCanonicalPath();
 
@@ -592,19 +575,14 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
-      try {
-        connection = getConnection(accounts.get(i), paramProperties);
-
-        statement = connection.createStatement();
-
+      try (Connection connection = getConnection(accounts.get(i), paramProperties);
+          Statement statement = connection.createStatement()) {
         statement.execute("PUT file://" + sourceFilePathOriginal + " @testPutGet_disable_stage");
 
         assertTrue("Shouldn't come here", false);
       } catch (Exception ex) {
         // Expected
         assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
-      } finally {
-        statement.close();
       }
     }
   }
@@ -617,8 +595,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetDisable() throws Throwable {
-    Connection connection = null;
-    Statement statement = null;
 
     // create a folder
     File destFolder = tmpFolder.newFolder();
@@ -629,10 +605,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
-      try {
-        connection = getConnection(accounts.get(i), paramProperties);
-
-        statement = connection.createStatement();
+      try (Connection connection = getConnection(accounts.get(i), paramProperties);
+          Statement statement = connection.createStatement()) {
 
         statement.execute(
             "GET @testPutGet_disable_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
@@ -641,8 +615,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       } catch (Exception ex) {
         // Expected
         assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
-      } finally {
-        statement.close();
       }
     }
   }
@@ -653,161 +625,164 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testSnow76376() throws Throwable {
-    Connection connection = null;
-    PreparedStatement preparedStatement = null;
-    Statement regularStatement = null;
-    ResultSet resultSet = null;
+    try (Connection connection = getConnection();
+        Statement regularStatement = connection.createStatement()) {
+      try {
+        regularStatement.execute(
+            "create or replace table t(a int) as select * from values" + "(1),(2),(8),(10)");
 
-    try {
-      connection = getConnection();
-      regularStatement = connection.createStatement();
-      regularStatement.execute(
-          "create or replace table t(a int) as select * from values" + "(1),(2),(8),(10)");
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("SELECT * FROM t " + "ORDER BY a LIMIT " + "? OFFSET ?")) {
 
-      preparedStatement =
-          connection.prepareStatement("SELECT * FROM t " + "ORDER BY a LIMIT " + "? OFFSET ?");
+          ////////////////////////////
+          // both NULL
+          preparedStatement.setNull(1, 4); // int
+          preparedStatement.setNull(2, 4); // int
 
-      ////////////////////////////
-      // both NULL
-      preparedStatement.setNull(1, 4); // int
-      preparedStatement.setNull(2, 4); // int
+          if (preparedStatement.execute()) {
+            try (ResultSet resultSet = preparedStatement.getResultSet()) {
+              assertTrue(resultSet.next());
+              assertEquals(1, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(2, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(8, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(10, resultSet.getInt(1));
+            }
+          } else {
+            fail("Could not execute preparedStatement with OFFSET and LIMIT set " + "to NULL");
+          }
 
-      if (preparedStatement.execute()) {
-        resultSet = preparedStatement.getResultSet();
-        resultSet.next();
-        assertEquals(1, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(2, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(8, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(10, resultSet.getInt(1));
-      } else {
-        fail("Could not execute preparedStatement with OFFSET and LIMIT set " + "to NULL");
-      }
+          ////////////////////////////
+          // both empty string
+          preparedStatement.setString(1, "");
+          preparedStatement.setString(2, "");
 
-      ////////////////////////////
-      // both empty string
-      preparedStatement.setString(1, "");
-      preparedStatement.setString(2, "");
+          if (preparedStatement.execute()) {
+            try (ResultSet resultSet = preparedStatement.getResultSet()) {
+              assertTrue(resultSet.next());
+              assertEquals(1, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(2, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(8, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(10, resultSet.getInt(1));
+            }
+          } else {
+            fail(
+                "Could not execute preparedStatement with OFFSET and LIMIT set "
+                    + "to empty string");
+          }
 
-      if (preparedStatement.execute()) {
-        resultSet = preparedStatement.getResultSet();
-        resultSet.next();
-        assertEquals(1, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(2, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(8, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(10, resultSet.getInt(1));
-      } else {
-        fail("Could not execute preparedStatement with OFFSET and LIMIT set " + "to empty string");
-      }
+          ////////////////////////////
+          // only LIMIT NULL
+          preparedStatement.setNull(1, 4); // int
+          preparedStatement.setInt(2, 2);
 
-      ////////////////////////////
-      // only LIMIT NULL
-      preparedStatement.setNull(1, 4); // int
-      preparedStatement.setInt(2, 2);
+          if (preparedStatement.execute()) {
+            try (ResultSet resultSet = preparedStatement.getResultSet()) {
+              assertTrue(resultSet.next());
+              assertEquals(8, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(10, resultSet.getInt(1));
+            }
+          } else {
+            fail("Could not execute preparedStatement with LIMIT set to NULL");
+          }
 
-      if (preparedStatement.execute()) {
-        resultSet = preparedStatement.getResultSet();
-        resultSet.next();
-        assertEquals(8, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(10, resultSet.getInt(1));
-      } else {
-        fail("Could not execute preparedStatement with LIMIT set to NULL");
-      }
+          ////////////////////////////
+          // only LIMIT empty string
+          preparedStatement.setString(1, "");
+          preparedStatement.setInt(2, 2);
 
-      ////////////////////////////
-      // only LIMIT empty string
-      preparedStatement.setString(1, "");
-      preparedStatement.setInt(2, 2);
+          if (preparedStatement.execute()) {
+            try (ResultSet resultSet = preparedStatement.getResultSet()) {
+              assertTrue(resultSet.next());
+              assertEquals(8, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(10, resultSet.getInt(1));
+            }
+          } else {
+            fail("Could not execute preparedStatement with LIMIT set to empty " + "string");
+          }
 
-      if (preparedStatement.execute()) {
-        resultSet = preparedStatement.getResultSet();
-        resultSet.next();
-        assertEquals(8, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(10, resultSet.getInt(1));
-      } else {
-        fail("Could not execute preparedStatement with LIMIT set to empty " + "string");
-      }
+          ////////////////////////////
+          // only OFFSET NULL
+          preparedStatement.setInt(1, 3); // int
+          preparedStatement.setNull(2, 4);
 
-      ////////////////////////////
-      // only OFFSET NULL
-      preparedStatement.setInt(1, 3); // int
-      preparedStatement.setNull(2, 4);
+          if (preparedStatement.execute()) {
+            try (ResultSet resultSet = preparedStatement.getResultSet()) {
+              assertTrue(resultSet.next());
+              assertEquals(1, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(2, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(8, resultSet.getInt(1));
+            }
+          } else {
+            fail("Could not execute preparedStatement with OFFSET set to NULL");
+          }
 
-      if (preparedStatement.execute()) {
-        resultSet = preparedStatement.getResultSet();
-        resultSet.next();
-        assertEquals(1, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(2, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(8, resultSet.getInt(1));
-      } else {
-        fail("Could not execute preparedStatement with OFFSET set to NULL");
-      }
+          ////////////////////////////
+          // only OFFSET empty string
+          preparedStatement.setInt(1, 3); // int
+          preparedStatement.setNull(2, 4);
 
-      ////////////////////////////
-      // only OFFSET empty string
-      preparedStatement.setInt(1, 3); // int
-      preparedStatement.setNull(2, 4);
-
-      if (preparedStatement.execute()) {
-        resultSet = preparedStatement.getResultSet();
-        resultSet.next();
-        assertEquals(1, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(2, resultSet.getInt(1));
-        resultSet.next();
-        assertEquals(8, resultSet.getInt(1));
-      } else {
-        fail("Could not execute preparedStatement with OFFSET set to empty " + "string");
-      }
-
-      ////////////////////////////
-      // OFFSET and LIMIT NULL for constant select query
-      preparedStatement =
-          connection.prepareStatement("SELECT 1 FROM t " + "ORDER BY a LIMIT " + "? OFFSET ?");
-      preparedStatement.setNull(1, 4); // int
-      preparedStatement.setNull(2, 4); // int
-      if (preparedStatement.execute()) {
-        resultSet = preparedStatement.getResultSet();
-        for (int i = 0; i < 4; i++) {
-          resultSet.next();
-          assertEquals(1, resultSet.getInt(1));
+          if (preparedStatement.execute()) {
+            try (ResultSet resultSet = preparedStatement.getResultSet()) {
+              assertTrue(resultSet.next());
+              assertEquals(1, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(2, resultSet.getInt(1));
+              assertTrue(resultSet.next());
+              assertEquals(8, resultSet.getInt(1));
+            }
+          } else {
+            fail("Could not execute preparedStatement with OFFSET set to empty " + "string");
+          }
         }
-      } else {
-        fail("Could not execute constant preparedStatement with OFFSET and " + "LIMIT set to NULL");
-      }
+        ////////////////////////////
+        // OFFSET and LIMIT NULL for constant select query
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("SELECT 1 FROM t " + "ORDER BY a LIMIT " + "? OFFSET ?")) {
+          preparedStatement.setNull(1, 4); // int
+          preparedStatement.setNull(2, 4); // int
+          if (preparedStatement.execute()) {
+            try (ResultSet resultSet = preparedStatement.getResultSet()) {
+              for (int i = 0; i < 4; i++) {
+                assertTrue(resultSet.next());
+                assertEquals(1, resultSet.getInt(1));
+              }
+            }
+          } else {
+            fail(
+                "Could not execute constant preparedStatement with OFFSET and "
+                    + "LIMIT set to NULL");
+          }
 
-      ////////////////////////////
-      // OFFSET and LIMIT empty string for constant select query
-      preparedStatement.setString(1, ""); // int
-      preparedStatement.setString(2, ""); // int
-      if (preparedStatement.execute()) {
-        resultSet = preparedStatement.getResultSet();
-        for (int i = 0; i < 4; i++) {
-          resultSet.next();
-          assertEquals(1, resultSet.getInt(1));
+          ////////////////////////////
+          // OFFSET and LIMIT empty string for constant select query
+          preparedStatement.setString(1, ""); // int
+          preparedStatement.setString(2, ""); // int
+          if (preparedStatement.execute()) {
+            try (ResultSet resultSet = preparedStatement.getResultSet()) {
+              for (int i = 0; i < 4; i++) {
+                assertTrue(resultSet.next());
+                assertEquals(1, resultSet.getInt(1));
+              }
+            }
+          } else {
+            fail(
+                "Could not execute constant preparedStatement with OFFSET and "
+                    + "LIMIT set to empty string");
+          }
         }
-      } else {
-        fail(
-            "Could not execute constant preparedStatement with OFFSET and "
-                + "LIMIT set to empty string");
-      }
-
-    } finally {
-      if (regularStatement != null) {
+      } finally {
         regularStatement.execute("drop table t");
-        regularStatement.close();
       }
-
-      closeSQLObjects(resultSet, preparedStatement, connection);
     }
   }
 
@@ -820,46 +795,37 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGeoOutputTypes() throws Throwable {
-    Connection connection = null;
-    Statement regularStatement = null;
 
-    try {
-      Properties paramProperties = new Properties();
+    Properties paramProperties = new Properties();
 
-      paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
-      paramProperties.put("ENABLE_GEOGRAPHY_TYPE", true);
+    paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
+    paramProperties.put("ENABLE_GEOGRAPHY_TYPE", true);
 
-      connection = getConnection(paramProperties);
+    try (Connection connection = getConnection(paramProperties);
+        Statement regularStatement = connection.createStatement()) {
+      try {
+        regularStatement.execute("create or replace table t_geo(geo geography);");
 
-      regularStatement = connection.createStatement();
+        regularStatement.execute(
+            "insert into t_geo values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
 
-      regularStatement.execute("create or replace table t_geo(geo geography);");
+        testGeoOutputTypeSingle(
+            regularStatement, false, "geoJson", "OBJECT", "java.lang.String", Types.VARCHAR);
 
-      regularStatement.execute("insert into t_geo values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
+        testGeoOutputTypeSingle(
+            regularStatement, true, "geoJson", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
 
-      testGeoOutputTypeSingle(
-          regularStatement, false, "geoJson", "OBJECT", "java.lang.String", Types.VARCHAR);
+        testGeoOutputTypeSingle(
+            regularStatement, false, "wkt", "VARCHAR", "java.lang.String", Types.VARCHAR);
 
-      testGeoOutputTypeSingle(
-          regularStatement, true, "geoJson", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
+        testGeoOutputTypeSingle(
+            regularStatement, true, "wkt", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
 
-      testGeoOutputTypeSingle(
-          regularStatement, false, "wkt", "VARCHAR", "java.lang.String", Types.VARCHAR);
+        testGeoOutputTypeSingle(regularStatement, false, "wkb", "BINARY", "[B", Types.BINARY);
 
-      testGeoOutputTypeSingle(
-          regularStatement, true, "wkt", "GEOGRAPHY", "java.lang.String", Types.VARCHAR);
-
-      testGeoOutputTypeSingle(regularStatement, false, "wkb", "BINARY", "[B", Types.BINARY);
-
-      testGeoOutputTypeSingle(regularStatement, true, "wkb", "GEOGRAPHY", "[B", Types.BINARY);
-    } finally {
-      if (regularStatement != null) {
+        testGeoOutputTypeSingle(regularStatement, true, "wkb", "GEOGRAPHY", "[B", Types.BINARY);
+      } finally {
         regularStatement.execute("drop table t_geo");
-        regularStatement.close();
-      }
-
-      if (connection != null) {
-        connection.close();
       }
     }
   }
@@ -872,16 +838,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       String expectedColumnClassName,
       int expectedColumnType)
       throws Throwable {
-    ResultSet resultSet = null;
 
-    try {
-      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+    regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
 
-      regularStatement.execute(
-          "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
+    regularStatement.execute(
+        "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
 
-      resultSet = regularStatement.executeQuery("select * from t_geo");
-
+    try (ResultSet resultSet = regularStatement.executeQuery("select * from t_geo")) {
       ResultSetMetaData metadata = resultSet.getMetaData();
 
       assertEquals(1, metadata.getColumnCount());
@@ -890,51 +853,34 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
       assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
       assertEquals(expectedColumnType, metadata.getColumnType(1));
-
-    } finally {
-      if (resultSet != null) {
-        resultSet.close();
-      }
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGeoMetadata() throws Throwable {
-    Connection connection = null;
-    Statement regularStatement = null;
+    Properties paramProperties = new Properties();
 
-    try {
-      Properties paramProperties = new Properties();
+    paramProperties.put("ENABLE_FIX_182763", true);
 
-      paramProperties.put("ENABLE_FIX_182763", true);
+    try (Connection connection = getConnection(paramProperties);
+        Statement regularStatement = connection.createStatement()) {
+      try {
+        regularStatement.execute("create or replace table t_geo(geo geography);");
 
-      connection = getConnection(paramProperties);
+        testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
 
-      regularStatement = connection.createStatement();
+        testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
 
-      regularStatement.execute("create or replace table t_geo(geo geography);");
+        testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
 
-      testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+        testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
 
-      testGeoMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
+        testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
 
-      testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
-
-      testGeoMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
-
-      testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
-
-      testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
-
-    } finally {
-      if (regularStatement != null) {
+        testGeoMetadataSingle(connection, regularStatement, "wkb", Types.BINARY);
+      } finally {
         regularStatement.execute("drop table t_geo");
-        regularStatement.close();
-      }
-
-      if (connection != null) {
-        connection.close();
       }
     }
   }
@@ -945,13 +891,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       String outputFormat,
       int expectedColumnType)
       throws Throwable {
-    ResultSet resultSet = null;
 
-    try {
-      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+    regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
 
-      DatabaseMetaData md = connection.getMetaData();
-      resultSet = md.getColumns(null, null, "T_GEO", null);
+    DatabaseMetaData md = connection.getMetaData();
+    try (ResultSet resultSet = md.getColumns(null, null, "T_GEO", null)) {
       ResultSetMetaData metadata = resultSet.getMetaData();
 
       assertEquals(24, metadata.getColumnCount());
@@ -960,48 +904,32 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
       assertEquals(expectedColumnType, resultSet.getInt(5));
       assertEquals("GEOGRAPHY", resultSet.getString(6));
-    } finally {
-      if (resultSet != null) {
-        resultSet.close();
-      }
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGeometryOutputTypes() throws Throwable {
-    Connection connection = null;
-    Statement regularStatement = null;
+    Properties paramProperties = new Properties();
 
-    try {
-      Properties paramProperties = new Properties();
+    paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
+    paramProperties.put("ENABLE_GEOMETRY_TYPE", true);
 
-      paramProperties.put("ENABLE_USER_DEFINED_TYPE_EXPANSION", true);
-      paramProperties.put("ENABLE_GEOMETRY_TYPE", true);
+    try (Connection connection = getConnection(paramProperties);
+        Statement regularStatement = connection.createStatement()) {
+      try {
+        regularStatement.execute("create or replace table t_geo2(geo geometry);");
 
-      connection = getConnection(paramProperties);
+        regularStatement.execute(
+            "insert into t_geo2 values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
 
-      regularStatement = connection.createStatement();
+        testGeometryOutputTypeSingle(
+            regularStatement, true, "geoJson", "GEOMETRY", "java.lang.String", Types.VARCHAR);
 
-      regularStatement.execute("create or replace table t_geo2(geo geometry);");
-
-      regularStatement.execute(
-          "insert into t_geo2 values ('POINT(0 0)'), ('LINESTRING(1 1, 2 2)')");
-
-      testGeometryOutputTypeSingle(
-          regularStatement, true, "geoJson", "GEOMETRY", "java.lang.String", Types.VARCHAR);
-
-      testGeometryOutputTypeSingle(
-          regularStatement, true, "wkt", "GEOMETRY", "java.lang.String", Types.VARCHAR);
-
-    } finally {
-      if (regularStatement != null) {
+        testGeometryOutputTypeSingle(
+            regularStatement, true, "wkt", "GEOMETRY", "java.lang.String", Types.VARCHAR);
+      } finally {
         regularStatement.execute("drop table t_geo2");
-        regularStatement.close();
-      }
-
-      if (connection != null) {
-        connection.close();
       }
     }
   }
@@ -1014,15 +942,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       String expectedColumnClassName,
       int expectedColumnType)
       throws Throwable {
-    ResultSet resultSet = null;
 
-    try {
-      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+    regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
 
-      regularStatement.execute(
-          "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
+    regularStatement.execute(
+        "alter session set ENABLE_UDT_EXTERNAL_TYPE_NAMES=" + enableExternalTypeNames);
 
-      resultSet = regularStatement.executeQuery("select * from t_geo2");
+    try (ResultSet resultSet = regularStatement.executeQuery("select * from t_geo2")) {
 
       ResultSetMetaData metadata = resultSet.getMetaData();
 
@@ -1032,41 +958,25 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
       assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
       assertEquals(expectedColumnType, metadata.getColumnType(1));
-
-    } finally {
-      if (resultSet != null) {
-        resultSet.close();
-      }
     }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGeometryMetadata() throws Throwable {
-    Connection connection = null;
-    Statement regularStatement = null;
 
-    try {
-      Properties paramProperties = new Properties();
+    Properties paramProperties = new Properties();
 
-      connection = getConnection(paramProperties);
+    try (Connection connection = getConnection(paramProperties);
+        Statement regularStatement = connection.createStatement()) {
+      try {
+        regularStatement.execute("create or replace table t_geo2(geo geometry);");
 
-      regularStatement = connection.createStatement();
+        testGeometryMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
 
-      regularStatement.execute("create or replace table t_geo2(geo geometry);");
-
-      testGeometryMetadataSingle(connection, regularStatement, "geoJson", Types.VARCHAR);
-
-      testGeometryMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
-
-    } finally {
-      if (regularStatement != null) {
+        testGeometryMetadataSingle(connection, regularStatement, "wkt", Types.VARCHAR);
+      } finally {
         regularStatement.execute("drop table t_geo2");
-        regularStatement.close();
-      }
-
-      if (connection != null) {
-        connection.close();
       }
     }
   }
@@ -1077,13 +987,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       String outputFormat,
       int expectedColumnType)
       throws Throwable {
-    ResultSet resultSet = null;
 
-    try {
-      regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
+    regularStatement.execute("alter session set GEOGRAPHY_OUTPUT_FORMAT='" + outputFormat + "'");
 
-      DatabaseMetaData md = connection.getMetaData();
-      resultSet = md.getColumns(null, null, "T_GEO2", null);
+    DatabaseMetaData md = connection.getMetaData();
+    try (ResultSet resultSet = md.getColumns(null, null, "T_GEO2", null)) {
       ResultSetMetaData metadata = resultSet.getMetaData();
 
       assertEquals(24, metadata.getColumnCount());
@@ -1092,10 +1000,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
       assertEquals(expectedColumnType, resultSet.getInt(5));
       assertEquals("GEOMETRY", resultSet.getString(6));
-    } finally {
-      if (resultSet != null) {
-        resultSet.close();
-      }
     }
   }
 
@@ -1183,77 +1087,75 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   public void testPutGetLargeFileGCSDownscopedCredential() throws Throwable {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
-    Connection connection = getConnection("gcpaccount", paramProperties);
-    Statement statement = connection.createStatement();
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
+        File destFolder = tmpFolder.newFolder();
+        String destFolderCanonicalPath = destFolder.getCanonicalPath();
+        String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-    File destFolder = tmpFolder.newFolder();
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+        File largeTempFile = tmpFolder.newFile("largeFile.csv");
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile))) {
+          bw.write("Creating large test file for GCP PUT/GET test");
+          bw.write(System.lineSeparator());
+          bw.write("Creating large test file for GCP PUT/GET test");
+          bw.write(System.lineSeparator());
+        }
+        File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
 
-    File largeTempFile = tmpFolder.newFile("largeFile.csv");
-    BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile));
-    bw.write("Creating large test file for GCP PUT/GET test");
-    bw.write(System.lineSeparator());
-    bw.write("Creating large test file for GCP PUT/GET test");
-    bw.write(System.lineSeparator());
-    bw.close();
-    File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+        String sourceFilePath = largeTempFile.getCanonicalPath();
 
-    String sourceFilePath = largeTempFile.getCanonicalPath();
+        // copy info from 1 file to another and continue doubling file size until we reach ~1.5GB,
+        // which is a large file
+        for (int i = 0; i < 12; i++) {
+          copyContentFrom(largeTempFile, largeTempFile2);
+          copyContentFrom(largeTempFile2, largeTempFile);
+        }
 
-    try {
-      // copy info from 1 file to another and continue doubling file size until we reach ~1.5GB,
-      // which is a large file
-      for (int i = 0; i < 12; i++) {
-        copyContentFrom(largeTempFile, largeTempFile2);
-        copyContentFrom(largeTempFile2, largeTempFile);
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE largefile_stage");
+        assertTrue(
+            "Failed to put a file",
+            statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
+
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @largefile_stage/");
+
+        // create a new table with columns matching CSV file
+        statement.execute("create or replace table large_table (colA string)");
+        // copy rows from file into table
+        statement.execute("copy into large_table from @largefile_stage/largeFile.csv.gz");
+        // copy back from table into different stage
+        statement.execute("create or replace stage extra_stage");
+        statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
+
+        // get file from new stage
+        assertTrue(
+            "Failed to get files",
+            statement.execute(
+                "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+
+        // Make sure that the downloaded file exists; it should be gzip compressed
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
+        assert (downloaded.exists());
+
+        // unzip the file
+        Process p =
+            Runtime.getRuntime()
+                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
+        p.waitFor();
+
+        // compare the original file with the file that's been uploaded, copied into a table, copied
+        // back into a stage,
+        // downloaded, and unzipped
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
+        assert (largeTempFile.length() == unzipped.length());
+        assert (FileUtils.contentEquals(largeTempFile, unzipped));
+      } finally {
+        statement.execute("DROP STAGE IF EXISTS largefile_stage");
+        statement.execute("DROP STAGE IF EXISTS extra_stage");
+        statement.execute("DROP TABLE IF EXISTS large_table");
       }
-
-      // create a stage to put the file in
-      statement.execute("CREATE OR REPLACE STAGE largefile_stage");
-      assertTrue(
-          "Failed to put a file",
-          statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
-
-      // check that file exists in stage after PUT
-      findFile(statement, "ls @largefile_stage/");
-
-      // create a new table with columns matching CSV file
-      statement.execute("create or replace table large_table (colA string)");
-      // copy rows from file into table
-      statement.execute("copy into large_table from @largefile_stage/largeFile.csv.gz");
-      // copy back from table into different stage
-      statement.execute("create or replace stage extra_stage");
-      statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
-
-      // get file from new stage
-      assertTrue(
-          "Failed to get files",
-          statement.execute(
-              "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
-
-      // Make sure that the downloaded file exists; it should be gzip compressed
-      File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-      assert (downloaded.exists());
-
-      // unzip the file
-      Process p =
-          Runtime.getRuntime()
-              .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-      p.waitFor();
-
-      // compare the original file with the file that's been uploaded, copied into a table, copied
-      // back into a stage,
-      // downloaded, and unzipped
-      File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
-      assert (largeTempFile.length() == unzipped.length());
-      assert (FileUtils.contentEquals(largeTempFile, unzipped));
-    } finally {
-      statement.execute("DROP STAGE IF EXISTS largefile_stage");
-      statement.execute("DROP STAGE IF EXISTS extra_stage");
-      statement.execute("DROP TABLE IF EXISTS large_table");
-      statement.close();
-      connection.close();
     }
   }
 
@@ -1261,77 +1163,75 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutGetLargeFileAzure() throws Throwable {
     Properties paramProperties = new Properties();
-    Connection connection = getConnection("azureaccount", paramProperties);
-    Statement statement = connection.createStatement();
+    try (Connection connection = getConnection("azureaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
+        File destFolder = tmpFolder.newFolder();
+        String destFolderCanonicalPath = destFolder.getCanonicalPath();
+        String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-    File destFolder = tmpFolder.newFolder();
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
+        File largeTempFile = tmpFolder.newFile("largeFile.csv");
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile))) {
+          bw.write("Creating large test file for Azure PUT/GET test");
+          bw.write(System.lineSeparator());
+          bw.write("Creating large test file for Azure PUT/GET test");
+          bw.write(System.lineSeparator());
+        }
+        File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
 
-    File largeTempFile = tmpFolder.newFile("largeFile.csv");
-    BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile));
-    bw.write("Creating large test file for Azure PUT/GET test");
-    bw.write(System.lineSeparator());
-    bw.write("Creating large test file for Azure PUT/GET test");
-    bw.write(System.lineSeparator());
-    bw.close();
-    File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+        String sourceFilePath = largeTempFile.getCanonicalPath();
 
-    String sourceFilePath = largeTempFile.getCanonicalPath();
+        // copy info from 1 file to another and continue doubling file size until we reach ~1.5GB,
+        // which is a large file
+        for (int i = 0; i < 12; i++) {
+          copyContentFrom(largeTempFile, largeTempFile2);
+          copyContentFrom(largeTempFile2, largeTempFile);
+        }
 
-    try {
-      // copy info from 1 file to another and continue doubling file size until we reach ~1.5GB,
-      // which is a large file
-      for (int i = 0; i < 12; i++) {
-        copyContentFrom(largeTempFile, largeTempFile2);
-        copyContentFrom(largeTempFile2, largeTempFile);
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE largefile_stage");
+        assertTrue(
+            "Failed to put a file",
+            statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
+
+        // check that file exists in stage after PUT
+        findFile(statement, "ls @largefile_stage/");
+
+        // create a new table with columns matching CSV file
+        statement.execute("create or replace table large_table (colA string)");
+        // copy rows from file into table
+        statement.execute("copy into large_table from @largefile_stage/largeFile.csv.gz");
+        // copy back from table into different stage
+        statement.execute("create or replace stage extra_stage");
+        statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
+
+        // get file from new stage
+        assertTrue(
+            "Failed to get files",
+            statement.execute(
+                "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+
+        // Make sure that the downloaded file exists; it should be gzip compressed
+        File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
+        assert (downloaded.exists());
+
+        // unzip the file
+        Process p =
+            Runtime.getRuntime()
+                .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
+        p.waitFor();
+
+        // compare the original file with the file that's been uploaded, copied into a table, copied
+        // back into a stage,
+        // downloaded, and unzipped
+        File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
+        assert (largeTempFile.length() == unzipped.length());
+        assert (FileUtils.contentEquals(largeTempFile, unzipped));
+      } finally {
+        statement.execute("DROP STAGE IF EXISTS largefile_stage");
+        statement.execute("DROP STAGE IF EXISTS extra_stage");
+        statement.execute("DROP TABLE IF EXISTS large_table");
       }
-
-      // create a stage to put the file in
-      statement.execute("CREATE OR REPLACE STAGE largefile_stage");
-      assertTrue(
-          "Failed to put a file",
-          statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
-
-      // check that file exists in stage after PUT
-      findFile(statement, "ls @largefile_stage/");
-
-      // create a new table with columns matching CSV file
-      statement.execute("create or replace table large_table (colA string)");
-      // copy rows from file into table
-      statement.execute("copy into large_table from @largefile_stage/largeFile.csv.gz");
-      // copy back from table into different stage
-      statement.execute("create or replace stage extra_stage");
-      statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
-
-      // get file from new stage
-      assertTrue(
-          "Failed to get files",
-          statement.execute(
-              "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
-
-      // Make sure that the downloaded file exists; it should be gzip compressed
-      File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-      assert (downloaded.exists());
-
-      // unzip the file
-      Process p =
-          Runtime.getRuntime()
-              .exec("gzip -d " + destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-      p.waitFor();
-
-      // compare the original file with the file that's been uploaded, copied into a table, copied
-      // back into a stage,
-      // downloaded, and unzipped
-      File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
-      assert (largeTempFile.length() == unzipped.length());
-      assert (FileUtils.contentEquals(largeTempFile, unzipped));
-    } finally {
-      statement.execute("DROP STAGE IF EXISTS largefile_stage");
-      statement.execute("DROP STAGE IF EXISTS extra_stage");
-      statement.execute("DROP TABLE IF EXISTS large_table");
-      statement.close();
-      connection.close();
     }
   }
 
@@ -1345,115 +1245,114 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   private void copyContentFrom(File file1, File file2) throws Exception {
     FileInputStream inputStream = new FileInputStream(file1);
     FileOutputStream outputStream = new FileOutputStream(file2);
-    FileChannel fIn = inputStream.getChannel();
-    FileChannel fOut = outputStream.getChannel();
-    fOut.transferFrom(fIn, 0, fIn.size());
-    fIn.position(0);
-    fOut.transferFrom(fIn, fIn.size(), fIn.size());
-    fOut.close();
-    fIn.close();
+    try (FileChannel fIn = inputStream.getChannel();
+        FileChannel fOut = outputStream.getChannel()) {
+      fOut.transferFrom(fIn, 0, fIn.size());
+      fIn.position(0);
+      fOut.transferFrom(fIn, fIn.size(), fIn.size());
+    }
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutS3RegionalUrl() throws Throwable {
-    Connection connection = null;
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
     for (String accountName : supportedAccounts) {
-      try {
-        connection = getConnection(accountName);
-        Statement statement = connection.createStatement();
+      try (Connection connection = getConnection(accountName);
+          Statement statement = connection.createStatement()) {
+        try {
+          // create a stage to put the file in
+          statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-        // create a stage to put the file in
-        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+          SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+          // Test put file with internal compression
+          String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
+          SnowflakeFileTransferAgent sfAgent1 =
+              new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
+          List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
 
-        // Test put file with internal compression
-        String putCommand1 = "put file:///dummy/path/file1.gz @" + testStageName;
-        SnowflakeFileTransferAgent sfAgent1 =
-            new SnowflakeFileTransferAgent(putCommand1, sfSession, new SFStatement(sfSession));
-        List<SnowflakeFileTransferMetadata> metadatas1 = sfAgent1.getFileTransferMetadatas();
+          String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
 
-        String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
+          for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+            InputStream inputStream = new FileInputStream(srcPath1);
+            SnowflakeFileTransferAgent.uploadWithoutConnection(
+                SnowflakeFileTransferConfig.Builder.newInstance()
+                    .setSnowflakeFileTransferMetadata(oneMetadata)
+                    .setUploadStream(inputStream)
+                    .setRequireCompress(true)
+                    .setNetworkTimeoutInMilli(0)
+                    .setOcspMode(OCSPMode.FAIL_OPEN)
+                    .setSFSession(sfSession)
+                    .setCommand(putCommand1)
+                    .setUseS3RegionalUrl(false)
+                    .build());
+          }
 
-        for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
-          InputStream inputStream = new FileInputStream(srcPath1);
-          SnowflakeFileTransferAgent.uploadWithoutConnection(
-              SnowflakeFileTransferConfig.Builder.newInstance()
-                  .setSnowflakeFileTransferMetadata(oneMetadata)
-                  .setUploadStream(inputStream)
-                  .setRequireCompress(true)
-                  .setNetworkTimeoutInMilli(0)
-                  .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .setSFSession(sfSession)
-                  .setCommand(putCommand1)
-                  .setUseS3RegionalUrl(false)
-                  .build());
-        }
+          for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
+            InputStream inputStream = new FileInputStream(srcPath1);
+            SnowflakeFileTransferAgent.uploadWithoutConnection(
+                SnowflakeFileTransferConfig.Builder.newInstance()
+                    .setSnowflakeFileTransferMetadata(oneMetadata)
+                    .setUploadStream(inputStream)
+                    .setRequireCompress(true)
+                    .setNetworkTimeoutInMilli(0)
+                    .setOcspMode(OCSPMode.FAIL_OPEN)
+                    .setSFSession(sfSession)
+                    .setCommand(putCommand1)
+                    .setUseS3RegionalUrl(true)
+                    .build());
+          }
 
-        for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
-          InputStream inputStream = new FileInputStream(srcPath1);
-          SnowflakeFileTransferAgent.uploadWithoutConnection(
-              SnowflakeFileTransferConfig.Builder.newInstance()
-                  .setSnowflakeFileTransferMetadata(oneMetadata)
-                  .setUploadStream(inputStream)
-                  .setRequireCompress(true)
-                  .setNetworkTimeoutInMilli(0)
-                  .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .setSFSession(sfSession)
-                  .setCommand(putCommand1)
-                  .setUseS3RegionalUrl(true)
-                  .build());
-        }
+          // Test Put file with external compression
+          String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
+          SnowflakeFileTransferAgent sfAgent2 =
+              new SnowflakeFileTransferAgent(putCommand2, sfSession, new SFStatement(sfSession));
+          List<SnowflakeFileTransferMetadata> metadatas2 = sfAgent2.getFileTransferMetadatas();
 
-        // Test Put file with external compression
-        String putCommand2 = "put file:///dummy/path/file2.gz @" + testStageName;
-        SnowflakeFileTransferAgent sfAgent2 =
-            new SnowflakeFileTransferAgent(putCommand2, sfSession, new SFStatement(sfSession));
-        List<SnowflakeFileTransferMetadata> metadatas2 = sfAgent2.getFileTransferMetadatas();
+          String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);
+          for (SnowflakeFileTransferMetadata oneMetadata : metadatas2) {
+            String gzfilePath = destFolderCanonicalPath + "/tmp_compress.gz";
+            Process p =
+                Runtime.getRuntime()
+                    .exec("cp -fr " + srcPath2 + " " + destFolderCanonicalPath + "/tmp_compress");
+            p.waitFor();
+            p = Runtime.getRuntime().exec("gzip " + destFolderCanonicalPath + "/tmp_compress");
+            p.waitFor();
 
-        String srcPath2 = getFullPathFileInResource(TEST_DATA_FILE_2);
-        for (SnowflakeFileTransferMetadata oneMetadata : metadatas2) {
-          String gzfilePath = destFolderCanonicalPath + "/tmp_compress.gz";
-          Process p =
-              Runtime.getRuntime()
-                  .exec("cp -fr " + srcPath2 + " " + destFolderCanonicalPath + "/tmp_compress");
-          p.waitFor();
-          p = Runtime.getRuntime().exec("gzip " + destFolderCanonicalPath + "/tmp_compress");
-          p.waitFor();
+            InputStream gzInputStream = new FileInputStream(gzfilePath);
 
-          InputStream gzInputStream = new FileInputStream(gzfilePath);
+            SnowflakeFileTransferAgent.uploadWithoutConnection(
+                SnowflakeFileTransferConfig.Builder.newInstance()
+                    .setSnowflakeFileTransferMetadata(oneMetadata)
+                    .setUploadStream(gzInputStream)
+                    .setRequireCompress(false)
+                    .setNetworkTimeoutInMilli(0)
+                    .setOcspMode(OCSPMode.FAIL_OPEN)
+                    .setSFSession(sfSession)
+                    .setCommand(putCommand2)
+                    .build());
+          }
 
-          SnowflakeFileTransferAgent.uploadWithoutConnection(
-              SnowflakeFileTransferConfig.Builder.newInstance()
-                  .setSnowflakeFileTransferMetadata(oneMetadata)
-                  .setUploadStream(gzInputStream)
-                  .setRequireCompress(false)
-                  .setNetworkTimeoutInMilli(0)
-                  .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .setSFSession(sfSession)
-                  .setCommand(putCommand2)
-                  .build());
-        }
+          // Download two files and verify their content.
+          assertTrue(
+              "Failed to get files",
+              statement.execute(
+                  "GET @"
+                      + testStageName
+                      + " 'file://"
+                      + destFolderCanonicalPath
+                      + "/' parallel=8"));
 
-        // Download two files and verify their content.
-        assertTrue(
-            "Failed to get files",
-            statement.execute(
-                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
-
-        // Make sure that the downloaded files are EQUAL,
-        // they should be gzip compressed
-        assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
-        assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
-      } finally {
-        if (connection != null) {
-          connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-          connection.close();
+          // Make sure that the downloaded files are EQUAL,
+          // they should be gzip compressed
+          assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+          assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+        } finally {
+          statement.execute("DROP STAGE if exists " + testStageName);
         }
       }
     }
@@ -1466,15 +1365,115 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testAzureS3UploadStreamingIngestFileMetadata() throws Throwable {
-    Connection connection = null;
     String clientName = "clientName";
     String clientKey = "clientKey";
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
     for (String accountName : supportedAccounts) {
-      try {
-        connection = getConnection(accountName);
-        Statement statement = connection.createStatement();
+      try (Connection connection = getConnection(accountName);
+          Statement statement = connection.createStatement()) {
+        try {
+          // create a stage to put the file in
+          statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
+          SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+          // Test put file with internal compression
+          String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
+          SnowflakeFileTransferAgent sfAgent =
+              new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+          List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
+
+          String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
+          for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
+            InputStream inputStream = new FileInputStream(srcPath1);
+
+            SnowflakeFileTransferAgent.uploadWithoutConnection(
+                SnowflakeFileTransferConfig.Builder.newInstance()
+                    .setSnowflakeFileTransferMetadata(oneMetadata)
+                    .setUploadStream(inputStream)
+                    .setRequireCompress(true)
+                    .setNetworkTimeoutInMilli(0)
+                    .setOcspMode(OCSPMode.FAIL_OPEN)
+                    .setSFSession(sfSession)
+                    .setCommand(putCommand)
+                    .setStreamingIngestClientName(clientName)
+                    .setStreamingIngestClientKey(clientKey)
+                    .build());
+
+            SnowflakeStorageClient client =
+                StorageClientFactory.getFactory()
+                    .createClient(
+                        ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo(),
+                        1,
+                        null,
+                        /* session= */ null);
+
+            String location =
+                ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo().getLocation();
+            int idx = location.indexOf('/');
+            String remoteStageLocation = location.substring(0, idx);
+            String path = location.substring(idx + 1) + "file1.gz";
+            StorageObjectMetadata meta = client.getObjectMetadata(remoteStageLocation, path);
+
+            // Verify that we are able to fetch the metadata
+            assertEquals(clientName, client.getStreamingIngestClientName(meta));
+            assertEquals(clientKey, client.getStreamingIngestClientKey(meta));
+          }
+        } finally {
+          statement.execute("DROP STAGE if exists " + testStageName);
+        }
+      }
+    }
+  }
+
+  @Test(expected = SnowflakeSQLException.class)
+  public void testNoSpaceLeftOnDeviceException() throws SQLException {
+    List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
+      try (Connection connection = getConnection(accountName)) {
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        try (Statement statement = connection.createStatement()) {
+          try {
+            SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+            statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+            statement.execute(
+                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");
+            String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
+            SnowflakeFileTransferAgent sfAgent =
+                new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+            StageInfo info = sfAgent.getStageInfo();
+            SnowflakeStorageClient client =
+                StorageClientFactory.getFactory().createClient(info, 1, null, /* session= */ null);
+
+            client.handleStorageException(
+                new StorageException(
+                    client.getMaxRetries(),
+                    Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                    new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+                client.getMaxRetries(),
+                "download",
+                null,
+                command,
+                null);
+          } finally {
+            statement.execute("DROP STAGE if exists testPutGet_stage");
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
+    File destFolder = tmpFolder.newFolder();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    // set parameter for presignedUrl upload instead of downscoped token
+    Properties paramProperties = new Properties();
+    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
+    try (Connection connection = getConnection("gcpaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
@@ -1486,10 +1485,11 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
         List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
 
-        String srcPath1 = getFullPathFileInResource(TEST_DATA_FILE);
+        String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
         for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
-          InputStream inputStream = new FileInputStream(srcPath1);
+          InputStream inputStream = new FileInputStream(srcPath);
 
+          assert (oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -1497,127 +1497,16 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                   .setRequireCompress(true)
                   .setNetworkTimeoutInMilli(0)
                   .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .setSFSession(sfSession)
-                  .setCommand(putCommand)
-                  .setStreamingIngestClientName(clientName)
-                  .setStreamingIngestClientKey(clientKey)
                   .build());
-
-          SnowflakeStorageClient client =
-              StorageClientFactory.getFactory()
-                  .createClient(
-                      ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo(),
-                      1,
-                      null,
-                      /* session= */ null);
-
-          String location =
-              ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo().getLocation();
-          int idx = location.indexOf('/');
-          String remoteStageLocation = location.substring(0, idx);
-          String path = location.substring(idx + 1) + "file1.gz";
-          StorageObjectMetadata meta = client.getObjectMetadata(remoteStageLocation, path);
-
-          // Verify that we are able to fetch the metadata
-          assertEquals(clientName, client.getStreamingIngestClientName(meta));
-          assertEquals(clientKey, client.getStreamingIngestClientKey(meta));
         }
+
+        assertTrue(
+            "Failed to get files",
+            statement.execute(
+                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
+        assert (isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
       } finally {
-        if (connection != null) {
-          connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-          connection.close();
-        }
-      }
-    }
-  }
-
-  @Test(expected = SnowflakeSQLException.class)
-  public void testNoSpaceLeftOnDeviceException() throws SQLException {
-    Connection connection = null;
-    List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
-    for (String accountName : supportedAccounts) {
-      try {
-        connection = getConnection(accountName);
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        Statement statement = connection.createStatement();
-        SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
-        statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-        statement.execute(
-            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");
-        String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
-        StageInfo info = sfAgent.getStageInfo();
-        SnowflakeStorageClient client =
-            StorageClientFactory.getFactory().createClient(info, 1, null, /* session= */ null);
-
-        client.handleStorageException(
-            new StorageException(
-                client.getMaxRetries(),
-                Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
-                new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
-            client.getMaxRetries(),
-            "download",
-            null,
-            command,
-            null);
-      } finally {
-        if (connection != null) {
-          connection.createStatement().execute("DROP STAGE if exists testPutGet_stage");
-          connection.close();
-        }
-      }
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
-    Connection connection = null;
-    File destFolder = tmpFolder.newFolder();
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    try {
-      // set parameter for presignedUrl upload instead of downscoped token
-      Properties paramProperties = new Properties();
-      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
-      connection = getConnection("gcpaccount", paramProperties);
-      Statement statement = connection.createStatement();
-
-      // create a stage to put the file in
-      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
-
-      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-
-      // Test put file with internal compression
-      String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
-      SnowflakeFileTransferAgent sfAgent =
-          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-      List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
-
-      String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
-      for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
-        InputStream inputStream = new FileInputStream(srcPath);
-
-        assert (oneMetadata.isForOneFile());
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
-            SnowflakeFileTransferConfig.Builder.newInstance()
-                .setSnowflakeFileTransferMetadata(oneMetadata)
-                .setUploadStream(inputStream)
-                .setRequireCompress(true)
-                .setNetworkTimeoutInMilli(0)
-                .setOcspMode(OCSPMode.FAIL_OPEN)
-                .build());
-      }
-
-      assertTrue(
-          "Failed to get files",
-          statement.execute(
-              "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
-      assert (isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-        connection.close();
+        statement.execute("DROP STAGE if exists " + testStageName);
       }
     }
   }
@@ -1785,39 +1674,47 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
               + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
               + " set ENABLE_SNOW_654741_FOR_TESTING=true");
     }
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    // Set up a test table with time, date, and timestamp values
-    statement.execute("create or replace table timetable (t1 time, t2 timestamp, t3 date)");
-    statement.execute(
-        "insert into timetable values ('13:53:11', '2023-08-17 13:53:33', '2023-08-17')");
-    // Set statement- level parameters that will affect the output (set output format params)
-    statement
-        .unwrap(SnowflakeStatement.class)
-        .setParameter("TIME_OUTPUT_FORMAT", "HH12:MI:SS.FF AM");
-    statement.unwrap(SnowflakeStatement.class).setParameter("DATE_OUTPUT_FORMAT", "DD-MON-YYYY");
-    statement
-        .unwrap(SnowflakeStatement.class)
-        .setParameter("TIMESTAMP_OUTPUT_FORMAT", "YYYY-MM-DD\"T\"HH24:MI:SS");
-    ResultSet resultSet = statement.executeQuery("select * from timetable");
-    resultSet.next();
-    // Assert that the values match the format of the specified statement parameter output format
-    // values
-    assertEquals("01:53:11.000000000 PM", resultSet.getString(1));
-    assertEquals("2023-08-17T13:53:33", resultSet.getString(2));
-    assertEquals("17-Aug-2023", resultSet.getString(3));
-    // Set a different statement parameter value for DATE_OUTPUT_FORMAT
-    statement.unwrap(SnowflakeStatement.class).setParameter("DATE_OUTPUT_FORMAT", "MM/DD/YYYY");
-    resultSet = statement.executeQuery("select * from timetable");
-    resultSet.next();
-    // Verify it matches the new statement parameter specified output format
-    assertEquals("08/17/2023", resultSet.getString(3));
-    statement.execute("drop table if exists timetable");
-    statement.close();
-    con.close();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      // Set up a test table with time, date, and timestamp values
+      try {
+        statement.execute("create or replace table timetable (t1 time, t2 timestamp, t3 date)");
+        statement.execute(
+            "insert into timetable values ('13:53:11', '2023-08-17 13:53:33', '2023-08-17')");
+        // Set statement- level parameters that will affect the output (set output format params)
+        statement
+            .unwrap(SnowflakeStatement.class)
+            .setParameter("TIME_OUTPUT_FORMAT", "HH12:MI:SS.FF AM");
+        statement
+            .unwrap(SnowflakeStatement.class)
+            .setParameter("DATE_OUTPUT_FORMAT", "DD-MON-YYYY");
+        statement
+            .unwrap(SnowflakeStatement.class)
+            .setParameter("TIMESTAMP_OUTPUT_FORMAT", "YYYY-MM-DD\"T\"HH24:MI:SS");
+        try (ResultSet resultSet = statement.executeQuery("select * from timetable")) {
+          assertTrue(resultSet.next());
+          // Assert that the values match the format of the specified statement parameter output
+          // format
+          // values
+          assertEquals("01:53:11.000000000 PM", resultSet.getString(1));
+          assertEquals("2023-08-17T13:53:33", resultSet.getString(2));
+          assertEquals("17-Aug-2023", resultSet.getString(3));
+        }
+
+        // Set a different statement parameter value for DATE_OUTPUT_FORMAT
+        statement.unwrap(SnowflakeStatement.class).setParameter("DATE_OUTPUT_FORMAT", "MM/DD/YYYY");
+        try (ResultSet resultSet = statement.executeQuery("select * from timetable")) {
+          assertTrue(resultSet.next());
+          // Verify it matches the new statement parameter specified output format
+          assertEquals("08/17/2023", resultSet.getString(3));
+        }
+      } finally {
+        statement.execute("drop table if exists timetable");
+      }
+    }
     // cleanup
-    try (Connection con2 = getSnowflakeAdminConnection()) {
-      statement = con2.createStatement();
+    try (Connection con2 = getSnowflakeAdminConnection();
+        Statement statement = con2.createStatement()) {
       statement.execute(
           "alter account "
               + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
@@ -1828,40 +1725,36 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testS3PutInGS() throws Throwable {
-    Connection connection = null;
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    try {
-      Properties paramProperties = new Properties();
-      connection = getConnection("s3testaccount", paramProperties);
-      Statement statement = connection.createStatement();
+    Properties paramProperties = new Properties();
+    try (Connection connection = getConnection("s3testaccount", paramProperties);
+        Statement statement = connection.createStatement()) {
+      try {
+        // create a stage to put the file in
+        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
 
-      // create a stage to put the file in
-      statement.execute("CREATE OR REPLACE STAGE " + testStageName);
+        // put file using GS system commmand, this is internal GS behavior
+        final String fileName = "testFile.json";
+        final String content = "testName: testS3PutInGs";
+        String putSystemCall =
+            String.format(
+                "call system$it('PUT_FILE_TO_STAGE', '%s', '%s', '%s', '%s')",
+                testStageName, fileName, content, "false");
+        statement.execute(putSystemCall);
 
-      // put file using GS system commmand, this is internal GS behavior
-      final String fileName = "testFile.json";
-      final String content = "testName: testS3PutInGs";
-      String putSystemCall =
-          String.format(
-              "call system$it('PUT_FILE_TO_STAGE', '%s', '%s', '%s', '%s')",
-              testStageName, fileName, content, "false");
-      statement.execute(putSystemCall);
+        // get file using jdbc
+        String getCall =
+            String.format("GET @%s 'file://%s/'", testStageName, destFolderCanonicalPath);
+        statement.execute(getCall);
 
-      // get file using jdbc
-      String getCall =
-          String.format("GET @%s 'file://%s/'", testStageName, destFolderCanonicalPath);
-      statement.execute(getCall);
-
-      InputStream downloadedFileStream =
-          new FileInputStream(destFolderCanonicalPath + "/" + fileName);
-      String downloadedFile = IOUtils.toString(downloadedFileStream, StandardCharsets.UTF_8);
-      assertTrue(
-          "downloaded content does not equal uploaded content", content.equals(downloadedFile));
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-        connection.close();
+        InputStream downloadedFileStream =
+            new FileInputStream(destFolderCanonicalPath + "/" + fileName);
+        String downloadedFile = IOUtils.toString(downloadedFileStream, StandardCharsets.UTF_8);
+        assertTrue(
+            "downloaded content does not equal uploaded content", content.equals(downloadedFile));
+      } finally {
+        statement.execute("DROP STAGE if exists " + testStageName);
       }
     }
   }
