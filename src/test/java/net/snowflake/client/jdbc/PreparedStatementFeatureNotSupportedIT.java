@@ -14,8 +14,8 @@ import org.junit.experimental.categories.Category;
 public class PreparedStatementFeatureNotSupportedIT extends BaseJDBCTest {
   @Test
   public void testFeatureNotSupportedException() throws Throwable {
-    try (Connection connection = getConnection()) {
-      PreparedStatement preparedStatement = connection.prepareStatement("select ?");
+    try (Connection connection = getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement("select ?")) {
       expectFeatureNotSupportedException(
           () -> preparedStatement.setAsciiStream(1, new BaseJDBCTest.FakeInputStream()));
       expectFeatureNotSupportedException(
