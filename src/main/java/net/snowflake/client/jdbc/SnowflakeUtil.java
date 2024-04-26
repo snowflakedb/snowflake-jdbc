@@ -6,7 +6,9 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import java.io.BufferedReader;
@@ -35,6 +37,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSessionProperty;
@@ -55,6 +58,7 @@ import org.apache.http.HttpResponse;
 public class SnowflakeUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
@@ -85,6 +89,10 @@ public class SnowflakeUtil {
   public static final String DATE_STR = "date";
   public static final String BYTE_STR = "byte";
   public static final String BYTES_STR = "byte array";
+
+  public static String mapJson(Object ob) throws JsonProcessingException {
+    return OBJECT_MAPPER.writeValueAsString(ob);
+  }
 
   public static void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
       throws SnowflakeSQLException {
@@ -437,7 +445,8 @@ public class SnowflakeUtil {
     return SnowflakeType.javaTypeToSFType(javaType, session).name();
   }
 
-  static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
+  @SnowflakeJdbcInternalApi
+  public static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType, session);
   }

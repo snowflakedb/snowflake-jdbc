@@ -278,7 +278,7 @@ public class ResultUtil {
       throws SFException {
     // Derive the timestamp formatter to use
     SnowflakeDateTimeFormat formatter;
-    if (columnType == Types.TIMESTAMP) {
+    if (columnType == Types.TIMESTAMP || columnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
       formatter = timestampNTZFormatter;
     } else if (columnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
       formatter = timestampLTZFormatter;

@@ -234,8 +234,12 @@ public class JsonSqlInput extends BaseSqlInput {
           List<T> result = new ArrayList();
           if (ArrayNode.class.isAssignableFrom(value.getClass())) {
             for (JsonNode node : (ArrayNode) value) {
-
-              result.add(convertObject(type, TimeZone.getDefault(), getValue(node), fieldMetadata));
+              result.add(
+                  convertObject(
+                      type,
+                      TimeZone.getDefault(),
+                      getValue(node),
+                      fieldMetadata.getFields().get(0)));
             }
             return result;
           } else {
@@ -259,7 +263,11 @@ public class JsonSqlInput extends BaseSqlInput {
             int counter = 0;
             for (JsonNode node : valueNodes) {
               array[counter++] =
-                  convertObject(type, TimeZone.getDefault(), getValue(node), fieldMetadata);
+                  convertObject(
+                      type,
+                      TimeZone.getDefault(),
+                      getValue(node),
+                      fieldMetadata.getFields().get(0));
             }
             return array;
           } else {
@@ -306,7 +314,7 @@ public class JsonSqlInput extends BaseSqlInput {
     int columnSubType = fieldMetadata.getType();
     int scale = fieldMetadata.getScale();
     Timestamp result =
-        SqlInputTimestampUtil.getTimestampFromType(
+        SfTimestampUtil.getTimestampFromType(
             columnSubType, (String) value, session, sessionTimeZone, tz);
     if (result != null) {
       return result;
