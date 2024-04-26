@@ -219,7 +219,10 @@ public class JsonSqlOutput implements SQLOutput {
   public void writeTimestamp(Timestamp value) throws SQLException {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
-        String timestampSessionType = (String) ResultUtil.effectiveParamValue(session.getCommonParameters(), "CLIENT_TIMESTAMP_TYPE_MAPPING");
+          String timestampSessionType =
+              (String)
+                  ResultUtil.effectiveParamValue(
+                      session.getCommonParameters(), "CLIENT_TIMESTAMP_TYPE_MAPPING");
           SnowflakeType snowflakeType =
               SnowflakeType.fromString(
                   maybeColumn
