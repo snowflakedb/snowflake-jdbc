@@ -152,13 +152,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetSessionID() throws Throwable {
-    try (Connection con = getConnection()) {
-      try (Statement statement = con.createStatement();
-          ResultSet rset = statement.executeQuery("select current_session()")) {
-        String sessionID = con.unwrap(SnowflakeConnection.class).getSessionID();
-        assertTrue(rset.next());
-        assertEquals(sessionID, rset.getString(1));
-      }
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement();
+        ResultSet rset = statement.executeQuery("select current_session()")) {
+      String sessionID = con.unwrap(SnowflakeConnection.class).getSessionID();
+      assertTrue(rset.next());
+      assertEquals(sessionID, rset.getString(1));
     }
   }
 
