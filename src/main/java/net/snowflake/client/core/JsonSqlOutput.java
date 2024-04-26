@@ -219,12 +219,13 @@ public class JsonSqlOutput implements SQLOutput {
   public void writeTimestamp(Timestamp value) throws SQLException {
     withNextValue(
         ((json, fieldName, maybeColumn) -> {
+        String timestampSessionType = (String) ResultUtil.effectiveParamValue(session.getCommonParameters(), "CLIENT_TIMESTAMP_TYPE_MAPPING");
           SnowflakeType snowflakeType =
               SnowflakeType.fromString(
                   maybeColumn
                       .map(cl -> cl.type())
                       .filter(str -> !str.isEmpty())
-                      .orElse("TIMESTAMP"));
+                      .orElse(timestampSessionType));
           int columnType = snowflakeTypeToJavaType(snowflakeType);
           TimeZone timeZone = timeZoneDependOnType(snowflakeType, session, null);
           String timestampAsString =
@@ -372,7 +373,7 @@ public class JsonSqlOutput implements SQLOutput {
 
   private TimeZone timeZoneDependOnType(
       SnowflakeType snowflakeType, SFBaseSession session, TimeZone tz) {
-    if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ || snowflakeType == SnowflakeType.TIMESTAMP) {
+    if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ) {
       return null;
     } else if (snowflakeType == SnowflakeType.TIMESTAMP_LTZ) {
       return getSessionTimezone(session);
@@ -383,7 +384,7 @@ public class JsonSqlOutput implements SQLOutput {
   }
 
   private int snowflakeTypeToJavaType(SnowflakeType snowflakeType) {
-    if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ || snowflakeType == SnowflakeType.TIMESTAMP) {
+    if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ) {
       return SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ;
     } else if (snowflakeType == SnowflakeType.TIMESTAMP_LTZ) {
       return SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ;
