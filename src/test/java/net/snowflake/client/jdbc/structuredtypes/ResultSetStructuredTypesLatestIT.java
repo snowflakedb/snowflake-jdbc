@@ -223,11 +223,16 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
-      statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
       statement.execute(
-          "ALTER SESSION SET TIMESTAMP_OUTPUT_FORMAT = 'YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM'");
-      statement.execute("ALTER SESSION SET TIME_OUTPUT_FORMAT = 'HH24:MI:SS'");
-      statement.execute("ALTER SESSION SET DATE_OUTPUT_FORMAT = 'YYYY-MM-DD'");
+          "alter session set "
+              + "TIMEZONE='Europe/Warsaw',"
+              + "TIME_OUTPUT_FORMAT = 'HH24:MI:SS',"
+              + "DATE_OUTPUT_FORMAT = 'YYYY-MM-DD',"
+              + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
+              + "TIMESTAMP_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM',"
+              + "TIMESTAMP_TZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM',"
+              + "TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM',"
+              + "TIMESTAMP_NTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3'");
 
       try (ResultSet resultSet =
           statement.executeQuery(
