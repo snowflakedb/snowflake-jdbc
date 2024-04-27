@@ -261,16 +261,25 @@ public class ArrowSqlInput extends BaseSqlInput {
 
   @Override
   public <T> Map<String, T> readMap(Class<T> type) throws SQLException {
+    return readMap(String.class, type);
+  }
+
+  @Override
+  public <K, T> Map<K, T> readMap(Class<K> ktype, Class<T> type) throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
           if (value == null) {
             return null;
           }
-          Map<String, T> result = new HashMap();
+          Map<K, T> result = new HashMap();
           JsonStringArrayList<Map> maps = (JsonStringArrayList) value;
           for (Map map : maps) {
             result.put(
-                map.get("key").toString(),
+                convertObject(
+                    ktype,
+                    TimeZone.getDefault(),
+                    map.get("key").toString(),
+                    fieldMetadata.getFields().get(0)),
                 convertObject(
                     type,
                     TimeZone.getDefault(),

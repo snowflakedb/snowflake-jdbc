@@ -14,7 +14,7 @@ public class NestedStructSqlData implements SQLData {
   private SimpleClass simpleClass;
   private List<SimpleClass> simpleClassses;
   private SimpleClass[] arrayOfSimpleClasses;
-  private Map<String, SimpleClass> mapOfSimpleClasses;
+  private Map<Long, SimpleClass> mapOfSimpleClasses;
   private List<String> texts;
   private Date[] arrayOfDates;
   private Map<String, Integer> mapOfIntegers;
@@ -29,7 +29,7 @@ public class NestedStructSqlData implements SQLData {
     simpleClass = sqlInput.readObject(SimpleClass.class);
     simpleClassses = SFSqlInput.unwrap(sqlInput).readList(SimpleClass.class);
     arrayOfSimpleClasses = SFSqlInput.unwrap(sqlInput).readArray(SimpleClass.class);
-    mapOfSimpleClasses = SFSqlInput.unwrap(sqlInput).readMap(SimpleClass.class);
+    mapOfSimpleClasses = SFSqlInput.unwrap(sqlInput).readMap(Long.class, SimpleClass.class);
     texts = SFSqlInput.unwrap(sqlInput).readList(String.class);
     arrayOfDates = SFSqlInput.unwrap(sqlInput).readArray(Date.class);
     mapOfIntegers = SFSqlInput.unwrap(sqlInput).readMap(Integer.class);
@@ -46,7 +46,7 @@ public class NestedStructSqlData implements SQLData {
     return simpleClassses;
   }
 
-  public Map<String, SimpleClass> getMapOfSimpleClasses() {
+  public Map<Long, SimpleClass> getMapOfSimpleClasses() {
     return mapOfSimpleClasses;
   }
 

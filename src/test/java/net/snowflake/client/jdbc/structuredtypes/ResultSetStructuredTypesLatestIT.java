@@ -489,12 +489,12 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   public void testReturnAsMapByGetObject() throws SQLException {
     Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
-        "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
+        "select {'1':{'string':'one'},'2':{'string':'two'},'3':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {
           Map<String, Map<String, Object>> map = resultSet.getObject(1, Map.class);
-          assertEquals("one", map.get("x").get("string"));
-          assertEquals("two", map.get("y").get("string"));
-          assertEquals("three", map.get("z").get("string"));
+          assertEquals("one", map.get("1").get("string"));
+          assertEquals("two", map.get("2").get("string"));
+          assertEquals("three", map.get("3").get("string"));
         });
   }
 
@@ -589,6 +589,20 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(Long.valueOf(1), map.get("x"));
           assertEquals(Long.valueOf(2), map.get("y"));
           assertEquals(Long.valueOf(3), map.get("z"));
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsMapLongAndLong() throws SQLException {
+    withFirstRow(
+        "SELECT {'1':1, '2':2, '3':3}::MAP(INTEGER, BIGINT)",
+        (resultSet) -> {
+          Map<Long, Long> map =
+              resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Long.class, Long.class);
+          assertEquals(Long.valueOf(1), map.get(1l));
+          assertEquals(Long.valueOf(2), map.get(2l));
+          assertEquals(Long.valueOf(3), map.get(3l));
         });
   }
 
@@ -853,14 +867,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         "SELECT {'simpleClass': {'string': 'a', 'intValue': 2}, "
             + "'simpleClasses': ARRAY_CONSTRUCT({'string': 'a', 'intValue': 2}, {'string': 'b', 'intValue': 2}), "
             + "'arrayOfSimpleClasses': ARRAY_CONSTRUCT({'string': 'a', 'intValue': 2}, {'string': 'b', 'intValue': 2}), "
-            + "'mapOfSimpleClasses':{'x':{'string': 'c', 'intValue': 2}, 'y':{'string': 'd', 'intValue': 2}},"
+            + "'mapOfSimpleClasses':{'1':{'string': 'c', 'intValue': 2}, '2':{'string': 'd', 'intValue': 2}},"
             + "'texts': ARRAY_CONSTRUCT('string', 'a'), "
             + "'arrayOfDates': ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD')), "
             + "'mapOfIntegers':{'x':3, 'y':4}}"
             + "::OBJECT(simpleClass OBJECT(string VARCHAR, intValue INTEGER), "
             + "simpleClasses ARRAY(OBJECT(string VARCHAR, intValue INTEGER)),"
             + "arrayOfSimpleClasses ARRAY(OBJECT(string VARCHAR, intValue INTEGER)),"
-            + "mapOfSimpleClasses MAP(VARCHAR, OBJECT(string VARCHAR, intValue INTEGER)),"
+            + "mapOfSimpleClasses MAP(INTEGER, OBJECT(string VARCHAR, intValue INTEGER)),"
             + "texts ARRAY(VARCHAR),"
             + "arrayOfDates ARRAY(DATE),"
             + "mapOfIntegers MAP(VARCHAR, INTEGER))",
@@ -885,14 +899,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals(
               Integer.valueOf(2), nestedStructSqlData.getArrayOfSimpleClasses()[1].getIntValue());
 
-          assertEquals("c", nestedStructSqlData.getMapOfSimpleClasses().get("x").getString());
+          assertEquals("c", nestedStructSqlData.getMapOfSimpleClasses().get(1l).getString());
           assertEquals(
               Integer.valueOf(2),
-              nestedStructSqlData.getMapOfSimpleClasses().get("x").getIntValue());
-          assertEquals("d", nestedStructSqlData.getMapOfSimpleClasses().get("y").getString());
+              nestedStructSqlData.getMapOfSimpleClasses().get(1l).getIntValue());
+          assertEquals("d", nestedStructSqlData.getMapOfSimpleClasses().get(2l).getString());
           assertEquals(
               Integer.valueOf(2),
-              nestedStructSqlData.getMapOfSimpleClasses().get("y").getIntValue());
+              nestedStructSqlData.getMapOfSimpleClasses().get(2l).getIntValue());
 
           assertEquals("string", nestedStructSqlData.getTexts().get(0));
           assertEquals("a", nestedStructSqlData.getTexts().get(1));

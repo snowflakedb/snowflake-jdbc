@@ -287,18 +287,23 @@ public class JsonSqlInput extends BaseSqlInput {
 
   @Override
   public <T> Map<String, T> readMap(Class<T> type) throws SQLException {
+    return readMap(String.class, type);
+  }
+
+  @Override
+  public <K, T> Map<K, T> readMap(Class<K> ktype, Class<T> type) throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
           if (value == null) {
             return null;
           }
           if (ObjectNode.class.isAssignableFrom(value.getClass())) {
-            Map<String, T> result = new HashMap<>();
+            Map<K, T> result = new HashMap<>();
             ObjectNode arrayNode = (ObjectNode) value;
             for (Iterator<String> it = arrayNode.fieldNames(); it.hasNext(); ) {
               String key = it.next();
               result.put(
-                  key,
+                  convertObject(ktype, TimeZone.getDefault(), key, fieldMetadata),
                   convertObject(
                       type, TimeZone.getDefault(), getValue(arrayNode.get(key)), fieldMetadata));
             }
