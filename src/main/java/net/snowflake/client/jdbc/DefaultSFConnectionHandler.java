@@ -188,9 +188,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
 
       if (logLevel != null && logPattern != null) {
         try {
-          logger.info(
-              String.format(
-                  "Setting logger with log level %s and log pattern %s", logLevel, logPattern));
+          logger.info("Setting logger with log level {} and log pattern {}", logLevel, logPattern);
           JDK14Logger.instantiateLogger(logLevel, logPattern);
         } catch (IOException ex) {
           throw new SnowflakeSQLLoggedException(
@@ -198,13 +196,10 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
         }
         if (sfClientConfig != null) {
           logger.debug(
-              String.format(
-                  "SF Client config found at location: %s.", sfClientConfig.getConfigFilePath()));
+              "SF Client config found at location: {}.", sfClientConfig.getConfigFilePath());
         }
         logger.debug(
-            String.format(
-                "Instantiating JDK14Logger with level: %s , output path: %s",
-                logLevel, logPattern));
+            "Instantiating JDK14Logger with level: {}, output path: {}", logLevel, logPattern);
       }
     }
   }
@@ -246,13 +241,13 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       logPath = Paths.get(homePath);
     }
 
-    Path path = CreateLogPathSubDirectory(logPath);
+    Path path = createLogPathSubDirectory(logPath);
 
     logPattern = Paths.get(path.toString(), "snowflake_jdbc%u.log").toString();
     return logPattern;
   }
 
-  private Path CreateLogPathSubDirectory(Path logPath) throws SnowflakeSQLLoggedException {
+  private Path createLogPathSubDirectory(Path logPath) throws SnowflakeSQLLoggedException {
     Path path = Paths.get(logPath.toString(), "jdbc");
     if (!Files.exists(path)) {
       // Create jdbc subfolder
@@ -270,7 +265,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
             ErrorCode.INTERNAL_ERROR,
             String.format(
                 "Un-able to create jdbc subfolder in configfile %s ,%s",
-                logPath.toString(), ex.getMessage()));
+                logPath.toString(), ex.getMessage(), ex.getCause()));
       }
     } else {
       // Check if jdbc subfolder has correct permissions
@@ -284,10 +279,10 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
               || folderPermissions.contains(PosixFilePermission.OTHERS_READ)
               || folderPermissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
             logger.info(
-                String.format(
-                    "Access permission for the logs directory '%s' is currently %s and is potentially "
-                        + "accessible to users other than the owner of the logs directory.",
-                    path.toString(), folderPermissions.toString()));
+                "Access permission for the logs directory '{}' is currently {} and is potentially "
+                    + "accessible to users other than the owner of the logs directory.",
+                path.toString(),
+                folderPermissions.toString());
           }
         } catch (IOException ex) {
           throw new SnowflakeSQLLoggedException(
@@ -295,7 +290,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
               ErrorCode.INTERNAL_ERROR,
               String.format(
                   "Un-able to get permissions of log directory %s ,%s",
-                  path.toString(), ex.getMessage()));
+                  path.toString(), ex.getMessage(), ex.getCause()));
         }
       }
     }
