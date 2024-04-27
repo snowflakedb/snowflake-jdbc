@@ -1375,7 +1375,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
           try {
             return (T)
                 OBJECT_MAPPER.readValue(
-                    (String) object, new TypeReference<Map<String, Object>>() {});
+                    (String) object, new TypeReference<Map<Object, Object>>() {});
           } catch (JsonProcessingException e) {
             throw new SQLException("Value couldn't be converted to Map");
           }
