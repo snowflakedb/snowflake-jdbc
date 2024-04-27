@@ -4,7 +4,6 @@
 package net.snowflake.client.core;
 
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLInput;
 import java.util.List;
 import java.util.Map;
