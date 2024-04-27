@@ -378,7 +378,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       SFBaseSession session,
       List<FieldMetadata> fields) {
     if (parentObjectClass.equals(JsonSqlInput.class)) {
-      return createJsonSqlInputForColumn(input, columnIndex, session, fields);
+      return createJsonSqlInputForColumn(input, session, fields);
     } else {
       return new ArrowSqlInput((Map<String, Object>) input, session, converters, fields);
     }
@@ -581,8 +581,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       if (obj == null) {
         return null;
       }
-      JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
+      String text = (String) obj;
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(text);
       return new JsonSqlInput(
+          text,
           jsonNode,
           session,
           converters,

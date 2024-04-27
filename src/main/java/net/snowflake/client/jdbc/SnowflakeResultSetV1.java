@@ -4,7 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -271,11 +270,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     if (object == null) {
       return null;
     } else if (object instanceof JsonSqlInput) {
-      try {
-        return SnowflakeUtil.mapJson(((JsonSqlInput) object).getInput());
-      } catch (JsonProcessingException e) {
-        throw new SQLException("Struct object couldn't be returned as String.", e);
-      }
+      return ((JsonSqlInput) object).getText();
     } else if (object instanceof ArrowSqlInput) {
       throw new SQLException(
           "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
