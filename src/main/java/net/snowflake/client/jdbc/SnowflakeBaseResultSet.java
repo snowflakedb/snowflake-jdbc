@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,7 +39,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.core.ArrowSqlInput;
 import net.snowflake.client.core.ColumnTypeHelper;
 import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -1354,7 +1354,9 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
     if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       if (SQLData.class.isAssignableFrom(type)) {
-        SQLInput sqlInput = (SQLInput) getObject(columnIndex);
+        SQLInput sqlInput =
+            SnowflakeUtil.mapSFExceptionToSQLException(
+                () -> (SQLInput) sfBaseResultSet.getObject(columnIndex));
         if (sqlInput == null) {
           return null;
         } else {
@@ -1366,12 +1368,17 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         Object object = getObject(columnIndex);
         if (object == null) {
           return null;
-        } else if (object instanceof JsonSqlInput) {
-          JsonNode jsonNode = ((JsonSqlInput) object).getInput();
-          return (T)
-              OBJECT_MAPPER.convertValue(jsonNode, new TypeReference<Map<String, Object>>() {});
+        } else if (object instanceof Map) {
+          throw new SQLException(
+              "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
         } else {
-          return (T) ((ArrowSqlInput) object).getInput();
+          try {
+            return (T)
+                OBJECT_MAPPER.readValue(
+                    (String) object, new TypeReference<Map<Object, Object>>() {});
+          } catch (JsonProcessingException e) {
+            throw new SQLException("Value couldn't be converted to Map");
+          }
         }
       }
     }
@@ -1585,7 +1592,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
-    Object object = getObject(columnIndex);
+    Object object =
+        SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
     if (object == null) {
       return null;
     }

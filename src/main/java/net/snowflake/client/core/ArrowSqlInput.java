@@ -28,7 +28,6 @@ import org.apache.arrow.vector.util.JsonStringHashMap;
 
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
-
   private final Map<String, Object> input;
   private int currentIndex = 0;
   private boolean wasNull = false;
