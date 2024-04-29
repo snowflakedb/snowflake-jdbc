@@ -942,7 +942,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
           cause = ex;
           logger.debug(
-              "Retrying {}/{} after sleeping {}(ms)", retry + 1, maxRetryCounter, sleepTime);
+              "Retrying {}/{} after sleeping {} ms", retry + 1, maxRetryCounter, sleepTime);
           try {
             if (retry + 1 < maxRetryCounter) {
               Thread.sleep(sleepTime);
@@ -1192,7 +1192,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         }
         IOUtils.closeQuietly(response);
 
-        logger.debug("Retrying {}/{} after sleeping {}(ms)", retry + 1, maxRetryCounter, sleepTime);
+        logger.debug("Retrying {}/{} after sleeping {} ms", retry + 1, maxRetryCounter, sleepTime);
         try {
           if (retry + 1 < maxRetryCounter) {
             Thread.sleep(sleepTime);

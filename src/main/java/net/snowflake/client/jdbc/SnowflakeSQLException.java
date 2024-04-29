@@ -44,7 +44,7 @@ public class SnowflakeSQLException extends SQLException {
 
     // log user error from GS at fine level
     logger.debug(
-        "Snowflake exception: {}, sqlState:{}, vendorCode:{}, queryId:{}",
+        "Snowflake exception: {}, sqlState: {}, vendorCode: {}, queryId: {}",
         reason,
         sqlState,
         vendorCode,
@@ -54,7 +54,7 @@ public class SnowflakeSQLException extends SQLException {
   public SnowflakeSQLException(String reason, String sqlState) {
     super(reason, sqlState);
     // log user error from GS at fine level
-    logger.debug("Snowflake exception: {}, sqlState:{}", reason, sqlState);
+    logger.debug("Snowflake exception: {}, sqlState: {}", reason, sqlState);
   }
 
   /** use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, int)} */
@@ -70,7 +70,7 @@ public class SnowflakeSQLException extends SQLException {
         vendorCode);
     this.queryId = queryId;
     logger.debug(
-        "Snowflake exception: {}, sqlState:{}, vendorCode:{}",
+        "Snowflake exception: {}, sqlState: {}, vendorCode: {}",
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode)),
         sqlState,
         vendorCode);
@@ -89,7 +89,7 @@ public class SnowflakeSQLException extends SQLException {
         vendorCode);
     this.queryId = queryId;
     logger.debug(
-        "Snowflake exception: {}, sqlState:{}, vendorCode:{}",
+        "Snowflake exception: {}, sqlState: {}, vendorCode: {}",
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params),
         sqlState,
         vendorCode);

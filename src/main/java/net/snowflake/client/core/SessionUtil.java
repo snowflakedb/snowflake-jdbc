@@ -767,7 +767,7 @@ public class SessionUtil {
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", theString);
+        logger.debug("Response: {}", theString);
 
         int errorCode = jsonNode.path("code").asInt();
         if (errorCode == Constants.ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE) {
@@ -820,7 +820,7 @@ public class SessionUtil {
       commonParams = SessionUtil.getCommonParams(jsonNode.path("data").path("parameters"));
 
       if (serverVersion != null) {
-        logger.debug("Server version = {}", serverVersion);
+        logger.debug("Server version: {}", serverVersion);
 
         if (serverVersion.indexOf(" ") > 0) {
           databaseVersion = serverVersion.substring(0, serverVersion.indexOf(" "));
@@ -1038,7 +1038,7 @@ public class SessionUtil {
       setServiceNameHeader(loginInput, postRequest);
 
       logger.debug(
-          "request type: {}, old session token: {}, " + "master token: {}",
+          "Request type: {}, old session token: {}, " + "master token: {}",
           requestType.value,
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
           (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
@@ -1057,7 +1057,7 @@ public class SessionUtil {
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", theString);
+        logger.debug("Response: {}", theString);
 
         String errorCode = jsonNode.path("code").asText();
         String message = jsonNode.path("message").asText();
@@ -1095,7 +1095,7 @@ public class SessionUtil {
    * @throws SFException if failed to close session
    */
   static void closeSession(SFLoginInput loginInput) throws SFException, SnowflakeSQLException {
-    logger.debug(" public void close() throws SFException");
+    logger.trace("void close() throws SFException");
 
     // assert the following inputs are valid
     AssertUtil.assertTrue(
@@ -1147,15 +1147,15 @@ public class SessionUtil {
 
       JsonNode rootNode;
 
-      logger.debug("connection close response: {}", theString);
+      logger.debug("Connection close response: {}", theString);
 
       rootNode = mapper.readTree(theString);
 
       SnowflakeUtil.checkErrorAndThrowException(rootNode);
     } catch (URISyntaxException ex) {
-      throw new RuntimeException("unexpected URI syntax exception", ex);
+      throw new RuntimeException("Unexpected URI syntax exception", ex);
     } catch (IOException ex) {
-      logger.error("unexpected IO exception for: " + postRequest, ex);
+      logger.error("Unexpected IO exception for: " + postRequest, ex);
     } catch (SnowflakeSQLException ex) {
       // ignore exceptions for session expiration exceptions and for
       // sessions that no longer exist
@@ -1287,7 +1287,7 @@ public class SessionUtil {
               null,
               loginInput.getHttpClientSettingsKey());
 
-      logger.debug("user is authenticated against {}.", loginInput.getAuthenticator());
+      logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
 
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
@@ -1375,12 +1375,12 @@ public class SessionUtil {
               loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
-      logger.debug("authenticator-request response: {}", gsResponse);
+      logger.debug("Authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", gsResponse);
+        logger.debug("Response: {}", gsResponse);
         int errorCode = jsonNode.path("code").asInt();
 
         throw new SnowflakeSQLException(
@@ -1518,7 +1518,7 @@ public class SessionUtil {
 
       // What type of value is it and what's the value?
       if (!child.hasNonNull("value")) {
-        logger.debug("No value found for Common Parameter {}", child.path("name").asText());
+        logger.debug("No value found for Common Parameter: {}", child.path("name").asText());
         continue;
       }
 
@@ -1553,7 +1553,7 @@ public class SessionUtil {
       session.setCommonParameters(parameters);
     }
     for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-      logger.debug("processing parameter {}", entry.getKey());
+      logger.debug("Processing parameter {}", entry.getKey());
 
       if ("CLIENT_DISABLE_INCIDENTS".equalsIgnoreCase(entry.getKey())) {
         SnowflakeDriver.setDisableIncidents((Boolean) entry.getValue());

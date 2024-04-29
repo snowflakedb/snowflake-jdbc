@@ -204,7 +204,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     List<RemoteStoreFileEncryptionMaterial> encryptionMaterial = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("encryptionMaterial");
     if (commandType == CommandType.UPLOAD) {
-      logger.debug("initEncryptionMaterial: UPLOAD", false);
+      logger.debug("InitEncryptionMaterial: UPLOAD", false);
 
       RemoteStoreFileEncryptionMaterial encMat = null;
       if (!rootNode.isMissingNode() && !rootNode.isNull()) {
@@ -213,7 +213,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       encryptionMaterial.add(encMat);
 
     } else {
-      logger.debug("initEncryptionMaterial: DOWNLOAD", false);
+      logger.debug("InitEncryptionMaterial: DOWNLOAD", false);
 
       if (!rootNode.isMissingNode() && !rootNode.isNull()) {
         encryptionMaterial =
@@ -233,7 +233,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     List<String> presignedUrls = new ArrayList<>();
     JsonNode rootNode = jsonNode.path("data").path("presignedUrls");
     if (commandType == CommandType.DOWNLOAD) {
-      logger.debug("initEncryptionMaterial: DOWNLOAD", false);
+      logger.debug("InitEncryptionMaterial: DOWNLOAD", false);
 
       if (!rootNode.isMissingNode() && !rootNode.isNull()) {
         presignedUrls = Arrays.asList(mapper.readValue(rootNode.toString(), String[].class));
@@ -543,7 +543,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     return new Callable<Void>() {
       public Void call() throws Exception {
 
-        logger.debug("Entering getUploadFileCallable...", false);
+        logger.trace("Entering getUploadFileCallable...", false);
 
         // make sure initialize context for the telemetry service for this thread
         TelemetryService.getInstance().updateContext(session.getSnowflakeConnectionString());
@@ -588,7 +588,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
         String digest = null;
 
-        logger.debug("Dest file name={}", false);
+        logger.debug("Dest file name: {}", false);
 
         // Temp file that needs to be cleaned up when upload was successful
         FileBackedOutputStream fileBackedOutputStream = null;
@@ -640,7 +640,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
           logger.debug(
               "Started copying file from: {} to {}:{} destName: {} "
-                  + "auto compressed? {} size={}",
+                  + "auto compressed? {} size: {}",
               srcFilePath,
               stage.getStageType().name(),
               stage.getLocation(),
@@ -708,7 +708,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             try {
               fileBackedOutputStream.reset();
             } catch (IOException ex) {
-              logger.debug("failed to clean up temp file: {}", ex);
+              logger.debug("Failed to clean up temp file: {}", ex);
             }
           }
           if (inputStream == null) {
@@ -716,7 +716,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           }
         }
 
-        logger.debug("filePath: {}", srcFilePath);
+        logger.debug("FilePath: {}", srcFilePath);
 
         // set dest size
         metadata.destFileSize = uploadSize;
@@ -866,7 +866,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           throw ex;
         }
 
-        logger.debug("filePath: {}", srcFilePath);
+        logger.debug("FilePath: {}", srcFilePath);
 
         File destFile = new File(localLocation + localFSFileSep + destFileName);
         long downloadSize = destFile.length();
@@ -1056,9 +1056,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       logger.debug("Command type: {}", commandType);
 
       if (commandType == CommandType.UPLOAD) {
-        logger.debug("autoCompress: {}, source compression: {}", autoCompress, sourceCompression);
+        logger.debug("Auto compress: {}, source compression: {}", autoCompress, sourceCompression);
       } else {
-        logger.debug("local download location: {}", localLocation);
+        logger.debug("Local download location: {}", localLocation);
       }
 
       logger.debug("Source files: {}", String.join(",", sourceFiles));
@@ -1218,7 +1218,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               + ", expected: "
               + localFilePath);
     } else if (localFilePath.isEmpty()) {
-      logger.debug("fail to parse local file path from command: {}", command);
+      logger.debug("Fail to parse local file path from command: {}", command);
     } else {
       logger.trace("local file path from GS matches local parsing: {}", localFilePath);
     }
@@ -1309,7 +1309,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     JsonNode jsonNode = (JsonNode) result;
-    logger.debug("response: {}", jsonNode.toString());
+    logger.debug("Response: {}", jsonNode.toString());
 
     SnowflakeUtil.checkErrorAndThrowException(jsonNode);
     return jsonNode;
@@ -1516,7 +1516,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
         filterExistingFiles();
 
-        logger.debug("filtering done");
+        logger.debug("Filtering done");
       }
 
       synchronized (canceled) {
@@ -1534,9 +1534,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           boolean created = dir.mkdirs();
 
           if (created) {
-            logger.debug("directory created: {}", localLocation);
+            logger.debug("Directory created: {}", localLocation);
           } else {
-            logger.debug("directory not created {}", localLocation);
+            logger.debug("Directory not created {}", localLocation);
           }
         }
 
@@ -1547,19 +1547,19 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // separate files to big files list and small files list
         // big files will be uploaded in serial, while small files will be
         // uploaded concurrently.
-        logger.debug("start segregate files by size");
+        logger.debug("Start segregate files by size");
         segregateFilesBySize();
 
         if (bigSourceFiles != null) {
-          logger.debug("start uploading big files");
+          logger.debug("Start uploading big files");
           uploadFiles(bigSourceFiles, 1);
-          logger.debug("end uploading big files");
+          logger.debug("End uploading big files");
         }
 
         if (smallSourceFiles != null) {
-          logger.debug("start uploading small files");
+          logger.debug("Start uploading small files");
           uploadFiles(smallSourceFiles, parallel);
-          logger.debug("end uploading small files");
+          logger.debug("End uploading small files");
         }
       }
 
@@ -1720,7 +1720,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                 presignedUrl,
                 queryID));
 
-        logger.debug("submitted download job for: {}", srcFile);
+        logger.debug("Submitted download job for: {}", srcFile);
       }
 
       threadExecutor.shutdown();
@@ -1816,7 +1816,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
                 encryptionMaterial.get(0),
                 queryID));
 
-        logger.debug("submitted copy job for: {}", srcFile);
+        logger.debug("Submitted copy job for: {}", srcFile);
       }
 
       // shut down the thread executor
@@ -1974,7 +1974,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     logger.debug("Expanded file paths: ");
 
     for (String filePath : result) {
-      logger.debug("file: {}", filePath);
+      logger.debug("File: {}", filePath);
     }
 
     return result;
@@ -1994,7 +1994,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     stageLocation = stageLocation.replace("~", systemGetProperty("user.home"));
     try {
       logger.debug(
-          "Copy file. srcFile={}, destination={}, destFileName={}",
+          "Copy file. srcFile: {}, destination: {}, destFileName: {}",
           filePath,
           stageLocation,
           destFileName);
@@ -2029,7 +2029,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       throws SQLException {
     try {
       logger.debug(
-          "Copy file. srcFile={}, destination={}, destFileName={}",
+          "Copy file. srcFile: {}, destination: {}, destFileName: {}",
           sourceLocation + localFSFileSep + filePath,
           destLocation,
           destFileName);
@@ -2079,7 +2079,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     logger.debug(
-        "upload object. location={}, key={}, srcFile={}, encryption={}",
+        "Upload object. Location: {}, key: {}, srcFile: {}, encryption: {}",
         remoteLocation.location,
         destFileName,
         srcFile,
@@ -2145,7 +2145,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @throws Exception if error occurs while data upload.
    */
   public static void uploadWithoutConnection(SnowflakeFileTransferConfig config) throws Exception {
-    logger.debug("Entering uploadWithoutConnection...");
+    logger.trace("Entering uploadWithoutConnection...");
 
     SnowflakeFileTransferMetadataV1 metadata =
         (SnowflakeFileTransferMetadataV1) config.getSnowflakeFileTransferMetadata();
@@ -2290,7 +2290,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         try {
           fileBackedOutputStream.reset();
         } catch (IOException ex) {
-          logger.debug("failed to clean up temp file: {}", ex);
+          logger.debug("Failed to clean up temp file: {}", ex);
         }
       }
     }
@@ -2330,7 +2330,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     logger.debug(
-        "upload object. location={}, key={}, srcFile={}, encryption={}",
+        "Upload object. Location: {}, key: {}, srcFile: {}, encryption: {}",
         remoteLocation.location,
         destFileName,
         srcFile,
@@ -2419,7 +2419,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     logger.debug(
-        "Download object. location={}, key={}, srcFile={}, encryption={}",
+        "Download object. Location: {}, key: {}, srcFile: {}, encryption: {}",
         remoteLocation.location,
         stageFilePath,
         filePath,
@@ -2506,7 +2506,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     if (stageInfo.getStageType() == StageInfo.StageType.S3
         || stageInfo.getStageType() == StageInfo.StageType.AZURE
         || stageInfo.getStageType() == StageInfo.StageType.GCS) {
-      logger.debug("check existing files on remote storage for the common prefix");
+      logger.debug("Check existing files on remote storage for the common prefix");
 
       remoteLocation storeLocation = extractLocationAndPath(stageInfo.getLocation());
 
@@ -2514,7 +2514,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
       int retryCount = 0;
 
-      logger.debug("start dragging object summaries from remote storage");
+      logger.debug("Start dragging object summaries from remote storage");
       do {
         try {
           // Normal flow will never hit here. This is only for testing purposes
@@ -2528,7 +2528,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               storageClient.listObjects(
                   storeLocation.location,
                   SnowflakeUtil.concatFilePathNames(storeLocation.path, greatestCommonPrefix, "/"));
-          logger.debug("received object summaries from remote storage");
+          logger.debug("Received object summaries from remote storage");
         } catch (Exception ex) {
           logger.debug("Listing objects for filtering encountered exception: {}", ex.getMessage());
 
@@ -2642,7 +2642,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               try {
                 stream.reset();
               } catch (IOException ex) {
-                logger.debug("failed to clean up temp file: {}", ex);
+                logger.debug("Failed to clean up temp file: {}", ex);
               }
             }
           }
@@ -2673,7 +2673,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               fileBackedOutputStream.reset();
             }
           } catch (IOException ex) {
-            logger.debug("failed to clean up temp file: {}", ex);
+            logger.debug("Failed to clean up temp file: {}", ex);
           }
           IOUtils.closeQuietly(stageFileStream);
         }
@@ -2681,12 +2681,12 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // continue if digest is different so that we will process the file
         if (!stageFileHashText.equals(localFileHashText)) {
           logger.debug(
-              "digest diff between local and stage, will {} {}",
+              "Digest diff between local and stage, will {} {}",
               commandType.name().toLowerCase(),
               mappedSrcFile);
           continue;
         } else {
-          logger.debug("digest matches between local and stage, will skip {}", mappedSrcFile);
+          logger.debug("Digest matches between local and stage, will skip {}", mappedSrcFile);
 
           // skip the file given that the check sum is the same b/w source
           // and destination
@@ -2709,7 +2709,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       throws SnowflakeSQLException {
     for (StorageObjectSummary obj : objectSummaries) {
       logger.debug(
-          "Existing object: key={} size={} md5={}", obj.getKey(), obj.getSize(), obj.getMD5());
+          "Existing object: key: {} size: {} md5: {}", obj.getKey(), obj.getSize(), obj.getMD5());
 
       int idxOfLastFileSep = obj.getKey().lastIndexOf("/");
       String objFileName = obj.getKey().substring(idxOfLastFileSep + 1);
@@ -2773,7 +2773,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             // log it
             logger.debug(
                 "File returned from listing but found missing {} when getting its"
-                    + " metadata. Location={}, key={}",
+                    + " metadata. Location: {}, key: {}",
                 obj.getLocation(),
                 obj.getKey());
 
@@ -2834,7 +2834,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
               try {
                 stream.reset();
               } catch (IOException ex) {
-                logger.debug("failed to clean up temp file: {}", ex);
+                logger.debug("Failed to clean up temp file: {}", ex);
               }
             }
           }
@@ -2848,7 +2848,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             (objDigest == null && !hashText.equals(obj.getMD5()))) // ETag/MD5 mismatch
         {
           logger.debug(
-              "digest diff between remote store and local, will {} {}, "
+              "Digest diff between remote store and local, will {} {}, "
                   + "local digest: {}, remote store md5: {}",
               commandType.name().toLowerCase(),
               mappedSrcFile,
@@ -2867,7 +2867,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       }
 
       logger.debug(
-          "digest same between remote store and local, will not upload {} {}",
+          "Digest same between remote store and local, will not upload {} {}",
           commandType.name().toLowerCase(),
           mappedSrcFile);
 
