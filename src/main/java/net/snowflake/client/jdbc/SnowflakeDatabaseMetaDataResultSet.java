@@ -132,7 +132,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public boolean next() throws SQLException {
-    logger.trace("public boolean next()", false);
+    logger.trace("boolean next()", false);
     incrementRow();
 
     // no exception is raised even after the result set is closed.
@@ -164,35 +164,35 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public boolean isFirst() throws SQLException {
-    logger.trace("public boolean isFirst()", false);
+    logger.trace("boolean isFirst()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return row == 0;
   }
 
   @Override
   public boolean isBeforeFirst() throws SQLException {
-    logger.trace("public boolean isBeforeFirst()", false);
+    logger.trace("boolean isBeforeFirst()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return row == -1;
   }
 
   @Override
   public boolean isLast() throws SQLException {
-    logger.trace("public boolean isLast()", false);
+    logger.trace("boolean isLast()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return !isBeforeFirst() && row == rows.length - 1;
   }
 
   @Override
   public boolean isAfterLast() throws SQLException {
-    logger.trace("public boolean isAfterLast()", false);
+    logger.trace("boolean isAfterLast()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return row == rows.length;
   }
 
   @Override
   public int getRow() throws SQLException {
-    logger.trace("public int getRow()", false);
+    logger.trace("int getRow()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return row;
   }
@@ -260,7 +260,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   }
 
   Object getObjectInternal(int columnIndex) throws SQLException {
-    logger.trace("public Object getObjectInternal(int columnIndex)", false);
+    logger.trace("Object getObjectInternal(int columnIndex)", false);
     raiseSQLExceptionIfResultSetIsClosed();
 
     if (nextRow == null) {
@@ -280,14 +280,14 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public boolean wasNull() throws SQLException {
-    logger.trace("public boolean wasNull() returning {}", wasNull);
+    logger.trace("boolean wasNull() returning {}", wasNull);
     raiseSQLExceptionIfResultSetIsClosed();
     return wasNull;
   }
 
   @Override
   public String getString(int columnIndex) throws SQLException {
-    logger.trace("public String getString(int columnIndex)", false);
+    logger.trace("String getString(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -297,7 +297,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public boolean getBoolean(int columnIndex) throws SQLException {
-    logger.trace("public boolean getBoolean(int columnIndex)", false);
+    logger.trace("boolean getBoolean(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -324,7 +324,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public byte getByte(int columnIndex) throws SQLException {
-    logger.trace("public byte getByte(int columnIndex)", false);
+    logger.trace("byte getByte(int columnIndex)", false);
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
 
@@ -341,7 +341,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public short getShort(int columnIndex) throws SQLException {
-    logger.trace("public short getShort(int columnIndex)", false);
+    logger.trace("short getShort(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -359,7 +359,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public int getInt(int columnIndex) throws SQLException {
-    logger.trace("public int getInt(int columnIndex)", false);
+    logger.trace("int getInt(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -377,7 +377,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public long getLong(int columnIndex) throws SQLException {
-    logger.trace("public long getLong(int columnIndex)", false);
+    logger.trace("long getLong(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -402,7 +402,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public float getFloat(int columnIndex) throws SQLException {
-    logger.trace("public float getFloat(int columnIndex)", false);
+    logger.trace("float getFloat(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -420,7 +420,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public double getDouble(int columnIndex) throws SQLException {
-    logger.trace("public double getDouble(int columnIndex)", false);
+    logger.trace("double getDouble(int columnIndex)", false);
 
     // Column index starts from 1, not 0.
     Object obj = getObjectInternal(columnIndex);
@@ -447,7 +447,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
   @Deprecated
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-    logger.trace("public BigDecimal getBigDecimal(int columnIndex, int scale)", false);
+    logger.trace("BigDecimal getBigDecimal(int columnIndex, int scale)", false);
 
     BigDecimal value;
 
@@ -471,7 +471,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-    logger.trace("public BigDecimal getBigDecimal(int columnIndex)", false);
+    logger.trace("BigDecimal getBigDecimal(int columnIndex)", false);
 
     BigDecimal value = null;
 
@@ -493,7 +493,7 @@ class SnowflakeDatabaseMetaDataResultSet extends SnowflakeBaseResultSet {
 
   @Override
   public Object getObject(int columnIndex) throws SQLException {
-    logger.trace("public Object getObject(int columnIndex)", false);
+    logger.trace("Object getObject(int columnIndex)", false);
 
     int type = resultSetMetaData.getColumnType(columnIndex);
 

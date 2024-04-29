@@ -139,12 +139,12 @@ public abstract class SFBaseResultSet {
 
   // default implementation
   public boolean next() throws SFException, SnowflakeSQLException {
-    logger.trace("public boolean next()", false);
+    logger.trace("boolean next()", false);
     return false;
   }
 
   public void close() throws SnowflakeSQLException {
-    logger.trace("public void close()", false);
+    logger.trace("void close()", false);
 
     // no exception even if already closed.
     resultSetMetaData = null;
@@ -152,7 +152,7 @@ public abstract class SFBaseResultSet {
   }
 
   public boolean wasNull() {
-    logger.trace("public boolean wasNull() returning {}", wasNull);
+    logger.trace("boolean wasNull() returning {}", wasNull);
 
     return wasNull;
   }

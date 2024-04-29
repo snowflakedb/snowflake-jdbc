@@ -80,7 +80,7 @@ public class SFStatement extends SFBaseStatement {
   private long conservativeMemoryLimit; // in bytes
 
   public SFStatement(SFSession session) {
-    logger.trace(" public SFStatement(SFSession session)", false);
+    logger.trace("SFStatement(SFSession session)", false);
 
     this.session = session;
     Integer queryTimeout = session == null ? null : session.getQueryTimeout();
@@ -814,7 +814,7 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public void close() {
-    logger.trace("public void close()", false);
+    logger.trace("void close()", false);
 
     if (requestId != null) {
       EventUtil.triggerStateTransition(
@@ -841,7 +841,7 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public void cancel() throws SFException, SQLException {
-    logger.trace("public void cancel()", false);
+    logger.trace("void cancel()", false);
 
     if (canceling.get()) {
       logger.debug("Query is already cancelled", false);

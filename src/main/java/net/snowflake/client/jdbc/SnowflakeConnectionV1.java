@@ -289,7 +289,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public boolean isClosed() throws SQLException {
-    logger.trace("public boolean isClosed()", false);
+    logger.trace("boolean isClosed()", false);
 
     return isClosed;
   }
@@ -302,14 +302,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   @Override
   public DatabaseMetaData getMetaData() throws SQLException {
-    logger.trace("public DatabaseMetaData getMetaData()", false);
+    logger.trace("DatabaseMetaData getMetaData()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return new SnowflakeDatabaseMetaData(this);
   }
 
   @Override
   public CallableStatement prepareCall(String sql) throws SQLException {
-    logger.trace("public CallableStatement prepareCall(String sql)", false);
+    logger.trace("CallableStatement prepareCall(String sql)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     CallableStatement stmt = prepareCall(sql, false);
     openStatements.add(stmt);
@@ -317,7 +317,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   public CallableStatement prepareCall(String sql, boolean skipParsing) throws SQLException {
-    logger.trace("public CallableStatement prepareCall(String sql, boolean skipParsing)", false);
+    logger.trace("CallableStatement prepareCall(String sql, boolean skipParsing)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     CallableStatement stmt =
         new SnowflakeCallableStatementV1(
@@ -348,7 +348,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public CallableStatement prepareCall(
       String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
       throws SQLException {
-    logger.trace("public CallableStatement prepareCall(String sql, int " + "resultSetType,", false);
+    logger.trace("CallableStatement prepareCall(String sql, int " + "resultSetType,", false);
     CallableStatement stmt =
         new SnowflakeCallableStatementV1(
             this, sql, false, resultSetType, resultSetConcurrency, resultSetHoldability);
@@ -358,7 +358,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public String nativeSQL(String sql) throws SQLException {
-    logger.trace("public String nativeSQL(String sql)", false);
+    logger.trace("String nativeSQL(String sql)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return sql;
   }

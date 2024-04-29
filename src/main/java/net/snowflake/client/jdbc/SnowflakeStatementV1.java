@@ -101,7 +101,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
       int resultSetConcurrency,
       int resultSetHoldability)
       throws SQLException {
-    logger.trace("public SnowflakeStatement(SnowflakeConnectionV1 conn)", false);
+    logger.trace("SnowflakeStatement(SnowflakeConnectionV1 conn)", false);
 
     this.connection = connection;
 

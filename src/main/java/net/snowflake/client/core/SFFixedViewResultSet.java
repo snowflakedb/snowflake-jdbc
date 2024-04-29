@@ -112,7 +112,7 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
 
   @Override
   protected Object getObjectInternal(int columnIndex) throws SFException {
-    logger.trace("public Object getObjectInternal(int columnIndex)", false);
+    logger.trace("Object getObjectInternal(int columnIndex)", false);
 
     if (nextRow == null) {
       throw new SFException(ErrorCode.ROW_DOES_NOT_EXIST);
