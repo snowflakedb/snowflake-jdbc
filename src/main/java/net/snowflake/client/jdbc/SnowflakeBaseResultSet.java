@@ -134,13 +134,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public Date getDate(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    return getDate(
-        columnIndex,
-        this.session.getUseSessionTimezone()
-            ? (sfBaseResultSet == null
-                ? TimeZone.getDefault()
-                : sfBaseResultSet.getSessionTimeZone())
-            : TimeZone.getDefault());
+    return getDate(columnIndex, (TimeZone) null);
   }
 
   @Override
