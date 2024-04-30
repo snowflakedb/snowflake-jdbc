@@ -132,7 +132,7 @@ public class StatementLatestIT extends BaseJDBCTest {
             // Make sure that the downloaded file exists, it should be gzip compressed
             File downloaded =
                 new File(tempFolder.getCanonicalPath() + File.separator + fileName + ".gz");
-            assert (downloaded.exists());
+            assertTrue(downloaded.exists());
           }
           // unzip the new file
           Process p =

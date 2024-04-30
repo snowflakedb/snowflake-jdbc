@@ -769,7 +769,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         for (int i = 0; i < fileNames.length; i++) {
           // Make sure that the downloaded file exists, it should be gzip compressed
           downloaded = new File(destFolderCanonicalPathWithSeparator + fileNames[i] + ".gz");
-          assert (downloaded.exists());
+          assertTrue(downloaded.exists());
 
           Process p =
               Runtime.getRuntime()
@@ -780,8 +780,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           File original = new File(individualFilePath);
           File unzipped = new File(destFolderCanonicalPathWithSeparator + fileNames[i]);
-          assert (original.length() == unzipped.length());
-          assert (FileUtils.contentEquals(original, unzipped));
+          assertEquals(original.length(), unzipped.length());
+          assertTrue(FileUtils.contentEquals(original, unzipped));
         }
       } finally {
         statement.execute("DROP STAGE IF EXISTS wildcard_stage");
@@ -862,7 +862,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         // Make sure that the downloaded file exists; it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-        assert (downloaded.exists());
+        assertTrue(downloaded.exists());
 
         // unzip the file
         Process p =
@@ -874,8 +874,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // back into a stage,
         // downloaded, and unzipped
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
-        assert (largeTempFile.length() == unzipped.length());
-        assert (FileUtils.contentEquals(largeTempFile, unzipped));
+        assertEquals(largeTempFile.length(), unzipped.length());
+        assertTrue(FileUtils.contentEquals(largeTempFile, unzipped));
       } finally {
         statement.execute("DROP STAGE IF EXISTS largefile_stage");
         statement.execute("DROP STAGE IF EXISTS extra_stage");
@@ -937,7 +937,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           // Make sure that the downloaded file exists; it should be gzip compressed
           File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
-          assert (downloaded.exists());
+          assertTrue(downloaded.exists());
 
           // unzip the file
           Process p =
@@ -946,7 +946,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           p.waitFor();
 
           File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
-          assert (FileUtils.contentEqualsIgnoreEOL(file2, unzipped, null));
+          assertTrue(FileUtils.contentEqualsIgnoreEOL(file2, unzipped, null));
         } finally {
           statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
         }
@@ -2695,7 +2695,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           // Make sure that the downloaded file exists, it should be gzip compressed
           File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-          assert (downloaded.exists());
+          assertTrue(downloaded.exists());
 
           Process p =
               Runtime.getRuntime()
@@ -2704,7 +2704,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           File original = new File(sourceFilePath);
           File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
-          assert (original.length() == unzipped.length());
+          assertEquals(original.length(), unzipped.length());
         } finally {
           statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
         }
@@ -2754,7 +2754,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           // Make sure that the downloaded file exists, it should be gzip compressed
           File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-          assert (downloaded.exists());
+          assertTrue(downloaded.exists());
 
           Process p =
               Runtime.getRuntime()
@@ -2763,7 +2763,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           File original = new File(sourceFilePath);
           File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
-          assert (original.length() == unzipped.length());
+          assertEquals(original.length(), unzipped.length());
         } finally {
           statement.execute("DROP STAGE IF EXISTS testPutGet_unencstage");
         }

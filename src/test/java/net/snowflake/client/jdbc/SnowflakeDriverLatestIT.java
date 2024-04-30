@@ -224,7 +224,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
           InputStream inputStream = new FileInputStream(srcPath1);
 
-          assert (oneMetadata.isForOneFile());
+          assertTrue(oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -252,7 +252,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           p.waitFor();
 
           InputStream gzInputStream = new FileInputStream(gzfilePath);
-          assert (oneMetadata.isForOneFile());
+          assertTrue(oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -271,8 +271,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         // Make sure that the downloaded files are EQUAL,
         // they should be gzip compressed
-        assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
-        assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+        assertTrue(
+            isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+        assertTrue(
+            isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
       } finally {
         statement.execute("DROP STAGE if exists " + testStageName);
       }
@@ -360,8 +362,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           // Make sure that the downloaded files are EQUAL,
           // they should be gzip compressed
-          assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
-          assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+          assertTrue(
+              isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+          assertTrue(
+              isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
         } finally {
           statement.execute("DROP STAGE if exists " + testStageName);
         }
@@ -1057,7 +1061,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
       // Make sure that the downloaded file exists, it should be gzip compressed
       File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
-      assert (downloaded.exists());
+      assertTrue(downloaded.exists());
 
       Process p =
           Runtime.getRuntime()
@@ -1070,7 +1074,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
       System.out.println(
           "Unzipped file: " + unzipped.getAbsolutePath() + ", size: " + unzipped.length());
-      assert (original.length() == unzipped.length());
+      assertEquals(original.length(), unzipped.length());
     } finally {
       statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
     }
@@ -1137,7 +1141,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         // Make sure that the downloaded file exists; it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-        assert (downloaded.exists());
+        assertTrue(downloaded.exists());
 
         // unzip the file
         Process p =
@@ -1149,8 +1153,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // back into a stage,
         // downloaded, and unzipped
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
-        assert (largeTempFile.length() == unzipped.length());
-        assert (FileUtils.contentEquals(largeTempFile, unzipped));
+        assertEquals(largeTempFile.length(), unzipped.length());
+        assertTrue(FileUtils.contentEquals(largeTempFile, unzipped));
       } finally {
         statement.execute("DROP STAGE IF EXISTS largefile_stage");
         statement.execute("DROP STAGE IF EXISTS extra_stage");
@@ -1213,7 +1217,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         // Make sure that the downloaded file exists; it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-        assert (downloaded.exists());
+        assertTrue(downloaded.exists());
 
         // unzip the file
         Process p =
@@ -1225,8 +1229,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // back into a stage,
         // downloaded, and unzipped
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
-        assert (largeTempFile.length() == unzipped.length());
-        assert (FileUtils.contentEquals(largeTempFile, unzipped));
+        assertEquals(largeTempFile.length(), unzipped.length());
+        assertTrue(FileUtils.contentEquals(largeTempFile, unzipped));
       } finally {
         statement.execute("DROP STAGE IF EXISTS largefile_stage");
         statement.execute("DROP STAGE IF EXISTS extra_stage");
@@ -1349,8 +1353,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           // Make sure that the downloaded files are EQUAL,
           // they should be gzip compressed
-          assert (isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
-          assert (isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+          assertTrue(
+              isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+          assertTrue(
+              isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
         } finally {
           statement.execute("DROP STAGE if exists " + testStageName);
         }
@@ -1489,7 +1495,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
           InputStream inputStream = new FileInputStream(srcPath);
 
-          assert (oneMetadata.isForOneFile());
+          assertTrue(oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -1504,7 +1510,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             "Failed to get files",
             statement.execute(
                 "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
-        assert (isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
+        assertTrue(isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
       } finally {
         statement.execute("DROP STAGE if exists " + testStageName);
       }
