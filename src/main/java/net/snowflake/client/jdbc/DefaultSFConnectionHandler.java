@@ -250,51 +250,57 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
   private Path createLogPathSubDirectory(Path logPath) throws SnowflakeSQLLoggedException {
     Path path = Paths.get(logPath.toString(), "jdbc");
     if (!Files.exists(path)) {
-      // Create jdbc subfolder
-      try {
-        if (Constants.getOS() == Constants.OS.WINDOWS) {
-          Files.createDirectories(path);
-        } else {
-          Files.createDirectories(
-              path,
-              PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
-        }
-      } catch (IOException ex) {
-        throw new SnowflakeSQLLoggedException(
-            sfSession,
-            ErrorCode.INTERNAL_ERROR,
-            String.format(
-                "Un-able to create jdbc subfolder in configfile %s ,%s",
-                logPath.toString(), ex.getMessage(), ex.getCause()));
-      }
+      createLogFolder(path);
     } else {
-      // Check if jdbc subfolder has correct permissions
-      if (Constants.getOS() != Constants.OS.WINDOWS) {
-        try {
-          Set<PosixFilePermission> folderPermissions = Files.getPosixFilePermissions(path);
-          if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
-              || folderPermissions.contains(PosixFilePermission.GROUP_READ)
-              || folderPermissions.contains(PosixFilePermission.GROUP_EXECUTE)
-              || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)
-              || folderPermissions.contains(PosixFilePermission.OTHERS_READ)
-              || folderPermissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
-            logger.info(
-                "Access permission for the logs directory '{}' is currently {} and is potentially "
-                    + "accessible to users other than the owner of the logs directory.",
-                path.toString(),
-                folderPermissions.toString());
-          }
-        } catch (IOException ex) {
-          throw new SnowflakeSQLLoggedException(
+      checkLogFolderPermissions(path);
+    }
+    return path;
+  }
+
+  private void createLogFolder(Path path) throws SnowflakeSQLLoggedException{
+    try {
+      if (Constants.getOS() == Constants.OS.WINDOWS) {
+        Files.createDirectories(path);
+      } else {
+        Files.createDirectories(
+                path,
+                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+      }
+    } catch (IOException ex) {
+      throw new SnowflakeSQLLoggedException(
               sfSession,
               ErrorCode.INTERNAL_ERROR,
               String.format(
-                  "Un-able to get permissions of log directory %s ,%s",
-                  path.toString(), ex.getMessage(), ex.getCause()));
+                      "Unable to create jdbc subfolder in configfile %s ,%s",
+                      path.toString(), ex.getMessage(), ex.getCause()));
+    }
+  }
+
+  private void checkLogFolderPermissions(Path path) throws SnowflakeSQLLoggedException {
+    if (Constants.getOS() != Constants.OS.WINDOWS) {
+      try {
+        Set<PosixFilePermission> folderPermissions = Files.getPosixFilePermissions(path);
+        if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
+                || folderPermissions.contains(PosixFilePermission.GROUP_READ)
+                || folderPermissions.contains(PosixFilePermission.GROUP_EXECUTE)
+                || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)
+                || folderPermissions.contains(PosixFilePermission.OTHERS_READ)
+                || folderPermissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
+          logger.info(
+                  "Access permission for the logs directory '{}' is currently {} and is potentially "
+                          + "accessible to users other than the owner of the logs directory.",
+                  path.toString(),
+                  folderPermissions.toString());
         }
+      } catch (IOException ex) {
+        throw new SnowflakeSQLLoggedException(
+                sfSession,
+                ErrorCode.INTERNAL_ERROR,
+                String.format(
+                        "Un-able to get permissions of log directory %s ,%s",
+                        path.toString(), ex.getMessage(), ex.getCause()));
       }
     }
-    return path;
   }
 
   private void initSessionProperties(SnowflakeConnectString conStr, String appID, String appVersion)

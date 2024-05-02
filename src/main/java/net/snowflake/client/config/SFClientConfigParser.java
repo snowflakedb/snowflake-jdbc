@@ -29,8 +29,7 @@ public class SFClientConfigParser {
    * connection property. 2. Environment variable: SF_CLIENT_CONFIG_FILE containing full path to
    * sf_client_config file. 3. Searches for default config file name(sf_client_config.json under the
    * driver directory from where the driver gets loaded. 4. Searches for default config file
-   * name(sf_client_config.json) under user home directory 5. Searches for default config file
-   * name(sf_client_config.json) under tmp directory.
+   * name(sf_client_config.json) under user home directory.
    *
    * @param configFilePath SF_CLIENT_CONFIG_FILE parameter read from connection URL or connection
    *     properties

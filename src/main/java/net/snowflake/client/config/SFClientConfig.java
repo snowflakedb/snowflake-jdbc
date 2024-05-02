@@ -85,7 +85,7 @@ public class SFClientConfig {
       this.logPath = logPath;
     }
 
-    protected Map<String, Object> getUnknownKeys() {
+    Map<String, Object> getUnknownKeys() {
       return unknownKeys;
     }
 

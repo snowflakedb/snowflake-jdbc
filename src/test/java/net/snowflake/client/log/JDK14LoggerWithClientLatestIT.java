@@ -22,6 +22,8 @@ import org.junit.Test;
 
 public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
+  String homePath = systemGetProperty("user.home");
+
   @Test
   public void testJDK14LoggingWithClientConfig() {
     Path configFilePath = Paths.get("config.json");
@@ -95,6 +97,8 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   public void testJDK14LoggingWithMissingLogPathClientConfig() {
     Path configFilePath = Paths.get("config.json");
     String configJson = "{\"common\":{\"log_level\":\"debug\"}}";
+
+    Path homeLogPath = Paths.get(homePath, "jdbc");
     try {
       Files.write(configFilePath, configJson.getBytes());
       Properties properties = new Properties();
@@ -102,23 +106,26 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
       Connection connection = getConnection(properties);
       connection.createStatement().executeQuery("select 1");
 
-      String homePath = systemGetProperty("user.home");
-      Path homeLogPath = Paths.get(homePath, "jdbc");
       File file = new File(homeLogPath.toString());
       assertTrue(file.exists());
-
-      Files.deleteIfExists(configFilePath);
-      FileUtils.deleteDirectory(new File(homeLogPath.toString()));
     } catch (IOException e) {
       fail("testJDK14LoggingWithMissingLogPathClientConfig failed");
     } catch (SQLException e) {
       fail("testJDK14LoggingWithMissingLogPathClientConfig failed");
+    } catch (Exception e) {
+      fail("testJDK14LoggingWithMissingLogPathClientConfig failed");
+    } finally {
+      try {
+        Files.deleteIfExists(configFilePath);
+        FileUtils.deleteDirectory(new File(homeLogPath.toString()));
+      } catch (IOException e) {
+        fail("testJDK14LoggingWithMissingLogPathClientConfig failed");
+      }
     }
   }
 
   @Test
   public void testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig() {
-    String homePath = systemGetProperty("user.home");
     System.clearProperty("user.home");
 
     Path configFilePath = Paths.get("config.json");
@@ -130,9 +137,6 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
       Connection connection = getConnection(properties);
 
       fail("testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig failed");
-
-      Files.deleteIfExists(configFilePath);
-      System.setProperty("user.home", homePath);
     } catch (IOException e) {
       fail("testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig failed");
     } catch (SQLException e) {

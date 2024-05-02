@@ -9,60 +9,91 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashMap;
 import java.util.Map;
-import net.snowflake.client.core.Constants;
-import org.junit.Test;
+import java.util.Set;
 
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnWin;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
+@RunWith(Parameterized.class)
 public class SFPermissionsTest {
 
-  Map<String, Boolean> testConfigFilePermissions =
-      new HashMap<String, Boolean>() {
-        {
-          put("rwx------", true);
-          put("rw-------", true);
-          put("r-x------", true);
-          put("r--------", true);
-          put("rwxrwx---", false);
-          put("rwxrw----", false);
-          put("rwxr-x---", true);
-          put("rwxr-----", true);
-          put("rwx-wx---", false);
-          put("rwx-w----", false);
-          put("rwx--x---", true);
-          put("rwx---rwx", false);
-          put("rwx---rw-", false);
-          put("rwx---r-x", true);
-          put("rwx---r--", true);
-          put("rwx----wx", false);
-          put("rwx----w-", false);
-          put("rwx-----x", true);
-        }
-      };
+  @Parameterized.Parameters(name = "permission={0}")
+  public static Set<Map.Entry<String, Boolean>> data() {
+    Map<String, Boolean> testConfigFilePermissions = new HashMap<String, Boolean>() {
+      {
+        put("rwx------", true);
+        put("rw-------", true);
+        put("r-x------", true);
+        put("r--------", true);
+        put("rwxrwx---", false);
+        put("rwxrw----", false);
+        put("rwxr-x---", true);
+        put("rwxr-----", true);
+        put("rwx-wx---", false);
+        put("rwx-w----", false);
+        put("rwx--x---", true);
+        put("rwx---rwx", false);
+        put("rwx---rw-", false);
+        put("rwx---r-x", true);
+        put("rwx---r--", true);
+        put("rwx----wx", false);
+        put("rwx----w-", false);
+        put("rwx-----x", true);
+      }
+    };
+    return testConfigFilePermissions.entrySet();
+  }
+
+  Path configFilePath = Paths.get("config.json");
+  String configJson = "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"logs\"}}";
+  String permission;
+  Boolean isSucceed;
+
+
+  public SFPermissionsTest(Map.Entry<String, Boolean> permission) {
+    this.permission = permission.getKey();
+    this.isSucceed = permission.getValue();
+  }
+  @Before
+  public void createConfigFile() {
+    try {
+      Files.write(configFilePath, configJson.getBytes());
+    } catch (IOException e) {
+      fail("testLogDirectoryPermissions failed setup");
+    }
+  }
+
+  @After
+  public void cleanupConfigFile() {
+    try {
+      Files.deleteIfExists(configFilePath);
+    } catch (IOException e) {
+      fail("testLogDirectoryPermissions failed cleanup");
+    }
+  }
 
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnWin.class)
   public void testLogDirectoryPermissions() {
-    if (Constants.getOS() != Constants.OS.WINDOWS) {
-      Path configFilePath = Paths.get("config.json");
-      String configJson = "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"logs\"}}";
-      try {
-        Files.write(configFilePath, configJson.getBytes());
-        for (Map.Entry<String, Boolean> entry : testConfigFilePermissions.entrySet()) {
-          Files.setPosixFilePermissions(
-              configFilePath, PosixFilePermissions.fromString(entry.getKey()));
-          try {
-            SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
-            if (!entry.getValue()) {
-              fail("testLogDirectoryPermissions failed. Expected exception.");
-            }
-          } catch (IOException e) {
-            if (entry.getValue()) {
-              fail("testLogDirectoryPermissions failed. Expected pass.");
-            }
-          }
-        }
-        Files.deleteIfExists(configFilePath);
-      } catch (IOException e) {
-        fail("testLogDirectoryPermissions failed");
+    // Don't run on Windows
+    try {
+      Files.setPosixFilePermissions(
+              configFilePath, PosixFilePermissions.fromString(permission));
+      SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
+      if (!isSucceed) {
+        fail("testLogDirectoryPermissions failed. Expected exception.");
       }
+    } catch (IOException e) {
+      if (isSucceed) {
+        fail("testLogDirectoryPermissions failed. Expected pass.");
+      }
+    } catch (Exception e) {
+      fail("testLogDirectoryPermissions failed. Unknown exception.");
     }
   }
 }
