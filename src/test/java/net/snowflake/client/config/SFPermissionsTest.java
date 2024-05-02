@@ -10,7 +10,6 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnWin;
 import org.junit.After;
@@ -24,28 +23,29 @@ public class SFPermissionsTest {
 
   @Parameterized.Parameters(name = "permission={0}")
   public static Set<Map.Entry<String, Boolean>> data() {
-    Map<String, Boolean> testConfigFilePermissions = new HashMap<String, Boolean>() {
-      {
-        put("rwx------", true);
-        put("rw-------", true);
-        put("r-x------", true);
-        put("r--------", true);
-        put("rwxrwx---", false);
-        put("rwxrw----", false);
-        put("rwxr-x---", true);
-        put("rwxr-----", true);
-        put("rwx-wx---", false);
-        put("rwx-w----", false);
-        put("rwx--x---", true);
-        put("rwx---rwx", false);
-        put("rwx---rw-", false);
-        put("rwx---r-x", true);
-        put("rwx---r--", true);
-        put("rwx----wx", false);
-        put("rwx----w-", false);
-        put("rwx-----x", true);
-      }
-    };
+    Map<String, Boolean> testConfigFilePermissions =
+        new HashMap<String, Boolean>() {
+          {
+            put("rwx------", true);
+            put("rw-------", true);
+            put("r-x------", true);
+            put("r--------", true);
+            put("rwxrwx---", false);
+            put("rwxrw----", false);
+            put("rwxr-x---", true);
+            put("rwxr-----", true);
+            put("rwx-wx---", false);
+            put("rwx-w----", false);
+            put("rwx--x---", true);
+            put("rwx---rwx", false);
+            put("rwx---rw-", false);
+            put("rwx---r-x", true);
+            put("rwx---r--", true);
+            put("rwx----wx", false);
+            put("rwx----w-", false);
+            put("rwx-----x", true);
+          }
+        };
     return testConfigFilePermissions.entrySet();
   }
 
@@ -54,11 +54,11 @@ public class SFPermissionsTest {
   String permission;
   Boolean isSucceed;
 
-
   public SFPermissionsTest(Map.Entry<String, Boolean> permission) {
     this.permission = permission.getKey();
     this.isSucceed = permission.getValue();
   }
+
   @Before
   public void createConfigFile() {
     try {
@@ -82,8 +82,7 @@ public class SFPermissionsTest {
   public void testLogDirectoryPermissions() {
     // Don't run on Windows
     try {
-      Files.setPosixFilePermissions(
-              configFilePath, PosixFilePermissions.fromString(permission));
+      Files.setPosixFilePermissions(configFilePath, PosixFilePermissions.fromString(permission));
       SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
       if (!isSucceed) {
         fail("testLogDirectoryPermissions failed. Expected exception.");

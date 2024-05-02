@@ -257,22 +257,22 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
     return path;
   }
 
-  private void createLogFolder(Path path) throws SnowflakeSQLLoggedException{
+  private void createLogFolder(Path path) throws SnowflakeSQLLoggedException {
     try {
       if (Constants.getOS() == Constants.OS.WINDOWS) {
         Files.createDirectories(path);
       } else {
         Files.createDirectories(
-                path,
-                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+            path,
+            PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
       }
     } catch (IOException ex) {
       throw new SnowflakeSQLLoggedException(
-              sfSession,
-              ErrorCode.INTERNAL_ERROR,
-              String.format(
-                      "Unable to create jdbc subfolder in configfile %s ,%s",
-                      path.toString(), ex.getMessage(), ex.getCause()));
+          sfSession,
+          ErrorCode.INTERNAL_ERROR,
+          String.format(
+              "Unable to create jdbc subfolder in configfile %s ,%s",
+              path.toString(), ex.getMessage(), ex.getCause()));
     }
   }
 
@@ -281,24 +281,24 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
       try {
         Set<PosixFilePermission> folderPermissions = Files.getPosixFilePermissions(path);
         if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
-                || folderPermissions.contains(PosixFilePermission.GROUP_READ)
-                || folderPermissions.contains(PosixFilePermission.GROUP_EXECUTE)
-                || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)
-                || folderPermissions.contains(PosixFilePermission.OTHERS_READ)
-                || folderPermissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
+            || folderPermissions.contains(PosixFilePermission.GROUP_READ)
+            || folderPermissions.contains(PosixFilePermission.GROUP_EXECUTE)
+            || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)
+            || folderPermissions.contains(PosixFilePermission.OTHERS_READ)
+            || folderPermissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
           logger.info(
-                  "Access permission for the logs directory '{}' is currently {} and is potentially "
-                          + "accessible to users other than the owner of the logs directory.",
-                  path.toString(),
-                  folderPermissions.toString());
+              "Access permission for the logs directory '{}' is currently {} and is potentially "
+                  + "accessible to users other than the owner of the logs directory.",
+              path.toString(),
+              folderPermissions.toString());
         }
       } catch (IOException ex) {
         throw new SnowflakeSQLLoggedException(
-                sfSession,
-                ErrorCode.INTERNAL_ERROR,
-                String.format(
-                        "Un-able to get permissions of log directory %s ,%s",
-                        path.toString(), ex.getMessage(), ex.getCause()));
+            sfSession,
+            ErrorCode.INTERNAL_ERROR,
+            String.format(
+                "Un-able to get permissions of log directory %s ,%s",
+                path.toString(), ex.getMessage(), ex.getCause()));
       }
     }
   }
