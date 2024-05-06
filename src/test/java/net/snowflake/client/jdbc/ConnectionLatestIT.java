@@ -113,13 +113,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // Disable QCC via prop
     Properties props = new Properties();
     props.put("disableQueryContextCache", "true");
-    Connection con = getConnection(props);
-    Statement statement = con.createStatement();
-    statement.execute("select 1");
-    SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    // if QCC disable, this should be null
-    assertNull(session.getQueryContextDTO());
-    con.close();
+    try (Connection con = getConnection(props);
+        Statement statement = con.createStatement()) {
+      statement.execute("select 1");
+      SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      // if QCC disable, this should be null
+      assertNull(session.getQueryContextDTO());
+    }
   }
 
   /**
@@ -130,21 +130,22 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   public void testHeartbeatFrequencyValidValue() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 1800);
-    Connection connection = getConnection(paramProperties);
+    try (Connection connection = getConnection(paramProperties)) {
+      for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
+        String key = (String) enums.nextElement();
+        try (ResultSet rs =
+            connection
+                .createStatement()
+                .executeQuery(String.format("show parameters like '%s'", key))) {
+          assertTrue(rs.next());
+          String value = rs.getString("value");
 
-    for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
-      String key = (String) enums.nextElement();
-      ResultSet rs =
-          connection
-              .createStatement()
-              .executeQuery(String.format("show parameters like '%s'", key));
-      rs.next();
-      String value = rs.getString("value");
-
-      assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+          assertThat(key, value, equalTo(paramProperties.get(key).toString()));
+        }
+      }
+      SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      assertEquals(1800, session.getHeartbeatFrequency());
     }
-    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    assertEquals(1800, session.getHeartbeatFrequency());
   }
 
   /**
@@ -155,22 +156,23 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   public void testHeartbeatFrequencyTooSmall() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put(CLIENT_SESSION_KEEP_ALIVE_HEARTBEAT_FREQUENCY, 2);
-    Connection connection = getConnection(paramProperties);
+    try (Connection connection = getConnection(paramProperties)) {
+      for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
+        String key = (String) enums.nextElement();
+        try (ResultSet rs =
+            connection
+                .createStatement()
+                .executeQuery(String.format("show parameters like '%s'", key))) {
+          assertTrue(rs.next());
+          String value = rs.getString("value");
 
-    for (Enumeration<?> enums = paramProperties.propertyNames(); enums.hasMoreElements(); ) {
-      String key = (String) enums.nextElement();
-      ResultSet rs =
-          connection
-              .createStatement()
-              .executeQuery(String.format("show parameters like '%s'", key));
-      rs.next();
-      String value = rs.getString("value");
+          assertThat(key, value, equalTo("900"));
+        }
+      }
 
-      assertThat(key, value, equalTo("900"));
+      SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      assertEquals(900, session.getHeartbeatFrequency());
     }
-
-    SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-    assertEquals(900, session.getHeartbeatFrequency());
   }
 
   /**
@@ -183,33 +185,37 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void putGetStatementsHaveQueryID() throws Throwable {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-    File destFolder = tmpFolder.newFolder();
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-    SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
-    String createStageQueryId = snowflakeStatement.getQueryID();
-    TestUtil.assertValidQueryId(createStageQueryId);
-    String putStatement = "PUT file://" + sourceFilePath + " @testPutGet_stage";
-    ResultSet resultSet = snowflakeStatement.executeAsyncQuery(putStatement);
-    String statementPutQueryId = snowflakeStatement.getQueryID();
-    TestUtil.assertValidQueryId(statementPutQueryId);
-    assertNotEquals(
-        "create query id is override by put query id", createStageQueryId, statementPutQueryId);
-    String resultSetPutQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    TestUtil.assertValidQueryId(resultSetPutQueryId);
-    assertEquals(resultSetPutQueryId, statementPutQueryId);
-    resultSet =
-        snowflakeStatement.executeAsyncQuery(
-            "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
-    String statementGetQueryId = snowflakeStatement.getQueryID();
-    String resultSetGetQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    TestUtil.assertValidQueryId(resultSetGetQueryId);
-    assertNotEquals(
-        "put and get query id should be different", resultSetGetQueryId, resultSetPutQueryId);
-    assertEquals(resultSetGetQueryId, statementGetQueryId);
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+      File destFolder = tmpFolder.newFolder();
+      String destFolderCanonicalPath = destFolder.getCanonicalPath();
+      statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+      SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
+      String createStageQueryId = snowflakeStatement.getQueryID();
+      TestUtil.assertValidQueryId(createStageQueryId);
+      String putStatement = "PUT file://" + sourceFilePath + " @testPutGet_stage";
+      String resultSetPutQueryId = "";
+      try (ResultSet resultSet = snowflakeStatement.executeAsyncQuery(putStatement)) {
+        String statementPutQueryId = snowflakeStatement.getQueryID();
+        TestUtil.assertValidQueryId(statementPutQueryId);
+        assertNotEquals(
+            "create query id is override by put query id", createStageQueryId, statementPutQueryId);
+        resultSetPutQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+        TestUtil.assertValidQueryId(resultSetPutQueryId);
+        assertEquals(resultSetPutQueryId, statementPutQueryId);
+      }
+      try (ResultSet resultSet =
+          snowflakeStatement.executeAsyncQuery(
+              "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8")) {
+        String statementGetQueryId = snowflakeStatement.getQueryID();
+        String resultSetGetQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+        TestUtil.assertValidQueryId(resultSetGetQueryId);
+        assertNotEquals(
+            "put and get query id should be different", resultSetGetQueryId, resultSetPutQueryId);
+        assertEquals(resultSetGetQueryId, statementGetQueryId);
+      }
+    }
   }
 
   /** Added in > 3.14.4 */
@@ -257,142 +263,154 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   public void testAsyncQueryOpenAndCloseConnection()
       throws SQLException, IOException, InterruptedException {
     // open connection and run asynchronous query
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    ResultSet rs1 =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery("CALL SYSTEM$WAIT(60, 'SECONDS')");
-    // Retrieve query ID for part 2 of test, check status of query
-    String queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
+    String queryID = null;
     QueryStatusV2 statusV2 = null;
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement();
+        ResultSet rs1 =
+            statement
+                .unwrap(SnowflakeStatement.class)
+                .executeAsyncQuery("CALL SYSTEM$WAIT(60, 'SECONDS')")) {
+      // Retrieve query ID for part 2 of test, check status of query
+      queryID = rs1.unwrap(SnowflakeResultSet.class).getQueryID();
 
-    SnowflakeResultSet sfrs = rs1.unwrap(SnowflakeResultSet.class);
-    await()
-        .atMost(Duration.ofSeconds(5))
-        .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
-    statusV2 = sfrs.getStatusV2();
-    // Query should take 60 seconds so should be running
-    assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
-    assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
-    // close connection and wait for 1 minute while query finishes running
-    statement.close();
-    con.close();
+      SnowflakeResultSet sfrs = rs1.unwrap(SnowflakeResultSet.class);
+      await()
+          .atMost(Duration.ofSeconds(5))
+          .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
+      statusV2 = sfrs.getStatusV2();
+      // Query should take 60 seconds so should be running
+      assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
+      assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
+      // close connection and wait for 1 minute while query finishes running
+    }
+
     Thread.sleep(1000 * 70);
     // Create a new connection and new instance of a resultSet using query ID
-    con = getConnection();
-    try {
-      ResultSet rs =
-          con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID");
-      fail("Query ID should be rejected");
-    } catch (SQLException e) {
-      assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+    try (Connection con = getConnection()) {
+      try (ResultSet rs =
+          con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID")) {
+        fail("Query ID should be rejected");
+      } catch (SQLException e) {
+        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+      }
+      try (ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID)) {
+        statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
+        // Assert status of query is a success
+        assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
+        assertEquals("No error reported", statusV2.getErrorMessage());
+        assertEquals(0, statusV2.getErrorCode());
+        assertEquals(1, getSizeOfResultSet(rs));
+        try (Statement statement = con.createStatement();
+            // Create another query that will not be successful (querying table that does not exist)
+            ResultSet rs1 =
+                statement
+                    .unwrap(SnowflakeStatement.class)
+                    .executeAsyncQuery("select * from nonexistentTable")) {
+          Thread.sleep(100);
+          statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
+          // when GS response is slow, allow up to 1 second of retries to get final query status
+          SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
+          await()
+              .atMost(Duration.ofSeconds(10))
+              .until(
+                  () -> {
+                    QueryStatus qs = sfrs1.getStatusV2().getStatus();
+                    return !(qs == QueryStatus.NO_DATA || qs == QueryStatus.RUNNING);
+                  });
+          // If GS response is too slow to return data, do nothing to avoid flaky test failure. If
+          // response has returned,
+          // assert it is the error message that we are expecting.
+          if (statusV2.getStatus() != QueryStatus.NO_DATA) {
+            assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
+            assertEquals(2003, statusV2.getErrorCode());
+            assertEquals(
+                "SQL compilation error:\n"
+                    + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
+                statusV2.getErrorMessage());
+          }
+        }
+      }
     }
-    ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID);
-    statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
-    // Assert status of query is a success
-    assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
-    assertEquals("No error reported", statusV2.getErrorMessage());
-    assertEquals(0, statusV2.getErrorCode());
-    assertEquals(1, getSizeOfResultSet(rs));
-    statement = con.createStatement();
-    // Create another query that will not be successful (querying table that does not exist)
-    rs1 =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery("select * from nonexistentTable");
-    Thread.sleep(100);
-    statusV2 = rs1.unwrap(SnowflakeResultSet.class).getStatusV2();
-    // when GS response is slow, allow up to 1 second of retries to get final query status
-    SnowflakeResultSet sfrs1 = rs1.unwrap(SnowflakeResultSet.class);
-    await()
-        .atMost(Duration.ofSeconds(10))
-        .until(
-            () -> {
-              QueryStatus qs = sfrs1.getStatusV2().getStatus();
-              return !(qs == QueryStatus.NO_DATA || qs == QueryStatus.RUNNING);
-            });
-    // If GS response is too slow to return data, do nothing to avoid flaky test failure. If
-    // response has returned,
-    // assert it is the error message that we are expecting.
-    if (statusV2.getStatus() != QueryStatus.NO_DATA) {
-      assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
-      assertEquals(2003, statusV2.getErrorCode());
-      assertEquals(
-          "SQL compilation error:\n"
-              + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
-          statusV2.getErrorMessage());
-    }
-    statement.close();
-    con.close();
   }
 
   @Test
   public void testGetErrorMessageFromAsyncQuery() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    // Create another query that will not be successful (querying table that does not exist)
-    ResultSet rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("bad query!");
-    try {
-      rs1.next();
-    } catch (SQLException ex) {
-      assertEquals(
-          "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
-              + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
-          ex.getMessage());
-      assertEquals(
-          "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
-          rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      // Create another query that will not be successful (querying table that does not exist)
+      try (ResultSet rs1 =
+          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("bad query!")) {
+        try {
+          rs1.next();
+        } catch (SQLException ex) {
+          assertEquals(
+              "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
+                  + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
+              ex.getMessage());
+          assertEquals(
+              "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
+              rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+        }
+      }
+      try (ResultSet rs2 =
+          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1")) {
+        rs2.next();
+        // Assert there is no error message when query is successful
+        assertEquals(
+            "No error reported", rs2.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+      }
     }
-    rs1 = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1");
-    rs1.next();
-    // Assert there is no error message when query is successful
-    assertEquals("No error reported", rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
-    rs1.close();
-    statement.close();
-    con.close();
   }
 
   @Test
   public void testAsyncAndSynchronousQueries() throws SQLException {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    // execute some statements that you want to be synchronous
-    statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
-    statement.execute("create or replace table smallTable (colA string, colB int)");
-    statement.execute("create or replace table uselessTable (colA string, colB int)");
-    statement.execute("insert into smallTable values ('row1', 1), ('row2', 2), ('row3', 3)");
-    statement.execute("insert into uselessTable values ('row1', 1), ('row2', 2), ('row3', 3)");
-    // Select from uselessTable asynchronously; drop it synchronously afterwards
-    ResultSet rs =
-        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from smallTable");
-    // execute a query that you don't want to wait for
-    ResultSet rs1 =
-        statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from uselessTable");
-    // Drop the table that was queried asynchronously. Should not drop until after async query
-    // finishes, because this
-    // query IS synchronous
-    ResultSet rs2 = statement.executeQuery("drop table uselessTable");
-    while (rs2.next()) {
-      assertEquals("USELESSTABLE successfully dropped.", rs2.getString(1));
-    }
-    // able to successfully fetch results in spite of table being dropped
-    assertEquals(3, getSizeOfResultSet(rs1));
-    statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      // execute some statements that you want to be synchronous
+      try {
+        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
+        statement.execute("create or replace table smallTable (colA string, colB int)");
+        statement.execute("create or replace table uselessTable (colA string, colB int)");
+        statement.execute("insert into smallTable values ('row1', 1), ('row2', 2), ('row3', 3)");
+        statement.execute("insert into uselessTable values ('row1', 1), ('row2', 2), ('row3', 3)");
+        // Select from uselessTable asynchronously; drop it synchronously afterwards
+        try (ResultSet rs =
+                statement
+                    .unwrap(SnowflakeStatement.class)
+                    .executeAsyncQuery("select * from smallTable");
+            // execute a query that you don't want to wait for
+            ResultSet rs1 =
+                statement
+                    .unwrap(SnowflakeStatement.class)
+                    .executeAsyncQuery("select * from uselessTable");
+            // Drop the table that was queried asynchronously. Should not drop until after async
+            // query
+            // finishes, because this
+            // query IS synchronous
+            ResultSet rs2 = statement.executeQuery("drop table uselessTable")) {
+          while (rs2.next()) {
+            assertEquals("USELESSTABLE successfully dropped.", rs2.getString(1));
+          }
+          // able to successfully fetch results in spite of table being dropped
+          assertEquals(3, getSizeOfResultSet(rs1));
+          statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
 
-    // come back to the asynchronously executed result set after finishing other things
-    rs.next();
-    assertEquals(rs.getString(1), "row1");
-    assertEquals(rs.getInt(2), 1);
-    rs.next();
-    assertEquals(rs.getString(1), "row2");
-    assertEquals(rs.getInt(2), 2);
-    rs.next();
-    assertEquals(rs.getString(1), "row3");
-    assertEquals(rs.getInt(2), 3);
-    statement.execute("drop table smallTable");
-    statement.close();
-    con.close();
+          // come back to the asynchronously executed result set after finishing other things
+          assertTrue(rs.next());
+          assertEquals(rs.getString(1), "row1");
+          assertEquals(rs.getInt(2), 1);
+          assertTrue(rs.next());
+          assertEquals(rs.getString(1), "row2");
+          assertEquals(rs.getInt(2), 2);
+          assertTrue(rs.next());
+          assertEquals(rs.getString(1), "row3");
+          assertEquals(rs.getInt(2), 3);
+        }
+      } finally {
+        statement.execute("drop table smallTable");
+      }
+    }
   }
 
   /** Can be used in > 3.14.4 (when {@link QueryStatusV2} was added) */
@@ -417,23 +435,31 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testPreparedStatementAsyncQuery() throws SQLException {
-    Connection con = getConnection();
-    con.createStatement().execute("create or replace table testTable(colA string, colB boolean)");
-    PreparedStatement prepStatement = con.prepareStatement("insert into testTable values (?,?)");
-    prepStatement.setInt(1, 33);
-    prepStatement.setBoolean(2, true);
-    // call executeAsyncQuery
-    ResultSet rs = prepStatement.unwrap(SnowflakePreparedStatement.class).executeAsyncQuery();
-    // Get access to results by calling next() function
-    // next () will block until results are ready
-    assertTrue(rs.next());
-    // the resultSet consists of a single row, single column containing the number of rows that have
-    // been updated by the insert
-    // the number of updated rows in testTable is 1 so 1 is returned
-    assertEquals(rs.getString(1), "1");
-    con.createStatement().execute("drop table testTable");
-    prepStatement.close();
-    con.close();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      try {
+        statement.execute("create or replace table testTable(colA string, colB boolean)");
+        try (PreparedStatement prepStatement =
+            con.prepareStatement("insert into testTable values (?,?)")) {
+          prepStatement.setInt(1, 33);
+          prepStatement.setBoolean(2, true);
+          // call executeAsyncQuery
+          try (ResultSet rs =
+              prepStatement.unwrap(SnowflakePreparedStatement.class).executeAsyncQuery()) {
+            // Get access to results by calling next() function
+            // next () will block until results are ready
+            assertTrue(rs.next());
+            // the resultSet consists of a single row, single column containing the number of rows
+            // that have
+            // been updated by the insert
+            // the number of updated rows in testTable is 1 so 1 is returned
+            assertEquals(rs.getString(1), "1");
+          }
+        }
+      } finally {
+        statement.execute("drop table testTable");
+      }
+    }
   }
 
   @Test
@@ -499,39 +525,41 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   // @Test
   public void testQueryStatuses() throws SQLException, IOException, InterruptedException {
     // Before running test, close warehouse and re-open it!
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    ResultSet rs =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery("select count(*) from table(generator(timeLimit => 5))");
-    Thread.sleep(100);
-    QueryStatus status = rs.unwrap(SnowflakeResultSet.class).getStatus();
-    // Since warehouse has just been restarted, warehouse should still be booting
-    assertEquals(QueryStatus.RESUMING_WAREHOUSE, status);
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement();
+        ResultSet rs =
+            statement
+                .unwrap(SnowflakeStatement.class)
+                .executeAsyncQuery("select count(*) from table(generator(timeLimit => 5))")) {
+      Thread.sleep(100);
+      QueryStatus status = rs.unwrap(SnowflakeResultSet.class).getStatus();
+      // Since warehouse has just been restarted, warehouse should still be booting
+      assertEquals(QueryStatus.RESUMING_WAREHOUSE, status);
 
-    // now try to get QUEUED status
-    ResultSet rs1 =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
-    ResultSet rs2 =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
-    ResultSet rs3 =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
-    ResultSet rs4 =
-        statement
-            .unwrap(SnowflakeStatement.class)
-            .executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
-    // Retrieve query ID for part 2 of test, check status of query
-    Thread.sleep(100);
-    status = rs4.unwrap(SnowflakeResultSet.class).getStatus();
-    // Since 4 queries were started at once, status is most likely QUEUED
-    assertEquals(QueryStatus.QUEUED, status);
+      // now try to get QUEUED status
+      try (ResultSet rs1 =
+              statement
+                  .unwrap(SnowflakeStatement.class)
+                  .executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
+          ResultSet rs2 =
+              statement
+                  .unwrap(SnowflakeStatement.class)
+                  .executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
+          ResultSet rs3 =
+              statement
+                  .unwrap(SnowflakeStatement.class)
+                  .executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))");
+          ResultSet rs4 =
+              statement
+                  .unwrap(SnowflakeStatement.class)
+                  .executeAsyncQuery("select count(*) from table(generator(timeLimit => 60))")) {
+        // Retrieve query ID for part 2 of test, check status of query
+        Thread.sleep(100);
+        status = rs4.unwrap(SnowflakeResultSet.class).getStatus();
+        // Since 4 queries were started at once, status is most likely QUEUED
+        assertEquals(QueryStatus.QUEUED, status);
+      }
+    }
   }
 
   @Test
@@ -694,8 +722,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setPrivateKeyFile(privateKeyLocation, "test");
 
     // set up public key
-    try (Connection con = getConnection()) {
-      Statement statement = con.createStatement();
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       statement.execute("use role accountadmin");
       String pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
       String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
@@ -705,36 +733,36 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           String.format("alter user %s set rsa_public_key='%s'", params.get("user"), pubKey));
     }
 
-    Connection con = ds.getConnection();
-    ResultSet resultSet = con.createStatement().executeQuery("select 1");
-    resultSet.next();
-    assertThat("select 1", resultSet.getInt(1), equalTo(1));
-    con.close();
+    try (Connection con = ds.getConnection();
+        Statement statement = con.createStatement();
+        ResultSet resultSet = statement.executeQuery("select 1")) {
+      resultSet.next();
+      assertThat("select 1", resultSet.getInt(1), equalTo(1));
+    }
     File serializedFile = tmpFolder.newFile("serializedStuff.ser");
     // serialize datasource object into a file
-    FileOutputStream outputFile = new FileOutputStream(serializedFile);
-    ObjectOutputStream out = new ObjectOutputStream(outputFile);
-    out.writeObject(ds);
-    out.close();
-    outputFile.close();
+    try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
+        ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
+      out.writeObject(ds);
+    }
     // deserialize into datasource object again
-    FileInputStream inputFile = new FileInputStream(serializedFile);
-    ObjectInputStream in = new ObjectInputStream(inputFile);
-    SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
-    in.close();
-    inputFile.close();
-    // test connection a second time
-    con = ds2.getConnection();
-    resultSet = con.createStatement().executeQuery("select 1");
-    resultSet.next();
-    assertThat("select 1", resultSet.getInt(1), equalTo(1));
-    con.close();
+    try (FileInputStream inputFile = new FileInputStream(serializedFile);
+        ObjectInputStream in = new ObjectInputStream(inputFile)) {
+      SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+      // test connection a second time
+      try (Connection con = ds2.getConnection();
+          Statement statement = con.createStatement()) {
+        ResultSet resultSet = statement.executeQuery("select 1");
+        resultSet.next();
+        assertThat("select 1", resultSet.getInt(1), equalTo(1));
+      }
 
-    // clean up
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
-      statement.execute("use role accountadmin");
-      statement.execute(String.format("alter user %s unset rsa_public_key", params.get("user")));
+      // clean up
+      try (Connection connection = getConnection()) {
+        Statement statement = connection.createStatement();
+        statement.execute("use role accountadmin");
+        statement.execute(String.format("alter user %s unset rsa_public_key", params.get("user")));
+      }
     }
   }
 
@@ -743,17 +771,18 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   public void testPrivateKeyInConnectionString() throws SQLException, IOException {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
-
+    String pathfile = null;
+    String pubKey = null;
     // Test with non-password-protected private key file (.pem)
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    String pathfile = getFullPathFileInResource("rsa_key.pub");
-    String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    connection.close();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      pathfile = getFullPathFileInResource("rsa_key.pub");
+      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    }
 
     // PKCS #8
     String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
@@ -763,8 +792,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("user", testUser);
     properties.put("ssl", parameters.get("ssl"));
     properties.put("port", parameters.get("port"));
-    connection = DriverManager.getConnection(uri, properties);
-    connection.close();
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
 
     // PKCS #1
     privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
@@ -775,19 +803,18 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("ssl", parameters.get("ssl"));
     properties.put("port", parameters.get("port"));
     properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.toString());
-    connection = DriverManager.getConnection(uri, properties);
-    connection.close();
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
 
     // test with password-protected private key file (.p8)
-    connection = getConnection();
-    statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
-    pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    connection.close();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
+      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    }
 
     privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
     uri =
@@ -795,58 +822,58 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             + "/?private_key_file_pwd=test&private_key_file="
             + privateKeyLocation;
 
-    connection = DriverManager.getConnection(uri, properties);
-    connection.close();
-
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
     // test with incorrect password for private key
     uri =
         parameters.get("uri")
             + "/?private_key_file_pwd=wrong_password&private_key_file="
             + privateKeyLocation;
-    try {
-      connection = DriverManager.getConnection(uri, properties);
+
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
       fail();
     } catch (SQLException e) {
       assertEquals(
           (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
     }
-    connection.close();
 
     // test with invalid public/private key combo (using 1st public key with 2nd private key)
-    connection = getConnection();
-    statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    pathfile = getFullPathFileInResource("rsa_key.pub");
-    pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    connection.close();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      pathfile = getFullPathFileInResource("rsa_key.pub");
+      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    }
 
     privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
     uri =
         parameters.get("uri")
             + "/?private_key_file_pwd=test&private_key_file="
             + privateKeyLocation;
-    try {
-      connection = DriverManager.getConnection(uri, properties);
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
       fail();
     } catch (SQLException e) {
       assertEquals(390144, e.getErrorCode());
     }
-    connection.close();
 
     // test with invalid private key
     privateKeyLocation = getFullPathFileInResource("invalid_private_key.pem");
     uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    try {
-      connection = DriverManager.getConnection(uri, properties);
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
       fail();
     } catch (SQLException e) {
       assertEquals(
           (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
     }
-    connection.close();
+
+    // clean up
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
+    }
   }
 
   // This will only work with JDBC driver versions higher than 3.15.1
@@ -864,36 +891,39 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // set up DataSource object and ensure connection works
     Map<String, String> params = getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    SnowflakeBasicDataSource ds2 = null;
     ds.setServerName(params.get("host"));
     ds.setSsl("on".equals(params.get("ssl")));
     ds.setAccount(params.get("account"));
     ds.setPortNumber(Integer.parseInt(params.get("port")));
     ds.setUser(params.get("user"));
     ds.setPassword(params.get("password"));
-    Connection con = ds.getConnection();
-    ResultSet resultSet = con.createStatement().executeQuery("select 1");
-    resultSet.next();
-    assertThat("select 1", resultSet.getInt(1), equalTo(1));
-    con.close();
-    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
-    // serialize datasource object into a file
-    FileOutputStream outputFile = new FileOutputStream(serializedFile);
-    ObjectOutputStream out = new ObjectOutputStream(outputFile);
-    out.writeObject(ds);
-    out.close();
-    outputFile.close();
-    // deserialize into datasource object again
-    FileInputStream inputFile = new FileInputStream(serializedFile);
-    ObjectInputStream in = new ObjectInputStream(inputFile);
-    SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
-    in.close();
-    inputFile.close();
+    try (Connection con = ds.getConnection();
+        Statement statement = con.createStatement();
+        ResultSet resultSet = statement.executeQuery("select 1")) {
+      resultSet.next();
+      assertThat("select 1", resultSet.getInt(1), equalTo(1));
+      con.close();
+      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      // serialize datasource object into a file
+      try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
+          ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
+        out.writeObject(ds);
+      }
+      // deserialize into datasource object again
+      try (FileInputStream inputFile = new FileInputStream(serializedFile);
+          ObjectInputStream in = new ObjectInputStream(inputFile)) {
+        ds2 = (SnowflakeBasicDataSource) in.readObject();
+      }
+    }
+
     // test connection a second time
-    con = ds2.getConnection();
-    resultSet = con.createStatement().executeQuery("select 1");
-    resultSet.next();
-    assertThat("select 1", resultSet.getInt(1), equalTo(1));
-    con.close();
+    try (Connection con = ds2.getConnection();
+        Statement statement = con.createStatement();
+        ResultSet resultSet = statement.executeQuery("select 1")) {
+      resultSet.next();
+      assertThat("select 1", resultSet.getInt(1), equalTo(1));
+    }
   }
 
   // Wait for the async query finish
@@ -908,149 +938,174 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetChildQueryIdsForAsyncSingleStatement() throws Exception {
-    Connection connection = getConnection();
-    Connection connection2 = getConnection();
+    String queryID = null;
+    String[] queryIDs = null;
+    try (Connection connection = getConnection();
+        Connection connection2 = getConnection();
+        Statement statement = connection.createStatement()) {
+      String query0 = "create or replace temporary table test_multi (cola int);";
+      String query1 = "insert into test_multi VALUES (111), (222);";
+      String query2 = "select cola from test_multi order by cola asc";
 
-    Statement statement = connection.createStatement();
-    String query0 = "create or replace temporary table test_multi (cola int);";
-    String query1 = "insert into test_multi VALUES (111), (222);";
-    String query2 = "select cola from test_multi order by cola asc";
+      // Get ResultSet for first statement
+      try (ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query0)) {
+        queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+        waitForAsyncQueryDone(connection, queryID);
+        queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+        assertEquals(queryIDs.length, 1);
+      }
 
-    // Get ResultSet for first statement
-    ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query0);
-    String queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-    waitForAsyncQueryDone(connection, queryID);
-    String[] queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-    assert (queryIDs.length == 1);
-    rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0]);
-    assertTrue(rs.next());
-    assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
-    assertFalse(rs.next());
+      try (ResultSet rs =
+          connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0])) {
+        assertTrue(rs.next());
+        assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
+        assertFalse(rs.next());
+      }
 
-    // Get ResultSet for second statement in another connection
-    rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query1);
-    queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-    waitForAsyncQueryDone(connection2, queryID);
-    queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-    assert (queryIDs.length == 1);
-    rs = connection2.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0]);
-    assertTrue(rs.next());
-    assertEquals(rs.getInt(1), 2); // insert 2 rows
-    assertFalse(rs.next());
+      // Get ResultSet for second statement in another connection
+      try (ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query1)) {
+        queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+        waitForAsyncQueryDone(connection2, queryID);
+        queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+        assertEquals(queryIDs.length, 1);
+      }
 
-    // Get ResultSet for third statement in another connection
-    rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query2);
-    queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-    waitForAsyncQueryDone(connection2, queryID);
-    queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-    assert (queryIDs.length == 1);
-    rs = connection2.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0]);
-    assertTrue(rs.next());
-    assertEquals(rs.getInt(1), 111);
-    assertTrue(rs.next());
-    assertEquals(rs.getInt(1), 222);
-    assertFalse(rs.next());
+      try (ResultSet rs =
+          connection2.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0])) {
+        assertTrue(rs.next());
+        assertEquals(rs.getInt(1), 2); // insert 2 rows
+        assertFalse(rs.next());
+      }
 
-    connection.close();
-    connection2.close();
+      // Get ResultSet for third statement in another connection
+      try (ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(query2)) {
+        queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+        waitForAsyncQueryDone(connection2, queryID);
+        queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+        assertEquals(queryIDs.length, 1);
+      }
+
+      try (ResultSet rs =
+          connection2.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0])) {
+        assertTrue(rs.next());
+        assertEquals(rs.getInt(1), 111);
+        assertTrue(rs.next());
+        assertEquals(rs.getInt(1), 222);
+        assertFalse(rs.next());
+      }
+    }
   }
 
   @Test
   public void testGetChildQueryIdsForAsyncMultiStatement() throws Exception {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    String multiStmtQuery =
-        "create or replace temporary table test_multi (cola int);"
-            + "insert into test_multi VALUES (111), (222);"
-            + "select cola from test_multi order by cola asc";
+    String queryID = null;
+    String[] queryIDs = null;
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      String multiStmtQuery =
+          "create or replace temporary table test_multi (cola int);"
+              + "insert into test_multi VALUES (111), (222);"
+              + "select cola from test_multi order by cola asc";
 
-    statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
-    ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery);
-    String queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-    statement.close();
-    connection.close();
-
+      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+      try (ResultSet rs =
+          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery)) {
+        queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+      }
+    }
     // Get the child query IDs in a new connection
-    connection = getConnection();
-    waitForAsyncQueryDone(connection, queryID);
-    String[] queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-    assert (queryIDs.length == 3);
+    try (Connection connection = getConnection()) {
+      waitForAsyncQueryDone(connection, queryID);
+      queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+      assertEquals(queryIDs.length, 3);
 
-    // First statement ResultSet
-    rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0]);
-    assertTrue(rs.next());
-    assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
-    assertFalse(rs.next());
+      // First statement ResultSet
+      try (ResultSet rs =
+          connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0])) {
+        assertTrue(rs.next());
+        assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
+        assertFalse(rs.next());
+      }
 
-    // Second statement ResultSet
-    rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[1]);
-    assertTrue(rs.next());
-    assertEquals(rs.getInt(1), 2);
-    assertFalse(rs.next());
+      // Second statement ResultSet
+      try (ResultSet rs =
+          connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[1])) {
+        assertTrue(rs.next());
+        assertEquals(rs.getInt(1), 2);
+        assertFalse(rs.next());
+      }
 
-    // Third statement ResultSet
-    rs = connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[2]);
-    assertTrue(rs.next());
-    assertEquals(rs.getInt(1), 111);
-    assertTrue(rs.next());
-    assertEquals(rs.getInt(1), 222);
-    assertFalse(rs.next());
-
-    connection.close();
+      // Third statement ResultSet
+      try (ResultSet rs =
+          connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[2])) {
+        assertTrue(rs.next());
+        assertEquals(rs.getInt(1), 111);
+        assertTrue(rs.next());
+        assertEquals(rs.getInt(1), 222);
+        assertFalse(rs.next());
+      }
+    }
   }
 
   @Test
   public void testGetChildQueryIdsNegativeTestQueryIsRunning() throws Exception {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    String multiStmtQuery = "select 1; call system$wait(10); select 2";
+    String queryID = null;
+    try (Connection connection = getConnection()) {
+      try (Statement statement = connection.createStatement()) {
+        String multiStmtQuery = "select 1; call system$wait(10); select 2";
 
-    statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
-    ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery);
-    String queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-
-    try {
-      connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-      fail("The getChildQueryIds() should fail because query is running");
-    } catch (SQLException ex) {
-      String msg = ex.getMessage();
-      if (!msg.contains("Status of query associated with resultSet is")
-          || !msg.contains("Results not generated.")) {
-        ex.printStackTrace();
-        QueryStatus qs =
-            connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getQueryStatus(queryID);
-        fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
+        statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+        try (ResultSet rs =
+            statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery)) {
+          queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+        }
+        try {
+          connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+          fail("The getChildQueryIds() should fail because query is running");
+        } catch (SQLException ex) {
+          String msg = ex.getMessage();
+          if (!msg.contains("Status of query associated with resultSet is")
+              || !msg.contains("Results not generated.")) {
+            ex.printStackTrace();
+            QueryStatus qs =
+                connection
+                    .unwrap(SnowflakeConnectionV1.class)
+                    .getSfSession()
+                    .getQueryStatus(queryID);
+            fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
+          }
+        }
+      } finally {
+        try (Statement statement = connection.createStatement()) {
+          statement.execute("select system$cancel_query('" + queryID + "')");
+        }
       }
-    } finally {
-      connection.createStatement().execute("select system$cancel_query('" + queryID + "')");
-      statement.close();
-      connection.close();
     }
   }
 
   @Test
   public void testGetChildQueryIdsNegativeTestQueryFailed() throws Exception {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    String multiStmtQuery = "select 1; select to_date('not_date'); select 2";
+    String queryID = null;
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      String multiStmtQuery = "select 1; select to_date('not_date'); select 2";
 
-    statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
-    ResultSet rs = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery);
-    String queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-
-    try {
-      waitForAsyncQueryDone(connection, queryID);
-      connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-      fail("The getChildQueryIds() should fail because the query fails");
-    } catch (SQLException ex) {
-      assertTrue(
-          ex.getMessage()
-              .contains(
-                  "Uncaught Execution of multiple statements failed on statement \"select"
-                      + " to_date('not_date')\""));
-    } finally {
-      statement.close();
-      connection.close();
+      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+      try (ResultSet rs =
+          statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(multiStmtQuery)) {
+        queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
+      }
+      try {
+        waitForAsyncQueryDone(connection, queryID);
+        connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
+        fail("The getChildQueryIds() should fail because the query fails");
+      } catch (SQLException ex) {
+        assertTrue(
+            ex.getMessage()
+                .contains(
+                    "Uncaught Execution of multiple statements failed on statement \"select"
+                        + " to_date('not_date')\""));
+      }
     }
   }
 
@@ -1096,35 +1151,40 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   public void testReadOnly() throws Throwable {
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
 
       connection.setReadOnly(true);
       assertEquals(connection.isReadOnly(), false);
 
       connection.setReadOnly(false);
-      connection.createStatement().execute("create or replace table readonly_test(c1 int)");
-      assertFalse(connection.isReadOnly());
-      connection.createStatement().execute("drop table if exists readonly_test");
+      try {
+        statement.execute("create or replace table readonly_test(c1 int)");
+        assertFalse(connection.isReadOnly());
+      } finally {
+        statement.execute("drop table if exists readonly_test");
+      }
     }
   }
 
   @Test
   public void testDownloadStreamWithFileNotFoundException() throws SQLException {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute("CREATE OR REPLACE TEMP STAGE testDownloadStream_stage");
-    long startDownloadTime = System.currentTimeMillis();
-    try {
-      connection
-          .unwrap(SnowflakeConnection.class)
-          .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
-    } catch (SQLException ex) {
-      assertThat(ex.getErrorCode(), is(ErrorCode.S3_OPERATION_ERROR.getMessageCode()));
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("CREATE OR REPLACE TEMP STAGE testDownloadStream_stage");
+      long startDownloadTime = System.currentTimeMillis();
+      try {
+        connection
+            .unwrap(SnowflakeConnection.class)
+            .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
+      } catch (SQLException ex) {
+        assertThat(ex.getErrorCode(), is(ErrorCode.S3_OPERATION_ERROR.getMessageCode()));
+      }
+      long endDownloadTime = System.currentTimeMillis();
+      // S3Client retries some exception for a default timeout of 5 minutes
+      // Check that 404 was not retried
+      assertTrue(endDownloadTime - startDownloadTime < 400000);
     }
-    long endDownloadTime = System.currentTimeMillis();
-    // S3Client retries some exception for a default timeout of 5 minutes
-    // Check that 404 was not retried
-    assertTrue(endDownloadTime - startDownloadTime < 400000);
   }
 
   @Test

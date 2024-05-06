@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -88,7 +90,7 @@ public class SnowflakeDriverConnectionStressTest {
         try (ResultSet resultSet = statement.executeQuery(QUERY)) {
           while (resultSet.next()) {
             final String user = resultSet.getString(1);
-            assert user != null;
+            assertNotNull(user);
           }
         }
       }

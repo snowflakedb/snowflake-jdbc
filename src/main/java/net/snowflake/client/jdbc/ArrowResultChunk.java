@@ -40,6 +40,7 @@ import net.snowflake.client.core.arrow.TwoFieldStructToTimestampNTZConverter;
 import net.snowflake.client.core.arrow.TwoFieldStructToTimestampTZConverter;
 import net.snowflake.client.core.arrow.VarBinaryToBinaryConverter;
 import net.snowflake.client.core.arrow.VarCharConverter;
+import net.snowflake.client.core.arrow.VectorTypeConverter;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -57,6 +58,7 @@ import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.complex.FixedSizeListVector;
 import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.complex.StructVector;
@@ -211,6 +213,10 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
 
           case MAP:
             converters.add(new MapConverter((MapVector) vector, i, context));
+            break;
+
+          case VECTOR:
+            converters.add(new VectorTypeConverter((FixedSizeListVector) vector, i, context));
             break;
 
           case ARRAY:

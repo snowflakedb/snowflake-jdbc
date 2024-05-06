@@ -6,7 +6,9 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import java.io.BufferedReader;
@@ -35,6 +37,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSessionProperty;
@@ -55,6 +58,7 @@ import org.apache.http.HttpResponse;
 public class SnowflakeUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
@@ -62,6 +66,8 @@ public class SnowflakeUtil {
   public static final int EXTRA_TYPES_TIMESTAMP_TZ = 50001;
 
   public static final int EXTRA_TYPES_TIMESTAMP_NTZ = 50002;
+
+  public static final int EXTRA_TYPES_VECTOR = 50003;
 
   // reauthenticate
   private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
@@ -83,6 +89,10 @@ public class SnowflakeUtil {
   public static final String DATE_STR = "date";
   public static final String BYTE_STR = "byte";
   public static final String BYTES_STR = "byte array";
+
+  public static String mapJson(Object ob) throws JsonProcessingException {
+    return OBJECT_MAPPER.writeValueAsString(ob);
+  }
 
   public static void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
       throws SnowflakeSQLException {
@@ -177,7 +187,8 @@ public class SnowflakeUtil {
         && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
       extColTypeName = extColTypeNameNode.asText();
     }
-    List<FieldMetadata> fieldsMetadata = getFieldMetadata(jdbcTreatDecimalAsInt, colNode);
+    List<FieldMetadata> fieldsMetadata =
+        getFieldMetadata(jdbcTreatDecimalAsInt, internalColTypeName, colNode);
 
     int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
     ColumnTypeInfo columnTypeInfo =
@@ -187,7 +198,8 @@ public class SnowflakeUtil {
             udtOutputType,
             session,
             fixedColType,
-            fieldsMetadata.size() > 0);
+            fieldsMetadata.size() > 0,
+            isVectorType(internalColTypeName));
 
     String colSrcDatabase = colNode.path("database").asText();
     String colSrcSchema = colNode.path("schema").asText();
@@ -218,7 +230,8 @@ public class SnowflakeUtil {
       JsonNode udtOutputType,
       SFBaseSession session,
       int fixedColType,
-      boolean isStructuredType)
+      boolean isStructuredType,
+      boolean isVectorType)
       throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
     ColumnTypeInfo columnTypeInfo = null;
@@ -237,13 +250,23 @@ public class SnowflakeUtil {
             new ColumnTypeInfo(Types.INTEGER, defaultIfNull(extColTypeName, "INTEGER"), baseType);
         break;
       case FIXED:
-        columnTypeInfo =
-            new ColumnTypeInfo(fixedColType, defaultIfNull(extColTypeName, "NUMBER"), baseType);
+        if (isVectorType) {
+          columnTypeInfo =
+              new ColumnTypeInfo(Types.INTEGER, defaultIfNull(extColTypeName, "INTEGER"), baseType);
+        } else {
+          columnTypeInfo =
+              new ColumnTypeInfo(fixedColType, defaultIfNull(extColTypeName, "NUMBER"), baseType);
+        }
         break;
 
       case REAL:
-        columnTypeInfo =
-            new ColumnTypeInfo(Types.DOUBLE, defaultIfNull(extColTypeName, "DOUBLE"), baseType);
+        if (isVectorType) {
+          columnTypeInfo =
+              new ColumnTypeInfo(Types.FLOAT, defaultIfNull(extColTypeName, "FLOAT"), baseType);
+        } else {
+          columnTypeInfo =
+              new ColumnTypeInfo(Types.DOUBLE, defaultIfNull(extColTypeName, "DOUBLE"), baseType);
+        }
         break;
 
       case TIMESTAMP:
@@ -279,6 +302,12 @@ public class SnowflakeUtil {
       case BOOLEAN:
         columnTypeInfo =
             new ColumnTypeInfo(Types.BOOLEAN, defaultIfNull(extColTypeName, "BOOLEAN"), baseType);
+        break;
+
+      case VECTOR:
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                EXTRA_TYPES_VECTOR, defaultIfNull(extColTypeName, "VECTOR"), baseType);
         break;
 
       case ARRAY:
@@ -349,7 +378,8 @@ public class SnowflakeUtil {
   }
 
   static List<FieldMetadata> createFieldsMetadata(
-      ArrayNode fieldsJson, boolean jdbcTreatDecimalAsInt) throws SnowflakeSQLLoggedException {
+      ArrayNode fieldsJson, boolean jdbcTreatDecimalAsInt, String parentInternalColumnTypeName)
+      throws SnowflakeSQLLoggedException {
     List<FieldMetadata> fields = new ArrayList<>();
     for (JsonNode node : fieldsJson) {
       String colName = node.path("name").asText();
@@ -360,7 +390,8 @@ public class SnowflakeUtil {
       int length = node.path("length").asInt();
       boolean fixed = node.path("fixed").asBoolean();
       int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
-      List<FieldMetadata> internalFields = getFieldMetadata(jdbcTreatDecimalAsInt, node);
+      List<FieldMetadata> internalFields =
+          getFieldMetadata(jdbcTreatDecimalAsInt, parentInternalColumnTypeName, node);
       JsonNode outputType = node.path("outputType");
       JsonNode extColTypeNameNode = node.path("extTypeName");
       String extColTypeName = null;
@@ -375,7 +406,8 @@ public class SnowflakeUtil {
               outputType,
               null,
               fixedColType,
-              internalFields.size() > 0);
+              internalFields.size() > 0,
+              isVectorType(parentInternalColumnTypeName));
       fields.add(
           new FieldMetadata(
               colName,
@@ -392,11 +424,17 @@ public class SnowflakeUtil {
     return fields;
   }
 
-  private static List<FieldMetadata> getFieldMetadata(boolean jdbcTreatDecimalAsInt, JsonNode node)
+  private static boolean isVectorType(String internalColumnTypeName) {
+    return internalColumnTypeName.equalsIgnoreCase("vector");
+  }
+
+  private static List<FieldMetadata> getFieldMetadata(
+      boolean jdbcTreatDecimalAsInt, String internalColumnTypeName, JsonNode node)
       throws SnowflakeSQLLoggedException {
     if (!node.path("fields").isEmpty()) {
       ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
-      return createFieldsMetadata(internalFieldsJson, jdbcTreatDecimalAsInt);
+      return createFieldsMetadata(
+          internalFieldsJson, jdbcTreatDecimalAsInt, internalColumnTypeName);
     } else {
       return new ArrayList<>();
     }
@@ -407,7 +445,8 @@ public class SnowflakeUtil {
     return SnowflakeType.javaTypeToSFType(javaType, session).name();
   }
 
-  static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
+  @SnowflakeJdbcInternalApi
+  public static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType, session);
   }
