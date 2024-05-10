@@ -403,7 +403,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     input.setLoginTimeout(1000);
     input.setSessionParameters(new HashMap<>());
     input.setAuthenticator("https://testauth.okta.com");
-    input.setDisableSamlUrlCheck(false);
+    input.setDisableSamlUrlCheck(true);
     return input;
   }
 
