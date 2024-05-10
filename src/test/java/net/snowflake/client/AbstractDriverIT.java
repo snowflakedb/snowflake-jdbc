@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
 import org.junit.Rule;
 
 /** Base test class with common constants, data structures and methods */
-public class AbstractDriverIT {
+public class fAbstractDriverIT {
   // This is required to use ConditionalIgnore annotation.
   @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
@@ -321,9 +321,6 @@ public class AbstractDriverIT {
     properties.put("schema", params.get("schema"));
     properties.put("warehouse", params.get("warehouse"));
     properties.put("ssl", params.get("ssl"));
-    properties.put("useProxy", "true");
-    properties.put("proxyHost", "localhost");
-    properties.put("proxyPort", "8080");
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
     properties.put("insecureMode", false); // use OCSP for all tests.
