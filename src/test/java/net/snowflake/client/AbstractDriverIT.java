@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
 import org.junit.Rule;
 
 /** Base test class with common constants, data structures and methods */
-public class fAbstractDriverIT {
+public class AbstractDriverIT {
   // This is required to use ConditionalIgnore annotation.
   @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
