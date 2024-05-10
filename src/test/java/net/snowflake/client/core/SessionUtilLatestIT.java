@@ -403,7 +403,6 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     input.setLoginTimeout(1000);
     input.setSessionParameters(new HashMap<>());
     input.setAuthenticator("https://testauth.okta.com");
-    input.setDisableSamlUrlCheck(true);
     return input;
   }
 
@@ -462,6 +461,58 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                       Mockito.anyInt(),
                       Mockito.nullable(HttpClientSettingsKey.class)))
           .thenReturn("<body><form action=\"https://testauth.okta.com\"></form></body>");
+
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+    }
+  }
+
+  @Test
+  public void testOktaDisableSamlUrlCheck() throws Throwable {
+    SFLoginInput loginInput = createOktaLoginInput();
+    loginInput.setDisableSamlUrlCheck(true);
+    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpPost.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
+                  + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
+                  + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeRequestWithoutCookies(
+                      Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(AtomicBoolean.class),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpGet.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
     }
