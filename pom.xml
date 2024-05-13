@@ -2,25 +2,31 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
     <version>3.16.1-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
+
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
   <version>3.16.1-SNAPSHOT</version>
   <packaging>jar</packaging>
+
   <name>${artifactId}</name>
   <url>https://github.com/snowflakedb/snowflake-jdbc</url>
+
   <scm>
     <connection>scm:git:https://github.com/snowflakedb/snowflake-jdbc.git</connection>
     <url>https://github.com/snowflakedb/snowflake-jdbc</url>
   </scm>
+
   <properties>
     <artifactId>snowflake-jdbc</artifactId>
   </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.bouncycastle</groupId>
@@ -31,6 +37,7 @@
       <artifactId>bcprov-jdk18on</artifactId>
     </dependency>
   </dependencies>
+
   <build>
     <finalName>${project.artifactId}</finalName>
     <resources>
@@ -423,6 +430,7 @@
               <generatePom>true</generatePom>
             </configuration>
           </execution>
+
           <execution>
             <id>install-arrow-memory-unsafe</id>
             <goals>
@@ -438,6 +446,7 @@
               <generatePom>true</generatePom>
             </configuration>
           </execution>
+
           <execution>
             <id>install-arrow-vector</id>
             <goals>
@@ -550,6 +559,7 @@
       </plugin>
     </plugins>
   </build>
+
   <reporting>
     <plugins>
       <plugin>
@@ -558,6 +568,7 @@
       </plugin>
     </plugins>
   </reporting>
+
   <profiles>
     <profile>
       <id>check-style</id>
@@ -739,19 +750,19 @@
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
             <executions>
-              <!--              <execution>-->
-              <!--                <id>check-shaded-content</id>-->
-              <!--                <goals>-->
-              <!--                  <goal>exec</goal>-->
-              <!--                </goals>-->
-              <!--                <phase>verify</phase>-->
-              <!--                <configuration>-->
-              <!--                  <executable>${basedir}/ci/scripts/check_content.sh</executable>-->
-              <!--                  <arguments>-->
-              <!--                    <argument>-thin</argument>-->
-              <!--                  </arguments>-->
-              <!--                </configuration>-->
-              <!--              </execution>-->
+              <execution>
+                <id>check-shaded-content</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
+                  <arguments>
+                    <argument>-thin</argument>
+                  </arguments>
+                </configuration>
+              </execution>
             </executions>
           </plugin>
         </plugins>
@@ -1061,6 +1072,7 @@
               </execution>
             </executions>
           </plugin>
+
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>buildnumber-maven-plugin</artifactId>
@@ -1086,16 +1098,16 @@
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
             <executions>
-              <!--              <execution>-->
-              <!--                <id>check-shaded-content</id>-->
-              <!--                <goals>-->
-              <!--                  <goal>exec</goal>-->
-              <!--                </goals>-->
-              <!--                <phase>verify</phase>-->
-              <!--                <configuration>-->
-              <!--                  <executable>${basedir}/ci/scripts/check_content.sh</executable>-->
-              <!--                </configuration>-->
-              <!--              </execution>-->
+              <execution>
+                <id>check-shaded-content</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
+                </configuration>
+              </execution>
             </executions>
           </plugin>
         </plugins>
