@@ -29,7 +29,7 @@
     <bouncycastle.bcfips.version>1.0.2.4</bouncycastle.bcfips.version>
     <bouncycastle.bcpkixfips.version>1.0.5</bouncycastle.bcpkixfips.version>
     <classworlds.version>1.1</classworlds.version>
-    <checkerframework.version>3.33.0</checkerframework.version>
+    <checkerframework.version>3.42.0</checkerframework.version>
     <commons.cli.version>1.2</commons.cli.version>
     <commons.codec.version>1.15</commons.codec.version>
     <commons.dbcp.version>1.4</commons.dbcp.version>
@@ -43,7 +43,7 @@
     <google.cloud.storage.version>2.22.6</google.cloud.storage.version>
     <google.code.gson.version>2.10.1</google.code.gson.version>
     <google.errorprone.version>2.18.0</google.errorprone.version>
-    <google.flatbuffers.version>1.12.0</google.flatbuffers.version>
+    <google.flatbuffers.version>23.5.26</google.flatbuffers.version>
     <google.gax.version>2.31.0</google.gax.version>
     <google.guava.version>32.1.1-jre</google.guava.version>
     <google.http.client.version>1.43.3</google.http.client.version>
@@ -52,7 +52,7 @@
     <grpc.version>1.60.0</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
-    <jackson.version>2.15.3</jackson.version>
+    <jackson.version>2.17.0</jackson.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
