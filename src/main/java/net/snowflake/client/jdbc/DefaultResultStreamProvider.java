@@ -97,7 +97,7 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
 
     if (context.getChunkHeadersMap() != null && context.getChunkHeadersMap().size() != 0) {
       for (Map.Entry<String, String> entry : context.getChunkHeadersMap().entrySet()) {
-        logger.debug("Adding header key={}, value={}", entry.getKey(), entry.getValue());
+        logger.debug("Adding header key: {}", entry.getKey());
         httpRequest.addHeader(entry.getKey(), entry.getValue());
       }
     }
