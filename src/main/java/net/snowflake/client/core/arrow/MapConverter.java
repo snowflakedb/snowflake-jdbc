@@ -28,6 +28,15 @@ public class MapConverter extends AbstractArrowVectorConverter {
 
   @Override
   public String toString(int index) throws SFException {
-    return vector.getObject(index).toString();
+    return toObject(index).toString();
   }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    // TODO SNOW-1374896 should we return here bytes directly from arrow?
+    return toString(index).getBytes();
+  }
+
+  // TODO SNOW-1374896 fix toString
+  // TODO SNOW-1374896 implement toBytes
 }

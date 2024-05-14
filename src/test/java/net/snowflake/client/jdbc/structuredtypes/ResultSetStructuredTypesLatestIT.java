@@ -84,6 +84,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   public Connection init() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     try (Statement stmt = conn.createStatement()) {
+      stmt.execute("alter session set USE_CACHED_RESULT = false;");
       stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
       stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
       stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
@@ -355,7 +356,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnNullsForAllTpesInSqlData() throws SQLException {
+  public void testReturnNullsForAllTypesInSqlData() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
       statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
@@ -495,6 +496,49 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("one", map.get("x").get("string"));
           assertEquals("two", map.get("y").get("string"));
           assertEquals("three", map.get("z").get("string"));
+        });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsMapByGetString() throws SQLException {
+    withFirstRow(
+        "select {'a': 3}::map(text, int);",
+        (resultSet) -> {
+          String result = resultSet.getString(1);
+          assertEquals("{\"a\":3}", result.replaceAll("\\s+", ""));
+        });
+
+      withFirstRow(
+              "select {'a': 'bla'}::map(text, text);",
+              (resultSet) -> {
+                  String result = resultSet.getString(1);
+                  assertEquals("{\"a\":\"bla\"}", result.replaceAll("\\s+", ""));
+              });
+
+      withFirstRow(
+              "select {'1': 'bla'}::map(int, text);",
+              (resultSet) -> {
+                  String result = resultSet.getString(1);
+                  assertEquals("{\"1\":\"bla\"}", result.replaceAll("\\s+", ""));
+              });
+
+      withFirstRow(
+              "select {'1': [1,2,3]}::map(int, ARRAY(int));",
+              (resultSet) -> {
+                  String result = resultSet.getString(1);
+                  assertEquals("{\"1\":[1,2,3]}", result.replaceAll("\\s+", ""));
+              });
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testReturnAsMapByGetBytes() throws SQLException {
+    withFirstRow(
+        "select {'a': 3}::map(text, int);",
+        (resultSet) -> {
+          String result = new String(resultSet.getBytes(1));
+          assertEquals("{\"a\":3}", result.replaceAll("\\s+", ""));
         });
   }
 

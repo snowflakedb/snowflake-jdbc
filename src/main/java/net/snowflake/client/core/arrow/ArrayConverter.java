@@ -23,4 +23,7 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
   public String toString(int index) throws SFException {
     return vector.getObject(index).toString();
   }
+
+  // TODO SNOW-1374896 fix toString
+  // TODO SNOW-1374896 implement toBytes
 }

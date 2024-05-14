@@ -25,4 +25,7 @@ public class StructConverter extends AbstractArrowVectorConverter {
   public String toString(int index) throws SFException {
     return structVector.getObject(index).toString();
   }
+
+  // TODO SNOW-1374896 fix toString
+  // TODO SNOW-1374896 implement toBytes
 }
