@@ -25,6 +25,8 @@ public class VectorTypeConverter extends AbstractArrowVectorConverter {
     return vector.getObject(index).toString();
   }
 
-  // TODO SNOW-1374896 fix toString
-  // TODO SNOW-1374896 implement toBytes
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    return toString(index).getBytes();
+  }
 }

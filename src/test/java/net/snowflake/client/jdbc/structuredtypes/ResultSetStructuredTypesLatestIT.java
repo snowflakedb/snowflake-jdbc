@@ -537,6 +537,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     samples.put(
         "select {'string':{'a':{'b':[{'c': 15}]}}}::object(string map(string, object(b array(object(c int)))))",
         "{\"string\":{\"a\":{\"b\":[{\"c\":15}]}}}");
+    samples.put("select [1,2,3]::VECTOR(INT, 3)", "[1,2,3]");
 
     samples.forEach(
         (sql, expected) -> {

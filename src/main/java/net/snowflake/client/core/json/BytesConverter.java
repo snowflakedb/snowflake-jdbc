@@ -48,6 +48,7 @@ public class BytesConverter {
         case Types.CHAR:
         case Types.STRUCT:
         case Types.ARRAY:
+        case 50003: // VECTOR
           return converters
               .getStringConverter()
               .getString(obj, columnType, columnSubType, scale)
