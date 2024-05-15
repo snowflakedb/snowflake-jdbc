@@ -531,7 +531,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  public void testInvalidOktaSamlForm() throws Throwable {
+  public void testInvalidOktaSamlFormat() throws Throwable {
     SFLoginInput loginInput = createOktaLoginInput();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
     try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
@@ -585,7 +585,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testInvalidOktaSaml() throws Throwable {
+  public void testOktaWithWrongHostName() throws Throwable {
     SFLoginInput loginInput = createOktaLoginInput();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
     try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
