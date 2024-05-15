@@ -525,11 +525,6 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     }
   }
 
-  /**
-   * Tests when the response from the server is invalid.
-   *
-   * @throws Throwable
-   */
   @Test
   public void testInvalidOktaSamlFormat() throws Throwable {
     SFLoginInput loginInput = createOktaLoginInput();
@@ -585,7 +580,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testOktaWithWrongHostName() throws Throwable {
+  public void testOktaWithInvalidHostName() throws Throwable {
     SFLoginInput loginInput = createOktaLoginInput();
     Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
     try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
