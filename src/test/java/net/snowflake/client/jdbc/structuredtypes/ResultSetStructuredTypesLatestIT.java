@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -501,45 +502,44 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapByGetString() throws SQLException {
-    withFirstRow(
-        "select {'a': 3}::map(text, int);",
-        (resultSet) -> {
-          String result = resultSet.getString(1);
-          assertEquals("{\"a\":3}", result.replaceAll("\\s+", ""));
+  public void testReturnAsGetStringAndGetBytes() throws SQLException {
+    // TODO SNOW-1374896: Convert to parameterized test
+    Map<String, String> samples = new LinkedHashMap<>();
+    samples.put("select {'a':3}::map(text, int);", "{\"a\":3}");
+    samples.put("select {'a':'bla'}::map(text, text);", "{\"a\":\"bla\"}");
+    samples.put("select {'1':'bla'}::map(int, text);", "{\"1\":\"bla\"}");
+    samples.put("select {'1':[1,2,3]}::map(int, ARRAY(int));", "{\"1\":[1,2,3]}");
+    samples.put(
+        "select {'1':{'string':'a'}}::map(int, OBJECT(string VARCHAR));",
+        "{\"1\":{\"string\":\"a\"}}");
+    samples.put(
+        "select {'1':{'string':'a'}}::map(int, map(string, string));",
+        "{\"1\":{\"string\":\"a\"}}");
+    samples.put(
+        "select {'1':[{'string':'a'},{'bla':'ble'}]}::map(int, array(map(string, string)));",
+        "{\"1\":[{\"string\":\"a\"},{\"bla\":\"ble\"}]}");
+    samples.forEach(
+        (sql, expected) -> {
+          try {
+            System.out.println("Calling " + sql + " and expecting " + expected);
+            withFirstRow(
+                sql, (resultSet) -> assertGetStringAndGetBytesAreCompatible(resultSet, expected));
+          } catch (SQLException e) {
+            throw new RuntimeException(e);
+          }
         });
-
-      withFirstRow(
-              "select {'a': 'bla'}::map(text, text);",
-              (resultSet) -> {
-                  String result = resultSet.getString(1);
-                  assertEquals("{\"a\":\"bla\"}", result.replaceAll("\\s+", ""));
-              });
-
-      withFirstRow(
-              "select {'1': 'bla'}::map(int, text);",
-              (resultSet) -> {
-                  String result = resultSet.getString(1);
-                  assertEquals("{\"1\":\"bla\"}", result.replaceAll("\\s+", ""));
-              });
-
-      withFirstRow(
-              "select {'1': [1,2,3]}::map(int, ARRAY(int));",
-              (resultSet) -> {
-                  String result = resultSet.getString(1);
-                  assertEquals("{\"1\":[1,2,3]}", result.replaceAll("\\s+", ""));
-              });
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsMapByGetBytes() throws SQLException {
-    withFirstRow(
-        "select {'a': 3}::map(text, int);",
-        (resultSet) -> {
-          String result = new String(resultSet.getBytes(1));
-          assertEquals("{\"a\":3}", result.replaceAll("\\s+", ""));
-        });
+  private void assertGetStringAndGetBytesAreCompatible(ResultSet resultSet, String expected)
+      throws SQLException {
+    String result = resultSet.getString(1);
+    assertEqualsIgnoringWhitespace(expected, result);
+    String resultFromBytes = new String(resultSet.getBytes(1));
+    assertEqualsIgnoringWhitespace(expected, resultFromBytes);
+  }
+
+  private void assertEqualsIgnoringWhitespace(String expected, String actual) {
+    assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
   }
 
   @Test
