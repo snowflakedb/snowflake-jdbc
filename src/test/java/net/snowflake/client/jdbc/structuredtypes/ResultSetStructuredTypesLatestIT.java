@@ -525,6 +525,18 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     samples.put(
         "select [{'string':'a'}, {'string':'b'}]::array(object(string varchar))",
         "[{\"string\":\"a\"}, {\"string\":\"b\"}]");
+    samples.put("select {'string':'a'}::object(string varchar)", "{\"string\":\"a\"}");
+    samples.put("select {'string':[1,2,3]}::object(string array(int))", "{\"string\":[1,2,3]}");
+    samples.put(
+        "select {'string':{'a':15}}::object(string object(a int))", "{\"string\":{\"a\":15}}");
+    samples.put(
+        "select {'string':{'a':15}}::object(string map(string,int))", "{\"string\":{\"a\":15}}");
+    samples.put(
+        "select {'string':{'a':{'b':15}}}::object(string object(a map(string, int)))",
+        "{\"string\":{\"a\":{\"b\":15}}}");
+    samples.put(
+        "select {'string':{'a':{'b':[{'c': 15}]}}}::object(string map(string, object(b array(object(c int)))))",
+        "{\"string\":{\"a\":{\"b\":[{\"c\":15}]}}}");
 
     samples.forEach(
         (sql, expected) -> {

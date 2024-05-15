@@ -5,6 +5,7 @@ package net.snowflake.client.core.arrow;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.SFException;
@@ -22,7 +23,7 @@ class StructuredTypeConversionHelper {
   static Object mapHashMapToObject(List<JsonStringHashMap<String, Object>> entriesList)
       throws SFException {
     if (entriesList.stream().allMatch(it -> it.keySet().equals(MAP_FIELDS))) {
-        // MAP is represented as list of entries with key and value
+      // MAP is represented as list of entries with key and value
       return entriesList.stream()
           .collect(
               Collectors.toMap(
@@ -36,7 +37,7 @@ class StructuredTypeConversionHelper {
                     return value;
                   }));
     } else {
-        return entriesList;
+      return entriesList;
     }
   }
 
@@ -59,5 +60,22 @@ class StructuredTypeConversionHelper {
               })
           .collect(Collectors.toList());
     }
+  }
+
+  static Object mapStructToObject(Map<?, ?> object) {
+    return object.entrySet().stream()
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                e -> {
+                  Object value = e.getValue();
+                  if (value instanceof List) {
+                    return StructuredTypeConversionHelper.mapListToObject((List<?>) value);
+                  } else if (value instanceof Map) {
+                    return mapStructToObject((Map<?, ?>) value);
+                  } else {
+                    return value;
+                  }
+                }));
   }
 }

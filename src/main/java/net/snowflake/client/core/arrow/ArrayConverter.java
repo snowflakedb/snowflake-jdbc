@@ -5,14 +5,13 @@ package net.snowflake.client.core.arrow;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.complex.ListVector;
-
-import java.util.List;
 
 public class ArrayConverter extends AbstractArrowVectorConverter {
 
