@@ -462,6 +462,7 @@
               <generatePom>true</generatePom>
             </configuration>
           </execution>
+
           <execution>
             <id>install-tika-core</id>
             <goals>
