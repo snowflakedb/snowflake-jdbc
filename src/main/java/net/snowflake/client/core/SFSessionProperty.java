@@ -84,7 +84,7 @@ public enum SFSessionProperty {
 
   JDBC_ARROW_TREAT_DECIMAL_AS_INT("JDBC_ARROW_TREAT_DECIMAL_AS_INT", false, Boolean.class),
 
-  DISABLE_SAML_URL_CHECK("disableSamlUrlCheck", false, Boolean.class);
+  DISABLE_SAML_URL_CHECK("disableSamlURLCheck", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

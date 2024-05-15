@@ -49,7 +49,7 @@ public class SFLoginInput {
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
 
   private boolean disableConsoleLogin = true;
-  private boolean disableSamlUrlCheck = false;
+  private boolean disableSamlURLCheck = false;
 
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
@@ -379,12 +379,12 @@ public class SFLoginInput {
     return this;
   }
 
-  boolean getDisableSamlUrlCheck() {
-    return disableSamlUrlCheck;
+  boolean getDisableSamlURLCheck() {
+    return disableSamlURLCheck;
   }
 
-  SFLoginInput setDisableSamlUrlCheck(boolean disableSamlUrlCheck) {
-    this.disableSamlUrlCheck = disableSamlUrlCheck;
+  SFLoginInput setDisableSamlURLCheck(boolean disableSamlURLCheck) {
+    this.disableSamlURLCheck = disableSamlURLCheck;
     return this;
   }
 

@@ -1154,34 +1154,36 @@ public class SessionUtil {
               loginInput.getHttpClientSettingsKey());
 
       // step 5
-      if (!loginInput.getDisableSamlUrlCheck()) {
-        String postBackUrl = getPostBackUrlFromHTML(responseHtml);
-        if (!isPrefixEqual(postBackUrl, loginInput.getServerUrl())) {
-          URL idpDestinationUrl = new URL(postBackUrl);
-          URL clientDestinationUrl = new URL(loginInput.getServerUrl());
-          String idpDestinationHostName = idpDestinationUrl.getHost();
-          String clientDestinationHostName = clientDestinationUrl.getHost();
-
-          logger.error(
-              "The Snowflake hostname specified in the client connection {} does not match "
-                  + "the destination hostname in the SAML response returned by the IdP: {}",
-              clientDestinationHostName,
-              idpDestinationHostName);
-
-          // Session is in process of getting created, so exception constructor takes in null
-          // session
-          // value
-          throw new SnowflakeSQLLoggedException(
-              null,
-              ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(),
-              SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION
-              /* session = */ );
-        }
-      }
+      validateSAML(responseHtml, loginInput);
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
     return responseHtml;
+  }
+
+  private static void validateSAML(String responseHtml, SFLoginInput loginInput)
+      throws SnowflakeSQLException, MalformedURLException {
+    if (!loginInput.getDisableSamlURLCheck()) {
+      String postBackUrl = getPostBackUrlFromHTML(responseHtml);
+      if (!isPrefixEqual(postBackUrl, loginInput.getServerUrl())) {
+        URL idpDestinationUrl = new URL(postBackUrl);
+        URL clientDestinationUrl = new URL(loginInput.getServerUrl());
+        String idpDestinationHostName = idpDestinationUrl.getHost();
+        String clientDestinationHostName = clientDestinationUrl.getHost();
+
+        logger.error(
+            "The Snowflake hostname specified in the client connection {} does not match "
+                + "the destination hostname in the SAML response returned by the IdP: {}",
+            clientDestinationHostName,
+            idpDestinationHostName);
+
+        // Session is in process of getting created, so exception constructor takes in null
+        throw new SnowflakeSQLLoggedException(
+            null,
+            ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(),
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION);
+      }
+    }
   }
 
   /**

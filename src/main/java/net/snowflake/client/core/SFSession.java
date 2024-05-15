@@ -609,7 +609,7 @@ public class SFSession extends SFBaseSession {
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN))
                 : true)
-        .setDisableSamlUrlCheck(
+        .setDisableSamlURLCheck(
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK) != null
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
