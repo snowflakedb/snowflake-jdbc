@@ -47,6 +47,7 @@ public class BytesConverter {
         case Types.VARCHAR:
         case Types.CHAR:
         case Types.STRUCT:
+        case Types.ARRAY:
           return converters
               .getStringConverter()
               .getString(obj, columnType, columnSubType, scale)
