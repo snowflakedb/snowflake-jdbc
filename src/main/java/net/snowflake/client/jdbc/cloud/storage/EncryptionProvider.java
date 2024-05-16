@@ -32,7 +32,7 @@ import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
 /**
- * Handles encryption and decryption using AES.
+ * Handles encryption and decryption using AES CBC (for files) and ECB (for keys).
  *
  * @author ppaulus
  */
