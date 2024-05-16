@@ -22,6 +22,9 @@ class StructuredTypeConversionHelper {
 
   static Object mapHashMapToObject(List<JsonStringHashMap<String, Object>> entriesList)
       throws SFException {
+    if (entriesList == null) {
+      return null;
+    }
     if (entriesList.stream().allMatch(it -> it.keySet().equals(MAP_FIELDS))) {
       // MAP is represented as list of entries with key and value
       return entriesList.stream()
@@ -42,6 +45,9 @@ class StructuredTypeConversionHelper {
   }
 
   static Object mapListToObject(List<?> list) {
+    if (list == null) {
+      return null;
+    }
     if (list.stream().anyMatch(nested -> nested instanceof JsonStringHashMap)) {
       try {
         return mapHashMapToObject((List<JsonStringHashMap<String, Object>>) list);
@@ -63,6 +69,9 @@ class StructuredTypeConversionHelper {
   }
 
   static Object mapStructToObject(Map<?, ?> object) {
+    if (object == null) {
+      return null;
+    }
     return object.entrySet().stream()
         .collect(
             Collectors.toMap(
