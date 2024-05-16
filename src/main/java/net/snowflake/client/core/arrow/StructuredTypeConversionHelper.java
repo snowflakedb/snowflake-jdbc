@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import net.snowflake.client.core.SFException;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
 class StructuredTypeConversionHelper {
@@ -20,8 +19,7 @@ class StructuredTypeConversionHelper {
         }
       };
 
-  static Object mapHashMapToObject(List<JsonStringHashMap<String, Object>> entriesList)
-      throws SFException {
+  static Object mapHashMapToObject(List<JsonStringHashMap<String, Object>> entriesList) {
     if (entriesList == null) {
       return null;
     }
@@ -49,11 +47,7 @@ class StructuredTypeConversionHelper {
       return null;
     }
     if (list.stream().anyMatch(nested -> nested instanceof JsonStringHashMap)) {
-      try {
-        return mapHashMapToObject((List<JsonStringHashMap<String, Object>>) list);
-      } catch (SFException e) {
-        throw new RuntimeException(e);
-      }
+      return mapHashMapToObject((List<JsonStringHashMap<String, Object>>) list);
     } else {
       return list.stream()
           .map(
