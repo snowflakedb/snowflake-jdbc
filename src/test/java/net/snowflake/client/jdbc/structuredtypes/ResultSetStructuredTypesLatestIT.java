@@ -22,15 +22,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.ThrowingConsumer;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
-import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ResultSetFormatType;
 import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
 import net.snowflake.client.jdbc.SnowflakeResultSetMetaData;
@@ -49,7 +46,7 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
-public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
+public class ResultSetStructuredTypesLatestIT extends ResultSetStructuredTypesBaseIT {
 
   @Parameterized.Parameters(name = "format={0}")
   public static Object[][] data() {
@@ -60,10 +57,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     };
   }
 
-  private final ResultSetFormatType queryResultFormat;
-
   public ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
+    super(queryResultFormat);
   }
 
   @Before
@@ -80,25 +75,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     SnowflakeObjectTypeFactories.unregister(SimpleClass.class);
     SnowflakeObjectTypeFactories.unregister(AllTypesClass.class);
     SnowflakeObjectTypeFactories.unregister(NullableFieldsSqlData.class);
-  }
-
-  public Connection init() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    try (Statement stmt = conn.createStatement()) {
-      stmt.execute("alter session set USE_CACHED_RESULT = false;");
-      stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
-      stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
-      stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
-      stmt.execute(
-          "alter session set jdbc_query_result_format = '"
-              + queryResultFormat.sessionParameterTypeValue
-              + "'");
-      if (queryResultFormat == ResultSetFormatType.NATIVE_ARROW) {
-        stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
-        stmt.execute("alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
-      }
-    }
-    return conn;
   }
 
   @Test
@@ -498,69 +474,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           assertEquals("two", map.get("y").get("string"));
           assertEquals("three", map.get("z").get("string"));
         });
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnAsGetStringAndGetBytes() throws SQLException {
-    // TODO SNOW-1374896: Convert to parameterized test
-    Map<String, String> samples = new LinkedHashMap<>();
-    samples.put("select {'a':3}::map(text, int);", "{\"a\":3}");
-    samples.put("select {'a':'bla'}::map(text, text);", "{\"a\":\"bla\"}");
-    samples.put("select {'1':'bla'}::map(int, text);", "{\"1\":\"bla\"}");
-    samples.put("select {'1':[1,2,3]}::map(int, ARRAY(int));", "{\"1\":[1,2,3]}");
-    samples.put(
-        "select {'1':{'string':'a'}}::map(int, OBJECT(string VARCHAR));",
-        "{\"1\":{\"string\":\"a\"}}");
-    samples.put(
-        "select {'1':{'string':'a'}}::map(int, map(string, string));",
-        "{\"1\":{\"string\":\"a\"}}");
-    samples.put(
-        "select {'1':[{'string':'a'},{'bla':'ble'}]}::map(int, array(map(string, string)));",
-        "{\"1\":[{\"string\":\"a\"},{\"bla\":\"ble\"}]}");
-    samples.put("select [1,2,3]::array(int)", "[1,2,3]");
-    samples.put(
-        "select [{'a':'a'}, {'b':'b'}]::array(map(string, string))",
-        "[{\"a\":\"a\"}, {\"b\":\"b\"}]");
-    samples.put(
-        "select [{'string':'a'}, {'string':'b'}]::array(object(string varchar))",
-        "[{\"string\":\"a\"}, {\"string\":\"b\"}]");
-    samples.put("select {'string':'a'}::object(string varchar)", "{\"string\":\"a\"}");
-    samples.put("select {'string':[1,2,3]}::object(string array(int))", "{\"string\":[1,2,3]}");
-    samples.put(
-        "select {'string':{'a':15}}::object(string object(a int))", "{\"string\":{\"a\":15}}");
-    samples.put(
-        "select {'string':{'a':15}}::object(string map(string,int))", "{\"string\":{\"a\":15}}");
-    samples.put(
-        "select {'string':{'a':{'b':15}}}::object(string object(a map(string, int)))",
-        "{\"string\":{\"a\":{\"b\":15}}}");
-    samples.put(
-        "select {'string':{'a':{'b':[{'c': 15}]}}}::object(string map(string, object(b array(object(c int)))))",
-        "{\"string\":{\"a\":{\"b\":[{\"c\":15}]}}}");
-    samples.put("select [1,2,3]::VECTOR(INT, 3)", "[1,2,3]");
-
-    samples.forEach(
-        (sql, expected) -> {
-          try {
-            System.out.println("Calling " + sql + " and expecting " + expected);
-            withFirstRow(
-                sql, (resultSet) -> assertGetStringAndGetBytesAreCompatible(resultSet, expected));
-          } catch (SQLException e) {
-            throw new RuntimeException(e);
-          }
-        });
-  }
-
-  private void assertGetStringAndGetBytesAreCompatible(ResultSet resultSet, String expected)
-      throws SQLException {
-    String result = resultSet.getString(1);
-    assertEqualsIgnoringWhitespace(expected, result);
-    String resultFromBytes = new String(resultSet.getBytes(1));
-    assertEqualsIgnoringWhitespace(expected, resultFromBytes);
-  }
-
-  private void assertEqualsIgnoringWhitespace(String expected, String actual) {
-    assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
   }
 
   @Test
@@ -1017,15 +930,5 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                   .get(0)
                   .getName());
         });
-  }
-
-  private void withFirstRow(String sqlText, ThrowingConsumer<ResultSet, SQLException> consumer)
-      throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
-        ResultSet rs = statement.executeQuery(sqlText); ) {
-      assertTrue(rs.next());
-      consumer.accept(rs);
-    }
   }
 }
