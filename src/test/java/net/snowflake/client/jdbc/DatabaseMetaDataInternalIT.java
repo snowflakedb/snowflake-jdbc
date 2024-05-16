@@ -476,15 +476,23 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
         assertEquals(0, getSizeOfResultSet(resultSet));
       }
 
+      // Get the count of tables in the SNOWFLAKE system database, so we can exclude them from subsequent assertions
+      int numSnowflakeTables = 0;
+      try (
+        ResultSet snowflakeResultSet = databaseMetaData.getTables("SNOWFLAKE", null, null, null)
+      ) {
+        numSnowflakeTables = getSizeOfResultSet(snowflakeResultSet);
+      }
+
       try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
         assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet));
+            getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"VIEW", "SYSTEM_TABLE"})) {
         assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllView), getSizeOfResultSet(resultSet));
+            getAllObjectCountInDBViaInforSchema(getAllView), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
@@ -497,13 +505,13 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
           databaseMetaData.getTables(
               null, null, null, new String[] {"TABLE", "VIEW", "SYSTEM_TABLE"})) {
         assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet));
+            getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"TABLE", "VIEW"})) {
         assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet));
+            getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
@@ -515,7 +523,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"VIEW"})) {
         assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllView), getSizeOfResultSet(resultSet));
+            getAllObjectCountInDBViaInforSchema(getAllView), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
