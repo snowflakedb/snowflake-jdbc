@@ -1231,6 +1231,19 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     meta.setContentLength(contentLength);
   }
 
+  @Override
+  public void addEncryptionMetadataForGcm(
+      StorageObjectMetadata meta,
+      MatDesc matDesc,
+      byte[] encryptedKey,
+      byte[] dataIvBytes,
+      byte[] keyIvBytes,
+      byte[] keyAad,
+      byte[] dataAad,
+      long contentLength) {
+    // TODO GCM SNOW-1431870
+  }
+
   /*
    * buildEncryptionMetadataJSON
    * Takes the base64-encoded iv and key and creates the JSON block to be

@@ -970,6 +970,19 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     meta.setContentLength(contentLength);
   }
 
+  @Override
+  public void addEncryptionMetadataForGcm(
+      StorageObjectMetadata meta,
+      MatDesc matDesc,
+      byte[] encryptedKey,
+      byte[] dataIvBytes,
+      byte[] keyIvBytes,
+      byte[] keyAad,
+      byte[] dataAad,
+      long contentLength) {
+    // TODO GCM SNOW-1431870
+  }
+
   /** Adds digest metadata to the StorageObjectMetadata object */
   @Override
   public void addDigestMetadata(StorageObjectMetadata meta, String digest) {
