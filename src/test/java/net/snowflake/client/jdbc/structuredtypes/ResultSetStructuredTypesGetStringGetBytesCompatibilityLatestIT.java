@@ -15,7 +15,7 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.jdbc.ResultSetFormatType;
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -27,13 +27,15 @@ import org.junit.runners.Parameterized;
 public class ResultSetStructuredTypesGetStringGetBytesCompatibilityLatestIT
     extends ResultSetStructuredTypesBaseIT {
 
-  private static Map<ResultSetFormatType, Connection> connections;
+  private static Map<ResultSetFormatType, Connection> connections = new HashMap<>();
 
-  @BeforeClass
-  public static void prepareConnections() throws SQLException {
-    connections = new HashMap<>();
-    for (ResultSetFormatType format : ResultSetFormatType.values()) {
-      connections.put(format, initConnection(format));
+  @Before
+  public void setUpConnection() throws SQLException {
+    // We init connection here since we need to set server properties that cannot be set in GH
+    // actions and before class is running even when all the tests have conditional ignore of tests
+    Connection connection = connections.get(queryResultFormat);
+    if (connection == null) {
+      connections.put(queryResultFormat, initConnection(queryResultFormat));
     }
   }
 
