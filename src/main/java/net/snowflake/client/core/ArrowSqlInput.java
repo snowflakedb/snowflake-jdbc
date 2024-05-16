@@ -23,8 +23,6 @@ import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.util.ThrowingBiFunction;
-import org.apache.arrow.vector.util.JsonStringArrayList;
-import org.apache.arrow.vector.util.JsonStringHashMap;
 
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
@@ -157,7 +155,7 @@ public class ArrowSqlInput extends BaseSqlInput {
   public Object readObject() throws SQLException {
     return withNextValue(
         (value, fieldMetadata) -> {
-          if (!(value instanceof JsonStringHashMap)) {
+          if (!(value instanceof Map<?, ?>)) {
             throw new SQLException(
                 "Invalid value passed to 'readObject()', expected Map; got: " + value.getClass());
           }
@@ -231,9 +229,9 @@ public class ArrowSqlInput extends BaseSqlInput {
           if (value == null) {
             return null;
           }
-          List<T> result = new ArrayList();
-          JsonStringArrayList<Map> maps = (JsonStringArrayList) value;
-          for (Object ob : maps) {
+          List<T> result = new ArrayList<>();
+          List<?> original = (List<?>) value;
+          for (Object ob : original) {
             result.add(
                 convertObject(type, TimeZone.getDefault(), ob, fieldMetadata.getFields().get(0)));
           }
@@ -248,10 +246,10 @@ public class ArrowSqlInput extends BaseSqlInput {
           if (value == null) {
             return null;
           }
-          JsonStringArrayList<Map> internalValues = (JsonStringArrayList) value;
-          T[] array = (T[]) java.lang.reflect.Array.newInstance(type, internalValues.size());
+          List<?> original = (List<?>) value;
+          T[] array = (T[]) java.lang.reflect.Array.newInstance(type, original.size());
           int counter = 0;
-          for (Object ob : internalValues) {
+          for (Object ob : original) {
             array[counter++] =
                 convertObject(type, TimeZone.getDefault(), ob, fieldMetadata.getFields().get(0));
           }
@@ -266,15 +264,15 @@ public class ArrowSqlInput extends BaseSqlInput {
           if (value == null) {
             return null;
           }
-          Map<String, T> result = new HashMap();
-          JsonStringArrayList<Map> maps = (JsonStringArrayList) value;
-          for (Map map : maps) {
+          Map<String, T> result = new HashMap<>();
+          Map<String, ?> original = (Map<String, ?>) value;
+          for (Map.Entry<String, ?> entry : original.entrySet()) {
             result.put(
-                map.get("key").toString(),
+                entry.getKey(),
                 convertObject(
                     type,
                     TimeZone.getDefault(),
-                    map.get("value"),
+                    entry.getValue(),
                     fieldMetadata.getFields().get(1)));
           }
           return result;
