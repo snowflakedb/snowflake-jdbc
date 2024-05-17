@@ -5,6 +5,9 @@ package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.jdbc.telemetry.Telemetry;
+import net.snowflake.client.jdbc.telemetry.TelemetryField;
+import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.util.TimeMeasurement;
 
@@ -24,7 +27,6 @@ public class ExecTimeTelemetryData {
   private String retryLocations = "";
   private Boolean ocspEnabled = false;
   boolean sendData = true;
-
   private String requestId;
 
   public ExecTimeTelemetryData(String queryFunction, String batchId) {
@@ -171,6 +173,29 @@ public class ExecTimeTelemetryData {
       return valueStr;
     }
     return "";
+  }
+
+  public void sendInBoundTelemetry(Telemetry telemetryClient) {
+    if (telemetryClient != null) {
+      telemetryClient.addLogToBatch(
+          TelemetryUtil.buildJobData(
+              this.queryId, TelemetryField.TIME_BINDING, bind.getEnd() - bind.getStart()));
+      telemetryClient.addLogToBatch(
+          TelemetryUtil.buildJobData(
+              this.queryId,
+              TelemetryField.TIME_CREATE_RESULT_SET,
+              this.createResultSet.getEnd() - this.createResultSet.getStart()));
+      telemetryClient.addLogToBatch(
+          TelemetryUtil.buildJobData(
+              this.queryId,
+              TelemetryField.TIME_PROCESS_RESULT_CHUNK,
+              this.processResultChunk.getEnd() - this.processResultChunk.getStart()));
+      telemetryClient.addLogToBatch(
+          TelemetryUtil.buildJobData(
+              this.queryId,
+              TelemetryField.TIME_SERVER_RESPONSE,
+              this.httpClient.getEnd() - this.httpClient.getStart()));
+    }
   }
 
   @SnowflakeJdbcInternalApi

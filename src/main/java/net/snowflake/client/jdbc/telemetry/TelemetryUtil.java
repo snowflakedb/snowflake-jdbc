@@ -15,19 +15,32 @@ public class TelemetryUtil {
   public static final String VALUE = "value";
 
   /**
-   * Create a simple TelemetryData instance for Job metrics using given parameters
+   * Create a TelemetryData instance for Job metrics using given parameters
    *
    * @param queryId the id of the query
    * @param field the field to log (represents the "type" field in telemetry)
    * @param value the value to log for the field
    * @return TelemetryData instance constructed from parameters
    */
-  public static TelemetryData buildJobData(String queryId, TelemetryField field, long value) {
+  public static TelemetryData buildJobData(String queryId, TelemetryField field, Object value) {
     ObjectNode obj = mapper.createObjectNode();
     obj.put(TYPE, field.toString());
     obj.put(QUERY_ID, queryId);
-    obj.put(VALUE, value);
+    if (value instanceof Long) {
+      obj.put(VALUE, (Long) value);
+    } else if (value instanceof String) {
+      obj.put(VALUE, (String) value);
+    }
     return new TelemetryData(obj, System.currentTimeMillis());
+  }
+
+  /**
+   * @deprecated This method is deprecated and will be removed in a future version. Use {@link
+   *     #buildJobData(String, TelemetryField, Object)} instead.
+   */
+  @Deprecated
+  public static TelemetryData buildJobData(String queryId, TelemetryField field, Long value) {
+    return buildJobData(queryId, field, (Object) value);
   }
 
   public static TelemetryData buildJobData(ObjectNode obj) {
