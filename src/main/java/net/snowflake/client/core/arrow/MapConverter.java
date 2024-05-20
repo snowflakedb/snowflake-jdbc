@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core.arrow;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
@@ -33,6 +34,6 @@ public class MapConverter extends AbstractArrowVectorConverter {
 
   @Override
   public byte[] toBytes(int index) throws SFException {
-    return toString(index).getBytes();
+    return toString(index).getBytes(StandardCharsets.UTF_8);
   }
 }
