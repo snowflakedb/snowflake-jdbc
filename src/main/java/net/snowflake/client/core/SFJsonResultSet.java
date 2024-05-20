@@ -93,7 +93,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
           return getArray(columnIndex);
         } else {
-          throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
+          return getString(columnIndex);
         }
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);

@@ -1056,4 +1056,16 @@ public class ResultSetIT extends ResultSet0IT {
       }
     }
   }
+
+  /** SNOW-1416051; Added in > 3.16.0 */
+  @Test
+  public void shouldSerializeArrayAsObject() throws SQLException {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("select ARRAY_CONSTRUCT(1,2,3)")) {
+      assertTrue(resultSet.next());
+      assertEquals("[\n  1,\n  2,\n  3\n]", resultSet.getObject(1));
+      assertEquals("[\n  1,\n  2,\n  3\n]", resultSet.getString(1));
+    }
+  }
 }
