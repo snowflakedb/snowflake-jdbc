@@ -3,14 +3,10 @@
  */
 package net.snowflake.client.core.arrow;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import net.snowflake.client.core.DataConversionContext;
-import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.complex.StructVector;
 
@@ -18,7 +14,6 @@ import org.apache.arrow.vector.complex.StructVector;
 public class StructConverter extends AbstractArrowVectorConverter {
 
   private final StructVector structVector;
-  private static final ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
 
   public StructConverter(StructVector vector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.OBJECT.name(), vector, columnIndex, context);
@@ -33,11 +28,7 @@ public class StructConverter extends AbstractArrowVectorConverter {
 
   @Override
   public String toString(int index) throws SFException {
-    try {
-      return objectMapper.writeValueAsString(toObject(index));
-    } catch (JsonProcessingException e) {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, e.getMessage());
-    }
+    return StructuredTypeConversionHelper.mapJson(toObject(index));
   }
 
   @Override

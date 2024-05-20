@@ -3,11 +3,15 @@
  */
 package net.snowflake.client.core.arrow;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
 class StructuredTypeConversionHelper {
@@ -28,11 +32,11 @@ class StructuredTypeConversionHelper {
       return entriesList.stream()
           .collect(
               Collectors.toMap(
-                  entry -> entry.get("key").toString(),
+                  entry -> entry.get("key"),
                   entry -> {
                     Object value = entry.get("value");
                     if (value instanceof List) {
-                      List<?> list = (List) value;
+                      List<?> list = (List<?>) value;
                       return mapListToObject(list);
                     }
                     return value;
@@ -80,5 +84,13 @@ class StructuredTypeConversionHelper {
                     return value;
                   }
                 }));
+  }
+
+  static String mapJson(Object ob) throws SFException {
+    try {
+      return SnowflakeUtil.mapJson(ob);
+    } catch (JsonProcessingException e) {
+      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, e.getMessage());
+    }
   }
 }

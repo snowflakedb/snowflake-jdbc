@@ -50,6 +50,8 @@ public class ResultSetStructuredTypesGetStringGetBytesCompatibilityLatestIT
   public static Collection<Object[]> data() {
     Map<String, String> samples = new LinkedHashMap<>();
     samples.put("select {'a':3}::map(text, int);", "{\"a\":3}");
+    samples.put(
+        "select {'a':'zażółć_gęślą_jaźń'}::map(text, text);", "{\"a\":'zażółć_gęślą_jaźń'}");
     samples.put("select {'a':'bla'}::map(text, text);", "{\"a\":\"bla\"}");
     samples.put("select {'1':'bla'}::map(int, text);", "{\"1\":\"bla\"}");
     samples.put("select {'1':[1,2,3]}::map(int, ARRAY(int));", "{\"1\":[1,2,3]}");

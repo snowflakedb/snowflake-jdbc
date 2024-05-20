@@ -265,10 +265,10 @@ public class ArrowSqlInput extends BaseSqlInput {
             return null;
           }
           Map<String, T> result = new HashMap<>();
-          Map<String, ?> original = (Map<String, ?>) value;
-          for (Map.Entry<String, ?> entry : original.entrySet()) {
+          Map<?, ?> original = (Map<String, ?>) value;
+          for (Map.Entry<?, ?> entry : original.entrySet()) {
             result.put(
-                entry.getKey(),
+                entry.getKey().toString(),
                 convertObject(
                     type,
                     TimeZone.getDefault(),

@@ -3,20 +3,15 @@
  */
 package net.snowflake.client.core.arrow;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
-import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.complex.ListVector;
 
 public class ArrayConverter extends AbstractArrowVectorConverter {
 
   private final ListVector vector;
-  private static final ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
 
   public ArrayConverter(ListVector valueVector, int vectorIndex, DataConversionContext context) {
     super(SnowflakeType.ARRAY.name(), valueVector, vectorIndex, context);
@@ -31,11 +26,7 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
 
   @Override
   public String toString(int index) throws SFException {
-    try {
-      return objectMapper.writeValueAsString(toObject(index));
-    } catch (JsonProcessingException e) {
-      throw new SFException(ErrorCode.INVALID_VALUE_CONVERT, e.getMessage());
-    }
+    return StructuredTypeConversionHelper.mapJson(toObject(index));
   }
 
   @Override

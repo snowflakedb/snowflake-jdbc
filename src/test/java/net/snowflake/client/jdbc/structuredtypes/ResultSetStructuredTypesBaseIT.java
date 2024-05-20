@@ -30,7 +30,7 @@ abstract class ResultSetStructuredTypesBaseIT extends BaseJDBCTest {
       throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     try (Statement stmt = conn.createStatement()) {
-      stmt.execute("alter session set USE_CACHED_RESULT = false;");
+      stmt.execute("alter session set USE_CACHED_RESULT = false");
       stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
       stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
       stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
@@ -62,7 +62,7 @@ abstract class ResultSetStructuredTypesBaseIT extends BaseJDBCTest {
       throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement();
-        ResultSet rs = statement.executeQuery(sqlText); ) {
+        ResultSet rs = statement.executeQuery(sqlText)) {
       assertTrue(rs.next());
       consumer.accept(rs);
     }

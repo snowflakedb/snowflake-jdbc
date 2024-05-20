@@ -48,7 +48,7 @@ public class BytesConverter {
         case Types.CHAR:
         case Types.STRUCT:
         case Types.ARRAY:
-        case 50003: // VECTOR
+        case SnowflakeUtil.EXTRA_TYPES_VECTOR:
           return converters
               .getStringConverter()
               .getString(obj, columnType, columnSubType, scale)
