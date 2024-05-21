@@ -249,15 +249,15 @@ public class TelemetryIT extends AbstractDriverIT {
   private void setUpPublicKey() throws SQLException, IOException {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    String pathfile = getFullPathFileInResource("rsa_key.pub");
-    String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-    pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-    pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-    statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    connection.close();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      String pathfile = getFullPathFileInResource("rsa_key.pub");
+      String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    }
   }
 
   // Helper function to create a sessionless telemetry using OAuth
@@ -279,26 +279,28 @@ public class TelemetryIT extends AbstractDriverIT {
   // Helper function to set up and get OAuth token
   private String getOAuthToken() throws SQLException {
     Map<String, String> parameters = getConnectionParameters();
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    statement.execute(
-        "create or replace security integration telemetry_oauth_integration\n"
-            + "  type=oauth\n"
-            + "  oauth_client=CUSTOM\n"
-            + "  oauth_client_type=CONFIDENTIAL\n"
-            + "  oauth_redirect_uri='https://localhost.com/oauth'\n"
-            + "  oauth_issue_refresh_tokens=true\n"
-            + "  enabled=true oauth_refresh_token_validity=86400;");
-    String role = parameters.get("role");
-    ResultSet resultSet =
-        statement.executeQuery(
-            "select system$it('create_oauth_access_token', 'TELEMETRY_OAUTH_INTEGRATION', '"
-                + role
-                + "')");
-    resultSet.next();
-    String token = resultSet.getString(1);
-    connection.close();
+    String token = null;
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      statement.execute(
+          "create or replace security integration telemetry_oauth_integration\n"
+              + "  type=oauth\n"
+              + "  oauth_client=CUSTOM\n"
+              + "  oauth_client_type=CONFIDENTIAL\n"
+              + "  oauth_redirect_uri='https://localhost.com/oauth'\n"
+              + "  oauth_issue_refresh_tokens=true\n"
+              + "  enabled=true oauth_refresh_token_validity=86400;");
+      String role = parameters.get("role");
+      try (ResultSet resultSet =
+          statement.executeQuery(
+              "select system$it('create_oauth_access_token', 'TELEMETRY_OAUTH_INTEGRATION', '"
+                  + role
+                  + "')")) {
+        assertTrue(resultSet.next());
+        token = resultSet.getString(1);
+      }
+    }
     return token;
   }
 }

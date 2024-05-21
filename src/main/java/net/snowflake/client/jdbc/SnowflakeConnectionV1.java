@@ -18,6 +18,7 @@ import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverPropertyInfo;
+import java.sql.JDBCType;
 import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -43,6 +44,7 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SfSqlArray;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
@@ -335,7 +337,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
       throws SQLException {
     logger.trace(
-        "public CallableStatement prepareCall(String sql,"
+        "CallableStatement prepareCall(String sql,"
             + " int resultSetType,int resultSetConcurrency",
         false);
     CallableStatement stmt =
@@ -712,8 +714,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     logger.trace("Array createArrayOf(String typeName, Object[] " + "elements)", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
+    return new SfSqlArray(JDBCType.valueOf(typeName).getVendorTypeNumber(), elements);
   }
 
   @Override

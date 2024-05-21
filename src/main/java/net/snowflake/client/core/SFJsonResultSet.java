@@ -95,7 +95,6 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
-
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
     }
@@ -258,7 +257,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
       int columnIndex,
       SFBaseSession session,
       List<FieldMetadata> fields) {
-    return createJsonSqlInputForColumn(input, columnIndex, session, fields);
+    return createJsonSqlInputForColumn(input, session, fields);
   }
 
   @Override
@@ -294,6 +293,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     try {
       JsonNode jsonNode = OBJECT_MAPPER.readTree(input);
       return new JsonSqlInput(
+          input,
           jsonNode,
           session,
           converters,

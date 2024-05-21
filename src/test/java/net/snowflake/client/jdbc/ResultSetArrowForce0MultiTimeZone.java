@@ -57,12 +57,12 @@ abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest {
               + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
               + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
               + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-    }
 
-    con.createStatement()
-        .execute("alter session set jdbc_query_result_format" + " = '" + queryResultFormat + "'");
-    con.createStatement().execute("create or replace table " + table + " " + column);
-    con.createStatement().execute("insert into " + table + " values " + values);
+      statement.execute(
+          "alter session set jdbc_query_result_format" + " = '" + queryResultFormat + "'");
+      statement.execute("create or replace table " + table + " " + column);
+      statement.execute("insert into " + table + " values " + values);
+    }
     return con;
   }
 

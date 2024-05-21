@@ -212,7 +212,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
             break;
 
           case MAP:
-            converters.add(new MapConverter((MapVector) vector, i, context));
+            if (vector instanceof MapVector) {
+              converters.add(new MapConverter((MapVector) vector, i, context));
+            } else {
+              converters.add(new VarCharConverter(vector, i, context));
+            }
             break;
 
           case VECTOR:

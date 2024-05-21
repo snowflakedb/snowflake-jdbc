@@ -37,6 +37,7 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 @SnowflakeJdbcInternalApi
 public class JsonSqlInput extends BaseSqlInput {
   private static final SFLogger logger = SFLoggerFactory.getLogger(JsonSqlInput.class);
+  private final String text;
   private final JsonNode input;
   private final Iterator<JsonNode> elements;
   private final TimeZone sessionTimeZone;
@@ -44,12 +45,14 @@ public class JsonSqlInput extends BaseSqlInput {
   private boolean wasNull = false;
 
   public JsonSqlInput(
+      String text,
       JsonNode input,
       SFBaseSession session,
       Converters converters,
       List<FieldMetadata> fields,
       TimeZone sessionTimeZone) {
     super(session, converters, fields);
+    this.text = text;
     this.input = input;
     this.elements = input.elements();
     this.sessionTimeZone = sessionTimeZone;
@@ -57,6 +60,10 @@ public class JsonSqlInput extends BaseSqlInput {
 
   public JsonNode getInput() {
     return input;
+  }
+
+  public String getText() {
+    return text;
   }
 
   @Override
@@ -180,7 +187,7 @@ public class JsonSqlInput extends BaseSqlInput {
       JsonNode jsonNode = (JsonNode) value;
       SQLInput sqlInput =
           new JsonSqlInput(
-              jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone);
+              null, jsonNode, session, converters, fieldMetadata.getFields(), sessionTimeZone);
       SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
       instance.readSQL(sqlInput, null);
       return (T) instance;
@@ -236,8 +243,12 @@ public class JsonSqlInput extends BaseSqlInput {
           List<T> result = new ArrayList();
           if (ArrayNode.class.isAssignableFrom(value.getClass())) {
             for (JsonNode node : (ArrayNode) value) {
-
-              result.add(convertObject(type, TimeZone.getDefault(), getValue(node), fieldMetadata));
+              result.add(
+                  convertObject(
+                      type,
+                      TimeZone.getDefault(),
+                      getValue(node),
+                      fieldMetadata.getFields().get(0)));
             }
             return result;
           } else {
@@ -261,7 +272,11 @@ public class JsonSqlInput extends BaseSqlInput {
             int counter = 0;
             for (JsonNode node : valueNodes) {
               array[counter++] =
-                  convertObject(type, TimeZone.getDefault(), getValue(node), fieldMetadata);
+                  convertObject(
+                      type,
+                      TimeZone.getDefault(),
+                      getValue(node),
+                      fieldMetadata.getFields().get(0));
             }
             return array;
           } else {
@@ -308,7 +323,7 @@ public class JsonSqlInput extends BaseSqlInput {
     int columnSubType = fieldMetadata.getType();
     int scale = fieldMetadata.getScale();
     Timestamp result =
-        SqlInputTimestampUtil.getTimestampFromType(
+        SfTimestampUtil.getTimestampFromType(
             columnSubType, (String) value, session, sessionTimeZone, tz);
     if (result != null) {
       return result;
