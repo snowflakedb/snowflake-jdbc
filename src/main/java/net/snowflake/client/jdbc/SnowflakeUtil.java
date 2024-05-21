@@ -311,8 +311,9 @@ public class SnowflakeUtil {
         break;
 
       case ARRAY:
+        int columnType = isStructuredType ? Types.ARRAY : Types.VARCHAR;
         columnTypeInfo =
-            new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
+            new ColumnTypeInfo(columnType, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
 
       case MAP:
