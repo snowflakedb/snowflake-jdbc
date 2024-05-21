@@ -86,6 +86,15 @@ public class ResultSetStructuredTypesGetStringGetBytesCompatibilityLatestIT
     samples.put(
         "select {'string':{'a':{'b':[{'c': 15}]}}}::object(string map(string, object(b array(object(c int)))))",
         "{\"string\":{\"a\":{\"b\":[{\"c\":15}]}}}");
+    samples.put(
+        "select {'ltz': '2024-05-20 11:22:33'::TIMESTAMP_LTZ}::object(ltz TIMESTAMP_LTZ)",
+        "{\"ltz\":\"2024-05-20 11:22:33.000+0200\"}");
+    samples.put(
+        "select {'ntz': '2024-05-20 11:22:33'::TIMESTAMP_NTZ}::object(ntz TIMESTAMP_NTZ)",
+        "{\"ntz\":\"2024-05-20 11:22:33.000\"}");
+    samples.put(
+        "select {'tz': '2024-05-20 11:22:33+0800'::TIMESTAMP_TZ}::object(tz TIMESTAMP_TZ)",
+        "{\"tz\":\"2024-05-20 11:22:33.000+0800\"}");
     samples.put("select [1,2,3]::VECTOR(INT, 3)", "[1,2,3]");
 
     Collection<Object[]> parameters = new ArrayList<>();

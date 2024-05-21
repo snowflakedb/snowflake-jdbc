@@ -13,9 +13,14 @@ import java.util.stream.Collectors;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
 class StructuredTypeConversionHelper {
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(StructuredTypeConversionHelper.class);
+
   private static final Set<String> MAP_FIELDS =
       new HashSet<String>() {
         {
@@ -57,12 +62,6 @@ class StructuredTypeConversionHelper {
                     }
                     return value;
                   }));
-    } else if (entriesList.stream().allMatch(it -> it.keySet().equals(TIMESTAMP_TZ_FIELDS))) {
-      System.out.println(entriesList);
-      return entriesList; // TODO timestamp tz
-    } else if (entriesList.stream().allMatch(it -> it.keySet().equals(TIMESTAMP_FIELDS))) {
-      System.out.println(entriesList);
-      return entriesList; // TODO timestamp ltz/ntz
     } else {
       return entriesList;
     }
@@ -91,6 +90,11 @@ class StructuredTypeConversionHelper {
   static Object mapStructToObject(Map<?, ?> object) {
     if (object == null) {
       return null;
+    }
+    if (object.keySet().equals(TIMESTAMP_TZ_FIELDS)) {
+      logger.trace("The struct may be the timestamp with timezone: {}" + object);
+    } else if (object.keySet().equals(TIMESTAMP_FIELDS)) {
+      logger.trace("The struct may be the timestamp ltz/ntz: {}" + object);
     }
     Map<Object, Object> result = new LinkedHashMap<>();
     object
