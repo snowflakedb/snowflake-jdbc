@@ -5,6 +5,7 @@ package net.snowflake.client.core.arrow;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +21,21 @@ class StructuredTypeConversionHelper {
         {
           add("key");
           add("value");
+        }
+      };
+  private static final Set<String> TIMESTAMP_TZ_FIELDS =
+      new HashSet<String>() {
+        {
+          add("epoch");
+          add("fraction");
+          add("timezone");
+        }
+      };
+  private static final Set<String> TIMESTAMP_FIELDS =
+      new HashSet<String>() {
+        {
+          add("epoch");
+          add("fraction");
         }
       };
 
@@ -41,6 +57,12 @@ class StructuredTypeConversionHelper {
                     }
                     return value;
                   }));
+    } else if (entriesList.stream().allMatch(it -> it.keySet().equals(TIMESTAMP_TZ_FIELDS))) {
+      System.out.println(entriesList);
+      return entriesList; // TODO timestamp tz
+    } else if (entriesList.stream().allMatch(it -> it.keySet().equals(TIMESTAMP_FIELDS))) {
+      System.out.println(entriesList);
+      return entriesList; // TODO timestamp ltz/ntz
     } else {
       return entriesList;
     }
@@ -70,20 +92,20 @@ class StructuredTypeConversionHelper {
     if (object == null) {
       return null;
     }
-    return object.entrySet().stream()
-        .collect(
-            Collectors.toMap(
-                Map.Entry::getKey,
-                e -> {
-                  Object value = e.getValue();
-                  if (value instanceof List) {
-                    return StructuredTypeConversionHelper.mapListToObject((List<?>) value);
-                  } else if (value instanceof Map) {
-                    return mapStructToObject((Map<?, ?>) value);
-                  } else {
-                    return value;
-                  }
-                }));
+    Map<Object, Object> result = new LinkedHashMap<>();
+    object
+        .entrySet()
+        .forEach(
+            e -> {
+              Object value = e.getValue();
+              if (value instanceof List) {
+                value = StructuredTypeConversionHelper.mapListToObject((List<?>) value);
+              } else if (value instanceof Map) {
+                value = mapStructToObject((Map<?, ?>) value);
+              }
+              result.put(e.getKey(), value);
+            });
+    return result;
   }
 
   static String mapJson(Object ob) throws SFException {

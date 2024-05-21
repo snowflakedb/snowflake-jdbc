@@ -72,6 +72,9 @@ public class ResultSetStructuredTypesGetStringGetBytesCompatibilityLatestIT
         "select [{'string':'a'}, {'string':'b'}]::array(object(string varchar))",
         "[{\"string\":\"a\"}, {\"string\":\"b\"}]");
     samples.put("select {'string':'a'}::object(string varchar)", "{\"string\":\"a\"}");
+    samples.put(
+        "select {'x':'a','b':'a','c':'a','d':'a','e':'a'}::object(x varchar,b varchar,c varchar,d varchar,e varchar)",
+        "{\"x\":\"a\",\"b\":\"a\",\"c\":\"a\",\"d\":\"a\",\"e\":\"a\"}");
     samples.put("select {'string':[1,2,3]}::object(string array(int))", "{\"string\":[1,2,3]}");
     samples.put(
         "select {'string':{'a':15}}::object(string object(a int))", "{\"string\":{\"a\":15}}");
