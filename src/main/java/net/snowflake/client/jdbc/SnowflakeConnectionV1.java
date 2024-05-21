@@ -337,8 +337,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
       throws SQLException {
     logger.trace(
-        "CallableStatement prepareCall(String sql,"
-            + " int resultSetType,int resultSetConcurrency",
+        "CallableStatement prepareCall(String sql," + " int resultSetType,int resultSetConcurrency",
         false);
     CallableStatement stmt =
         prepareCall(sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
