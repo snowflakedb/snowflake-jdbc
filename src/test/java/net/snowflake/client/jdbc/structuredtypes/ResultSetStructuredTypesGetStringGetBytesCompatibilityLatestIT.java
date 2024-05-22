@@ -95,6 +95,14 @@ public class ResultSetStructuredTypesGetStringGetBytesCompatibilityLatestIT
     samples.put(
         "select {'tz': '2024-05-20 11:22:33+0800'::TIMESTAMP_TZ}::object(tz TIMESTAMP_TZ)",
         "{\"tz\":\"2024-05-20 11:22:33.000+0800\"}");
+    samples.put(
+        "select {'date': '2024-05-20'::DATE}::object(date DATE)", "{\"date\":\"2024-05-20\"}");
+    samples.put("select {'time': '22:14:55'::TIME}::object(time TIME)", "{\"time\":\"22:14:55\"}");
+    samples.put("select {'bool': TRUE}::object(bool BOOLEAN)", "{\"bool\":true}");
+    samples.put("select {'bool': 'y'}::object(bool BOOLEAN)", "{\"bool\":true}");
+    samples.put(
+        "select {'binary': TO_BINARY('616263', 'HEX')}::object(binary BINARY)",
+        "{\"binary\":\"616263\"}");
     samples.put("select [1,2,3]::VECTOR(INT, 3)", "[1,2,3]");
 
     Collection<Object[]> parameters = new ArrayList<>();
