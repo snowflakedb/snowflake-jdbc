@@ -21,13 +21,14 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    List<?> list = vector.getObject(index);
-    return StructuredTypeConversionHelper.mapListToObject(list);
+    return vector.getObject(index);
   }
 
   @Override
   public String toString(int index) throws SFException {
-    return StructuredTypeConversionHelper.mapJson(toObject(index));
+    List<?> list = vector.getObject(index);
+    return StructuredTypeConversionHelper.mapJson(
+        StructuredTypeConversionHelper.mapListToObject(list));
   }
 
   @Override

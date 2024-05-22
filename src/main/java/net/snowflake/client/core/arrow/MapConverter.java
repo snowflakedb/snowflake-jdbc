@@ -5,6 +5,7 @@ package net.snowflake.client.core.arrow;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -24,12 +25,17 @@ public class MapConverter extends AbstractArrowVectorConverter {
   public Object toObject(int index) throws SFException {
     List<JsonStringHashMap<String, Object>> entriesList =
         (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
-    return StructuredTypeConversionHelper.mapHashMapToObject(entriesList);
+    return entriesList.stream()
+        .collect(
+            Collectors.toMap(entry -> entry.get("key").toString(), entry -> entry.get("value")));
   }
 
   @Override
   public String toString(int index) throws SFException {
-    return StructuredTypeConversionHelper.mapJson(toObject(index));
+    List<JsonStringHashMap<String, Object>> entriesList =
+        (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
+    return StructuredTypeConversionHelper.mapJson(
+        StructuredTypeConversionHelper.mapHashMapToObject(entriesList));
   }
 
   @Override

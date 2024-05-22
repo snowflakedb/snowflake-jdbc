@@ -4,7 +4,6 @@
 package net.snowflake.client.core.arrow;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
@@ -23,13 +22,13 @@ public class StructConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    Map<String, ?> object = structVector.getObject(index);
-    return StructuredTypeConversionHelper.mapStructToObject(object);
+    return structVector.getObject(index);
   }
 
   @Override
   public String toString(int index) throws SFException {
-    return StructuredTypeConversionHelper.mapJson(toObject(index));
+    return StructuredTypeConversionHelper.mapJson(
+        StructuredTypeConversionHelper.mapStructToObject(structVector.getObject(index)));
   }
 
   @Override
