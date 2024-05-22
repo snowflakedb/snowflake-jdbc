@@ -205,6 +205,7 @@ public class SecretDetectorTest {
     testParametersMasked.put("private_key_pwd", "test");
     testParametersMasked.put("proxyPassword", "test");
     testParametersMasked.put("proxyUser", "test");
+    testParametersMasked.put("privatekey", "test");
 
     Map<String, String> testParametersUnmasked = new HashMap<>();
     testParametersUnmasked.put("oktausername", "test");
