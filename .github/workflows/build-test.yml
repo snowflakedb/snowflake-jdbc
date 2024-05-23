@@ -35,21 +35,16 @@ jobs:
               env:
                 WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
               run: ./ci/build.sh
-            - name: Upload Build Artifact
-              uses: actions/upload-artifact@v3
-              with:
-                name: artifacts
-                path: artifacts
 
     test-mac:
         needs: build
-        name: JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} / Test on Mac(java ${{ matrix.javaVersion }}, ${{ matrix.cloud }} )
+        name: ${{ matrix.cloud }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} / Test on Mac(java ${{ matrix.javaVersion }}, ${{ matrix.cloud }} )
         runs-on: macos-13
         strategy:
             fail-fast: false
             matrix:
                 cloud: [ 'AWS' ]
-                javaVersion: [ '11', '17']
+                javaVersion: [ '8', '11', '17']
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
@@ -57,16 +52,11 @@ jobs:
             - uses: actions/setup-java@v4
               with:
                 java-version: ${{ matrix.javaVersion }}
-                distribution: 'adopt'
+                distribution: 'temurin'
                 cache: maven
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
-            - name: Download Build Artifacts
-              uses: actions/download-artifact@v3
-              with:
-                name: artifacts
-                path: artifacts
             - name: Install Homebrew Bash
               shell: bash
               run: brew install bash
