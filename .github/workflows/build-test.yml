@@ -35,6 +35,47 @@ jobs:
               env:
                 WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
               run: ./ci/build.sh
+            - name: Upload Build Artifact
+              uses: actions/upload-artifact@v3
+              with:
+                name: artifacts
+                path: artifacts
+
+    test-windows:
+        needs: build
+        name: ${{ matrix.cloud }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} / Test on Windows(java ${{ matrix.javaVersion }}, ${{ matrix.cloud }} )
+        runs-on: windows-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                cloud: [ 'AWS' ]
+                javaVersion: [ '8', '11', '17']
+                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                additionalMavenProfile: ['', '-Dthin-jar']
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-java@v4
+              with:
+                java-version: ${{ matrix.javaVersion }}
+                distribution: 'temurin'
+                cache: maven
+            - uses: actions/setup-python@v4
+              with:
+                python-version: '3.7'
+                architecture: 'x64'
+            - name: Download Build Artifacts
+              uses: actions/download-artifact@v3
+              with:
+                name: artifacts
+                path: lib
+            - name: Tests
+              shell: cmd
+              env:
+                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                CLOUD_PROVIDER: ${{ matrix.cloud }}
+                JDBC_TEST_CATEGORY: ${{ matrix.category }}
+                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+              run: ci\\test_windows.bat
 
     test-mac:
         needs: build
