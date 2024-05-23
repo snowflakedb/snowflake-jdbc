@@ -43,7 +43,7 @@ jobs:
 
     test-mac:
         needs: build
-        name: ${{ matrix.cloud }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} ${{ matrix.javaVersion }} Tests on Mac
+        name: JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} / Test on Mac(java ${{ matrix.javaVersion }}, ${{ matrix.cloud }} )
         runs-on: macos-13
         strategy:
             fail-fast: false
