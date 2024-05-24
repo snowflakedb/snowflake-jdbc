@@ -37,7 +37,8 @@ import org.junit.rules.TemporaryFolder;
 public class SFTrustManagerIT extends BaseJDBCTest {
   private static final String[] TARGET_HOSTS = {
     "storage.googleapis.com",
-    "ocspssd.us-east-1.snowflakecomputing.com/ocsp/fetch",
+    // TODO SNOW-1446174 uncomment when OCSP error cause is known
+    // "ocspssd.us-east-1.snowflakecomputing.com/ocsp/fetch",
     "sfcsupport.snowflakecomputing.com",
     "sfcsupport.us-east-1.snowflakecomputing.com",
     "sfcsupport.eu-central-1.snowflakecomputing.com",
