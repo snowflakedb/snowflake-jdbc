@@ -41,7 +41,8 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     // "ocspssd.us-east-1.snowflakecomputing.com/ocsp/fetch",
     "sfcsupport.snowflakecomputing.com",
     "sfcsupport.us-east-1.snowflakecomputing.com",
-    "sfcsupport.eu-central-1.snowflakecomputing.com",
+    // TODO SNOW-1446174 uncomment when OCSP error cause is known
+    // "sfcsupport.eu-central-1.snowflakecomputing.com",
     "sfc-dev1-regression.s3.amazonaws.com",
     "sfc-ds2-customer-stage.s3.amazonaws.com",
     "snowflake.okta.com",
