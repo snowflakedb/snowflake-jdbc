@@ -10,7 +10,11 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeDateWithTimezone;
+import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
@@ -68,20 +72,7 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
 
-    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      if (fromToString) {
-        throw new TimestampOperationNotAvailableException(epoch, fraction);
-      } else {
-        return null;
-      }
-    }
-
-    Timestamp ts =
-        ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
-
-    Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-
-    return adjustedTimestamp;
+    return getTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone, fromToString);
   }
 
   @Override
@@ -122,5 +113,24 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);
+  }
+
+  public static Timestamp getTimestamp(
+      long epoch,
+      int fraction,
+      TimeZone sessionTimeZone,
+      boolean useSessionTimezone,
+      boolean fromToString)
+      throws SFException {
+    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
+      if (fromToString) {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      } else {
+        return null;
+      }
+    }
+    Timestamp ts =
+        ArrowResultUtil.createTimestamp(epoch, fraction, sessionTimeZone, useSessionTimezone);
+    return ResultUtil.adjustTimestamp(ts);
   }
 }

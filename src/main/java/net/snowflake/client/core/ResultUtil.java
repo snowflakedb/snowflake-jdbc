@@ -10,7 +10,14 @@ import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
@@ -271,7 +278,7 @@ public class ResultUtil {
       throws SFException {
     // Derive the timestamp formatter to use
     SnowflakeDateTimeFormat formatter;
-    if (columnType == Types.TIMESTAMP) {
+    if (columnType == Types.TIMESTAMP || columnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
       formatter = timestampNTZFormatter;
     } else if (columnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
       formatter = timestampLTZFormatter;
@@ -404,8 +411,9 @@ public class ResultUtil {
             || statementType == SFStatementType.MERGE
             || statementType == SFStatementType.MULTI_INSERT) {
           int columnCount = resultSet.getMetaData().getColumnCount();
-          for (int i = 0; i < columnCount; i++)
+          for (int i = 0; i < columnCount; i++) {
             updateCount += resultSet.getLong(i + 1); // add up number of rows updated
+          }
         } else {
           updateCount = 0;
         }

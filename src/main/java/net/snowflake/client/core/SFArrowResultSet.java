@@ -6,32 +6,54 @@ package net.snowflake.client.core;
 import static net.snowflake.client.core.StmtUtil.eventHandler;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Array;
 import java.sql.Date;
 import java.sql.SQLException;
+import java.sql.SQLInput;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.stream.Stream;
+import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.core.arrow.StructConverter;
+import net.snowflake.client.core.arrow.VarCharConverter;
+import net.snowflake.client.core.arrow.VectorTypeConverter;
+import net.snowflake.client.core.json.Converters;
+import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.FieldMetadata;
+import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.Converter;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.util.JsonStringHashMap;
 
 /** Arrow result set implementation */
 public class SFArrowResultSet extends SFBaseResultSet implements DataConversionContext {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFArrowResultSet.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFArrowResultSet.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   /** iterator over current arrow result chunk */
   private ArrowChunkIterator currentChunkIterator;
@@ -52,9 +74,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   /** is array bind supported */
   private final boolean arrayBindSupported;
-
-  /** session timezone */
-  private TimeZone timeZone;
 
   /** index of next chunk to consume */
   private long nextChunkIndex = 0;
@@ -92,6 +111,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   private boolean formatDateWithTimezone;
 
+  @SnowflakeJdbcInternalApi protected Converters converters;
+
   /**
    * Constructor takes a result from the API response that we get from executing a SQL statement.
    *
@@ -110,6 +131,21 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       boolean sortResult)
       throws SQLException {
     this(resultSetSerializable, session.getTelemetryClient(), sortResult);
+    this.converters =
+        new Converters(
+            resultSetSerializable.getTimeZone(),
+            session,
+            resultSetSerializable.getResultVersion(),
+            resultSetSerializable.isHonorClientTZForTimestampNTZ(),
+            resultSetSerializable.getTreatNTZAsUTC(),
+            resultSetSerializable.getUseSessionTimezone(),
+            resultSetSerializable.getFormatDateWithTimeZone(),
+            resultSetSerializable.getBinaryFormatter(),
+            resultSetSerializable.getDateFormatter(),
+            resultSetSerializable.getTimeFormatter(),
+            resultSetSerializable.getTimestampNTZFormatter(),
+            resultSetSerializable.getTimestampLTZFormatter(),
+            resultSetSerializable.getTimestampTZFormatter());
 
     // update the session db/schema/wh/role etc
     this.statement = statement;
@@ -157,7 +193,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.parameters = resultSetSerializable.getParameters();
     this.chunkCount = resultSetSerializable.getChunkFileCount();
     this.chunkDownloader = resultSetSerializable.getChunkDownloader();
-    this.timeZone = resultSetSerializable.getTimeZone();
     this.honorClientTZForTimestampNTZ = resultSetSerializable.isHonorClientTZForTimestampNTZ();
     this.resultVersion = resultSetSerializable.getResultVersion();
     this.numberOfBinds = resultSetSerializable.getNumberOfBinds();
@@ -170,8 +205,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     this.timestampTZFormatter = resultSetSerializable.getTimestampTZFormatter();
     this.dateFormatter = resultSetSerializable.getDateFormatter();
     this.timeFormatter = resultSetSerializable.getTimeFormatter();
-    this.timeZone = resultSetSerializable.getTimeZone();
-    this.honorClientTZForTimestampNTZ = resultSetSerializable.isHonorClientTZForTimestampNTZ();
+    this.sessionTimeZone = resultSetSerializable.getTimeZone();
     this.binaryFormatter = resultSetSerializable.getBinaryFormatter();
     this.resultSetMetaData = resultSetSerializable.getSFResultSetMetaData();
     this.treatNTZAsUTC = resultSetSerializable.getTreatNTZAsUTC();
@@ -329,6 +363,58 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
   }
 
+  @Override
+  @SnowflakeJdbcInternalApi
+  public Converters getConverters() {
+    return converters;
+  }
+
+  @Override
+  @SnowflakeJdbcInternalApi
+  public SQLInput createSqlInputForColumn(
+      Object input,
+      Class<?> parentObjectClass,
+      int columnIndex,
+      SFBaseSession session,
+      List<FieldMetadata> fields) {
+    if (parentObjectClass.equals(JsonSqlInput.class)) {
+      return createJsonSqlInputForColumn(input, session, fields);
+    } else {
+      return new ArrowSqlInput((Map<String, Object>) input, session, converters, fields);
+    }
+  }
+
+  @Override
+  @SnowflakeJdbcInternalApi
+  public Date convertToDate(Object object, TimeZone tz) throws SFException {
+    if (object instanceof String) {
+      return convertStringToDate((String) object, tz);
+    }
+    return converters.getStructuredTypeDateTimeConverter().getDate((int) object, tz);
+  }
+
+  @Override
+  @SnowflakeJdbcInternalApi
+  public Time convertToTime(Object object, int scale) throws SFException {
+    if (object instanceof String) {
+      return convertStringToTime((String) object, scale);
+    }
+    return converters.getStructuredTypeDateTimeConverter().getTime((long) object, scale);
+  }
+
+  @Override
+  @SnowflakeJdbcInternalApi
+  public Timestamp convertToTimestamp(
+      Object object, int columnType, int columnSubType, TimeZone tz, int scale) throws SFException {
+    if (object instanceof String) {
+      return convertStringToTimestamp((String) object, columnType, columnSubType, tz, scale);
+    }
+    return converters
+        .getStructuredTypeDateTimeConverter()
+        .getTimestamp(
+            (JsonStringHashMap<String, Object>) object, columnType, columnSubType, tz, scale);
+  }
+
   /**
    * Advance to next row
    *
@@ -444,7 +530,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    converter.setSessionTimeZone(timeZone);
+    converter.setSessionTimeZone(sessionTimeZone);
     converter.setUseSessionTimezone(useSessionTimezone);
     return converter.toDate(index, tz, resultSetSerializable.getFormatDateWithTimeZone());
   }
@@ -454,7 +540,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    converter.setSessionTimeZone(timeZone);
+    converter.setSessionTimeZone(sessionTimeZone);
     converter.setUseSessionTimezone(useSessionTimezone);
     return converter.toTime(index);
   }
@@ -463,7 +549,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
-    converter.setSessionTimeZone(timeZone);
+    converter.setSessionTimeZone(sessionTimeZone);
     converter.setUseSessionTimezone(useSessionTimezone);
     wasNull = converter.isNull(index);
     return converter.toTimestamp(index, tz);
@@ -476,8 +562,178 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     wasNull = converter.isNull(index);
     converter.setTreatNTZAsUTC(treatNTZAsUTC);
     converter.setUseSessionTimezone(useSessionTimezone);
-    converter.setSessionTimeZone(timeZone);
-    return converter.toObject(index);
+    converter.setSessionTimeZone(sessionTimeZone);
+    Object obj = converter.toObject(index);
+    int type = resultSetMetaData.getColumnType(columnIndex);
+    boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
+    if (type == Types.STRUCT && isStructuredType) {
+      if (converter instanceof VarCharConverter) {
+        return createJsonSqlInput(columnIndex, obj);
+      } else if (converter instanceof StructConverter) {
+        return createArrowSqlInput(columnIndex, (Map<String, Object>) obj);
+      }
+    }
+    return obj;
+  }
+
+  private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
+    try {
+      if (obj == null) {
+        return null;
+      }
+      String text = (String) obj;
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(text);
+      return new JsonSqlInput(
+          text,
+          jsonNode,
+          session,
+          converters,
+          resultSetMetaData.getColumnFields(columnIndex),
+          sessionTimeZone);
+    } catch (JsonProcessingException e) {
+      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+    }
+  }
+
+  private Object createArrowSqlInput(int columnIndex, Map<String, Object> input)
+      throws SFException {
+    if (input == null) {
+      return null;
+    }
+    return new ArrowSqlInput(
+        input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
+  }
+
+  @Override
+  public Array getArray(int columnIndex) throws SFException {
+    ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
+    int index = currentChunkIterator.getCurrentRowInRecordBatch();
+    wasNull = converter.isNull(index);
+    Object obj = converter.toObject(index);
+    if (obj == null) {
+      return null;
+    }
+    if (converter instanceof VarCharConverter) {
+      return getJsonArray((String) obj, columnIndex);
+    } else if (converter instanceof ArrayConverter) {
+      return getArrowArray((List<Object>) obj, columnIndex);
+    } else if (converter instanceof VectorTypeConverter) {
+      return getArrowArray((List<Object>) obj, columnIndex);
+    } else {
+      throw new SFException(ErrorCode.INVALID_STRUCT_DATA);
+    }
+  }
+
+  private SfSqlArray getArrowArray(List<Object> elements, int columnIndex) throws SFException {
+    try {
+      List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
+      if (fieldMetadataList.size() != 1) {
+        throw new SFException(
+            ErrorCode.INVALID_STRUCT_DATA,
+            "Wrong size of fields for array type " + fieldMetadataList.size());
+      }
+      FieldMetadata fieldMetadata = fieldMetadataList.get(0);
+      int columnSubType = fieldMetadata.getType();
+      int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
+      int scale = fieldMetadata.getScale();
+
+      switch (columnType) {
+        case Types.INTEGER:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.integerConverter(columnType))
+                  .toArray(Integer[]::new));
+        case Types.SMALLINT:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.smallIntConverter(columnType))
+                  .toArray(Short[]::new));
+        case Types.TINYINT:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.tinyIntConverter(columnType))
+                  .toArray(Byte[]::new));
+        case Types.BIGINT:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.bigIntConverter(columnType)).toArray(Long[]::new));
+        case Types.DECIMAL:
+        case Types.NUMERIC:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.bigDecimalConverter(columnType))
+                  .toArray(BigDecimal[]::new));
+        case Types.CHAR:
+        case Types.VARCHAR:
+        case Types.LONGNVARCHAR:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.varcharConverter(columnType, columnSubType, scale))
+                  .toArray(String[]::new));
+        case Types.BINARY:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.bytesConverter(columnType, scale))
+                  .toArray(Byte[][]::new));
+        case Types.FLOAT:
+        case Types.REAL:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.floatConverter(columnType)).toArray(Float[]::new));
+        case Types.DOUBLE:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.doubleConverter(columnType))
+                  .toArray(Double[]::new));
+        case Types.DATE:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.dateFromIntConverter(sessionTimeZone))
+                  .toArray(Date[]::new));
+        case Types.TIME:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.timeFromIntConverter(scale)).toArray(Time[]::new));
+        case Types.TIMESTAMP:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(
+                      elements,
+                      converters.timestampFromStructConverter(
+                          columnType, columnSubType, sessionTimeZone, scale))
+                  .toArray(Timestamp[]::new));
+        case Types.BOOLEAN:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, converters.booleanConverter(columnType))
+                  .toArray(Boolean[]::new));
+        case Types.STRUCT:
+          return new SfSqlArray(columnSubType, mapAndConvert(elements, e -> e).toArray(Map[]::new));
+        case Types.ARRAY:
+          return new SfSqlArray(
+              columnSubType,
+              mapAndConvert(elements, e -> ((List) e).stream().toArray(Map[]::new))
+                  .toArray(Map[][]::new));
+        default:
+          throw new SFException(
+              ErrorCode.FEATURE_UNSUPPORTED,
+              "Can't construct array for data type: " + columnSubType);
+      }
+    } catch (RuntimeException e) {
+      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+    }
+  }
+
+  private <T> Stream<T> mapAndConvert(List<Object> elements, Converter<T> converter) {
+    return elements.stream()
+        .map(
+            obj -> {
+              try {
+                return converter.convert(obj);
+              } catch (SFException e) {
+                throw new RuntimeException(e);
+              }
+            });
   }
 
   @Override
@@ -485,7 +741,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
-    converter.setSessionTimeZone(timeZone);
+    converter.setSessionTimeZone(sessionTimeZone);
     converter.setUseSessionTimezone(useSessionTimezone);
     return converter.toBigDecimal(index);
   }
@@ -625,7 +881,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public TimeZone getTimeZone() {
-    return timeZone;
+    return sessionTimeZone;
   }
 
   @Override

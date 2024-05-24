@@ -3,7 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -141,8 +142,8 @@ public class OpenGroupCLIFuncIT extends BaseJDBCTest {
   }
 
   static void testFunction(Connection connection, String sql, String expected) throws SQLException {
-    try (Statement statement = connection.createStatement()) {
-      ResultSet resultSet = statement.executeQuery(sql);
+    try (Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql)) {
       assertTrue(resultSet.next());
       assertEquals(expected, resultSet.getString(1));
     }

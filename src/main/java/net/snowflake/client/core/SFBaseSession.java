@@ -10,10 +10,19 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import com.google.common.base.Strings;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.QueryStatusV2;
+import net.snowflake.client.jdbc.SFConnectionHandler;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -123,7 +132,17 @@ public abstract class SFBaseSession {
   // Connection string setting
   private boolean enablePutGet = true;
 
+  // Enables the use of pattern searches for certain DatabaseMetaData methods
+  // which do not by definition allow the use of patterns, but
+  // we need to allow for it to maintain backwards compatibility.
+  private boolean enablePatternSearch = true;
+
+  /** Disable lookup for default credentials by GCS library */
+  private boolean disableGcsDefaultCredentials = false;
+
   private Map<String, Object> commonParameters;
+
+  private boolean isJdbcArrowTreatDecimalAsInt = true;
 
   protected SFBaseSession(SFConnectionHandler sfConnectionHandler) {
     this.sfConnectionHandler = sfConnectionHandler;
@@ -253,6 +272,14 @@ public abstract class SFBaseSession {
     isJdbcTreatDecimalAsInt = jdbcTreatDecimalAsInt;
   }
 
+  public boolean isJdbcArrowTreatDecimalAsInt() {
+    return isJdbcArrowTreatDecimalAsInt;
+  }
+
+  public void setJdbcArrowTreatDecimalAsInt(boolean jdbcArrowTreatDecimalAsInt) {
+    isJdbcArrowTreatDecimalAsInt = jdbcArrowTreatDecimalAsInt;
+  }
+
   public String getServerUrl() {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL)) {
       return (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
@@ -378,21 +405,30 @@ public abstract class SFBaseSession {
       boolean httpUseProxy = Boolean.parseBoolean(systemGetProperty("http.useProxy"));
       String httpProxyHost = systemGetProperty("http.proxyHost");
       String httpProxyPort = systemGetProperty("http.proxyPort");
+      String httpProxyUser = systemGetProperty("http.proxyUser");
+      String httpProxyPassword = systemGetProperty("http.proxyPassword");
       String httpsProxyHost = systemGetProperty("https.proxyHost");
       String httpsProxyPort = systemGetProperty("https.proxyPort");
+      String httpsProxyUser = systemGetProperty("https.proxyUser");
+      String httpsProxyPassword = systemGetProperty("https.proxyPassword");
       String httpProxyProtocol = systemGetProperty("http.proxyProtocol");
       String noProxy = systemGetEnv("NO_PROXY");
       String nonProxyHosts = systemGetProperty("http.nonProxyHosts");
       // log the JVM parameters that are being used
       if (httpUseProxy) {
         logger.debug(
-            "http.useProxy={}, http.proxyHost={}, http.proxyPort={}, https.proxyHost={},"
-                + " https.proxyPort={}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
+            "Proxy environment settings: http.useProxy={}, http.proxyHost={}, http.proxyPort={}, http.proxyUser={}, "
+                + "http.proxyPassword is {}, https.proxyHost={}, https.proxyPort={}, https.proxyUser={}, "
+                + "https.proxyPassword is {}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
             httpUseProxy,
             httpProxyHost,
             httpProxyPort,
+            httpProxyUser,
+            httpProxyPassword == null || httpProxyPassword.isEmpty() ? "not set" : "set",
             httpsProxyHost,
             httpsProxyPort,
+            httpsProxyUser,
+            httpsProxyPassword == null || httpsProxyPassword.isEmpty() ? "not set" : "set",
             nonProxyHosts,
             noProxy,
             httpProxyProtocol,
@@ -433,8 +469,8 @@ public abstract class SFBaseSession {
                   httpsProxyHost,
                   proxyPort,
                   combinedNonProxyHosts,
-                  "", /* user = empty */
-                  "", /* password = empty */
+                  httpsProxyUser,
+                  httpsProxyPassword,
                   "https",
                   userAgentSuffix,
                   gzipDisabled);
@@ -454,8 +490,8 @@ public abstract class SFBaseSession {
                   httpProxyHost,
                   proxyPort,
                   combinedNonProxyHosts,
-                  "", /* user = empty */
-                  "", /* password = empty */
+                  httpProxyUser,
+                  httpProxyPassword,
                   "http",
                   userAgentSuffix,
                   gzipDisabled);
@@ -702,6 +738,22 @@ public abstract class SFBaseSession {
 
   public boolean setEnablePutGet(boolean enablePutGet) {
     return this.enablePutGet = enablePutGet;
+  }
+
+  public boolean getEnablePatternSearch() {
+    return enablePatternSearch;
+  }
+
+  public void setEnablePatternSearch(boolean enablePatternSearch) {
+    this.enablePatternSearch = enablePatternSearch;
+  }
+
+  public boolean getDisableGcsDefaultCredentials() {
+    return disableGcsDefaultCredentials;
+  }
+
+  public void setDisableGcsDefaultCredentials(boolean disableGcsDefaultCredentials) {
+    this.disableGcsDefaultCredentials = disableGcsDefaultCredentials;
   }
 
   public int getClientResultChunkSize() {

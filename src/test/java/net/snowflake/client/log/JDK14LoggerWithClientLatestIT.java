@@ -1,6 +1,8 @@
 package net.snowflake.client.log;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -27,14 +30,16 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
       Files.write(configFilePath, configJson.getBytes());
       Properties properties = new Properties();
       properties.put("client_config_file", configFilePath.toString());
-      Connection connection = getConnection(properties);
-      connection.createStatement().executeQuery("select 1");
+      try (Connection connection = getConnection(properties);
+          Statement statement = connection.createStatement()) {
+        statement.executeQuery("select 1");
 
-      File file = new File("logs/jdbc/");
-      assertTrue(file.exists());
+        File file = new File("logs/jdbc/");
+        assertTrue(file.exists());
 
-      Files.deleteIfExists(configFilePath);
-      FileUtils.deleteDirectory(new File("logs"));
+        Files.deleteIfExists(configFilePath);
+        FileUtils.deleteDirectory(new File("logs"));
+      }
     } catch (IOException e) {
       fail("testJDK14LoggingWithClientConfig failed");
     } catch (SQLException e) {
@@ -47,8 +52,9 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     Path configFilePath = Paths.get("invalid.json");
     Properties properties = new Properties();
     properties.put("client_config_file", configFilePath.toString());
-    Connection connection = getConnection(properties);
-    connection.createStatement().executeQuery("select 1");
+    try (Connection connection = getConnection(properties)) {
+      connection.createStatement().executeQuery("select 1");
+    }
   }
 
   @Test

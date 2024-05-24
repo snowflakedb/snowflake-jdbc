@@ -5,10 +5,12 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Collection;
 import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.commons.lang3.StringUtils;
@@ -65,17 +67,23 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
     String column = "(a timestamp_tz(" + scale + "))";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    Connection con = init(table, column, values);
-    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
-    int i = 0;
-    while (i < cases.length) {
-      rs.next();
-      assertEquals(times[i++], rs.getTimestamp(1).getTime());
-      assertEquals(0, rs.getTimestamp(1).getNanos());
+    try (Connection con = init(table, column, values);
+        Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select * from " + table)) {
+      try {
+        int i = 0;
+        while (i < cases.length) {
+          assertTrue(rs.next());
+          assertEquals(times[i++], rs.getTimestamp(1).getTime());
+          assertEquals(0, rs.getTimestamp(1).getNanos());
+        }
+        assertTrue(rs.next());
+        assertNull(rs.getString(1));
+      } finally {
+        statement.execute("drop table " + table);
+        System.clearProperty("user.timezone");
+      }
     }
-    rs.next();
-    assertNull(rs.getString(1));
-    finish(table, con);
   }
 
   @Test
@@ -111,22 +119,28 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
     String column = "(a timestamp_tz)";
 
     String values = "('" + StringUtils.join(cases, " Z'),('") + " Z'), (null)";
-    Connection con = init(table, column, values);
-    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
-    int i = 0;
-    while (i < cases.length) {
-      rs.next();
-      if (i == cases.length - 1 && tz.equalsIgnoreCase("utc")) {
-        // TODO: Is this a JDBC bug which happens in both arrow and json cases?
-        assertEquals("0001-01-01 00:00:01.790870987", rs.getTimestamp(1).toString());
-      }
+    try (Connection con = init(table, column, values);
+        Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select * from " + table)) {
+      try {
+        int i = 0;
+        while (i < cases.length) {
+          assertTrue(rs.next());
+          if (i == cases.length - 1 && tz.equalsIgnoreCase("utc")) {
+            // TODO: Is this a JDBC bug which happens in both arrow and json cases?
+            assertEquals("0001-01-01 00:00:01.790870987", rs.getTimestamp(1).toString());
+          }
 
-      assertEquals(times[i], rs.getTimestamp(1).getTime());
-      assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+          assertEquals(times[i], rs.getTimestamp(1).getTime());
+          assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+        }
+        assertTrue(rs.next());
+        assertNull(rs.getString(1));
+      } finally {
+        statement.execute("drop table " + table);
+        System.clearProperty("user.timezone");
+      }
     }
-    rs.next();
-    assertNull(rs.getString(1));
-    finish(table, con);
   }
 
   @Test
@@ -164,21 +178,27 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
     String column = "(a timestamp_tz(6))";
 
     String values = "('" + StringUtils.join(cases, " Z'),('") + " Z'), (null)";
-    Connection con = init(table, column, values);
-    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
-    int i = 0;
-    while (i < cases.length) {
-      rs.next();
-      if (i == cases.length - 1 && tz.equalsIgnoreCase("utc")) {
-        // TODO: Is this a JDBC bug which happens in both arrow and json cases?
-        assertEquals("0001-01-01 00:00:01.79087", rs.getTimestamp(1).toString());
-      }
+    try (Connection con = init(table, column, values);
+        Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select * from " + table)) {
+      try {
+        int i = 0;
+        while (i < cases.length) {
+          assertTrue(rs.next());
+          if (i == cases.length - 1 && tz.equalsIgnoreCase("utc")) {
+            // TODO: Is this a JDBC bug which happens in both arrow and json cases?
+            assertEquals("0001-01-01 00:00:01.79087", rs.getTimestamp(1).toString());
+          }
 
-      assertEquals(times[i], rs.getTimestamp(1).getTime());
-      assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+          assertEquals(times[i], rs.getTimestamp(1).getTime());
+          assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+        }
+        assertTrue(rs.next());
+        assertNull(rs.getString(1));
+      } finally {
+        statement.execute("drop table " + table);
+        System.clearProperty("user.timezone");
+      }
     }
-    rs.next();
-    assertNull(rs.getString(1));
-    finish(table, con);
   }
 }

@@ -5,9 +5,16 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -39,15 +46,14 @@ public class HeartbeatIT extends AbstractDriverIT {
   @BeforeClass
   public static void setUpClass() throws Exception {
     if (!RunningOnGithubAction.isRunningOnGithubAction()) {
-      Connection connection = getSnowflakeAdminConnection();
-      connection
-          .createStatement()
-          .execute(
-              "alter system set"
-                  + " master_token_validity=60"
-                  + ",session_token_validity=20"
-                  + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=1");
-      connection.close();
+      try (Connection connection = getSnowflakeAdminConnection();
+          Statement statement = connection.createStatement()) {
+        statement.execute(
+            "alter system set"
+                + " master_token_validity=60"
+                + ",session_token_validity=20"
+                + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=1");
+      }
     }
   }
 
@@ -58,15 +64,14 @@ public class HeartbeatIT extends AbstractDriverIT {
   @AfterClass
   public static void tearDownClass() throws Exception {
     if (!RunningOnGithubAction.isRunningOnGithubAction()) {
-      Connection connection = getSnowflakeAdminConnection();
-      connection
-          .createStatement()
-          .execute(
-              "alter system set"
-                  + " master_token_validity=default"
-                  + ",session_token_validity=default"
-                  + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=default");
-      connection.close();
+      try (Connection connection = getSnowflakeAdminConnection();
+          Statement statement = connection.createStatement()) {
+        statement.execute(
+            "alter system set"
+                + " master_token_validity=default"
+                + ",session_token_validity=default"
+                + ",SESSION_RECORD_ACCESS_INTERVAL_SECS=default");
+      }
     }
   }
 
@@ -80,34 +85,28 @@ public class HeartbeatIT extends AbstractDriverIT {
    */
   protected void submitQuery(boolean useKeepAliveSession, int queryIdx)
       throws SQLException, InterruptedException {
-    Connection connection = null;
-    Statement statement = null;
-    ResultSet resultSet = null;
     ResultSetMetaData resultSetMetaData;
 
-    try {
-      Properties sessionParams = new Properties();
-      sessionParams.put(
-          "CLIENT_SESSION_KEEP_ALIVE",
-          useKeepAliveSession ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
+    Properties sessionParams = new Properties();
+    sessionParams.put(
+        "CLIENT_SESSION_KEEP_ALIVE",
+        useKeepAliveSession ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
 
-      connection = getConnection(sessionParams);
-      statement = connection.createStatement();
+    try (Connection connection = getConnection(sessionParams);
+        Statement statement = connection.createStatement()) {
 
       Thread.sleep(61000); // sleep 61 seconds
-      resultSet = statement.executeQuery("SELECT 1");
-      resultSetMetaData = resultSet.getMetaData();
+      try (ResultSet resultSet = statement.executeQuery("SELECT 1")) {
+        resultSetMetaData = resultSet.getMetaData();
 
-      // assert column count
-      assertEquals(1, resultSetMetaData.getColumnCount());
+        // assert column count
+        assertEquals(1, resultSetMetaData.getColumnCount());
 
-      // assert we get 1 row
-      assertTrue(resultSet.next());
+        // assert we get 1 row
+        assertTrue(resultSet.next());
 
-      logger.fine("Query " + queryIdx + " passed ");
-      statement.close();
-    } finally {
-      closeSQLObjects(resultSet, statement, connection);
+        logger.fine("Query " + queryIdx + " passed ");
+      }
     }
   }
 
@@ -137,7 +136,9 @@ public class HeartbeatIT extends AbstractDriverIT {
               }));
     }
     executorService.shutdown();
-    for (int idx = 0; idx < concurrency; idx++) futures.get(idx).get();
+    for (int idx = 0; idx < concurrency; idx++) {
+      futures.get(idx).get();
+    }
   }
 
   /**

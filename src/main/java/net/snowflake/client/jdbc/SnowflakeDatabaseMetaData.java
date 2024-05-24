@@ -4,15 +4,38 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.*;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_CATALOGS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_COLUMNS_EXTENDED_SET;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FOREIGN_KEYS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FUNCTIONS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_FUNCTION_COLUMNS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PRIMARY_KEYS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PROCEDURES;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_PROCEDURE_COLUMNS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_SCHEMAS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_STREAMS;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLES;
+import static net.snowflake.client.jdbc.DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES;
 import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Strings;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.RowIdLifetime;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
@@ -39,7 +62,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   private static final char SEARCH_STRING_ESCAPE = '\\';
 
-  private static final String JDBCVersion = "1.0";
+  private static final String JDBCVersion = "4.2";
   // Open Group CLI Functions
   // LOG10 is not supported
   public static final String NumericFunctionsSupported =
@@ -71,27 +94,51 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   // These are keywords not in SQL2003 standard
   private static final String notSQL2003Keywords =
-      "ACCOUNT,DATABASE,SCHEMA,VIEW,ISSUE,DATE_PART,EXTRACT,"
-          + "POSITION,TRY_CAST,BIT,DATETIME,NUMBERC,OBJECT,BYTEINT,STRING,TEXT,"
-          + "TIMESTAMPLTZ,TIMESTAMPNTZ,TIMESTAMPTZ,TIMESTAMP_LTZ,TIMESTAMP_NTZ,TIMESTAMP_TZ,TINYINT,"
-          + "VARBINARY,VARIANT,ACCOUNTS,ACTION,ACTIVATE,ASC,AUTOINCREMENT,BEFORE,"
-          + "BUILTIN,BYTE,CACHE,CHANGE,CLEAREPCACHE,CLONE,CLUSTER,CLUSTERS,COLUMNS,COMMENT,"
-          + "COMPRESSION,CONSTRAINTS,COPY,CP,CREDENTIALS,D,DATA,DATABASES,DEFERRABLE,"
-          + "DEFERRED,DELIMITED,DESC,DIRECTORY,DISABLE,DUAL,ENABLE,ENFORCED,"
-          + "EXCLUSIVE,EXPLAIN,EXPORTED,FAIL,FIELDS,FILE,FILES,FIRST,FN,FORCE,FORMAT,"
-          + "FORMATS,FUNCTIONS,GRANTS,GSINSTANCE,GSINSTANCES,HELP,HIBERNATE,HINTS,"
-          + "HISTORY,IDENTIFIED,IMMUTABLE,IMPORTED,INCIDENT,INCIDENTS,INFO,INITIALLY,"
-          + "ISSUES,KEEP,KEY,KEYS,LAST,LIMIT,LIST,LOAD,LOCATION,LOCK,LOCKS,LS,MANAGE,MAP,MATCHED,"
-          + "MATERIALIZED,MODIFY,MONITOR,MONITORS,NAME,NETWORK,NEXT,NORELY,NOTIFY,NOVALIDATE,NULLS,OBJECTS,"
-          + "OFFSET,OJ,OPERATE,OPERATION,OPTION,OWNERSHIP,PARAMETERS,PARTIAL,"
-          + "PERCENT,PLAN,PLUS,POLICIES,POLICY,POOL,PRESERVE,PRIVILEGES,PUBLIC,PURGE,PUT,QUIESCE,"
-          + "READ,RECLUSTER,REFERENCE,RELY,REMOVE,RENAME,REPLACE,REPLACE_FAIL,RESOURCE,"
-          + "RESTART,RESTORE,RESTRICT,RESUME,REWRITE,RM,ROLE,ROLES,RULE,SAMPLE,SCHEMAS,SEMI,"
-          + "SEQUENCE,SEQUENCES,SERVER,SERVERS,SESSION,SETLOGLEVEL,SETS,SFC,SHARE,SHARED,SHARES,SHOW,SHUTDOWN,SIMPLE,SORT,"
-          + "STAGE,STAGES,STATEMENT,STATISTICS,STOP,STORED,STRICT,STRUCT,SUSPEND,SUSPEND_IMMEDIATE,SWAP,SWITCH,T,"
-          + "TABLES,TEMP,TEMPORARY,TRANSACTION,TRANSACTIONS,TRANSIENT,TRIGGERS,TRUNCATE,TS,TYPE,UNDROP,UNLOCK,UNSET,"
-          + "UPGRADE,USAGE,USE,USERS,UTC,UTCTIMESTAMP,VALIDATE,VARIABLES,VERSION,VIEWS,VOLATILE,VOLUME,"
-          + "VOLUMES,WAREHOUSE,WAREHOUSES,WARN,WORK,WRITE,ZONE,INCREMENT,MINUS,REGEXP,RLIKE";
+      String.join(
+          ",",
+          "ACCOUNT",
+          "ASOF",
+          "BIT",
+          "BYTEINT",
+          "CONNECTION",
+          "DATABASE",
+          "DATETIME",
+          "DATE_PART",
+          "FIXED",
+          "FOLLOWING",
+          "GSCLUSTER",
+          "GSPACKAGE",
+          "IDENTIFIER",
+          "ILIKE",
+          "INCREMENT",
+          "ISSUE",
+          "LONG",
+          "MAP",
+          "MATCH_CONDITION",
+          "MINUS",
+          "NUMBER",
+          "OBJECT",
+          "ORGANIZATION",
+          "QUALIFY",
+          "REFERENCE",
+          "REGEXP",
+          "RLIKE",
+          "SAMPLE",
+          "SCHEMA",
+          "STRING",
+          "TEXT",
+          "TIMESTAMPLTZ",
+          "TIMESTAMPNTZ",
+          "TIMESTAMPTZ",
+          "TIMESTAMP_LTZ",
+          "TIMESTAMP_NTZ",
+          "TIMESTAMP_TZ",
+          "TINYINT",
+          "TRANSIT",
+          "TRY_CAST",
+          "VARIANT",
+          "VECTOR",
+          "VIEW");
 
   private final Connection connection;
 
@@ -111,6 +158,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   // means the procedure doesn't return a result set
   private int procedureResultsetColumnNum;
 
+  // Indicates if pattern matching is allowed for all parameters.
+  private boolean isPatternMatchingEnabled = true;
+
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
     logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
 
@@ -121,6 +171,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     this.stringsQuoted = session.isStringQuoted();
     this.ibInstance = session.getTelemetryClient();
     this.procedureResultsetColumnNum = -1;
+    this.isPatternMatchingEnabled = session.getEnablePatternSearch();
   }
 
   private void raiseSQLExceptionIfConnectionIsClosed() throws SQLException {
@@ -2029,6 +2080,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final String catalog = resPair.left;
     final String schema = resPair.right;
 
+    // These Patterns will only be used if the connection property enablePatternSearch=true
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(schema, true);
     final Pattern compiledTablePattern = Wildcard.toRegexPattern(table, true);
 
@@ -2038,7 +2090,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PRIMARY_KEYS, statement);
     } else {
       String catalogUnescaped = escapeSqlQuotes(catalog);
-      if (schema == null || isSchemaNameWildcardPattern(schema)) {
+      if (schema == null || (isPatternMatchingEnabled && isSchemaNameWildcardPattern(schema))) {
         showPKCommand += "database \"" + catalogUnescaped + "\"";
       } else if (schema.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_PRIMARY_KEYS, statement);
@@ -2063,6 +2115,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     }
 
     final String catalogIn = catalog;
+    // These values for Schema and Table will only be used to filter results if the connection
+    // property
+    // enablePatternSearch=false
+    final String schemaIn = schema;
+    final String tableIn = table;
 
     logger.debug("sql command to get primary key metadata: {}", showPKCommand);
     ResultSet resultSet =
@@ -2084,26 +2141,74 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           String column_name = showObjectResultSet.getString(5);
           int key_seq = showObjectResultSet.getInt(6);
           String pk_name = showObjectResultSet.getString(7);
+          boolean isMatch = false;
 
           // Post filter based on the input
-          if ((catalogIn == null || catalogIn.equals(table_cat))
-              && (compiledSchemaPattern == null
-                  || compiledSchemaPattern.equals(table_schem)
-                  || compiledSchemaPattern.matcher(table_schem).matches())
-              && (compiledTablePattern == null
-                  || compiledTablePattern.equals(table_name)
-                  || compiledTablePattern.matcher(table_name).matches())) {
-            nextRow[0] = table_cat;
-            nextRow[1] = table_schem;
-            nextRow[2] = table_name;
-            nextRow[3] = column_name;
-            nextRow[4] = key_seq;
-            nextRow[5] = pk_name;
+          if (isPatternMatchingEnabled) {
+            isMatch =
+                isPrimaryKeyPatternSearch(
+                    table_cat, table_schem, table_name, column_name, key_seq, pk_name);
+          } else {
+            isMatch =
+                isPrimaryKeyExactSearch(
+                    table_cat, table_schem, table_name, column_name, key_seq, pk_name);
+          }
+          if (isMatch) {
+            createPrimaryKeyRow(table_cat, table_schem, table_name, column_name, key_seq, pk_name);
             return true;
           }
         }
         close();
         return false;
+      }
+
+      private boolean isPrimaryKeyExactSearch(
+          String table_cat,
+          String table_schem,
+          String table_name,
+          String column_name,
+          int key_seq,
+          String pk_name) {
+        if ((catalogIn == null || catalogIn.equals(table_cat))
+            && (schemaIn == null || schemaIn.equals(table_schem))
+            && (tableIn == null || tableIn.equals(table_name))) {
+          return true;
+        }
+        return false;
+      }
+
+      private boolean isPrimaryKeyPatternSearch(
+          String table_cat,
+          String table_schem,
+          String table_name,
+          String column_name,
+          int key_seq,
+          String pk_name) {
+        if ((catalogIn == null || catalogIn.equals(table_cat))
+            && (compiledSchemaPattern == null
+                || compiledSchemaPattern.equals(table_schem)
+                || compiledSchemaPattern.matcher(table_schem).matches())
+            && (compiledTablePattern == null
+                || compiledTablePattern.equals(table_name)
+                || compiledTablePattern.matcher(table_name).matches())) {
+          return true;
+        }
+        return false;
+      }
+
+      private void createPrimaryKeyRow(
+          String table_cat,
+          String table_schem,
+          String table_name,
+          String column_name,
+          int key_seq,
+          String pk_name) {
+        nextRow[0] = table_cat;
+        nextRow[1] = table_schem;
+        nextRow[2] = table_name;
+        nextRow[3] = column_name;
+        nextRow[4] = key_seq;
+        nextRow[5] = pk_name;
       }
     };
   }
@@ -2140,6 +2245,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final String parentCatalog = resPair.left;
     final String parentSchema = resPair.right;
 
+    // These Patterns will only be used to filter results if the connection property
+    // enablePatternSearch=true
     final Pattern compiledSchemaPattern = Wildcard.toRegexPattern(parentSchema, true);
     final Pattern compiledParentTablePattern = Wildcard.toRegexPattern(parentTable, true);
     final Pattern compiledForeignSchemaPattern = Wildcard.toRegexPattern(foreignSchema, true);
@@ -2159,7 +2266,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FOREIGN_KEYS, statement);
     } else {
       String unescapedParentCatalog = escapeSqlQuotes(parentCatalog);
-      if (parentSchema == null || isSchemaNameWildcardPattern(parentSchema)) {
+      if (parentSchema == null
+          || (isPatternMatchingEnabled && isSchemaNameWildcardPattern(parentSchema))) {
         commandBuilder.append("database \"" + unescapedParentCatalog + "\"");
       } else if (parentSchema.isEmpty()) {
         return SnowflakeDatabaseMetaDataResultSet.getEmptyResultSet(GET_FOREIGN_KEYS, statement);
@@ -2185,6 +2293,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     }
 
     final String finalParentCatalog = parentCatalog;
+    final String finalForeignCatalog = foreignCatalog;
+    // These values will only be used to filter results if the connection property
+    // enablePatternSearch=true
+    final String finalParentSchema = parentSchema;
+    final String finalParentTable = parentTable;
+    final String finalForeignSchema = foreignSchema;
+    final String finalForeignTable = foreignTable;
 
     String command = commandBuilder.toString();
 
@@ -2226,70 +2341,172 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
           boolean passedFilter = false;
 
-          // Post filter the results based on the client type
-          if (client.equals("import")) {
-            // For imported keys, filter on the foreign key table
-            if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
-                && (compiledSchemaPattern == null
-                    || compiledSchemaPattern.equals(fktable_schem)
-                    || compiledSchemaPattern.matcher(fktable_schem).matches())
-                && (compiledParentTablePattern == null
-                    || compiledParentTablePattern.equals(fktable_name)
-                    || compiledParentTablePattern.matcher(fktable_name).matches())) {
-              passedFilter = true;
-            }
-          } else if (client.equals("export")) {
-            // For exported keys, filter on the primary key table
-            if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
-                && (compiledSchemaPattern == null
-                    || compiledSchemaPattern.equals(pktable_schem)
-                    || compiledSchemaPattern.matcher(pktable_schem).matches())
-                && (compiledParentTablePattern == null
-                    || compiledParentTablePattern.equals(pktable_name)
-                    || compiledParentTablePattern.matcher(pktable_name).matches())) {
-              passedFilter = true;
-            }
-          } else if (client.equals("cross")) {
-            // For cross references, filter on both the primary key and foreign
-            // key table
-            if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
-                && (compiledSchemaPattern == null
-                    || compiledSchemaPattern.equals(pktable_schem)
-                    || compiledSchemaPattern.matcher(pktable_schem).matches())
-                && (compiledParentTablePattern == null
-                    || compiledParentTablePattern.equals(pktable_name)
-                    || compiledParentTablePattern.matcher(pktable_name).matches())
-                && (foreignCatalog == null || foreignCatalog.equals(fktable_cat))
-                && (compiledForeignSchemaPattern == null
-                    || compiledForeignSchemaPattern.equals(fktable_schem)
-                    || compiledForeignSchemaPattern.matcher(fktable_schem).matches())
-                && (compiledForeignTablePattern == null
-                    || compiledForeignTablePattern.equals(fktable_name)
-                    || compiledForeignTablePattern.matcher(fktable_name).matches())) {
-              passedFilter = true;
-            }
+          if (isPatternMatchingEnabled) {
+            passedFilter =
+                isForeignKeyPatternMatch(
+                    fktable_cat,
+                    fktable_schem,
+                    fktable_name,
+                    passedFilter,
+                    pktable_cat,
+                    pktable_schem,
+                    pktable_name);
+          } else {
+            passedFilter =
+                isForeignKeyExactMatch(
+                    fktable_cat,
+                    fktable_schem,
+                    fktable_name,
+                    passedFilter,
+                    pktable_cat,
+                    pktable_schem,
+                    pktable_name);
           }
 
           if (passedFilter) {
-            nextRow[0] = pktable_cat;
-            nextRow[1] = pktable_schem;
-            nextRow[2] = pktable_name;
-            nextRow[3] = pkcolumn_name;
-            nextRow[4] = fktable_cat;
-            nextRow[5] = fktable_schem;
-            nextRow[6] = fktable_name;
-            nextRow[7] = fkcolumn_name;
-            nextRow[8] = key_seq;
-            nextRow[9] = updateRule;
-            nextRow[10] = deleteRule;
-            nextRow[11] = fk_name;
-            nextRow[12] = pk_name;
-            nextRow[13] = deferrability;
+            createForeinKeyRow(
+                pktable_cat,
+                pktable_schem,
+                pktable_name,
+                pkcolumn_name,
+                fktable_cat,
+                fktable_schem,
+                fktable_name,
+                fkcolumn_name,
+                key_seq,
+                updateRule,
+                deleteRule,
+                fk_name,
+                pk_name,
+                deferrability);
             return true;
           }
         }
         close();
         return false;
+      }
+
+      private void createForeinKeyRow(
+          String pktable_cat,
+          String pktable_schem,
+          String pktable_name,
+          String pkcolumn_name,
+          String fktable_cat,
+          String fktable_schem,
+          String fktable_name,
+          String fkcolumn_name,
+          int key_seq,
+          short updateRule,
+          short deleteRule,
+          String fk_name,
+          String pk_name,
+          short deferrability) {
+        nextRow[0] = pktable_cat;
+        nextRow[1] = pktable_schem;
+        nextRow[2] = pktable_name;
+        nextRow[3] = pkcolumn_name;
+        nextRow[4] = fktable_cat;
+        nextRow[5] = fktable_schem;
+        nextRow[6] = fktable_name;
+        nextRow[7] = fkcolumn_name;
+        nextRow[8] = key_seq;
+        nextRow[9] = updateRule;
+        nextRow[10] = deleteRule;
+        nextRow[11] = fk_name;
+        nextRow[12] = pk_name;
+        nextRow[13] = deferrability;
+      }
+
+      private boolean isForeignKeyExactMatch(
+          String fktable_cat,
+          String fktable_schem,
+          String fktable_name,
+          boolean passedFilter,
+          String pktable_cat,
+          String pktable_schem,
+          String pktable_name) {
+        // Post filter the results based on the client type
+        if (client.equals("import")) {
+          // For imported keys, filter on the foreign key table
+          if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
+              && (finalParentSchema == null || finalParentSchema.equals(fktable_schem))
+              && (finalParentTable == null || finalParentTable.equals(fktable_name))) {
+            passedFilter = true;
+          }
+        } else if (client.equals("export")) {
+          // For exported keys, filter on the primary key table
+          if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
+              && (finalParentSchema == null || finalParentSchema.equals(pktable_schem))
+              && (finalParentTable == null || finalParentTable.equals(pktable_name))) {
+            passedFilter = true;
+          }
+        } else if (client.equals("cross")) {
+          // For cross references, filter on both the primary key and foreign
+          // key table
+          if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
+              && (finalParentSchema == null || finalParentSchema.equals(pktable_schem))
+              && (finalParentTable == null || finalParentTable.equals(pktable_name))
+              && (finalForeignCatalog == null || finalForeignCatalog.equals(fktable_cat))
+              && (finalForeignSchema == null || finalForeignSchema.equals(fktable_schem))
+              && (finalForeignTable == null || finalForeignTable.equals(fktable_name))) {
+            passedFilter = true;
+          }
+        }
+        return passedFilter;
+      }
+
+      private boolean isForeignKeyPatternMatch(
+          String fktable_cat,
+          String fktable_schem,
+          String fktable_name,
+          boolean passedFilter,
+          String pktable_cat,
+          String pktable_schem,
+          String pktable_name) {
+        // Post filter the results based on the client type
+        if (client.equals("import")) {
+          // For imported keys, filter on the foreign key table
+          if ((finalParentCatalog == null || finalParentCatalog.equals(fktable_cat))
+              && (compiledSchemaPattern == null
+                  || compiledSchemaPattern.equals(fktable_schem)
+                  || compiledSchemaPattern.matcher(fktable_schem).matches())
+              && (compiledParentTablePattern == null
+                  || compiledParentTablePattern.equals(fktable_name)
+                  || compiledParentTablePattern.matcher(fktable_name).matches())) {
+            passedFilter = true;
+          }
+        } else if (client.equals("export")) {
+          // For exported keys, filter on the primary key table
+          if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
+              && (compiledSchemaPattern == null
+                  || compiledSchemaPattern.equals(pktable_schem)
+                  || compiledSchemaPattern.matcher(pktable_schem).matches())
+              && (compiledParentTablePattern == null
+                  || compiledParentTablePattern.equals(pktable_name)
+                  || compiledParentTablePattern.matcher(pktable_name).matches())) {
+            passedFilter = true;
+          }
+        } else if (client.equals("cross")) {
+          // For cross references, filter on both the primary key and foreign
+          // key table
+          if ((finalParentCatalog == null || finalParentCatalog.equals(pktable_cat))
+              && (compiledSchemaPattern == null
+                  || compiledSchemaPattern.equals(pktable_schem)
+                  || compiledSchemaPattern.matcher(pktable_schem).matches())
+              && (compiledParentTablePattern == null
+                  || compiledParentTablePattern.equals(pktable_name)
+                  || compiledParentTablePattern.matcher(pktable_name).matches())
+              && (foreignCatalog == null || foreignCatalog.equals(fktable_cat))
+              && (compiledForeignSchemaPattern == null
+                  || compiledForeignSchemaPattern.equals(fktable_schem)
+                  || compiledForeignSchemaPattern.matcher(fktable_schem).matches())
+              && (compiledForeignTablePattern == null
+                  || compiledForeignTablePattern.equals(fktable_name)
+                  || compiledForeignTablePattern.matcher(fktable_name).matches())) {
+            passedFilter = true;
+          }
+        }
+        return passedFilter;
       }
     };
   }

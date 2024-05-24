@@ -9,7 +9,7 @@ public class TcpDiagnosticCheck extends DiagnosticCheck {
             SFLoggerFactory.getLogger(TcpDiagnosticCheck.class);
 
     public TcpDiagnosticCheck(){
-        super("TCP Connection Diagnostic Test");
+        super("TCP Connection Test");
     }
 
 }

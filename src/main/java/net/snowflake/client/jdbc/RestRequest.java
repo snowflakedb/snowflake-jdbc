@@ -11,7 +11,13 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLKeyException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
-import net.snowflake.client.core.*;
+import net.snowflake.client.core.Event;
+import net.snowflake.client.core.EventUtil;
+import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFOCSPException;
+import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.UUIDUtils;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -391,6 +397,16 @@ public class RestRequest {
           // reset state
           retryCount = 0;
           break;
+        }
+
+        // If this was a request for an Okta one-time token that failed with a retry-able error,
+        // throw exception to renew the token before trying again.
+        if (String.valueOf(httpRequest.getURI()).contains("okta.com/api/v1/authn")) {
+          throw new SnowflakeSQLException(
+              ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
+              retryCount,
+              true,
+              elapsedMilliForTransientIssues / 1000);
         }
 
         // Make sure that any authenticator specific info that needs to be

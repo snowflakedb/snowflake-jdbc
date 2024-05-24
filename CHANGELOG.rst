@@ -1,55 +1,67 @@
+**JDBC Driver 3.16.0**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
+**JDBC Driver 3.15.1**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
+**JDBC Driver 3.15.0**
+
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
+
 **JDBC Driver 3.14.5**
 
-- \||Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.14.4**
 
-- \||Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.14.3**
 
-- \||Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.14.2**
 
-- \||Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.14.1**
 
-- \||Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.14.0**
 
-- \||Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.13.33**
 
-- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \|| Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.13.32**
 
 
-- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \|| Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.13.31**
 
-- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \|| Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.13.30**
 
-- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \|| Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.13.29**
 
-- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \|| Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.13.28**
 
-- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \|| Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.13.27**
 
-- \|| Please Refer to Release Notes at https://community.snowflake.com/s/article/JDBC-Driver-Release-Notes
+- \|| Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.13.26**
 

@@ -18,11 +18,10 @@ import org.junit.experimental.categories.Category;
 public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
   @Test
   public void testQueryResultSetNotSupportedException() throws Throwable {
-    try (Connection connection = getConnection()) {
-      try (Statement statement = connection.createStatement()) {
-        ResultSet resultSet = statement.executeQuery("select 1");
-        checkFeatureNotSupportedException(resultSet);
-      }
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("select 1")) {
+      checkFeatureNotSupportedException(resultSet);
     }
   }
 
@@ -117,7 +116,6 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
     expectFeatureNotSupportedException(() -> resultSet.getObject(1, Collections.emptyMap()));
     expectFeatureNotSupportedException(() -> resultSet.getRef(1));
     expectFeatureNotSupportedException(() -> resultSet.getBlob(1));
-    expectFeatureNotSupportedException(() -> resultSet.getArray(1));
     expectFeatureNotSupportedException(() -> resultSet.getURL(1));
     expectFeatureNotSupportedException(() -> resultSet.getRowId(1));
     expectFeatureNotSupportedException(() -> resultSet.getNClob(1));
@@ -125,7 +123,6 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
     expectFeatureNotSupportedException(() -> resultSet.getNString(1));
     expectFeatureNotSupportedException(() -> resultSet.getNCharacterStream(1));
     expectFeatureNotSupportedException(() -> resultSet.getNClob(1));
-    expectFeatureNotSupportedException(() -> resultSet.getObject(1, String.class));
 
     expectFeatureNotSupportedException(() -> resultSet.updateRef(1, new FakeRef()));
     expectFeatureNotSupportedException(() -> resultSet.updateBlob(1, new FakeBlob()));
@@ -166,7 +163,6 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
     expectFeatureNotSupportedException(() -> resultSet.getNString("col2"));
     expectFeatureNotSupportedException(() -> resultSet.getNCharacterStream("col2"));
     expectFeatureNotSupportedException(() -> resultSet.getNClob("col2"));
-    expectFeatureNotSupportedException(() -> resultSet.getObject("col2", String.class));
 
     expectFeatureNotSupportedException(() -> resultSet.updateRef("col2", new FakeRef()));
     expectFeatureNotSupportedException(() -> resultSet.updateBlob("col2", new FakeBlob()));

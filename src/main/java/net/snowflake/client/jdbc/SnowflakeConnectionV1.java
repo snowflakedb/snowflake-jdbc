@@ -10,8 +10,33 @@ import static net.snowflake.client.jdbc.ErrorCode.INVALID_CONNECT_STRING;
 import com.google.common.base.Strings;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.*;
-import java.util.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.ClientInfoStatus;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverPropertyInfo;
+import java.sql.JDBCType;
+import java.sql.NClob;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLClientInfoException;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,6 +44,7 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SfSqlArray;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
@@ -659,8 +685,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
     logger.debug("Array createArrayOf(String typeName, Object[] " + "elements)", false);
-
-    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
+    return new SfSqlArray(JDBCType.valueOf(typeName).getVendorTypeNumber(), elements);
   }
 
   @Override

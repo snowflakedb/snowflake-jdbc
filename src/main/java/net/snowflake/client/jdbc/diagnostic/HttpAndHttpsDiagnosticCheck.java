@@ -18,13 +18,14 @@ public class HttpAndHttpsDiagnosticCheck extends DiagnosticCheck {
     final String HTTP_SCHEMA="http://";
     final String HTTPS_SCHEMA="https://";
 
-    public HttpAndHttpsDiagnosticCheck() { super("HTTP and HTTPS Diagnostic Test"); }
+    public HttpAndHttpsDiagnosticCheck() { super("HTTP/HTTPS Connection Test"); }
     @Override
     public void run(SnowflakeEndpoint snowflakeEndpoint) {
+        super.run(snowflakeEndpoint);
+        // We have to replace underscores with hyphens because the JDK doesn't allow underscores in the hostname
         String host = snowflakeEndpoint.getHost().replace('_','-');
-        logger.debug("HTTP/HTTPS Test for host: " + host);
         try {
-            String urlString = null;
+            String urlString;
             urlString = (snowflakeEndpoint.isSslEnabled()) ? HTTPS_SCHEMA + host : HTTP_SCHEMA + host;
             URL url = new URL(urlString);
             HttpURLConnection con = (snowflakeEndpoint.isSslEnabled()) ? (HttpsURLConnection) url.openConnection() : (HttpURLConnection) url.openConnection();

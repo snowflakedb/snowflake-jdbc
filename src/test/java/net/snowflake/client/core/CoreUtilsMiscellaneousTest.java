@@ -4,7 +4,10 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
@@ -18,6 +21,7 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import org.junit.Test;
 
 public class CoreUtilsMiscellaneousTest {
@@ -106,7 +110,7 @@ public class CoreUtilsMiscellaneousTest {
             "jdbc",
             false);
     ClientConfiguration clientConfig = new ClientConfiguration();
-    HttpUtil.setProxyForS3(testKey, clientConfig);
+    S3HttpUtil.setProxyForS3(testKey, clientConfig);
     assertEquals(Protocol.HTTPS, clientConfig.getProxyProtocol());
     assertEquals("snowflakecomputing.com", clientConfig.getProxyHost());
     assertEquals(443, clientConfig.getProxyPort());
@@ -126,7 +130,7 @@ public class CoreUtilsMiscellaneousTest {
     props.put("nonProxyHosts", "baz.com | foo.com");
     props.put("proxyProtocol", "http");
     ClientConfiguration clientConfig = new ClientConfiguration();
-    HttpUtil.setSessionlessProxyForS3(props, clientConfig);
+    S3HttpUtil.setSessionlessProxyForS3(props, clientConfig);
     assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
     assertEquals("localhost", clientConfig.getProxyHost());
     assertEquals(8084, clientConfig.getProxyPort());
@@ -136,7 +140,7 @@ public class CoreUtilsMiscellaneousTest {
     // Test that exception is thrown when port number is invalid
     props.put("proxyPort", "invalidnumber");
     try {
-      HttpUtil.setSessionlessProxyForS3(props, clientConfig);
+      S3HttpUtil.setSessionlessProxyForS3(props, clientConfig);
     } catch (SnowflakeSQLException e) {
       assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
     }
@@ -346,7 +350,7 @@ public class CoreUtilsMiscellaneousTest {
     HttpClientSettingsKey testKey =
         new HttpClientSettingsKey(OCSPMode.FAIL_OPEN, null, 443, null, null, null, "", "", false);
     ClientConfiguration clientConfig = new ClientConfiguration();
-    HttpUtil.setProxyForS3(testKey, clientConfig);
+    S3HttpUtil.setProxyForS3(testKey, clientConfig);
     assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
     assertEquals("", clientConfig.getProxyHost());
     assertEquals(443, clientConfig.getProxyPort());

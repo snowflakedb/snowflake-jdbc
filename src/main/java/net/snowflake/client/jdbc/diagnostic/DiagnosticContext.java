@@ -16,10 +16,9 @@ public class DiagnosticContext {
 
     private static final SFLogger logger =
             SFLoggerFactory.getLogger(DiagnosticContext.class);
-    final String JAVAX_NET_DEBUG="javax.net.debug";
+    final static String JAVAX_NET_DEBUG = "javax.net.debug";
     String jsonInputFile;
 
-    String logPath;
     boolean enableSslTrace = false; //SSL tracing is off by default in case that's never provided by the user.
     ArrayList<SnowflakeEndpoint> endpoints = new ArrayList<>();
 
@@ -30,13 +29,12 @@ public class DiagnosticContext {
             new HttpAndHttpsDiagnosticCheck()
     };
 
-    public DiagnosticContext(String allowListFile, String diagnosticsLogPath, boolean enableSslTrace) {
+    public DiagnosticContext(String allowListFile, boolean enableSslTrace) {
         this.jsonInputFile = allowListFile;
         this.enableSslTrace = enableSslTrace;
-        this.logPath = diagnosticsLogPath;
 
         if(enableSslTrace){
-            setSslDebugging(enableSslTrace);
+                setSslDebugging(true);
         }
     }
 
@@ -76,10 +74,8 @@ public class DiagnosticContext {
    */
     public void setSslDebugging(Boolean enable) {
         if (enable) {
-            System.setProperty(JAVAX_NET_DEBUG, "ssl,handshake");
+            System.setProperty(JAVAX_NET_DEBUG, "all");
         }
-        else
-            System.clearProperty(this.JAVAX_NET_DEBUG);
     }
 
     private JsonNode readAllowListJsonFile(String jsonFilePath) throws IOException {
@@ -90,10 +86,11 @@ public class DiagnosticContext {
     }
 
     public static void getEnvironmentInfo() {
-        logger.debug("Environment Information:");
+        logger.debug("Getting environment information");
         logger.debug("Current truststore used: " + getTrustStoreLocation());
         logger.debug("-Dnetworkaddress.cache.ttl: " + System.getProperty("networkaddress.cache.ttl"));
         logger.debug("-Dnetworkaddress.cache.negative.ttl: " + System.getProperty("networkaddress.cache.negative.ttl"));
+        logger.debug("-Djavax.net.debug: " + System.getProperty(JAVAX_NET_DEBUG));
     }
 
     public static boolean isNullOrEmpty(String a) {
@@ -142,4 +139,8 @@ public class DiagnosticContext {
         return trustStore;
     }
 
+    boolean checkIfJvmSslTraceIsEnabled() {
+        // Return true if the JVM argument -Djavax.net.debug is already set.
+        return (System.getProperty(JAVAX_NET_DEBUG) != null);
+    }
 }

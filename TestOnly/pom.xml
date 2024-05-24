@@ -13,6 +13,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <arrow.version>10.0.1</arrow.version>
+    <awaitility.version>4.2.0</awaitility.version>
     <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
@@ -57,6 +58,12 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-inline</artifactId>
       <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -338,6 +345,8 @@
             <exclude>**/ResultSetArrow*.java</exclude>
             <exclude>**/PreparedStatementArrow*IT.java</exclude>
             <exclude>**/SFArrowResultSetIT.java</exclude>
+            <!-- structured types tests -->
+            <exclude>**/structuredtypes/sqldata/*.java</exclude>
             <!-- Latest JDBC driver tests that cannot run with the oldest driver -->
             <exclude>**/*LatestIT.java</exclude>
             <!-- Unit Tests -->

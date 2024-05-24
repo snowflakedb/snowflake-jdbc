@@ -3,7 +3,8 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
@@ -16,7 +17,9 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.BaseJDBCTest;
+import net.snowflake.client.jdbc.SnowflakeConnectionV1;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -69,26 +72,29 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
   @Test
   @Ignore
   public void testS3ConnectionWithProxyEnvVariablesSet() throws SQLException {
-    Connection connection = null;
     String testStageName = "s3TestStage";
-    try {
-      connection = getConnection();
-      Statement statement = connection.createStatement();
-      ResultSet resultSet = statement.executeQuery("select 1");
-      assertTrue(resultSet.next());
-      statement.execute("create or replace stage " + testStageName);
-      resultSet =
-          connection
-              .createStatement()
-              .executeQuery(
-                  "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @" + testStageName);
-      while (resultSet.next()) {
-        assertEquals("UPLOADED", resultSet.getString("status"));
+
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try (ResultSet resultSet = statement.executeQuery("select 1")) {
+        assertTrue(resultSet.next());
       }
-    } finally {
-      if (connection != null) {
-        connection.createStatement().execute("DROP STAGE if exists " + testStageName);
-        connection.close();
+      try {
+        statement.execute("create or replace stage " + testStageName);
+        try (ResultSet resultSet =
+            connection
+                .createStatement()
+                .executeQuery(
+                    "PUT file://"
+                        + getFullPathFileInResource(TEST_DATA_FILE)
+                        + " @"
+                        + testStageName)) {
+          while (resultSet.next()) {
+            assertEquals("UPLOADED", resultSet.getString("status"));
+          }
+        }
+      } finally {
+        statement.execute("DROP STAGE if exists " + testStageName);
       }
     }
   }

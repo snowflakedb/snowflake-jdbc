@@ -17,10 +17,21 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeDriver;
+import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
@@ -464,9 +475,11 @@ public class SessionUtil {
         // Fix for HikariCP refresh token issue:SNOW-533673.
         // If token value is not set but password field is set then
         // the driver treats password as token.
-        if (loginInput.getToken() != null)
+        if (loginInput.getToken() != null) {
           data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getToken());
-        else data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
+        } else {
+          data.put(ClientAuthnParameter.TOKEN.name(), loginInput.getPassword());
+        }
 
       } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
         data.put(ClientAuthnParameter.AUTHENTICATOR.name(), authenticatorType.name());
@@ -638,16 +651,31 @@ public class SessionUtil {
                   loginInput.getHttpClientSettingsKey());
         } catch (SnowflakeSQLException ex) {
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
-            if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
-              SessionUtilKeyPair s =
-                  new SessionUtilKeyPair(
-                      loginInput.getPrivateKey(),
-                      loginInput.getPrivateKeyFile(),
-                      loginInput.getPrivateKeyFilePwd(),
-                      loginInput.getAccountName(),
-                      loginInput.getUserName());
+            if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT
+                || authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
 
-              data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
+              if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT) {
+                SessionUtilKeyPair s =
+                    new SessionUtilKeyPair(
+                        loginInput.getPrivateKey(),
+                        loginInput.getPrivateKeyFile(),
+                        loginInput.getPrivateKeyFilePwd(),
+                        loginInput.getAccountName(),
+                        loginInput.getUserName());
+
+                data.put(ClientAuthnParameter.TOKEN.name(), s.issueJwtToken());
+              } else if (authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
+                logger.debug("Retrieve new token for Okta authentication.");
+                // If we need to retry, we need to get a new Okta token
+                tokenOrSamlResponse = getSamlResponseUsingOkta(loginInput);
+                data.put(ClientAuthnParameter.RAW_SAML_RESPONSE.name(), tokenOrSamlResponse);
+                authnData.setData(data);
+                String updatedJson = mapper.writeValueAsString(authnData);
+
+                StringEntity updatedInput = new StringEntity(updatedJson, StandardCharsets.UTF_8);
+                updatedInput.setContentType("application/json");
+                postRequest.setEntity(updatedInput);
+              }
 
               long elapsedSeconds = ex.getElapsedSeconds();
 
@@ -677,7 +705,8 @@ public class SessionUtil {
                 }
               }
 
-              // JWT renew should not count as a retry, so we pass back the current retry count.
+              // JWT or Okta renew should not count as a retry, so we pass back the current retry
+              // count.
               retryCount = ex.getRetryCount();
 
               continue;
@@ -1125,6 +1154,16 @@ public class SessionUtil {
               loginInput.getHttpClientSettingsKey());
 
       // step 5
+      validateSAML(responseHtml, loginInput);
+    } catch (IOException | URISyntaxException ex) {
+      handleFederatedFlowError(loginInput, ex);
+    }
+    return responseHtml;
+  }
+
+  private static void validateSAML(String responseHtml, SFLoginInput loginInput)
+      throws SnowflakeSQLException, MalformedURLException {
+    if (!loginInput.getDisableSamlURLCheck()) {
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
       if (!isPrefixEqual(postBackUrl, loginInput.getServerUrl())) {
         URL idpDestinationUrl = new URL(postBackUrl);
@@ -1138,18 +1177,13 @@ public class SessionUtil {
             clientDestinationHostName,
             idpDestinationHostName);
 
-        // Session is in process of getting created, so exception constructor takes in null session
-        // value
+        // Session is in process of getting created, so exception constructor takes in null
         throw new SnowflakeSQLLoggedException(
             null,
             ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(),
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION
-            /* session = */ );
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION);
       }
-    } catch (IOException | URISyntaxException ex) {
-      handleFederatedFlowError(loginInput, ex);
     }
-    return responseHtml;
   }
 
   /**
@@ -1349,12 +1383,24 @@ public class SessionUtil {
    */
   private static String getSamlResponseUsingOkta(SFLoginInput loginInput)
       throws SnowflakeSQLException {
-    JsonNode dataNode = federatedFlowStep1(loginInput);
-    String tokenUrl = dataNode.path("tokenUrl").asText();
-    String ssoUrl = dataNode.path("ssoUrl").asText();
-    federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
-    final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
-    return federatedFlowStep4(loginInput, ssoUrl, oneTimeToken);
+    while (true) {
+      try {
+        JsonNode dataNode = federatedFlowStep1(loginInput);
+        String tokenUrl = dataNode.path("tokenUrl").asText();
+        String ssoUrl = dataNode.path("ssoUrl").asText();
+        federatedFlowStep2(loginInput, tokenUrl, ssoUrl);
+        final String oneTimeToken = federatedFlowStep3(loginInput, tokenUrl);
+        return federatedFlowStep4(loginInput, ssoUrl, oneTimeToken);
+      } catch (SnowflakeSQLException ex) {
+        // This error gets thrown if the okta request encountered a retry-able error that
+        // requires getting a new one-time token.
+        if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
+          logger.debug("Failed to get Okta SAML response. Retrying without changing retry count.");
+        } else {
+          throw ex;
+        }
+      }
+    }
   }
 
   /**

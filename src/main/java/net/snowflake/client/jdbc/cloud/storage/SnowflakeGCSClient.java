@@ -12,18 +12,48 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.gax.paging.Page;
 import com.google.api.gax.rpc.FixedHeaderProvider;
-import com.google.cloud.storage.*;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobListOption;
+import com.google.cloud.storage.StorageException;
+import com.google.cloud.storage.StorageOptions;
 import com.google.common.base.Strings;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 import java.nio.channels.Channels;
 import java.security.InvalidKeyException;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.core.ExecTimeTelemetryData;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.FileBackedOutputStream;
+import net.snowflake.client.jdbc.MatDesc;
+import net.snowflake.client.jdbc.RestRequest;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -47,6 +77,10 @@ import org.apache.http.util.EntityUtils;
  * @author ppaulus
  */
 public class SnowflakeGCSClient implements SnowflakeStorageClient {
+  @SnowflakeJdbcInternalApi
+  public static final String DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME =
+      "net.snowflake.jdbc.disableGcsDefaultCredentials";
+
   private static final String GCS_ENCRYPTIONDATAPROP = "encryptiondata";
   private static final String localFileSep = systemGetProperty("file.separator");
   private static final String GCS_METADATA_PREFIX = "x-goog-meta-";
@@ -667,7 +701,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       logger.debug("Upload successful", false);
 
       // close any open streams in the "toClose" list and return
-      for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+      for (FileInputStream is : toClose) {
+        IOUtils.closeQuietly(is);
+      }
 
       return;
     }
@@ -689,7 +725,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         logger.debug("Upload successful", false);
 
         // close any open streams in the "toClose" list and return
-        for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+        for (FileInputStream is : toClose) {
+          IOUtils.closeQuietly(is);
+        }
 
         return;
       } catch (Exception ex) {
@@ -720,7 +758,9 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
     } while (retryCount <= getMaxRetries());
 
-    for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+    for (FileInputStream is : toClose) {
+      IOUtils.closeQuietly(is);
+    }
 
     throw new SnowflakeSQLLoggedException(
         queryId,
@@ -1167,13 +1207,19 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     try {
       String accessToken = (String) stage.getCredentials().get("GCS_ACCESS_TOKEN");
       if (accessToken != null) {
+        // We are authenticated with an oauth access token.
+        StorageOptions.Builder builder = StorageOptions.newBuilder();
+        if (areDisabledGcsDefaultCredentials(session)) {
+          logger.debug(
+              "Adding explicit credentials to avoid default credential lookup by the GCS client");
+          builder.setCredentials(GoogleCredentials.create(new AccessToken(accessToken, null)));
+        }
+
         // Using GoogleCredential with access token will cause IllegalStateException when the token
         // is expired and trying to refresh, which cause error cannot be caught. Instead, set a
         // header so we can caught the error code.
-
-        // We are authenticated with an oauth access token.
         this.gcsClient =
-            StorageOptions.newBuilder()
+            builder
                 .setHeaderProvider(
                     FixedHeaderProvider.create("Authorization", "Bearer " + accessToken))
                 .build()
@@ -1199,6 +1245,12 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     } catch (Exception ex) {
       throw new IllegalArgumentException("invalid_gcs_credentials");
     }
+  }
+
+  private static boolean areDisabledGcsDefaultCredentials(SFSession session) {
+    return session != null && session.getDisableGcsDefaultCredentials()
+        || SnowflakeUtil.convertSystemPropertyToBooleanValue(
+            DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, false);
   }
 
   private static boolean isSuccessStatusCode(int code) {

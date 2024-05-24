@@ -2,9 +2,13 @@
 
 SNOW-XXXXX
 
-## External contributors - please answer these questions before submitting a pull request. Thanks!
+## Pre-review self checklist
+- [ ] PR branch is updated with all the changes from `master` branch
+- [ ] The code is correctly formatted (run `mvn -P check-style validate`)
+- [ ] New public API is not unnecessary exposed (run `mvn verify` and inspect `target/japicmp/japicmp.html`)
+- [ ] The pull request name is prefixed with `SNOW-XXXX: `
 
-Please answer these questions before submitting your pull requests. Thanks!
+## External contributors - please answer these questions before submitting a pull request. Thanks!
 
 1. What GitHub issue is this PR addressing? Make sure that there is an accompanying issue to your PR.
 
@@ -18,13 +22,9 @@ Please answer these questions before submitting your pull requests. Thanks!
    - [ ] I am modifying authorization mechanisms
    - [ ] I am adding new credentials
    - [ ] I am modifying OCSP code
-   - [ ] I am adding a new dependency
+   - [ ] I am adding a new dependency or upgrading an existing one
+   - [ ] I am adding new public/protected component not marked with `@SnowflakeJdbcInternalApi` (note that public/protected methods/fields in classes marked with this annotation are already internal)
 
 3. Please describe how your code solves the related issue.
 
    Please write a short description of how your code change solves the related issue.
-
-## Pre-review checklist
-- [ ] This change has passed precommit
-- [ ] I have reviewed code coverage report for my PR in  ([Sonarqube](https://sonarqube.int.snowflakecomputing.com/project/branches?id=snowflake-jdbc))
-

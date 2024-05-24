@@ -7,7 +7,12 @@ package net.snowflake.client.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -335,7 +340,9 @@ public class QueryContextCache {
       logCacheEntries();
 
       TreeSet<QueryContextElement> elements = getElements();
-      if (elements.size() == 0) return null;
+      if (elements.size() == 0) {
+        return null;
+      }
 
       try {
         QueryContextDTO queryContextDTO = new QueryContextDTO();

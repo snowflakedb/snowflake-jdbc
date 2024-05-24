@@ -22,12 +22,24 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Builder;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3EncryptionClient;
-import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.CryptoConfiguration;
+import com.amazonaws.services.s3.model.CryptoMode;
+import com.amazonaws.services.s3.model.EncryptionMaterials;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.StaticEncryptionMaterialsProvider;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
@@ -40,8 +52,18 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import net.snowflake.client.core.*;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFSSLConnectionSocketFactory;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.FileBackedOutputStream;
+import net.snowflake.client.jdbc.MatDesc;
+import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
@@ -144,9 +166,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     clientConfig.withSignerOverride("AWSS3V4SignerType");
     clientConfig.getApacheHttpClientConfig().setSslSocketFactory(getSSLConnectionSocketFactory());
     if (session != null) {
-      HttpUtil.setProxyForS3(session.getHttpClientKey(), clientConfig);
+      S3HttpUtil.setProxyForS3(session.getHttpClientKey(), clientConfig);
     } else {
-      HttpUtil.setSessionlessProxyForS3(proxyProperties, clientConfig);
+      S3HttpUtil.setSessionlessProxyForS3(proxyProperties, clientConfig);
     }
     AmazonS3Builder<?, ?> amazonS3Builder = AmazonS3Client.builder();
     if (encMat != null) {
@@ -556,7 +578,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         myUpload.waitForCompletion();
 
         // get out
-        for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+        for (FileInputStream is : toClose) {
+          IOUtils.closeQuietly(is);
+        }
         return;
       } catch (Exception ex) {
 
@@ -588,7 +612,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       }
     } while (retryCount <= getMaxRetries());
 
-    for (FileInputStream is : toClose) IOUtils.closeQuietly(is);
+    for (FileInputStream is : toClose) {
+      IOUtils.closeQuietly(is);
+    }
 
     throw new SnowflakeSQLLoggedException(
         queryId,

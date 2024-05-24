@@ -5,8 +5,12 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -346,6 +350,20 @@ public class RestRequestTest {
     CloseableHttpClient client = mock(CloseableHttpClient.class);
     when(client.execute(any(HttpUriRequest.class)))
         .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryResponse());
+
+    try {
+      execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false);
+    } catch (SnowflakeSQLException ex) {
+      assertThat(
+          ex.getErrorCode(), equalTo(ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()));
+    }
+  }
+
+  @Test
+  public void testExceptionAuthBasedTimeoutFor429ErrorCode() throws IOException {
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .thenAnswer((Answer<CloseableHttpResponse>) invocation -> retryLoginResponse());
 
     try {
       execute(client, "login-request.com/?requestId=abcd-1234", 2, 1, 30000, true, false);

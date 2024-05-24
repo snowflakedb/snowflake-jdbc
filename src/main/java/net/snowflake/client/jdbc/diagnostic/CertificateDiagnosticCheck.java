@@ -15,11 +15,12 @@ public class CertificateDiagnosticCheck extends DiagnosticCheck {
             SFLoggerFactory.getLogger(CertificateDiagnosticCheck.class);
 
     public CertificateDiagnosticCheck(){
-        super("SSL/TLS Certificate Diagnostic Test");
+        super("SSL/TLS Certificate Test");
     }
 
     @Override
     public void run(SnowflakeEndpoint snowflakeEndpoint){
+        super.run(snowflakeEndpoint);
         if (snowflakeEndpoint.isSslEnabled()) {
             try {
                 SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();

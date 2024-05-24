@@ -8,11 +8,28 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.Date;
+import java.sql.NClob;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.ArrowSqlInput;
+import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
@@ -20,7 +37,6 @@ import net.snowflake.client.core.SFException;
 /** Snowflake ResultSet implementation */
 public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     implements SnowflakeResultSet, ResultSet {
-  private final SFBaseResultSet sfBaseResultSet;
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -35,6 +51,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    */
   public SnowflakeResultSetV1(SFBaseResultSet sfBaseResultSet, Statement statement)
       throws SQLException {
+
     super(statement);
     this.sfBaseResultSet = sfBaseResultSet;
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
@@ -86,7 +103,6 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
       SFBaseResultSet sfBaseResultSet, SnowflakeResultSetSerializableV1 resultSetSerializable)
       throws SQLException {
     super(resultSetSerializable);
-
     this.sfBaseResultSet = sfBaseResultSet;
     this.resultSetMetaData = new SnowflakeResultSetMetaDataV1(sfBaseResultSet.getMetaData());
   }
@@ -249,8 +265,27 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
 
   public Object getObject(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
+    Object object =
+        SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
+    if (object == null) {
+      return null;
+    } else if (object instanceof JsonSqlInput) {
+      return ((JsonSqlInput) object).getText();
+    } else if (object instanceof ArrowSqlInput) {
+      throw new SQLException(
+          "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
+    } else {
+      return object;
+    }
+  }
+
+  public Array getArray(int columnIndex) throws SQLException {
+    if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
+      throw new SnowflakeLoggedFeatureNotSupportedException(session);
+    }
+    raiseSQLExceptionIfResultSetIsClosed();
     try {
-      return sfBaseResultSet.getObject(columnIndex);
+      return sfBaseResultSet.getArray(columnIndex);
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());

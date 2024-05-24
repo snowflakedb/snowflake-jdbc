@@ -6,12 +6,14 @@ package net.snowflake.client.core.arrow;
 import java.nio.ByteBuffer;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.*;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.ValueVector;
@@ -42,21 +44,22 @@ public class BigIntToTimeConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return null;
     } else {
-      SFTime sfTime = toSFTime(index);
-      if (sfTime == null) {
-        return null;
-      }
-      Time ts =
-          new Time(
-              sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
-      if (useSessionTimezone) {
-        ts =
-            SnowflakeUtil.getTimeInSessionTimezone(
-                SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
-                sfTime.getNanosecondsWithinSecond());
-      }
-      return ts;
+      long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
+      return getTime(val, context.getScale(columnIndex), useSessionTimezone);
     }
+  }
+
+  public static Time getTime(long value, int scale, boolean useSessionTimezone) throws SFException {
+    SFTime sfTime = SFTime.fromFractionalSeconds(value, scale);
+    Time ts =
+        new Time(sfTime.getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
+    if (useSessionTimezone) {
+      ts =
+          SnowflakeUtil.getTimeInSessionTimezone(
+              SnowflakeUtil.getSecondsFromMillis(ts.getTime()),
+              sfTime.getNanosecondsWithinSecond());
+    }
+    return ts;
   }
 
   @Override

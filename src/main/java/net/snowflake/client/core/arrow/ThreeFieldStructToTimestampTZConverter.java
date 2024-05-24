@@ -10,7 +10,11 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.*;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeDateWithTimezone;
+import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.IntVector;
@@ -42,11 +46,10 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   @Override
   public String toString(int index) throws SFException {
     if (context.getTimestampTZFormatter() == null) {
-      throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp LTZ formatter");
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "missing timestamp TZ formatter");
     }
     try {
       Timestamp ts = epochs.isNull(index) ? null : getTimestamp(index, TimeZone.getDefault(), true);
-
       return ts == null
           ? null
           : context.getTimestampTZFormatter().format(ts, timeZone, context.getScale(columnIndex));
@@ -78,23 +81,14 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     long epoch = epochs.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int fraction = fractions.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
     int timeZoneIndex = timeZoneIndices.getDataBuffer().getInt(index * IntVector.TYPE_WIDTH);
-
-    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
-      if (fromToString) {
-        throw new TimestampOperationNotAvailableException(epoch, fraction);
-      } else {
-        return null;
-      }
-    }
-
-    if (context.getResultVersion() > 0) {
-      timeZone = SFTimestamp.convertTimezoneIndexToTimeZone(timeZoneIndex);
-    } else {
-      timeZone = TimeZone.getTimeZone("UTC");
-    }
-    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, timeZone, useSessionTimezone);
-    Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(ts);
-    return adjustedTimestamp;
+    timeZone = convertFromTimeZoneIndex(timeZoneIndex, context.getResultVersion());
+    return getTimestamp(
+        epoch,
+        fraction,
+        timeZoneIndex,
+        context.getResultVersion(),
+        useSessionTimezone,
+        fromToString);
   }
 
   @Override
@@ -133,5 +127,33 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
     }
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr, SnowflakeUtil.SHORT_STR, "");
+  }
+
+  public static Timestamp getTimestamp(
+      long epoch,
+      int fraction,
+      int timeZoneIndex,
+      long resultVersion,
+      boolean useSessionTimezone,
+      boolean fromToString)
+      throws SFException {
+    if (ArrowResultUtil.isTimestampOverflow(epoch)) {
+      if (fromToString) {
+        throw new TimestampOperationNotAvailableException(epoch, fraction);
+      } else {
+        return null;
+      }
+    }
+    TimeZone timeZone = convertFromTimeZoneIndex(timeZoneIndex, resultVersion);
+    Timestamp ts = ArrowResultUtil.createTimestamp(epoch, fraction, timeZone, useSessionTimezone);
+    return ResultUtil.adjustTimestamp(ts);
+  }
+
+  private static TimeZone convertFromTimeZoneIndex(int timeZoneIndex, long resultVersion) {
+    if (resultVersion > 0) {
+      return SFTimestamp.convertTimezoneIndexToTimeZone(timeZoneIndex);
+    } else {
+      return TimeZone.getTimeZone("UTC");
+    }
   }
 }

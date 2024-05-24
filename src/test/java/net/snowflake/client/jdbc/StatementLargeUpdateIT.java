@@ -13,18 +13,21 @@ import org.junit.experimental.categories.Category;
 public class StatementLargeUpdateIT extends BaseJDBCTest {
   @Test
   public void testLargeUpdate() throws Throwable {
-    try (Connection con = getConnection()) {
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
       long expectedUpdateRows = (long) Integer.MAX_VALUE + 10L;
-      con.createStatement().execute("create or replace table test_large_update(c1 boolean)");
-      Statement st = con.createStatement();
-      long updatedRows =
-          st.executeLargeUpdate(
-              "insert into test_large_update select true from table(generator(rowcount=>"
-                  + expectedUpdateRows
-                  + "))");
-      assertEquals(expectedUpdateRows, updatedRows);
-      assertEquals(expectedUpdateRows, st.getLargeUpdateCount());
-      con.createStatement().execute("drop table if exists test_large_update");
+      try {
+        statement.execute("create or replace table test_large_update(c1 boolean)");
+        long updatedRows =
+            statement.executeLargeUpdate(
+                "insert into test_large_update select true from table(generator(rowcount=>"
+                    + expectedUpdateRows
+                    + "))");
+        assertEquals(expectedUpdateRows, updatedRows);
+        assertEquals(expectedUpdateRows, statement.getLargeUpdateCount());
+      } finally {
+        statement.execute("drop table if exists test_large_update");
+      }
     }
   }
 }

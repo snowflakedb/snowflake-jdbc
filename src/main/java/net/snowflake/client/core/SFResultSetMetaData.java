@@ -7,8 +7,14 @@ package net.snowflake.client.core;
 import java.sql.Date;
 import java.sql.ResultSetMetaData;
 import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeColumnMetadata;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
@@ -43,6 +49,7 @@ public class SFResultSetMetaData {
 
   private List<Integer> columnDisplaySizes;
 
+  private List<SnowflakeColumnMetadata> columnMetadata = new ArrayList<>();
   private String queryId;
 
   private Map<String, Integer> columnNamePositionMap = new HashMap<>();
@@ -123,6 +130,7 @@ public class SFResultSetMetaData {
       SnowflakeDateTimeFormat dateFormatter,
       SnowflakeDateTimeFormat timeFormatter) {
     this.columnCount = columnMetadata.size();
+    this.columnMetadata = columnMetadata;
     this.queryId = queryId;
     this.timestampNTZFormatter = timestampNTZFormatter;
     this.timestampLTZFormatter = timestampLTZFormatter;
@@ -349,22 +357,7 @@ public class SFResultSetMetaData {
   }
 
   public int getColumnType(int column) throws SFException {
-    int internalColumnType = getInternalColumnType(column);
-
-    int externalColumnType = internalColumnType;
-
-    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
-      externalColumnType = Types.TIMESTAMP;
-    }
-    if (internalColumnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ) {
-      externalColumnType =
-          session == null
-              ? Types.TIMESTAMP_WITH_TIMEZONE
-              : session.getEnableReturnTimestampWithTimeZone()
-                  ? Types.TIMESTAMP_WITH_TIMEZONE
-                  : Types.TIMESTAMP;
-    }
-    return externalColumnType;
+    return ColumnTypeHelper.getColumnType(getInternalColumnType(column), session);
   }
 
   public int getInternalColumnType(int column) throws SFException {
@@ -479,5 +472,23 @@ public class SFResultSetMetaData {
 
   public List<Boolean> getIsAutoIncrementList() {
     return isAutoIncrementList;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public List<FieldMetadata> getColumnFields(int column) throws SFException {
+    if (column < 1 || column > columnMetadata.size()) {
+      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
+    }
+
+    if (columnMetadata.get(column - 1) == null) {
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column fields for column " + column);
+    }
+
+    return columnMetadata.get(column - 1).getFields();
+  }
+
+  public boolean isStructuredTypeColumn(int columnIndex) {
+    return columnMetadata.get(columnIndex - 1).getFields() != null
+        && !columnMetadata.get(columnIndex - 1).getFields().isEmpty();
   }
 }

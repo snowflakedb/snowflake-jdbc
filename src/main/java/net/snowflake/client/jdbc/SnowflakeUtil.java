@@ -6,26 +6,45 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.ThrowingCallable;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -38,7 +57,8 @@ import org.apache.http.HttpResponse;
  */
 public class SnowflakeUtil {
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(RestRequest.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
@@ -46,6 +66,8 @@ public class SnowflakeUtil {
   public static final int EXTRA_TYPES_TIMESTAMP_TZ = 50001;
 
   public static final int EXTRA_TYPES_TIMESTAMP_NTZ = 50002;
+
+  public static final int EXTRA_TYPES_VECTOR = 50003;
 
   // reauthenticate
   private static final int ID_TOKEN_EXPIRED_GS_CODE = 390110;
@@ -67,6 +89,10 @@ public class SnowflakeUtil {
   public static final String DATE_STR = "date";
   public static final String BYTE_STR = "byte";
   public static final String BYTES_STR = "byte array";
+
+  public static String mapJson(Object ob) throws JsonProcessingException {
+    return OBJECT_MAPPER.writeValueAsString(ob);
+  }
 
   public static void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
       throws SnowflakeSQLException {
@@ -154,94 +180,175 @@ public class SnowflakeUtil {
     int scale = colNode.path("scale").asInt();
     int length = colNode.path("length").asInt();
     boolean fixed = colNode.path("fixed").asBoolean();
-    String extColTypeName;
+    JsonNode udtOutputType = colNode.path("outputType");
+    JsonNode extColTypeNameNode = colNode.path("extTypeName");
+    String extColTypeName = null;
+    if (!extColTypeNameNode.isMissingNode()
+        && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
+      extColTypeName = extColTypeNameNode.asText();
+    }
+    List<FieldMetadata> fieldsMetadata =
+        getFieldMetadata(jdbcTreatDecimalAsInt, internalColTypeName, colNode);
 
-    int colType;
+    int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
+    ColumnTypeInfo columnTypeInfo =
+        getSnowflakeType(
+            internalColTypeName,
+            extColTypeName,
+            udtOutputType,
+            session,
+            fixedColType,
+            fieldsMetadata.size() > 0,
+            isVectorType(internalColTypeName));
 
+    String colSrcDatabase = colNode.path("database").asText();
+    String colSrcSchema = colNode.path("schema").asText();
+    String colSrcTable = colNode.path("table").asText();
+
+    boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
+
+    return new SnowflakeColumnMetadata(
+        colName,
+        columnTypeInfo.getColumnType(),
+        nullable,
+        length,
+        precision,
+        scale,
+        columnTypeInfo.getExtColTypeName(),
+        fixed,
+        columnTypeInfo.getSnowflakeType(),
+        fieldsMetadata,
+        colSrcDatabase,
+        colSrcSchema,
+        colSrcTable,
+        isAutoIncrement);
+  }
+
+  static ColumnTypeInfo getSnowflakeType(
+      String internalColTypeName,
+      String extColTypeName,
+      JsonNode udtOutputType,
+      SFBaseSession session,
+      int fixedColType,
+      boolean isStructuredType,
+      boolean isVectorType)
+      throws SnowflakeSQLLoggedException {
     SnowflakeType baseType = SnowflakeType.fromString(internalColTypeName);
+    ColumnTypeInfo columnTypeInfo = null;
 
     switch (baseType) {
       case TEXT:
-        colType = Types.VARCHAR;
-        extColTypeName = "VARCHAR";
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "VARCHAR"), baseType);
         break;
-
       case CHAR:
-        colType = Types.CHAR;
-        extColTypeName = "CHAR";
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.CHAR, defaultIfNull(extColTypeName, "CHAR"), baseType);
         break;
-
       case INTEGER:
-        colType = Types.INTEGER;
-        extColTypeName = "INTEGER";
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.INTEGER, defaultIfNull(extColTypeName, "INTEGER"), baseType);
         break;
-
       case FIXED:
-        colType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
-        extColTypeName = "NUMBER";
+        if (isVectorType) {
+          columnTypeInfo =
+              new ColumnTypeInfo(Types.INTEGER, defaultIfNull(extColTypeName, "INTEGER"), baseType);
+        } else {
+          columnTypeInfo =
+              new ColumnTypeInfo(fixedColType, defaultIfNull(extColTypeName, "NUMBER"), baseType);
+        }
         break;
 
       case REAL:
-        colType = Types.DOUBLE;
-        extColTypeName = "DOUBLE";
+        if (isVectorType) {
+          columnTypeInfo =
+              new ColumnTypeInfo(Types.FLOAT, defaultIfNull(extColTypeName, "FLOAT"), baseType);
+        } else {
+          columnTypeInfo =
+              new ColumnTypeInfo(Types.DOUBLE, defaultIfNull(extColTypeName, "DOUBLE"), baseType);
+        }
         break;
 
       case TIMESTAMP:
       case TIMESTAMP_LTZ:
-        colType = EXTRA_TYPES_TIMESTAMP_LTZ;
-        extColTypeName = "TIMESTAMPLTZ";
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                EXTRA_TYPES_TIMESTAMP_LTZ, defaultIfNull(extColTypeName, "TIMESTAMPLTZ"), baseType);
         break;
 
       case TIMESTAMP_NTZ:
-        colType = Types.TIMESTAMP;
-        extColTypeName = "TIMESTAMPNTZ";
+        // if the column type is changed to EXTRA_TYPES_TIMESTAMP_NTZ, update also JsonSqlInput
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                Types.TIMESTAMP, defaultIfNull(extColTypeName, "TIMESTAMPNTZ"), baseType);
         break;
 
       case TIMESTAMP_TZ:
-        colType = EXTRA_TYPES_TIMESTAMP_TZ;
-        extColTypeName = "TIMESTAMPTZ";
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                EXTRA_TYPES_TIMESTAMP_TZ, defaultIfNull(extColTypeName, "TIMESTAMPTZ"), baseType);
         break;
 
       case DATE:
-        colType = Types.DATE;
-        extColTypeName = "DATE";
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.DATE, defaultIfNull(extColTypeName, "DATE"), baseType);
         break;
 
       case TIME:
-        colType = Types.TIME;
-        extColTypeName = "TIME";
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.TIME, defaultIfNull(extColTypeName, "TIME"), baseType);
         break;
 
       case BOOLEAN:
-        colType = Types.BOOLEAN;
-        extColTypeName = "BOOLEAN";
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.BOOLEAN, defaultIfNull(extColTypeName, "BOOLEAN"), baseType);
+        break;
+
+      case VECTOR:
+        columnTypeInfo =
+            new ColumnTypeInfo(
+                EXTRA_TYPES_VECTOR, defaultIfNull(extColTypeName, "VECTOR"), baseType);
         break;
 
       case ARRAY:
-        colType = Types.VARCHAR;
-        extColTypeName = "ARRAY";
+        int columnType = isStructuredType ? Types.ARRAY : Types.VARCHAR;
+        columnTypeInfo =
+            new ColumnTypeInfo(columnType, defaultIfNull(extColTypeName, "ARRAY"), baseType);
+        break;
+
+      case MAP:
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.STRUCT, defaultIfNull(extColTypeName, "OBJECT"), baseType);
         break;
 
       case OBJECT:
-        colType = Types.VARCHAR;
-        extColTypeName = "OBJECT";
+        if (isStructuredType) {
+          boolean isGeoType =
+              "GEOMETRY".equals(extColTypeName) || "GEOGRAPHY".equals(extColTypeName);
+          int type = isGeoType ? Types.VARCHAR : Types.STRUCT;
+          columnTypeInfo =
+              new ColumnTypeInfo(type, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+        } else {
+          columnTypeInfo =
+              new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "OBJECT"), baseType);
+        }
         break;
 
       case VARIANT:
-        colType = Types.VARCHAR;
-        extColTypeName = "VARIANT";
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.VARCHAR, defaultIfNull(extColTypeName, "VARIANT"), baseType);
         break;
 
       case BINARY:
-        colType = Types.BINARY;
-        extColTypeName = "BINARY";
+        columnTypeInfo =
+            new ColumnTypeInfo(Types.BINARY, defaultIfNull(extColTypeName, "BINARY"), baseType);
         break;
 
       case GEOGRAPHY:
       case GEOMETRY:
-        colType = Types.VARCHAR;
+        int colType = Types.VARCHAR;
         extColTypeName = (baseType == GEOGRAPHY) ? "GEOGRAPHY" : "GEOMETRY";
-        JsonNode udtOutputType = colNode.path("outputType");
+
         if (!udtOutputType.isMissingNode()) {
           SnowflakeType outputType = SnowflakeType.fromString(udtOutputType.asText());
           switch (outputType) {
@@ -253,6 +360,7 @@ public class SnowflakeUtil {
               colType = Types.BINARY;
           }
         }
+        columnTypeInfo = new ColumnTypeInfo(colType, extColTypeName, baseType);
         break;
 
       default:
@@ -263,32 +371,74 @@ public class SnowflakeUtil {
             "Unknown column type: " + internalColTypeName);
     }
 
-    JsonNode extColTypeNameNode = colNode.path("extTypeName");
-    if (!extColTypeNameNode.isMissingNode()
-        && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
-      extColTypeName = extColTypeNameNode.asText();
+    return columnTypeInfo;
+  }
+
+  private static String defaultIfNull(String extColTypeName, String defaultValue) {
+    return Optional.ofNullable(extColTypeName).orElse(defaultValue);
+  }
+
+  static List<FieldMetadata> createFieldsMetadata(
+      ArrayNode fieldsJson, boolean jdbcTreatDecimalAsInt, String parentInternalColumnTypeName)
+      throws SnowflakeSQLLoggedException {
+    List<FieldMetadata> fields = new ArrayList<>();
+    for (JsonNode node : fieldsJson) {
+      String colName = node.path("name").asText();
+      int scale = node.path("scale").asInt();
+      int precision = node.path("precision").asInt();
+      String internalColTypeName = node.path("type").asText();
+      boolean nullable = node.path("nullable").asBoolean();
+      int length = node.path("length").asInt();
+      boolean fixed = node.path("fixed").asBoolean();
+      int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
+      List<FieldMetadata> internalFields =
+          getFieldMetadata(jdbcTreatDecimalAsInt, parentInternalColumnTypeName, node);
+      JsonNode outputType = node.path("outputType");
+      JsonNode extColTypeNameNode = node.path("extTypeName");
+      String extColTypeName = null;
+      if (!extColTypeNameNode.isMissingNode()
+          && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
+        extColTypeName = extColTypeNameNode.asText();
+      }
+      ColumnTypeInfo columnTypeInfo =
+          getSnowflakeType(
+              internalColTypeName,
+              extColTypeName,
+              outputType,
+              null,
+              fixedColType,
+              internalFields.size() > 0,
+              isVectorType(parentInternalColumnTypeName));
+      fields.add(
+          new FieldMetadata(
+              colName,
+              columnTypeInfo.getExtColTypeName(),
+              columnTypeInfo.getColumnType(),
+              nullable,
+              length,
+              precision,
+              scale,
+              fixed,
+              columnTypeInfo.getSnowflakeType(),
+              internalFields));
     }
+    return fields;
+  }
 
-    String colSrcDatabase = colNode.path("database").asText();
-    String colSrcSchema = colNode.path("schema").asText();
-    String colSrcTable = colNode.path("table").asText();
+  private static boolean isVectorType(String internalColumnTypeName) {
+    return internalColumnTypeName.equalsIgnoreCase("vector");
+  }
 
-    boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
-
-    return new SnowflakeColumnMetadata(
-        colName,
-        colType,
-        nullable,
-        length,
-        precision,
-        scale,
-        extColTypeName,
-        fixed,
-        baseType,
-        colSrcDatabase,
-        colSrcSchema,
-        colSrcTable,
-        isAutoIncrement);
+  private static List<FieldMetadata> getFieldMetadata(
+      boolean jdbcTreatDecimalAsInt, String internalColumnTypeName, JsonNode node)
+      throws SnowflakeSQLLoggedException {
+    if (!node.path("fields").isEmpty()) {
+      ArrayNode internalFieldsJson = (ArrayNode) node.path("fields");
+      return createFieldsMetadata(
+          internalFieldsJson, jdbcTreatDecimalAsInt, internalColumnTypeName);
+    } else {
+      return new ArrayList<>();
+    }
   }
 
   static String javaTypeToSFTypeString(int javaType, SFBaseSession session)
@@ -296,7 +446,8 @@ public class SnowflakeUtil {
     return SnowflakeType.javaTypeToSFType(javaType, session).name();
   }
 
-  static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
+  @SnowflakeJdbcInternalApi
+  public static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType, session);
   }
@@ -403,6 +554,7 @@ public class SnowflakeUtil {
               typeName, // type name
               true,
               stype, // fixed
+              new ArrayList<>(),
               "", // database
               "", // schema
               "",
@@ -672,5 +824,39 @@ public class SnowflakeUtil {
     c.add(Calendar.MILLISECOND, nanos / 1000000);
     ts.setTime(c.getTimeInMillis());
     return ts;
+  }
+
+  /**
+   * Helper function to convert system properties to boolean
+   *
+   * @param systemProperty name of the system property
+   * @param defaultValue default value used
+   * @return the value of the system property as boolean, else the default value
+   */
+  @SnowflakeJdbcInternalApi
+  public static boolean convertSystemPropertyToBooleanValue(
+      String systemProperty, boolean defaultValue) {
+    String systemPropertyValue = systemGetProperty(systemProperty);
+    if (systemPropertyValue != null) {
+      return Boolean.parseBoolean(systemPropertyValue);
+    }
+    return defaultValue;
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static <T> T mapSFExceptionToSQLException(ThrowingCallable<T, SFException> action)
+      throws SQLException {
+    try {
+      return action.call();
+    } catch (SFException e) {
+      throw new SQLException(e);
+    }
+  }
+
+  public static String getJsonNodeStringValue(JsonNode node) throws SFException {
+    if (node.isNull()) {
+      return null;
+    }
+    return node.isValueNode() ? node.asText() : node.toString();
   }
 }

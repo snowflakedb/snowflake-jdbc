@@ -1,11 +1,15 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.awaitility.Awaitility.await;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.Properties;
 import java.util.logging.Logger;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -35,32 +39,25 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   @Override
   protected void submitQuery(boolean useKeepAliveSession, int queryIdx)
       throws SQLException, InterruptedException {
-    Connection connection = null;
-    ResultSet resultSet = null;
-    try {
-      Properties sessionParams = new Properties();
-      sessionParams.put(
-          "CLIENT_SESSION_KEEP_ALIVE",
-          useKeepAliveSession ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
+    Properties sessionParams = new Properties();
+    sessionParams.put(
+        "CLIENT_SESSION_KEEP_ALIVE",
+        useKeepAliveSession ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
 
-      connection = getConnection(sessionParams);
-
-      Statement stmt = connection.createStatement();
-      // Query will take 5 seconds to run, but ResultSet will be returned immediately
-      resultSet =
-          stmt.unwrap(SnowflakeStatement.class)
-              .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 5))");
+    try (Connection connection = getConnection(sessionParams);
+        Statement stmt = connection.createStatement();
+        // Query will take 5 seconds to run, but ResultSet will be returned immediately
+        ResultSet resultSet =
+            stmt.unwrap(SnowflakeStatement.class)
+                .executeAsyncQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 5))")) {
       Thread.sleep(61000); // sleep 61 seconds to await original session expiration time
       QueryStatus qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
-      int retry = 0;
-      int MAX_RETRY = 20;
       // Ensure query succeeded. Avoid flaky test failure by waiting until query is complete to
       // assert the query status is a success.
-      while (QueryStatus.isStillRunning(qs) && retry < MAX_RETRY) {
-        Thread.sleep(3000);
-        retry++;
-        qs = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
-      }
+      SnowflakeResultSet rs = resultSet.unwrap(SnowflakeResultSet.class);
+      await()
+          .atMost(Duration.ofSeconds(60))
+          .until(() -> !QueryStatus.isStillRunning(rs.getStatus()));
       // Query should succeed eventually. Assert this is the case.
       assertEquals(QueryStatus.SUCCESS, qs);
 
@@ -68,10 +65,6 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
       assertTrue(resultSet.next());
       assertFalse(resultSet.next());
       logger.fine("Query " + queryIdx + " passed ");
-
-    } finally {
-      resultSet.close();
-      connection.close();
     }
   }
 
@@ -91,16 +84,12 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testIsValidWithInvalidSession() throws Exception {
-    Connection connection = null;
-    try {
-      connection = getConnection();
+    try (Connection connection = getConnection()) {
       // assert that connection starts out valid
       assertTrue(connection.isValid(5));
       Thread.sleep(61000); // sleep 61 seconds to await session expiration time
       // assert that connection is no longer valid after session has expired
       assertFalse(connection.isValid(5));
-    } finally {
-      connection.close();
     }
   }
 }

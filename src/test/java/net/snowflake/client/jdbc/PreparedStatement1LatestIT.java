@@ -4,10 +4,19 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.math.BigInteger;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
@@ -33,9 +42,10 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testPrepStWithCacheEnabled() throws SQLException {
-    try (Connection connection = init()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       // ensure enable the cache result use
-      connection.createStatement().execute(enableCacheReuse);
+      statement.execute(enableCacheReuse);
 
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
@@ -45,13 +55,12 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         prepStatement.execute();
       }
 
-      try (ResultSet resultSet =
-          connection.createStatement().executeQuery("select * from test_prepst")) {
-        resultSet.next();
+      try (ResultSet resultSet = statement.executeQuery("select * from test_prepst")) {
+        assertTrue(resultSet.next());
         assertEquals(resultSet.getInt(1), 1);
-        resultSet.next();
+        assertTrue(resultSet.next());
         assertEquals(resultSet.getInt(1), 1);
-        resultSet.next();
+        assertTrue(resultSet.next());
         assertEquals(resultSet.getInt(1), 100);
       }
 
@@ -60,13 +69,13 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         prepStatement.setInt(1, 1);
         prepStatement.setInt(2, 1);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(resultSet.getInt(2), 2);
           prepStatement.setInt(1, 1);
           prepStatement.setInt(2, 100);
         }
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertEquals(resultSet.getInt(2), 101);
         }
       }
@@ -101,35 +110,37 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testInsertStageArrayBindWithTime() throws SQLException {
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
-      statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD=2");
-      statement.execute("create or replace table testStageBindTime (c1 time, c2 time)");
-      PreparedStatement prepSt =
-          connection.prepareStatement("insert into testStageBindTime values (?, ?)");
-      Time[][] timeValues = {
-        {new Time(0), new Time(1)},
-        {new Time(1000), new Time(Integer.MAX_VALUE)},
-        {new Time(123456), new Time(55555)},
-        {Time.valueOf("01:02:00"), new Time(-100)},
-      };
-      for (Time[] value : timeValues) {
-        prepSt.setTime(1, value[0]);
-        prepSt.setTime(2, value[1]);
-        prepSt.addBatch();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute("alter session set CLIENT_STAGE_ARRAY_BINDING_THRESHOLD=2");
+        statement.execute("create or replace table testStageBindTime (c1 time, c2 time)");
+        PreparedStatement prepSt =
+            connection.prepareStatement("insert into testStageBindTime values (?, ?)");
+        Time[][] timeValues = {
+          {new Time(0), new Time(1)},
+          {new Time(1000), new Time(Integer.MAX_VALUE)},
+          {new Time(123456), new Time(55555)},
+          {Time.valueOf("01:02:00"), new Time(-100)},
+        };
+        for (Time[] value : timeValues) {
+          prepSt.setTime(1, value[0]);
+          prepSt.setTime(2, value[1]);
+          prepSt.addBatch();
+        }
+        prepSt.executeBatch();
+        // check results
+        try (ResultSet rs = statement.executeQuery("select * from testStageBindTime")) {
+          for (Time[] timeValue : timeValues) {
+            assertTrue(rs.next());
+            assertEquals(timeValue[0].toString(), rs.getTime(1).toString());
+            assertEquals(timeValue[1].toString(), rs.getTime(2).toString());
+          }
+        }
+      } finally {
+        statement.execute("drop table if exists testStageBindTime");
+        statement.execute("alter session unset CLIENT_STAGE_ARRAY_BINDING_THRESHOLD");
       }
-      prepSt.executeBatch();
-      // check results
-      ResultSet rs = statement.executeQuery("select * from testStageBindTime");
-      for (Time[] timeValue : timeValues) {
-        rs.next();
-        assertEquals(timeValue[0].toString(), rs.getTime(1).toString());
-        assertEquals(timeValue[1].toString(), rs.getTime(2).toString());
-      }
-      rs.close();
-      statement.execute("drop table if exists testStageBindTime");
-      statement.execute("alter session unset CLIENT_STAGE_ARRAY_BINDING_THRESHOLD");
-      statement.close();
     }
   }
 
@@ -146,48 +157,48 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSetObjectForTimestampTypes() throws SQLException {
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       // set timestamp mapping to default value
-      statement.execute("ALTER SESSION UNSET CLIENT_TIMESTAMP_TYPE_MAPPING");
-      statement.execute("create or replace table TS (ntz TIMESTAMP_NTZ, ltz TIMESTAMP_LTZ)");
-      PreparedStatement prepst = connection.prepareStatement("insert into TS values (?, ?)");
-      String date1 = "2014-01-01 16:00:00";
-      String date2 = "1945-11-12 5:25:00";
-      Timestamp[] testTzs = {Timestamp.valueOf(date1), Timestamp.valueOf(date2)};
-      for (int i = 0; i < testTzs.length; i++) {
-        // Disable stage array binding and insert the timestamp values
-        statement.execute(
-            "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0"); // disable stage bind
-        prepst.setObject(1, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
-        prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
-        prepst.addBatch();
-        prepst.executeBatch();
-        // Enable stage array binding and insert the same timestamp values as above
-        statement.execute(
-            "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage bind
-        prepst.setObject(1, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
-        prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
-        prepst.addBatch();
-        prepst.executeBatch();
+      try {
+        statement.execute("ALTER SESSION UNSET CLIENT_TIMESTAMP_TYPE_MAPPING");
+        statement.execute("create or replace table TS (ntz TIMESTAMP_NTZ, ltz TIMESTAMP_LTZ)");
+        PreparedStatement prepst = connection.prepareStatement("insert into TS values (?, ?)");
+        String date1 = "2014-01-01 16:00:00";
+        String date2 = "1945-11-12 5:25:00";
+        Timestamp[] testTzs = {Timestamp.valueOf(date1), Timestamp.valueOf(date2)};
+        for (int i = 0; i < testTzs.length; i++) {
+          // Disable stage array binding and insert the timestamp values
+          statement.execute(
+              "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0"); // disable stage bind
+          prepst.setObject(1, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
+          prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
+          prepst.addBatch();
+          prepst.executeBatch();
+          // Enable stage array binding and insert the same timestamp values as above
+          statement.execute(
+              "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage bind
+          prepst.setObject(1, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ);
+          prepst.setObject(2, testTzs[i], SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ);
+          prepst.addBatch();
+          prepst.executeBatch();
+        }
+        try (ResultSet rs = statement.executeQuery("select * from TS")) {
+          // Get results for each timestamp value tested
+          for (int i = 0; i < testTzs.length; i++) {
+            // Assert that the first row of inserts with payload binding matches the second row of
+            // inserts that used stage array binding
+            assertTrue(rs.next());
+            Timestamp expectedNTZTs = rs.getTimestamp(1);
+            Timestamp expectedLTZTs = rs.getTimestamp(2);
+            assertTrue(rs.next());
+            assertEquals(expectedNTZTs, rs.getTimestamp(1));
+            assertEquals(expectedLTZTs, rs.getTimestamp(2));
+          }
+        }
+      } finally {
+        statement.execute("ALTER SESSION UNSET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD;");
       }
-      ResultSet rs = statement.executeQuery("select * from TS");
-      // Get results for each timestamp value tested
-      for (int i = 0; i < testTzs.length; i++) {
-        // Assert that the first row of inserts with payload binding matches the second row of
-        // inserts that used stage array binding
-        rs.next();
-        Timestamp expectedNTZTs = rs.getTimestamp(1);
-        Timestamp expectedLTZTs = rs.getTimestamp(2);
-        rs.next();
-        assertEquals(expectedNTZTs, rs.getTimestamp(1));
-        assertEquals(expectedLTZTs, rs.getTimestamp(2));
-      }
-
-      // clean up
-      statement.execute("ALTER SESSION UNSET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD;");
-      rs.close();
-      statement.close();
     }
   }
 
@@ -281,26 +292,29 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testBatchInsertWithTimestampInputFormatSet() throws SQLException {
-    try (Connection connection = init()) {
-      Statement statement = connection.createStatement();
-      statement.execute("alter session set TIMESTAMP_INPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FFTZH'");
-      statement.execute(
-          "create or replace table testStageBindTypes (c1 date, c2 datetime, c3 timestamp)");
-      java.util.Date today = new java.util.Date();
-      java.sql.Date sqldate = new java.sql.Date(today.getDate());
-      java.sql.Timestamp todaySQL = new java.sql.Timestamp(today.getTime());
-      PreparedStatement prepSt =
-          connection.prepareStatement("insert into testStageBindTypes values (?, ?, ?)");
-      for (int i = 1; i < 30000; i++) {
-        prepSt.setDate(1, sqldate);
-        prepSt.setDate(2, sqldate);
-        prepSt.setTimestamp(3, todaySQL);
-        prepSt.addBatch();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute("alter session set TIMESTAMP_INPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FFTZH'");
+        statement.execute(
+            "create or replace table testStageBindTypes (c1 date, c2 datetime, c3 timestamp)");
+        java.util.Date today = new java.util.Date();
+        java.sql.Date sqldate = new java.sql.Date(today.getDate());
+        java.sql.Timestamp todaySQL = new java.sql.Timestamp(today.getTime());
+        try (PreparedStatement prepSt =
+            connection.prepareStatement("insert into testStageBindTypes values (?, ?, ?)")) {
+          for (int i = 1; i < 30000; i++) {
+            prepSt.setDate(1, sqldate);
+            prepSt.setDate(2, sqldate);
+            prepSt.setTimestamp(3, todaySQL);
+            prepSt.addBatch();
+          }
+          prepSt.executeBatch(); // should not throw a parsing error.
+        }
+      } finally {
+        statement.execute("drop table if exists testStageBindTypes");
+        statement.execute("alter session unset TIMESTAMP_INPUT_FORMAT");
       }
-      prepSt.executeBatch(); // should not throw a parsing error.
-      statement.execute("drop table if exists testStageBindTypes");
-      statement.execute("alter session unset TIMESTAMP_INPUT_FORMAT");
-      statement.close();
     }
   }
 
@@ -313,34 +327,36 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   @Test
   @Ignore
   public void testCallStatement() throws SQLException {
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
-      statement.executeQuery(
-          "ALTER SESSION SET USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS=true");
-      statement.executeQuery(
-          "create or replace procedure\n"
-              + "TEST_SP_CALL_STMT_ENABLED(in1 float, in2 variant)\n"
-              + "returns string language javascript as $$\n"
-              + "let res = snowflake.execute({sqlText: 'select ? c1, ? c2', binds:[IN1, JSON.stringify(IN2)]});\n"
-              + "res.next();\n"
-              + "return res.getColumnValueAsString(1) + ' ' + res.getColumnValueAsString(2) + ' ' + IN2;\n"
-              + "$$;");
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.executeQuery(
+            "ALTER SESSION SET USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS=true");
+        statement.executeQuery(
+            "create or replace procedure\n"
+                + "TEST_SP_CALL_STMT_ENABLED(in1 float, in2 variant)\n"
+                + "returns string language javascript as $$\n"
+                + "let res = snowflake.execute({sqlText: 'select ? c1, ? c2', binds:[IN1, JSON.stringify(IN2)]});\n"
+                + "res.next();\n"
+                + "return res.getColumnValueAsString(1) + ' ' + res.getColumnValueAsString(2) + ' ' + IN2;\n"
+                + "$$;");
 
-      PreparedStatement prepStatement =
-          connection.prepareStatement("call TEST_SP_CALL_STMT_ENABLED(?, to_variant(?))");
-      prepStatement.setDouble(1, 1);
-      prepStatement.setString(2, "[2,3]");
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("call TEST_SP_CALL_STMT_ENABLED(?, to_variant(?))")) {
+          prepStatement.setDouble(1, 1);
+          prepStatement.setString(2, "[2,3]");
 
-      ResultSet rs = prepStatement.executeQuery();
-      String result = "1 \"[2,3]\" [2,3]";
-      while (rs.next()) {
-        assertEquals(result, rs.getString(1));
+          try (ResultSet rs = prepStatement.executeQuery()) {
+            String result = "1 \"[2,3]\" [2,3]";
+            while (rs.next()) {
+              assertEquals(result, rs.getString(1));
+            }
+          }
+        }
+      } finally {
+        statement.executeQuery(
+            "drop procedure if exists TEST_SP_CALL_STMT_ENABLED(float, variant)");
       }
-
-      statement.executeQuery("drop procedure if exists TEST_SP_CALL_STMT_ENABLED(float, variant)");
-      rs.close();
-      prepStatement.close();
-      statement.close();
     }
   }
 }

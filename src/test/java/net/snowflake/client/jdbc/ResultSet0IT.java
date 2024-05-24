@@ -12,7 +12,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 
@@ -23,79 +22,69 @@ public class ResultSet0IT extends BaseJDBCTest {
 
   public Connection init(int injectSocketTimeout) throws SQLException {
     Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
-
-    Statement statement = connection.createStatement();
-    statement.execute(
-        "alter session set "
-            + "TIMEZONE='America/Los_Angeles',"
-            + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
-            + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-            + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-            + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-            + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-    statement.close();
+    try (Statement statement = connection.createStatement()) {
+      statement.execute(
+          "alter session set "
+              + "TIMEZONE='America/Los_Angeles',"
+              + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
+              + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
+              + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
+              + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
+              + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+    }
     return connection;
   }
 
   public Connection init() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    Statement stmt = conn.createStatement();
-    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    stmt.close();
+    try (Statement stmt = conn.createStatement()) {
+      stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+    }
     return conn;
   }
 
   public Connection init(Properties paramProperties) throws SQLException {
     Connection conn =
         BaseJDBCTest.getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
-    Statement stmt = conn.createStatement();
-    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    stmt.close();
+    try (Statement stmt = conn.createStatement()) {
+      stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+    }
     return conn;
   }
 
   @Before
   public void setUp() throws SQLException {
-    Connection con = init();
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
 
-    // TEST_RS
-    con.createStatement().execute("create or replace table test_rs (colA string)");
-    con.createStatement().execute("insert into test_rs values('rowOne')");
-    con.createStatement().execute("insert into test_rs values('rowTwo')");
-    con.createStatement().execute("insert into test_rs values('rowThree')");
+      // TEST_RS
+      statement.execute("create or replace table test_rs (colA string)");
+      statement.execute("insert into test_rs values('rowOne')");
+      statement.execute("insert into test_rs values('rowTwo')");
+      statement.execute("insert into test_rs values('rowThree')");
 
-    // ORDERS_JDBC
-    Statement statement = con.createStatement();
-    statement.execute(
-        "create or replace table orders_jdbc"
-            + "(C1 STRING NOT NULL COMMENT 'JDBC', "
-            + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
-            + "C7 STRING, C8 STRING, C9 STRING) "
-            + "stage_file_format = (field_delimiter='|' "
-            + "error_on_column_count_mismatch=false)");
-    // put files
-    assertTrue(
-        "Failed to put a file",
-        statement.execute(
-            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
-    assertTrue(
-        "Failed to put a file",
-        statement.execute(
-            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
+      // ORDERS_JDBC
+      statement.execute(
+          "create or replace table orders_jdbc"
+              + "(C1 STRING NOT NULL COMMENT 'JDBC', "
+              + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
+              + "C7 STRING, C8 STRING, C9 STRING) "
+              + "stage_file_format = (field_delimiter='|' "
+              + "error_on_column_count_mismatch=false)");
+      // put files
+      assertTrue(
+          "Failed to put a file",
+          statement.execute(
+              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
+      assertTrue(
+          "Failed to put a file",
+          statement.execute(
+              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
 
-    int numRows = statement.executeUpdate("copy into orders_jdbc");
+      int numRows = statement.executeUpdate("copy into orders_jdbc");
 
-    assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
-
-    con.close();
-  }
-
-  @After
-  public void tearDown() throws SQLException {
-    Connection con = init();
-    con.createStatement().execute("drop table if exists orders_jdbc");
-    con.createStatement().execute("drop table if exists test_rs");
-    con.close();
+      assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
+    }
   }
 
   ResultSet numberCrossTesting() throws SQLException {

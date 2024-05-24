@@ -13,11 +13,19 @@ import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Security;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -30,6 +38,15 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
+import org.bouncycastle.operator.InputDecryptorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.util.io.pem.PemReader;
 
 /** Class used to compute jwt token for key pair authentication Created by hyu on 1/16/18. */
@@ -51,13 +68,13 @@ class SessionUtilKeyPair {
 
   private Provider SecurityProvider = null;
 
-  private SecretKeyFactory secretKeyFactory = null;
-
   private static final String ISSUER_FMT = "%s.%s.%s";
 
   private static final String SUBJECT_FMT = "%s.%s";
 
   private static final int JWT_DEFAULT_AUTH_TIMEOUT = 10;
+
+  private boolean isBouncyCastleProviderEnabled = false;
 
   SessionUtilKeyPair(
       PrivateKey privateKey,
@@ -68,10 +85,14 @@ class SessionUtilKeyPair {
       throws SFException {
     this.userName = userName.toUpperCase();
     this.accountName = accountName.toUpperCase();
-
+    String enableBouncyCastleJvm =
+        System.getProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
+    if (enableBouncyCastleJvm != null) {
+      isBouncyCastleProviderEnabled = enableBouncyCastleJvm.equalsIgnoreCase("true");
+    }
     // check if in FIPS mode
     for (Provider p : Security.getProviders()) {
-      if ("BCFIPS".equals(p.getName())) {
+      if (SecurityUtil.BOUNCY_CASTLE_FIPS_PROVIDER.equals(p.getName())) {
         this.isFipsMode = true;
         this.SecurityProvider = p;
         break;
@@ -126,37 +147,31 @@ class SessionUtilKeyPair {
 
   private PrivateKey extractPrivateKeyFromFile(String privateKeyFile, String privateKeyFilePwd)
       throws SFException {
-    try {
-      String privateKeyContent = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
-      if (Strings.isNullOrEmpty(privateKeyFilePwd)) {
-        // unencrypted private key file
-        PemReader pr = new PemReader(new StringReader(privateKeyContent));
-        byte[] decoded = pr.readPemObject().getContent();
-        pr.close();
-        PKCS8EncodedKeySpec encodedKeySpec = new PKCS8EncodedKeySpec(decoded);
-        KeyFactory keyFactory = getKeyFactoryInstance();
-        return keyFactory.generatePrivate(encodedKeySpec);
-      } else {
-        // encrypted private key file
-        PemReader pr = new PemReader(new StringReader(privateKeyContent));
-        byte[] decoded = pr.readPemObject().getContent();
-        pr.close();
-        EncryptedPrivateKeyInfo pkInfo = new EncryptedPrivateKeyInfo(decoded);
-        PBEKeySpec keySpec = new PBEKeySpec(privateKeyFilePwd.toCharArray());
-        SecretKeyFactory pbeKeyFactory = this.getSecretKeyFactory(pkInfo.getAlgName());
-        PKCS8EncodedKeySpec encodedKeySpec =
-            pkInfo.getKeySpec(pbeKeyFactory.generateSecret(keySpec));
-        KeyFactory keyFactory = getKeyFactoryInstance();
-        return keyFactory.generatePrivate(encodedKeySpec);
+
+    if (isBouncyCastleProviderEnabled) {
+      try {
+        return extractPrivateKeyWithBouncyCastle(privateKeyFile, privateKeyFilePwd);
+      } catch (IOException | PKCSException | OperatorCreationException e) {
+        logger.error("Could not extract private key using Bouncy Castle provider", e);
+        throw new SFException(e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, e.getCause());
       }
-    } catch (NoSuchAlgorithmException
-        | InvalidKeySpecException
-        | IOException
-        | IllegalArgumentException
-        | NullPointerException
-        | InvalidKeyException e) {
-      throw new SFException(
-          e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, privateKeyFile + ": " + e.getMessage());
+    } else {
+      try {
+        return extractPrivateKeyWithJdk(privateKeyFile, privateKeyFilePwd);
+      } catch (NoSuchAlgorithmException
+          | InvalidKeySpecException
+          | IOException
+          | IllegalArgumentException
+          | NullPointerException
+          | InvalidKeyException e) {
+        logger.error(
+            "Could not extract private key. Try setting the JVM argument: " + "-D{}" + "=TRUE",
+            SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
+        throw new SFException(
+            e,
+            ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+            privateKeyFile + ": " + e.getMessage());
+      }
     }
   }
 
@@ -214,5 +229,73 @@ class SessionUtilKeyPair {
       jwtAuthTimeout = Integer.parseInt(jwtAuthTimeoutStr);
     }
     return jwtAuthTimeout;
+  }
+
+  private PrivateKey extractPrivateKeyWithBouncyCastle(
+      String privateKeyFile, String privateKeyFilePwd)
+      throws IOException, PKCSException, OperatorCreationException {
+    PrivateKeyInfo privateKeyInfo = null;
+    PEMParser pemParser = new PEMParser(new FileReader(Paths.get(privateKeyFile).toFile()));
+    Object pemObject = pemParser.readObject();
+    if (pemObject instanceof PKCS8EncryptedPrivateKeyInfo) {
+      // Handle the case where the private key is encrypted.
+      PKCS8EncryptedPrivateKeyInfo encryptedPrivateKeyInfo =
+          (PKCS8EncryptedPrivateKeyInfo) pemObject;
+      InputDecryptorProvider pkcs8Prov =
+          new JceOpenSSLPKCS8DecryptorProviderBuilder().build(privateKeyFilePwd.toCharArray());
+      privateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(pkcs8Prov);
+    } else if (pemObject instanceof PEMKeyPair) {
+      // PKCS#1 private key
+      privateKeyInfo = ((PEMKeyPair) pemObject).getPrivateKeyInfo();
+    } else if (pemObject instanceof PrivateKeyInfo) {
+      // Handle the case where the private key is unencrypted.
+      privateKeyInfo = (PrivateKeyInfo) pemObject;
+    }
+    pemParser.close();
+    JcaPEMKeyConverter converter =
+        new JcaPEMKeyConverter()
+            .setProvider(
+                isFipsMode
+                    ? SecurityUtil.BOUNCY_CASTLE_FIPS_PROVIDER
+                    : SecurityUtil.BOUNCY_CASTLE_PROVIDER);
+    return converter.getPrivateKey(privateKeyInfo);
+  }
+
+  private PrivateKey extractPrivateKeyWithJdk(String privateKeyFile, String privateKeyFilePwd)
+      throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
+    String privateKeyContent = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
+    if (Strings.isNullOrEmpty(privateKeyFilePwd)) {
+      // unencrypted private key file
+      return generatePrivateKey(false, privateKeyContent, privateKeyFilePwd);
+    } else {
+      // encrypted private key file
+      return generatePrivateKey(true, privateKeyContent, privateKeyFilePwd);
+    }
+  }
+
+  private PrivateKey generatePrivateKey(
+      boolean isEncrypted, String privateKeyContent, String privateKeyFilePwd)
+      throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
+    if (isEncrypted) {
+      try (PemReader pr = new PemReader(new StringReader(privateKeyContent))) {
+        byte[] decoded = pr.readPemObject().getContent();
+        pr.close();
+        EncryptedPrivateKeyInfo pkInfo = new EncryptedPrivateKeyInfo(decoded);
+        PBEKeySpec keySpec = new PBEKeySpec(privateKeyFilePwd.toCharArray());
+        SecretKeyFactory pbeKeyFactory = this.getSecretKeyFactory(pkInfo.getAlgName());
+        PKCS8EncodedKeySpec encodedKeySpec =
+            pkInfo.getKeySpec(pbeKeyFactory.generateSecret(keySpec));
+        KeyFactory keyFactory = getKeyFactoryInstance();
+        return keyFactory.generatePrivate(encodedKeySpec);
+      }
+    } else {
+      try (PemReader pr = new PemReader(new StringReader(privateKeyContent))) {
+        byte[] decoded = pr.readPemObject().getContent();
+        pr.close();
+        PKCS8EncodedKeySpec encodedKeySpec = new PKCS8EncodedKeySpec(decoded);
+        KeyFactory keyFactory = getKeyFactoryInstance();
+        return keyFactory.generatePrivate(encodedKeySpec);
+      }
+    }
   }
 }

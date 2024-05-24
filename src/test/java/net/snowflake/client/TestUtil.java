@@ -9,6 +9,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -25,15 +27,18 @@ public class TestUtil {
   public static final String GENERATED_SCHEMA_PREFIX = "GENERATED_";
   public static final String ESCAPED_GENERATED_SCHEMA_PREFIX =
       GENERATED_SCHEMA_PREFIX.replaceAll("_", "\\\\_");
-  private static final String GITHUB_SCHEMA_PREFIX =
-      "GITHUB_"; // created by JDBC CI jobs before tests
-  private static final String GITHUB_JOB_SCHEMA_PREFIX =
-      "GH_JOB_"; // created by other drivers e.g. Python driver
+
+  private static final List<String> schemaGeneratedInTestsPrefixes =
+      Arrays.asList(
+          GENERATED_SCHEMA_PREFIX,
+          "GITHUB_", // created by JDBC CI jobs before tests
+          "GH_JOB_", // created by other drivers tests e.g. Python
+          "JDBCPERF", // created in JDBC perf tests
+          "SCHEMA_" // created by other drivers tests e.g. Scala
+          );
 
   public static boolean isSchemaGeneratedInTests(String schema) {
-    return schema.startsWith(TestUtil.GITHUB_SCHEMA_PREFIX)
-        || schema.startsWith(TestUtil.GITHUB_JOB_SCHEMA_PREFIX)
-        || schema.startsWith(TestUtil.GENERATED_SCHEMA_PREFIX);
+    return schemaGeneratedInTestsPrefixes.stream().anyMatch(prefix -> schema.startsWith(prefix));
   }
 
   /**
@@ -111,13 +116,13 @@ public class TestUtil {
    * @param action action to execute when schema was created
    * @throws Exception when any error occurred
    */
-  public static void withRandomSchema(Statement statement, ThrowingConsumer<String> action)
-      throws Exception {
+  public static void withRandomSchema(
+      Statement statement, ThrowingConsumer<String, Exception> action) throws Exception {
     String customSchema =
         GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
     try {
       statement.execute("CREATE OR REPLACE SCHEMA " + customSchema);
-      action.call(customSchema);
+      action.accept(customSchema);
     } finally {
       statement.execute("DROP SCHEMA " + customSchema);
     }

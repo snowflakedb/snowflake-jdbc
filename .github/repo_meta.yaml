@@ -26,4 +26,4 @@ jira_project_issue_type: Bug
 
 
 # jira_area: the jira area that raised issues should use
-jira_area: Snowpark: Application Development Ecosystem
+jira_area: Developer Platform

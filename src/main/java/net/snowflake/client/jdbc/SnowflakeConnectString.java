@@ -10,7 +10,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -25,7 +29,6 @@ public class SnowflakeConnectString implements Serializable {
   private final Map<String, Object> parameters;
   private final String account;
   private static final String JVM_ENABLE_DIAGNOSTICS = "net.snowflake.jdbc.enable.diagnostics";
-  private static final String JVM_DIAGNOSTICS_LOG_PATH = "net.snowflake.jdbc.diagnostics.log.path";
   private static final String JVM_DIAGNOSTICS_ALLOWLIST_PATH =
       "net.snowflake.jdbc.diagnostics.allowlist.path";
 
@@ -261,9 +264,6 @@ public class SnowflakeConnectString implements Serializable {
   }
 
   private static void checkAndConfigureDiagnostics(Map<String, Object> parameters) {
-    // The diagnostics log path will default to the temporary directory in case this
-    // was not configured by the user
-    String diagnosticsLogPath = System.getProperty("java.io.tmpdir");
     boolean enableDiagnostics;
     String allowListPath = null;
 
@@ -276,10 +276,6 @@ public class SnowflakeConnectString implements Serializable {
           (System.getProperty(JVM_DIAGNOSTICS_ALLOWLIST_PATH) != null)
               ? System.getProperty(JVM_DIAGNOSTICS_ALLOWLIST_PATH)
               : null;
-      diagnosticsLogPath =
-          (System.getProperty(JVM_DIAGNOSTICS_LOG_PATH) == null)
-              ? diagnosticsLogPath
-              : System.getProperty(JVM_DIAGNOSTICS_LOG_PATH);
     }
 
     // Check if diagnostics was enabled as a connection parameter. If so, override any settings
@@ -291,14 +287,9 @@ public class SnowflakeConnectString implements Serializable {
                   (String) parameters.get(SFSessionProperty.ENABLE_DIAGNOSTICS.getPropertyKey())));
       allowListPath =
           (String) parameters.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE.getPropertyKey());
-      diagnosticsLogPath =
-          (parameters.get(SFSessionProperty.DIAGNOSTICS_LOG_PATH.getPropertyKey()) == null)
-              ? diagnosticsLogPath
-              : (String) parameters.get(SFSessionProperty.DIAGNOSTICS_LOG_PATH.getPropertyKey());
     }
 
     parameters.put(SFSessionProperty.ENABLE_DIAGNOSTICS.getPropertyKey(), enableDiagnostics);
-    parameters.put(SFSessionProperty.DIAGNOSTICS_LOG_PATH.getPropertyKey(), diagnosticsLogPath);
     // If diagnostics is enabled then the allowlist file MUST be provided.
     // A check later on will verify if the allowlist file was provided.
     if (enableDiagnostics && allowListPath != null) {

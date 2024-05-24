@@ -7,9 +7,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.google.common.base.Strings;
 import java.net.URL;
-import java.sql.*;
+import java.sql.Connection;
 import java.sql.Date;
-import java.util.*;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
@@ -314,7 +323,6 @@ public class AbstractDriverIT {
     properties.put("ssl", params.get("ssl"));
 
     properties.put("internal", Boolean.TRUE.toString()); // TODO: do we need this?
-
     properties.put("insecureMode", false); // use OCSP for all tests.
 
     if (injectSocketTimeout > 0) {

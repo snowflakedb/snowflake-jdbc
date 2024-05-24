@@ -1,8 +1,15 @@
 package net.snowflake.client.config;
 
-import static net.snowflake.client.config.SFClientConfigParser.*;
-import static net.snowflake.client.jdbc.SnowflakeUtil.*;
-import static org.junit.Assert.*;
+import static net.snowflake.client.config.SFClientConfigParser.SF_CLIENT_CONFIG_ENV_NAME;
+import static net.snowflake.client.config.SFClientConfigParser.SF_CLIENT_CONFIG_FILE_NAME;
+import static net.snowflake.client.config.SFClientConfigParser.convertToWindowsPath;
+import static net.snowflake.client.config.SFClientConfigParser.getConfigFilePathFromJDBCJarLocation;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemSetEnv;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemUnsetEnv;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mockStatic;
 
 import java.io.IOException;
@@ -128,11 +135,18 @@ public class SFClientConfigParserTest {
   }
 
   @Test
-  public void testgetConfigFileNameFromJDBCJarLocationForWindows() {
-    try (MockedStatic<SnowflakeUtil> mockedSnowflakeUtil = mockStatic(SnowflakeUtil.class)) {
-      mockedSnowflakeUtil.when(() -> systemGetProperty("os.name")).thenReturn("windows");
-      String jdbcDirectoryPath = getConfigFilePathFromJDBCJarLocation();
-      assertFalse(jdbcDirectoryPath.contains("/")); // windows use \ in paths
+  public void testConvertToWindowsPath() {
+    String mockWindowsPath = "C:/Program Files/example.txt";
+    String resultWindowsPath = "C:\\Program Files\\example.txt";
+    String[] testCases = new String[] {"", "file:\\", "\\\\", "/", "nested:\\"};
+    String mockCloudPrefix = "cloud://";
+
+    for (String testcase : testCases) {
+      assertEquals(resultWindowsPath, convertToWindowsPath(testcase + mockWindowsPath));
     }
+
+    assertEquals(
+        mockCloudPrefix + resultWindowsPath,
+        convertToWindowsPath(mockCloudPrefix + mockWindowsPath));
   }
 }

@@ -19,21 +19,40 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.X509TrustManager;
 import net.snowflake.client.jdbc.OCSPErrorCode;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -61,14 +80,31 @@ import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLInitializationException;
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.ocsp.CertID;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.ocsp.*;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+import org.bouncycastle.cert.ocsp.CertificateID;
+import org.bouncycastle.cert.ocsp.CertificateStatus;
+import org.bouncycastle.cert.ocsp.OCSPException;
+import org.bouncycastle.cert.ocsp.OCSPReq;
+import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
+import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.bouncycastle.cert.ocsp.RevokedStatus;
+import org.bouncycastle.cert.ocsp.SingleResp;
 import org.bouncycastle.operator.DigestCalculator;
 
 /**
@@ -116,9 +152,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final ASN1ObjectIdentifier SHA512RSA =
       new ASN1ObjectIdentifier("1.2.840.113549.1.1.13").intern();
 
-  private static final String DEFAULT_SECURITY_PROVIDER_NAME =
-      "org.bouncycastle.jce.provider.BouncyCastleProvider";
-
   private static final String ALGORITHM_SHA1_NAME = "SHA-1";
   /** Object mapper for JSON encoding and decoding */
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
@@ -136,10 +169,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final int DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT = 10000;
   /** Default OCSP Cache server host name */
   private static final String DEFAULT_OCSP_CACHE_HOST = "http://ocsp.snowflakecomputing.com";
-  /** provider name */
-  private static final String BOUNCY_CASTLE_PROVIDER = "BC";
-  /** provider name for FIPS */
-  private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+
   /** OCSP response file cache directory */
   private static final FileCacheManager fileCacheManager;
   /** Tolerable validity date range ratio. */
@@ -212,37 +242,6 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     OCSP_RESPONSE_CODE_TO_STRING.put(OCSPResp.TRY_LATER, "tryLater");
     OCSP_RESPONSE_CODE_TO_STRING.put(OCSPResp.SIG_REQUIRED, "sigRequired");
     OCSP_RESPONSE_CODE_TO_STRING.put(OCSPResp.UNAUTHORIZED, "unauthorized");
-  }
-
-  static {
-    // Add Bouncy Castle to the security provider. This is required to
-    // verify the signature on OCSP response and attached certificates.
-    if (Security.getProvider(BOUNCY_CASTLE_PROVIDER) == null
-        && Security.getProvider(BOUNCY_CASTLE_FIPS_PROVIDER) == null) {
-      Security.addProvider(instantiateSecurityProvider());
-    }
-  }
-
-  private static Provider instantiateSecurityProvider() {
-    try {
-      Class klass = Class.forName(DEFAULT_SECURITY_PROVIDER_NAME);
-      return (Provider) klass.getDeclaredConstructor().newInstance();
-    } catch (ExceptionInInitializerError
-        | ClassNotFoundException
-        | NoSuchMethodException
-        | InstantiationException
-        | IllegalAccessException
-        | IllegalArgumentException
-        | InvocationTargetException
-        | SecurityException ex) {
-      String errMsg =
-          String.format(
-              "Failed to load %s, err=%s. If you use Snowflake JDBC for FIPS jar, "
-                  + "import BouncyCastleFipsProvider in the application.",
-              DEFAULT_SECURITY_PROVIDER_NAME, ex.getMessage());
-      LOGGER.error(errMsg, true);
-      throw new RuntimeException(errMsg);
-    }
   }
 
   static {

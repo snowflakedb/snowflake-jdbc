@@ -48,92 +48,128 @@ public class ExecTimeTelemetryData {
   }
 
   public void setBindStart() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.bindStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setOCSPStatus(Boolean ocspEnabled) {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.ocspEnabled = ocspEnabled;
   }
 
   public void setBindEnd() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.bindEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setHttpClientStart() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.httpClientStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setHttpClientEnd() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.httpClientEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setGzipStart() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.gzipStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setGzipEnd() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.gzipEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setQueryEnd() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.queryEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setQueryId(String queryId) {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.queryId = queryId;
   }
 
   public void setProcessResultChunkStart() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.processResultChunkStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setProcessResultChunkEnd() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.processResultChunkEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setResponseIOStreamStart() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.responseIOStreamStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setResponseIOStreamEnd() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.responseIOStreamEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setCreateResultSetStart() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.createResultSetStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void setCreateResultSetEnd() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.createResultSetEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
   public void incrementRetryCount() {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.retryCount++;
   }
 
   public void setRequestId(String requestId) {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     this.requestId = requestId;
   }
 
   public void addRetryLocation(String location) {
-    if (!this.sendData) return;
+    if (!this.sendData) {
+      return;
+    }
     if (Strings.isNullOrEmpty(this.retryLocations)) {
       this.retryLocations = location;
     } else {

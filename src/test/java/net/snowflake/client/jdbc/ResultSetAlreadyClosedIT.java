@@ -3,7 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -20,9 +21,9 @@ import org.junit.experimental.categories.Category;
 public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
   @Test
   public void testQueryResultSetAlreadyClosed() throws Throwable {
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
-      ResultSet resultSet = statement.executeQuery("select 1");
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("select 1")) {
       checkAlreadyClosed(resultSet);
     }
   }
@@ -44,9 +45,10 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
 
   @Test
   public void testEmptyResultSetAlreadyClosed() throws Throwable {
-    ResultSet resultSet = new SnowflakeResultSetV1.EmptyResultSet();
-    checkAlreadyClosed(resultSet);
-    checkAlreadyClosedEmpty(resultSet);
+    try (ResultSet resultSet = new SnowflakeResultSetV1.EmptyResultSet()) {
+      checkAlreadyClosed(resultSet);
+      checkAlreadyClosedEmpty(resultSet);
+    }
   }
 
   private void checkAlreadyClosed(ResultSet resultSet) throws SQLException {

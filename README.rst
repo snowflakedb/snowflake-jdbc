@@ -138,7 +138,7 @@ Run the maven command to check the coding style.
 
 .. code-block:: bash
 
-    mvn -P check-style verify
+    mvn -P check-style validate
 
 Follow the instruction if any error occurs or run this command to fix the formats.
 
@@ -151,6 +151,12 @@ You may import the coding style from IntelliJ so that the coding style can be ap
 - In the **File** -> **Settings/Plugins**, and install `google-java-format` plugin.
 - Enable `google-java-format` for the JDBC project.
 - In the source code window, select **Code** -> **Reformat** to apply the coding style.
+- Additionally configure IDE in **File** -> **Editor** -> **Code Style** -> **Java** to
+  - not use wildcard imports (tab **Imports**):
+    - **Use single class import**
+    - **Class count to use import with '*'** to 1000
+    - **Names count to use static import with '*'** to 1000
+  - always use braces in ``if/while/for/do..while`` in (tab **Wrapping and Braces**)
 
 Tests
 =====
@@ -178,6 +184,18 @@ Run the maven ``verify`` goal.
     mvn -DjenkinsIT -DtestCategory=net.snowflake.client.category.<category> verify
 
 where ``category`` is the class name under the package ``net.snowflake.client.category``.
+
+Set new version
+---------------
+
+1. Run maven command with passing specific version:
+
+.. code-block:: bash
+
+   mvn -f parent-pom.xml versions:set -DnewVersion=... -DgenerateBackupPoms=false
+
+2. Set manually the same version in field ``implementVersion`` in ``src/main/java/net/snowflake/client/jdbc/SnowflakeDriver.java`` when it's version for release or without ``-SNAPSHOT`` suffix between releases
+3. Add entry in ``CHANGELOG.rst`` for release versions
 
 Test Class Naming Convention
 ----------------------------

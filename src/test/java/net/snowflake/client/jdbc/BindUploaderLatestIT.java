@@ -3,7 +3,15 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.BindUploaderIT.*;
+import static net.snowflake.client.jdbc.BindUploaderIT.SELECT_FROM_STAGE;
+import static net.snowflake.client.jdbc.BindUploaderIT.STAGE_DIR;
+import static net.snowflake.client.jdbc.BindUploaderIT.bind;
+import static net.snowflake.client.jdbc.BindUploaderIT.csv1;
+import static net.snowflake.client.jdbc.BindUploaderIT.csv2;
+import static net.snowflake.client.jdbc.BindUploaderIT.dummyInsert;
+import static net.snowflake.client.jdbc.BindUploaderIT.getBindings;
+import static net.snowflake.client.jdbc.BindUploaderIT.parseRow;
+import static net.snowflake.client.jdbc.BindUploaderIT.row1;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -17,7 +25,11 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 /**

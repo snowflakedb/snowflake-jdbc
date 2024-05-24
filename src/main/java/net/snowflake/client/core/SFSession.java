@@ -4,7 +4,9 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.QueryStatus.*;
+import static net.snowflake.client.core.QueryStatus.getStatusFromString;
+import static net.snowflake.client.core.QueryStatus.isAnError;
+import static net.snowflake.client.core.QueryStatus.isStillRunning;
 import static net.snowflake.client.core.SFLoginInput.getBooleanValue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,13 +17,30 @@ import java.security.PrivateKey;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import net.snowflake.client.config.SFClientConfig;
-import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.diagnostic.DiagnosticContext;
+import net.snowflake.client.jdbc.DefaultSFConnectionHandler;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.QueryStatusV2;
+import net.snowflake.client.jdbc.SnowflakeConnectString;
+import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -48,7 +67,6 @@ public class SFSession extends SFBaseSession {
   // Need to be removed when a better way to organize session parameter is introduced.
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
-  private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final int MAX_SESSION_PARAMETERS = 1000;
   // this constant was public - let's not change it
   public static final int DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT =
@@ -197,7 +215,7 @@ public class SFSession extends SFBaseSession {
                 loginTimeout,
                 authTimeout,
                 (int) httpClientSocketTimeout.toMillis(),
-                0,
+                maxHttpRetries,
                 getHttpClientKey());
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
@@ -448,6 +466,23 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ENABLE_PATTERN_SEARCH:
+          if (propertyValue != null) {
+            setEnablePatternSearch(getBooleanValue(propertyValue));
+          }
+          break;
+        case DISABLE_GCS_DEFAULT_CREDENTIALS:
+          if (propertyValue != null) {
+            setDisableGcsDefaultCredentials(getBooleanValue(propertyValue));
+          }
+          break;
+
+        case JDBC_ARROW_TREAT_DECIMAL_AS_INT:
+          if (propertyValue != null) {
+            setJdbcArrowTreatDecimalAsInt(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
@@ -486,7 +521,7 @@ public class SFSession extends SFBaseSession {
             + " passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={},"
             + " application={}, app_id={}, app_version={}, login_timeout={}, retry_timeout={}, network_timeout={},"
             + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={},"
-            + " enable_diagnostics={}, diagnostics_log_path={}, diagnostics_allowlist_path={}."
+            + " enable_diagnostics={}, diagnostics_allowlist_path={}."
             + " session_parameters: client_store_temporary_credential={}, gzip_disabled={}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
@@ -523,7 +558,6 @@ public class SFSession extends SFBaseSession {
             ? "***"
             : "(empty)",
         connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
-        connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_LOG_PATH),
         connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
         connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
@@ -539,7 +573,7 @@ public class SFSession extends SFBaseSession {
         httpClientSettingsKey.getProxyUser(),
         !Strings.isNullOrEmpty(httpClientSettingsKey.getProxyPassword()) ? "***" : "(empty)",
         httpClientSettingsKey.getNonProxyHosts(),
-        httpClientSettingsKey.getProxyProtocol());
+        httpClientSettingsKey.getProxyHttpProtocol());
 
     // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
     SFLoginInput loginInput = new SFLoginInput();
@@ -580,7 +614,12 @@ public class SFSession extends SFBaseSession {
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN) != null
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN))
-                : true);
+                : true)
+        .setDisableSamlURLCheck(
+            connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK) != null
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
+                : false);
 
     // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
     // The value may still change later when session parameters from the server are read.
@@ -669,8 +708,11 @@ public class SFSession extends SFBaseSession {
         "Query context cache is {}", ((disableQueryContextCache) ? "disabled" : "enabled"));
 
     // Initialize QCC
-    if (!disableQueryContextCache) qcc = new QueryContextCache(this.getQueryContextCacheSize());
-    else qcc = null;
+    if (!disableQueryContextCache) {
+      qcc = new QueryContextCache(this.getQueryContextCacheSize());
+    } else {
+      qcc = null;
+    }
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
@@ -800,7 +842,9 @@ public class SFSession extends SFBaseSession {
     getClientInfo().clear();
 
     // qcc can be null, if disabled.
-    if (qcc != null) qcc.clearCache();
+    if (qcc != null) {
+      qcc.clearCache();
+    }
 
     isClosed = true;
   }
@@ -941,7 +985,7 @@ public class SFSession extends SFBaseSession {
 
         logger.debug("connection heartbeat response: {}", theResponse);
 
-        rootNode = mapper.readTree(theResponse);
+        rootNode = OBJECT_MAPPER.readTree(theResponse);
 
         // check the response to see if it is session expiration response
         if (rootNode != null
@@ -1219,20 +1263,23 @@ public class SFSession extends SFBaseSession {
     this.sfClientConfig = sfClientConfig;
   }
 
-  private void runDiagnosticsIfEnabled() throws SnowflakeSQLException{
+  private void runDiagnosticsIfEnabled() throws SnowflakeSQLException {
     // If the user enables diagnostic check then we need to be sure we don't go on
     // and create an actual connection because that would be a waste of time since
     // they're trying to debug a connection issue. We need to throw a SqlException
     // back to the calling application with a clear message explaining a connection
     // is not created.
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
-    boolean  isDiagnosticsEnabled = (Boolean) connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS);
+    boolean isDiagnosticsEnabled = (connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS) == null) ?
+            false : (Boolean) connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS);
+    boolean sslTraceEnabled = (connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_SSL_TRACE) == null) ?
+            false : (Boolean) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_SSL_TRACE);
     if (isDiagnosticsEnabled) {
+      logger.debug("Running diagnostics tests");
       String allowListFile = (String) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
-      String diagnosticLogPath = (String) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_LOG_PATH);
 
       // Implement diagnostics check here
-      DiagnosticContext diagnosticContext = new DiagnosticContext(allowListFile,diagnosticLogPath,isDiagnosticsEnabled);
+      DiagnosticContext diagnosticContext = new DiagnosticContext(allowListFile,sslTraceEnabled);
       diagnosticContext.runDiagnostics();
 
       throw new SnowflakeSQLException(

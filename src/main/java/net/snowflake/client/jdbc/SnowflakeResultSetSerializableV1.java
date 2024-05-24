@@ -6,7 +6,12 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.GB;
 import static net.snowflake.client.core.Constants.MB;
-import static net.snowflake.client.core.SessionUtil.*;
+import static net.snowflake.client.core.SessionUtil.CLIENT_ENABLE_CONSERVATIVE_MEMORY_USAGE;
+import static net.snowflake.client.core.SessionUtil.CLIENT_MEMORY_LIMIT;
+import static net.snowflake.client.core.SessionUtil.CLIENT_PREFETCH_THREADS;
+import static net.snowflake.client.core.SessionUtil.CLIENT_RESULT_CHUNK_SIZE;
+import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
+import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,8 +21,31 @@ import java.io.Serializable;
 import java.nio.channels.ClosedByInterruptException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
-import net.snowflake.client.core.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.TimeZone;
+import net.snowflake.client.core.ChunkDownloader;
+import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.MetaDataOfBinds;
+import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.QueryResultFormat;
+import net.snowflake.client.core.ResultUtil;
+import net.snowflake.client.core.SFArrowResultSet;
+import net.snowflake.client.core.SFBaseResultSet;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFBaseStatement;
+import net.snowflake.client.core.SFResultSet;
+import net.snowflake.client.core.SFResultSetMetaData;
+import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFStatementType;
+import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.ArgSupplier;
@@ -571,7 +599,7 @@ public class SnowflakeResultSetSerializableV1
     resultSetSerializable.parameters =
         SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
     if (resultSetSerializable.parameters.isEmpty()) {
-      resultSetSerializable.parameters = sfSession.getCommonParameters();
+      resultSetSerializable.parameters = new HashMap<>(sfSession.getCommonParameters());
       resultSetSerializable.setStatemementLevelParameters(sfStatement.getStatementParameters());
     }
 
@@ -1040,7 +1068,7 @@ public class SnowflakeResultSetSerializableV1
    * sc:2.8.2/jdbc:3.12.12 since Sept 2020. It is safe to remove it after Sept 2022.
    *
    * @return a ResultSet which represents for the data wrapped in the object
-   * @deprecated Please use new interface function getResultSet(ResultSetRetrieveConfig)
+   * @deprecated Use {@link #getResultSet(ResultSetRetrieveConfig)} instead
    */
   @Deprecated
   public ResultSet getResultSet() throws SQLException {
@@ -1055,7 +1083,7 @@ public class SnowflakeResultSetSerializableV1
    *
    * @param info The proxy sever information if proxy is necessary.
    * @return a ResultSet which represents for the data wrapped in the object
-   * @deprecated Please use new interface function getResultSet(ResultSetRetrieveConfig)
+   * @deprecated Use {@link #getResultSet(ResultSetRetrieveConfig)} instead
    */
   @Deprecated
   public ResultSet getResultSet(Properties info) throws SQLException {

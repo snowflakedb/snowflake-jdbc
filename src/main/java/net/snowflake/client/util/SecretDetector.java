@@ -9,7 +9,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minidev.json.JSONArray;
@@ -47,10 +51,14 @@ public class SecretDetector {
               + "([a-z0-9!\"#$%&'\\()*+,-./:;<=>?@\\[\\]^_`\\{|\\}~]{6,})",
           Pattern.CASE_INSENSITIVE);
 
-  // "-----BEGIN PRIVATE KEY-----\n[PRIVATE-KEY]\n-----END PRIVATE KEY-----"
+  // "-----BEGIN PRIVATE KEY-----  // #pragma: allowlist secret
+  // [PRIVATE-KEY]
+  // -----END PRIVATE KEY-----"
   private static final Pattern PRIVATE_KEY_PATTERN =
       Pattern.compile(
-          "-----BEGIN PRIVATE KEY-----\\\\n([a-z0-9/+=\\\\n]{32,})\\\\n-----END PRIVATE KEY-----",
+          "-----BEGIN PRIVATE KEY-----" // #pragma: allowlist secret
+              + "\\\\n([a-z0-9/+=\\\\n]{32,})\\\\n"
+              + "-----END PRIVATE KEY-----",
           Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 
   // "privateKeyData": "[PRIVATE-KEY]"
@@ -233,7 +241,9 @@ public class SecretDetector {
     if (gcsMatcher.find()) {
       message =
           gcsMatcher.replaceAll(
-              "-----BEGIN PRIVATE KEY-----\\\\nXXXX\\\\n-----END PRIVATE KEY-----");
+              "-----BEGIN PRIVATE KEY-----" // #pragma: allowlist secret
+                  + "\\\\nXXXX\\\\n"
+                  + "-----END PRIVATE KEY-----");
     }
 
     gcsMatcher = PRIVATE_KEY_DATA_PATTERN.matcher(message);
