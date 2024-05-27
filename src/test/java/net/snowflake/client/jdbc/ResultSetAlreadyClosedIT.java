@@ -115,6 +115,8 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
     expectResultSetAlreadyClosedException(resultSet::isFirst);
     expectResultSetAlreadyClosedException(resultSet::isLast);
     expectResultSetAlreadyClosedException(resultSet::getRow);
+    expectResultSetAlreadyClosedException(resultSet::beforeFirst);
+    expectResultSetAlreadyClosedException(resultSet::afterLast);
 
     expectResultSetAlreadyClosedException(
         () -> resultSet.setFetchDirection(ResultSet.FETCH_FORWARD));

@@ -28,6 +28,7 @@ public class URLUtil {
       Matcher matcher = pattern.matcher(url);
       return matcher.find();
     } catch (PatternSyntaxException pex) {
+      // Do we really need this part? Any use cases?
       logger.debug("The URL REGEX is invalid. Falling back to basic sanity test");
       try {
         new URL(url).toURI();

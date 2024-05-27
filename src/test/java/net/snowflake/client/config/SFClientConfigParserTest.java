@@ -33,6 +33,7 @@ public class SFClientConfigParserTest {
           SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
+      assertEquals("config.json", actualConfig.getConfigFilePath());
 
       Files.delete(configFilePath);
     } catch (IOException e) {
