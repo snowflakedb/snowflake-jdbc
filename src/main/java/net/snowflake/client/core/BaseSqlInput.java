@@ -109,7 +109,7 @@ public abstract class BaseSqlInput implements SFSqlInput {
     throw new SnowflakeLoggedFeatureNotSupportedException(session, "readRowId");
   }
 
-  protected abstract Map<String, Object> convertSqlInputToMap(SQLInput sqlInput);
+  abstract Map<String, Object> convertSqlInputToMap(SQLInput sqlInput);
 
   protected String convertString(Object value, FieldMetadata fieldMetadata) throws SQLException {
     int columnType = ColumnTypeHelper.getColumnType(fieldMetadata.getType(), session);
