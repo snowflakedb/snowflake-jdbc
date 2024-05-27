@@ -687,7 +687,11 @@ public class SnowflakeUtil {
    */
   public static String systemGetEnv(String env) {
     try {
-      return System.getenv(env);
+      String value = System.getenv(env);
+      if (value == null) {
+        value = System.getenv().getOrDefault(env, null);
+      }
+      return value;
     } catch (SecurityException ex) {
       logger.debug(
           "Failed to get environment variable {}. Security exception raised: {}",
