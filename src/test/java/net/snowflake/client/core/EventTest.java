@@ -62,7 +62,7 @@ public class EventTest {
       File dumpFile =
           new File(
               EventUtil.getDumpPathPrefix()
-                  + "/"
+                  + File.separator
                   + "sf_event_"
                   + EventUtil.getDumpFileId()
                   + ".dmp.gz");
