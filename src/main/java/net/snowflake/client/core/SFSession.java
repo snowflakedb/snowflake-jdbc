@@ -211,7 +211,7 @@ public class SFSession extends SFBaseSession {
             HttpUtil.executeGeneralRequest(
                 get,
                 loginTimeout,
-                authTimeout,
+                0,
                 (int) httpClientSocketTimeout.toMillis(),
                 maxHttpRetries,
                 getHttpClientKey());
@@ -967,7 +967,7 @@ public class SFSession extends SFBaseSession {
             HttpUtil.executeGeneralRequest(
                 postRequest,
                 SF_HEARTBEAT_TIMEOUT,
-                authTimeout,
+                0,
                 (int) httpClientSocketTimeout.toMillis(),
                 0,
                 getHttpClientKey());
