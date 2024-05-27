@@ -586,12 +586,21 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             transferOptions,
             opContext);
         stopwatch.stop();
-        logger.info(
-            "Uploaded file {} to Azure location: {}. It took {} ms with {} retries",
-            srcFile.getAbsolutePath(),
-            remoteStorageLocation,
-            stopwatch.elapsedMillis(),
-            retryCount);
+
+        if (uploadFromStream) {
+          logger.info(
+              "Uploaded data from input stream to Azure location: {}. It took {} ms with {} retries",
+              remoteStorageLocation,
+              stopwatch.elapsedMillis(),
+              retryCount);
+        } else {
+          logger.info(
+              "Uploaded file {} to Azure location: {}. It took {} ms with {} retries",
+              srcFile.getAbsolutePath(),
+              remoteStorageLocation,
+              stopwatch.elapsedMillis(),
+              retryCount);
+        }
 
         blob.uploadMetadata(null, transferOptions, opContext);
 

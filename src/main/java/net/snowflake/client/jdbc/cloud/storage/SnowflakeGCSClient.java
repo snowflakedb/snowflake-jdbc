@@ -689,11 +689,19 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       logger.debug("Upload successfully with presigned url");
     }
     stopwatch.stop();
-    logger.info(
-        "Uploaded file {} to GCS location: {}. It took {} ms",
-        srcFile.getAbsolutePath(),
-        remoteStorageLocation,
-        stopwatch.elapsedMillis());
+
+    if (uploadFromStream) {
+      logger.info(
+          "Uploaded data from input stream to GCS location: {}. It took {} ms",
+          remoteStorageLocation,
+          stopwatch.elapsedMillis());
+    } else {
+      logger.info(
+          "Uploaded file {} to GCS location: {}. It took {} ms",
+          srcFile.getAbsolutePath(),
+          remoteStorageLocation,
+          stopwatch.elapsedMillis());
+    }
 
     // close any open streams in the "toClose" list and return
     for (FileInputStream is : toClose) {

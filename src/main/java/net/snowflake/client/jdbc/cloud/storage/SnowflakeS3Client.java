@@ -638,11 +638,21 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         for (FileInputStream is : toClose) {
           IOUtils.closeQuietly(is);
         }
-        logger.info(
-            "Uploaded file to S3 location: {}. It took {} ms with {} retries",
-            destFileName,
-            uploadMillis,
-            retryCount);
+
+        if (uploadFromStream) {
+          logger.info(
+              "Uploaded data from input stream to S3 location: {}. It took {} ms with {} retries",
+              destFileName,
+              uploadMillis,
+              retryCount);
+        } else {
+          logger.info(
+              "Uploaded file {} to S3 location: {}. It took {} ms with {} retries",
+              srcFile.getAbsolutePath(),
+              destFileName,
+              uploadMillis,
+              retryCount);
+        }
         return;
       } catch (Exception ex) {
 
