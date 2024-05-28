@@ -746,25 +746,6 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>check-shaded-content</id>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <phase>verify</phase>
-                <configuration>
-                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
-                  <arguments>
-                    <argument>-thin</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
         </plugins>
       </build>
     </profile>
@@ -1094,22 +1075,6 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>check-shaded-content</id>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <phase>verify</phase>
-                <configuration>
-                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
         </plugins>
       </build>
     </profile>
@@ -1231,6 +1196,36 @@
                 <configuration>
                   <dataFile>target/jacoco-it.exec</dataFile>
                   <outputDirectory>target/jacoco-it</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>check-content</id>
+      <activation>
+        <os>
+          <family>!windows</family>
+        </os>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${version.plugin.exec}</version>
+            <executions>
+              <execution>
+                <id>check-shaded-content</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
                 </configuration>
               </execution>
             </executions>
