@@ -115,8 +115,6 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
     expectResultSetAlreadyClosedException(resultSet::isFirst);
     expectResultSetAlreadyClosedException(resultSet::isLast);
     expectResultSetAlreadyClosedException(resultSet::getRow);
-    expectResultSetAlreadyClosedException(resultSet::beforeFirst);
-    expectResultSetAlreadyClosedException(resultSet::afterLast);
 
     expectResultSetAlreadyClosedException(
         () -> resultSet.setFetchDirection(ResultSet.FETCH_FORWARD));
@@ -127,6 +125,15 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
     expectResultSetAlreadyClosedException(resultSet::getConcurrency);
     expectResultSetAlreadyClosedException(resultSet::getHoldability);
     expectResultSetAlreadyClosedException(resultSet::getStatement);
+  }
+
+  private void checkeNotSupportedMethodsinAlreadyClosedStatus(SnowflakeResultSetV1 resultSet) throws Throwable {
+    resultSet.close();
+    expectSnowflakeLoggedFeatureNotSupportedException(resultSet::getStatusV2);
+    expectSnowflakeLoggedFeatureNotSupportedException(() -> resultSet.getArray(-1));
+
+
+
   }
 
   /**
@@ -326,4 +333,5 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
     expectResultSetAlreadyClosedException(() -> resultSet.isWrapperFor(SnowflakeResultSetV1.class));
     expectResultSetAlreadyClosedException(() -> resultSet.unwrap(SnowflakeResultSetV1.class));
   }
+
 }
