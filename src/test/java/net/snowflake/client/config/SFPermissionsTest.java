@@ -24,28 +24,28 @@ public class SFPermissionsTest {
   @Parameterized.Parameters(name = "permission={0}")
   public static Set<Map.Entry<String, Boolean>> data() {
     Map<String, Boolean> testConfigFilePermissions =
-            new HashMap<String, Boolean>() {
-              {
-                put("rwx------", true);
-                put("rw-------", true);
-                put("r-x------", true);
-                put("r--------", true);
-                put("rwxrwx---", false);
-                put("rwxrw----", false);
-                put("rwxr-x---", true);
-                put("rwxr-----", true);
-                put("rwx-wx---", false);
-                put("rwx-w----", false);
-                put("rwx--x---", true);
-                put("rwx---rwx", false);
-                put("rwx---rw-", false);
-                put("rwx---r-x", true);
-                put("rwx---r--", true);
-                put("rwx----wx", false);
-                put("rwx----w-", false);
-                put("rwx-----x", true);
-              }
-            };
+        new HashMap<String, Boolean>() {
+          {
+            put("rwx------", true);
+            put("rw-------", true);
+            put("r-x------", true);
+            put("r--------", true);
+            put("rwxrwx---", false);
+            put("rwxrw----", false);
+            put("rwxr-x---", true);
+            put("rwxr-----", true);
+            put("rwx-wx---", false);
+            put("rwx-w----", false);
+            put("rwx--x---", true);
+            put("rwx---rwx", false);
+            put("rwx---rw-", false);
+            put("rwx---r-x", true);
+            put("rwx---r--", true);
+            put("rwx----wx", false);
+            put("rwx----w-", false);
+            put("rwx-----x", true);
+          }
+        };
     return testConfigFilePermissions.entrySet();
   }
 
