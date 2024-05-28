@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.logging.Level;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
@@ -98,7 +99,7 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   }
 
   @Test
-  public void testJDK14LoggingWithMissingLogPathClientConfig() {
+  public void testJDK14LoggingWithMissingLogPathClientConfig() throws IOException {
     Path configFilePath = Paths.get("config.json");
     String configJson = "{\"common\":{\"log_level\":\"debug\"}}";
 
@@ -119,17 +120,13 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     } catch (Exception e) {
       fail("testJDK14LoggingWithMissingLogPathClientConfig failed");
     } finally {
-      try {
-        Files.deleteIfExists(configFilePath);
-        FileUtils.deleteDirectory(new File(homeLogPath.toString()));
-      } catch (IOException e) {
-        fail("testJDK14LoggingWithMissingLogPathClientConfig failed");
-      }
+      Files.deleteIfExists(configFilePath);
+      FileUtils.deleteDirectory(new File(homeLogPath.toString()));
     }
   }
 
   @Test
-  public void testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig() {
+  public void testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig() throws Exception {
     System.clearProperty("user.home");
 
     Path configFilePath = Paths.get("config.json");
@@ -141,17 +138,11 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
       Connection connection = getConnection(properties);
 
       fail("testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig failed");
-    } catch (IOException e) {
-      fail("testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig failed");
-    } catch (SQLException e) {
+    } catch (SnowflakeSQLLoggedException e) {
       // Succeed
     } finally {
-      try {
-        System.setProperty("user.home", homePath);
-        Files.deleteIfExists(configFilePath);
-      } catch (IOException e) {
-        fail("testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig failed");
-      }
+      System.setProperty("user.home", homePath);
+      Files.deleteIfExists(configFilePath);
     }
   }
 }

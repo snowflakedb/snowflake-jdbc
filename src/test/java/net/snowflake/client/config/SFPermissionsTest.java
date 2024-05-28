@@ -60,39 +60,23 @@ public class SFPermissionsTest {
   }
 
   @Before
-  public void createConfigFile() {
-    try {
-      Files.write(configFilePath, configJson.getBytes());
-    } catch (IOException e) {
-      fail("testLogDirectoryPermissions failed setup");
-    }
+  public void createConfigFile() throws IOException {
+    Files.write(configFilePath, configJson.getBytes());
   }
 
   @After
-  public void cleanupConfigFile() {
-    try {
-      Files.deleteIfExists(configFilePath);
-    } catch (IOException e) {
-      fail("testLogDirectoryPermissions failed cleanup");
-    }
+  public void cleanupConfigFile() throws IOException {
+    Files.deleteIfExists(configFilePath);
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnWin.class)
-  public void testLogDirectoryPermissions() {
+  public void testLogDirectoryPermissions() throws IOException {
     // Don't run on Windows
-    try {
-      Files.setPosixFilePermissions(configFilePath, PosixFilePermissions.fromString(permission));
-      SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
-      if (!isSucceed) {
-        fail("testLogDirectoryPermissions failed. Expected exception.");
-      }
-    } catch (IOException e) {
-      if (isSucceed) {
-        fail("testLogDirectoryPermissions failed. Expected pass.");
-      }
-    } catch (Exception e) {
-      fail("testLogDirectoryPermissions failed. Unknown exception.");
+    Files.setPosixFilePermissions(configFilePath, PosixFilePermissions.fromString(permission));
+    SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
+    if (!isSucceed) {
+      fail("testLogDirectoryPermissions failed. Expected exception.");
     }
   }
 }

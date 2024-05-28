@@ -223,7 +223,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
               sfSession,
               ErrorCode.INTERNAL_ERROR,
               String.format(
-                  "Un-able to create log path mentioned in configfile %s ,%s",
+                  "Unable to create log path mentioned in configfile %s ,%s",
                   logPathFromConfig, ex.getMessage()));
         }
       }
