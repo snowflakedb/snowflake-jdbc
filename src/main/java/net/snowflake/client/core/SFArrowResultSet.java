@@ -28,6 +28,7 @@ import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.VarCharConverter;
+import net.snowflake.client.core.arrow.VectorTypeConverter;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
@@ -377,7 +378,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       SFBaseSession session,
       List<FieldMetadata> fields) {
     if (parentObjectClass.equals(JsonSqlInput.class)) {
-      return createJsonSqlInputForColumn(input, columnIndex, session, fields);
+      return createJsonSqlInputForColumn(input, session, fields);
     } else {
       return new ArrowSqlInput((Map<String, Object>) input, session, converters, fields);
     }
@@ -580,8 +581,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       if (obj == null) {
         return null;
       }
-      JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
+      String text = (String) obj;
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(text);
       return new JsonSqlInput(
+          text,
           jsonNode,
           session,
           converters,
@@ -594,6 +597,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   private Object createArrowSqlInput(int columnIndex, Map<String, Object> input)
       throws SFException {
+    if (input == null) {
+      return null;
+    }
     return new ArrowSqlInput(
         input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }
@@ -610,6 +616,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (converter instanceof VarCharConverter) {
       return getJsonArray((String) obj, columnIndex);
     } else if (converter instanceof ArrayConverter) {
+      return getArrowArray((List<Object>) obj, columnIndex);
+    } else if (converter instanceof VectorTypeConverter) {
       return getArrowArray((List<Object>) obj, columnIndex);
     } else {
       throw new SFException(ErrorCode.INVALID_STRUCT_DATA);

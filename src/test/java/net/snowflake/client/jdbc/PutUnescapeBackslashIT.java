@@ -38,10 +38,6 @@ public class PutUnescapeBackslashIT extends AbstractDriverIT {
     String remoteSubDir = "testPut";
     String testDataFileName = "testdata.txt";
 
-    Connection connection = null;
-    Statement statement = null;
-    ResultSet resultSet = null;
-    Writer writer = null;
     Path topDataDir = null;
     try {
       topDataDir = Files.createTempDirectory("testPutFileUnescapeBackslashes");
@@ -53,39 +49,36 @@ public class PutUnescapeBackslashIT extends AbstractDriverIT {
 
       // create a test data
       File dataFile = new File(subDir.toFile(), testDataFileName);
-      writer =
+      try (Writer writer =
           new BufferedWriter(
-              new OutputStreamWriter(new FileOutputStream(dataFile.getCanonicalPath()), "UTF-8"));
-      writer.write("1,test1");
-      writer.close();
-
+              new OutputStreamWriter(new FileOutputStream(dataFile.getCanonicalPath()), "UTF-8"))) {
+        writer.write("1,test1");
+      }
       // run PUT command
-      connection = getConnection();
-      statement = connection.createStatement();
-      String sql =
-          String.format("PUT 'file://%s' @~/%s/", dataFile.getCanonicalPath(), remoteSubDir);
+      try (Connection connection = getConnection();
+          Statement statement = connection.createStatement()) {
+        try {
+          String sql =
+              String.format("PUT 'file://%s' @~/%s/", dataFile.getCanonicalPath(), remoteSubDir);
 
-      // Escape backslashes. This must be done by the application.
-      sql = sql.replaceAll("\\\\", "\\\\\\\\");
-      statement.execute(sql);
+          // Escape backslashes. This must be done by the application.
+          sql = sql.replaceAll("\\\\", "\\\\\\\\");
+          statement.execute(sql);
 
-      resultSet =
-          connection.createStatement().executeQuery(String.format("LS @~/%s/", remoteSubDir));
-      while (resultSet.next()) {
-        assertThat(
-            "File name doesn't match",
-            resultSet.getString(1),
-            startsWith(String.format("%s/%s", remoteSubDir, testDataFileName)));
+          try (ResultSet resultSet =
+              connection.createStatement().executeQuery(String.format("LS @~/%s/", remoteSubDir))) {
+            while (resultSet.next()) {
+              assertThat(
+                  "File name doesn't match",
+                  resultSet.getString(1),
+                  startsWith(String.format("%s/%s", remoteSubDir, testDataFileName)));
+            }
+          }
+        } finally {
+          statement.execute(String.format("RM @~/%s", remoteSubDir));
+        }
       }
-
     } finally {
-      if (connection != null) {
-        connection.createStatement().execute(String.format("RM @~/%s", remoteSubDir));
-      }
-      closeSQLObjects(resultSet, statement, connection);
-      if (writer != null) {
-        writer.close();
-      }
       FileUtils.deleteDirectory(topDataDir.toFile());
     }
   }

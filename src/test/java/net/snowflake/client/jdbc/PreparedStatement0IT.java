@@ -15,9 +15,9 @@ abstract class PreparedStatement0IT extends BaseJDBCTest {
 
   Connection init() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection();
-    Statement stmt = conn.createStatement();
-    stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    stmt.close();
+    try (Statement stmt = conn.createStatement()) {
+      stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+    }
     return conn;
   }
 

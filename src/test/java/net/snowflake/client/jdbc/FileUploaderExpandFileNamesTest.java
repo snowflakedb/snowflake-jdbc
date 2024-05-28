@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -114,15 +115,14 @@ public class FileUploaderExpandFileNamesTest {
     SnowflakeFileTransferConfig config = builder.build();
 
     // Assert setting fields are in config
-    assert (config.getSnowflakeFileTransferMetadata() == metadata);
-    assert (config.getUploadStream() == input);
-    assert (config.getOcspMode() == OCSPMode.FAIL_CLOSED);
-    assert (!config.getRequireCompress());
-    assert (config.getNetworkTimeoutInMilli() == 12345);
-    assert (config.getProxyProperties() == props);
-    assert (config.getPrefix().equals("dummy_prefix"));
-    assert (config.getDestFileName().equals("dummy_dest_file_name"));
-
+    assertEquals(metadata, config.getSnowflakeFileTransferMetadata());
+    assertEquals(input, config.getUploadStream());
+    assertEquals(OCSPMode.FAIL_CLOSED, config.getOcspMode());
+    assertFalse(config.getRequireCompress());
+    assertEquals(12345, config.getNetworkTimeoutInMilli());
+    assertEquals(props, config.getProxyProperties());
+    assertEquals("dummy_prefix", config.getPrefix());
+    assertEquals("dummy_dest_file_name", config.getDestFileName());
     assertEquals(expectedThrowCount, throwCount);
   }
 }

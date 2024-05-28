@@ -455,163 +455,194 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
         "select count(*) from db.information_schema." + "tables where table_type = 'BASE TABLE'";
     String getAllView =
         "select count(*) from db.information_schema." + "tables where table_type = 'VIEW'";
-    connection = getConnection();
-    Statement stmt = connection.createStatement();
+    try (Connection connection = getConnection();
+        Statement stmt = connection.createStatement()) {
 
-    // set parameter
-    stmt.execute("alter session set ENABLE_DRIVER_TERSE_SHOW = true;");
-    stmt.execute("alter session set qa_mode = false;");
+      // set parameter
+      stmt.execute("alter session set ENABLE_DRIVER_TERSE_SHOW = true;");
+      stmt.execute("alter session set qa_mode = false;");
 
-    databaseMetaData = connection.getMetaData();
+      databaseMetaData = connection.getMetaData();
 
-    try {
-      resultSet = databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"});
-    } catch (SQLException e) {
-      assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
-      assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
+      try {
+        ResultSet resultSet = databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"});
+      } catch (SQLException e) {
+        assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
+        assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
+      }
+
+      try (ResultSet resultSet =
+          databaseMetaData.getTables(null, null, null, new String[] {"SYSTEM_TABLE"})) {
+        assertEquals(0, getSizeOfResultSet(resultSet));
+      }
+
+      // Get the count of tables in the SNOWFLAKE system database, so we can exclude them from
+      // subsequent assertions
+      int numSnowflakeTables = 0;
+      try (ResultSet snowflakeResultSet =
+          databaseMetaData.getTables("SNOWFLAKE", null, null, null)) {
+        numSnowflakeTables = getSizeOfResultSet(snowflakeResultSet);
+      }
+
+      try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
+        assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllTable),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+      }
+
+      try (ResultSet resultSet =
+          databaseMetaData.getTables(null, null, null, new String[] {"VIEW", "SYSTEM_TABLE"})) {
+        assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllView),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+      }
+
+      try (ResultSet resultSet =
+          databaseMetaData.getTables(null, null, null, new String[] {"TABLE", "SYSTEM_TABLE"})) {
+        assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
+      }
+
+      try (ResultSet resultSet =
+          databaseMetaData.getTables(
+              null, null, null, new String[] {"TABLE", "VIEW", "SYSTEM_TABLE"})) {
+        assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllTable),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+      }
+
+      try (ResultSet resultSet =
+          databaseMetaData.getTables(null, null, null, new String[] {"TABLE", "VIEW"})) {
+        assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllTable),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+      }
+
+      try (ResultSet resultSet =
+          databaseMetaData.getTables(null, null, null, new String[] {"TABLE"})) {
+        assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
+      }
+
+      try (ResultSet resultSet =
+          databaseMetaData.getTables(null, null, null, new String[] {"VIEW"})) {
+        assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllView),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+      }
+
+      try (ResultSet resultSet =
+          databaseMetaData.getTables("JDBC_DB1", "JDBC_SCHEMA11", null, new String[] {"TABLE"})) {
+        assertEquals(1, getSizeOfResultSet(resultSet));
+      }
+
+      // snow-26032. JDBC should strip backslash before sending the show functions to server
+      try (ResultSet resultSet =
+          databaseMetaData.getTables("JDBC_DB1", "JDBC\\_SCHEMA11", "%", new String[] {"TABLE"})) {
+        assertEquals(1, getSizeOfResultSet(resultSet));
+      }
+
+      try (ResultSet resultSet =
+          databaseMetaData.getTables("JDBC_DB1", "JDBC%", null, new String[] {"TABLE"})) {
+        assertEquals(3, getSizeOfResultSet(resultSet));
+      }
+
+      // SNOW-487548: disable the key-value feature to hide is_hybrid column
+      // in show tables command. The column is controlled by two parameters:
+      // enable_key_value_table and qa_mode.
+      stmt.execute("alter session set ENABLE_KEY_VALUE_TABLE = false;");
+      try (ResultSet resultSet =
+          databaseMetaData.getTables(
+              "JDBC_DB1", "JDBC_SCH%", "J_BC_TBL122", new String[] {"TABLE"})) {
+        resultSet.next();
+        assertEquals("JDBC_DB1", resultSet.getString(1));
+        assertEquals("JDBC_SCHEMA12", resultSet.getString(2));
+        assertEquals("JDBC_TBL122", resultSet.getString(3));
+        assertEquals("TABLE", resultSet.getString(4));
+        assertEquals("", resultSet.getString(5));
+        stmt.execute("alter session unset ENABLE_KEY_VALUE_TABLE;");
+      }
+      try (ResultSet resultSet =
+          databaseMetaData.getTables("JDBC_DB1", null, "JDBC_TBL211", new String[] {"TABLE"})) {
+        assertEquals(0, getSizeOfResultSet(resultSet));
+      }
+
+      try (ResultSet resultSet = databaseMetaData.getTableTypes()) {
+        resultSet.next();
+        assertEquals("TABLE", resultSet.getString(1));
+        resultSet.next();
+        assertEquals("VIEW", resultSet.getString(1));
+      }
+      stmt.execute("alter session set ENABLE_DRIVER_TERSE_SHOW = default;");
     }
-
-    resultSet = databaseMetaData.getTables(null, null, null, new String[] {"SYSTEM_TABLE"});
-    assertEquals(0, getSizeOfResultSet(resultSet));
-
-    // Exclude SNOWFLAKE system database from DatabaseMetadata
-    ResultSet snowflakeResultSet = databaseMetaData.getTables("SNOWFLAKE", null, null, null);
-    int numSnowflakeTables = getSizeOfResultSet(snowflakeResultSet);
-
-    resultSet = databaseMetaData.getTables(null, null, null, null);
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllTable),
-        getSizeOfResultSet(resultSet) - numSnowflakeTables);
-
-    resultSet = databaseMetaData.getTables(null, null, null, new String[] {"VIEW", "SYSTEM_TABLE"});
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllView),
-        getSizeOfResultSet(resultSet) - numSnowflakeTables);
-
-    resultSet =
-        databaseMetaData.getTables(null, null, null, new String[] {"TABLE", "SYSTEM_TABLE"});
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
-
-    resultSet =
-        databaseMetaData.getTables(
-            null, null, null, new String[] {"TABLE", "VIEW", "SYSTEM_TABLE"});
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllTable),
-        getSizeOfResultSet(resultSet) - numSnowflakeTables);
-
-    resultSet = databaseMetaData.getTables(null, null, null, new String[] {"TABLE", "VIEW"});
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllTable),
-        getSizeOfResultSet(resultSet) - numSnowflakeTables);
-
-    resultSet = databaseMetaData.getTables(null, null, null, new String[] {"TABLE"});
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
-
-    resultSet = databaseMetaData.getTables(null, null, null, new String[] {"VIEW"});
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllView),
-        getSizeOfResultSet(resultSet) - numSnowflakeTables);
-
-    resultSet =
-        databaseMetaData.getTables("JDBC_DB1", "JDBC_SCHEMA11", null, new String[] {"TABLE"});
-    assertEquals(1, getSizeOfResultSet(resultSet));
-
-    // snow-26032. JDBC should strip backslash before sending the show functions to server
-    resultSet =
-        databaseMetaData.getTables("JDBC_DB1", "JDBC\\_SCHEMA11", "%", new String[] {"TABLE"});
-    assertEquals(1, getSizeOfResultSet(resultSet));
-
-    resultSet = databaseMetaData.getTables("JDBC_DB1", "JDBC%", null, new String[] {"TABLE"});
-    assertEquals(3, getSizeOfResultSet(resultSet));
-
-    // SNOW-487548: disable the key-value feature to hide is_hybrid column
-    // in show tables command. The column is controlled by two parameters:
-    // enable_key_value_table and qa_mode.
-    stmt.execute("alter session set ENABLE_KEY_VALUE_TABLE = false;");
-    resultSet =
-        databaseMetaData.getTables("JDBC_DB1", "JDBC_SCH%", "J_BC_TBL122", new String[] {"TABLE"});
-    resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString(1));
-    assertEquals("JDBC_SCHEMA12", resultSet.getString(2));
-    assertEquals("JDBC_TBL122", resultSet.getString(3));
-    assertEquals("TABLE", resultSet.getString(4));
-    assertEquals("", resultSet.getString(5));
-    stmt.execute("alter session unset ENABLE_KEY_VALUE_TABLE;");
-
-    resultSet = databaseMetaData.getTables("JDBC_DB1", null, "JDBC_TBL211", new String[] {"TABLE"});
-    assertEquals(0, getSizeOfResultSet(resultSet));
-    resultSet.close();
-    resultSet.next();
-
-    resultSet = databaseMetaData.getTableTypes();
-    resultSet.next();
-    assertEquals("TABLE", resultSet.getString(1));
-    resultSet.next();
-    assertEquals("VIEW", resultSet.getString(1));
-    resultSet.close();
-    resultSet.next();
-
-    stmt.execute("alter session set ENABLE_DRIVER_TERSE_SHOW = default;");
-    stmt.close();
-    connection.close();
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetMetaDataUseConnectionCtx() throws SQLException {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
 
-    // setup: reset session db and schema, enable the parameter
-    statement.execute("use database JDBC_DB1");
-    statement.execute("use schema JDBC_SCHEMA11");
-    statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
+      // setup: reset session db and schema, enable the parameter
+      statement.execute("use database JDBC_DB1");
+      statement.execute("use schema JDBC_SCHEMA11");
+      statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
 
-    DatabaseMetaData databaseMetaData = connection.getMetaData();
+      DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-    // this should only return JDBC_SCHEMA11
-    ResultSet resultSet = databaseMetaData.getSchemas(null, null);
-    assertEquals(1, getSizeOfResultSet(resultSet));
+      // this should only return JDBC_SCHEMA11
+      try (ResultSet resultSet = databaseMetaData.getSchemas(null, null)) {
+        assertEquals(1, getSizeOfResultSet(resultSet));
+      }
+      // only returns tables in JDBC_DB1.JDBC_SCHEMA11
+      try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
+        assertEquals(1, getSizeOfResultSet(resultSet));
+      }
 
-    // only returns tables in JDBC_DB1.JDBC_SCHEMA11
-    resultSet = databaseMetaData.getTables(null, null, null, null);
-    assertEquals(1, getSizeOfResultSet(resultSet));
+      statement.execute("use schema JDBC_SCHEMA12");
+      try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
+        assertEquals(2, getSizeOfResultSet(resultSet));
+      }
 
-    statement.execute("use schema JDBC_SCHEMA12");
-    resultSet = databaseMetaData.getTables(null, null, null, null);
-    assertEquals(2, getSizeOfResultSet(resultSet));
+      try (ResultSet resultSet = databaseMetaData.getColumns(null, null, null, null)) {
+        assertEquals(4, getSizeOfResultSet(resultSet));
+      }
 
-    resultSet = databaseMetaData.getColumns(null, null, null, null);
-    assertEquals(4, getSizeOfResultSet(resultSet));
+      statement.execute("use schema TEST_CTX");
+      try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, null)) {
+        assertEquals(1, getSizeOfResultSet(resultSet));
+      }
 
-    statement.execute("use schema TEST_CTX");
-    resultSet = databaseMetaData.getPrimaryKeys(null, null, null);
-    assertEquals(1, getSizeOfResultSet(resultSet));
+      try (ResultSet resultSet = databaseMetaData.getImportedKeys(null, null, null)) {
+        assertEquals(1, getSizeOfResultSet(resultSet));
+      }
 
-    resultSet = databaseMetaData.getImportedKeys(null, null, null);
-    assertEquals(1, getSizeOfResultSet(resultSet));
+      try (ResultSet resultSet = databaseMetaData.getExportedKeys(null, null, null)) {
+        assertEquals(1, getSizeOfResultSet(resultSet));
+      }
 
-    resultSet = databaseMetaData.getExportedKeys(null, null, null);
-    assertEquals(1, getSizeOfResultSet(resultSet));
-
-    resultSet = databaseMetaData.getCrossReference(null, null, null, null, null, null);
-    assertEquals(1, getSizeOfResultSet(resultSet));
+      try (ResultSet resultSet =
+          databaseMetaData.getCrossReference(null, null, null, null, null, null)) {
+        assertEquals(1, getSizeOfResultSet(resultSet));
+      }
+    }
   }
 
   private int getAllObjectCountInDBViaInforSchema(String SQLCmdTemplate) throws SQLException {
     int objectCount = 0;
-    Connection con = getConnection();
-    Statement st = con.createStatement();
-    st.execute("alter session set ENABLE_BUILTIN_SCHEMAS = true");
-    ResultSet dbNameRS = st.executeQuery("select database_name from information_schema.databases");
-    while (dbNameRS.next()) {
-      String databaseName = dbNameRS.getString(1);
-      String execSQLCmd = SQLCmdTemplate.replaceAll("db", databaseName);
-      ResultSet object = st.executeQuery(execSQLCmd);
-      object.next();
-      objectCount += object.getInt(1);
+    try (Connection con = getConnection();
+        Statement st = con.createStatement()) {
+      st.execute("alter session set ENABLE_BUILTIN_SCHEMAS = true");
+      try (ResultSet dbNameRS =
+          st.executeQuery("select database_name from information_schema.databases")) {
+        while (dbNameRS.next()) {
+          String databaseName = dbNameRS.getString(1);
+          String execSQLCmd = SQLCmdTemplate.replaceAll("db", databaseName);
+          ResultSet object = st.executeQuery(execSQLCmd);
+          object.next();
+          objectCount += object.getInt(1);
+        }
+      }
     }
     return objectCount;
   }
