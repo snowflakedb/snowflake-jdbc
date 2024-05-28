@@ -1935,9 +1935,9 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     // For each location, list files and match against the patterns
     for (Map.Entry<String, List<String>> entry : locationToFilePatterns.entrySet()) {
-      java.io.File dir = null;
+      File dir = null;
       try {
-        dir = new java.io.File(entry.getKey());
+        dir = new File(entry.getKey());
 
         logger.debug(
             "Listing files under: {} with patterns: {}",
@@ -1953,28 +1953,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
         // The following currently ignore sub directories
         for (Object file :
             FileUtils.listFiles(dir, new WildcardFileFilter(entry.getValue()), null)) {
-          result.add(((java.io.File) file).getCanonicalPath());
+          result.add(((File) file).getCanonicalPath());
         }
       } catch (Exception ex) {
-        if (ex instanceof UncheckedIOException) {
-          if (!dir.exists()) {
-            logger.debug(
-                "The directory: "
-                    + entry.getKey()
-                    + " has been deleted. Ignoring files under this directory.");
-          } else {
-            throw new SnowflakeSQLException(
-                queryId,
-                ex,
-                SqlState.DATA_EXCEPTION,
-                ErrorCode.FAIL_LIST_FILES.getMessageCode(),
-                "Exception: "
-                    + ex.getMessage()
-                    + ", Dir="
-                    + entry.getKey()
-                    + ", Patterns="
-                    + entry.getValue().toString());
-          }
+        if (ex instanceof UncheckedIOException && !dir.exists()) {
+          logger.warn(
+              "The directory: {} has been deleted. Ignoring files under this directory.",
+              entry.getKey());
         } else {
           throw new SnowflakeSQLException(
               queryId,

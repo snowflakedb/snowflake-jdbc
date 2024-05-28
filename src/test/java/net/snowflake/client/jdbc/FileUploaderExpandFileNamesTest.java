@@ -3,9 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +19,8 @@ import org.junit.rules.TemporaryFolder;
 /** Tests for SnowflakeFileTransferAgent.expandFileNames */
 public class FileUploaderExpandFileNamesTest {
   @Rule public TemporaryFolder folder = new TemporaryFolder();
+  @Rule public TemporaryFolder secondFolder = new TemporaryFolder();
+  private String localFSFileSep = systemGetProperty("file.separator");
 
   @Test
   public void testProcessFileNames() throws Exception {
@@ -124,5 +125,39 @@ public class FileUploaderExpandFileNamesTest {
     assertEquals("dummy_prefix", config.getPrefix());
     assertEquals("dummy_dest_file_name", config.getDestFileName());
     assertEquals(expectedThrowCount, throwCount);
+  }
+
+  /**
+   * Test fix for if a folder has been deleted before calling FileUtils.listFiles we ignore that
+   * directory. Fix available after version 3.16.1.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testDeleteDirectoryBeforeListFilesWithWildCard() throws Exception {
+    folder.newFile("TestFileA");
+    folder.newFile("TestFileB");
+
+    secondFolder.newFile("TestFileC");
+    secondFolder.newFile("TestFileD");
+
+    String folderName = folder.getRoot().getCanonicalPath();
+    String secondFolderName = secondFolder.getRoot().getCanonicalPath();
+
+    folder.delete();
+
+    String[] locations = {
+      folderName + localFSFileSep + "TestFil*A",
+      folderName + localFSFileSep + "TestFil*B",
+      secondFolderName + localFSFileSep + "TestFil*C",
+      secondFolderName + localFSFileSep + "TestFil*D",
+    };
+
+    Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations, null);
+    assertFalse(files.contains(folderName + localFSFileSep + "TestFileA"));
+    assertFalse(files.contains(folderName + localFSFileSep + "TestFileB"));
+    assertTrue(files.contains(secondFolderName + localFSFileSep + "TestFileC"));
+    assertTrue(files.contains(secondFolderName + localFSFileSep + "TestFileD"));
+    assertEquals(2, files.size());
   }
 }
