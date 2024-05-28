@@ -1956,7 +1956,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           result.add(((File) file).getCanonicalPath());
         }
       } catch (Exception ex) {
-        if (ex instanceof UncheckedIOException && !dir.exists()) {
+        if (ex instanceof UncheckedIOException && dir != null && !dir.exists()) {
           logger.warn(
               "The directory: {} has been deleted. Ignoring files under this directory.",
               entry.getKey());
