@@ -114,7 +114,7 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
     try (Connection con = init(table, column, values);
         Statement statement = con.createStatement()) {
-		statement.executeQuery("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=FALSE");
+      statement.executeQuery("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=FALSE");
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
