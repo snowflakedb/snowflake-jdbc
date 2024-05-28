@@ -32,6 +32,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -48,8 +49,10 @@ import net.snowflake.client.jdbc.cloud.storage.StorageProviderException;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 @Category(TestCategoryOthers.class)
@@ -57,6 +60,8 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   private static final String OBJ_META_STAGE = "testObjMeta";
   private ObjectMapper mapper = new ObjectMapper();
   private static final String PUT_COMMAND = "put file:///dummy/path/file2.gz @testStage";
+  @Rule public TemporaryFolder secondFolder = new TemporaryFolder();
+  private String localFSFileSep = systemGetProperty("file.separator");
 
   /**
    * This tests that getStageInfo(JsonNode, session) reflects the boolean value of UseS3RegionalUrl
@@ -865,6 +870,47 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
       }
     } finally {
       FileUtils.deleteDirectory(subDir.toFile());
+    }
+  }
+
+  /**
+   * Test fix for if a folder has been deleted before calling FileUtils.listFiles we ignore that
+   * directory. Fix available after version 3.16.0.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testDeleteDirectoryBeforeListFilesWithWildCard() throws Exception {
+    folder.newFile("TestFileA");
+    folder.newFile("TestFileB");
+
+    secondFolder.newFile("TestFileC");
+    secondFolder.newFile("TestFileD");
+
+    String folderName = folder.getRoot().getCanonicalPath();
+    String secondFolderName = secondFolder.getRoot().getCanonicalPath();
+    System.setProperty("user.dir", folderName);
+    System.setProperty("user.home", folderName);
+
+    folder.delete();
+
+    String[] locations = {
+      folderName + localFSFileSep + "TestFil*A",
+      folderName + localFSFileSep + "TestFil*B",
+      secondFolderName + localFSFileSep + "TestFil*C",
+      secondFolderName + localFSFileSep + "TestFil*D",
+    };
+
+    try {
+
+      Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations, null);
+      assertFalse(files.contains(folderName + localFSFileSep + "TestFileA"));
+      assertFalse(files.contains(folderName + localFSFileSep + "TestFileB"));
+      assertTrue(files.contains(secondFolderName + localFSFileSep + "TestFileC"));
+      assertTrue(files.contains(secondFolderName + localFSFileSep + "TestFileD"));
+      assertEquals(2, files.size());
+    } catch (SnowflakeSQLException e) {
+      fail("Should not throw exception.");
     }
   }
 }
