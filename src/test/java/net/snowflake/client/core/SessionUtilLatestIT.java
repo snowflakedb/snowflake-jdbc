@@ -465,4 +465,171 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
     }
   }
+
+  /**
+   * Tests the disableSamlURLCheck. If the disableSamlUrl is provided to the login input with true,
+   * the driver will skip checking the format of the saml URL response. This latest test will work
+   * with jdbc > 3.16.0
+   *
+   * @throws Throwable
+   */
+  @Test
+  public void testOktaDisableSamlUrlCheck() throws Throwable {
+    SFLoginInput loginInput = createOktaLoginInput();
+    loginInput.setDisableSamlURLCheck(true);
+    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpPost.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
+                  + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
+                  + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeRequestWithoutCookies(
+                      Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(AtomicBoolean.class),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpGet.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn("<body><form action=\"invalidformError\"></form></body>");
+
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+    }
+  }
+
+  @Test
+  public void testInvalidOktaSamlFormat() throws Throwable {
+    SFLoginInput loginInput = createOktaLoginInput();
+    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpPost.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
+                  + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
+                  + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeRequestWithoutCookies(
+                      Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(AtomicBoolean.class),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpGet.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn("<body><form action=\"invalidformError\"></form></body>");
+
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+      fail("Should be failed because of the invalid form");
+    } catch (SnowflakeSQLException ex) {
+      assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), ex.getErrorCode());
+    }
+  }
+
+  @Test
+  public void testOktaWithInvalidHostName() throws Throwable {
+    SFLoginInput loginInput = createOktaLoginInput();
+    Map<SFSessionProperty, Object> connectionPropertiesMap = initConnectionPropertiesMap();
+    try (MockedStatic<HttpUtil> mockedHttpUtil = mockStatic(HttpUtil.class)) {
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpPost.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"data\":{\"tokenUrl\":\"https://testauth.okta.com/api/v1/authn\","
+                  + "\"ssoUrl\":\"https://testauth.okta.com/app/snowflake/abcdefghijklmnopqrstuvwxyz/sso/saml\","
+                  + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeRequestWithoutCookies(
+                      Mockito.any(HttpRequestBase.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(AtomicBoolean.class),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn(
+              "{\"expiresAt\":\"2023-10-13T19:18:09.000Z\",\"status\":\"SUCCESS\",\"sessionToken\":\"testsessiontoken\"}");
+
+      mockedHttpUtil
+          .when(
+              () ->
+                  HttpUtil.executeGeneralRequest(
+                      Mockito.any(HttpGet.class),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.anyInt(),
+                      Mockito.nullable(HttpClientSettingsKey.class)))
+          .thenReturn("<body><form action=\"https://helloworld.okta.com\"></form></body>");
+
+      SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
+      fail("Should be failed because of the invalid form");
+    } catch (SnowflakeSQLException ex) {
+      assertEquals((int) ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), ex.getErrorCode());
+    }
+  }
 }

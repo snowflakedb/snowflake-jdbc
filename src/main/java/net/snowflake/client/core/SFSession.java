@@ -608,7 +608,12 @@ public class SFSession extends SFBaseSession {
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN) != null
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN))
-                : true);
+                : true)
+        .setDisableSamlURLCheck(
+            connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK) != null
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
+                : false);
 
     // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
     // The value may still change later when session parameters from the server are read.
