@@ -3,9 +3,9 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 import static net.snowflake.client.jdbc.SnowflakeType.getJavaType;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.fail;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
