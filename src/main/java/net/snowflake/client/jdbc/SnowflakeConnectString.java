@@ -28,9 +28,9 @@ public class SnowflakeConnectString implements Serializable {
   private final int port;
   private final Map<String, Object> parameters;
   private final String account;
-  private static final String JVM_ENABLE_DIAGNOSTICS = "net.snowflake.jdbc.enable.diagnostics";
+  private static final String JVM_ENABLE_DIAGNOSTICS = SFSessionProperty.JVM_ENABLE_DIAGNOSTICS;
   private static final String JVM_DIAGNOSTICS_ALLOWLIST_PATH =
-      "net.snowflake.jdbc.diagnostics.allowlist.path";
+      SFSessionProperty.JVM_DIAGNOSTICS_ALLOWLIST_PATH;
 
   private static SnowflakeConnectString INVALID_CONNECT_STRING =
       new SnowflakeConnectString("", "", -1, Collections.emptyMap(), "");

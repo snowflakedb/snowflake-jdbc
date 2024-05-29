@@ -102,6 +102,11 @@ public enum SFSessionProperty {
   // application name matcher
   public static Pattern APPLICATION_REGEX = Pattern.compile("^[A-Za-z][A-Za-z0-9\\.\\-_]{1,50}$");
 
+  public static final String JVM_ENABLE_DIAGNOSTICS = "net.snowflake.jdbc.enable.diagnostics";
+
+  public static final String JVM_DIAGNOSTICS_ALLOWLIST_PATH =
+      "net.snowflake.jdbc.diagnostics.allowlist.path";
+
   public boolean isRequired() {
     return required;
   }

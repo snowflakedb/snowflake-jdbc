@@ -1,86 +1,87 @@
 package net.snowflake.client.jdbc.diagnostic;
 
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
-import javax.naming.NamingEnumeration;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.spi.NamingManager;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Hashtable;
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.spi.NamingManager;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 public class DnsDiagnosticCheck extends DiagnosticCheck {
 
-    private static final SFLogger logger =
-            SFLoggerFactory.getLogger(DnsDiagnosticCheck.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(DnsDiagnosticCheck.class);
 
-    public DnsDiagnosticCheck() { super("DNS Lookup Test"); }
+  private final String INITIAL_DNS_CONTEXT = "com.sun.jndi.dns.DnsContextFactory";
 
-    @Override
-    public void run(SnowflakeEndpoint snowflakeEndpoint){
-        super.run(snowflakeEndpoint);
-        try {
-            getCnameRecords(snowflakeEndpoint);
-            getArecords(snowflakeEndpoint);
-        }catch(UnknownHostException e){
-            this.success = false;
-            logger.error("DNS query failed for host: {} Please check your DNS configurations.", snowflakeEndpoint.getHost());
-            logger.error(e.getMessage(), e);
+  DnsDiagnosticCheck(ProxyConfig proxyConfig) {
+    super("DNS Lookup Test", proxyConfig);
+  }
+
+  @Override
+  public void run(SnowflakeEndpoint snowflakeEndpoint) {
+    super.run(snowflakeEndpoint);
+    getCnameRecords(snowflakeEndpoint);
+    getArecords(snowflakeEndpoint);
+  }
+
+  private void getCnameRecords(SnowflakeEndpoint snowflakeEndpoint) {
+    String hostname = snowflakeEndpoint.getHost();
+    try {
+      Hashtable<String, String> env = new Hashtable<>();
+      env.put(Context.INITIAL_CONTEXT_FACTORY, INITIAL_DNS_CONTEXT);
+      DirContext dirCtx = (DirContext) NamingManager.getInitialContext(env);
+      Attributes attrs1 = dirCtx.getAttributes(snowflakeEndpoint.getHost(), new String[] {"CNAME"});
+      NamingEnumeration<? extends Attribute> attrs = attrs1.getAll();
+      StringBuilder sb = new StringBuilder();
+      sb.append("\nCNAME:\n");
+      while (attrs.hasMore()) {
+        Attribute a = attrs.next();
+        NamingEnumeration<?> values = a.getAll();
+        while (values.hasMore()) {
+          sb.append(values.next());
+          sb.append("\n");
         }
+      }
+      logger.debug(sb.toString());
+    } catch (NamingException e) {
+      logger.error("Error occurred when getting CNAME record for host {}", hostname);
+      logger.error(e.getLocalizedMessage(), e);
     }
+  }
 
-    private void getCnameRecords(SnowflakeEndpoint snowflakeEndpoint) {
-        try {
-            Hashtable<String, String> env = new Hashtable<>();
-            env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-            // TODO: Consider adding the ability to provide a particular DNS server for lookups
-            // env.put("java.naming.provider.url",    "dns://8.8.8.8");
-            DirContext dirCtx = (DirContext) NamingManager.getInitialContext(env);
-            Attributes attrs1 = dirCtx.getAttributes(snowflakeEndpoint.getHost(), new String[] { "CNAME"});
-            NamingEnumeration<? extends Attribute> attrs = attrs1.getAll();
-            while(attrs.hasMore()) {
-                Attribute a = attrs.next();
-                logger.debug("{}:", a.getID());
-                NamingEnumeration<?> values = a.getAll();
-                while (values.hasMore()) {
-                    logger.debug("{}", values.next());
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+  private void getArecords(SnowflakeEndpoint snowflakeEndpoint) {
+    String hostname = snowflakeEndpoint.getHost();
+    try {
+      InetAddress[] addresses = InetAddress.getAllByName(hostname);
+      StringBuilder sb = new StringBuilder();
+      sb.append("\nA Records:\n");
+      for (InetAddress ip : addresses) {
+        if (ip instanceof Inet4Address) {
+          sb.append(ip.getHostAddress());
+          sb.append("\n");
         }
-    }
-
-    private void getArecords(SnowflakeEndpoint snowflakeEndpoint) throws UnknownHostException {
-        InetAddress[] addresses = InetAddress.getAllByName(snowflakeEndpoint.getHost());
-        for (InetAddress ip : addresses) {
-            if (ip instanceof Inet4Address) {
-                logger.debug(ip.getHostAddress());
-            }
-            // Check if this is a private link endpoint and if the ip address
-            // returned by the DNS query is a private IP address as expected.
-            if (snowflakeEndpoint.isPrivateLink() && !ip.isSiteLocalAddress()) {
-                this.success = false;
-                logger.error("Public IP address was returned for a private link endpoint. Please review your DNS configurations.");
-            }
+        // Check if this is a private link endpoint and if the ip address
+        // returned by the DNS query is a private IP address as expected.
+        if (snowflakeEndpoint.isPrivateLink() && !ip.isSiteLocalAddress()) {
+          this.success = false;
+          logger.error(
+              "Public IP address was returned for {}. Please review your DNS configurations.",
+              hostname);
         }
+      }
+      logger.debug(sb.toString());
+    } catch (UnknownHostException e) {
+      this.success = false;
+      logger.error(
+          "DNS query failed for host: {} Please check your DNS configurations.",
+          snowflakeEndpoint.getHost());
     }
+  }
 }
-
-    /*
-    networkaddress.cache.ttl
-    Indicates the caching policy for successful name lookups from the name service.
-    The value is specified as as integer to indicate the number of seconds to cache the successful lookup.
-    The default setting is to cache for an implementation specific period of time.
-    A value of -1 indicates "cache forever".
-
-    networkaddress.cache.negative.ttl (default: 10)
-    Indicates the caching policy for un-successful name lookups from the name service.
-    The value is specified as as integer to indicate the number of seconds to cache the failure for un-successful lookups.
-    A value of 0 indicates "never cache". A value of -1 indicates "cache forever".
-     */
-

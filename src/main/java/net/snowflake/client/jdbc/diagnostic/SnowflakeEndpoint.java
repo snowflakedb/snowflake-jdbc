@@ -8,56 +8,79 @@ function. Example:
 
  */
 public class SnowflakeEndpoint {
-    private String type;
-    private String host;
-    private int port;
-    private boolean isSecure;
+  private String type;
+  private String host;
+  private int port;
+  private final boolean isSecure;
 
-    public SnowflakeEndpoint(String type, String host, int port) {
-        this.type = type;
-        this.host = host;
-        this.port = port;
-        this.isSecure = (this.port == 443) ? true : false;
+  public SnowflakeEndpoint(String type, String host, int port) {
+    this.type = type;
+    this.host = host;
+    this.port = port;
+    this.isSecure = (this.port == 443);
+  }
+
+  public SnowflakeEndpoint() {
+    this(null, null, -1);
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  public void setPort(int port) {
+    this.port = port;
+  }
+
+  public String getType() {
+    return this.type;
+  }
+
+  public String getHost() {
+    return this.host;
+  }
+
+  public boolean isSslEnabled() {
+    return this.isSecure;
+  }
+
+  public int getPort() {
+    return this.port;
+  }
+
+  // We can only tell if private link is enabled for certain hosts when the hostname contains
+  // the word 'privatelink' but we don't have a good way of telling if a private link connection
+  // is expected for internal stages for example.
+  public boolean isPrivateLink() {
+    return (host.contains("privatelink.snowflakecomputing.com"));
+  }
+
+  @Override
+  public String toString() {
+    return this.host + ":" + this.port;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    boolean isSnowflakeEndpoint = o instanceof SnowflakeEndpoint;
+    if (!isSnowflakeEndpoint) {
+      return false;
+    }
+    if (!((SnowflakeEndpoint) o).getHost().equals(this.host)) {
+      return false;
+    }
+    if (((SnowflakeEndpoint) o).getPort() != this.port) {
+      return false;
     }
 
-    public SnowflakeEndpoint() {
-        this(null, null, -1);
+    if (!((SnowflakeEndpoint) o).getType().equals(this.type)) {
+      return false;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    public String getType() {
-        return this.type;
-    }
-
-    public String getHost() {
-        return this.host;
-    }
-
-    public boolean isSslEnabled() { return this.isSecure; }
-
-    public int getPort() {
-        return this.port;
-    }
-
-    //We can only tell if private link is enabled for certain hosts when the hostname contains
-    //the word 'privatelink' but we don't have a good way of telling if a private link connection
-    //is expected for internal stages for example.
-    public boolean isPrivateLink() {
-        return (host.contains("privatelink.snowflakecomputing.com"));
-    }
-
-    public String toString() {
-        return this.host + ":" + this.port;
-    }
+    return true;
+  }
 }

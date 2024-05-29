@@ -2,103 +2,121 @@ package net.snowflake.client.jdbc.diagnostic;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
+import java.net.Proxy;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Map;
+import net.snowflake.client.core.SFSessionProperty;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 public class DiagnosticContext {
 
-    private static final SFLogger logger =
-            SFLoggerFactory.getLogger(DiagnosticContext.class);
-    final static String JAVAX_NET_DEBUG = "javax.net.debug";
-    String jsonInputFile;
+  private static final SFLogger logger = SFLoggerFactory.getLogger(DiagnosticContext.class);
+  private static final String JAVAX_NET_DEBUG = "javax.net.debug";
 
-    boolean enableSslTrace = false; //SSL tracing is off by default in case that's never provided by the user.
-    ArrayList<SnowflakeEndpoint> endpoints = new ArrayList<>();
+  private ProxyConfig proxyConf;
+  String jsonInputFile;
 
-    DiagnosticCheck[] tests = new DiagnosticCheck[] {
-            new DnsDiagnosticCheck(),
-            new TcpDiagnosticCheck(),
-            new CertificateDiagnosticCheck(),
-            new HttpAndHttpsDiagnosticCheck()
-    };
+  private ArrayList<SnowflakeEndpoint> endpoints = new ArrayList<>();
 
-    public DiagnosticContext(String allowListFile, boolean enableSslTrace) {
-        this.jsonInputFile = allowListFile;
-        this.enableSslTrace = enableSslTrace;
+  private final DiagnosticCheck[] tests;
 
-        if(enableSslTrace){
-                setSslDebugging(true);
-        }
+  public DiagnosticContext(
+      String allowListFile, Map<SFSessionProperty, Object> connectionPropertiesMap) {
+
+    createProxyConfiguration(connectionPropertiesMap);
+    this.jsonInputFile = allowListFile;
+
+    try {
+      JsonNode jsonNode = readAllowListJsonFile(jsonInputFile);
+      for (JsonNode objectNode : jsonNode) {
+        String type = objectNode.get("type").asText();
+        String host = objectNode.get("host").asText();
+        int port = objectNode.get("port").asInt();
+        SnowflakeEndpoint e = new SnowflakeEndpoint(type, host, port);
+        endpoints.add(e);
+      }
+
+    } catch (IOException e) {
+      logger.error("Failed to read allowlist file: ", allowListFile);
+      logger.error(e.getLocalizedMessage(), e);
+    } catch (Exception e) {
+      logger.error("Failed to parse data in allowlist file:", allowListFile);
+      logger.error(e.getLocalizedMessage(), e);
     }
 
-    static class DiagnosticUtil {
+    tests =
+        new DiagnosticCheck[] {
+          new DnsDiagnosticCheck(proxyConf),
+          new TcpDiagnosticCheck(proxyConf),
+          new CertificateDiagnosticCheck(proxyConf),
+          new HttpAndHttpsDiagnosticCheck(proxyConf)
+        };
+  }
 
+  /** This constructor is only used for testing */
+  public DiagnosticContext(Map<SFSessionProperty, Object> connectionPropertiesMap) {
+    createProxyConfiguration(connectionPropertiesMap);
+
+    tests =
+        new DiagnosticCheck[] {
+          new DnsDiagnosticCheck(proxyConf),
+          new TcpDiagnosticCheck(proxyConf),
+          new CertificateDiagnosticCheck(proxyConf),
+          new HttpAndHttpsDiagnosticCheck(proxyConf)
+        };
+  }
+
+  private void createProxyConfiguration(Map<SFSessionProperty, Object> connectionPropertiesMap) {
+    String proxyHost = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_HOST);
+    int proxyPort =
+        (connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT) == null)
+            ? -1
+            : Integer.parseInt((String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PORT));
+    String nonProxyHosts = (String) connectionPropertiesMap.get(SFSessionProperty.NON_PROXY_HOSTS);
+    proxyConf = new ProxyConfig(proxyHost, proxyPort, nonProxyHosts);
+  }
+
+  public void runDiagnostics() {
+
+    getEnvironmentInfo();
+
+    // Loop through endpoints and run diagnostic test on each one of them
+    for (DiagnosticCheck test : tests) {
+      for (SnowflakeEndpoint endpoint : endpoints) {
+        test.run(endpoint);
+      }
     }
+  }
 
-    public void runDiagnostics() {
+  private JsonNode readAllowListJsonFile(String jsonFilePath) throws IOException {
+    ObjectMapper objectMapper = new ObjectMapper();
+    File allowListFile = new File(jsonFilePath);
 
-        getEnvironmentInfo();
+    return objectMapper.readTree(allowListFile);
+  }
 
-        try {
-            JsonNode jsonNode = readAllowListJsonFile(jsonInputFile);
-            for (JsonNode objectNode : jsonNode) {
-                String type = objectNode.get("type").asText();
-                String host = objectNode.get("host").asText();
-                int port = objectNode.get("port").asInt();
-                SnowflakeEndpoint e = new SnowflakeEndpoint(type, host, port);
-                endpoints.add(e);
-            }
+  public void getEnvironmentInfo() {
+    logger.debug("Getting environment information");
+    logger.debug("Current truststore used: " + getTrustStoreLocation());
+    logger.debug("-Dnetworkaddress.cache.ttl: " + System.getProperty("networkaddress.cache.ttl"));
+    logger.debug(
+        "-Dnetworkaddress.cache.negative.ttl: "
+            + System.getProperty("networkaddress.cache.negative.ttl"));
+    logger.debug("-Djavax.net.debug: " + System.getProperty(JAVAX_NET_DEBUG));
+  }
 
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-            e.printStackTrace(System.err);
-        }
+  private boolean isNullOrEmpty(String a) {
+    return a == null || a.isEmpty();
+  }
 
-        //Loop through endpoints and run diangostic test on each one of them
-        for(DiagnosticCheck test : tests) {
-            for (SnowflakeEndpoint endpoint: endpoints) {
-                test.run(endpoint);
-            }
-        }
-    }
-    /* Convenience method to use in order to enable SSL debugging
-     through a connection parameter in case someone can't directly
-     add a JVM argument to the process and can't restart it.
-   */
-    public void setSslDebugging(Boolean enable) {
-        if (enable) {
-            System.setProperty(JAVAX_NET_DEBUG, "all");
-        }
-    }
-
-    private JsonNode readAllowListJsonFile(String jsonFilePath) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        File allowListFile = new File(jsonFilePath);
-
-        return objectMapper.readTree(allowListFile);
-    }
-
-    public static void getEnvironmentInfo() {
-        logger.debug("Getting environment information");
-        logger.debug("Current truststore used: " + getTrustStoreLocation());
-        logger.debug("-Dnetworkaddress.cache.ttl: " + System.getProperty("networkaddress.cache.ttl"));
-        logger.debug("-Dnetworkaddress.cache.negative.ttl: " + System.getProperty("networkaddress.cache.negative.ttl"));
-        logger.debug("-Djavax.net.debug: " + System.getProperty(JAVAX_NET_DEBUG));
-    }
-
-    public static boolean isNullOrEmpty(String a) {
-        return a == null || a.isEmpty();
-    }
-
-    /*
-  https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html
+  /*
+  We determine the truststore being used based on the JSSE documentation:
 
   1.) If the javax.net.ssl.trustStore property is defined, then the TrustManagerFactory attempts
   to find a file using the file name specified by that system property, and uses that file for the
@@ -114,33 +132,66 @@ public class DiagnosticContext {
     - if neither of these files exists, then the SSL cipher suite is anonymous,
       does not perform any authentication, and thus does not need a truststore.
   */
-    private static String getTrustStoreLocation() {
-        String trustStore = System.getProperty("javax.net.ssl.trustStore");
-        String javaHome = System.getProperty("java.home");
-        Path javaSecurityPath = FileSystems.getDefault().getPath(javaHome, "/lib/security");
-        logger.debug("JAVA_HOME: " + javaHome);
+  private String getTrustStoreLocation() {
+    final String JAVAX_TRUSTSTORE = "javax.net.ssl.trustStore";
+    String trustStore = System.getProperty(JAVAX_TRUSTSTORE);
+    String javaHome = System.getProperty("java.home");
+    Path javaSecurityPath = FileSystems.getDefault().getPath(javaHome, "/lib/security");
+    logger.debug("JAVA_HOME: " + javaHome);
 
-        if (isNullOrEmpty(trustStore)) {
-            logger.debug("-Djavax.net.ssl.trustStore is null");
-            Path jssecacertsPath = FileSystems.getDefault().getPath(javaSecurityPath.toString(), "jssecacerts");
-            Path cacertsPath = FileSystems.getDefault().getPath(javaSecurityPath.toString(), "cacerts");
+    if (isNullOrEmpty(trustStore)) {
+      logger.debug("-D{} is null", JAVAX_TRUSTSTORE);
+      Path jssecacertsPath =
+          FileSystems.getDefault().getPath(javaSecurityPath.toString(), "jssecacerts");
+      Path cacertsPath = FileSystems.getDefault().getPath(javaSecurityPath.toString(), "cacerts");
 
-            logger.debug("Checking if jssecacerts or cacerts exist");
-            if (Files.exists(jssecacertsPath)) {
-                logger.debug(jssecacertsPath.toString() + " exists");
-                trustStore = jssecacertsPath.toString();
-            }
-            else if (Files.exists(cacertsPath)) {
-                logger.debug(cacertsPath.toString() + " exists");
-                trustStore = cacertsPath.toString();
-            }
-        }
-
-        return trustStore;
+      logger.debug("Checking if jssecacerts or cacerts exist");
+      if (Files.exists(jssecacertsPath)) {
+        logger.debug(jssecacertsPath.toString() + " exists");
+        trustStore = jssecacertsPath.toString();
+      } else if (Files.exists(cacertsPath)) {
+        logger.debug(cacertsPath.toString() + " exists");
+        trustStore = cacertsPath.toString();
+      }
+    } else {
+      logger.debug("-D{} is set by user: ", JAVAX_TRUSTSTORE);
     }
+    return trustStore;
+  }
 
-    boolean checkIfJvmSslTraceIsEnabled() {
-        // Return true if the JVM argument -Djavax.net.debug is already set.
-        return (System.getProperty(JAVAX_NET_DEBUG) != null);
-    }
+  public String getHttpProxyHost() {
+    return proxyConf.getHttpProxyHost();
+  }
+
+  public int getHttpProxyPort() {
+    return proxyConf.getHttpProxyPort();
+  }
+
+  public String getHttpsProxyHost() {
+    return proxyConf.getHttpsProxyHost();
+  }
+
+  public int getHttpsProxyPort() {
+    return proxyConf.getHttpsProxyPort();
+  }
+
+  public String getHttpNonProxyHosts() {
+    return proxyConf.getNonProxyHosts();
+  }
+
+  public ArrayList<SnowflakeEndpoint> getEndpoints() {
+    return endpoints;
+  }
+
+  public Proxy getProxy(SnowflakeEndpoint snowflakeEndpoint) {
+    return this.proxyConf.getProxy(snowflakeEndpoint);
+  }
+
+  public boolean isProxyEnabled() {
+    return proxyConf.isProxyEnabled();
+  }
+
+  public boolean isProxyEnabledOnJvm() {
+    return proxyConf.isProxyEnabledOnJvm();
+  }
 }
