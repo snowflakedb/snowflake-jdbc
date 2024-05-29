@@ -32,11 +32,11 @@ public class FileUploaderExpandFileNamesTest {
     System.setProperty("user.home", folderName);
 
     String[] locations = {
-            folderName + File.separator + "Tes*Fil*A",
-            folderName + File.separator + "TestFil?B",
-            "~" +  File.separator + "TestFileC",
-            "TestFileD",
-            folderName + File.separator + "TestFileE~"
+      folderName + File.separator + "Tes*Fil*A",
+      folderName + File.separator + "TestFil?B",
+      "~" + File.separator + "TestFileC",
+      "TestFileD",
+      folderName + File.separator + "TestFileE~"
     };
 
     Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations, null);

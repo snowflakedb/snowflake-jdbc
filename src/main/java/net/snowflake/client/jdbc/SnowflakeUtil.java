@@ -688,7 +688,7 @@ public class SnowflakeUtil {
   public static String systemGetEnv(String env) {
     try {
       String value = System.getenv(env);
-      if(value == null) {
+      if (value == null) {
         value = System.getenv().getOrDefault(env, null);
       }
       return value;
