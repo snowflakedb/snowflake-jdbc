@@ -13,7 +13,7 @@ abstract class DiagnosticCheck {
         return this.name;
     }
     public void run(SnowflakeEndpoint snowflakeEndpoint){
-        logger.debug("{}: {}", snowflakeEndpoint.getHost(), this.name);
+        logger.debug("JDBC Diagnostics - {}: hostname: {}", this.name, snowflakeEndpoint.getHost());
     }
     public boolean isSuccess() {
         return this.success;

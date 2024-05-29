@@ -27,22 +27,33 @@ public class CertificateDiagnosticCheck extends DiagnosticCheck {
                 SSLSocket sslsocket = (SSLSocket) sslsocketfactory
                         .createSocket(snowflakeEndpoint.getHost(), snowflakeEndpoint.getPort());
                 SSLSession session = sslsocket.getSession();
-                Certificate[] chaincerts = session.getPeerCertificates();
+                Certificate[] chainCerts = session.getPeerCertificates();
 
-                for (Certificate cert : chaincerts) {
-                    if (cert.getType() == "X.509"){
-                        logger.debug("Certificate Type is ok: " + cert.getType());
+                logger.debug("Printing certificate chain");
+                int i = 0;
+                for (Certificate cert : chainCerts) {
+                    logger.debug("Certificate[{}]:", i);
+                    if (cert.getType().equals("X.509")){
                         X509Certificate x509Cert = (X509Certificate) cert;
-                        logger.debug("Subject: " + x509Cert.getSubjectDN());
-                        logger.debug("Issuer: " + x509Cert.getIssuerDN());
-                        logger.debug("Valid from: " + x509Cert.getNotBefore());
-                        logger.debug("Not Valid After: " + x509Cert.getNotAfter());
-                        logger.debug("Subject Alternative Names: " + x509Cert.getSubjectAlternativeNames());
-                        logger.debug("Issuer Alternative Names: " + x509Cert.getIssuerAlternativeNames());
-                        logger.debug("Serial: " + x509Cert.getSerialNumber());
+                        logger.debug("Subject: {} \n" +
+                        "Issuer: {} \n" +
+                        "Valid from: {} \n" +
+                        "Not Valid After: {} \n" +
+                        "Subject Alternative Names: {} \n" +
+                        "Issuer Alternative Names: {} \n" +
+                        "Serial: {} \n",
+                                x509Cert.getSubjectDN()
+                                ,x509Cert.getIssuerDN()
+                                ,x509Cert.getNotBefore()
+                                ,x509Cert.getNotAfter()
+                                ,x509Cert.getSubjectAlternativeNames()
+                                ,x509Cert.getIssuerAlternativeNames()
+                                ,x509Cert.getSerialNumber()
+                        );
                     }
                     else
-                        logger.debug("Certificate Type is not x509: " + cert.getType());
+                        logger.debug("Certificate Type is not x509: {} ", cert.getType());
+                    i++;
                 }
             }catch(Exception e){
                 logger.debug("SSL/TLS Certificate check failed");

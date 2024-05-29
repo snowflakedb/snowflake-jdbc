@@ -7,7 +7,7 @@ import javax.naming.NamingEnumeration;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
+import javax.naming.spi.NamingManager;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -24,49 +24,49 @@ public class DnsDiagnosticCheck extends DiagnosticCheck {
     public void run(SnowflakeEndpoint snowflakeEndpoint){
         super.run(snowflakeEndpoint);
         try {
-            getCnameRecords(snowflakeEndpoint.getHost());
-            InetAddress[] addresses = InetAddress.getAllByName(snowflakeEndpoint.getHost());
-            for (InetAddress ip : addresses) {
-                if (ip instanceof Inet4Address) {
-                    logger.debug(ip.getHostAddress());
-                }
-                //Check if the endpoint is a private link endpoint and if the ip address
-                //returned by the DNS query is a private IP address as expected.
-                if (snowflakeEndpoint.isPrivateLink() && !ip.isSiteLocalAddress()) {
-                    this.success = false;
-                    logger.error("Public IP address was returned for a private link endpoint. Please review your DNS configurations.");
-                }
-            }
+            getCnameRecords(snowflakeEndpoint);
+            getArecords(snowflakeEndpoint);
         }catch(UnknownHostException e){
             this.success = false;
-            logger.error("DNS query failed with an UnknownHostException for host: " + snowflakeEndpoint.getHost());
-            logger.error("Please check your DNS server's settings");
+            logger.error("DNS query failed for host: {} Please check your DNS configurations.", snowflakeEndpoint.getHost());
+            logger.error(e.getMessage(), e);
         }
     }
 
-    private void getCnameRecords(String hostname) {
+    private void getCnameRecords(SnowflakeEndpoint snowflakeEndpoint) {
         try {
             Hashtable<String, String> env = new Hashtable<>();
             env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
             // TODO: Consider adding the ability to provide a particular DNS server for lookups
             // env.put("java.naming.provider.url",    "dns://8.8.8.8");
-
-            DirContext dirCtx = new InitialDirContext(env);
-            Attributes attrs1 = dirCtx.getAttributes("imwwjzsfcb1stg.blob.core.windows.net", new String[] { "CNAME"});
+            DirContext dirCtx = (DirContext) NamingManager.getInitialContext(env);
+            Attributes attrs1 = dirCtx.getAttributes(snowflakeEndpoint.getHost(), new String[] { "CNAME"});
             NamingEnumeration<? extends Attribute> attrs = attrs1.getAll();
             while(attrs.hasMore()) {
                 Attribute a = attrs.next();
-                System.out.println(a.getID());
+                logger.debug("{}:", a.getID());
                 NamingEnumeration<?> values = a.getAll();
                 while (values.hasMore()) {
-                    System.out.println(values.next());
+                    logger.debug("{}", values.next());
                 }
-                System.out.println();
-
             }
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
+        }
+    }
+
+    private void getArecords(SnowflakeEndpoint snowflakeEndpoint) throws UnknownHostException {
+        InetAddress[] addresses = InetAddress.getAllByName(snowflakeEndpoint.getHost());
+        for (InetAddress ip : addresses) {
+            if (ip instanceof Inet4Address) {
+                logger.debug(ip.getHostAddress());
+            }
+            // Check if this is a private link endpoint and if the ip address
+            // returned by the DNS query is a private IP address as expected.
+            if (snowflakeEndpoint.isPrivateLink() && !ip.isSiteLocalAddress()) {
+                this.success = false;
+                logger.error("Public IP address was returned for a private link endpoint. Please review your DNS configurations.");
+            }
         }
     }
 }
