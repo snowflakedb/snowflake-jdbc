@@ -48,7 +48,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                cloud: [ 'AWS' ]
+                cloud: [ 'AWS', 'GCP' ]
                 javaVersion: [ '8', '11', '17']
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
                 additionalMavenProfile: ['', '-Dthin-jar']
@@ -85,7 +85,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
-                cloud: [ 'AWS' ]
+                cloud: [ 'AWS', 'GCP' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
