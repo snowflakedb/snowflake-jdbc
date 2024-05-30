@@ -1106,6 +1106,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testGetObjectWithType() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
+      statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=FALSE");
       statement.execute(
           " CREATE OR REPLACE TABLE test_all_types ("
               + "                  string VARCHAR, "

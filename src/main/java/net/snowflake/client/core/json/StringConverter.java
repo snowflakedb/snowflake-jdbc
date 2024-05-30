@@ -112,7 +112,7 @@ public class StringConverter {
                 obj,
                 columnType,
                 columnSubType,
-                this.session.getUseSessionTimezone() ? sessionTimeZone : TimeZone.getDefault(),
+                TimeZone.getDefault(),
                 scale);
 
     if (dateFormatter == null) {

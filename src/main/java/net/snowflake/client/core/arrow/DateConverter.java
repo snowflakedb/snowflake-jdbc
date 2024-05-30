@@ -121,7 +121,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
     Date date =
         getDate(
             index,
-            this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(),
+            TimeZone.getDefault(),
             this.context.getSession() == null
                 ? false
                 : (this.context.getSession().getUseHardcodedTimezone()
@@ -134,7 +134,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
   public Object toObject(int index) throws SFException {
     return toDate(
         index,
-        this.useSessionTimezone ? this.sessionTimeZone : TimeZone.getDefault(),
+        TimeZone.getDefault(),
         this.context.getSession() == null
             ? false
             : (this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat));

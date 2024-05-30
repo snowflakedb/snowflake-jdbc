@@ -236,13 +236,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   }
 
   public Date getDate(int columnIndex) throws SFException {
-    return getDate(
-        columnIndex,
-        this.getSession() == null
-            ? TimeZone.getDefault()
-            : this.getSession().getUseSessionTimezone()
-                ? this.getSessionTimeZone()
-                : TimeZone.getDefault());
+    return getDate(columnIndex, TimeZone.getDefault());
   }
 
   @Override
