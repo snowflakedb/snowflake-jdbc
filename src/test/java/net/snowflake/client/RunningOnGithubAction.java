@@ -3,15 +3,13 @@
  */
 package net.snowflake.client;
 
-import net.snowflake.client.jdbc.SnowflakeUtil;
-
 /** Run tests on CI */
 public class RunningOnGithubAction implements ConditionalIgnoreRule.IgnoreCondition {
   public boolean isSatisfied() {
-    return SnowflakeUtil.systemGetEnv("GITHUB_ACTIONS") != null;
+    return TestUtil.systemGetEnv("GITHUB_ACTIONS") != null;
   }
 
   public static boolean isRunningOnGithubAction() {
-    return SnowflakeUtil.systemGetEnv("GITHUB_ACTIONS") != null;
+    return TestUtil.systemGetEnv("GITHUB_ACTIONS") != null;
   }
 }
