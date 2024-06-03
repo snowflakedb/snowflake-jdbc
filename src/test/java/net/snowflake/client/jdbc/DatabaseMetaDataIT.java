@@ -720,7 +720,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals(255, metaData.getMaxUserNameLength());
       assertEquals(0, getSizeOfResultSet(metaData.getTablePrivileges(null, null, null)));
       // assertEquals("", metaData.getTimeDateFunctions());
-      assertEquals(TestUtil.systemGetEnv("SNOWFLAKE_TEST_USER"), metaData.getUserName());
+      assertEquals(SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_USER"), metaData.getUserName());
       assertFalse(metaData.insertsAreDetected(1));
       assertTrue(metaData.isCatalogAtStart());
       assertFalse(metaData.isReadOnly());

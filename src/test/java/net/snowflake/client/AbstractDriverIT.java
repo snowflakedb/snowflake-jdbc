@@ -24,6 +24,7 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.Rule;
 
 /** Base test class with common constants, data structures and methods */
@@ -54,7 +55,7 @@ public class AbstractDriverIT {
 
   private static String getConnPropValueFromEnv(String connectionType, String propKey) {
     String envKey = String.format("SNOWFLAKE_%s_%s", connectionType, propKey);
-    return TestUtil.systemGetEnv(envKey);
+    return SnowflakeUtil.systemGetEnv(envKey);
   }
 
   public static Map<String, String> getConnectionParameters(String accountName) {

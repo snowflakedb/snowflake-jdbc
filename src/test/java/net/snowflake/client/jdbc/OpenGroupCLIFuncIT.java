@@ -11,7 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -137,7 +136,7 @@ public class OpenGroupCLIFuncIT extends BaseJDBCTest {
       testFunction(
           connection,
           "select {fn USER()}",
-          TestUtil.systemGetEnv("SNOWFLAKE_TEST_USER").toUpperCase());
+          SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_USER").toUpperCase());
     }
   }
 

@@ -4,7 +4,6 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.TestUtil.systemGetEnv;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +24,7 @@ import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
@@ -84,14 +84,14 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   private SFLoginInput initMockLoginInput() {
     // mock SFLoginInput
     SFLoginInput loginInput = mock(SFLoginInput.class);
-    when(loginInput.getServerUrl()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_HOST"));
+    when(loginInput.getServerUrl()).thenReturn(SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_HOST"));
     when(loginInput.getAuthenticator())
         .thenReturn(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name());
     when(loginInput.getPrivateKeyFile())
-        .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
+        .thenReturn(SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
     when(loginInput.getPrivateKeyFilePwd())
-        .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE_PWD"));
-    when(loginInput.getUserName()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_USER"));
+        .thenReturn(SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE_PWD"));
+    when(loginInput.getUserName()).thenReturn(SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_USER"));
     when(loginInput.getAccountName()).thenReturn("testaccount");
     when(loginInput.getAppId()).thenReturn("testid");
     when(loginInput.getOCSPMode()).thenReturn(OCSPMode.FAIL_OPEN);

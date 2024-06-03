@@ -42,7 +42,6 @@ import java.util.concurrent.Executors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
@@ -220,8 +219,8 @@ public class ConnectionIT extends BaseJDBCTest {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       try {
-        final String database = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").toUpperCase();
-        final String schema = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").toUpperCase();
+        final String database = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").toUpperCase();
+        final String schema = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").toUpperCase();
 
         assertEquals(database, con.getCatalog());
         assertEquals(schema, con.getSchema());

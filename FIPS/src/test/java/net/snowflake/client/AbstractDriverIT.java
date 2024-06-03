@@ -21,6 +21,8 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.Rule;
 
 /** Base test class with common constants, data structures and methods */
@@ -49,13 +51,13 @@ public class AbstractDriverIT {
     String account;
     String host;
     if (accountName == null) {
-      account = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT");
-      host = TestUtil.systemGetEnv("SNOWFLAKE_TEST_HOST");
+      account = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT");
+      host = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_HOST");
     } else {
       account = accountName;
       // By default, the test will run against reg deployment.
       // If developer needs to run in IntelliJ, you can set this env as ".dev.local"
-      String deployment = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DEPLOYMENT");
+      String deployment = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_DEPLOYMENT");
       if (Strings.isNullOrEmpty(deployment)) {
         deployment = ".reg.local";
       }
@@ -75,7 +77,7 @@ public class AbstractDriverIT {
         !Strings.isNullOrEmpty(host));
     params.put("host", host);
 
-    String protocol = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PROTOCOL");
+    String protocol = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PROTOCOL");
     String ssl;
     if ("http".equals(protocol)) {
       ssl = "off";
@@ -84,16 +86,16 @@ public class AbstractDriverIT {
     }
     params.put("ssl", ssl);
 
-    String user = TestUtil.systemGetEnv("SNOWFLAKE_TEST_USER");
+    String user = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_USER");
     assertThat("set SNOWFLAKE_TEST_USER environment variable.", !Strings.isNullOrEmpty(user));
     params.put("user", user);
 
-    String password = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PASSWORD");
+    String password = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PASSWORD");
     assertThat(
         "set SNOWFLAKE_TEST_PASSWORD environment variable.", !Strings.isNullOrEmpty(password));
     params.put("password", password);
 
-    String port = TestUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
+    String port = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_PORT");
     if (Strings.isNullOrEmpty(port)) {
       if ("on".equals(ssl)) {
         port = "443";
@@ -104,36 +106,36 @@ public class AbstractDriverIT {
     assertThat("set SNOWFLAKE_TEST_PORT environment variable.", !Strings.isNullOrEmpty(port));
     params.put("port", port);
 
-    String database = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE");
+    String database = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE");
     assertThat(
         "set SNOWFLAKE_TEST_DATABASE environment variable.", !Strings.isNullOrEmpty(database));
     params.put("database", database);
 
-    String schema = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA");
+    String schema = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA");
     assertThat("set SNOWFLAKE_TEST_SCHEMA environment variable.", !Strings.isNullOrEmpty(schema));
     params.put("schema", schema);
 
-    String role = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ROLE");
+    String role = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_ROLE");
     assertThat("set SNOWFLAKE_TEST_ROLE environment variable.", !Strings.isNullOrEmpty(role));
     params.put("role", role);
 
-    String warehouse = TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE");
+    String warehouse = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE");
     assertThat(
         "set SNOWFLAKE_TEST_WAREHOUSE environment variable.", !Strings.isNullOrEmpty(warehouse));
     params.put("warehouse", warehouse);
 
     params.put("uri", String.format("jdbc:snowflake://%s:%s", host, port));
 
-    String adminUser = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_USER");
+    String adminUser = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_USER");
     params.put("adminUser", adminUser);
 
-    String adminPassword = TestUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_PASSWORD");
+    String adminPassword = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_ADMIN_PASSWORD");
     params.put("adminPassword", adminPassword);
 
-    String ssoUser = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_USER");
+    String ssoUser = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_USER");
     params.put("ssoUser", ssoUser);
 
-    String ssoPassword = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_PASSWORD");
+    String ssoPassword = SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_SSO_PASSWORD");
     params.put("ssoPassword", ssoPassword);
 
     return params;

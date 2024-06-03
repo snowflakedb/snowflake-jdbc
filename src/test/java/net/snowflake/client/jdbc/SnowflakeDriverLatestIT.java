@@ -42,7 +42,6 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.RunningOnTestaccount;
-import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
@@ -1606,7 +1605,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           Statement statement = con.createStatement()) {
         statement.execute(
             "alter account "
-                + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+                + SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
                 + " set ENABLE_SNOW_654741_FOR_TESTING=true");
       }
       // Create a normal connection and assert that database, schema, and warehouse have expected
@@ -1614,11 +1613,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       try (Connection con = getConnection()) {
         SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
         assertTrue(
-            TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
+            SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
         assertTrue(
-            TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").equalsIgnoreCase(con.getCatalog()));
+            SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE")
+                .equalsIgnoreCase(con.getCatalog()));
         assertTrue(
-            TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE")
+            SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE")
                 .equalsIgnoreCase(session.getWarehouse()));
         try (Statement statement = con.createStatement()) {
           // Set TIMESTAMP_OUTPUT_FORMAT (which is a session parameter) to check its value later
@@ -1633,12 +1633,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
               // Assert database, schema, and warehouse have the same values as before even though
               // the select statement will return no parameters or metadata
               assertTrue(
-                  TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
+                  SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA")
+                      .equalsIgnoreCase(con.getSchema()));
               assertTrue(
-                  TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE")
+                  SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE")
                       .equalsIgnoreCase(con.getCatalog()));
               assertTrue(
-                  TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE")
+                  SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE")
                       .equalsIgnoreCase(session.getWarehouse()));
               // Assert session parameter TIMESTAMP_OUTPUT_FORMAT has the same value as before the
               // select statement
@@ -1657,7 +1658,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           Statement statement = con.createStatement()) {
         statement.execute(
             "alter account "
-                + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+                + SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
                 + " unset ENABLE_SNOW_654741_FOR_TESTING");
       }
     }
@@ -1677,7 +1678,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       Statement statement = con.createStatement();
       statement.execute(
           "alter account "
-              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+              + SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
               + " set ENABLE_SNOW_654741_FOR_TESTING=true");
     }
     try (Connection con = getConnection();
@@ -1723,7 +1724,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         Statement statement = con2.createStatement()) {
       statement.execute(
           "alter account "
-              + TestUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
+              + SnowflakeUtil.systemGetEnv("SNOWFLAKE_TEST_ACCOUNT")
               + " unset ENABLE_SNOW_654741_FOR_TESTING");
     }
   }
