@@ -13,6 +13,7 @@ import static org.junit.Assert.fail;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Time;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -142,10 +143,10 @@ public class LoaderIT extends LoaderBase {
         errorMessage = listener.getErrors().get(0).getException().toString();
       }
       assertThat(String.format("Error: %s", errorMessage), listener.getErrorCount(), equalTo(0));
+      Statement statement = testConnection.createStatement();
+      statement.executeQuery("alter session set JDBC_USE_SESSION_TIMEZONE=FALSE");
       ResultSet rs =
-          testConnection
-              .createStatement()
-              .executeQuery(String.format("SELECT c1, c2 FROM %s LIMIT 1", tableName));
+          statement.executeQuery(String.format("SELECT c1, c2 FROM %s LIMIT 1", tableName));
       rs.next();
       Time rsTm = rs.getTime(1);
       Date rsDt = rs.getDate(2);
