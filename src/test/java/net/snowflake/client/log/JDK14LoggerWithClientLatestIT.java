@@ -99,29 +99,26 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   }
 
   @Test
-  public void testJDK14LoggingWithMissingLogPathClientConfig() throws IOException {
+  public void testJDK14LoggingWithMissingLogPathClientConfig() throws Exception {
     Path configFilePath = Paths.get("config.json");
     String configJson = "{\"common\":{\"log_level\":\"debug\"}}";
 
     Path homeLogPath = Paths.get(homePath, "jdbc");
-    try {
-      Files.write(configFilePath, configJson.getBytes());
-      Properties properties = new Properties();
-      properties.put("client_config_file", configFilePath.toString());
-      Connection connection = getConnection(properties);
-      connection.createStatement().executeQuery("select 1");
+    Files.write(configFilePath, configJson.getBytes());
+    Properties properties = new Properties();
+    properties.put("client_config_file", configFilePath.toString());
+    try (Connection connection = getConnection(properties);
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.executeQuery("select 1");
 
-      File file = new File(homeLogPath.toString());
-      assertTrue(file.exists());
-    } catch (IOException e) {
-      fail("testJDK14LoggingWithMissingLogPathClientConfig failed");
-    } catch (SQLException e) {
-      fail("testJDK14LoggingWithMissingLogPathClientConfig failed");
-    } catch (Exception e) {
-      fail("testJDK14LoggingWithMissingLogPathClientConfig failed");
-    } finally {
-      Files.deleteIfExists(configFilePath);
-      FileUtils.deleteDirectory(new File(homeLogPath.toString()));
+        File file = new File(homeLogPath.toString());
+        assertTrue(file.exists());
+
+      } finally {
+        Files.deleteIfExists(configFilePath);
+        FileUtils.deleteDirectory(new File(homeLogPath.toString()));
+      }
     }
   }
 
@@ -131,11 +128,11 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
     Path configFilePath = Paths.get("config.json");
     String configJson = "{\"common\":{\"log_level\":\"debug\"}}";
-    try {
-      Files.write(configFilePath, configJson.getBytes());
-      Properties properties = new Properties();
-      properties.put("client_config_file", configFilePath.toString());
-      Connection connection = getConnection(properties);
+    Files.write(configFilePath, configJson.getBytes());
+    Properties properties = new Properties();
+    properties.put("client_config_file", configFilePath.toString());
+    try (Connection connection = getConnection(properties);
+        Statement statement = connection.createStatement()) {
 
       fail("testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig failed");
     } catch (SnowflakeSQLLoggedException e) {

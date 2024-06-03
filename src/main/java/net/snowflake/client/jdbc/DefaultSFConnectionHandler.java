@@ -286,7 +286,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
             || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)
             || folderPermissions.contains(PosixFilePermission.OTHERS_READ)
             || folderPermissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
-          logger.info(
+          logger.warn(
               "Access permission for the logs directory '{}' is currently {} and is potentially "
                   + "accessible to users other than the owner of the logs directory.",
               path.toString(),
@@ -297,7 +297,7 @@ public class DefaultSFConnectionHandler implements SFConnectionHandler {
             sfSession,
             ErrorCode.INTERNAL_ERROR,
             String.format(
-                "Un-able to get permissions of log directory %s ,%s",
+                "Unable to get permissions of log directory %s ,%s",
                 path.toString(), ex.getMessage(), ex.getCause()));
       }
     }
