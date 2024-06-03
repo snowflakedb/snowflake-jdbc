@@ -388,7 +388,7 @@ public class AbstractDriverIT {
     URL url = classLoader.getResource(fileName);
     if (url != null) {
       try {
-        return Paths.get(url.toURI()).toFile().getAbsolutePath();
+        return Paths.get(url.toURI()).toAbsolutePath().toString();
       } catch (URISyntaxException ex) {
         throw new RuntimeException("Unable to get absolute path: " + fileName);
       }
