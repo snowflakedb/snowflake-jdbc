@@ -84,25 +84,12 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testSimpleConnectionUsingFileConfigurationUserPassword() throws SQLException {
-    SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "aws-preprod");
-    Connection con = SnowflakeDriver.INSTANCE.connect();
-    try (Statement statement = con.createStatement();
-        ResultSet resultSet = statement.executeQuery("show parameters")) {
-      assertTrue(resultSet.next());
-      assertFalse(con.isClosed());
-    }
-    con.close();
-    assertTrue(con.isClosed());
-    con.close(); // ensure no exception
-  }
-
-  @Test
   public void testThrowExceptionIfConfigurationDoesNotExist() {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "non-existent");
     assertThrows(SnowflakeSQLException.class, () -> SnowflakeDriver.INSTANCE.connect());
   }
 
+  @Ignore // This test could be run only on local environment where file connection.toml is configured
   @Test
   public void testSimpleConnectionUsingFileConfigurationToken() throws SQLException {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "aws-oauth");
@@ -117,6 +104,7 @@ public class ConnectionIT extends BaseJDBCTest {
     con.close(); // ensure no exception
   }
 
+  @Ignore // This test could be run only on local environment where file connection.toml is configured
   @Test
   public void testSimpleConnectionUsingFileConfigurationTokenFromFile() throws SQLException {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "aws-oauth-file");
