@@ -236,8 +236,8 @@
           <showWarnings>true</showWarnings>
           <executable>javac</executable>
           <fork>true</fork>
-          <source>8</source>
-          <target>8</target>
+          <source>9</source>
+          <target>9</target>
           <compilerArgs>
             <arg>-Xlint:all,-path</arg>
           </compilerArgs>
