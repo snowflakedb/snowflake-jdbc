@@ -48,7 +48,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                cloud: [ 'AWS', 'GCP' ]
+                cloud: [ 'AWS', 'AZURE' ]
                 javaVersion: [ '8', '11', '17']
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
                 additionalMavenProfile: ['', '-Dthin-jar']
@@ -85,7 +85,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
-                cloud: [ 'AWS', 'GCP' ]
+                cloud: [ 'AWS', 'AZURE' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
@@ -107,7 +107,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ 'jdbc-centos7-openjdk8' ]
-                cloud: [ 'AWS' ]
+                cloud: [ 'AWS', 'AZURE' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader']
                 is_old_driver: ['true']
         steps:
