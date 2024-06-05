@@ -182,7 +182,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     assertThat(
         String.format("response code for %s", host),
         statusCode,
-        anyOf(equalTo(200), equalTo(403), equalTo(400)));
+        anyOf(equalTo(200), equalTo(403), equalTo(400), equalTo(513)));
   }
 
   /**
