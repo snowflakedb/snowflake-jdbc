@@ -717,7 +717,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Ignore // This test could be run only on local environment where file connection.toml is
-          // configured
+  // configured
   @Test
   public void testSimpleConnectionUsingFileConfigurationToken() throws SQLException {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "aws-oauth");
@@ -733,7 +733,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Ignore // This test could be run only on local environment where file connection.toml is
-          // configured
+  // configured
   @Test
   public void testSimpleConnectionUsingFileConfigurationTokenFromFile() throws SQLException {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "aws-oauth-file");
