@@ -27,7 +27,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -811,11 +810,60 @@ public class ResultSetLatestIT extends ResultSet0IT {
   public void testNewFeaturesNotSupported() throws SQLException {
     try (Connection con = init();
         ResultSet rs = con.createStatement().executeQuery("select 1")) {
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          rs.unwrap(SnowflakeResultSet.class)::getQueryErrorMessage);
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          rs.unwrap(SnowflakeResultSet.class)::getStatus);
+      expectSnowflakeLoggedFeatureNotSupportedException(() -> rs.getArray(1));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getList(1, String.class));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getArray(1, String.class));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getMap(1, String.class));
+
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getUnicodeStream(1));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getUnicodeStream("column1"));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateAsciiStream("column1", new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateBinaryStream("column1", new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateCharacterStream("column1", new FakeReader(), 5L));
+
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateAsciiStream(1, new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateBinaryStream(1, new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateCharacterStream(1, new FakeReader(), 5L));
+    }
+  }
+
+  @Test
+  public void testInvalidUnWrap() throws SQLException {
+    try (Connection con = init();
+        ResultSet rs = con.createStatement().executeQuery("select 1")) {
       try {
-        rs.unwrap(SnowflakeResultSet.class).getQueryErrorMessage();
-      } catch (SQLFeatureNotSupportedException ex) {
-        // catch SQLFeatureNotSupportedException
-        assertEquals("This function is only supported for asynchronous queries.", ex.getMessage());
+        rs.unwrap(SnowflakeUtil.class);
+      } catch (SQLException ex) {
+        assertEquals(
+            ex.getMessage(),
+            "net.snowflake.client.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.jdbc.SnowflakeUtil");
       }
     }
   }
