@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
@@ -35,6 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -706,6 +708,16 @@ public class SnowflakeUtil {
       field.setAccessible(true);
       Map<String, String> writableEnv = (Map<String, String>) field.get(env);
       writableEnv.put(key, value);
+
+      if (Constants.getOS() == Constants.OS.WINDOWS) {
+        Class<?> pe = Class.forName("java.lang.ProcessEnvironment");
+        Method getenv = pe.getDeclaredMethod("getenv", String.class);
+        getenv.setAccessible(true);
+        Field props = pe.getDeclaredField("theCaseInsensitiveEnvironment");
+        props.setAccessible(true);
+        Map<String, String> writableEnvForGet = (Map<String, String>) props.get(null);
+        writableEnvForGet.put(key, value);
+      }
     } catch (Exception e) {
       System.out.println("Failed to set value");
       logger.error(
