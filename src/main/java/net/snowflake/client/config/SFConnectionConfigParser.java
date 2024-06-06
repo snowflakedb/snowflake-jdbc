@@ -21,6 +21,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 @SnowflakeJdbcInternalApi
 public class SFConnectionConfigParser {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFConnectionConfigParser.class);
+  private static TomlMapper mapper = new TomlMapper();
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
       String defaultConnectionName) throws SnowflakeSQLException {
@@ -28,16 +29,8 @@ public class SFConnectionConfigParser {
         Optional.ofNullable(systemGetEnv("SNOWFLAKE_HOME"))
             .orElse(Paths.get(System.getProperty("user.home"), ".snowflake").toString());
     Path configFilePath = Paths.get(configDirectory, "connections.toml");
-    logger.debug("Reading connection parameters from file: " + configFilePath);
-    TomlMapper mapper = new TomlMapper();
-    Map<String, Map> data;
-    try {
-      data = mapper.readValue(new File(configFilePath.toUri()), Map.class);
-    } catch (IOException e) {
-      throw new SnowflakeSQLException(
-          "Problem during reading a configuration file: " + e.getMessage());
-    }
-
+    logger.debug("Reading connectioxn parameters from file: {}", configFilePath);
+    Map<String, Map> data = readParametersMap(configFilePath);
     Map<String, String> defaultConnectionParametersMap = data.get(defaultConnectionName);
     if (defaultConnectionParametersMap == null || defaultConnectionParametersMap.isEmpty()) {
       throw new SnowflakeSQLException(
@@ -46,6 +39,16 @@ public class SFConnectionConfigParser {
     }
 
     return defaultConnectionParametersMap;
+  }
+
+  private static Map<String, Map> readParametersMap(Path configFilePath)
+      throws SnowflakeSQLException {
+    try {
+      return mapper.readValue(new File(configFilePath.toUri()), Map.class);
+    } catch (IOException e) {
+      throw new SnowflakeSQLException(
+          "Problem during reading a configuration file: " + e.getMessage());
+    }
   }
 
   public static ConnectionParameters buildConnectionParameters(String defaultConnectionName)
