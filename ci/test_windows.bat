@@ -10,7 +10,7 @@ pip install -U snowflake-connector-python
 
 cd %GITHUB_WORKSPACE%
 
-set JDBC_TEST_CLOUD_PROVIDER="%CLOUD_PROVIDER%"
+set JDBC_TEST_CLOUD_PROVIDER=%CLOUD_PROVIDER%
 if "%CLOUD_PROVIDER%"=="AZURE" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_azure.json.gpg
 ) else if "%CLOUD_PROVIDER%"=="GCP" (
@@ -49,6 +49,8 @@ echo [INFO] Database:  %SNOWFLAKE_TEST_DATABASE%
 echo [INFO] Schema:    %SNOWFLAKE_TEST_SCHEMA%
 echo [INFO] Warehouse: %SNOWFLAKE_TEST_WAREHOUSE%
 echo [INFO] Role:      %SNOWFLAKE_TEST_ROLE%
+echo [INFO] PROVIDER:  %JDBC_TEST_CLOUD_PROVIDER%
+
 
 echo [INFO] Creating schema %SNOWFLAKE_TEST_SCHEMA%
 pushd %GITHUB_WORKSPACE%\ci\container
