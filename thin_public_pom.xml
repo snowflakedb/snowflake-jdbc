@@ -33,7 +33,7 @@
   </scm>
 
   <properties>
-    <apache.httpclient.version>4.5.14</apache.httpclient.version>
+    <apache.httpclient.version>4.5.17</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
     <awssdk.version>1.12.501</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
@@ -239,7 +239,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>${apache.httpclient.version}</version>
+      <version>4.5.17</version>
     </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>

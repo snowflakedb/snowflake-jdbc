@@ -17,7 +17,7 @@
     <apache.commons.compress.version>1.21</apache.commons.compress.version>
     <apache.commons.lang3.version>3.12.0</apache.commons.lang3.version>
     <apache.commons.text.version>1.10.0</apache.commons.text.version>
-    <apache.httpclient.version>4.5.14</apache.httpclient.version>
+    <apache.httpclient.version>4.5.17</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
     <arrow.version>10.0.1</arrow.version>
     <asm.version>9.3</asm.version>
@@ -318,7 +318,7 @@
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpclient</artifactId>
-        <version>${apache.httpclient.version}</version>
+        <version>4.5.17</version>
       </dependency>
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
