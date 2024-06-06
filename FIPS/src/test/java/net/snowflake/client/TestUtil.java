@@ -47,11 +47,7 @@ public class TestUtil {
    */
   public static String systemGetEnv(String env) {
     try {
-      String value = System.getenv(env);
-      if(value == null) {
-        value = System.getenv().getOrDefault(env, null);
-      }
-      return value;
+      return System.getenv(env);
     } catch (SecurityException ex) {
       logger.debug(
           "Failed to get environment variable {}. Security exception raised: {}",
