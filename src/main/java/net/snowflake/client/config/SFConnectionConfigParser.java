@@ -51,33 +51,19 @@ public class SFConnectionConfigParser {
     }
   }
 
-  public static ConnectionParameters buildConnectionParameters(String defaultConnectionName)
-      throws SnowflakeSQLException {
+  public static ConnectionParameters buildConnectionParameters() throws SnowflakeSQLException {
+    String defaultConnectionName =
+        Optional.ofNullable(systemGetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME")).orElse("default");
     Map<String, String> fileConnectionConfiguration =
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
     Properties conectionProperties = new Properties();
     conectionProperties.putAll(fileConnectionConfiguration);
 
-    String host =
+    String url =
         Optional.ofNullable(fileConnectionConfiguration.get("account"))
-            .map(ac -> ac + ".snowflakecomputing.com")
-            .orElseThrow(
-                () ->
-                    new SnowflakeSQLException(
-                        "Connection configuration is invalid. Account must be set."));
-
-    String port = fileConnectionConfiguration.get("port");
-    ;
-    String protocol = fileConnectionConfiguration.get("protocol");
-    if (Strings.isNullOrEmpty(port)) {
-      if ("https".equals(protocol)) {
-        port = "443";
-      } else {
-        port = "80";
-      }
-    }
-    String uri = String.format("jdbc:snowflake://%s:%s", host, port);
+            .map(ac -> createUrl(ac, fileConnectionConfiguration))
+            .orElse(null);
 
     if (fileConnectionConfiguration.containsKey("token_file_path")) {
       Path path =
@@ -88,6 +74,8 @@ public class SFConnectionConfigParser {
         String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
         if (!token.isEmpty()) {
           putPropertyIfNotNull(conectionProperties, "token", token.trim());
+        } else {
+          logger.warn("The token has empty value");
         }
       } catch (Exception e) {
         throw new SnowflakeSQLException(
@@ -95,7 +83,21 @@ public class SFConnectionConfigParser {
       }
     }
 
-    return new ConnectionParameters(uri, conectionProperties);
+    return new ConnectionParameters(url, conectionProperties);
+  }
+
+  private static String createUrl(String ac, Map<String, String> fileConnectionConfiguration) {
+    String host = String.format("%s.snowflakecomputing.com", ac);
+    String port = fileConnectionConfiguration.get("port");
+    String protocol = fileConnectionConfiguration.get("protocol");
+    if (Strings.isNullOrEmpty(port)) {
+      if ("https".equals(protocol)) {
+        port = "443";
+      } else {
+        port = "80";
+      }
+    }
+    return String.format("jdbc:snowflake://%s:%s", host, port);
   }
 
   private static void putPropertyIfNotNull(Properties props, Object key, Object value) {

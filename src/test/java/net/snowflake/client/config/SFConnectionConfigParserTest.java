@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,20 +31,26 @@ public class SFConnectionConfigParserTest {
     prepareConnectionConfigurationTomlFile();
   }
 
+  @After
+  public void close() throws IOException {
+    SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_HOME");
+    SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME");
+    Files.delete(tempPath);
+  }
+
   @Test
   public void testLoadSFConnectionConfigWrongConfigurationName() {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_HOME", tempPath.toString());
+    SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "unknown");
     assertThrows(
-        SnowflakeSQLException.class,
-        () -> SFConnectionConfigParser.buildConnectionParameters("unknown"));
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 
   @Test
   public void testLoadSFConnectionConfigInValidPath() {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_HOME", Paths.get("unknownPath").toString());
     assertThrows(
-        SnowflakeSQLException.class,
-        () -> SFConnectionConfigParser.buildConnectionParameters("default"));
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 
   @Test
@@ -54,7 +61,7 @@ public class SFConnectionConfigParserTest {
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()));
 
-    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters("default");
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
     assertNotNull(data);
     assertEquals("token_from_file", data.getParams().get("token"));
   }
@@ -76,9 +83,10 @@ public class SFConnectionConfigParserTest {
     tomlMapper.writeValue(file, configuration);
 
     if (configurationParams.containsKey("token_file_path")) {
-      FileWriter writer = new FileWriter(configurationParams.get("token_file_path").toString());
-      writer.write("token_from_file");
-      writer.close();
+      try (FileWriter writer =
+          new FileWriter(configurationParams.get("token_file_path").toString()); ) {
+        writer.write("token_from_file");
+      }
     }
   }
 
