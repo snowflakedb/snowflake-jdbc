@@ -62,7 +62,7 @@ public class StatementIT extends BaseJDBCTest {
     }
   }
 
-  @Ignore("Not working for setFetchSize")
+  @Ignore("Not working for setFetchSize ")
   @Test
   public void testFetchSize() throws SQLException {
     try (Connection connection = getConnection();
