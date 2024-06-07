@@ -10,6 +10,9 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -29,7 +32,7 @@ public class SFConnectionConfigParser {
         Optional.ofNullable(systemGetEnv("SNOWFLAKE_HOME"))
             .orElse(Paths.get(System.getProperty("user.home"), ".snowflake").toString());
     Path configFilePath = Paths.get(configDirectory, "connections.toml");
-    logger.debug("Reading connectioxn parameters from file: {}", configFilePath);
+    logger.debug("Reading connection parameters from file: {}", configFilePath);
     Map<String, Map> data = readParametersMap(configFilePath);
     Map<String, String> defaultConnectionParametersMap = data.get(defaultConnectionName);
     if (defaultConnectionParametersMap == null || defaultConnectionParametersMap.isEmpty()) {
@@ -44,10 +47,27 @@ public class SFConnectionConfigParser {
   private static Map<String, Map> readParametersMap(Path configFilePath)
       throws SnowflakeSQLException {
     try {
-      return mapper.readValue(new File(configFilePath.toUri()), Map.class);
+      File file = new File(configFilePath.toUri());
+      varifyFilePermissionSecure(configFilePath);
+      return mapper.readValue(file, Map.class);
     } catch (IOException e) {
       throw new SnowflakeSQLException(
           "Problem during reading a configuration file: " + e.getMessage());
+    }
+  }
+
+  private static void varifyFilePermissionSecure(Path configFilePath)
+      throws IOException, SnowflakeSQLException {
+    PosixFileAttributeView posixFileAttributeView =
+        Files.getFileAttributeView(configFilePath, PosixFileAttributeView.class);
+    if (!posixFileAttributeView.readAttributes().permissions().stream()
+        .allMatch(
+            o ->
+                Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
+                    .contains(o))) {
+      logger.error("Reading from file {} is not secure", configFilePath);
+      throw new SnowflakeSQLException(
+          String.format("Reading from file %s is not secure", configFilePath));
     }
   }
 
@@ -70,6 +90,7 @@ public class SFConnectionConfigParser {
           Paths.get(
               Optional.ofNullable(fileConnectionConfiguration.get("token_file_path"))
                   .orElse("/snowflake/session/token"));
+      logger.debug("Token used in connect is read from file: {}", path);
       try {
         String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
         if (!token.isEmpty()) {

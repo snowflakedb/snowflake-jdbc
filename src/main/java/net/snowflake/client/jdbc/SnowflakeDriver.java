@@ -203,7 +203,7 @@ public class SnowflakeDriver implements Driver {
    */
   @Override
   public Connection connect(String url, Properties info) throws SQLException {
-    ConnectionParameters connectionParameters = readFileConnectionParametersIfNull(url, info);
+    ConnectionParameters connectionParameters = overrideByFileConnectionParametersIfNull(url, info);
     if (connectionParameters.getUrl() == null) {
       // expected return format per the JDBC spec for java.sql.Driver#connect()
       throw new SnowflakeSQLException("Unable to connect to url of 'null'.");
@@ -226,8 +226,8 @@ public class SnowflakeDriver implements Driver {
     return connect(null, null);
   }
 
-  private static ConnectionParameters readFileConnectionParametersIfNull(String url, Properties info)
-      throws SnowflakeSQLException {
+  private static ConnectionParameters overrideByFileConnectionParametersIfNull(
+      String url, Properties info) throws SnowflakeSQLException {
     if (url == null) {
       // Connect using connection configuration file
       return SFConnectionConfigParser.buildConnectionParameters();
