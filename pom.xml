@@ -887,13 +887,6 @@
                       <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
                     </relocation>
                     <relocation>
-                      <pattern>com.sun</pattern>
-                      <shadedPattern>${shadeBase}.com.sun</shadedPattern>
-                      <excludes>
-                        <exclude>com.sun.jna.**</exclude>
-                      </excludes>
-                    </relocation>
-                    <relocation>
                       <pattern>io.netty</pattern>
                       <shadedPattern>${shadeBase}.io.netty</shadedPattern>
                     </relocation>
