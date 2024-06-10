@@ -272,6 +272,7 @@ public class RestRequestTest {
     testCases.add(new TestCase(509, false, false));
     testCases.add(new TestCase(510, false, false));
     testCases.add(new TestCase(511, false, false));
+    testCases.add(new TestCase(513, false, false));
     // do retry on HTTP 403 option
     testCases.add(new TestCase(100, true, true));
     testCases.add(new TestCase(101, true, true));
@@ -325,6 +326,7 @@ public class RestRequestTest {
     testCases.add(new TestCase(509, true, false));
     testCases.add(new TestCase(510, true, false));
     testCases.add(new TestCase(511, true, false));
+    testCases.add(new TestCase(513, true, false));
 
     for (TestCase t : testCases) {
       if (t.result) {

@@ -427,7 +427,7 @@ public class SFLoginInput {
     URL url;
     try {
       if (!serverUrl.startsWith("http")) {
-        url = new URL("http://" + serverUrl);
+        url = new URL("https://" + serverUrl);
       } else {
         url = new URL(serverUrl);
       }

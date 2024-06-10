@@ -122,6 +122,8 @@ public class SFClientConfigParser {
       filePath = filePath.substring(1);
     } else if (filePath.startsWith("file:\\")) {
       filePath = filePath.substring(6);
+    } else if (filePath.startsWith("nested:\\")) {
+      filePath = filePath.substring(8);
     } else if (filePath.startsWith("\\")) {
       filePath = filePath.substring(2);
     } else if (matcher.find() && matcher.start() != 0) {
