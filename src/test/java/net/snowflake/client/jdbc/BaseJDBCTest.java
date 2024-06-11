@@ -35,6 +35,7 @@ import java.util.UUID;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.core.SFException;
 import net.snowflake.common.core.SqlState;
 
 public class BaseJDBCTest extends AbstractDriverIT {
@@ -43,6 +44,10 @@ public class BaseJDBCTest extends AbstractDriverIT {
 
   protected interface MethodRaisesSQLException {
     void run() throws SQLException;
+  }
+
+  protected interface MethodRaisesSFException {
+    void run() throws SFException, SQLException;
   }
 
   protected interface MethodRaisesSQLClientInfoException {
@@ -91,6 +96,15 @@ public class BaseJDBCTest extends AbstractDriverIT {
       fail("must raise exception");
     } catch (SQLException ex) {
       assertTrue(ex instanceof SQLFeatureNotSupportedException);
+    }
+  }
+
+  protected void expectFeatureSFException(MethodRaisesSFException f) {
+    try {
+      f.run();
+      fail("must raise exception");
+    } catch (SFException | SQLException ex ) {
+      assertTrue(ex instanceof SFException);
     }
   }
 
