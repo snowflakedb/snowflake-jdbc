@@ -40,23 +40,6 @@ public class SFClientConfigParserTest {
   }
 
   @Test
-  public void testloadSFClientConfigValidPath() {
-    Path configFilePath = Paths.get("config.json");
-    try {
-      Files.write(configFilePath, CONFIG_JSON.getBytes());
-      SFClientConfig actualConfig =
-          SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
-      assertEquals("info", actualConfig.getCommonProps().getLogLevel());
-      assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
-      assertEquals("config.json", actualConfig.getConfigFilePath());
-
-      Files.delete(configFilePath);
-    } catch (IOException e) {
-      fail("testloadSFClientConfigValidPath failed");
-    }
-  }
-
-  @Test
   public void testLoadSFClientConfigValidPath() throws IOException {
     configFilePath = Paths.get("config.json");
     Files.write(configFilePath, CONFIG_JSON.getBytes());
@@ -64,6 +47,7 @@ public class SFClientConfigParserTest {
         SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
     assertEquals("info", actualConfig.getCommonProps().getLogLevel());
     assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
+    assertEquals("config.json", actualConfig.getConfigFilePath());
   }
 
   @Test
