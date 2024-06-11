@@ -10,8 +10,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
@@ -1032,12 +1032,10 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Test
   public void testSFBaseSession() throws SQLException {
-    try(Connection con = getConnection()) {
+    try (Connection con = getConnection()) {
       assertNull(con.unwrap(SFBaseSession.class).getServerUrl());
-        expectFeatureSFException(() ->
-                con.unwrap(SFBaseSession.class).addProperty("user","a"));
-
-      }
+      expectFeatureSFException(() -> con.unwrap(SFBaseSession.class).addProperty("user", "a"));
+    }
   }
 
   private class ConcurrentConnections implements Runnable {

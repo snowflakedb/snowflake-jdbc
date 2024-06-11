@@ -103,7 +103,7 @@ public class BaseJDBCTest extends AbstractDriverIT {
     try {
       f.run();
       fail("must raise exception");
-    } catch (SFException | SQLException ex ) {
+    } catch (SFException | SQLException ex) {
       assertTrue(ex instanceof SFException);
     }
   }

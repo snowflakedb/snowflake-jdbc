@@ -10,8 +10,6 @@ import static org.mockito.Mockito.*;
 
 import org.junit.Test;
 
-import java.sql.Timestamp;
-
 public class QueryContextCacheTest {
   private QueryContextCache qcc = null;
   private long BASE_READ_TIMESTAMP = 1668727958;
@@ -232,13 +230,13 @@ public class QueryContextCacheTest {
     QueryContextEntryDTO queryContextEntryDTO = new QueryContextEntryDTO();
     OpaqueContextDTO opaqueContextDTO = mock(OpaqueContextDTO.class);
     queryContextEntryDTO.setId(1);
-    assertEquals(queryContextEntryDTO.getId(),1);
+    assertEquals(queryContextEntryDTO.getId(), 1);
     queryContextEntryDTO.setTimestamp(2);
-    assertEquals(queryContextEntryDTO.getTimestamp(),2);
+    assertEquals(queryContextEntryDTO.getTimestamp(), 2);
     queryContextEntryDTO.setPriority(3);
-    assertEquals(queryContextEntryDTO.getPriority(),3);
+    assertEquals(queryContextEntryDTO.getPriority(), 3);
     queryContextEntryDTO.setContext(opaqueContextDTO);
-    assertEquals(queryContextEntryDTO.getContext(),opaqueContextDTO);
+    assertEquals(queryContextEntryDTO.getContext(), opaqueContextDTO);
   }
 
   @Test
@@ -246,13 +244,13 @@ public class QueryContextCacheTest {
     QueryContextEntryDTO queryContextEntryDTO = new QueryContextEntryDTO();
     OpaqueContextDTO opaqueContextDTO = mock(OpaqueContextDTO.class);
     queryContextEntryDTO.setId(1);
-    assertEquals(queryContextEntryDTO.getId(),1);
+    assertEquals(queryContextEntryDTO.getId(), 1);
     queryContextEntryDTO.setTimestamp(2);
-    assertEquals(queryContextEntryDTO.getTimestamp(),2);
+    assertEquals(queryContextEntryDTO.getTimestamp(), 2);
     queryContextEntryDTO.setPriority(3);
-    assertEquals(queryContextEntryDTO.getPriority(),3);
+    assertEquals(queryContextEntryDTO.getPriority(), 3);
     queryContextEntryDTO.setContext(opaqueContextDTO);
-    assertEquals(queryContextEntryDTO.getContext(),opaqueContextDTO);
+    assertEquals(queryContextEntryDTO.getContext(), opaqueContextDTO);
   }
 
   private void assertCacheData() {

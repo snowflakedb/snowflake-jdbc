@@ -3,10 +3,9 @@ package net.snowflake.client.jdbc.cloud.storage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.sql.Connection;
 import java.sql.SQLException;
-
-import com.microsoft.azure.storage.blob.ListBlobItem;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.core.SFSession;
@@ -44,8 +43,8 @@ public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
     Iterable<ListBlobItem> mockList = null;
     AzureObjectSummariesIterator iterator = new AzureObjectSummariesIterator(mockList);
     AzureObjectSummariesIterator spyIterator = spy(iterator);
-    UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class, () -> spyIterator.remove());
+    UnsupportedOperationException ex =
+        assertThrows(UnsupportedOperationException.class, () -> spyIterator.remove());
     assertEquals(ex.getMessage(), "remove() method not supported");
-
   }
 }
