@@ -709,6 +709,8 @@ public class SnowflakeUtil {
       Map<String, String> writableEnv = (Map<String, String>) field.get(env);
       writableEnv.put(key, value);
 
+      // To an environment variable is set on Windows, it uses a different map to store the values
+      // when the system.getenv(VAR_NAME) is used its required to update in this additional place.
       if (Constants.getOS() == Constants.OS.WINDOWS) {
         Class<?> pe = Class.forName("java.lang.ProcessEnvironment");
         Method getenv = pe.getDeclaredMethod("getenv", String.class);
