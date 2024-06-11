@@ -54,8 +54,8 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
     } catch (SnowflakeSQLException exception) {
       // verify that request was retried twice before reaching max retries
       Mockito.verify(snowflakeChunkDownloaderSpy, Mockito.times(2)).getResultStreamProvider();
-      assertTrue(exception.getMessage().contains("Max retry reached for the download of #chunk0"));
-      assertTrue(exception.getMessage().contains("retry=2"));
+      assertTrue(exception.getMessage().contains("Max retry reached for the download of chunk#0"));
+      assertTrue(exception.getMessage().contains("retry: 2"));
     }
   }
 }

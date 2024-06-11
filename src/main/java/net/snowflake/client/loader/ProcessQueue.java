@@ -20,14 +20,14 @@ import net.snowflake.client.log.SFLoggerFactory;
  * BufferStage class
  */
 public class ProcessQueue implements Runnable {
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(ProcessQueue.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ProcessQueue.class);
 
   private final Thread _thread;
 
   private final StreamLoader _loader;
 
   public ProcessQueue(StreamLoader loader) {
-    LOGGER.debug("", false);
+    logger.debug("", false);
 
     _loader = loader;
     _thread = new Thread(this);
@@ -73,10 +73,10 @@ public class ProcessQueue implements Runnable {
           if (_loader.isAborted()) {
             if (!_loader._preserveStageFile) {
               currentCommand = "RM '" + remoteStage + "'";
-              LOGGER.debug(currentCommand, true);
+              logger.debug(currentCommand, true);
               conn.createStatement().execute(currentCommand);
             } else {
-              LOGGER.debug(
+              logger.debug(
                   "Error occurred. The remote stage is preserved for "
                       + "further investigation: {}",
                   remoteStage);
@@ -97,7 +97,7 @@ public class ProcessQueue implements Runnable {
           String lastErrorRow = "";
 
           // Create temp table to load data (may have a subset of columns)
-          LOGGER.debug("Creating Temporary Table: name={}", stage.getId());
+          logger.debug("Creating Temporary Table: name={}", stage.getId());
           currentState = State.CREATE_TEMP_TABLE;
           List<String> allColumns = getAllColumns(conn);
 
@@ -124,7 +124,7 @@ public class ProcessQueue implements Runnable {
           }
 
           // Load data there
-          LOGGER.debug(
+          logger.debug(
               "COPY data in the stage to table:" + " stage={}," + " name={}",
               remoteStage,
               stage.getId());
@@ -152,7 +152,7 @@ public class ProcessQueue implements Runnable {
           }
 
           int errorRecordCount = toIntExact(parsed - loaded);
-          LOGGER.debug(
+          logger.debug(
               "errorRecordCount=[{}]," + " parsed=[{}]," + " loaded=[{}]",
               errorRecordCount,
               parsed,
@@ -163,13 +163,13 @@ public class ProcessQueue implements Runnable {
 
           if (loaded == stage.getRowCount()) {
             // successfully loaded everything
-            LOGGER.debug(
+            logger.debug(
                 "COPY command successfully finished:" + " stage={}," + " name={}",
                 remoteStage,
                 stage.getId());
             listener.addErrorCount(0);
           } else {
-            LOGGER.debug(
+            logger.debug(
                 "Found errors in COPY command:" + " stage={}," + " name={}",
                 remoteStage,
                 stage.getId());
@@ -204,7 +204,7 @@ public class ProcessQueue implements Runnable {
                   dataError = loadError.getException();
                 }
               }
-              LOGGER.debug("errorCount: {}", errorCount);
+              logger.debug("errorCount: {}", errorCount);
 
               listener.addErrorCount(errorCount);
               if (listener.throwOnError()) {
@@ -212,10 +212,10 @@ public class ProcessQueue implements Runnable {
                 _loader.abort(dataError);
 
                 if (!_loader._preserveStageFile) {
-                  LOGGER.debug("RM: {}", remoteStage);
+                  logger.debug("RM: {}", remoteStage);
                   conn.createStatement().execute("RM '" + remoteStage + "'");
                 } else {
-                  LOGGER.error(
+                  logger.error(
                       "Error occurred. The remote stage is preserved for "
                           + "further investigation: {}",
                       remoteStage);
@@ -320,7 +320,7 @@ public class ProcessQueue implements Runnable {
           }
           currentCommand = loadStatement;
 
-          LOGGER.debug("Load Statement: {}", loadStatement);
+          logger.debug("Load Statement: {}", loadStatement);
           Statement s = conn.createStatement();
           s.execute(loadStatement);
 
@@ -357,13 +357,13 @@ public class ProcessQueue implements Runnable {
           }
         }
       } catch (InterruptedException ex) {
-        LOGGER.error("Interrupted", ex);
+        logger.error("Interrupted", ex);
         break;
       } catch (Exception ex) {
         String msg =
             String.format("State: %s, %s, %s", currentState, currentCommand, ex.getMessage());
         _loader.abort(new Loader.ConnectionError(msg, Utils.getCause(ex)));
-        LOGGER.error(msg, true);
+        logger.error(msg, true);
         if (stage == null || stage.isTerminate()) {
           break;
         }
@@ -406,11 +406,11 @@ public class ProcessQueue implements Runnable {
   }
 
   public void join() {
-    LOGGER.debug("", false);
+    logger.trace("Joining threads", false);
     try {
       _thread.join(0);
     } catch (InterruptedException ex) {
-      LOGGER.debug("Exception: ", ex);
+      logger.debug("Exception: ", ex);
     }
   }
 
