@@ -152,13 +152,6 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
     expectResultSetAlreadyClosedException(resultSet::getStatement);
   }
 
-  private void checkeNotSupportedMethodsinAlreadyClosedStatus(SnowflakeResultSetV1 resultSet)
-      throws Throwable {
-    expectSnowflakeLoggedFeatureNotSupportedException(resultSet::getStatus);
-    expectSnowflakeLoggedFeatureNotSupportedException(resultSet::getStatusV2);
-    expectSnowflakeLoggedFeatureNotSupportedException(() -> resultSet.getArray(-1));
-  }
-
   /**
    * These tests are specific to an empty resultset object
    *
