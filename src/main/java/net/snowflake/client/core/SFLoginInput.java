@@ -426,7 +426,11 @@ public class SFLoginInput {
   String getHostFromServerUrl() throws SFException {
     URL url;
     try {
-      url = new URL(serverUrl);
+      if (!serverUrl.startsWith("http")) {
+        url = new URL("https://" + serverUrl);
+      } else {
+        url = new URL(serverUrl);
+      }
     } catch (MalformedURLException e) {
       throw new SFException(
           e, ErrorCode.INTERNAL_ERROR, "Invalid serverUrl for retrieving host name");

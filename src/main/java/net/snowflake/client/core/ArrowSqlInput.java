@@ -4,7 +4,6 @@
 
 package net.snowflake.client.core;
 
-import static net.snowflake.client.core.SFResultSet.logger;
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
 import java.math.BigDecimal;
@@ -22,12 +21,16 @@ import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.ThrowingBiFunction;
 import org.apache.arrow.vector.util.JsonStringArrayList;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
 @SnowflakeJdbcInternalApi
 public class ArrowSqlInput extends BaseSqlInput {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ArrowSqlInput.class);
+
   private final Map<String, Object> input;
   private int currentIndex = 0;
   private boolean wasNull = false;

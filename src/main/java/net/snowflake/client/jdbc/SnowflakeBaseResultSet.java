@@ -52,7 +52,7 @@ import net.snowflake.common.core.SqlState;
 
 /** Base class for query result set and metadata result set */
 public abstract class SnowflakeBaseResultSet implements ResultSet {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBaseResultSet.class);
   private final int resultSetType;
   private final int resultSetConcurrency;
   private final int resultSetHoldability;
@@ -150,7 +150,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public InputStream getAsciiStream(int columnIndex) throws SQLException {
-    logger.debug("public InputStream getAsciiStream(int columnIndex)", false);
+    logger.trace("InputStream getAsciiStream(int columnIndex)", false);
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
@@ -160,33 +160,33 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Deprecated
   @Override
   public InputStream getUnicodeStream(int columnIndex) throws SQLException {
-    logger.debug("public InputStream getUnicodeStream(int columnIndex)", false);
+    logger.trace("InputStream getUnicodeStream(int columnIndex)", false);
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public InputStream getBinaryStream(int columnIndex) throws SQLException {
-    logger.debug("public InputStream getBinaryStream(int columnIndex)", false);
+    logger.trace("InputStream getBinaryStream(int columnIndex)", false);
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public String getString(String columnLabel) throws SQLException {
-    logger.debug("public String getString(String columnLabel)", false);
+    logger.trace("String getString(String columnLabel)", false);
 
     return getString(findColumn(columnLabel));
   }
 
   @Override
   public boolean getBoolean(String columnLabel) throws SQLException {
-    logger.debug("public boolean getBoolean(String columnLabel)", false);
+    logger.trace("boolean getBoolean(String columnLabel)", false);
 
     return getBoolean(findColumn(columnLabel));
   }
 
   @Override
   public byte getByte(String columnLabel) throws SQLException {
-    logger.debug("public byte getByte(String columnLabel)", false);
+    logger.trace("byte getByte(String columnLabel)", false);
     raiseSQLExceptionIfResultSetIsClosed();
 
     return getByte(findColumn(columnLabel));
@@ -194,35 +194,35 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public short getShort(String columnLabel) throws SQLException {
-    logger.debug("public short getShort(String columnLabel)", false);
+    logger.trace("short getShort(String columnLabel)", false);
 
     return getShort(findColumn(columnLabel));
   }
 
   @Override
   public int getInt(String columnLabel) throws SQLException {
-    logger.debug("public int getInt(String columnLabel)", false);
+    logger.trace("int getInt(String columnLabel)", false);
 
     return getInt(findColumn(columnLabel));
   }
 
   @Override
   public long getLong(String columnLabel) throws SQLException {
-    logger.debug("public long getLong(String columnLabel)", false);
+    logger.trace("long getLong(String columnLabel)", false);
 
     return getLong(findColumn(columnLabel));
   }
 
   @Override
   public float getFloat(String columnLabel) throws SQLException {
-    logger.debug("public float getFloat(String columnLabel)", false);
+    logger.trace("float getFloat(String columnLabel)", false);
 
     return getFloat(findColumn(columnLabel));
   }
 
   @Override
   public double getDouble(String columnLabel) throws SQLException {
-    logger.debug("public double getDouble(String columnLabel)", false);
+    logger.trace("double getDouble(String columnLabel)", false);
 
     return getDouble(findColumn(columnLabel));
   }
@@ -233,42 +233,42 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Deprecated
   @Override
   public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-    logger.debug("public BigDecimal getBigDecimal(String columnLabel, " + "int scale)", false);
+    logger.trace("BigDecimal getBigDecimal(String columnLabel, " + "int scale)", false);
 
     return getBigDecimal(findColumn(columnLabel), scale);
   }
 
   @Override
   public byte[] getBytes(String columnLabel) throws SQLException {
-    logger.debug("public byte[] getBytes(String columnLabel)", false);
+    logger.trace("byte[] getBytes(String columnLabel)", false);
 
     return getBytes(findColumn(columnLabel));
   }
 
   @Override
   public Date getDate(String columnLabel) throws SQLException {
-    logger.debug("public Date getDate(String columnLabel)", false);
+    logger.trace("Date getDate(String columnLabel)", false);
 
     return getDate(findColumn(columnLabel));
   }
 
   @Override
   public Time getTime(String columnLabel) throws SQLException {
-    logger.debug("public Time getTime(String columnLabel)", false);
+    logger.trace("Time getTime(String columnLabel)", false);
 
     return getTime(findColumn(columnLabel));
   }
 
   @Override
   public Timestamp getTimestamp(String columnLabel) throws SQLException {
-    logger.debug("public Timestamp getTimestamp(String columnLabel)", false);
+    logger.trace("Timestamp getTimestamp(String columnLabel)", false);
 
     return getTimestamp(findColumn(columnLabel));
   }
 
   @Override
   public InputStream getAsciiStream(String columnLabel) throws SQLException {
-    logger.debug("public InputStream getAsciiStream(String columnLabel)", false);
+    logger.trace("InputStream getAsciiStream(String columnLabel)", false);
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
@@ -278,55 +278,55 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Deprecated
   @Override
   public InputStream getUnicodeStream(String columnLabel) throws SQLException {
-    logger.debug("public InputStream getUnicodeStream(String columnLabel)", false);
+    logger.trace("InputStream getUnicodeStream(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public InputStream getBinaryStream(String columnLabel) throws SQLException {
-    logger.debug("public InputStream getBinaryStream(String columnLabel)", false);
+    logger.trace("InputStream getBinaryStream(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public SQLWarning getWarnings() throws SQLException {
-    logger.debug("public SQLWarning getWarnings()", false);
+    logger.trace("SQLWarning getWarnings()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return null;
   }
 
   @Override
   public void clearWarnings() throws SQLException {
-    logger.debug("public void clearWarnings()", false);
+    logger.trace("void clearWarnings()", false);
     raiseSQLExceptionIfResultSetIsClosed();
   }
 
   @Override
   public String getCursorName() throws SQLException {
-    logger.debug("public String getCursorName()", false);
+    logger.trace("String getCursorName()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public ResultSetMetaData getMetaData() throws SQLException {
-    logger.debug("public ResultSetMetaData getMetaData()", false);
+    logger.trace("ResultSetMetaData getMetaData()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return resultSetMetaData;
   }
 
   @Override
   public Object getObject(String columnLabel) throws SQLException {
-    logger.debug("public Object getObject(String columnLabel)", false);
+    logger.trace("Object getObject(String columnLabel)", false);
 
     return getObject(findColumn(columnLabel));
   }
 
   @Override
   public int findColumn(String columnLabel) throws SQLException {
-    logger.debug("public int findColumn(String columnLabel)", false);
+    logger.trace("int findColumn(String columnLabel)", false);
     raiseSQLExceptionIfResultSetIsClosed();
 
     int columnIndex = resultSetMetaData.getColumnIndex(columnLabel);
@@ -340,7 +340,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public Reader getCharacterStream(int columnIndex) throws SQLException {
-    logger.debug("public Reader getCharacterStream(int columnIndex)", false);
+    logger.trace("Reader getCharacterStream(int columnIndex)", false);
     raiseSQLExceptionIfResultSetIsClosed();
     String streamData = getString(columnIndex);
     return (streamData == null) ? null : new StringReader(streamData);
@@ -348,76 +348,76 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public Reader getCharacterStream(String columnLabel) throws SQLException {
-    logger.debug("public Reader getCharacterStream(String columnLabel)", false);
+    logger.trace("Reader getCharacterStream(String columnLabel)", false);
     return getCharacterStream(findColumn(columnLabel));
   }
 
   @Override
   public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
-    logger.debug("public BigDecimal getBigDecimal(String columnLabel)", false);
+    logger.trace("BigDecimal getBigDecimal(String columnLabel)", false);
 
     return getBigDecimal(findColumn(columnLabel));
   }
 
   @Override
   public void beforeFirst() throws SQLException {
-    logger.debug("public void beforeFirst()", false);
+    logger.trace("void beforeFirst()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void afterLast() throws SQLException {
-    logger.debug("public void afterLast()", false);
+    logger.trace("void afterLast()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public boolean first() throws SQLException {
-    logger.debug("public boolean first()", false);
+    logger.trace("boolean first()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public boolean last() throws SQLException {
-    logger.debug("public boolean last()", false);
+    logger.trace("boolean last()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public boolean absolute(int row) throws SQLException {
-    logger.debug("public boolean absolute(int row)", false);
+    logger.trace("boolean absolute(int row)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public boolean relative(int rows) throws SQLException {
-    logger.debug("public boolean relative(int rows)", false);
+    logger.trace("boolean relative(int rows)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public boolean previous() throws SQLException {
-    logger.debug("public boolean previous()", false);
+    logger.trace("boolean previous()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public int getFetchDirection() throws SQLException {
-    logger.debug("public int getFetchDirection()", false);
+    logger.trace("int getFetchDirection()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return ResultSet.FETCH_FORWARD;
   }
 
   @Override
   public void setFetchDirection(int direction) throws SQLException {
-    logger.debug("public void setFetchDirection(int direction)", false);
+    logger.trace("void setFetchDirection(int direction)", false);
 
     raiseSQLExceptionIfResultSetIsClosed();
     if (direction != ResultSet.FETCH_FORWARD) {
@@ -427,14 +427,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public int getFetchSize() throws SQLException {
-    logger.debug("public int getFetchSize()", false);
+    logger.trace("int getFetchSize()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return this.fetchSize;
   }
 
   @Override
   public void setFetchSize(int rows) throws SQLException {
-    logger.debug("public void setFetchSize(int rows)", false);
+    logger.trace("void setFetchSize(int rows)", false);
     raiseSQLExceptionIfResultSetIsClosed();
 
     this.fetchSize = rows;
@@ -442,140 +442,140 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public int getType() throws SQLException {
-    logger.debug("public int getType()", false);
+    logger.trace("int getType()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return resultSetType;
   }
 
   @Override
   public int getConcurrency() throws SQLException {
-    logger.debug("public int getConcurrency()", false);
+    logger.trace("int getConcurrency()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return resultSetConcurrency;
   }
 
   @Override
   public boolean rowUpdated() throws SQLException {
-    logger.debug("public boolean rowUpdated()", false);
+    logger.trace("boolean rowUpdated()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public boolean rowInserted() throws SQLException {
-    logger.debug("public boolean rowInserted()", false);
+    logger.trace("boolean rowInserted()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public boolean rowDeleted() throws SQLException {
-    logger.debug("public boolean rowDeleted()", false);
+    logger.trace("boolean rowDeleted()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateNull(int columnIndex) throws SQLException {
-    logger.debug("public void updateNull(int columnIndex)", false);
+    logger.trace("void updateNull(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBoolean(int columnIndex, boolean x) throws SQLException {
-    logger.debug("public void updateBoolean(int columnIndex, boolean x)", false);
+    logger.trace("void updateBoolean(int columnIndex, boolean x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateByte(int columnIndex, byte x) throws SQLException {
-    logger.debug("public void updateByte(int columnIndex, byte x)", false);
+    logger.trace("void updateByte(int columnIndex, byte x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateShort(int columnIndex, short x) throws SQLException {
-    logger.debug("public void updateShort(int columnIndex, short x)", false);
+    logger.trace("void updateShort(int columnIndex, short x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateInt(int columnIndex, int x) throws SQLException {
-    logger.debug("public void updateInt(int columnIndex, int x)", false);
+    logger.trace("void updateInt(int columnIndex, int x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateLong(int columnIndex, long x) throws SQLException {
-    logger.debug("public void updateLong(int columnIndex, long x)", false);
+    logger.trace("void updateLong(int columnIndex, long x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateFloat(int columnIndex, float x) throws SQLException {
-    logger.debug("public void updateFloat(int columnIndex, float x)", false);
+    logger.trace("void updateFloat(int columnIndex, float x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateDouble(int columnIndex, double x) throws SQLException {
-    logger.debug("public void updateDouble(int columnIndex, double x)", false);
+    logger.trace("void updateDouble(int columnIndex, double x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBigDecimal(int columnIndex, BigDecimal x) throws SQLException {
-    logger.debug("public void updateBigDecimal(int columnIndex, BigDecimal x)", false);
+    logger.trace("void updateBigDecimal(int columnIndex, BigDecimal x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateString(int columnIndex, String x) throws SQLException {
-    logger.debug("public void updateString(int columnIndex, String x)", false);
+    logger.trace("void updateString(int columnIndex, String x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBytes(int columnIndex, byte[] x) throws SQLException {
-    logger.debug("public void updateBytes(int columnIndex, byte[] x)", false);
+    logger.trace("void updateBytes(int columnIndex, byte[] x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateDate(int columnIndex, Date x) throws SQLException {
-    logger.debug("public void updateDate(int columnIndex, Date x)", false);
+    logger.trace("void updateDate(int columnIndex, Date x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateTime(int columnIndex, Time x) throws SQLException {
-    logger.debug("public void updateTime(int columnIndex, Time x)", false);
+    logger.trace("void updateTime(int columnIndex, Time x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateTimestamp(int columnIndex, Timestamp x) throws SQLException {
-    logger.debug("public void updateTimestamp(int columnIndex, Timestamp x)", false);
+    logger.trace("void updateTimestamp(int columnIndex, Timestamp x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateAsciiStream(int columnIndex, " + "InputStream x, int length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -583,7 +583,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateBinaryStream(int columnIndex, " + "InputStream x, int length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -591,7 +591,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateCharacterStream(int columnIndex, " + "Reader x, int length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -599,7 +599,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateObject(int columnIndex, Object x, int scaleOrLength) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateObject(int columnIndex, Object x, " + "int scaleOrLength)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -607,112 +607,112 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateObject(int columnIndex, Object x) throws SQLException {
-    logger.debug("public void updateObject(int columnIndex, Object x)", false);
+    logger.trace("void updateObject(int columnIndex, Object x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateNull(String columnLabel) throws SQLException {
-    logger.debug("public void updateNull(String columnLabel)", false);
+    logger.trace("void updateNull(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBoolean(String columnLabel, boolean x) throws SQLException {
-    logger.debug("public void updateBoolean(String columnLabel, boolean x)", false);
+    logger.trace("void updateBoolean(String columnLabel, boolean x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateByte(String columnLabel, byte x) throws SQLException {
-    logger.debug("public void updateByte(String columnLabel, byte x)", false);
+    logger.trace("void updateByte(String columnLabel, byte x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateShort(String columnLabel, short x) throws SQLException {
-    logger.debug("public void updateShort(String columnLabel, short x)", false);
+    logger.trace("void updateShort(String columnLabel, short x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateInt(String columnLabel, int x) throws SQLException {
-    logger.debug("public void updateInt(String columnLabel, int x)", false);
+    logger.trace("void updateInt(String columnLabel, int x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateLong(String columnLabel, long x) throws SQLException {
-    logger.debug("public void updateLong(String columnLabel, long x)", false);
+    logger.trace("void updateLong(String columnLabel, long x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateFloat(String columnLabel, float x) throws SQLException {
-    logger.debug("public void updateFloat(String columnLabel, float x)", false);
+    logger.trace("void updateFloat(String columnLabel, float x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateDouble(String columnLabel, double x) throws SQLException {
-    logger.debug("public void updateDouble(String columnLabel, double x)", false);
+    logger.trace("void updateDouble(String columnLabel, double x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBigDecimal(String columnLabel, BigDecimal x) throws SQLException {
-    logger.debug("public void updateBigDecimal(String columnLabel, " + "BigDecimal x)", false);
+    logger.trace("void updateBigDecimal(String columnLabel, " + "BigDecimal x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateString(String columnLabel, String x) throws SQLException {
-    logger.debug("public void updateString(String columnLabel, String x)", false);
+    logger.trace("void updateString(String columnLabel, String x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBytes(String columnLabel, byte[] x) throws SQLException {
-    logger.debug("public void updateBytes(String columnLabel, byte[] x)", false);
+    logger.trace("void updateBytes(String columnLabel, byte[] x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateDate(String columnLabel, Date x) throws SQLException {
-    logger.debug("public void updateDate(String columnLabel, Date x)", false);
+    logger.trace("void updateDate(String columnLabel, Date x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateTime(String columnLabel, Time x) throws SQLException {
-    logger.debug("public void updateTime(String columnLabel, Time x)", false);
+    logger.trace("void updateTime(String columnLabel, Time x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateTimestamp(String columnLabel, Timestamp x) throws SQLException {
-    logger.debug("public void updateTimestamp(String columnLabel, Timestamp x)", false);
+    logger.trace("void updateTimestamp(String columnLabel, Timestamp x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateAsciiStream(String columnLabel, InputStream x, int length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateAsciiStream(String columnLabel, " + "InputStream x, int length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -721,7 +721,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public void updateBinaryStream(String columnLabel, InputStream x, int length)
       throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateBinaryStream(String columnLabel, " + "InputStream x, int length)",
         false);
 
@@ -731,7 +731,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public void updateCharacterStream(String columnLabel, Reader reader, int length)
       throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateCharacterStream(String columnLabel, " + "Reader reader,int length)",
         false);
 
@@ -740,7 +740,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateObject(String columnLabel, Object x, int scaleOrLength) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateObject(String columnLabel, Object x, " + "int scaleOrLength)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -748,91 +748,91 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateObject(String columnLabel, Object x) throws SQLException {
-    logger.debug("public void updateObject(String columnLabel, Object x)", false);
+    logger.trace("void updateObject(String columnLabel, Object x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void insertRow() throws SQLException {
-    logger.debug("public void insertRow()", false);
+    logger.trace("void insertRow()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateRow() throws SQLException {
-    logger.debug("public void updateRow()", false);
+    logger.trace("void updateRow()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void deleteRow() throws SQLException {
-    logger.debug("public void deleteRow()", false);
+    logger.trace("void deleteRow()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void refreshRow() throws SQLException {
-    logger.debug("public void refreshRow()", false);
+    logger.trace("void refreshRow()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void cancelRowUpdates() throws SQLException {
-    logger.debug("public void cancelRowUpdates()", false);
+    logger.trace("void cancelRowUpdates()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void moveToInsertRow() throws SQLException {
-    logger.debug("public void moveToInsertRow()", false);
+    logger.trace("void moveToInsertRow()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void moveToCurrentRow() throws SQLException {
-    logger.debug("public void moveToCurrentRow()", false);
+    logger.trace("void moveToCurrentRow()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Statement getStatement() throws SQLException {
-    logger.debug("public Statement getStatement()", false);
+    logger.trace("Statement getStatement()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return statement;
   }
 
   @Override
   public Object getObject(int columnIndex, Map<String, Class<?>> map) throws SQLException {
-    logger.debug("public Object getObject(int columnIndex, Map<String, " + "Class<?>> map)", false);
+    logger.trace("Object getObject(int columnIndex, Map<String, " + "Class<?>> map)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Ref getRef(int columnIndex) throws SQLException {
-    logger.debug("public Ref getRef(int columnIndex)", false);
+    logger.trace("Ref getRef(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Blob getBlob(int columnIndex) throws SQLException {
-    logger.debug("public Blob getBlob(int columnIndex)", false);
+    logger.trace("Blob getBlob(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Clob getClob(int columnIndex) throws SQLException {
-    logger.debug("public Clob getClob(int columnIndex)", false);
+    logger.trace("Clob getClob(int columnIndex)", false);
     String columnValue = getString(columnIndex);
 
     return columnValue == null ? null : new SnowflakeClob(columnValue);
@@ -840,14 +840,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public Array getArray(int columnIndex) throws SQLException {
-    logger.debug("public Array getArray(int columnIndex)", false);
+    logger.trace("Array getArray(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Object getObject(String columnLabel, Map<String, Class<?>> map) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public Object getObject(String columnLabel, " + "Map<String, Class<?>> map)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -855,21 +855,21 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public Ref getRef(String columnLabel) throws SQLException {
-    logger.debug("public Ref getRef(String columnLabel)", false);
+    logger.trace("Ref getRef(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Blob getBlob(String columnLabel) throws SQLException {
-    logger.debug("public Blob getBlob(String columnLabel)", false);
+    logger.trace("Blob getBlob(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Clob getClob(String columnLabel) throws SQLException {
-    logger.debug("public Clob getClob(String columnLabel)", false);
+    logger.trace("Clob getClob(String columnLabel)", false);
     String columnValue = getString(columnLabel);
 
     return columnValue == null ? null : new SnowflakeClob(columnValue);
@@ -877,258 +877,258 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public Array getArray(String columnLabel) throws SQLException {
-    logger.debug("public Array getArray(String columnLabel)", false);
+    logger.trace("Array getArray(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-    logger.debug("public Date getDate(int columnIndex, Calendar cal)", false);
+    logger.trace("Date getDate(int columnIndex, Calendar cal)", false);
     return getDate(columnIndex, cal.getTimeZone());
   }
 
   @Override
   public Date getDate(String columnLabel, Calendar cal) throws SQLException {
-    logger.debug("public Date getDate(String columnLabel, Calendar cal)", false);
+    logger.trace("Date getDate(String columnLabel, Calendar cal)", false);
 
     return getDate(findColumn(columnLabel), cal.getTimeZone());
   }
 
   @Override
   public Time getTime(int columnIndex, Calendar cal) throws SQLException {
-    logger.debug("public Time getTime(int columnIndex, Calendar cal)", false);
+    logger.trace("Time getTime(int columnIndex, Calendar cal)", false);
 
     return getTime(columnIndex);
   }
 
   @Override
   public Time getTime(String columnLabel, Calendar cal) throws SQLException {
-    logger.debug("public Time getTime(String columnLabel, Calendar cal)", false);
+    logger.trace("Time getTime(String columnLabel, Calendar cal)", false);
 
     return getTime(columnLabel);
   }
 
   @Override
   public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-    logger.debug("public Timestamp getTimestamp(int columnIndex, Calendar cal)", false);
+    logger.trace("Timestamp getTimestamp(int columnIndex, Calendar cal)", false);
 
     return getTimestamp(columnIndex, cal.getTimeZone());
   }
 
   @Override
   public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
-    logger.debug("public Timestamp getTimestamp(String columnLabel, " + "Calendar cal)", false);
+    logger.trace("Timestamp getTimestamp(String columnLabel, " + "Calendar cal)", false);
 
     return getTimestamp(findColumn(columnLabel), cal.getTimeZone());
   }
 
   @Override
   public URL getURL(int columnIndex) throws SQLException {
-    logger.debug("public URL getURL(int columnIndex)", false);
+    logger.trace("URL getURL(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public URL getURL(String columnLabel) throws SQLException {
-    logger.debug("public URL getURL(String columnLabel)", false);
+    logger.trace("URL getURL(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateRef(int columnIndex, Ref x) throws SQLException {
-    logger.debug("public void updateRef(int columnIndex, Ref x)", false);
+    logger.trace("void updateRef(int columnIndex, Ref x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateRef(String columnLabel, Ref x) throws SQLException {
-    logger.debug("public void updateRef(String columnLabel, Ref x)", false);
+    logger.trace("void updateRef(String columnLabel, Ref x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBlob(int columnIndex, Blob x) throws SQLException {
-    logger.debug("public void updateBlob(int columnIndex, Blob x)", false);
+    logger.trace("void updateBlob(int columnIndex, Blob x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBlob(String columnLabel, Blob x) throws SQLException {
-    logger.debug("public void updateBlob(String columnLabel, Blob x)", false);
+    logger.trace("void updateBlob(String columnLabel, Blob x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateClob(int columnIndex, Clob x) throws SQLException {
-    logger.debug("public void updateClob(int columnIndex, Clob x)", false);
+    logger.trace("void updateClob(int columnIndex, Clob x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateClob(String columnLabel, Clob x) throws SQLException {
-    logger.debug("public void updateClob(String columnLabel, Clob x)", false);
+    logger.trace("void updateClob(String columnLabel, Clob x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateArray(int columnIndex, Array x) throws SQLException {
-    logger.debug("public void updateArray(int columnIndex, Array x)", false);
+    logger.trace("void updateArray(int columnIndex, Array x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateArray(String columnLabel, Array x) throws SQLException {
-    logger.debug("public void updateArray(String columnLabel, Array x)", false);
+    logger.trace("void updateArray(String columnLabel, Array x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public RowId getRowId(int columnIndex) throws SQLException {
-    logger.debug("public RowId getRowId(int columnIndex)", false);
+    logger.trace("RowId getRowId(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public RowId getRowId(String columnLabel) throws SQLException {
-    logger.debug("public RowId getRowId(String columnLabel)", false);
+    logger.trace("RowId getRowId(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateRowId(int columnIndex, RowId x) throws SQLException {
-    logger.debug("public void updateRowId(int columnIndex, RowId x)", false);
+    logger.trace("void updateRowId(int columnIndex, RowId x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateRowId(String columnLabel, RowId x) throws SQLException {
-    logger.debug("public void updateRowId(String columnLabel, RowId x)", false);
+    logger.trace("void updateRowId(String columnLabel, RowId x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public int getHoldability() throws SQLException {
-    logger.debug("public int getHoldability()", false);
+    logger.trace("int getHoldability()", false);
     raiseSQLExceptionIfResultSetIsClosed();
     return resultSetHoldability;
   }
 
   @Override
   public void updateNString(int columnIndex, String nString) throws SQLException {
-    logger.debug("public void updateNString(int columnIndex, String nString)", false);
+    logger.trace("void updateNString(int columnIndex, String nString)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateNString(String columnLabel, String nString) throws SQLException {
-    logger.debug("public void updateNString(String columnLabel, String nString)", false);
+    logger.trace("void updateNString(String columnLabel, String nString)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
-    logger.debug("public void updateNClob(int columnIndex, NClob nClob)", false);
+    logger.trace("void updateNClob(int columnIndex, NClob nClob)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateNClob(String columnLabel, NClob nClob) throws SQLException {
-    logger.debug("public void updateNClob(String columnLabel, NClob nClob)", false);
+    logger.trace("void updateNClob(String columnLabel, NClob nClob)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public NClob getNClob(int columnIndex) throws SQLException {
-    logger.debug("public NClob getNClob(int columnIndex)", false);
+    logger.trace("NClob getNClob(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public NClob getNClob(String columnLabel) throws SQLException {
-    logger.debug("public NClob getNClob(String columnLabel)", false);
+    logger.trace("NClob getNClob(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public SQLXML getSQLXML(int columnIndex) throws SQLException {
-    logger.debug("public SQLXML getSQLXML(int columnIndex)", false);
+    logger.trace("SQLXML getSQLXML(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public SQLXML getSQLXML(String columnLabel) throws SQLException {
-    logger.debug("public SQLXML getSQLXML(String columnLabel)", false);
+    logger.trace("SQLXML getSQLXML(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException {
-    logger.debug("public void updateSQLXML(int columnIndex, SQLXML xmlObject)", false);
+    logger.trace("void updateSQLXML(int columnIndex, SQLXML xmlObject)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateSQLXML(String columnLabel, SQLXML xmlObject) throws SQLException {
-    logger.debug("public void updateSQLXML(String columnLabel, SQLXML xmlObject)", false);
+    logger.trace("void updateSQLXML(String columnLabel, SQLXML xmlObject)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public String getNString(int columnIndex) throws SQLException {
-    logger.debug("public String getNString(int columnIndex)", false);
+    logger.trace("String getNString(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public String getNString(String columnLabel) throws SQLException {
-    logger.debug("public String getNString(String columnLabel)", false);
+    logger.trace("String getNString(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Reader getNCharacterStream(int columnIndex) throws SQLException {
-    logger.debug("public Reader getNCharacterStream(int columnIndex)", false);
+    logger.trace("Reader getNCharacterStream(int columnIndex)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public Reader getNCharacterStream(String columnLabel) throws SQLException {
-    logger.debug("public Reader getNCharacterStream(String columnLabel)", false);
+    logger.trace("Reader getNCharacterStream(String columnLabel)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateNCharacterStream(int columnIndex, " + "Reader x, long length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -1137,7 +1137,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public void updateNCharacterStream(String columnLabel, Reader reader, long length)
       throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateNCharacterStream(String columnLabel, " + "Reader reader,long length)",
         false);
 
@@ -1146,7 +1146,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateAsciiStream(int columnIndex, " + "InputStream x, long length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -1154,7 +1154,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateBinaryStream(int columnIndex, " + "InputStream x, long length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -1162,7 +1162,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateCharacterStream(int columnIndex, Reader x, " + "long length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -1171,7 +1171,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public void updateAsciiStream(String columnLabel, InputStream x, long length)
       throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateAsciiStream(String columnLabel, " + "InputStream x, long length)",
         false);
 
@@ -1181,7 +1181,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public void updateBinaryStream(String columnLabel, InputStream x, long length)
       throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateBinaryStream(String columnLabel, " + "InputStream x, long length)",
         false);
 
@@ -1191,7 +1191,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public void updateCharacterStream(String columnLabel, Reader reader, long length)
       throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateCharacterStream(String columnLabel, " + "Reader reader,long length)",
         false);
 
@@ -1201,7 +1201,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public void updateBlob(int columnIndex, InputStream inputStream, long length)
       throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateBlob(int columnIndex, InputStream " + "inputStream, long length)",
         false);
 
@@ -1211,7 +1211,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public void updateBlob(String columnLabel, InputStream inputStream, long length)
       throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateBlob(String columnLabel, " + "InputStream inputStream,long length)",
         false);
 
@@ -1220,14 +1220,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateClob(int columnIndex, Reader reader, long length) throws SQLException {
-    logger.debug("public void updateClob(int columnIndex, Reader reader, " + "long length)", false);
+    logger.trace("void updateClob(int columnIndex, Reader reader, " + "long length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateClob(String columnLabel, Reader reader, long length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateClob(String columnLabel, Reader reader, " + "long length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -1235,7 +1235,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateNClob(int columnIndex, Reader reader, long length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateNClob(int columnIndex, Reader reader, " + "long length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -1243,7 +1243,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateNClob(String columnLabel, Reader reader, long length) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateNClob(String columnLabel, Reader reader, " + "long length)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -1251,14 +1251,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateNCharacterStream(int columnIndex, Reader x) throws SQLException {
-    logger.debug("public void updateNCharacterStream(int columnIndex, Reader x)", false);
+    logger.trace("void updateNCharacterStream(int columnIndex, Reader x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateNCharacterStream(String columnLabel, Reader reader) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateNCharacterStream(String columnLabel, " + "Reader reader)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -1266,42 +1266,42 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateAsciiStream(int columnIndex, InputStream x) throws SQLException {
-    logger.debug("public void updateAsciiStream(int columnIndex, InputStream x)", false);
+    logger.trace("void updateAsciiStream(int columnIndex, InputStream x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBinaryStream(int columnIndex, InputStream x) throws SQLException {
-    logger.debug("public void updateBinaryStream(int columnIndex, InputStream x)", false);
+    logger.trace("void updateBinaryStream(int columnIndex, InputStream x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateCharacterStream(int columnIndex, Reader x) throws SQLException {
-    logger.debug("public void updateCharacterStream(int columnIndex, Reader x)", false);
+    logger.trace("void updateCharacterStream(int columnIndex, Reader x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateAsciiStream(String columnLabel, InputStream x) throws SQLException {
-    logger.debug("public void updateAsciiStream(String columnLabel, InputStream x)", false);
+    logger.trace("void updateAsciiStream(String columnLabel, InputStream x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBinaryStream(String columnLabel, InputStream x) throws SQLException {
-    logger.debug("public void updateBinaryStream(String columnLabel, InputStream x)", false);
+    logger.trace("void updateBinaryStream(String columnLabel, InputStream x)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateCharacterStream(String columnLabel, Reader reader) throws SQLException {
-    logger.debug(
+    logger.trace(
         "public void updateCharacterStream(String columnLabel, " + "Reader reader)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -1309,49 +1309,49 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public void updateBlob(int columnIndex, InputStream inputStream) throws SQLException {
-    logger.debug("public void updateBlob(int columnIndex, InputStream inputStream)", false);
+    logger.trace("void updateBlob(int columnIndex, InputStream inputStream)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateBlob(String columnLabel, InputStream inputStream) throws SQLException {
-    logger.debug("public void updateBlob(String columnLabel, InputStream " + "inputStream)", false);
+    logger.trace("void updateBlob(String columnLabel, InputStream " + "inputStream)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateClob(int columnIndex, Reader reader) throws SQLException {
-    logger.debug("public void updateClob(int columnIndex, Reader reader)", false);
+    logger.trace("void updateClob(int columnIndex, Reader reader)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateClob(String columnLabel, Reader reader) throws SQLException {
-    logger.debug("public void updateClob(String columnLabel, Reader reader)", false);
+    logger.trace("void updateClob(String columnLabel, Reader reader)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateNClob(int columnIndex, Reader reader) throws SQLException {
-    logger.debug("public void updateNClob(int columnIndex, Reader reader)", false);
+    logger.trace("void updateNClob(int columnIndex, Reader reader)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public void updateNClob(String columnLabel, Reader reader) throws SQLException {
-    logger.debug("public void updateNClob(String columnLabel, Reader reader)", false);
+    logger.trace("void updateNClob(String columnLabel, Reader reader)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-    logger.debug("public <T> T getObject(int columnIndex,Class<T> type)", false);
+    logger.trace("<T> T getObject(int columnIndex,Class<T> type)", false);
     if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       if (SQLData.class.isAssignableFrom(type)) {
         SQLInput sqlInput =
@@ -1416,7 +1416,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> List<T> getList(int columnIndex, Class<T> type) throws SQLException {
-    logger.debug("public <T> List<T> getList(int columnIndex, Class<T> type)", false);
+    logger.trace("<T> List<T> getList(int columnIndex, Class<T> type)", false);
     if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
@@ -1425,7 +1425,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> T[] getArray(int columnIndex, Class<T> type) throws SQLException {
-    logger.debug("public <T> T[] getArray(int columnIndex, Class<T> type)", false);
+    logger.trace("<T> T[] getArray(int columnIndex, Class<T> type)", false);
     if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
@@ -1578,7 +1578,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   }
 
   public <T> Map<String, T> getMap(int columnIndex, Class<T> type) throws SQLException {
-    logger.debug("public <T> Map<String, T> getMap(int columnIndex, Class<T> type)", false);
+    logger.trace("<T> Map<String, T> getMap(int columnIndex, Class<T> type)", false);
     if (!resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
       throw new SnowflakeLoggedFeatureNotSupportedException(session);
     }
@@ -1742,14 +1742,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-    logger.debug("public <T> T getObject(String columnLabel,Class<T> type)", false);
+    logger.trace("<T> T getObject(String columnLabel,Class<T> type)", false);
     return getObject(findColumn(columnLabel), type);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("public <T> T unwrap(Class<T> iface)", false);
+    logger.trace("<T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(
@@ -1760,7 +1760,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
+    logger.trace("boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }

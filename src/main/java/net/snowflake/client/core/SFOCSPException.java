@@ -9,7 +9,7 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 public class SFOCSPException extends Throwable {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFOCSPException.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFOCSPException.class);
 
   private static final long serialVersionUID = 1L;
 
