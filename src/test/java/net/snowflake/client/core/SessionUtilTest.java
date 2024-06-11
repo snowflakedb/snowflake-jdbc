@@ -130,5 +130,3 @@ public class SessionUtilTest {
     }
   }
 }
-
-// codecovtesting

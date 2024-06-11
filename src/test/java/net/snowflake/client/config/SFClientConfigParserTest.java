@@ -27,8 +27,9 @@ public class SFClientConfigParserTest {
       "{\"common\":{\"log_level\":\"info\",\"log_path\":\"/jdbc.log\"}}";
   private static final String CONFIG_JSON_WITH_UNKNOWN_PROPS =
       "{\"common\":{\"log_level\":\"info\",\"log_path\":\"/jdbc.log\",\"unknown_inside\":\"/unknown\"},\"unknown_outside\":\"/unknown\"}";
+
   private Path configFilePath;
-    
+
   @After
   public void cleanup() throws IOException {
     if (configFilePath != null) {
@@ -37,7 +38,7 @@ public class SFClientConfigParserTest {
 
     systemUnsetEnv(SF_CLIENT_CONFIG_ENV_NAME);
   }
-  
+
   @Test
   public void testloadSFClientConfigValidPath() {
     Path configFilePath = Paths.get("config.json");
@@ -48,7 +49,12 @@ public class SFClientConfigParserTest {
       assertEquals("info", actualConfig.getCommonProps().getLogLevel());
       assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
       assertEquals("config.json", actualConfig.getConfigFilePath());
-   }
+
+      Files.delete(configFilePath);
+    } catch (IOException e) {
+      fail("testloadSFClientConfigValidPath failed");
+    }
+  }
 
   @Test
   public void testLoadSFClientConfigValidPath() throws IOException {
