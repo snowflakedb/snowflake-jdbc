@@ -28,7 +28,7 @@ public class StopwatchTest {
   @Test
   public void testGetMillisWhenStopped() throws InterruptedException {
     stopwatch.start();
-    TimeUnit.MILLISECONDS.sleep(100);
+    TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);
     stopwatch.stop();
     assertThat(
         stopwatch.elapsedMillis(),
