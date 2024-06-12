@@ -3,10 +3,15 @@
  */
 package net.snowflake.client.util;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -18,23 +23,22 @@ public class StopwatchTest {
     stopwatch = new Stopwatch();
   }
 
-  //  @Test
-  //  public void testGetMillisWhenStopped() throws InterruptedException {
-  //    stopwatch.start();
-  //    TimeUnit.MILLISECONDS.sleep(20);
-  //    stopwatch.stop();
-  //
-  //    assertThat(stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L),
-  // lessThanOrEqualTo(50L)));
-  //  }
+  @Test
+  public void testGetMillisWhenStopped() throws InterruptedException {
+    stopwatch.start();
+    TimeUnit.MILLISECONDS.sleep(100);
+    stopwatch.stop();
+    assertThat(
+        stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(100L), lessThanOrEqualTo(200L)));
+  }
 
-  //  @Test
-  //  public void testGetMillisWithoutStopping() throws InterruptedException {
-  //    stopwatch.start();
-  //    TimeUnit.MILLISECONDS.sleep(20);
-  //    assertThat(
-  //        stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(200L)));
-  //  }
+  @Test
+  public void testGetMillisWithoutStopping() throws InterruptedException {
+    stopwatch.start();
+    TimeUnit.MILLISECONDS.sleep(100);
+    long elapsedTime = stopwatch.elapsedMillis();
+    assertThat(elapsedTime, allOf(greaterThanOrEqualTo(100L), lessThanOrEqualTo(200L)));
+  }
 
   @Test
   public void testShouldBeStarted() {
