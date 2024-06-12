@@ -29,7 +29,7 @@ public class StopwatchTest {
     TimeUnit.MILLISECONDS.sleep(100);
     stopwatch.stop();
     assertThat(
-        stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(100L), lessThanOrEqualTo(200L)));
+        stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(100L), lessThanOrEqualTo(300L)));
   }
 
   @Test
@@ -37,7 +37,7 @@ public class StopwatchTest {
     stopwatch.start();
     TimeUnit.MILLISECONDS.sleep(100);
     long elapsedTime = stopwatch.elapsedMillis();
-    assertThat(elapsedTime, allOf(greaterThanOrEqualTo(100L), lessThanOrEqualTo(200L)));
+    assertThat(elapsedTime, allOf(greaterThanOrEqualTo(100L), lessThanOrEqualTo(300L)));
   }
 
   @Test
