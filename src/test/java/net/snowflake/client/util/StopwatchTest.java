@@ -17,6 +17,8 @@ import org.junit.Test;
 
 public class StopwatchTest {
   Stopwatch stopwatch = new Stopwatch();
+  private static final long ALLOWED_ERROR = 50;
+  private static final long SLEEP_TIME = 100;
 
   @Before
   public void before() {
@@ -29,15 +31,18 @@ public class StopwatchTest {
     TimeUnit.MILLISECONDS.sleep(100);
     stopwatch.stop();
     assertThat(
-        stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(100L), lessThanOrEqualTo(300L)));
+        stopwatch.elapsedMillis(),
+        allOf(greaterThanOrEqualTo(SLEEP_TIME), lessThanOrEqualTo(SLEEP_TIME + ALLOWED_ERROR)));
   }
 
   @Test
   public void testGetMillisWithoutStopping() throws InterruptedException {
     stopwatch.start();
-    TimeUnit.MILLISECONDS.sleep(100);
+    TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);
     long elapsedTime = stopwatch.elapsedMillis();
-    assertThat(elapsedTime, allOf(greaterThanOrEqualTo(100L), lessThanOrEqualTo(300L)));
+    assertThat(
+        elapsedTime,
+        allOf(greaterThanOrEqualTo(SLEEP_TIME), lessThanOrEqualTo(SLEEP_TIME + ALLOWED_ERROR)));
   }
 
   @Test
