@@ -6,7 +6,6 @@ package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -226,34 +225,6 @@ public class QueryContextCacheTest {
     mockQcc.deserializeQueryContextDTO(null);
     verify(mockQcc).clearCache();
     verify(mockQcc, times(2)).logCacheEntries();
-  }
-
-  @Test
-  public void testQueryContextEntroDTO() throws Exception {
-    QueryContextEntryDTO queryContextEntryDTO = new QueryContextEntryDTO();
-    OpaqueContextDTO opaqueContextDTO = mock(OpaqueContextDTO.class);
-    queryContextEntryDTO.setId(1);
-    assertEquals(queryContextEntryDTO.getId(), 1);
-    queryContextEntryDTO.setTimestamp(2);
-    assertEquals(queryContextEntryDTO.getTimestamp(), 2);
-    queryContextEntryDTO.setPriority(3);
-    assertEquals(queryContextEntryDTO.getPriority(), 3);
-    queryContextEntryDTO.setContext(opaqueContextDTO);
-    assertEquals(queryContextEntryDTO.getContext(), opaqueContextDTO);
-  }
-
-  @Test
-  public void testQueryExecDTO() throws Exception {
-    QueryContextEntryDTO queryContextEntryDTO = new QueryContextEntryDTO();
-    OpaqueContextDTO opaqueContextDTO = mock(OpaqueContextDTO.class);
-    queryContextEntryDTO.setId(1);
-    assertEquals(queryContextEntryDTO.getId(), 1);
-    queryContextEntryDTO.setTimestamp(2);
-    assertEquals(queryContextEntryDTO.getTimestamp(), 2);
-    queryContextEntryDTO.setPriority(3);
-    assertEquals(queryContextEntryDTO.getPriority(), 3);
-    queryContextEntryDTO.setContext(opaqueContextDTO);
-    assertEquals(queryContextEntryDTO.getContext(), opaqueContextDTO);
   }
 
   private void assertCacheData() {

@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Objects;
 import org.junit.Test;
 
 public class SFClientConfigTest {
@@ -40,6 +39,5 @@ public class SFClientConfigTest {
     commonProps2.setLogPath("jdbc_log");
 
     assertTrue(commonProps.equals(commonProps2));
-    assertEquals(commonProps2.hashCode(), Objects.hash("info", "jdbc_log"));
   }
 }

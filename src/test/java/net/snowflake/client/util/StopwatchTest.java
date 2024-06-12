@@ -26,7 +26,7 @@ public class StopwatchTest {
   @Test
   public void testGetMillisWhenStopped() throws InterruptedException {
     stopwatch.start();
-    TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);
+    TimeUnit.MILLISECONDS.sleep(10);
     stopwatch.stop();
     assertThat(
         stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(500L)));
@@ -35,9 +35,7 @@ public class StopwatchTest {
   @Test
   public void testGetMillisWithoutStopping() throws InterruptedException {
     stopwatch.start();
-    TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);
-    long elapsedTime = stopwatch.elapsedMillis();
-    TimeUnit.MILLISECONDS.sleep(20);
+    TimeUnit.MILLISECONDS.sleep(10);
     assertThat(
         stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(500L)));
   }

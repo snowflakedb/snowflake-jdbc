@@ -3,7 +3,6 @@ package net.snowflake.client.core;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
@@ -14,7 +13,7 @@ import org.junit.Test;
 public class ExecTimeTelemetryDataTest {
 
   @Test
-  public void testExecTimeTelemetryData() {
+  public void testExecTimeTelemetryData() throws ParseException {
     ExecTimeTelemetryData execTimeTelemetryData = new ExecTimeTelemetryData();
     execTimeTelemetryData.sendData = true;
     execTimeTelemetryData.setBindStart();
@@ -38,38 +37,34 @@ public class ExecTimeTelemetryDataTest {
 
     String telemetry = execTimeTelemetryData.generateTelemetry();
     JSONParser parser = new JSONParser(JSONParser.MODE_JSON_SIMPLE);
-    try {
-      JSONObject json = (JSONObject) parser.parse(telemetry);
-      assertNotNull(json.get("BindStart"));
-      assertNotNull(json.get("BindEnd"));
-      assertEquals(json.get("ocspEnabled"), true);
-      assertNotNull(json.get("HttpClientStart"));
-      assertNotNull(json.get("HttpClientEnd"));
-      assertNotNull(json.get("GzipStart"));
-      assertNotNull(json.get("GzipEnd"));
-      assertNotNull(json.get("QueryEnd"));
-      assertEquals(json.get("QueryID"), "queryid");
-      assertNotNull(json.get("ProcessResultChunkStart"));
-      assertNotNull(json.get("ProcessResultChunkEnd"));
-      assertNotNull(json.get("ResponseIOStreamStart"));
-      assertNotNull(json.get("CreateResultSetStart"));
-      assertNotNull(json.get("CreateResultSetEnd"));
-      assertNotNull(json.get("ElapsedQueryTime"));
-      assertNotNull(json.get("ElapsedResultProcessTime"));
-      assertNull(json.get("QueryFunction"));
-      assertNull(json.get("BatchID"));
-      assertEquals(((Long) json.get("RetryCount")).intValue(), 1);
-      assertEquals(json.get("RequestID"), "mockId");
-      assertEquals(json.get("RetryLocations"), "retry");
-      assertEquals(json.get("Urgent"), true);
-      assertEquals(json.get("eventType"), "ExecutionTimeRecord");
-    } catch (ParseException ex) {
-      fail("test failed");
-    }
+    JSONObject json = (JSONObject) parser.parse(telemetry);
+    assertNotNull(json.get("BindStart"));
+    assertNotNull(json.get("BindEnd"));
+    assertEquals(json.get("ocspEnabled"), true);
+    assertNotNull(json.get("HttpClientStart"));
+    assertNotNull(json.get("HttpClientEnd"));
+    assertNotNull(json.get("GzipStart"));
+    assertNotNull(json.get("GzipEnd"));
+    assertNotNull(json.get("QueryEnd"));
+    assertEquals(json.get("QueryID"), "queryid");
+    assertNotNull(json.get("ProcessResultChunkStart"));
+    assertNotNull(json.get("ProcessResultChunkEnd"));
+    assertNotNull(json.get("ResponseIOStreamStart"));
+    assertNotNull(json.get("CreateResultSetStart"));
+    assertNotNull(json.get("CreateResultSetEnd"));
+    assertNotNull(json.get("ElapsedQueryTime"));
+    assertNotNull(json.get("ElapsedResultProcessTime"));
+    assertNull(json.get("QueryFunction"));
+    assertNull(json.get("BatchID"));
+    assertEquals(((Long) json.get("RetryCount")).intValue(), 1);
+    assertEquals(json.get("RequestID"), "mockId");
+    assertEquals(json.get("RetryLocations"), "retry");
+    assertEquals(json.get("Urgent"), true);
+    assertEquals(json.get("eventType"), "ExecutionTimeRecord");
   }
 
   @Test
-  public void testRetryLocation() {
+  public void testRetryLocation() throws ParseException {
     TelemetryService.enableHTAP();
     ExecTimeTelemetryData execTimeTelemetryData =
         new ExecTimeTelemetryData("queryFunction", "batchId");
@@ -79,16 +74,11 @@ public class ExecTimeTelemetryDataTest {
     String telemetry = execTimeTelemetryData.generateTelemetry();
 
     JSONParser parser = new JSONParser(JSONParser.MODE_JSON_SIMPLE);
-    try {
-      JSONObject json = (JSONObject) parser.parse(telemetry);
-      assertEquals(json.get("QueryFunction"), "queryFunction");
-      assertEquals(json.get("BatchID"), "batchId");
-      assertNotNull(json.get("QueryStart"));
-      assertEquals(json.get("RetryLocations"), "hello, world");
-    } catch (ParseException ex) {
-      fail("test failed");
-    } finally {
-      TelemetryService.disableHTAP();
-    }
+    JSONObject json = (JSONObject) parser.parse(telemetry);
+    assertEquals(json.get("QueryFunction"), "queryFunction");
+    assertEquals(json.get("BatchID"), "batchId");
+    assertNotNull(json.get("QueryStart"));
+    assertEquals(json.get("RetryLocations"), "hello, world");
+    TelemetryService.disableHTAP();
   }
 }

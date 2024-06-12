@@ -5,7 +5,6 @@ import static net.snowflake.client.jdbc.SnowflakeType.getJavaType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -86,33 +85,24 @@ public class SnowflakeTypeTest {
   }
 
   @Test
-  public void testJavaTypeToSFType() {
-    try {
-      assertEquals(SnowflakeType.javaTypeToSFType(0, null), SnowflakeType.ANY);
-      assertThrows(
-          SnowflakeSQLLoggedException.class,
-          () -> {
-            SnowflakeType.javaTypeToSFType(2000000, null);
-          });
-      ;
-    } catch (SnowflakeSQLException ex) {
-      fail("Failed the test");
-    }
+  public void testJavaTypeToSFType() throws SnowflakeSQLException {
+    assertEquals(SnowflakeType.javaTypeToSFType(0, null), SnowflakeType.ANY);
+    assertThrows(
+        SnowflakeSQLLoggedException.class,
+        () -> {
+          SnowflakeType.javaTypeToSFType(2000000, null);
+        });
   }
 
   @Test
-  public void testJavaTypeToClassName() {
-    try {
-      assertEquals(SnowflakeType.javaTypeToClassName(Types.DECIMAL), BigDecimal.class.getName());
-      assertEquals(SnowflakeType.javaTypeToClassName(Types.TIME), java.sql.Time.class.getName());
-      assertEquals(SnowflakeType.javaTypeToClassName(Types.BOOLEAN), Boolean.class.getName());
-      assertThrows(
-          SQLFeatureNotSupportedException.class,
-          () -> {
-            SnowflakeType.javaTypeToClassName(-2000000);
-          });
-    } catch (SQLException ex) {
-      fail("Failed the test");
-    }
+  public void testJavaTypeToClassName() throws SQLException {
+    assertEquals(SnowflakeType.javaTypeToClassName(Types.DECIMAL), BigDecimal.class.getName());
+    assertEquals(SnowflakeType.javaTypeToClassName(Types.TIME), java.sql.Time.class.getName());
+    assertEquals(SnowflakeType.javaTypeToClassName(Types.BOOLEAN), Boolean.class.getName());
+    assertThrows(
+        SQLFeatureNotSupportedException.class,
+        () -> {
+          SnowflakeType.javaTypeToClassName(-2000000);
+        });
   }
 }

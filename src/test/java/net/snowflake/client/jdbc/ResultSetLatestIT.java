@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.TestUtil.expectSnowflakeLoggedFeatureNotSupportedException;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;

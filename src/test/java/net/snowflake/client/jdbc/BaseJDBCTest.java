@@ -36,7 +36,6 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.core.SFException;
-import net.snowflake.common.core.SqlState;
 
 public class BaseJDBCTest extends AbstractDriverIT {
   // Test UUID unique per session
@@ -47,7 +46,7 @@ public class BaseJDBCTest extends AbstractDriverIT {
   }
 
   protected interface MethodRaisesSFException {
-    void run() throws SFException, SQLException;
+    void run() throws SFException;
   }
 
   protected interface MethodRaisesSQLClientInfoException {
@@ -81,30 +80,12 @@ public class BaseJDBCTest extends AbstractDriverIT {
     }
   }
 
-  protected void expectSnowflakeLoggedFeatureNotSupportedException(MethodRaisesSQLException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLException ex) {
-      assertEquals(SqlState.FEATURE_NOT_SUPPORTED, "0A000");
-    }
-  }
-
   protected void expectFeatureNotSupportedException(MethodRaisesSQLException f) {
     try {
       f.run();
       fail("must raise exception");
     } catch (SQLException ex) {
       assertTrue(ex instanceof SQLFeatureNotSupportedException);
-    }
-  }
-
-  protected void expectFeatureSFException(MethodRaisesSFException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SFException | SQLException ex) {
-      assertTrue(ex instanceof SFException);
     }
   }
 

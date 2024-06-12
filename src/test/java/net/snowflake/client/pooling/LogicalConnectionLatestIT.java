@@ -377,7 +377,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testExceptions() throws SQLException {
+  public void testLogicalConnectionWhenPhysicalConnectionThrowsErrors() throws SQLException {
     Connection connection = mock(Connection.class);
     SnowflakePooledConnection snowflakePooledConnection = mock(SnowflakePooledConnection.class);
     when(snowflakePooledConnection.getPhysicalConnection()).thenReturn(connection);

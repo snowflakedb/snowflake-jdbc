@@ -5,14 +5,15 @@ package net.snowflake.client;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -126,6 +127,19 @@ public class TestUtil {
       action.accept(customSchema);
     } finally {
       statement.execute("DROP SCHEMA " + customSchema);
+    }
+  }
+
+  public interface MethodRaisesSQLException {
+    void run() throws SQLException;
+  }
+
+  public static void expectSnowflakeLoggedFeatureNotSupportedException(MethodRaisesSQLException f) {
+    try {
+      f.run();
+      fail("must raise exception");
+    } catch (SQLException ex) {
+      assertTrue(ex instanceof SnowflakeLoggedFeatureNotSupportedException);
     }
   }
 }

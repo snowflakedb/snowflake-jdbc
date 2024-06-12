@@ -1,12 +1,9 @@
 package net.snowflake.client.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static net.snowflake.client.TestUtil.expectSnowflakeLoggedFeatureNotSupportedException;
 import static org.mockito.Mockito.mock;
 
 import java.sql.SQLData;
-import java.sql.SQLException;
-import net.snowflake.common.core.SqlState;
 import org.junit.Test;
 
 public class SQLInputOutputTest {
@@ -41,18 +38,5 @@ public class SQLInputOutputTest {
     expectSnowflakeLoggedFeatureNotSupportedException(() -> sqloutput.writeNClob(null));
     expectSnowflakeLoggedFeatureNotSupportedException(() -> sqloutput.writeRowId(null));
     expectSnowflakeLoggedFeatureNotSupportedException(() -> sqloutput.writeSQLXML(null));
-  }
-
-  private interface MethodRaisesSQLException {
-    void run() throws SQLException;
-  }
-
-  private void expectSnowflakeLoggedFeatureNotSupportedException(MethodRaisesSQLException f) {
-    try {
-      f.run();
-      fail("must raise exception");
-    } catch (SQLException ex) {
-      assertEquals(SqlState.FEATURE_NOT_SUPPORTED, "0A000");
-    }
   }
 }
