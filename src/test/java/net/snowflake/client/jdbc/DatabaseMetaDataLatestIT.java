@@ -2342,4 +2342,28 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(43, metaData.getSQLKeywords().split(",").length);
     }
   }
+  /** Added in > 3.16.1 */
+  @Test
+  public void testVectorDimension() throws SQLException {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          "create or replace table JDBC_VECTOR(text_col varchar(32), float_vec VECTOR(FLOAT, 256), int_vec VECTOR(INT, 16))");
+      DatabaseMetaData metaData = connection.getMetaData();
+      try (ResultSet resultSet =
+          metaData.getColumns(
+              connection.getCatalog(),
+              connection.getSchema().replaceAll("_", "\\\\_"),
+              "JDBC\\_VECTOR",
+              null)) {
+        assertTrue(resultSet.next());
+        assertEquals(32, resultSet.getObject("COLUMN_SIZE"));
+        assertTrue(resultSet.next());
+        assertEquals(256, resultSet.getObject("COLUMN_SIZE"));
+        assertTrue(resultSet.next());
+        assertEquals(16, resultSet.getObject("COLUMN_SIZE"));
+        assertFalse(resultSet.next());
+      }
+    }
+  }
 }

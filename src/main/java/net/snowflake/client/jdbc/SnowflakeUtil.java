@@ -181,6 +181,7 @@ public class SnowflakeUtil {
     int precision = colNode.path("precision").asInt();
     int scale = colNode.path("scale").asInt();
     int length = colNode.path("length").asInt();
+    int dimension = colNode.path("dimension").asInt();
     boolean fixed = colNode.path("fixed").asBoolean();
     JsonNode udtOutputType = colNode.path("outputType");
     JsonNode extColTypeNameNode = colNode.path("extTypeName");
@@ -223,7 +224,8 @@ public class SnowflakeUtil {
         colSrcDatabase,
         colSrcSchema,
         colSrcTable,
-        isAutoIncrement);
+        isAutoIncrement,
+        dimension);
   }
 
   static ColumnTypeInfo getSnowflakeType(
@@ -560,7 +562,9 @@ public class SnowflakeUtil {
               "", // database
               "", // schema
               "",
-              false)); // isAutoincrement
+              false, // isAutoincrement
+              0 // dimension
+              ));
     }
 
     return rowType;
