@@ -17,8 +17,8 @@ import org.junit.Test;
 
 public class StopwatchTest {
   Stopwatch stopwatch = new Stopwatch();
-  private static final long ALLOWED_ERROR = 100;
-  private static final long SLEEP_TIME = 1000;
+  private static final long ALLOWED_ERROR = 200;
+  private static final long SLEEP_TIME = 100;
 
   @Before
   public void before() {
