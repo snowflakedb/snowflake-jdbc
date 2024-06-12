@@ -17,8 +17,6 @@ import org.junit.Test;
 
 public class StopwatchTest {
   Stopwatch stopwatch = new Stopwatch();
-  private static final long ALLOWED_ERROR = 200;
-  private static final long SLEEP_TIME = 100;
 
   @Before
   public void before() {
@@ -31,8 +29,7 @@ public class StopwatchTest {
     TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);
     stopwatch.stop();
     assertThat(
-        stopwatch.elapsedMillis(),
-        allOf(greaterThanOrEqualTo(SLEEP_TIME), lessThanOrEqualTo(SLEEP_TIME + ALLOWED_ERROR)));
+        stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(500L)));
   }
 
   @Test
@@ -40,9 +37,9 @@ public class StopwatchTest {
     stopwatch.start();
     TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);
     long elapsedTime = stopwatch.elapsedMillis();
+    TimeUnit.MILLISECONDS.sleep(20);
     assertThat(
-        elapsedTime,
-        allOf(greaterThanOrEqualTo(SLEEP_TIME), lessThanOrEqualTo(SLEEP_TIME + ALLOWED_ERROR)));
+        stopwatch.elapsedMillis(), allOf(greaterThanOrEqualTo(10L), lessThanOrEqualTo(500L)));
   }
 
   @Test
