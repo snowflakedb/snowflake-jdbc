@@ -3,7 +3,6 @@ REM Tests JDBC Driver on Windows
 REM
 setlocal
 setlocal EnableDelayedExpansion
-set TIMEOUT=90000
 python -m venv venv
 call venv\scripts\activate
 pip install -U snowflake-connector-python
@@ -52,11 +51,6 @@ echo [INFO] Creating schema %SNOWFLAKE_TEST_SCHEMA%
 pushd %GITHUB_WORKSPACE%\ci\container
 python create_schema.py
 popd
-
-echo [INFO] Installing Snowflake JDBC Driver
-copy %GITHUB_WORKSPACE%\artifacts\* .
-
-REM add steps to jdbc driver
 
 REM setup log
 

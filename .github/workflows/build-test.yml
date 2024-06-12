@@ -43,7 +43,7 @@ jobs:
 
     test-windows:
         needs: build
-        name: ${{ matrix.cloud }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} / Test on Windows(java ${{ matrix.javaVersion }}, ${{ matrix.cloud }} )
+        name: ${{ matrix.cloud }} Windows java ${{ matrix.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }}
         runs-on: windows-latest
         strategy:
             fail-fast: false
@@ -79,7 +79,7 @@ jobs:
 
     test-mac:
         needs: build
-        name: ${{ matrix.cloud }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} / Test on Mac(java ${{ matrix.javaVersion }}, ${{ matrix.cloud }} )
+        name: ${{ matrix.cloud }} Mac java ${{ matrix.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }}
         runs-on: macos-13
         strategy:
             fail-fast: false
@@ -112,7 +112,7 @@ jobs:
 
     test-linux:
         needs: build
-        name: ${{ matrix.cloud }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} on ${{ matrix.image }}
+        name: ${{ matrix.cloud }} Linux java on ${{ matrix.image }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }}
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
