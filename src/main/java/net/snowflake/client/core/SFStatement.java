@@ -44,7 +44,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 /** Snowflake statement */
 public class SFStatement extends SFBaseStatement {
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFStatement.class);
 
   private SFSession session;
 
@@ -80,7 +80,7 @@ public class SFStatement extends SFBaseStatement {
   private long conservativeMemoryLimit; // in bytes
 
   public SFStatement(SFSession session) {
-    logger.debug(" public SFStatement(SFSession session)", false);
+    logger.trace("SFStatement(SFSession session)", false);
 
     this.session = session;
     Integer queryTimeout = session == null ? null : session.getQueryTimeout();
@@ -91,7 +91,7 @@ public class SFStatement extends SFBaseStatement {
   private void verifyArrowSupport() {
     if (SnowflakeDriver.isDisableArrowResultFormat()) {
       logger.debug(
-          "disable arrow support: {}", SnowflakeDriver.getDisableArrowResultFormatMessage());
+          "Disable arrow support: {}", SnowflakeDriver.getDisableArrowResultFormatMessage());
       statementParametersMap.put("JDBC_QUERY_RESULT_FORMAT", "JSON");
     }
   }
@@ -205,7 +205,7 @@ public class SFStatement extends SFBaseStatement {
       throws SQLException, SFException {
     resetState();
 
-    logger.debug("executeQuery: {}", sql);
+    logger.debug("ExecuteQuery: {}", sql);
 
     if (session == null || session.isClosed()) {
       throw new SQLException("connection is closed");
@@ -771,9 +771,9 @@ public class SFStatement extends SFBaseStatement {
     session.injectedDelay();
 
     if (session.getPreparedStatementLogging()) {
-      logger.info("execute: {}", sql);
+      logger.info("Execute: {}", sql);
     } else {
-      logger.debug("execute: {}", sql);
+      logger.debug("Execute: {}", sql);
     }
 
     String trimmedSql = sql.trim();
@@ -798,7 +798,7 @@ public class SFStatement extends SFBaseStatement {
     try {
       transferAgent.execute();
 
-      logger.debug("setting result set", false);
+      logger.debug("Setting result set", false);
 
       resultSet = (SFFixedViewResultSet) transferAgent.getResultSet();
       childResults = Collections.emptyList();
@@ -814,7 +814,7 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public void close() {
-    logger.debug("public void close()", false);
+    logger.trace("void close()", false);
 
     if (requestId != null) {
       EventUtil.triggerStateTransition(
@@ -827,7 +827,7 @@ public class SFStatement extends SFBaseStatement {
     isClosed = true;
 
     if (httpRequest != null) {
-      logger.debug("releasing connection for the http request", false);
+      logger.debug("Releasing connection for the http request", false);
 
       httpRequest.releaseConnection();
       httpRequest = null;
@@ -841,7 +841,7 @@ public class SFStatement extends SFBaseStatement {
 
   @Override
   public void cancel() throws SFException, SQLException {
-    logger.debug("public void cancel()", false);
+    logger.trace("void cancel()", false);
 
     if (canceling.get()) {
       logger.debug("Query is already cancelled", false);

@@ -42,33 +42,27 @@ public class SFClientConfigParser {
     String derivedConfigFilePath = null;
     if (configFilePath != null && !configFilePath.isEmpty()) {
       // 1. Try to read the file at  configFilePath.
+      logger.info("Using config file specified from connection string: {}", configFilePath);
       derivedConfigFilePath = configFilePath;
-      logger.info(
-          "Using client configuration path from a connection string: {}", derivedConfigFilePath);
     } else if (System.getenv().containsKey(SF_CLIENT_CONFIG_ENV_NAME)) {
       // 2. If SF_CLIENT_CONFIG_ENV_NAME is set, read from env.
-      derivedConfigFilePath = systemGetEnv(SF_CLIENT_CONFIG_ENV_NAME);
-      logger.info(
-          "Using client configuration path from an environment variable: {}",
-          derivedConfigFilePath);
+      String filePath = systemGetEnv(SF_CLIENT_CONFIG_ENV_NAME);
+      logger.info("Using config file specified from environment variable: {}", filePath);
+      derivedConfigFilePath = filePath;
     } else {
       // 3. Read SF_CLIENT_CONFIG_FILE_NAME from where jdbc jar is loaded.
       String driverLocation =
           Paths.get(getConfigFilePathFromJDBCJarLocation(), SF_CLIENT_CONFIG_FILE_NAME).toString();
       if (Files.exists(Paths.get(driverLocation))) {
+        logger.info("Using config file specified from driver directory: {}", driverLocation);
         derivedConfigFilePath = driverLocation;
-        logger.info(
-            "Using client configuration path from jar directory: {}", derivedConfigFilePath);
       } else {
         // 4. Read SF_CLIENT_CONFIG_FILE_NAME if it is present in user home directory.
-        String homePath = systemGetProperty("user.home");
-        if (homePath != null) {
-          String userHomeFilePath = Paths.get(homePath, SF_CLIENT_CONFIG_FILE_NAME).toString();
-          if (Files.exists(Paths.get(userHomeFilePath))) {
-            derivedConfigFilePath = userHomeFilePath;
-            logger.info(
-                "Using client configuration path from home directory: {}", derivedConfigFilePath);
-          }
+        String userHomeFilePath =
+            Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME).toString();
+        if (Files.exists(Paths.get(userHomeFilePath))) {
+          logger.info("Using config file specified from home directory: {}", userHomeFilePath);
+          derivedConfigFilePath = userHomeFilePath;
         }
       }
     }
@@ -90,15 +84,16 @@ public class SFClientConfigParser {
         File configFile = new File(derivedConfigFilePath);
         ObjectMapper objectMapper = new ObjectMapper();
         SFClientConfig clientConfig = objectMapper.readValue(configFile, SFClientConfig.class);
-        logger.info(
+		logger.info(
             "Reading values logLevel {} and logPath {} from client configuration",
             clientConfig.getCommonProps().getLogLevel(),
             clientConfig.getCommonProps().getLogPath());
-
-        for (Map.Entry<String, Object> prop :
-            clientConfig.getCommonProps().getUnknownKeys().entrySet()) {
-          logger.info(
-              "Unknown configuration entry: {} with value: {}", prop.getKey(), prop.getValue());
+			
+        Set<String> unknownParams = clientConfig.getUnknownParamKeys();
+        if (!unknownParams.isEmpty()) {
+          for (String unknownParam : unknownParams) {
+            logger.warn("Unknown field from config: {}", unknownParam);
+          }
         }
         clientConfig.setConfigFilePath(derivedConfigFilePath);
 

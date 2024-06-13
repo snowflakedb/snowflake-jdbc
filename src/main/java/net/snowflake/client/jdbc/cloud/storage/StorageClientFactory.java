@@ -53,7 +53,7 @@ public class StorageClientFactory {
   public SnowflakeStorageClient createClient(
       StageInfo stage, int parallel, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
-    logger.debug("createClient client type={}", stage.getStageType().name());
+    logger.debug("Creating storage client. Client type: {}", stage.getStageType().name());
 
     switch (stage.getStageType()) {
       case S3:
@@ -113,7 +113,7 @@ public class StorageClientFactory {
       throws SnowflakeSQLException {
     final int S3_TRANSFER_MAX_RETRIES = 3;
 
-    logger.debug("createS3Client encryption={}", (encMat == null ? "no" : "yes"));
+    logger.debug("Creating S3 client with encryption: {}", (encMat == null ? "no" : "yes"));
 
     SnowflakeS3Client s3Client;
 
@@ -130,8 +130,8 @@ public class StorageClientFactory {
     clientConfig.setProxyPassword("");
 
     logger.debug(
-        "s3 client configuration: maxConnection={}, connectionTimeout={}, "
-            + "socketTimeout={}, maxErrorRetry={}",
+        "S3 client configuration: maxConnection: {}, connectionTimeout: {}, "
+            + "socketTimeout: {}, maxErrorRetry: {}",
         clientConfig.getMaxConnections(),
         clientConfig.getConnectionTimeout(),
         clientConfig.getSocketTimeout(),
@@ -153,7 +153,7 @@ public class StorageClientFactory {
       logger.debug("Exception creating s3 client", ex);
       throw ex;
     }
-    logger.debug("s3 client created", false);
+    logger.debug("S3 Storage client created", false);
 
     return s3Client;
   }
@@ -195,7 +195,7 @@ public class StorageClientFactory {
   private SnowflakeAzureClient createAzureClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFBaseSession session)
       throws SnowflakeSQLException {
-    logger.debug("createAzureClient encryption={}", (encMat == null ? "no" : "yes"));
+    logger.debug("Creating Azure client with encryption: {}", (encMat == null ? "no" : "yes"));
 
     SnowflakeAzureClient azureClient;
 
@@ -220,7 +220,7 @@ public class StorageClientFactory {
   private SnowflakeGCSClient createGCSClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFSession session)
       throws SnowflakeSQLException {
-    logger.debug("createGCSClient encryption={}", (encMat == null ? "no" : "yes"));
+    logger.debug("Creating GCS client with encryption: {}", (encMat == null ? "no" : "yes"));
 
     SnowflakeGCSClient gcsClient;
 

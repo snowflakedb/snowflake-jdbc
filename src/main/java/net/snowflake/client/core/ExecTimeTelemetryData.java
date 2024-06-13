@@ -5,24 +5,18 @@ package net.snowflake.client.core;
 
 import com.google.common.base.Strings;
 import net.minidev.json.JSONObject;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.util.TimeMeasurement;
 
 public class ExecTimeTelemetryData {
-  private long queryStart;
-  private long bindStart;
-  private long bindEnd;
-  private long gzipStart;
-  private long gzipEnd;
-  private long httpClientStart;
-  private long httpClientEnd;
-  private long responseIOStreamStart;
-  private long responseIOStreamEnd;
-  private long processResultChunkStart;
-  private long processResultChunkEnd;
-  private long createResultSetStart;
-  private long createResultSetEnd;
-  private long queryEnd;
+  private final TimeMeasurement query = new TimeMeasurement();
+  private final TimeMeasurement bind = new TimeMeasurement();
+  private final TimeMeasurement gzip = new TimeMeasurement();
+  private final TimeMeasurement httpClient = new TimeMeasurement();
+  private final TimeMeasurement responseIOStream = new TimeMeasurement();
+  private final TimeMeasurement processResultChunk = new TimeMeasurement();
+  private final TimeMeasurement createResultSet = new TimeMeasurement();
+
   private String batchId;
   private String queryId;
   private String queryFunction;
@@ -34,11 +28,10 @@ public class ExecTimeTelemetryData {
   private String requestId;
 
   public ExecTimeTelemetryData(String queryFunction, String batchId) {
-    if (TelemetryService.getInstance().isHTAPEnabled()) {
-      this.queryStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
-      this.queryFunction = queryFunction;
-      this.batchId = batchId;
-    } else {
+    this.query.setStart();
+    this.queryFunction = queryFunction;
+    this.batchId = batchId;
+    if (!TelemetryService.getInstance().isHTAPEnabled()) {
       this.sendData = false;
     }
   }
@@ -48,133 +41,99 @@ public class ExecTimeTelemetryData {
   }
 
   public void setBindStart() {
-    if (!this.sendData) {
-      return;
-    }
-    this.bindStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    bind.setStart();
   }
 
   public void setOCSPStatus(Boolean ocspEnabled) {
-    if (!this.sendData) {
-      return;
-    }
     this.ocspEnabled = ocspEnabled;
   }
 
   public void setBindEnd() {
-    if (!this.sendData) {
-      return;
-    }
-    this.bindEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    this.bind.setEnd();
   }
 
   public void setHttpClientStart() {
-    if (!this.sendData) {
-      return;
-    }
-    this.httpClientStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    httpClient.setStart();
   }
 
   public void setHttpClientEnd() {
-    if (!this.sendData) {
-      return;
-    }
-    this.httpClientEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    httpClient.setEnd();
   }
 
   public void setGzipStart() {
-    if (!this.sendData) {
-      return;
-    }
-    this.gzipStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    gzip.setStart();
   }
 
   public void setGzipEnd() {
-    if (!this.sendData) {
-      return;
-    }
-    this.gzipEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    gzip.setEnd();
   }
 
   public void setQueryEnd() {
-    if (!this.sendData) {
-      return;
-    }
-    this.queryEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    query.setEnd();
   }
 
   public void setQueryId(String queryId) {
-    if (!this.sendData) {
-      return;
-    }
     this.queryId = queryId;
   }
 
   public void setProcessResultChunkStart() {
-    if (!this.sendData) {
-      return;
-    }
-    this.processResultChunkStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    processResultChunk.setStart();
   }
 
   public void setProcessResultChunkEnd() {
-    if (!this.sendData) {
-      return;
-    }
-    this.processResultChunkEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    processResultChunk.setEnd();
   }
 
   public void setResponseIOStreamStart() {
-    if (!this.sendData) {
-      return;
-    }
-    this.responseIOStreamStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    responseIOStream.setStart();
   }
 
   public void setResponseIOStreamEnd() {
-    if (!this.sendData) {
-      return;
-    }
-    this.responseIOStreamEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    responseIOStream.setEnd();
   }
 
   public void setCreateResultSetStart() {
-    if (!this.sendData) {
-      return;
-    }
-    this.createResultSetStart = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    createResultSet.setStart();
   }
 
   public void setCreateResultSetEnd() {
-    if (!this.sendData) {
-      return;
-    }
-    this.createResultSetEnd = SnowflakeUtil.getEpochTimeInMicroSeconds();
+    createResultSet.setEnd();
   }
 
   public void incrementRetryCount() {
-    if (!this.sendData) {
-      return;
-    }
     this.retryCount++;
   }
 
   public void setRequestId(String requestId) {
-    if (!this.sendData) {
-      return;
-    }
     this.requestId = requestId;
   }
 
   public void addRetryLocation(String location) {
-    if (!this.sendData) {
-      return;
-    }
     if (Strings.isNullOrEmpty(this.retryLocations)) {
       this.retryLocations = location;
     } else {
       this.retryLocations = this.retryLocations.concat(", ").concat(location);
     }
+  }
+
+  long getTotalQueryTime() {
+    return query.getTime();
+  }
+
+  long getResultProcessingTime() {
+    if (createResultSet.getEnd() == 0 || processResultChunk.getStart() == 0) {
+      return -1;
+    }
+
+    return createResultSet.getEnd() - processResultChunk.getStart();
+  }
+
+  long getHttpRequestTime() {
+    return httpClient.getTime();
+  }
+
+  long getResultSetCreationTime() {
+    return createResultSet.getTime();
   }
 
   public String generateTelemetry() {
@@ -183,20 +142,20 @@ public class ExecTimeTelemetryData {
       JSONObject value = new JSONObject();
       String valueStr;
       value.put("eventType", eventType);
-      value.put("QueryStart", this.queryStart);
-      value.put("BindStart", this.bindStart);
-      value.put("BindEnd", this.bindEnd);
-      value.put("GzipStart", this.gzipStart);
-      value.put("GzipEnd", this.gzipEnd);
-      value.put("HttpClientStart", this.httpClientStart);
-      value.put("HttpClientEnd", this.httpClientEnd);
-      value.put("ResponseIOStreamStart", this.responseIOStreamStart);
-      value.put("ResponseIOStreamEnd", this.responseIOStreamEnd);
-      value.put("ProcessResultChunkStart", this.processResultChunkStart);
-      value.put("ProcessResultChunkEnd", this.processResultChunkEnd);
-      value.put("CreateResultSetStart", this.createResultSetStart);
-      value.put("CreatResultSetEnd", this.createResultSetEnd);
-      value.put("QueryEnd", this.queryEnd);
+      value.put("QueryStart", this.query.getStart());
+      value.put("BindStart", this.bind.getStart());
+      value.put("BindEnd", this.bind.getEnd());
+      value.put("GzipStart", this.gzip.getStart());
+      value.put("GzipEnd", this.gzip.getEnd());
+      value.put("HttpClientStart", this.httpClient.getStart());
+      value.put("HttpClientEnd", this.httpClient.getEnd());
+      value.put("ResponseIOStreamStart", this.responseIOStream.getStart());
+      value.put("ResponseIOStreamEnd", this.responseIOStream.getEnd());
+      value.put("ProcessResultChunkStart", this.processResultChunk.getStart());
+      value.put("ProcessResultChunkEnd", this.processResultChunk.getEnd());
+      value.put("CreateResultSetStart", this.createResultSet.getStart());
+      value.put("CreatResultSetEnd", this.createResultSet.getEnd());
+      value.put("QueryEnd", this.query.getEnd());
       value.put("BatchID", this.batchId);
       value.put("QueryID", this.queryId);
       value.put("RequestID", this.requestId);
@@ -204,14 +163,39 @@ public class ExecTimeTelemetryData {
       value.put("RetryCount", this.retryCount);
       value.put("RetryLocations", this.retryLocations);
       value.put("ocspEnabled", this.ocspEnabled);
-      value.put("ElapsedQueryTime", (this.queryEnd - this.queryStart));
-      value.put(
-          "ElapsedResultProcessTime", (this.createResultSetEnd - this.processResultChunkStart));
+      value.put("ElapsedQueryTime", getTotalQueryTime());
+      value.put("ElapsedResultProcessTime", getResultProcessingTime());
       value.put("Urgent", true);
       valueStr = value.toString(); // Avoid adding exception stacktrace to user logs.
       TelemetryService.getInstance().logExecutionTimeTelemetryEvent(value, eventType);
       return valueStr;
     }
     return "";
+  }
+
+  @SnowflakeJdbcInternalApi
+  public String getLogString() {
+    return "Query id: "
+        + this.queryId
+        + ", query function: "
+        + this.queryFunction
+        + ", batch id: "
+        + this.batchId
+        + ", request id: "
+        + this.requestId
+        + ", total query time: "
+        + getTotalQueryTime() / 1000
+        + " ms"
+        + ", result processing time: "
+        + getResultProcessingTime() / 1000
+        + " ms"
+        + ", result set creation time: "
+        + getResultSetCreationTime() / 1000
+        + " ms"
+        + ", http request time: "
+        + getHttpRequestTime() / 1000
+        + " ms"
+        + ", retry count: "
+        + this.retryCount;
   }
 }
