@@ -2364,6 +2364,18 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(16, resultSet.getObject("COLUMN_SIZE"));
         assertFalse(resultSet.next());
       }
+
+      try (ResultSet resultSet =
+          statement.executeQuery("Select text_col, float_vec, int_vec from JDBC_VECTOR")) {
+        SnowflakeResultSetMetaData unwrapResultSetMetadata =
+            resultSet.getMetaData().unwrap(SnowflakeResultSetMetaData.class);
+        assertEquals(0, unwrapResultSetMetadata.getDimension("TEXT_COL"));
+        assertEquals(0, unwrapResultSetMetadata.getDimension(1));
+        assertEquals(256, unwrapResultSetMetadata.getDimension("FLOAT_VEC"));
+        assertEquals(256, unwrapResultSetMetadata.getDimension(2));
+        assertEquals(16, unwrapResultSetMetadata.getDimension("INT_VEC"));
+        assertEquals(16, unwrapResultSetMetadata.getDimension(3));
+      }
     }
   }
 }
