@@ -86,6 +86,16 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
   }
 
   @Override
+  public int getDimension(int column) throws SQLException {
+    return resultSetMetaData.getDimension(column);
+  }
+
+  @Override
+  public int getDimension(String columnName) throws SQLException {
+    return resultSetMetaData.getDimension(getColumnIndex(columnName) + 1);
+  }
+
+  @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
     logger.trace("<T> T unwrap(Class<T> iface)", false);
 
