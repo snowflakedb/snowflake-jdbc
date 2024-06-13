@@ -33,10 +33,13 @@ import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /** Snowflake ResultSet implementation */
 public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     implements SnowflakeResultSet, ResultSet {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetV1.class);
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -359,7 +362,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
+    logger.trace("boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }
@@ -367,7 +370,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("public <T> T unwrap(Class<T> iface)", false);
+    logger.trace("<T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(

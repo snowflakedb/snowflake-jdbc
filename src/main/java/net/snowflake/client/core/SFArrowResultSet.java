@@ -278,7 +278,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           if (currentChunkIterator.next()) {
 
             logger.debug(
-                "Moving to chunk index {}, row count={}", nextChunkIndex, nextChunk.getRowCount());
+                "Moving to chunk index: {}, row count: {}",
+                nextChunkIndex,
+                nextChunk.getRowCount());
 
             nextChunkIndex++;
             return true;
@@ -435,7 +437,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       }
       return true;
     } else {
-      logger.debug("end of result", false);
+      logger.debug("End of result", false);
 
       /*
        * Here we check if the result has been truncated and throw exception if
@@ -805,7 +807,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         rootAllocator.close();
       }
     } catch (InterruptedException ie) {
-      logger.debug("interrupted during closing root allocator", false);
+      logger.debug("Interrupted during closing root allocator", false);
     } catch (Exception e) {
       logger.debug("Exception happened when closing rootAllocator: ", e.getLocalizedMessage());
     }

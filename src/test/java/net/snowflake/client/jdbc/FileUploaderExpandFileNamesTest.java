@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -31,20 +32,20 @@ public class FileUploaderExpandFileNamesTest {
     System.setProperty("user.home", folderName);
 
     String[] locations = {
-      folderName + "/Tes*Fil*A",
-      folderName + "/TestFil?B",
-      "~/TestFileC",
+      folderName + File.separator + "Tes*Fil*A",
+      folderName + File.separator + "TestFil?B",
+      "~" + File.separator + "TestFileC",
       "TestFileD",
-      folderName + "/TestFileE~"
+      folderName + File.separator + "TestFileE~"
     };
 
     Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations, null);
 
-    assertTrue(files.contains(folderName + "/TestFileA"));
-    assertTrue(files.contains(folderName + "/TestFileB"));
-    assertTrue(files.contains(folderName + "/TestFileC"));
-    assertTrue(files.contains(folderName + "/TestFileD"));
-    assertTrue(files.contains(folderName + "/TestFileE~"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileA"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileB"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileC"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileD"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileE~"));
   }
 
   @Test

@@ -25,7 +25,7 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 /** Snowflake ResultSetMetaData */
 public class SFResultSetMetaData {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSetMetaData.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSetMetaData.class);
 
   private int columnCount = 0;
 
