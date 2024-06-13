@@ -810,7 +810,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   @Test
   public void testNewFeaturesNotSupportedExeceptions() throws SQLException {
     try (Connection con = init();
-         Statement statement = con.createStatement();
+        Statement statement = con.createStatement();
         ResultSet rs = statement.executeQuery("select 1")) {
       expectSnowflakeLoggedFeatureNotSupportedException(
           rs.unwrap(SnowflakeResultSet.class)::getQueryErrorMessage);
