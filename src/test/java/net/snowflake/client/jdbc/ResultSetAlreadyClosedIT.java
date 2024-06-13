@@ -79,7 +79,6 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
     expectResultSetAlreadyClosedException(() -> resultSet.getBigDecimal(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getBytes(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getDate(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getDate(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getTime(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getTimestamp(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getObject(1));
