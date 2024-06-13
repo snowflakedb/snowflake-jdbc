@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -84,11 +83,11 @@ public class SFClientConfigParser {
         File configFile = new File(derivedConfigFilePath);
         ObjectMapper objectMapper = new ObjectMapper();
         SFClientConfig clientConfig = objectMapper.readValue(configFile, SFClientConfig.class);
-		logger.info(
+        logger.info(
             "Reading values logLevel {} and logPath {} from client configuration",
             clientConfig.getCommonProps().getLogLevel(),
             clientConfig.getCommonProps().getLogPath());
-			
+
         Set<String> unknownParams = clientConfig.getUnknownParamKeys();
         if (!unknownParams.isEmpty()) {
           for (String unknownParam : unknownParams) {
