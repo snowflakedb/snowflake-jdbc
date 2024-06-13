@@ -79,7 +79,7 @@ public enum SFSessionProperty {
   RETRY_TIMEOUT("retryTimeout", false, Integer.class),
   ENABLE_DIAGNOSTICS("ENABLE_DIAGNOSTICS", false, Boolean.class),
   DIAGNOSTICS_ALLOWLIST_FILE("DIAGNOSTICS_ALLOWLIST_FILE", false, String.class),
-  DIAGNOSTICS_SSL_TRACE("DIAGNOSTICS_SSL_TRACE", false, Boolean.class),
+
   ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class),
 
   DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class),
@@ -101,11 +101,6 @@ public enum SFSessionProperty {
 
   // application name matcher
   public static Pattern APPLICATION_REGEX = Pattern.compile("^[A-Za-z][A-Za-z0-9\\.\\-_]{1,50}$");
-
-  public static final String JVM_ENABLE_DIAGNOSTICS = "net.snowflake.jdbc.enable.diagnostics";
-
-  public static final String JVM_DIAGNOSTICS_ALLOWLIST_PATH =
-      "net.snowflake.jdbc.diagnostics.allowlist.path";
 
   public boolean isRequired() {
     return required;

@@ -6,11 +6,14 @@ import java.net.Proxy;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import javax.net.ssl.*;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-public class CertificateDiagnosticCheck extends DiagnosticCheck {
+class CertificateDiagnosticCheck extends DiagnosticCheck {
 
   private static final String SECURE_SOCKET_PROTOCOL = "TLS";
 
@@ -22,11 +25,11 @@ public class CertificateDiagnosticCheck extends DiagnosticCheck {
   }
 
   @Override
-  public void run(SnowflakeEndpoint snowflakeEndpoint) {
-    super.run(snowflakeEndpoint);
+  protected void doCheck(SnowflakeEndpoint snowflakeEndpoint) {
+    String hostname = snowflakeEndpoint.getHost();
+    String port = Integer.toString(snowflakeEndpoint.getPort());
     if (snowflakeEndpoint.isSslEnabled()) {
-      String hostname = snowflakeEndpoint.getHost();
-      String urlString = "https://" + hostname + ":" + snowflakeEndpoint.getPort();
+      String urlString = "https://" + hostname + ":" + port;
       try {
         SSLContext sslContext = SSLContext.getInstance(SECURE_SOCKET_PROTOCOL);
         sslContext.init(null, new TrustManager[] {new DiagnosticTrustManager()}, null);
@@ -35,33 +38,24 @@ public class CertificateDiagnosticCheck extends DiagnosticCheck {
         new URL(urlString).openConnection(proxy).connect();
       } catch (NoSuchAlgorithmException e) {
         logger.error(
-            "None of the security provider's implementation of SSLContextSpi supports the {} protocol",
-            SECURE_SOCKET_PROTOCOL);
-        logger.error(e.getLocalizedMessage(), e);
+            "None of the security provider's implementation of SSLContextSpi supports "
+                + SECURE_SOCKET_PROTOCOL,
+            e);
       } catch (KeyManagementException e) {
-        logger.error("Failed to initialize SSLContext");
-        logger.error(e.getLocalizedMessage(), e);
+        logger.error("Failed to initialize SSLContext", e);
       } catch (MalformedURLException e) {
-        logger.error("Failed to create new URL object: {}", urlString);
-        logger.error(e.getLocalizedMessage(), e);
+        logger.error("Failed to create new URL object: " + urlString, e);
       } catch (IOException e) {
-        logger.error("Failed to open a connection to: {}", urlString);
-        logger.error(e.getLocalizedMessage(), e);
+        logger.error("Failed to open a connection to: " + urlString, e);
       } catch (Exception e) {
         logger.error(
-            "Unknown error occurred when trying to retrieve certificate from: {}", hostname);
-        logger.error(e.getLocalizedMessage(), e);
+            "Unexpected error occurred when trying to retrieve certificate from: " + hostname, e);
       } finally {
         HttpsURLConnection.setDefaultSSLSocketFactory(
             (SSLSocketFactory) SSLSocketFactory.getDefault());
       }
     } else {
-      logger.debug(
-          "Host "
-              + snowflakeEndpoint.getHost()
-              + ":"
-              + snowflakeEndpoint.getPort()
-              + " is not secure. Skipping certificate check.");
+      logger.info("Host " + hostname + ":" + port + " is not secure. Skipping certificate check.");
     }
   }
 }

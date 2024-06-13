@@ -4,21 +4,15 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 abstract class DiagnosticCheck {
-  protected String name;
-  protected boolean success;
-  protected ProxyConfig proxyConf;
+  protected final String name;
+  protected final ProxyConfig proxyConf;
   private static final SFLogger logger = SFLoggerFactory.getLogger(DiagnosticCheck.class);
 
-  public String name() {
-    return this.name;
-  }
+  abstract void doCheck(SnowflakeEndpoint snowflakeEndpoint);
 
-  public void run(SnowflakeEndpoint snowflakeEndpoint) {
-    logger.debug("JDBC Diagnostics - {}: hostname: {}", this.name, snowflakeEndpoint.getHost());
-  }
-
-  public boolean isSuccess() {
-    return this.success;
+  final void run(SnowflakeEndpoint snowflakeEndpoint) {
+    logger.info("JDBC Diagnostics - {}: hostname: {}", this.name, snowflakeEndpoint.getHost());
+    doCheck(snowflakeEndpoint);
   }
 
   protected DiagnosticCheck(String name, ProxyConfig proxyConf) {

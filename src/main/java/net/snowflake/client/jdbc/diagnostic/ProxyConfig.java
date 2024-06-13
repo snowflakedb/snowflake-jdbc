@@ -3,43 +3,50 @@ package net.snowflake.client.jdbc.diagnostic;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.regex.Pattern;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
-/*
-This class is used to represent the proxy configurations passed to the JDBC driver
-either as JVM arguments or connection parameters. The class determines which proxy settings
-take precedence and should be used by the diagnostic tests.
-We normalize configurations where empty strings for hostnames and -1 for ports represent the absence of a configuration.
-
-The order of precedence is:
-
-1.) Connection parameters (proxy configurations passed to the constructor)
-2.) JVM arguments
-
-The useProxy parameter is ignored. If the proxy is configured using the JVM and someone wants to bypass that
-at the connection-level then they would need to set the following connection parameters:
-proxyHost=127.0.0.1
-proxyPort=8080
-nonProxyHosts=*
-
-i.e. bypass the proxy host when connecting to any host.
+/**
+ * This class is used to represent the proxy configurations passed to the JDBC driver either as JVM
+ * arguments or connection parameters. The class determines which proxy settings take precedence and
+ * should be used by the diagnostic tests. We normalize configurations where empty strings for
+ * hostnames and -1 for ports represent the absence of a configuration.
+ *
+ * <p>The order of precedence is:
+ *
+ * <p>1.) Connection parameters (proxy configurations passed to the constructor) 2.) JVM arguments
+ *
+ * <p>The useProxy parameter is ignored. If the proxy is configured using the JVM and someone wants
+ * to bypass that at the connection-level then they would need to set the following connection
+ * parameters: proxyHost=127.0.0.1 proxyPort=8080 nonProxyHosts=*
+ *
+ * <p>i.e. bypass the proxy host when connecting to any host.
  */
 class ProxyConfig {
-  String proxyHost;
-  int proxyPort;
-  String nonProxyHosts;
-  String jvmHttpProxyHost;
-  String jvmHttpsProxyHost;
-  int jvmHttpProxyPort;
-  int jvmHttpsProxyPort;
-  String jvmNonProxyHosts;
-  String finalHttpProxyHost = "";
-  String finalHttpsProxyHost = "";
-  int finalHttpProxyPort = -1;
-  int finalHttpsProxyPort = -1;
-  String finalNonProxyHosts = "";
-  boolean isProxyEnabled = false;
+  private String proxyHost;
+  private int proxyPort;
+  private String nonProxyHosts;
+  private String jvmHttpProxyHost;
+  private String jvmHttpsProxyHost;
+  private int jvmHttpProxyPort;
+  private int jvmHttpsProxyPort;
+  private String jvmNonProxyHosts;
+  private String finalHttpProxyHost = "";
+  private String finalHttpsProxyHost = "";
+  private int finalHttpProxyPort = -1;
+  private int finalHttpsProxyPort = -1;
+  private String finalNonProxyHosts = "";
+  private boolean isProxyEnabled = false;
 
-  boolean isProxyEnabledOnJvm = false;
+  private boolean isProxyEnabledOnJvm = false;
+
+  private final String JVM_HTTP_PROXY_HOST = "http.proxyHost";
+  private final String JVM_HTTPS_PROXY_HOST = "https.proxyHost";
+  private final String JVM_HTTP_PROXY_PORT = "http.proxyPort";
+  private final String JVM_HTTPS_PROXY_PORT = "https.proxyPort";
+  private final String JVM_HTTP_NON_PROXY_HOSTS = "http.nonProxyHosts";
+
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ProxyConfig.class);
 
   public String getHttpProxyHost() {
     return finalHttpProxyHost;
@@ -74,12 +81,6 @@ class ProxyConfig {
   }
 
   public ProxyConfig(String proxyHost, int proxyPort, String nonProxyHosts) {
-    String JVM_HTTP_PROXY_HOST = "http.proxyHost";
-    String JVM_HTTPS_PROXY_HOST = "https.proxyHost";
-    String JVM_HTTP_PROXY_PORT = "http.proxyPort";
-    String JVM_HTTPS_PROXY_PORT = "https.proxyPort";
-    String JVM_HTTP_NON_PROXY_HOSTS = "http.nonProxyHosts";
-
     jvmHttpProxyHost =
         (System.getProperty(JVM_HTTP_PROXY_HOST) == null)
             ? ""
@@ -122,14 +123,17 @@ class ProxyConfig {
     return isProxyEnabledOnJvm;
   }
 
-  /*
-  This method reviews both the JVM and connection parameter configurations then concludes which settings to use
-  1.) Check if proxy settings were passed in the connection parameters, if so, then we use that right away.
-  2.) If connection parameters sere not passed, then review JVM arguments and use those.
-  3.) If neither were set, then don't use any proxy settings (default).
+  /**
+   * This method reviews both the JVM and connection parameter configurations then concludes which
+   * settings to use 1.) Check if proxy settings were passed in the connection parameters, if so,
+   * then we use that right away. 2.) If connection parameters were not passed, then review JVM
+   * arguments and use those. 3.) If neither were set, then don't use any proxy settings (default).
    */
   private void resolveProxyConfigurations() {
     // Both proxyHost and proxyPort connection parameters must be present.
+    StringBuilder sb = new StringBuilder();
+    logger.info("Resolving proxy configurations");
+    sb.append("Proxy Configurations picked up from ");
     if (!proxyHost.isEmpty() && proxyPort != -1) {
       finalHttpProxyHost = proxyHost;
       finalHttpsProxyHost = proxyHost;
@@ -137,6 +141,10 @@ class ProxyConfig {
       finalHttpsProxyPort = proxyPort;
       finalNonProxyHosts = nonProxyHosts;
       isProxyEnabled = true;
+      sb.append("connection parameters:\n");
+      sb.append("proxyHost: ").append(proxyHost).append("\n");
+      sb.append("proxyPort: ").append(proxyPort).append("\n");
+      sb.append("nonProxyHosts: ").append(nonProxyHosts);
     } else if ((!jvmHttpProxyHost.isEmpty() && jvmHttpProxyPort != -1)
         || (!jvmHttpsProxyHost.isEmpty() && jvmHttpsProxyPort != -1)) {
       finalHttpProxyHost = jvmHttpProxyHost;
@@ -146,7 +154,21 @@ class ProxyConfig {
       finalNonProxyHosts = jvmNonProxyHosts;
       isProxyEnabled = true;
       isProxyEnabledOnJvm = true;
+      sb.append("JVM arguments:\n");
+      sb.append("-D").append(JVM_HTTP_PROXY_HOST).append("=").append(jvmHttpProxyHost).append("\n");
+      sb.append("-D").append(JVM_HTTP_PROXY_PORT).append("=").append(jvmHttpProxyPort).append("\n");
+      sb.append("-D")
+          .append(JVM_HTTPS_PROXY_HOST)
+          .append("=")
+          .append(jvmHttpsProxyHost)
+          .append("\n");
+      sb.append("-D")
+          .append(JVM_HTTPS_PROXY_PORT)
+          .append("=")
+          .append(jvmHttpsProxyPort)
+          .append("\n");
     }
+    logger.info(sb.toString());
   }
 
   protected boolean isBypassProxy(String hostname) {
@@ -161,13 +183,14 @@ class ProxyConfig {
   }
 
   public Proxy getProxy(SnowflakeEndpoint endpoint) {
-    if (!isProxyEnabled || isBypassProxy(endpoint.getHost())) return Proxy.NO_PROXY;
-    else if (endpoint.isSslEnabled())
+    if (!isProxyEnabled || isBypassProxy(endpoint.getHost())) {
+      return Proxy.NO_PROXY;
+    } else if (endpoint.isSslEnabled()) {
       return (isHttpsProxyEnabled())
           ? new Proxy(
               Proxy.Type.HTTP, new InetSocketAddress(finalHttpsProxyHost, finalHttpsProxyPort))
           : Proxy.NO_PROXY;
-
+    }
     return (isHttpProxyEnabled())
         ? new Proxy(Proxy.Type.HTTP, new InetSocketAddress(finalHttpProxyHost, finalHttpProxyPort))
         : Proxy.NO_PROXY;

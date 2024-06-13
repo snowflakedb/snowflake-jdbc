@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -553,10 +554,8 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.TRACING),
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
-        !Strings.isNullOrEmpty(
-                (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
-            ? "***"
-            : "(empty)",
+        SFLoggerUtil.isVariableProvided(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
         connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
         connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
@@ -1288,38 +1287,43 @@ public class SFSession extends SFBaseSession {
     this.sfClientConfig = sfClientConfig;
   }
 
+  /**
+   * If the JDBC driver starts in diagnostics mode then the method prints results of the
+   * connectivity tests it performs in the logs. A SQLException is thrown with a message indicating
+   * that the driver is in diagnostics mode, and that a connection was not created.
+   */
   private void runDiagnosticsIfEnabled() throws SnowflakeSQLException {
-    // If the user enables diagnostics then we need to be sure we don't go on
-    // and create an actual connection because that would be a waste of time since
-    // they're trying to debug a connection issue. We need to throw a SqlException
-    // back to the calling application with a clear message explaining a connection
-    // is not created.
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     boolean isDiagnosticsEnabled =
-        (connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS) == null)
-            ? false
-            : (Boolean) connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS);
-    boolean sslTraceEnabled =
-        (connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_SSL_TRACE) == null)
-            ? false
-            : (Boolean) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_SSL_TRACE);
+        Optional.ofNullable(connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS))
+            .map(b -> (Boolean) b)
+            .orElse(false);
+
     if (isDiagnosticsEnabled) {
-      logger.debug("Running diagnostics tests");
+      logger.info("Running diagnostics tests");
       String allowListFile =
           (String) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
 
-      // Implement diagnostics check here
-      DiagnosticContext diagnosticContext =
-          new DiagnosticContext(allowListFile, connectionPropertiesMap);
-      diagnosticContext.runDiagnostics();
+      if (allowListFile == null || allowListFile.isEmpty()) {
+        logger.error(
+            "Diagnostics was enabled but an allowlist file was not provided."
+                + " Please provide an allowlist JSON file using the connection parameter {}",
+            SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+        throw new SnowflakeSQLException(
+            "Diagnostics was enabled but an allowlist file was not provided. "
+                + "Please provide an allowlist JSON file using the connection parameter "
+                + SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+      } else {
+        DiagnosticContext diagnosticContext =
+            new DiagnosticContext(allowListFile, connectionPropertiesMap);
+        diagnosticContext.runDiagnostics();
+      }
 
       throw new SnowflakeSQLException(
           "A connection was not created because the driver is running in diagnostics mode."
               + " If this is unintended then disable diagnostics check by removing the "
               + SFSessionProperty.ENABLE_DIAGNOSTICS
-              + " connection parameter or the -D"
-              + SFSessionProperty.JVM_ENABLE_DIAGNOSTICS
-              + " JVM argument.");
+              + " connection parameter");
     }
   }
 }

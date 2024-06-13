@@ -14,7 +14,7 @@ import javax.naming.spi.NamingManager;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-public class DnsDiagnosticCheck extends DiagnosticCheck {
+class DnsDiagnosticCheck extends DiagnosticCheck {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(DnsDiagnosticCheck.class);
 
@@ -25,8 +25,7 @@ public class DnsDiagnosticCheck extends DiagnosticCheck {
   }
 
   @Override
-  public void run(SnowflakeEndpoint snowflakeEndpoint) {
-    super.run(snowflakeEndpoint);
+  protected void doCheck(SnowflakeEndpoint snowflakeEndpoint) {
     getCnameRecords(snowflakeEndpoint);
     getArecords(snowflakeEndpoint);
   }
@@ -49,10 +48,11 @@ public class DnsDiagnosticCheck extends DiagnosticCheck {
           sb.append("\n");
         }
       }
-      logger.debug(sb.toString());
+      logger.info(sb.toString());
     } catch (NamingException e) {
-      logger.error("Error occurred when getting CNAME record for host {}", hostname);
-      logger.error(e.getLocalizedMessage(), e);
+      logger.error("Error occurred when getting CNAME record for host " + hostname, e);
+    } catch (Exception e) {
+      logger.error("Unexpected error occurred when getting CNAME record for host " + hostname, e);
     }
   }
 
@@ -70,18 +70,14 @@ public class DnsDiagnosticCheck extends DiagnosticCheck {
         // Check if this is a private link endpoint and if the ip address
         // returned by the DNS query is a private IP address as expected.
         if (snowflakeEndpoint.isPrivateLink() && !ip.isSiteLocalAddress()) {
-          this.success = false;
           logger.error(
               "Public IP address was returned for {}. Please review your DNS configurations.",
               hostname);
         }
       }
-      logger.debug(sb.toString());
+      logger.info(sb.toString());
     } catch (UnknownHostException e) {
-      this.success = false;
-      logger.error(
-          "DNS query failed for host: {} Please check your DNS configurations.",
-          snowflakeEndpoint.getHost());
+      logger.error("DNS query failed for host: " + snowflakeEndpoint.getHost(), e);
     }
   }
 }

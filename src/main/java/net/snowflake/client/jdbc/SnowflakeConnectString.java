@@ -28,10 +28,6 @@ public class SnowflakeConnectString implements Serializable {
   private final int port;
   private final Map<String, Object> parameters;
   private final String account;
-  private static final String JVM_ENABLE_DIAGNOSTICS = SFSessionProperty.JVM_ENABLE_DIAGNOSTICS;
-  private static final String JVM_DIAGNOSTICS_ALLOWLIST_PATH =
-      SFSessionProperty.JVM_DIAGNOSTICS_ALLOWLIST_PATH;
-
   private static SnowflakeConnectString INVALID_CONNECT_STRING =
       new SnowflakeConnectString("", "", -1, Collections.emptyMap(), "");
 
@@ -170,8 +166,6 @@ public class SnowflakeConnectString implements Serializable {
         host = host.replaceFirst(account, account_wo_uscores);
       }
 
-      checkAndConfigureDiagnostics(parameters);
-
       return new SnowflakeConnectString(scheme, host, port, parameters, account);
     } catch (URISyntaxException uriEx) {
       logger.warn(
@@ -261,39 +255,5 @@ public class SnowflakeConnectString implements Serializable {
     }
     String vs = value.toString();
     return !"off".equalsIgnoreCase(vs) && !Boolean.FALSE.toString().equalsIgnoreCase(vs);
-  }
-
-  private static void checkAndConfigureDiagnostics(Map<String, Object> parameters) {
-    boolean enableDiagnostics;
-    String allowListPath = null;
-
-    // Check if diagnostics configurations were passed as JVM arguments
-    enableDiagnostics =
-        (System.getProperty(JVM_ENABLE_DIAGNOSTICS) != null
-            && System.getProperty(JVM_ENABLE_DIAGNOSTICS).equalsIgnoreCase("true"));
-    if (enableDiagnostics) {
-      allowListPath =
-          (System.getProperty(JVM_DIAGNOSTICS_ALLOWLIST_PATH) != null)
-              ? System.getProperty(JVM_DIAGNOSTICS_ALLOWLIST_PATH)
-              : null;
-    }
-
-    // Check if diagnostics was enabled as a connection parameter. If so, override any settings
-    // passed as a JVM argument.
-    if (parameters.get(SFSessionProperty.ENABLE_DIAGNOSTICS.getPropertyKey()) != null) {
-      enableDiagnostics =
-          ("true"
-              .equalsIgnoreCase(
-                  (String) parameters.get(SFSessionProperty.ENABLE_DIAGNOSTICS.getPropertyKey())));
-      allowListPath =
-          (String) parameters.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE.getPropertyKey());
-    }
-
-    parameters.put(SFSessionProperty.ENABLE_DIAGNOSTICS.getPropertyKey(), enableDiagnostics);
-    // If diagnostics is enabled then the allowlist file MUST be provided.
-    // A check later on will verify if the allowlist file was provided.
-    if (enableDiagnostics && allowListPath != null) {
-      parameters.put(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE.getPropertyKey(), allowListPath);
-    }
   }
 }

@@ -8,7 +8,7 @@ import java.net.SocketTimeoutException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
-public class TcpDiagnosticCheck extends DiagnosticCheck {
+class TcpDiagnosticCheck extends DiagnosticCheck {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(TcpDiagnosticCheck.class);
 
@@ -16,31 +16,30 @@ public class TcpDiagnosticCheck extends DiagnosticCheck {
     super("TCP Connection Test", proxyConfig);
   }
 
-  public void run(SnowflakeEndpoint snowflakeEndpoint) {
-    super.run(snowflakeEndpoint);
+  protected void doCheck(SnowflakeEndpoint snowflakeEndpoint) {
     String hostname = snowflakeEndpoint.getHost();
     int connectTimeoutMillis = 60000;
     int port = snowflakeEndpoint.getPort();
     Proxy proxy = proxyConf.getProxy(snowflakeEndpoint);
     try (Socket socket = new Socket(proxy)) {
       socket.bind(null);
-      logger.debug(
+      logger.info(
           "Establishing TCP connection: {} -> {}:{}",
           socket.getLocalSocketAddress(),
           snowflakeEndpoint.getHost(),
           snowflakeEndpoint.getPort());
       socket.connect(new InetSocketAddress(hostname, port), connectTimeoutMillis);
-      logger.debug(
+      logger.info(
           "Established a TCP connection successfully: {} -> {}",
           socket.getLocalSocketAddress(),
           socket.getRemoteSocketAddress());
     } catch (SocketTimeoutException e) {
       logger.error(
-          "Could not establish TCP connection within timeout of {} ms", connectTimeoutMillis);
-      logger.error(e.getLocalizedMessage(), e);
+          "Could not establish TCP connection within timeout of " + connectTimeoutMillis + "ms", e);
     } catch (IOException e) {
-      logger.error(
-          "Error connecting to host " + hostname + ":" + port + ":" + e.getLocalizedMessage(), e);
+      logger.error("Error connecting to host " + hostname + ":" + port, e);
+    } catch (Exception e) {
+      logger.error("Unexpected error occurred when connecting to host " + hostname + ":" + port, e);
     }
   }
 }

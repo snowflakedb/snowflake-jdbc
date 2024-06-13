@@ -1,17 +1,21 @@
-package net.snowflake.client.diagnostic;
+package net.snowflake.client.jdbc.diagnostic;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.snowflake.client.category.TestCategoryDiagnostic;
 import net.snowflake.client.core.SFSessionProperty;
-import net.snowflake.client.jdbc.diagnostic.DiagnosticContext;
-import net.snowflake.client.jdbc.diagnostic.SnowflakeEndpoint;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -24,10 +28,36 @@ public class DiagnosticContextLatestIT {
   private static final String HTTPS_PROXY_HOST = "https.proxyHost";
   private static final String HTTPS_PROXY_PORT = "https.proxyPort";
 
-  /*
-  Check that all the mock Snowflake Endpoints we manually created exist in the array returned to us by
-  the DiagnosticContext class which it generated after it parsed the allowlist.json file during initialization.
-  */
+  private static String oldJvmNonProxyHosts;
+  private static String oldJvmHttpProxyHost;
+  private static String oldJvmHttpProxyPort;
+  private static String oldJvmHttpsProxyHost;
+  private static String oldJvmHttpsProxyPort;
+
+  @BeforeClass
+  public static void init() {
+    oldJvmNonProxyHosts = System.getProperty(HTTP_NON_PROXY_HOSTS);
+    oldJvmHttpProxyHost = System.getProperty(HTTP_PROXY_HOST);
+    oldJvmHttpProxyPort = System.getProperty(HTTP_PROXY_PORT);
+    oldJvmHttpsProxyHost = System.getProperty(HTTPS_PROXY_HOST);
+    oldJvmHttpsProxyPort = System.getProperty(HTTPS_PROXY_PORT);
+  }
+
+  @Before
+  public void clearJvmProperties() {
+    System.clearProperty(HTTP_NON_PROXY_HOSTS);
+    System.clearProperty(HTTP_PROXY_HOST);
+    System.clearProperty(HTTP_PROXY_PORT);
+    System.clearProperty(HTTPS_PROXY_HOST);
+    System.clearProperty(HTTPS_PROXY_PORT);
+  }
+  /**
+   * Check that all the mock Snowflake Endpoints we manually created exist in the array returned to
+   * us by the DiagnosticContext class which it generated after it parsed the allowlist.json file
+   * during initialization.
+   *
+   * <p>Test added in version > 3.16.1
+   */
   @Test
   public void parseAllowListFileTest() {
     Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
@@ -35,8 +65,8 @@ public class DiagnosticContextLatestIT {
 
     DiagnosticContext diagnosticContext =
         new DiagnosticContext(allowlistFile.getAbsolutePath(), connectionPropertiesMap);
-    ArrayList<SnowflakeEndpoint> endpointsFromTestFile = diagnosticContext.getEndpoints();
-    ArrayList<SnowflakeEndpoint> mockEndpoints = new ArrayList<>();
+    List<SnowflakeEndpoint> endpointsFromTestFile = diagnosticContext.getEndpoints();
+    List<SnowflakeEndpoint> mockEndpoints = new ArrayList<>();
 
     mockEndpoints.add(
         new SnowflakeEndpoint("SNOWFLAKE_DEPLOYMENT", "account_name.snowflakecomputing.com", 443));
@@ -70,9 +100,11 @@ public class DiagnosticContextLatestIT {
     assertTrue(testFailedMessage, endpointsFromTestFile.containsAll(mockEndpoints));
   }
 
-  /*
-  Test that we correctly determine that proxy settings are absent from both the JVM and
-  the connections parameters (i.e. empty strings for hostnames, or -1 for ports).
+  /**
+   * Test that we correctly determine that proxy settings are absent from both the JVM and the
+   * connections parameters (i.e. empty strings for hostnames, or -1 for ports).
+   *
+   * <p>Test added in version > 3.16.1
    */
   @Test
   public void testEmptyProxyConfig() {
@@ -100,6 +132,7 @@ public class DiagnosticContextLatestIT {
         diagnosticContext.getHttpNonProxyHosts().isEmpty());
   }
 
+  /** Test added in version > 3.16.1 */
   @Test
   public void testProxyConfigSetOnJvm() {
     System.setProperty(HTTP_PROXY_HOST, "http.proxyHost.com");
@@ -112,12 +145,6 @@ public class DiagnosticContextLatestIT {
 
     DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
 
-    System.clearProperty(HTTP_PROXY_HOST);
-    System.clearProperty(HTTP_PROXY_PORT);
-    System.clearProperty(HTTPS_PROXY_HOST);
-    System.clearProperty(HTTPS_PROXY_PORT);
-    System.clearProperty(HTTP_NON_PROXY_HOSTS);
-
     assertTrue(diagnosticContext.isProxyEnabled());
     assertTrue(diagnosticContext.isProxyEnabledOnJvm());
     assertEquals(diagnosticContext.getHttpProxyHost(), "http.proxyHost.com");
@@ -127,9 +154,11 @@ public class DiagnosticContextLatestIT {
     assertEquals(diagnosticContext.getHttpNonProxyHosts(), "*.domain.com|localhost");
   }
 
-  /*
-  If Proxy settings are passed using JVM arguments and connection parameters
-  then the connection parameters take precedence.
+  /**
+   * If Proxy settings are passed using JVM arguments and connection parameters then the connection
+   * parameters take precedence.
+   *
+   * <p>Test added in version > 3.16.1
    */
   @Test
   public void testProxyOverrideWithConnectionParameter() {
@@ -148,12 +177,6 @@ public class DiagnosticContextLatestIT {
 
     DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
 
-    System.clearProperty(HTTP_PROXY_HOST);
-    System.clearProperty(HTTP_PROXY_PORT);
-    System.clearProperty(HTTPS_PROXY_HOST);
-    System.clearProperty(HTTPS_PROXY_PORT);
-    System.clearProperty(HTTP_NON_PROXY_HOSTS);
-
     assertTrue(diagnosticContext.isProxyEnabled());
     assertFalse(diagnosticContext.isProxyEnabledOnJvm());
     assertEquals(diagnosticContext.getHttpProxyHost(), "override.proxyHost.com");
@@ -163,6 +186,7 @@ public class DiagnosticContextLatestIT {
     assertEquals(diagnosticContext.getHttpNonProxyHosts(), "*.new_domain.com|localhost");
   }
 
+  /** Test added in version > 3.16.1 */
   @Test
   public void testGetProxy() {
     System.setProperty(HTTP_PROXY_HOST, "http.proxyHost.com");
@@ -174,12 +198,6 @@ public class DiagnosticContextLatestIT {
     Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
 
     DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
-
-    System.clearProperty(HTTP_PROXY_HOST);
-    System.clearProperty(HTTP_PROXY_PORT);
-    System.clearProperty(HTTPS_PROXY_HOST);
-    System.clearProperty(HTTPS_PROXY_PORT);
-    System.clearProperty(HTTP_NON_PROXY_HOSTS);
 
     String httpProxyHost = diagnosticContext.getHttpProxyHost();
     int httpProxyPort = diagnosticContext.getHttpProxyPort();
@@ -207,10 +225,12 @@ public class DiagnosticContextLatestIT {
     assertEquals(httpsProxy, diagnosticContext.getProxy(hostWithHttpsProxy));
   }
 
-  /*
-  Test that we correctly create direct HTTPS connections and only route HTTP requests through a proxy server
-  when we set only the -Dhttp.proxyHost and -Dhttp.proxyPort arguments
-  */
+  /**
+   * Test that we correctly create direct HTTPS connections and only route HTTP requests through a
+   * proxy server when we set only the -Dhttp.proxyHost and -Dhttp.proxyPort arguments
+   *
+   * <p>Test added in version > 3.16.1
+   */
   @Test
   public void testGetHttpProxyOnly() {
     System.setProperty(HTTP_PROXY_HOST, "http.proxyHost.com");
@@ -239,10 +259,12 @@ public class DiagnosticContextLatestIT {
     assertEquals(httpProxy, diagnosticContext.getProxy(httpHostProxy));
   }
 
-  /*
-  Test that we correctly create direct HTTP connections and only route HTTPS through a proxy server
-  when we set only the -Dhttps.proxyHost and -Dhttps.proxyPort parameters
-  */
+  /**
+   * Test that we correctly create direct HTTP connections and only route HTTPS through a proxy
+   * server when we set only the -Dhttps.proxyHost and -Dhttps.proxyPort parameters
+   *
+   * <p>Test added in version > 3.16.1
+   */
   @Test
   public void testGetHttpsProxyOnly() {
     System.setProperty(HTTPS_PROXY_HOST, "https.proxyHost.com");
@@ -251,9 +273,6 @@ public class DiagnosticContextLatestIT {
     Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
 
     DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
-
-    System.clearProperty(HTTPS_PROXY_HOST);
-    System.clearProperty(HTTPS_PROXY_PORT);
 
     String httpsProxyHost = diagnosticContext.getHttpsProxyHost();
     int httpsProxyPort = diagnosticContext.getHttpsProxyPort();
@@ -269,5 +288,69 @@ public class DiagnosticContextLatestIT {
 
     assertEquals(noProxy, diagnosticContext.getProxy(httpHostDirectConnection));
     assertEquals(httpsProxy, diagnosticContext.getProxy(httpsHostProxy));
+  }
+
+  /**
+   * Test that we create a direct connection to every host even though the JVM arguments are set. We
+   * override the JVM arguments with the nonProxyHosts connection parameter.
+   *
+   * <p>Test added in version > 3.16.1
+   */
+  @Test
+  public void testgetNoProxyAfterOverridingJvm() {
+    System.setProperty(HTTPS_PROXY_HOST, "https.proxyHost.com");
+    System.setProperty(HTTPS_PROXY_PORT, "8083");
+    System.setProperty(HTTP_PROXY_HOST, "http.proxyHost.com");
+    System.setProperty(HTTP_PROXY_PORT, "8080");
+
+    Map<SFSessionProperty, Object> connectionPropertiesMap = new HashMap<>();
+
+    connectionPropertiesMap.put(SFSessionProperty.PROXY_HOST, "override.proxyHost.com");
+    connectionPropertiesMap.put(SFSessionProperty.PROXY_PORT, "80");
+    connectionPropertiesMap.put(SFSessionProperty.NON_PROXY_HOSTS, "*");
+
+    DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
+
+    Proxy noProxy = Proxy.NO_PROXY;
+
+    SnowflakeEndpoint host1 =
+        new SnowflakeEndpoint("SNOWFLAKE_DEPLOYMENT", "account_name.snowflakecomputing.com", 443);
+    SnowflakeEndpoint host2 =
+        new SnowflakeEndpoint("OCSP_CACHE", "ocsp_cache.snowflakecomputing.com", 80);
+    SnowflakeEndpoint host3 =
+        new SnowflakeEndpoint(
+            "SNOWFLAKE_DEPLOYMENT", "account_name.privatelink.snowflakecomputing.com", 443);
+    SnowflakeEndpoint host4 =
+        new SnowflakeEndpoint("STAGE", "stage-bucket.s3-us-west-2.amazonaws.com", 443);
+
+    assertEquals(noProxy, diagnosticContext.getProxy(host1));
+    assertEquals(noProxy, diagnosticContext.getProxy(host2));
+    assertEquals(noProxy, diagnosticContext.getProxy(host3));
+    assertEquals(noProxy, diagnosticContext.getProxy(host4));
+  }
+
+  @After
+  public void restoreJvmArguments() {
+    System.clearProperty(HTTP_NON_PROXY_HOSTS);
+    System.clearProperty(HTTP_PROXY_HOST);
+    System.clearProperty(HTTP_PROXY_PORT);
+    System.clearProperty(HTTPS_PROXY_HOST);
+    System.clearProperty(HTTPS_PROXY_PORT);
+
+    if (oldJvmNonProxyHosts != null) {
+      System.setProperty(HTTP_NON_PROXY_HOSTS, oldJvmNonProxyHosts);
+    }
+    if (oldJvmHttpProxyHost != null) {
+      System.setProperty(HTTP_PROXY_HOST, oldJvmHttpProxyHost);
+    }
+    if (oldJvmHttpProxyPort != null) {
+      System.setProperty(HTTP_PROXY_PORT, oldJvmHttpProxyPort);
+    }
+    if (oldJvmHttpsProxyHost != null) {
+      System.setProperty(HTTPS_PROXY_HOST, oldJvmHttpsProxyHost);
+    }
+    if (oldJvmHttpsProxyPort != null) {
+      System.getProperty(HTTPS_PROXY_PORT, oldJvmHttpsProxyPort);
+    }
   }
 }

@@ -49,11 +49,11 @@ class DiagnosticTrustManager extends X509ExtendedTrustManager {
   }
 
   private void printCertificates(X509Certificate[] chainCerts) {
-    logger.debug("Printing certificate chain");
+    logger.info("Printing certificate chain");
     StringBuilder sb = new StringBuilder();
     int i = 0;
-    try {
-      for (X509Certificate x509Cert : chainCerts) {
+    for (X509Certificate x509Cert : chainCerts) {
+      try {
         sb.append("\nCertificate[").append(i).append("]:").append("\n");
         sb.append("Subject: ").append(x509Cert.getSubjectDN()).append("\n");
         sb.append("Issuer: ").append(x509Cert.getIssuerDN()).append("\n");
@@ -65,12 +65,14 @@ class DiagnosticTrustManager extends X509ExtendedTrustManager {
         sb.append("Issuer Alternative Names: ")
             .append(x509Cert.getIssuerAlternativeNames())
             .append("\n");
-        sb.append("Serail: ").append(x509Cert.getSerialNumber().toString(16)).append("\n");
+        sb.append("Serial: ").append(x509Cert.getSerialNumber().toString(16)).append("\n");
+        logger.info(sb.toString());
         i++;
+      } catch (CertificateParsingException e) {
+        logger.error("Error parsing certificate", e);
+      } catch (Exception e) {
+        logger.error("Unexpected error occurred when parsing certificate", e);
       }
-      logger.debug(sb.toString());
-    } catch (CertificateParsingException e) {
-      logger.error("Error parsing certificate {} : ", e.getLocalizedMessage(), e);
     }
   }
 }
