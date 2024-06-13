@@ -808,9 +808,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * implemented for synchronous queries *
    */
   @Test
-  public void testNewFeaturesNotSupported() throws SQLException {
+  public void testNewFeaturesNotSupportedExeceptions() throws SQLException {
     try (Connection con = init();
-        ResultSet rs = con.createStatement().executeQuery("select 1")) {
+         Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select 1")) {
       expectSnowflakeLoggedFeatureNotSupportedException(
           rs.unwrap(SnowflakeResultSet.class)::getQueryErrorMessage);
       expectSnowflakeLoggedFeatureNotSupportedException(
