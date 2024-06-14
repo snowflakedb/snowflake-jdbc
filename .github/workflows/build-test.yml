@@ -35,11 +35,6 @@ jobs:
               env:
                 WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
               run: ./ci/build.sh
-            - name: Upload Build Artifact
-              uses: actions/upload-artifact@v3
-              with:
-                name: artifacts
-                path: artifacts
 
     test-windows:
         needs: build
@@ -63,11 +58,6 @@ jobs:
               with:
                 python-version: '3.7'
                 architecture: 'x64'
-            - name: Download Build Artifacts
-              uses: actions/download-artifact@v3
-              with:
-                name: artifacts
-                path: lib
             - name: Tests
               shell: cmd
               env:
