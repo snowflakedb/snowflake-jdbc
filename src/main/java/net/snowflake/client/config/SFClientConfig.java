@@ -81,8 +81,6 @@ public class SFClientConfig {
     @JsonProperty("log_path")
     private String logPath;
 
-    @JsonAnySetter private Map<String, Object> unknownKeys = new LinkedHashMap<>();
-
     public CommonProps() {}
 
     public void CommonProps(String logLevel, String logPath) {
@@ -104,10 +102,6 @@ public class SFClientConfig {
 
     public void setLogPath(String logPath) {
       this.logPath = logPath;
-    }
-
-    Map<String, Object> getUnknownKeys() {
-      return unknownKeys;
     }
 
     @Override
