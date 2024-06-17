@@ -85,7 +85,9 @@ public class SFConnectionConfigParser {
             .map(ac -> createUrl(ac, fileConnectionConfiguration))
             .orElse(null);
 
-    if (fileConnectionConfiguration.containsKey("token_file_path")) {
+    if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
+            && fileConnectionConfiguration.get("token") == null
+    ) {
       Path path =
           Paths.get(
               Optional.ofNullable(fileConnectionConfiguration.get("token_file_path"))
