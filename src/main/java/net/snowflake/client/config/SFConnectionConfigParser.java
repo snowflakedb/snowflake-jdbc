@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -32,16 +33,22 @@ public class SFConnectionConfigParser {
         Optional.ofNullable(systemGetEnv("SNOWFLAKE_HOME"))
             .orElse(Paths.get(System.getProperty("user.home"), ".snowflake").toString());
     Path configFilePath = Paths.get(configDirectory, "connections.toml");
-    logger.debug("Reading connection parameters from file: {}", configFilePath);
-    Map<String, Map> data = readParametersMap(configFilePath);
-    Map<String, String> defaultConnectionParametersMap = data.get(defaultConnectionName);
-    if (defaultConnectionParametersMap == null || defaultConnectionParametersMap.isEmpty()) {
-      throw new SnowflakeSQLException(
-          String.format(
-              "Connection configuration with name %s does not exist", defaultConnectionName));
-    }
 
-    return defaultConnectionParametersMap;
+    if (Files.exists(configFilePath)) {
+      logger.debug("Reading connection parameters from file: {}", configFilePath);
+      Map<String, Map> data = readParametersMap(configFilePath);
+      Map<String, String> defaultConnectionParametersMap = data.get(defaultConnectionName);
+      if (defaultConnectionParametersMap == null || defaultConnectionParametersMap.isEmpty()) {
+        throw new SnowflakeSQLException(
+            String.format(
+                "Connection configuration with name %s does not contains paramaters",
+                defaultConnectionName));
+      }
+
+      return defaultConnectionParametersMap;
+    } else {
+      return new HashMap<>();
+    }
   }
 
   private static Map<String, Map> readParametersMap(Path configFilePath)
@@ -86,8 +93,7 @@ public class SFConnectionConfigParser {
             .orElse(null);
 
     if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
-            && fileConnectionConfiguration.get("token") == null
-    ) {
+        && fileConnectionConfiguration.get("token") == null) {
       Path path =
           Paths.get(
               Optional.ofNullable(fileConnectionConfiguration.get("token_file_path"))

@@ -2,6 +2,7 @@ package net.snowflake.client.config;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
@@ -12,13 +13,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.After;
@@ -40,9 +39,7 @@ public class SFConnectionConfigParserTest {
   public void close() throws IOException {
     SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_HOME");
     SnowflakeUtil.systemUnsetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME");
-    Files.walk(tempPath)
-            .map(Path::toFile)
-            .forEach(File::delete);
+    Files.walk(tempPath).map(Path::toFile).forEach(File::delete);
     Files.delete(tempPath);
   }
 
@@ -55,10 +52,9 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
-  public void testLoadSFConnectionConfigInValidPath() {
+  public void testLoadSFConnectionConfigInValidPath() throws SnowflakeSQLException {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_HOME", Paths.get("unknownPath").toString());
-    assertThrows(
-        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+    assertNull(SFConnectionConfigParser.buildConnectionParameters().getUrl());
   }
 
   @Test
@@ -80,18 +76,20 @@ public class SFConnectionConfigParserTest {
 
   @Test
   public void testThrowErrorWhenWrongPermissionsForTokenFile()
-          throws SnowflakeSQLException, IOException {
+      throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_HOME", tempPath.toString());
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     Set<PosixFilePermission> perms = new HashSet<>();
     perms.add(PosixFilePermission.OWNER_READ);
     perms.add(PosixFilePermission.OWNER_EXECUTE);
     prepareConnectionConfigurationTomlFile(
-            Collections.singletonMap("token_file_path", tokenFile.toString()), perms);
-    assertThrows(SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+        Collections.singletonMap("token_file_path", tokenFile.toString()), perms);
+    assertThrows(
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 
-  private void prepareConnectionConfigurationTomlFile(Map moreParameters, Set filepermissions) throws IOException {
+  private void prepareConnectionConfigurationTomlFile(Map moreParameters, Set filepermissions)
+      throws IOException {
     File file = new File(Paths.get(tempPath.toString(), "connections.toml").toUri());
 
     Map configuration = new HashMap();
