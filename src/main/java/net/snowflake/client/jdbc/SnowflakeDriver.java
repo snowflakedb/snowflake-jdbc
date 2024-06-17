@@ -221,6 +221,12 @@ public class SnowflakeDriver implements Driver {
         connectionParameters.getUrl(), connectionParameters.getParams());
   }
 
+  /**
+   * Connect method using connection configuration file
+   *
+   * @return connection
+   * @throws SQLException if failed to create a snowflake connection
+   */
   @SnowflakeJdbcInternalApi
   public Connection connect() throws SQLException {
     return connect(null, null);
@@ -236,12 +242,6 @@ public class SnowflakeDriver implements Driver {
     }
   }
 
-  /**
-   * Connect method using connection configuration file
-   *
-   * @return connection
-   * @throws SQLException if failed to create a snowflake connection
-   */
   @Override
   public int getMajorVersion() {
     return majorVersion;
