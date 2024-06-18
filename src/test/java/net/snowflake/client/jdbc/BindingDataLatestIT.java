@@ -77,7 +77,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
       statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
       prepStatement.setInt(1, 1);
-      prepStatement.setTimestamp(2, currT);
+      prepStatement.setTimestamp(2, currT, Calendar.getInstance(TimeZone.getTimeZone("UTC")));
       prepStatement.setTimestamp(3, currT);
       prepStatement.setTimestamp(4, currT);
       prepStatement.addBatch();
