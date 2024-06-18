@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.log.SFLogger;
@@ -33,13 +34,18 @@ public class SFConnectionConfigParser {
         Optional.ofNullable(systemGetEnv("SNOWFLAKE_HOME"))
             .orElse(Paths.get(System.getProperty("user.home"), ".snowflake").toString());
     Path configFilePath = Paths.get(configDirectory, "connections.toml");
+    System.out.println(" ###### load form file: " + configFilePath.toString());
 
     if (Files.exists(configFilePath)) {
-      logger.debug("Reading connection parameters from file: {}", configFilePath);
+      logger.debug(
+          "Reading connection parameters from file using key: {} []",
+          configFilePath,
+          defaultConnectionName);
       Map<String, Map> data = readParametersMap(configFilePath);
       Map<String, String> defaultConnectionParametersMap = data.get(defaultConnectionName);
       return defaultConnectionParametersMap;
     } else {
+      logger.debug("Connection configuration file does not exist");
       return new HashMap<>();
     }
   }
@@ -57,16 +63,18 @@ public class SFConnectionConfigParser {
 
   private static void varifyFilePermissionSecure(Path configFilePath)
       throws IOException, SnowflakeSQLException {
-    PosixFileAttributeView posixFileAttributeView =
-        Files.getFileAttributeView(configFilePath, PosixFileAttributeView.class);
-    if (!posixFileAttributeView.readAttributes().permissions().stream()
-        .allMatch(
-            o ->
-                Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
-                    .contains(o))) {
-      logger.error("Reading from file {} is not secure", configFilePath);
-      throw new SnowflakeSQLException(
-          String.format("Reading from file %s is not secure", configFilePath));
+    if (Constants.getOS() != Constants.OS.WINDOWS) {
+      PosixFileAttributeView posixFileAttributeView =
+          Files.getFileAttributeView(configFilePath, PosixFileAttributeView.class);
+      if (!posixFileAttributeView.readAttributes().permissions().stream()
+          .allMatch(
+              o ->
+                  Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
+                      .contains(o))) {
+        logger.error("Reading from file {} is not secure", configFilePath);
+        throw new SnowflakeSQLException(
+            String.format("Reading from file %s is not secure", configFilePath));
+      }
     }
   }
 

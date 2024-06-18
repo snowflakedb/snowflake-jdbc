@@ -237,7 +237,7 @@ public class SnowflakeDriver implements Driver {
    */
   @SnowflakeJdbcInternalApi
   public Connection connect() throws SQLException {
-    logger.debug("Execute internal method connet() without parameters");
+    logger.debug("Execute internal method connect() without parameters");
     return connect("useConfigurationFile", null);
   }
 
