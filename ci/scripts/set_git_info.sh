@@ -12,7 +12,6 @@ if [[ -z "$GITHUB_ACTIONS" ]]; then
 else
     #
     # GITHUB Actions
-    export JDBC_TEST_CLOUD_PROVIDER=$CLOUD_PROVIDER
     if [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
         SOURCE_PARAMETER_FILE=parameters_azure.json.gpg
     elif [[ "$CLOUD_PROVIDER" == "GCP" ]]; then
