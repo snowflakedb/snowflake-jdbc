@@ -10,10 +10,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /** This test could be run only on environment where file connection.toml is configured */
-// @Ignore
+ @Ignore
 public class FileConnectionConfigurationLatestIT {
 
   public static final String SNOWFLAKE_DEFAULT_CONNECTION_NAME_ENV_VAR =
