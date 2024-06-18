@@ -25,7 +25,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 @SnowflakeJdbcInternalApi
 public class SFConnectionConfigParser {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFConnectionConfigParser.class);
-  private static TomlMapper mapper = new TomlMapper();
+  private static final TomlMapper mapper = new TomlMapper();
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
       String defaultConnectionName) throws SnowflakeSQLException {
