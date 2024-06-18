@@ -4,21 +4,24 @@
 package net.snowflake.client.jdbc;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /** This test could be run only on environment where file connection.toml is configured */
-@Ignore
+// @Ignore
 public class FileConnectionConfigurationLatestIT {
 
-  @Test
-  public void testThrowExceptionIfConfigurationDoesNotExist() {
-    SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "non-existent");
-    Assert.assertThrows(SnowflakeSQLException.class, () -> SnowflakeDriver.INSTANCE.connect());
+  public static final String SNOWFLAKE_DEFAULT_CONNECTION_NAME_ENV_VAR =
+      "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
+
+  @After
+  public void cleanUp() {
+    SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_ENV_VAR);
   }
 
   @Test
@@ -32,12 +35,11 @@ public class FileConnectionConfigurationLatestIT {
   }
 
   private static void verifyConnetionToSnowflake(String connectionName) throws SQLException {
-    SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", connectionName);
-    try (Connection con = SnowflakeDriver.INSTANCE.connect();
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_ENV_VAR, connectionName);
+    try (Connection con = DriverManager.getConnection("spcs", null);
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("show parameters")) {
       Assert.assertTrue(resultSet.next());
     }
-    SnowflakeUtil.systemUnsetEnv(connectionName);
   }
 }

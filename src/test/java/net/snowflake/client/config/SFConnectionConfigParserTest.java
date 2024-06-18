@@ -44,17 +44,18 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
-  public void testLoadSFConnectionConfigWrongConfigurationName() {
+  public void testLoadSFConnectionConfigWrongConfigurationName() throws SnowflakeSQLException {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_HOME", tempPath.toString());
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "unknown");
-    assertThrows(
-        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+    ConnectionParameters connectionParameters =
+        SFConnectionConfigParser.buildConnectionParameters();
+    assertEquals(null, connectionParameters);
   }
 
   @Test
   public void testLoadSFConnectionConfigInValidPath() throws SnowflakeSQLException {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_HOME", Paths.get("unknownPath").toString());
-    assertNull(SFConnectionConfigParser.buildConnectionParameters().getUrl());
+    assertNull(SFConnectionConfigParser.buildConnectionParameters());
   }
 
   @Test

@@ -18,6 +18,8 @@ import net.snowflake.client.config.ConnectionParameters;
 import net.snowflake.client.config.SFConnectionConfigParser;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
 
@@ -29,6 +31,7 @@ import net.snowflake.common.core.SqlState;
  * loading
  */
 public class SnowflakeDriver implements Driver {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDriver.class);
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
@@ -203,7 +206,12 @@ public class SnowflakeDriver implements Driver {
    */
   @Override
   public Connection connect(String url, Properties info) throws SQLException {
-    ConnectionParameters connectionParameters = overrideByFileConnectionParametersIfNull(url, info);
+    ConnectionParameters fileConnectionParameters =
+        SFConnectionConfigParser.buildConnectionParameters();
+    ConnectionParameters connectionParameters =
+        fileConnectionParameters != null
+            ? fileConnectionParameters
+            : new ConnectionParameters(url, info);
     if (connectionParameters.getUrl() == null) {
       // expected return format per the JDBC spec for java.sql.Driver#connect()
       throw new SnowflakeSQLException("Unable to connect to url of 'null'.");
@@ -229,17 +237,8 @@ public class SnowflakeDriver implements Driver {
    */
   @SnowflakeJdbcInternalApi
   public Connection connect() throws SQLException {
-    return connect(null, null);
-  }
-
-  private static ConnectionParameters overrideByFileConnectionParametersIfNull(
-      String url, Properties info) throws SnowflakeSQLException {
-    if (url == null) {
-      // Connect using connection configuration file
-      return SFConnectionConfigParser.buildConnectionParameters();
-    } else {
-      return new ConnectionParameters(url, info);
-    }
+    logger.debug("Execute internal method connet() without parameters");
+    return connect("useConfigurationFile", null);
   }
 
   @Override

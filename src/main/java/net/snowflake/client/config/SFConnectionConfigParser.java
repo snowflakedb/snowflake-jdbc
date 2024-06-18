@@ -38,13 +38,6 @@ public class SFConnectionConfigParser {
       logger.debug("Reading connection parameters from file: {}", configFilePath);
       Map<String, Map> data = readParametersMap(configFilePath);
       Map<String, String> defaultConnectionParametersMap = data.get(defaultConnectionName);
-      if (defaultConnectionParametersMap == null || defaultConnectionParametersMap.isEmpty()) {
-        throw new SnowflakeSQLException(
-            String.format(
-                "Connection configuration with name %s does not contains paramaters",
-                defaultConnectionName));
-      }
-
       return defaultConnectionParametersMap;
     } else {
       return new HashMap<>();
@@ -57,9 +50,8 @@ public class SFConnectionConfigParser {
       File file = new File(configFilePath.toUri());
       varifyFilePermissionSecure(configFilePath);
       return mapper.readValue(file, Map.class);
-    } catch (IOException e) {
-      throw new SnowflakeSQLException(
-          "Problem during reading a configuration file: " + e.getMessage());
+    } catch (IOException ex) {
+      throw new SnowflakeSQLException(ex, "Problem during reading a configuration file.");
     }
   }
 
@@ -84,39 +76,41 @@ public class SFConnectionConfigParser {
     Map<String, String> fileConnectionConfiguration =
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
-    Properties conectionProperties = new Properties();
-    conectionProperties.putAll(fileConnectionConfiguration);
+    if (fileConnectionConfiguration != null && !fileConnectionConfiguration.isEmpty()) {
+      Properties conectionProperties = new Properties();
+      conectionProperties.putAll(fileConnectionConfiguration);
 
-    String url =
-        Optional.ofNullable(fileConnectionConfiguration.get("account"))
-            .map(ac -> createUrl(ac, fileConnectionConfiguration))
-            .orElse(null);
+      String url =
+          Optional.ofNullable(fileConnectionConfiguration.get("account"))
+              .map(ac -> createUrl(ac, fileConnectionConfiguration))
+              .orElse(null);
 
-    if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
-        && fileConnectionConfiguration.get("token") == null) {
-      Path path =
-          Paths.get(
-              Optional.ofNullable(fileConnectionConfiguration.get("token_file_path"))
-                  .orElse("/snowflake/session/token"));
-      logger.debug("Token used in connect is read from file: {}", path);
-      try {
-        String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
-        if (!token.isEmpty()) {
-          putPropertyIfNotNull(conectionProperties, "token", token.trim());
-        } else {
-          logger.warn("The token has empty value");
+      if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
+          && fileConnectionConfiguration.get("token") == null) {
+        Path path =
+            Paths.get(
+                Optional.ofNullable(fileConnectionConfiguration.get("token_file_path"))
+                    .orElse("/snowflake/session/token"));
+        logger.debug("Token used in connect is read from file: {}", path);
+        try {
+          String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
+          if (!token.isEmpty()) {
+            putPropertyIfNotNull(conectionProperties, "token", token.trim());
+          } else {
+            logger.warn("The token has empty value");
+          }
+        } catch (IOException ex) {
+          throw new SnowflakeSQLException(ex, "There is a problem during reading token from file");
         }
-      } catch (Exception e) {
-        throw new SnowflakeSQLException(
-            "There is a problem during reading token from file", e.getMessage());
       }
+      return new ConnectionParameters(url, conectionProperties);
+    } else {
+      return null;
     }
-
-    return new ConnectionParameters(url, conectionProperties);
   }
 
-  private static String createUrl(String ac, Map<String, String> fileConnectionConfiguration) {
-    String host = String.format("%s.snowflakecomputing.com", ac);
+  private static String createUrl(String account, Map<String, String> fileConnectionConfiguration) {
+    String host = String.format("%s.snowflakecomputing.com", account);
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
     if (Strings.isNullOrEmpty(port)) {
