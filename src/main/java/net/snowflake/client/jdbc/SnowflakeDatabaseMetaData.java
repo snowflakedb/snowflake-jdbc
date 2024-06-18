@@ -1865,6 +1865,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                 || columnMetadata.getType() == Types.TIME
                 || columnMetadata.getType() == Types.TIMESTAMP) {
               columnSize = columnMetadata.getPrecision();
+            } else if (columnMetadata.getType() == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
+              // For VECTOR Snowflake type we consider dimension as the column size
+              columnSize = columnMetadata.getDimension();
             }
 
             nextRow[6] = columnSize;
