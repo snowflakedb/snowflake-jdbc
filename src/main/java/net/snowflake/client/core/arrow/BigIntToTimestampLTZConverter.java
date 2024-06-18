@@ -109,15 +109,7 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
   public static Timestamp getTimestamp(
       long epoch, int scale, TimeZone sessionTimeZone, boolean useSessionTimezone)
       throws SFException {
-    long seconds = epoch / ArrowResultUtil.powerOfTen(scale);
-    int fraction =
-        (int) ((epoch % ArrowResultUtil.powerOfTen(scale)) * ArrowResultUtil.powerOfTen(9 - scale));
-    if (fraction < 0) {
-      // handle negative case here
-      seconds--;
-      fraction += 1000000000;
-    }
-    return TwoFieldStructToTimestampLTZConverter.getTimestamp(
-        seconds, fraction, sessionTimeZone, useSessionTimezone, false);
+    return ResultUtil.adjustTimestamp(
+        ArrowResultUtil.toJavaTimestamp(epoch, scale, sessionTimeZone, useSessionTimezone));
   }
 }
