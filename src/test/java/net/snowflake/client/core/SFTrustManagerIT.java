@@ -20,9 +20,12 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -38,6 +41,8 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 @Category(TestCategoryCore.class)
 public class SFTrustManagerIT extends BaseJDBCTest {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFTrustManagerIT.class);
+
   public SFTrustManagerIT(String host) {
     this.host = host;
   }
@@ -171,20 +176,38 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     accessHost(host, client);
   }
 
-  private static void accessHost(String host, HttpClient client) throws IOException {
-    int statusCode = -1;
-
-    HttpGet httpRequest = new HttpGet(String.format("https://%s:443/", host));
-    HttpResponse response = client.execute(httpRequest);
-    statusCode = response.getStatusLine().getStatusCode();
+  private static void accessHost(String host, HttpClient client)
+      throws IOException, InterruptedException {
+    HttpResponse response = executeWithRetries(host, client);
 
     await()
         .atMost(Duration.ofSeconds(10))
         .until(() -> response.getStatusLine().getStatusCode(), not(equalTo(-1)));
+
     assertThat(
         String.format("response code for %s", host),
-        statusCode,
+        response.getStatusLine().getStatusCode(),
         anyOf(equalTo(200), equalTo(400), equalTo(403), equalTo(404), equalTo(513)));
+  }
+
+  private static HttpResponse executeWithRetries(String host, HttpClient client)
+      throws IOException, InterruptedException {
+    // There is one host that causes SSLHandshakeException very often - let's retry
+    int maxRetries = host.equals("storage.googleapis.com") ? 5 : 0;
+    int retries = 0;
+    HttpGet httpRequest = new HttpGet(String.format("https://%s:443/", host));
+    while (true) {
+      try {
+        return client.execute(httpRequest);
+      } catch (SSLHandshakeException e) {
+        logger.warn("SSL handshake failed (host = {}, retries={}}", host, retries, e);
+        ++retries;
+        if (retries >= maxRetries) {
+          throw e;
+        }
+        Thread.sleep(retries * 1000);
+      }
+    }
   }
 
   /**
