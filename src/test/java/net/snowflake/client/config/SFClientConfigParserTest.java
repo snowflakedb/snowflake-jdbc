@@ -29,7 +29,7 @@ public class SFClientConfigParserTest {
       "{\"common\":{\"log_level\":\"info\",\"log_path\":\"/jdbc.log\",\"unknown_inside\":\"/unknown\"},\"unknown_outside\":\"/unknown\"}";
 
   private Path configFilePath;
-  // testing
+
   @After
   public void cleanup() throws IOException {
     if (configFilePath != null) {
