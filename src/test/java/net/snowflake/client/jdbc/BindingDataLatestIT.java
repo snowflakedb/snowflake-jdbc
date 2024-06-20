@@ -32,24 +32,29 @@ import org.junit.experimental.categories.Category;
 public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   public void testBindTimestampTZ() throws SQLException {
-    Connection connection = getConnection();
-    Statement statement = connection.createStatement();
-    statement.execute(
-        "create or replace table testBindTimestampTZ(" + "cola int, colb timestamp_tz)");
-    statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          "create or replace table testBindTimestampTZ(" + "cola int, colb timestamp_tz)");
+      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
 
-    long millSeconds = System.currentTimeMillis();
-    Timestamp ts = new Timestamp(millSeconds);
-    PreparedStatement prepStatement =
-        connection.prepareStatement("insert into testBindTimestampTZ values (?, ?)");
-    prepStatement.setInt(1, 123);
-    prepStatement.setTimestamp(2, ts, Calendar.getInstance(TimeZone.getTimeZone("EST")));
-    prepStatement.execute();
+      long millSeconds = System.currentTimeMillis();
+      Timestamp ts = new Timestamp(millSeconds);
+      try (PreparedStatement prepStatement =
+          connection.prepareStatement("insert into testBindTimestampTZ values (?, ?)")) {
+        prepStatement.setInt(1, 123);
+        prepStatement.setTimestamp(2, ts, Calendar.getInstance(TimeZone.getTimeZone("EST")));
+        prepStatement.execute();
+      }
 
-    ResultSet resultSet = statement.executeQuery("select cola, colb from testBindTimestampTz");
-    resultSet.next();
-    assertThat("integer", resultSet.getInt(1), equalTo(123));
-    assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
+      try (ResultSet resultSet =
+          statement.executeQuery("select cola, colb from testBindTimestampTz")) {
+
+        resultSet.next();
+        assertThat("integer", resultSet.getInt(1), equalTo(123));
+        assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
+      }
+    }
   }
 
   /**
@@ -60,57 +65,59 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithNTZType() throws SQLException {
-    try (Connection connection = getConnection()) {
-      TimeZone origTz = TimeZone.getDefault();
-      Statement statement = connection.createStatement();
-      statement.execute(
-          "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
-      statement.execute(
-          "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
-      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
-      statement.execute("alter session set TIMEZONE='Asia/Tokyo'");
-      TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
-      Timestamp currT = new Timestamp(System.currentTimeMillis());
+    TimeZone origTz = TimeZone.getDefault();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+        statement.execute(
+            "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
+        statement.execute("alter session set TIMEZONE='Asia/Tokyo'");
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
+        Timestamp currT = new Timestamp(System.currentTimeMillis());
 
-      // insert using stage binding
-      PreparedStatement prepStatement =
-          connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
-      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 5");
-      prepStatement.setInt(1, 1);
-      prepStatement.setTimestamp(2, currT);
-      prepStatement.setTimestamp(3, currT);
-      prepStatement.setTimestamp(4, currT);
-      prepStatement.addBatch();
-      prepStatement.executeBatch();
-      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
+        // insert using regular binging
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("insert into regularinsert values (?,?,?,?)")) {
+          for (int i = 1; i <= 6; i++) {
+            prepStatement.setInt(1, 1);
+            prepStatement.setTimestamp(2, currT);
+            prepStatement.setTimestamp(3, currT);
+            prepStatement.setTimestamp(4, currT);
+            prepStatement.addBatch();
+          }
+          prepStatement.executeBatch();
+        }
+        // insert using stage binding
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("insert into stageinsert values (?,?,?,?)")) {
+          statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+          prepStatement.setInt(1, 1);
+          prepStatement.setTimestamp(2, currT);
+          prepStatement.setTimestamp(3, currT);
+          prepStatement.setTimestamp(4, currT);
+          prepStatement.addBatch();
+          prepStatement.executeBatch();
+        }
 
-      // insert using regular binging
-      prepStatement = connection.prepareStatement("insert into regularinsert values (?,?,?,?)");
-      for (int i = 1; i <= 6; i++) {
-        prepStatement.setInt(1, 1);
-        prepStatement.setTimestamp(2, currT);
-        prepStatement.setTimestamp(3, currT);
-        prepStatement.setTimestamp(4, currT);
-        prepStatement.addBatch();
+        // Compare the results
+        try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
+            ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
+          rs1.next();
+          rs2.next();
+
+          assertEquals(rs1.getInt(1), rs2.getInt(1));
+          assertEquals(rs1.getString(2), rs2.getString(2));
+          assertEquals(rs1.getString(3), rs2.getString(3));
+          assertEquals(rs1.getString(4), rs2.getString(4));
+        }
+      } finally {
+        statement.execute("drop table if exists stageinsert");
+        statement.execute("drop table if exists regularinsert");
+        TimeZone.setDefault(origTz);
       }
-      prepStatement.executeBatch();
-
-      // Compare the results
-      ResultSet rs1 = statement.executeQuery("select * from stageinsert");
-      ResultSet rs2 = statement.executeQuery("select * from regularinsert");
-      rs1.next();
-      rs2.next();
-
-      assertEquals(rs1.getInt(1), rs2.getInt(1));
-      assertEquals(rs1.getString(2), rs2.getString(2));
-      assertEquals(rs1.getString(3), rs2.getString(3));
-      assertEquals(rs1.getString(4), rs2.getString(4));
-
-      statement.execute("drop table if exists stageinsert");
-      statement.execute("drop table if exists regularinsert");
-      TimeZone.setDefault(origTz);
-      statement.close();
-      prepStatement.close();
     }
   }
 
@@ -122,57 +129,59 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithLTZType() throws SQLException {
-    try (Connection connection = getConnection()) {
-      TimeZone origTz = TimeZone.getDefault();
-      Statement statement = connection.createStatement();
-      statement.execute(
-          "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
-      statement.execute(
-          "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
-      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
-      statement.execute("alter session set TIMEZONE='Asia/Tokyo'");
-      TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
-      Timestamp currT = new Timestamp(System.currentTimeMillis());
+    TimeZone origTz = TimeZone.getDefault();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+        statement.execute(
+            "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
+        statement.execute("alter session set TIMEZONE='Asia/Tokyo'");
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
+        Timestamp currT = new Timestamp(System.currentTimeMillis());
 
-      // insert using stage binding
-      PreparedStatement prepStatement =
-          connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
-      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
-      prepStatement.setInt(1, 1);
-      prepStatement.setTimestamp(2, currT);
-      prepStatement.setTimestamp(3, currT);
-      prepStatement.setTimestamp(4, currT);
-      prepStatement.addBatch();
-      prepStatement.executeBatch();
-      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
+        // insert using regular binging
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("insert into regularinsert values (?,?,?,?)")) {
+          for (int i = 1; i <= 6; i++) {
+            prepStatement.setInt(1, 1);
+            prepStatement.setTimestamp(2, currT);
+            prepStatement.setTimestamp(3, currT);
+            prepStatement.setTimestamp(4, currT);
+            prepStatement.addBatch();
+          }
+          prepStatement.executeBatch();
+        }
+        // insert using stage binding
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("insert into stageinsert values (?,?,?,?)")) {
+          statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+          prepStatement.setInt(1, 1);
+          prepStatement.setTimestamp(2, currT);
+          prepStatement.setTimestamp(3, currT);
+          prepStatement.setTimestamp(4, currT);
+          prepStatement.addBatch();
+          prepStatement.executeBatch();
+        }
 
-      // insert using regular binging
-      prepStatement = connection.prepareStatement("insert into regularinsert values (?,?,?,?)");
-      for (int i = 1; i <= 6; i++) {
-        prepStatement.setInt(1, 1);
-        prepStatement.setTimestamp(2, currT);
-        prepStatement.setTimestamp(3, currT);
-        prepStatement.setTimestamp(4, currT);
-        prepStatement.addBatch();
+        // Compare the results
+        try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
+            ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
+          rs1.next();
+          rs2.next();
+
+          assertEquals(rs1.getInt(1), rs2.getInt(1));
+          assertEquals(rs1.getString(2), rs2.getString(2));
+          assertEquals(rs1.getString(3), rs2.getString(3));
+          assertEquals(rs1.getString(4), rs2.getString(4));
+        }
+      } finally {
+        statement.execute("drop table if exists stageinsert");
+        statement.execute("drop table if exists regularinsert");
+        TimeZone.setDefault(origTz);
       }
-      prepStatement.executeBatch();
-
-      // Compare the results
-      ResultSet rs1 = statement.executeQuery("select * from stageinsert");
-      ResultSet rs2 = statement.executeQuery("select * from regularinsert");
-      rs1.next();
-      rs2.next();
-
-      assertEquals(rs1.getInt(1), rs2.getInt(1));
-      assertEquals(rs1.getString(2), rs2.getString(2));
-      assertEquals(rs1.getString(3), rs2.getString(3));
-      assertEquals(rs1.getString(4), rs2.getString(4));
-
-      statement.execute("drop table if exists stageinsert");
-      statement.execute("drop table if exists regularinsert");
-      TimeZone.setDefault(origTz);
-      statement.close();
-      prepStatement.close();
     }
   }
 
@@ -184,58 +193,62 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithLTZTypeForDayLightSavingTimeZone() throws SQLException {
-    try (Connection connection = getConnection()) {
-      TimeZone origTz = TimeZone.getDefault();
-      Statement statement = connection.createStatement();
-      statement.execute(
-          "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
-      statement.execute(
-          "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
-      statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
-      statement.execute("alter session set TIMEZONE='UTC'");
-      TimeZone.setDefault(TimeZone.getTimeZone("Australia/Sydney"));
-      Timestamp ts1 = new Timestamp(1403049600000L);
-      Timestamp ts2 = new Timestamp(1388016000000L);
+    TimeZone origTz = TimeZone.getDefault();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+        statement.execute(
+            "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
+        statement.execute("alter session set TIMEZONE='UTC'");
+        TimeZone.setDefault(TimeZone.getTimeZone("Australia/Sydney"));
 
-      // insert using stage binding
-      PreparedStatement prepStatement =
-          connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
-      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 5");
-      prepStatement.setInt(1, 1);
-      prepStatement.setTimestamp(2, ts1);
-      prepStatement.setTimestamp(3, ts2);
-      prepStatement.setTimestamp(4, ts2);
-      prepStatement.addBatch();
-      prepStatement.executeBatch();
-      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
+        Timestamp ts1 = new Timestamp(1403049600000L);
+        Timestamp ts2 = new Timestamp(1388016000000L);
+        Timestamp ts3 = new Timestamp(System.currentTimeMillis());
 
-      // insert using regular binging
-      prepStatement = connection.prepareStatement("insert into regularinsert values (?,?,?,?)");
-      for (int i = 1; i <= 6; i++) {
-        prepStatement.setInt(1, 1);
-        prepStatement.setTimestamp(2, ts1);
-        prepStatement.setTimestamp(3, ts2);
-        prepStatement.setTimestamp(4, ts2);
-        prepStatement.addBatch();
+        // insert using regular binging
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("insert into regularinsert values (?,?,?,?)")) {
+          for (int i = 1; i <= 6; i++) {
+            prepStatement.setInt(1, 1);
+            prepStatement.setTimestamp(2, ts1);
+            prepStatement.setTimestamp(3, ts2);
+            prepStatement.setTimestamp(4, ts3);
+            prepStatement.addBatch();
+          }
+          prepStatement.executeBatch();
+        }
+        // insert using stage binding
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("insert into stageinsert values (?,?,?,?)")) {
+          statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+          prepStatement.setInt(1, 1);
+          prepStatement.setTimestamp(2, ts1);
+          prepStatement.setTimestamp(3, ts2);
+          prepStatement.setTimestamp(4, ts3);
+          prepStatement.addBatch();
+          prepStatement.executeBatch();
+        }
+
+        // Compare the results
+        try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
+            ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
+          rs1.next();
+          rs2.next();
+
+          assertEquals(rs1.getInt(1), rs2.getInt(1));
+          assertEquals(rs1.getString(2), rs2.getString(2));
+          assertEquals(rs1.getString(3), rs2.getString(3));
+          assertEquals(rs1.getString(4), rs2.getString(4));
+        }
+      } finally {
+        statement.execute("drop table if exists stageinsert");
+        statement.execute("drop table if exists regularinsert");
+        TimeZone.setDefault(origTz);
       }
-      prepStatement.executeBatch();
-
-      // Compare the results
-      ResultSet rs1 = statement.executeQuery("select * from stageinsert");
-      ResultSet rs2 = statement.executeQuery("select * from regularinsert");
-      rs1.next();
-      rs2.next();
-
-      assertEquals(rs1.getInt(1), rs2.getInt(1));
-      assertEquals(rs1.getString(2), rs2.getString(2));
-      assertEquals(rs1.getString(3), rs2.getString(3));
-      assertEquals(rs1.getString(4), rs2.getString(4));
-
-      statement.execute("drop table if exists stageinsert");
-      statement.execute("drop table if exists regularinsert");
-      TimeZone.setDefault(origTz);
-      statement.close();
-      prepStatement.close();
     }
   }
 }
