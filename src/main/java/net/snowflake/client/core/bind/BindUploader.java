@@ -170,11 +170,10 @@ public class BindUploader implements Closeable {
       timestampFormat.setCalendar(cal);
       offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.ofEpochMilli(v1.getTime()));
     } else {
-      offsetId =  ZoneOffset.UTC;
+      offsetId = ZoneOffset.UTC;
     }
 
     return timestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
-
   }
 
   /**
