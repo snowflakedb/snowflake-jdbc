@@ -75,7 +75,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       // insert using stage binding
       PreparedStatement prepStatement =
           connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
-      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 5");
       prepStatement.setInt(1, 1);
       prepStatement.setTimestamp(2, currT);
       prepStatement.setTimestamp(3, currT);
@@ -200,7 +200,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
       // insert using stage binding
       PreparedStatement prepStatement =
           connection.prepareStatement("insert into stageinsert values (?,?,?,?)");
-      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+      statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 5");
       prepStatement.setInt(1, 1);
       prepStatement.setTimestamp(2, ts1);
       prepStatement.setTimestamp(3, ts2);
