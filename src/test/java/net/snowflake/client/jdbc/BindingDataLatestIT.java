@@ -49,7 +49,6 @@ public class BindingDataLatestIT extends AbstractDriverIT {
 
       try (ResultSet resultSet =
           statement.executeQuery("select cola, colb from testBindTimestampTz")) {
-
         resultSet.next();
         assertThat("integer", resultSet.getInt(1), equalTo(123));
         assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
