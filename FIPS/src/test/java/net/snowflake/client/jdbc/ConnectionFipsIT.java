@@ -291,7 +291,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGCP.class)
+  // @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGCP.class)
   public void connectWithFipsAndQuery() throws SQLException {
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();
