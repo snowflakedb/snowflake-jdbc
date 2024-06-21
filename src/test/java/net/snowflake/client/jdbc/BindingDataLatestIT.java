@@ -89,6 +89,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           }
           prepStatement.executeBatch();
         }
+
         // insert using stage binding
         try (PreparedStatement prepStatement =
             connection.prepareStatement("insert into stageinsert values (?,?,?,?)")) {
