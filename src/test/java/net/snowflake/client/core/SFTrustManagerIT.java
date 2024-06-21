@@ -20,9 +20,12 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -32,22 +35,37 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 @Category(TestCategoryCore.class)
 public class SFTrustManagerIT extends BaseJDBCTest {
-  private static final String[] TARGET_HOSTS = {
-    "storage.googleapis.com",
-    "ocspssd.us-east-1.snowflakecomputing.com/ocsp/fetch",
-    "sfcsupport.snowflakecomputing.com",
-    "sfcsupport.us-east-1.snowflakecomputing.com",
-    "sfcsupport.eu-central-1.snowflakecomputing.com",
-    "sfc-dev1-regression.s3.amazonaws.com",
-    "sfc-ds2-customer-stage.s3.amazonaws.com",
-    "snowflake.okta.com",
-    "sfcdev2.blob.core.windows.net"
-  };
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFTrustManagerIT.class);
+
+  public SFTrustManagerIT(String host) {
+    this.host = host;
+  }
+
+  @Parameterized.Parameters(name = "host={0}")
+  public static Object[][] data() {
+    return new Object[][] {
+      // this host generates many "SSLHandshake Certificate Revocation
+      // check failed. Could not retrieve OCSP Response." when running in parallel CI builds
+      // {"storage.googleapis.com"},
+      {"ocspssd.us-east-1.snowflakecomputing.com/ocsp/fetch"},
+      {"sfcsupport.snowflakecomputing.com"},
+      {"sfcsupport.us-east-1.snowflakecomputing.com"},
+      {"sfcsupport.eu-central-1.snowflakecomputing.com"},
+      {"sfc-dev1-regression.s3.amazonaws.com"},
+      {"sfc-ds2-customer-stage.s3.amazonaws.com"},
+      {"snowflake.okta.com"},
+      {"sfcdev2.blob.core.windows.net"}
+    };
+  }
 
   private boolean defaultState;
+  private final String host;
 
   @Before
   public void setUp() {
@@ -83,15 +101,13 @@ public class SFTrustManagerIT extends BaseJDBCTest {
   public void testOcsp() throws Throwable {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
-    for (String host : TARGET_HOSTS) {
-      HttpClient client =
-          HttpUtil.buildHttpClient(
-              new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
-              null, // default OCSP response cache file
-              false // enable decompression
-              );
-      accessHost(host, client);
-    }
+    HttpClient client =
+        HttpUtil.buildHttpClient(
+            new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
+            null, // default OCSP response cache file
+            false // enable decompression
+            );
+    accessHost(host, client);
   }
 
   /**
@@ -104,15 +120,13 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     File ocspCacheFile = tmpFolder.newFile();
-    for (String host : TARGET_HOSTS) {
-      HttpClient client =
-          HttpUtil.buildHttpClient(
-              new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
-              ocspCacheFile, // a temp OCSP response cache file
-              false // enable decompression
-              );
-      accessHost(host, client);
-    }
+    HttpClient client =
+        HttpUtil.buildHttpClient(
+            new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
+            ocspCacheFile, // a temp OCSP response cache file
+            false // enable decompression
+            );
+    accessHost(host, client);
   }
 
   /** OCSP tests for the Snowflake and AWS S3 HTTPS connections using the server cache. */
@@ -121,15 +135,13 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
     File ocspCacheFile = tmpFolder.newFile();
-    for (String host : TARGET_HOSTS) {
-      HttpClient client =
-          HttpUtil.buildHttpClient(
-              new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
-              ocspCacheFile, // a temp OCSP response cache file
-              false // enable decompression
-              );
-      accessHost(host, client);
-    }
+    HttpClient client =
+        HttpUtil.buildHttpClient(
+            new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
+            ocspCacheFile, // a temp OCSP response cache file
+            false // enable decompression
+            );
+    accessHost(host, client);
   }
 
   /**
@@ -141,15 +153,13 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     File ocspCacheFile = tmpFolder.newFile();
-    for (String host : TARGET_HOSTS) {
-      HttpClient client =
-          HttpUtil.buildHttpClient(
-              new HttpClientSettingsKey(OCSPMode.FAIL_OPEN),
-              ocspCacheFile, // a temp OCSP response cache file
-              false // enable decompression
-              );
-      accessHost(host, client);
-    }
+    HttpClient client =
+        HttpUtil.buildHttpClient(
+            new HttpClientSettingsKey(OCSPMode.FAIL_OPEN),
+            ocspCacheFile, // a temp OCSP response cache file
+            false // enable decompression
+            );
+    accessHost(host, client);
   }
 
   /** OCSP tests for the Snowflake and AWS S3 HTTPS connections using the server cache. */
@@ -159,7 +169,6 @@ public class SFTrustManagerIT extends BaseJDBCTest {
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
     // a file under never exists.
     File ocspCacheFile = new File("NEVER_EXISTS", "NEVER_EXISTS");
-    String host = TARGET_HOSTS[0];
     HttpClient client =
         HttpUtil.buildHttpClient(
             new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
@@ -169,20 +178,38 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     accessHost(host, client);
   }
 
-  private static void accessHost(String host, HttpClient client) throws IOException {
-    int statusCode = -1;
-
-    HttpGet httpRequest = new HttpGet(String.format("https://%s:443/", host));
-    HttpResponse response = client.execute(httpRequest);
-    statusCode = response.getStatusLine().getStatusCode();
+  private static void accessHost(String host, HttpClient client)
+      throws IOException, InterruptedException {
+    HttpResponse response = executeWithRetries(host, client);
 
     await()
         .atMost(Duration.ofSeconds(10))
         .until(() -> response.getStatusLine().getStatusCode(), not(equalTo(-1)));
+
     assertThat(
         String.format("response code for %s", host),
-        statusCode,
+        response.getStatusLine().getStatusCode(),
         anyOf(equalTo(200), equalTo(400), equalTo(403), equalTo(404), equalTo(513)));
+  }
+
+  private static HttpResponse executeWithRetries(String host, HttpClient client)
+      throws IOException, InterruptedException {
+    // There is one host that causes SSLHandshakeException very often - let's retry
+    int maxRetries = host.equals("storage.googleapis.com") ? 5 : 0;
+    int retries = 0;
+    HttpGet httpRequest = new HttpGet(String.format("https://%s:443/", host));
+    while (true) {
+      try {
+        return client.execute(httpRequest);
+      } catch (SSLHandshakeException e) {
+        logger.warn("SSL handshake failed (host = {}, retries={}}", host, retries, e);
+        ++retries;
+        if (retries >= maxRetries) {
+          throw e;
+        }
+        Thread.sleep(retries * 1000);
+      }
+    }
   }
 
   /**
