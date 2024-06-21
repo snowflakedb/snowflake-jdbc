@@ -82,11 +82,11 @@ public class SFConnectionConfigParserTest {
 
   @Test
   public void testThrowErrorWhenWrongPermissionsForTokenFile() throws IOException {
-    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), false);
+    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
     assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
@@ -108,7 +108,6 @@ public class SFConnectionConfigParserTest {
       moreParameters.forEach((k, v) -> configurationParams.put(k, v));
     }
     configuration.put("default", configurationParams);
-    System.out.println("Write to file : " + file.toString() + configuration.values().toString());
     tomlMapper.writeValue(file, configuration);
 
     if (configurationParams.containsKey("token_file_path")) {
