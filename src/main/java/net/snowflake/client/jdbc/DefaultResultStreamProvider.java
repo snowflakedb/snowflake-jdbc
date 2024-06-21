@@ -2,6 +2,8 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.core.Constants.MB;
 
+import com.github.luben.zstd.RecyclingBufferPool;
+import com.github.luben.zstd.ZstdInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -153,6 +155,8 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
       if ("gzip".equalsIgnoreCase(encoding.getValue())) {
         /* specify buffer size for GZIPInputStream */
         inputStream = new GZIPInputStream(is, STREAM_BUFFER_SIZE);
+      } else if ("zstd".equalsIgnoreCase(encoding.getValue())) {
+        inputStream = new ZstdInputStream(is, RecyclingBufferPool.INSTANCE);
       } else {
         throw new SnowflakeSQLException(
             SqlState.INTERNAL_ERROR,

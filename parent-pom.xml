@@ -505,6 +505,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
+      <version>1.5.6-3</version>
+    </dependency>
+    <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-core</artifactId>
     </dependency>
