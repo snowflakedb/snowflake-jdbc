@@ -290,6 +290,10 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     DriverManager.getConnection(uri, properties).close();
   }
 
+  /**
+   * Test case for connecting with FIPS and executing a query.
+   * Currently ignored execution on GCP due to exception thrown "SSlException Could not generate XDH keypair"
+   */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGCP.class)
   public void connectWithFipsAndQuery() throws SQLException {
