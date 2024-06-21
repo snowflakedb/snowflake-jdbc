@@ -199,9 +199,9 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         Statement statement = connection.createStatement()) {
       try {
         statement.execute(
-            "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+            "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, ltz1 timestamp_ltz, ltz2 timestamp_ltz, tz0 timestamp_tz, tz1 timestamp_tz, tz2 timestamp_tz, ntz0 timestamp_ntz, ntz1 timestamp_ntz, ntz2 timestamp_ntz)");
         statement.execute(
-            "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+            "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, ltz1 timestamp_ltz, ltz2 timestamp_ltz, tz0 timestamp_tz, tz1 timestamp_tz, tz2 timestamp_tz, ntz0 timestamp_ntz, ntz1 timestamp_ntz, ntz2 timestamp_ntz)");
         statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
         statement.execute("alter session set TIMEZONE='UTC'");
         TimeZone.setDefault(TimeZone.getTimeZone("Australia/Sydney"));
@@ -212,12 +212,20 @@ public class BindingDataLatestIT extends AbstractDriverIT {
 
         // insert using regular binging
         try (PreparedStatement prepStatement =
-            connection.prepareStatement("insert into regularinsert values (?,?,?,?)")) {
+            connection.prepareStatement("insert into regularinsert values (?,?,?,?,?,?,?,?,?,?)")) {
           for (int i = 1; i <= 6; i++) {
-            prepStatement.setInt(1, 1);
+            prepStatement.setInt(i, 1);
             prepStatement.setTimestamp(2, ts1);
             prepStatement.setTimestamp(3, ts2);
             prepStatement.setTimestamp(4, ts3);
+
+            prepStatement.setTimestamp(5, ts1);
+            prepStatement.setTimestamp(6, ts2);
+            prepStatement.setTimestamp(7, ts3);
+
+            prepStatement.setTimestamp(8, ts1);
+            prepStatement.setTimestamp(9, ts2);
+            prepStatement.setTimestamp(10, ts3);
             prepStatement.addBatch();
           }
           prepStatement.executeBatch();
@@ -225,12 +233,20 @@ public class BindingDataLatestIT extends AbstractDriverIT {
 
         // insert using stage binding
         try (PreparedStatement prepStatement =
-            connection.prepareStatement("insert into stageinsert values (?,?,?,?)")) {
+            connection.prepareStatement("insert into stageinsert values (?,?,?,?,?,?,?,?,?,?)")) {
           statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
           prepStatement.setInt(1, 1);
           prepStatement.setTimestamp(2, ts1);
           prepStatement.setTimestamp(3, ts2);
           prepStatement.setTimestamp(4, ts3);
+
+          prepStatement.setTimestamp(5, ts1);
+          prepStatement.setTimestamp(6, ts2);
+          prepStatement.setTimestamp(7, ts3);
+
+          prepStatement.setTimestamp(8, ts1);
+          prepStatement.setTimestamp(9, ts2);
+          prepStatement.setTimestamp(10, ts3);
           prepStatement.addBatch();
           prepStatement.executeBatch();
         }
@@ -242,9 +258,9 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           rs2.next();
 
           assertEquals(rs1.getInt(1), rs2.getInt(1));
-          assertEquals(rs1.getString(2), rs2.getString(2));
-          assertEquals(rs1.getString(3), rs2.getString(3));
-          assertEquals(rs1.getString(4), rs2.getString(4));
+          for (int i = 1; i < 10; i++) {
+            assertEquals(rs1.getString(i), rs2.getString(i));
+          }
         }
       } finally {
         statement.execute("drop table if exists stageinsert");
