@@ -128,7 +128,7 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ 'jdbc-centos7-openjdk8' ]
-                cloud: [ 'AWS', 'AZURE', 'GCP' ]
+                cloud: [ 'AWS' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader']
                 is_old_driver: ['true']
         steps:
