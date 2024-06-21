@@ -4,6 +4,7 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;

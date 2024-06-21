@@ -206,7 +206,8 @@ public class SnowflakeDriver implements Driver {
    */
   @Override
   public Connection connect(String url, Properties info) throws SQLException {
-    ConnectionParameters connectionParameters = overrideByFileConnectionParametersIfAutoConfiguration(url, info);
+    ConnectionParameters connectionParameters =
+        overrideByFileConnectionParametersIfAutoConfiguration(url, info);
 
     if (connectionParameters.getUrl() == null) {
       // expected return format per the JDBC spec for java.sql.Driver#connect()
@@ -225,14 +226,15 @@ public class SnowflakeDriver implements Driver {
         connectionParameters.getUrl(), connectionParameters.getParams());
   }
 
-
   private static ConnectionParameters overrideByFileConnectionParametersIfAutoConfiguration(
       String url, Properties info) throws SnowflakeSQLException {
     if (url != null && url.contains("jdbc:snowflake:auto")) {
       // Connect using connection configuration file
-      ConnectionParameters connectionParameters = SFConnectionConfigParser.buildConnectionParameters();
+      ConnectionParameters connectionParameters =
+          SFConnectionConfigParser.buildConnectionParameters();
       if (connectionParameters == null) {
-        throw new SnowflakeSQLException("Invalid connection configuration parameters expected for auto configuration using file");
+        throw new SnowflakeSQLException(
+            "Invalid connection configuration parameters expected for auto configuration using file");
       }
       return connectionParameters;
     } else {

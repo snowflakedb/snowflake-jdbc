@@ -30,7 +30,8 @@ public class SFConnectionConfigParser {
   private static final TomlMapper mapper = new TomlMapper();
   public static final String SNOWFLAKE_HOME_KEY = "SNOWFLAKE_HOME";
   public static final String SNOWFLAKE_DIR = ".snowflake";
-  public static final String SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY = "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
+  public static final String SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY =
+      "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
   public static final String DEFAULT = "default";
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
@@ -75,9 +76,12 @@ public class SFConnectionConfigParser {
               o ->
                   Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
                       .contains(o))) {
-        logger.error("Reading from file {} is not safe because of insufficient permissions", configFilePath);
+        logger.error(
+            "Reading from file {} is not safe because of insufficient permissions", configFilePath);
         throw new SnowflakeSQLException(
-            String.format("Reading from file %s is not safe because of insufficient permissions", configFilePath));
+            String.format(
+                "Reading from file %s is not safe because of insufficient permissions",
+                configFilePath));
       }
     }
   }
