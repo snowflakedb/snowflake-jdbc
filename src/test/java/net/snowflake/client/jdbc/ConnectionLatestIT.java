@@ -427,8 +427,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       await()
           .atMost(Duration.ofSeconds(10))
           .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.RUNNING));
+
+      // it may take more time to finish the test when running in parallel in CI builds
       await()
-          .atMost(Duration.ofSeconds(50))
+          .atMost(Duration.ofSeconds(360))
           .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.SUCCESS));
     }
   }
