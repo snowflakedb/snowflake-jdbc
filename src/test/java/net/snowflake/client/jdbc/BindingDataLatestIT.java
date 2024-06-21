@@ -65,6 +65,9 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithNTZType() throws SQLException {
     TimeZone origTz = TimeZone.getDefault();
+    Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
+
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
@@ -74,7 +77,6 @@ public class BindingDataLatestIT extends AbstractDriverIT {
             "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
         statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
         statement.execute("alter session set TIMEZONE='Asia/Tokyo'");
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
         Timestamp currT = new Timestamp(System.currentTimeMillis());
 
         // insert using regular binging
@@ -95,8 +97,8 @@ public class BindingDataLatestIT extends AbstractDriverIT {
             connection.prepareStatement("insert into stageinsert values (?,?,?,?)")) {
           statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
           prepStatement.setInt(1, 1);
-          prepStatement.setTimestamp(2, currT);
-          prepStatement.setTimestamp(3, currT);
+          prepStatement.setTimestamp(2, currT, utc);
+          prepStatement.setTimestamp(3, currT, utc);
           prepStatement.setTimestamp(4, currT);
           prepStatement.addBatch();
           prepStatement.executeBatch();
@@ -109,9 +111,14 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           rs2.next();
 
           assertEquals(rs1.getInt(1), rs2.getInt(1));
-          assertEquals(rs1.getString(2), rs2.getString(2));
-          assertEquals(rs1.getString(3), rs2.getString(3));
-          assertEquals(rs1.getString(4), rs2.getString(4));
+
+          // Check all the columns have the same.
+          assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(3), rs1.getTimestamp(4));
+
+          assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
+          assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
         }
       } finally {
         statement.execute("drop table if exists stageinsert");
@@ -174,9 +181,14 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           rs2.next();
 
           assertEquals(rs1.getInt(1), rs2.getInt(1));
-          assertEquals(rs1.getString(2), rs2.getString(2));
-          assertEquals(rs1.getString(3), rs2.getString(3));
-          assertEquals(rs1.getString(4), rs2.getString(4));
+
+          // Check that all the values are the same.
+          assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(3), rs1.getTimestamp(4));
+
+          assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
+          assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
         }
       } finally {
         statement.execute("drop table if exists stageinsert");
@@ -195,6 +207,8 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithLTZTypeForDayLightSavingTimeZone() throws SQLException {
     TimeZone origTz = TimeZone.getDefault();
+    Calendar australia = Calendar.getInstance(TimeZone.getTimeZone("Australia/Sydney"));
+    TimeZone.setDefault(TimeZone.getTimeZone("Australia/Sydney"));
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
@@ -202,9 +216,8 @@ public class BindingDataLatestIT extends AbstractDriverIT {
             "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, ltz1 timestamp_ltz, ltz2 timestamp_ltz, tz0 timestamp_tz, tz1 timestamp_tz, tz2 timestamp_tz, ntz0 timestamp_ntz, ntz1 timestamp_ntz, ntz2 timestamp_ntz)");
         statement.execute(
             "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, ltz1 timestamp_ltz, ltz2 timestamp_ltz, tz0 timestamp_tz, tz1 timestamp_tz, tz2 timestamp_tz, ntz0 timestamp_ntz, ntz1 timestamp_ntz, ntz2 timestamp_ntz)");
-        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
+        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
         statement.execute("alter session set TIMEZONE='UTC'");
-        TimeZone.setDefault(TimeZone.getTimeZone("Australia/Sydney"));
 
         Timestamp ts1 = new Timestamp(1403049600000L);
         Timestamp ts2 = new Timestamp(1388016000000L);
@@ -223,9 +236,10 @@ public class BindingDataLatestIT extends AbstractDriverIT {
             prepStatement.setTimestamp(6, ts2);
             prepStatement.setTimestamp(7, ts3);
 
-            prepStatement.setTimestamp(8, ts1);
-            prepStatement.setTimestamp(9, ts2);
-            prepStatement.setTimestamp(10, ts3);
+            prepStatement.setTimestamp(8, ts1, australia);
+            prepStatement.setTimestamp(9, ts2, australia);
+            prepStatement.setTimestamp(10, ts3, australia);
+
             prepStatement.addBatch();
           }
           prepStatement.executeBatch();
@@ -247,6 +261,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           prepStatement.setTimestamp(8, ts1);
           prepStatement.setTimestamp(9, ts2);
           prepStatement.setTimestamp(10, ts3);
+
           prepStatement.addBatch();
           prepStatement.executeBatch();
         }
@@ -258,9 +273,35 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           rs2.next();
 
           assertEquals(rs1.getInt(1), rs2.getInt(1));
-          for (int i = 1; i < 10; i++) {
-            assertEquals(rs1.getString(i), rs2.getString(i));
-          }
+          assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
+          assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
+          assertEquals(rs1.getTimestamp(5), rs2.getTimestamp(5));
+          assertEquals(rs1.getTimestamp(6), rs2.getTimestamp(6));
+          assertEquals(rs1.getTimestamp(7), rs2.getTimestamp(7));
+          assertEquals(rs1.getTimestamp(8), rs2.getTimestamp(8));
+          assertEquals(rs1.getTimestamp(9), rs2.getTimestamp(9));
+          assertEquals(rs1.getTimestamp(10), rs2.getTimestamp(10));
+
+          assertEquals(ts1.getTime(), rs1.getTimestamp(2).getTime());
+          assertEquals(ts2.getTime(), rs1.getTimestamp(3).getTime());
+          assertEquals(ts3.getTime(), rs1.getTimestamp(4).getTime());
+          assertEquals(ts1.getTime(), rs1.getTimestamp(5).getTime());
+          assertEquals(ts2.getTime(), rs1.getTimestamp(6).getTime());
+          assertEquals(ts3.getTime(), rs1.getTimestamp(7).getTime());
+          assertEquals(ts1.getTime(), rs1.getTimestamp(8).getTime());
+          assertEquals(ts2.getTime(), rs1.getTimestamp(9).getTime());
+          assertEquals(ts3.getTime(), rs1.getTimestamp(10).getTime());
+
+          assertEquals(ts1.getTime(), rs2.getTimestamp(2).getTime());
+          assertEquals(ts2.getTime(), rs2.getTimestamp(3).getTime());
+          assertEquals(ts3.getTime(), rs2.getTimestamp(4).getTime());
+          assertEquals(ts1.getTime(), rs2.getTimestamp(5).getTime());
+          assertEquals(ts2.getTime(), rs2.getTimestamp(6).getTime());
+          assertEquals(ts3.getTime(), rs2.getTimestamp(7).getTime());
+          assertEquals(ts1.getTime(), rs2.getTimestamp(8).getTime());
+          assertEquals(ts2.getTime(), rs2.getTimestamp(9).getTime());
+          assertEquals(ts3.getTime(), rs2.getTimestamp(10).getTime());
         }
       } finally {
         statement.execute("drop table if exists stageinsert");
