@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -17,12 +18,15 @@ import org.junit.Test;
 @Ignore
 public class FileConnectionConfigurationLatestIT {
 
-  public static final String SNOWFLAKE_DEFAULT_CONNECTION_NAME_ENV_VAR =
-      "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
-
   @After
   public void cleanUp() {
-    SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_ENV_VAR);
+    SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);
+  }
+
+  @Test
+  public void testThrowExceptionIfConfigurationDoesNotExist() {
+    SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "non-existent");
+    Assert.assertThrows(SnowflakeSQLException.class, () -> SnowflakeDriver.INSTANCE.connect());
   }
 
   @Test
@@ -36,8 +40,8 @@ public class FileConnectionConfigurationLatestIT {
   }
 
   private static void verifyConnetionToSnowflake(String connectionName) throws SQLException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_ENV_VAR, connectionName);
-    try (Connection con = DriverManager.getConnection("spcs", null);
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, connectionName);
+    try (Connection con = DriverManager.getConnection("jdbc:snowflake:auto", null);
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("show parameters")) {
       Assert.assertTrue(resultSet.next());

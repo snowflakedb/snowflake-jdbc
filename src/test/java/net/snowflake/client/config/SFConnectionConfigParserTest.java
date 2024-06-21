@@ -1,5 +1,7 @@
 package net.snowflake.client.config;
 
+import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
+import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_HOME_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -29,9 +31,6 @@ import org.junit.Test;
 
 public class SFConnectionConfigParserTest {
 
-  public static final String SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY =
-      "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
-  public static final String SNOWFLAKE_HOME = "SNOWFLAKE_HOME";
   private Path tempPath = null;
   private TomlMapper tomlMapper = new TomlMapper();
 
@@ -42,7 +41,7 @@ public class SFConnectionConfigParserTest {
 
   @After
   public void close() throws IOException {
-    SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_HOME);
+    SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_HOME_KEY);
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);
     Files.walk(tempPath).map(Path::toFile).forEach(File::delete);
     Files.delete(tempPath);
@@ -51,7 +50,7 @@ public class SFConnectionConfigParserTest {
   @Test
   public void testLoadSFConnectionConfigWrongConfigurationName()
       throws SnowflakeSQLException, IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "unknown");
     prepareConnectionConfigurationTomlFile(null, true);
     ConnectionParameters connectionParameters =
@@ -61,7 +60,7 @@ public class SFConnectionConfigParserTest {
 
   @Test
   public void testLoadSFConnectionConfigInValidPath() throws SnowflakeSQLException, IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME, Paths.get("unknownPath").toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, Paths.get("unknownPath").toString());
     prepareConnectionConfigurationTomlFile(null, true);
     assertNull(SFConnectionConfigParser.buildConnectionParameters());
   }
@@ -69,7 +68,7 @@ public class SFConnectionConfigParserTest {
   @Test
   public void testLoadSFConnectionConfigWithTokenFromFile()
       throws SnowflakeSQLException, IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     prepareConnectionConfigurationTomlFile(
@@ -83,7 +82,7 @@ public class SFConnectionConfigParserTest {
 
   @Test
   public void testThrowErrorWhenWrongPermissionsForTokenFile() throws IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), false);

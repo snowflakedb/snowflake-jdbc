@@ -8,8 +8,8 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 @SnowflakeJdbcInternalApi
 public class ConnectionParameters {
-  private String url;
-  private Properties params;
+  private final String url;
+  private final Properties params;
 
   public ConnectionParameters(String uri, Properties params) {
     this.url = uri;

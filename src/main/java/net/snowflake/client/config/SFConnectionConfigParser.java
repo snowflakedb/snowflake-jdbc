@@ -25,24 +25,28 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 @SnowflakeJdbcInternalApi
 public class SFConnectionConfigParser {
+
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFConnectionConfigParser.class);
   private static final TomlMapper mapper = new TomlMapper();
+  public static final String SNOWFLAKE_HOME_KEY = "SNOWFLAKE_HOME";
+  public static final String SNOWFLAKE_DIR = ".snowflake";
+  public static final String SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY = "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
+  public static final String DEFAULT = "default";
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
       String defaultConnectionName) throws SnowflakeSQLException {
     String configDirectory =
-        Optional.ofNullable(systemGetEnv("SNOWFLAKE_HOME"))
-            .orElse(Paths.get(System.getProperty("user.home"), ".snowflake").toString());
+        Optional.ofNullable(systemGetEnv(SNOWFLAKE_HOME_KEY))
+            .orElse(Paths.get(System.getProperty("user.home"), SNOWFLAKE_DIR).toString());
     Path configFilePath = Paths.get(configDirectory, "connections.toml");
-    System.out.println(" ###### load form file: " + configFilePath.toString());
 
     if (Files.exists(configFilePath)) {
       logger.debug(
           "Reading connection parameters from file using key: {} []",
           configFilePath,
           defaultConnectionName);
-      Map<String, Map> data = readParametersMap(configFilePath);
-      Map<String, String> defaultConnectionParametersMap = data.get(defaultConnectionName);
+      Map<String, Map> parametersMap = readParametersMap(configFilePath);
+      Map<String, String> defaultConnectionParametersMap = parametersMap.get(defaultConnectionName);
       return defaultConnectionParametersMap;
     } else {
       logger.debug("Connection configuration file does not exist");
@@ -71,16 +75,16 @@ public class SFConnectionConfigParser {
               o ->
                   Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
                       .contains(o))) {
-        logger.error("Reading from file {} is not secure", configFilePath);
+        logger.error("Reading from file {} is not safe because of insufficient permissions", configFilePath);
         throw new SnowflakeSQLException(
-            String.format("Reading from file %s is not secure", configFilePath));
+            String.format("Reading from file %s is not safe because of insufficient permissions", configFilePath));
       }
     }
   }
 
   public static ConnectionParameters buildConnectionParameters() throws SnowflakeSQLException {
     String defaultConnectionName =
-        Optional.ofNullable(systemGetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME")).orElse("default");
+        Optional.ofNullable(systemGetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY)).orElse(DEFAULT);
     Map<String, String> fileConnectionConfiguration =
         loadDefaultConnectionConfiguration(defaultConnectionName);
 
@@ -92,6 +96,7 @@ public class SFConnectionConfigParser {
           Optional.ofNullable(fileConnectionConfiguration.get("account"))
               .map(ac -> createUrl(ac, fileConnectionConfiguration))
               .orElse(null);
+      logger.debug("Url created using parameters from connection configuration file: {}", url);
 
       if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
           && fileConnectionConfiguration.get("token") == null) {
