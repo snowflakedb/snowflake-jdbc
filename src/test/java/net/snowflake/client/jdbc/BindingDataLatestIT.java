@@ -199,7 +199,18 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   }
 
   /**
-   * Test that stage binding and regular binding insert and return the same value for timestamp_ltz
+   * Test that stage binding and regular binding insert and return the same value for timestamp_ltz when the local timezone has the daylight saving.
+   *
+   * When CLIENT_TIMESTAMP_TYPE_MAPPING setting is mismatched with target data
+   * type (.e.g MAPPING=LTZ and insert to NTZ or MAPPING=NTZ and insert to TZ/LTZ
+   * there could be different result as the timezone offset is applied on client
+   * side and removed on server side. This only occurs around the boundary of
+   * daylight-savings and the difference from the source data would be one hour.
+   * Both regular binding and stage binding have such issue but they also behave
+   * diffently, for some data only regular binding gets the extra hour while
+   * sometime only stage binding does.
+   * The workaround is to use CLIENT_TIMESTAMP_TYPE_MAPPING=LTZ to insert
+   * LTZ/TZ data and use CLIENT_TIMESTAMP_TYPE_MAPPING=NTZ to insert NTZ data.
    *
    * @throws SQLException
    */
