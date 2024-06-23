@@ -1367,4 +1367,39 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       thread.join();
     }
   }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDataSourceGetProperties() {
+    Map<String, String> params = getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setAccount(params.get("account"));
+    ds.setAuthenticator("snowflake");
+    ds.setTracing("all");
+    Properties props = ds.getProperties();
+    assertEquals(params.get("account"), props.get("account"));
+    assertEquals("snowflake", props.get("authenticator"));
+    assertEquals("all", props.get("tracing"));
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testDataSourceSetProperties() {
+    Map<String, String> params = getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setAccount(params.get("account"));
+    ds.setAuthenticator("snowflake");
+    ds.setTracing("all");
+    Properties props = new Properties();
+    props.put("role", "test_role");
+    props.put("connection_property_key_1", "connection_property_value_1");
+    props.put("connection_property_key_2", "connection_property_value_2");
+    ds.setProperties(props);
+    Properties mergedProps = ds.getProperties();
+    assertEquals(params.get("account"), mergedProps.get("account"));
+    assertEquals("snowflake", mergedProps.get("authenticator"));
+    assertEquals("all", mergedProps.get("tracing"));
+    assertEquals("connection_property_value_1", mergedProps.get("connection_property_key_1"));
+    assertEquals("connection_property_value_2", mergedProps.get("connection_property_key_2"));
+  }
 }

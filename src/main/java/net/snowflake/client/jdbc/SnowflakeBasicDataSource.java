@@ -231,4 +231,12 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public void setTracing(String tracing) {
     this.properties.put("tracing", tracing);
   }
+
+  public Properties getProperties() {
+    return this.properties;
+  }
+
+  public void setProperties(Properties props) {
+    this.properties.putAll(props);
+  }
 }
