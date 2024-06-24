@@ -33,6 +33,7 @@ public class SFConnectionConfigParser {
   public static final String SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY =
       "SNOWFLAKE_DEFAULT_CONNECTION_NAME";
   public static final String DEFAULT = "default";
+  public static final String SNOWFLAKE_TOKEN_FILE_PATH = "/snowflake/session/token";
 
   private static Map<String, String> loadDefaultConnectionConfiguration(
       String defaultConnectionName) throws SnowflakeSQLException {
@@ -107,7 +108,7 @@ public class SFConnectionConfigParser {
         Path path =
             Paths.get(
                 Optional.ofNullable(fileConnectionConfiguration.get("token_file_path"))
-                    .orElse("/snowflake/session/token"));
+                    .orElse(SNOWFLAKE_TOKEN_FILE_PATH));
         logger.debug("Token used in connect is read from file: {}", path);
         try {
           String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
