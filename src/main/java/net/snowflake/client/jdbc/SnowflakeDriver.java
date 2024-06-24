@@ -32,7 +32,7 @@ import net.snowflake.common.core.SqlState;
  */
 public class SnowflakeDriver implements Driver {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDriver.class);
-  protected static final String AUTO_CONNECTION_STRING_PREFIX = "jdbc:snowflake:auto";
+  public static final String AUTO_CONNECTION_STRING_PREFIX = "jdbc:snowflake:auto";
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
