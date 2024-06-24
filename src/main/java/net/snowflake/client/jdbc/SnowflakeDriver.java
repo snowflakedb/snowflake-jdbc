@@ -32,6 +32,7 @@ import net.snowflake.common.core.SqlState;
  */
 public class SnowflakeDriver implements Driver {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDriver.class);
+  protected static final String AUTO_CONNECTION_STRING_PREFIX = "jdbc:snowflake:auto";
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
@@ -228,13 +229,13 @@ public class SnowflakeDriver implements Driver {
 
   private static ConnectionParameters overrideByFileConnectionParametersIfAutoConfiguration(
       String url, Properties info) throws SnowflakeSQLException {
-    if (url != null && url.contains("jdbc:snowflake:auto")) {
+    if (url != null && url.contains(AUTO_CONNECTION_STRING_PREFIX)) {
       // Connect using connection configuration file
       ConnectionParameters connectionParameters =
           SFConnectionConfigParser.buildConnectionParameters();
       if (connectionParameters == null) {
         throw new SnowflakeSQLException(
-            "Invalid connection configuration parameters expected for auto configuration using file");
+            "Unavailable connection configuration parameters expected for auto configuration using file");
       }
       return connectionParameters;
     } else {
@@ -251,7 +252,7 @@ public class SnowflakeDriver implements Driver {
   @SnowflakeJdbcInternalApi
   public Connection connect() throws SQLException {
     logger.debug("Execute internal method connect() without parameters");
-    return connect("jdbc:snowflake:auto", null);
+    return connect(AUTO_CONNECTION_STRING_PREFIX, null);
   }
 
   @Override

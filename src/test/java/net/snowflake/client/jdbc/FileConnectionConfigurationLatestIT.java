@@ -42,7 +42,8 @@ public class FileConnectionConfigurationLatestIT {
 
   private static void verifyConnetionToSnowflake(String connectionName) throws SQLException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, connectionName);
-    try (Connection con = DriverManager.getConnection("jdbc:snowflake:auto", null);
+    try (Connection con =
+            DriverManager.getConnection(SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX, null);
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("show parameters")) {
       Assert.assertTrue(resultSet.next());
