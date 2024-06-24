@@ -73,7 +73,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}]
+                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
                 additionalMavenProfile: ['']
         steps:
@@ -105,7 +105,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
+                image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
                 cloud: [ 'AWS', 'AZURE', 'GCP' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
                 additionalMavenProfile: ['', '-Dthin-jar']
