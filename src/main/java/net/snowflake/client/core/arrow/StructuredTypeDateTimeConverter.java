@@ -18,7 +18,6 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.apache.arrow.vector.util.JsonStringHashMap;
 
 @SnowflakeJdbcInternalApi
 public class StructuredTypeDateTimeConverter {
@@ -81,8 +80,8 @@ public class StructuredTypeDateTimeConverter {
   }
 
   private Timestamp convertTimestampLtz(Object obj, int scale) throws SFException {
-    if (obj instanceof JsonStringHashMap) {
-      JsonStringHashMap<String, Object> map = (JsonStringHashMap<String, Object>) obj;
+    if (obj instanceof Map) {
+      Map<String, Object> map = (Map<String, Object>) obj;
       if (map.values().size() == 2) {
         return TwoFieldStructToTimestampLTZConverter.getTimestamp(
             (long) map.get("epoch"),
@@ -100,8 +99,8 @@ public class StructuredTypeDateTimeConverter {
   }
 
   private Timestamp convertTimestampNtz(Object obj, TimeZone tz, int scale) throws SFException {
-    if (obj instanceof JsonStringHashMap) {
-      JsonStringHashMap<String, Object> map = (JsonStringHashMap<String, Object>) obj;
+    if (obj instanceof Map) {
+      Map<String, Object> map = (Map<String, Object>) obj;
       if (map.values().size() == 2) {
         return TwoFieldStructToTimestampNTZConverter.getTimestamp(
             (long) map.get("epoch"),
@@ -123,8 +122,8 @@ public class StructuredTypeDateTimeConverter {
   }
 
   private Timestamp convertTimestampTz(Object obj, int scale) throws SFException {
-    if (obj instanceof JsonStringHashMap) {
-      JsonStringHashMap<String, Object> map = (JsonStringHashMap<String, Object>) obj;
+    if (obj instanceof Map) {
+      Map<String, Object> map = (Map<String, Object>) obj;
       if (map.values().size() == 2) {
         return TwoFieldStructToTimestampTZConverter.getTimestamp(
             (long) map.get("epoch"), (int) map.get("timezone"), scale);

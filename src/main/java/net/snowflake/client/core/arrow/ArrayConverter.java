@@ -1,5 +1,10 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.core.arrow;
 
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -21,6 +26,13 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
 
   @Override
   public String toString(int index) throws SFException {
-    return vector.getObject(index).toString();
+    List<?> list = vector.getObject(index);
+    return StructuredTypeConversionHelper.mapJson(
+        StructuredTypeConversionHelper.mapListToObject(list));
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    return toString(index).getBytes(StandardCharsets.UTF_8);
   }
 }

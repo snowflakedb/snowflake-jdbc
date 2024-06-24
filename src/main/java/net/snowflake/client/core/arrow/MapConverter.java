@@ -1,5 +1,9 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.core.arrow;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.DataConversionContext;
@@ -28,6 +32,14 @@ public class MapConverter extends AbstractArrowVectorConverter {
 
   @Override
   public String toString(int index) throws SFException {
-    return vector.getObject(index).toString();
+    List<JsonStringHashMap<String, Object>> entriesList =
+        (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
+    return StructuredTypeConversionHelper.mapJson(
+        StructuredTypeConversionHelper.mapHashMapToObject(entriesList));
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    return toString(index).getBytes(StandardCharsets.UTF_8);
   }
 }

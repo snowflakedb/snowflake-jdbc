@@ -1,5 +1,9 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.core.arrow;
 
+import java.nio.charset.StandardCharsets;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
@@ -23,6 +27,12 @@ public class StructConverter extends AbstractArrowVectorConverter {
 
   @Override
   public String toString(int index) throws SFException {
-    return structVector.getObject(index).toString();
+    return StructuredTypeConversionHelper.mapJson(
+        StructuredTypeConversionHelper.mapStructToObject(structVector.getObject(index)));
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    return toString(index).getBytes(StandardCharsets.UTF_8);
   }
 }

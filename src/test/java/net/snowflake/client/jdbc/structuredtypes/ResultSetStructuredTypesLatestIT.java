@@ -26,10 +26,8 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.ThrowingConsumer;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
-import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ResultSetFormatType;
 import net.snowflake.client.jdbc.SnowflakeBaseResultSet;
 import net.snowflake.client.jdbc.SnowflakeResultSetMetaData;
@@ -48,7 +46,7 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
-public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
+public class ResultSetStructuredTypesLatestIT extends ResultSetStructuredTypesBaseIT {
 
   @Parameterized.Parameters(name = "format={0}")
   public static Object[][] data() {
@@ -59,10 +57,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     };
   }
 
-  private final ResultSetFormatType queryResultFormat;
-
   public ResultSetStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
+    super(queryResultFormat);
   }
 
   @Before
@@ -79,24 +75,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     SnowflakeObjectTypeFactories.unregister(SimpleClass.class);
     SnowflakeObjectTypeFactories.unregister(AllTypesClass.class);
     SnowflakeObjectTypeFactories.unregister(NullableFieldsSqlData.class);
-  }
-
-  public Connection init() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    try (Statement stmt = conn.createStatement()) {
-      stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_IN_CLIENT_RESPONSE = true");
-      stmt.execute("alter session set IGNORE_CLIENT_VESRION_IN_STRUCTURED_TYPES_RESPONSE = true");
-      stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
-      stmt.execute(
-          "alter session set jdbc_query_result_format = '"
-              + queryResultFormat.sessionParameterTypeValue
-              + "'");
-      if (queryResultFormat == ResultSetFormatType.NATIVE_ARROW) {
-        stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
-        stmt.execute("alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
-      }
-    }
-    return conn;
   }
 
   @Test
@@ -355,7 +333,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testReturnNullsForAllTpesInSqlData() throws SQLException {
+  public void testReturnNullsForAllTypesInSqlData() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
       statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
@@ -952,15 +930,5 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                   .get(0)
                   .getName());
         });
-  }
-
-  private void withFirstRow(String sqlText, ThrowingConsumer<ResultSet, SQLException> consumer)
-      throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
-        ResultSet rs = statement.executeQuery(sqlText); ) {
-      assertTrue(rs.next());
-      consumer.accept(rs);
-    }
   }
 }
