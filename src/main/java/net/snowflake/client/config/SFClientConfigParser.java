@@ -77,7 +77,8 @@ public class SFClientConfigParser {
                 String.format(
                     "Error due to other users having permission to modify the config file: %s",
                     derivedConfigFilePath);
-            throw new IOException(error);
+            // TODO: SNOW-1503722 to change warning log to throw an error instead
+            logger.warn(error);
           }
         }
         File configFile = new File(derivedConfigFilePath);
