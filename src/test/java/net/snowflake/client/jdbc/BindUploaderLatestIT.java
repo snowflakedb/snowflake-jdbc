@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
@@ -30,7 +29,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /**
  * Bind Uploader tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -38,7 +36,7 @@ import org.junit.experimental.categories.Category;
  * tests still is not applicable. If it is applicable, move tests to BindUploaderIT so that both the
  * latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+
 public class BindUploaderLatestIT extends BaseJDBCTest {
   BindUploader bindUploader;
   Connection conn;

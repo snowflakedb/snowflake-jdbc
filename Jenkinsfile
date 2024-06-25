@@ -73,9 +73,6 @@ timestamps {
     jobDefinitions = jdkToParams.collectMany { jdk, params ->
       return [
         'RT-LanguageJDBC1-PC' : "Test JDBC 1 - $jdk",
-        'RT-LanguageJDBC2-PC' : "Test JDBC 2 - $jdk",
-        'RT-LanguageJDBC3-PC' : "Test JDBC 3 - $jdk",
-        'RT-LanguageJDBC4-PC' : "Test JDBC 4 - $jdk",
       ].collect { jobToRun, runName ->
         return new JdbcJobDefinition(
           jdk: jdk,

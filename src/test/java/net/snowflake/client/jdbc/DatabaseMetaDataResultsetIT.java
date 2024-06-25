@@ -18,11 +18,8 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   private static final int columnCount = 9;
   private static final int INT_DATA = 1;

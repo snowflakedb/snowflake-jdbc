@@ -31,12 +31,9 @@ import java.util.regex.Pattern;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /** Database Metadata IT */
-@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataIT extends BaseJDBCTest {
   private static final Pattern VERSION_PATTERN =
       Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");

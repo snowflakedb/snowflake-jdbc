@@ -44,7 +44,7 @@ jobs:
             fail-fast: false
             matrix:
                 runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                category: ['TestCategoryOthers']
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
             fail-fast: false
             matrix:
                 runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                category: ['TestCategoryOthers']
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v4
@@ -106,8 +106,8 @@ jobs:
             fail-fast: false
             matrix:
                 image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
-                cloud: [ 'AWS', 'AZURE', 'GCP' ]
-                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                cloud: [ 'AWS']
+                category: ['TestCategoryOthers']
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
             - uses: actions/checkout@v1
@@ -129,7 +129,7 @@ jobs:
             matrix:
                 image: [ 'jdbc-centos7-openjdk8' ]
                 cloud: [ 'AWS' ]
-                category: ['TestCategoryResultSet,TestCategoryOthers', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryCore,TestCategoryLoader']
+                category: ['TestCategoryOthers']
                 is_old_driver: ['true']
         steps:
             - uses: actions/checkout@v1

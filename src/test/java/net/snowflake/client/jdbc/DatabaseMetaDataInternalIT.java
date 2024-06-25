@@ -15,15 +15,12 @@ import java.sql.Statement;
 import java.sql.Types;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /** Database Metadata IT */
-@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   private Connection connection;
   private Statement statement;

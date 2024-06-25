@@ -60,8 +60,6 @@ public class ProxyLatestIT {
     System.setProperty(
         TRUST_STORE_PROPERTY,
         System.getProperty("user.dir") + "/src/test/resources/wiremock/truststore.jks");
-    System.out.println(wiremockServer.getMappedPort(8080));
-    System.out.println(wiremockServer.getMappedPort(8443));
   }
 
   @After
@@ -279,7 +277,6 @@ public class ProxyLatestIT {
   private String getSnowflakeUrl(Properties props) {
     String protocol = props.get("ssl").equals("on") ? "https" : "http";
     String host = props.get("ssl").equals("on") ? props.get("host").toString() : "host.testcontainers.internal";
-    System.out.println(host);
     return String.format("%s://%s:%s", protocol, host, props.get("port"));
   }
 }

@@ -18,7 +18,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpProtocol;
 import net.snowflake.client.core.HttpUtil;
@@ -27,7 +26,6 @@ import net.snowflake.common.core.SqlState;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 // To run these tests, you must:
@@ -37,7 +35,6 @@ import org.junit.rules.TemporaryFolder;
 // 2.) Enter your own username and password for the account you're connecting to
 // 3.) Adjust parameters like role, database, schema, etc to match with account accordingly
 
-@Category(TestCategoryOthers.class)
 public class CustomProxyLatestIT {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 

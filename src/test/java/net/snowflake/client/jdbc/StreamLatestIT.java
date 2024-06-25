@@ -21,12 +21,10 @@ import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 /**
@@ -35,7 +33,7 @@ import org.junit.rules.TemporaryFolder;
  * is not applicable. If it is applicable, move tests to StreamIT so that both the latest and oldest
  * supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+
 public class StreamLatestIT extends BaseJDBCTest {
 
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();

@@ -52,7 +52,6 @@ import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.RunningOnTestaccount;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
@@ -61,11 +60,9 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 /** General integration tests */
-@Category(TestCategoryOthers.class)
 public class SnowflakeDriverIT extends BaseJDBCTest {
   private static final int MAX_CONCURRENT_QUERIES_PER_USER = 50;
   private static final String getCurrenTransactionStmt = "SELECT CURRENT_TRANSACTION()";

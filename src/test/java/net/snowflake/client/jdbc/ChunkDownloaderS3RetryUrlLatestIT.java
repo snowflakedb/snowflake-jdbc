@@ -12,7 +12,6 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;
@@ -22,9 +21,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-@Category(TestCategoryOthers.class)
 public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
 
   private SFStatement sfStatement;

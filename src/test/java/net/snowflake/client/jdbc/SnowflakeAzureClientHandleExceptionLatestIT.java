@@ -15,7 +15,6 @@ import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
@@ -25,12 +24,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeAzureClient handle exception function */
-@Category(TestCategoryOthers.class)
 public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverIT {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
   private Connection connection;

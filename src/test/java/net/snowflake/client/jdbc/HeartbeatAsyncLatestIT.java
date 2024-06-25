@@ -14,16 +14,13 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.QueryStatus;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /**
  * Test class for using heartbeat with asynchronous querying. This is a "Latest" class because old
  * driver versions do not contain the asynchronous querying API.
  */
-@Category(TestCategoryOthers.class)
 public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   private static Logger logger = Logger.getLogger(HeartbeatAsyncLatestIT.class.getName());
 

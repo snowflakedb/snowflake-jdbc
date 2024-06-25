@@ -18,9 +18,7 @@ import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /**
  * Binding Data integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -28,7 +26,6 @@ import org.junit.experimental.categories.Category;
  * to examine if the tests still are not applicable. If it is applicable, move tests to
  * BindingDataIT so that both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
 public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   public void testBindTimestampTZ() throws SQLException {

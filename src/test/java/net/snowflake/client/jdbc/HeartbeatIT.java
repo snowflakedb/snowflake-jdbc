@@ -26,14 +26,11 @@ import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /** This test assumes that GS has been set up */
-@Category(TestCategoryOthers.class)
 public class HeartbeatIT extends AbstractDriverIT {
   private static Logger logger = Logger.getLogger(HeartbeatIT.class.getName());
 

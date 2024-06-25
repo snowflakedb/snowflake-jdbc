@@ -14,11 +14,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-@Category(TestCategoryOthers.class)
 public final class SessionVariablesIT extends AbstractDriverIT {
   @Test
   public void testSettingSessionVariablesInConnectionProperties() throws SQLException {

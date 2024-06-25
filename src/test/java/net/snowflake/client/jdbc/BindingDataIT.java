@@ -20,9 +20,7 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -30,7 +28,6 @@ import org.junit.runner.RunWith;
 
 /** Integration tests for binding variable */
 @RunWith(Theories.class)
-@Category(TestCategoryOthers.class)
 public class BindingDataIT extends AbstractDriverIT {
   @DataPoints public static short[] shortValues = {0, 1, -1, Short.MIN_VALUE, Short.MAX_VALUE};
 

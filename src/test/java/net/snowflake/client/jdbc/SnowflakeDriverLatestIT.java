@@ -43,7 +43,6 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.RunningOnTestaccount;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
@@ -60,7 +59,6 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 /**
@@ -69,7 +67,7 @@ import org.junit.rules.TemporaryFolder;
  * is not applicable. If it is applicable, move tests to SnowflakeDriverIT so that both the latest
  * and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+
 public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
   @Rule public TemporaryFolder tmpFolder2 = new TemporaryFolder();

@@ -31,12 +31,10 @@ import java.util.Set;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /**
  * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
@@ -44,7 +42,6 @@ import org.junit.experimental.categories.Category;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   private static final String TEST_PROC =
       "create or replace procedure testproc(param1 float, param2 string)\n"

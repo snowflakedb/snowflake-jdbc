@@ -19,11 +19,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /**
  * Database Metadata tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -31,7 +29,6 @@ import org.junit.experimental.categories.Category;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
   @Before
