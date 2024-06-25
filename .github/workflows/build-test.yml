@@ -36,22 +36,51 @@ jobs:
                 WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
               run: ./ci/build.sh
 
-    test-mac:
+    test-windows:
         needs: build
-        name: ${{ matrix.cloud }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} / Test on Mac(java ${{ matrix.javaVersion }}, ${{ matrix.cloud }} )
-        runs-on: macos-13
+        name: ${{ matrix.runConfig.cloud }} Windows java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }}
+        runs-on: windows-latest
         strategy:
             fail-fast: false
             matrix:
-                cloud: [ 'AWS' ]
-                javaVersion: [ '8', '11', '17']
+                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
-                additionalMavenProfile: ['', '-Dthin-jar']
+                additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-java@v4
               with:
-                java-version: ${{ matrix.javaVersion }}
+                java-version: ${{ matrix.runConfig.javaVersion }}
+                distribution: 'temurin'
+                cache: maven
+            - uses: actions/setup-python@v4
+              with:
+                python-version: '3.7'
+                architecture: 'x64'
+            - name: Tests
+              shell: cmd
+              env:
+                PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
+                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
+                JDBC_TEST_CATEGORY: ${{ matrix.category }}
+                ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
+              run: ci\\test_windows.bat
+
+    test-mac:
+        needs: build
+        name: ${{ matrix.runConfig.cloud }} Mac java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }}
+        runs-on: macos-13
+        strategy:
+            fail-fast: false
+            matrix:
+                runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
+                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                additionalMavenProfile: ['']
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-java@v4
+              with:
+                java-version: ${{ matrix.runConfig.javaVersion }}
                 distribution: 'temurin'
                 cache: maven
             - uses: actions/setup-python@v4
@@ -64,20 +93,20 @@ jobs:
               shell: bash
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
-                CLOUD_PROVIDER: ${{ matrix.cloud }}
+                CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
                 JDBC_TEST_CATEGORY: ${{ matrix.category }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
               run: /usr/local/bin/bash ./ci/test_mac.sh
 
     test-linux:
         needs: build
-        name: ${{ matrix.cloud }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }} on ${{ matrix.image }}
+        name: ${{ matrix.cloud }} Linux java on ${{ matrix.image }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }}
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
-                image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17' ]
-                cloud: [ 'AWS' ]
+                image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
+                cloud: [ 'AWS', 'AZURE', 'GCP' ]
                 category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:

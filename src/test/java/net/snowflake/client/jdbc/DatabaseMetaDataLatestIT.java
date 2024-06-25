@@ -2346,4 +2346,40 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(43, metaData.getSQLKeywords().split(",").length);
     }
   }
+  /** Added in > 3.16.1 */
+  @Test
+  public void testVectorDimension() throws SQLException {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          "create or replace table JDBC_VECTOR(text_col varchar(32), float_vec VECTOR(FLOAT, 256), int_vec VECTOR(INT, 16))");
+      DatabaseMetaData metaData = connection.getMetaData();
+      try (ResultSet resultSet =
+          metaData.getColumns(
+              connection.getCatalog(),
+              connection.getSchema().replaceAll("_", "\\\\_"),
+              "JDBC\\_VECTOR",
+              null)) {
+        assertTrue(resultSet.next());
+        assertEquals(32, resultSet.getObject("COLUMN_SIZE"));
+        assertTrue(resultSet.next());
+        assertEquals(256, resultSet.getObject("COLUMN_SIZE"));
+        assertTrue(resultSet.next());
+        assertEquals(16, resultSet.getObject("COLUMN_SIZE"));
+        assertFalse(resultSet.next());
+      }
+
+      try (ResultSet resultSet =
+          statement.executeQuery("Select text_col, float_vec, int_vec from JDBC_VECTOR")) {
+        SnowflakeResultSetMetaData unwrapResultSetMetadata =
+            resultSet.getMetaData().unwrap(SnowflakeResultSetMetaData.class);
+        assertEquals(0, unwrapResultSetMetadata.getDimension("TEXT_COL"));
+        assertEquals(0, unwrapResultSetMetadata.getDimension(1));
+        assertEquals(256, unwrapResultSetMetadata.getDimension("FLOAT_VEC"));
+        assertEquals(256, unwrapResultSetMetadata.getDimension(2));
+        assertEquals(16, unwrapResultSetMetadata.getDimension("INT_VEC"));
+        assertEquals(16, unwrapResultSetMetadata.getDimension(3));
+      }
+    }
+  }
 }
