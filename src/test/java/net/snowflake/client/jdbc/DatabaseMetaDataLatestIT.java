@@ -881,10 +881,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertTrue(resultSet.getString("SPECIFIC_NAME")
-                .equals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)") ||
-                resultSet.getString("SPECIFIC_NAME")
-                        .equals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)"));
+        assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
+                resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -907,10 +905,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertTrue(resultSet.getString("SPECIFIC_NAME")
-                .equals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)") ||
-                resultSet.getString("SPECIFIC_NAME")
-                        .equals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)"));
+        assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
+                resultSet.getString("SPECIFIC_NAME"));;
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -933,10 +929,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertTrue(resultSet.getString("SPECIFIC_NAME")
-                .equals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)") ||
-                resultSet.getString("SPECIFIC_NAME")
-                        .equals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)"));
+        assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
+                resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -959,10 +953,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertTrue(resultSet.getString("SPECIFIC_NAME")
-                .equals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)") ||
-                resultSet.getString("SPECIFIC_NAME")
-                        .equals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)"));
+        assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
+                resultSet.getString("SPECIFIC_NAME"));
         assertFalse(resultSet.next());
       }
 
