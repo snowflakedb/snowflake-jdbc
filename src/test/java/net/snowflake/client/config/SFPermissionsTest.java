@@ -72,17 +72,12 @@ public class SFPermissionsTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnWin.class)
   public void testLogDirectoryPermissions() throws IOException {
+    // TODO: SNOW-1503722 Change to check for thrown exceptions
     // Don't run on Windows
-    try {
-      Files.setPosixFilePermissions(configFilePath, PosixFilePermissions.fromString(permission));
-      SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
-      if (!isSucceed) {
-        fail("testLogDirectoryPermissions failed. Expected exception.");
-      }
-    } catch (IOException e) {
-      if (isSucceed) {
-        fail("testLogDirectoryPermissions failed. Expected pass.");
-      }
+    Files.setPosixFilePermissions(configFilePath, PosixFilePermissions.fromString(permission));
+    Boolean result = SFClientConfigParser.checkConfigFilePermissions(configFilePath.toString());
+    if (isSucceed != result) {
+      fail("testLogDirectoryPermissions failed. Expected " + isSucceed);
     }
   }
 }

@@ -67,20 +67,10 @@ public class SFClientConfigParser {
     }
     if (derivedConfigFilePath != null) {
       try {
-        if (Constants.getOS() != Constants.OS.WINDOWS) {
-          // Check permissions of config file
-          Set<PosixFilePermission> folderPermissions =
-              Files.getPosixFilePermissions(Paths.get(derivedConfigFilePath));
-          if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
-              || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)) {
-            String error =
-                String.format(
-                    "Error due to other users having permission to modify the config file: %s",
-                    derivedConfigFilePath);
-            // TODO: SNOW-1503722 to change warning log to throw an error instead
-            logger.warn(error);
-          }
+        if (!checkConfigFilePermissions(derivedConfigFilePath)) {
+          return null;
         }
+
         File configFile = new File(derivedConfigFilePath);
         ObjectMapper objectMapper = new ObjectMapper();
         SFClientConfig clientConfig = objectMapper.readValue(configFile, SFClientConfig.class);
@@ -132,6 +122,30 @@ public class SFClientConfigParser {
       // return empty path and move to step 4 of loadSFClientConfig()
       return "";
     }
+  }
+
+  public static Boolean checkConfigFilePermissions(String derivedConfigFilePath) {
+    try {
+      if (Constants.getOS() != Constants.OS.WINDOWS) {
+        // Check permissions of config file
+        Set<PosixFilePermission> folderPermissions =
+            Files.getPosixFilePermissions(Paths.get(derivedConfigFilePath));
+        if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
+            || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)) {
+          String error =
+              String.format(
+                  "Error due to other users having permission to modify the config file: %s",
+                  derivedConfigFilePath);
+          // TODO: SNOW-1503722 to change warning log to throw an error instead
+          logger.warn(error);
+          return false;
+        }
+      }
+    } catch (IOException e) {
+      logger.warn(e.getMessage());
+      return false;
+    }
+    return true;
   }
 
   static String convertToWindowsPath(String filePath) {
