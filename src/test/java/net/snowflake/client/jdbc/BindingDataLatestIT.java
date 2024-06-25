@@ -6,6 +6,7 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,12 +35,11 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   public void testBindTimestampTZ() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
-      statement.execute(
-          "create or replace table testBindTimestampTZ(" + "cola int, colb timestamp_tz)");
+      statement.execute("create or replace table testBindTimestampTZ(cola int, colb timestamp_tz)");
       statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_TZ");
 
-      long millSeconds = System.currentTimeMillis();
-      Timestamp ts = new Timestamp(millSeconds);
+      long milliSeconds = System.currentTimeMillis();
+      Timestamp ts = new Timestamp(milliSeconds);
       try (PreparedStatement prepStatement =
           connection.prepareStatement("insert into testBindTimestampTZ values (?, ?)")) {
         prepStatement.setInt(1, 123);
@@ -49,7 +49,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
 
       try (ResultSet resultSet =
           statement.executeQuery("select cola, colb from testBindTimestampTz")) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         assertThat("integer", resultSet.getInt(1), equalTo(123));
         assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
       }
@@ -80,22 +80,12 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         Timestamp currT = new Timestamp(System.currentTimeMillis());
 
         // insert using regular binging
-        try (PreparedStatement prepStatement =
-            connection.prepareStatement("insert into regularinsert values (?,?,?,?)")) {
-          for (int i = 1; i <= 6; i++) {
-            prepStatement.setInt(1, 1);
-            prepStatement.setTimestamp(2, currT);
-            prepStatement.setTimestamp(3, currT);
-            prepStatement.setTimestamp(4, currT);
-            prepStatement.addBatch();
-          }
-          prepStatement.executeBatch();
-        }
+        executePsStatementForTimestampTest(connection, "regularinsert", currT);
 
         // insert using stage binding
+        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
         try (PreparedStatement prepStatement =
             connection.prepareStatement("insert into stageinsert values (?,?,?,?)")) {
-          statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
           prepStatement.setInt(1, 1);
           prepStatement.setTimestamp(2, currT, utc);
           prepStatement.setTimestamp(3, currT, utc);
@@ -107,8 +97,8 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         // Compare the results
         try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
             ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
-          rs1.next();
-          rs2.next();
+          assertTrue(rs1.next());
+          assertTrue(rs2.next());
 
           assertEquals(rs1.getInt(1), rs2.getInt(1));
 
@@ -150,35 +140,17 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         Timestamp currT = new Timestamp(System.currentTimeMillis());
 
         // insert using regular binging
-        try (PreparedStatement prepStatement =
-            connection.prepareStatement("insert into regularinsert values (?,?,?,?)")) {
-          for (int i = 1; i <= 6; i++) {
-            prepStatement.setInt(1, 1);
-            prepStatement.setTimestamp(2, currT);
-            prepStatement.setTimestamp(3, currT);
-            prepStatement.setTimestamp(4, currT);
-            prepStatement.addBatch();
-          }
-          prepStatement.executeBatch();
-        }
+        executePsStatementForTimestampTest(connection, "regularinsert", currT);
 
         // insert using stage binding
-        try (PreparedStatement prepStatement =
-            connection.prepareStatement("insert into stageinsert values (?,?,?,?)")) {
-          statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
-          prepStatement.setInt(1, 1);
-          prepStatement.setTimestamp(2, currT);
-          prepStatement.setTimestamp(3, currT);
-          prepStatement.setTimestamp(4, currT);
-          prepStatement.addBatch();
-          prepStatement.executeBatch();
-        }
+        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        executePsStatementForTimestampTest(connection, "stageinsert", currT);
 
         // Compare the results
         try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
             ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
-          rs1.next();
-          rs2.next();
+          assertTrue(rs1.next());
+          assertTrue(rs2.next());
 
           assertEquals(rs1.getInt(1), rs2.getInt(1));
 
@@ -199,18 +171,20 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   }
 
   /**
-   * Test that stage binding and regular binding insert and return the same value for timestamp_ltz when the local timezone has the daylight saving.
+   * Test that stage binding and regular binding insert and return the same value for timestamp_ltz
+   * when the local timezone has the daylight saving. This test is added in version > 3.16.1
    *
-   * When CLIENT_TIMESTAMP_TYPE_MAPPING setting is mismatched with target data
-   * type (.e.g MAPPING=LTZ and insert to NTZ or MAPPING=NTZ and insert to TZ/LTZ
-   * there could be different result as the timezone offset is applied on client
-   * side and removed on server side. This only occurs around the boundary of
-   * daylight-savings and the difference from the source data would be one hour.
-   * Both regular binding and stage binding have such issue but they also behave
-   * diffently, for some data only regular binding gets the extra hour while
-   * sometime only stage binding does.
-   * The workaround is to use CLIENT_TIMESTAMP_TYPE_MAPPING=LTZ to insert
-   * LTZ/TZ data and use CLIENT_TIMESTAMP_TYPE_MAPPING=NTZ to insert NTZ data.
+   * <p>When CLIENT_TIMESTAMP_TYPE_MAPPING setting is mismatched with target data type (e.g
+   * MAPPING=LTZ and insert to NTZ or MAPPING=NTZ and insert to TZ/LTZ there could be different
+   * result as the timezone offset is applied on client side and removed on server side. This only
+   * occurs around the boundary of daylight-savings and the difference from the source data would be
+   * one hour. Both regular binding and stage binding have such issue but they also behave
+   * diffently, for some data only regular binding gets the extra hour while sometime only stage
+   * binding does. The workaround is to use CLIENT_TIMESTAMP_TYPE_MAPPING=LTZ to insert LTZ/TZ data
+   * and use CLIENT_TIMESTAMP_TYPE_MAPPING=NTZ to insert NTZ data.
+   *
+   * <p>This test cannot run on the GitHub testing because of the "ALTER SESSION SET
+   * CLIENT_STAGE_ARRAY_BINDING_THRESHOLD" This command should be executed with the system admin.
    *
    * @throws SQLException
    */
@@ -257,9 +231,9 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         }
 
         // insert using stage binding
+        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
         try (PreparedStatement prepStatement =
             connection.prepareStatement("insert into stageinsert values (?,?,?,?,?,?,?,?,?,?)")) {
-          statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
           prepStatement.setInt(1, 1);
           prepStatement.setTimestamp(2, ts1);
           prepStatement.setTimestamp(3, ts2);
@@ -280,8 +254,8 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         // Compare the results
         try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
             ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
-          rs1.next();
-          rs2.next();
+          assertTrue(rs1.next());
+          assertTrue(rs2.next());
 
           assertEquals(rs1.getInt(1), rs2.getInt(1));
           assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
@@ -319,6 +293,19 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         statement.execute("drop table if exists regularinsert");
         TimeZone.setDefault(origTz);
       }
+    }
+  }
+
+  public void executePsStatementForTimestampTest(
+      Connection connection, String tableName, Timestamp timestamp) throws SQLException {
+    try (PreparedStatement prepStatement =
+        connection.prepareStatement("insert into " + tableName + " values (?,?,?,?)")) {
+      prepStatement.setInt(1, 1);
+      prepStatement.setTimestamp(2, timestamp);
+      prepStatement.setTimestamp(3, timestamp);
+      prepStatement.setTimestamp(4, timestamp);
+      prepStatement.addBatch();
+      prepStatement.executeBatch();
     }
   }
 }
