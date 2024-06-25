@@ -111,7 +111,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA21", "JDBC_BIN", "BIN1");
     resultSet.next();
-    assertEquals(8388608, resultSet.getInt("COLUMN_SIZE"));
+    assertEquals(67108864, resultSet.getInt("COLUMN_SIZE"));
     assertEquals(1, getSizeOfResultSet(resultSet) + 1);
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA21", "JDBC_BIN", "BIN2");

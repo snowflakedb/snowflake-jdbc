@@ -698,9 +698,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals("$", metaData.getExtraNameCharacters());
       assertEquals("\"", metaData.getIdentifierQuoteString());
       assertEquals(0, getSizeOfResultSet(metaData.getIndexInfo(null, null, null, true, true)));
-      assertEquals(8388608, metaData.getMaxBinaryLiteralLength());
+      assertEquals(67108864, metaData.getMaxBinaryLiteralLength());
       assertEquals(255, metaData.getMaxCatalogNameLength());
-      assertEquals(16777216, metaData.getMaxCharLiteralLength());
+      assertEquals(134217728, metaData.getMaxCharLiteralLength());
       assertEquals(255, metaData.getMaxColumnNameLength());
       assertEquals(0, metaData.getMaxColumnsInGroupBy());
       assertEquals(0, metaData.getMaxColumnsInIndex());
