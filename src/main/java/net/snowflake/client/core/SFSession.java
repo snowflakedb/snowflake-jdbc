@@ -74,6 +74,7 @@ public class SFSession extends SFBaseSession {
       HttpUtil.DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS;
   private final AtomicInteger sequenceId = new AtomicInteger(0);
   private final List<DriverPropertyInfo> missingProperties = new ArrayList<>();
+  private final ReentrantLock openFunctionLock = new ReentrantLock();
   // list of active asynchronous queries. Used to see if session should be closed when connection
   // closes
   private Set<String> activeAsyncQueries = ConcurrentHashMap.newKeySet();
@@ -513,201 +514,206 @@ public class SFSession extends SFBaseSession {
    * @throws SFException this is a runtime exception
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
-  public synchronized void open() throws SFException, SnowflakeSQLException {
-    Stopwatch stopwatch = new Stopwatch();
-    stopwatch.start();
-    performSanityCheckOnProperties();
-    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
-    logger.info(
-        "Opening session with server: {}, account: {}, user: {}, password is {}, role: {}, database: {}, schema: {},"
-            + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
-            + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
-            + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
-            + " query timeout: {}, tracing: {}, private key file: {}, private key file pwd is {},"
-            + " session parameters: client store temporary credential: {}, gzip disabled: {}",
-        connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
-        connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
-        connectionPropertiesMap.get(SFSessionProperty.USER),
-        SFLoggerUtil.isVariableProvided(
-            (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD)),
-        connectionPropertiesMap.get(SFSessionProperty.ROLE),
-        connectionPropertiesMap.get(SFSessionProperty.DATABASE),
-        connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
-        connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE),
-        connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS),
-        connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
-        getOCSPMode().name(),
-        connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
-        SFLoggerUtil.isVariableProvided(
-            (String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE)),
-        SFLoggerUtil.isVariableProvided(connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY)),
-        connectionPropertiesMap.get(SFSessionProperty.DISABLE_SOCKS_PROXY),
-        connectionPropertiesMap.get(SFSessionProperty.APPLICATION),
-        connectionPropertiesMap.get(SFSessionProperty.APP_ID),
-        connectionPropertiesMap.get(SFSessionProperty.APP_VERSION),
-        connectionPropertiesMap.get(SFSessionProperty.LOGIN_TIMEOUT),
-        connectionPropertiesMap.get(SFSessionProperty.RETRY_TIMEOUT),
-        connectionPropertiesMap.get(SFSessionProperty.NETWORK_TIMEOUT),
-        connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
-        connectionPropertiesMap.get(SFSessionProperty.TRACING),
-        connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
-        SFLoggerUtil.isVariableProvided(
-            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
-        sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
-        connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
-
-    HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
-    logger.debug(
-        "Connection proxy parameters: use proxy: {}, proxy host: {}, proxy port: {}, proxy user: {},"
-            + " proxy password is {}, non proxy hosts: {}, proxy protocol: {}",
-        httpClientSettingsKey.usesProxy(),
-        httpClientSettingsKey.getProxyHost(),
-        httpClientSettingsKey.getProxyPort(),
-        httpClientSettingsKey.getProxyUser(),
-        SFLoggerUtil.isVariableProvided(httpClientSettingsKey.getProxyPassword()),
-        httpClientSettingsKey.getNonProxyHosts(),
-        httpClientSettingsKey.getProxyHttpProtocol());
-
-    // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
-    SFLoginInput loginInput = new SFLoginInput();
-
-    loginInput
-        .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
-        .setDatabaseName((String) connectionPropertiesMap.get(SFSessionProperty.DATABASE))
-        .setSchemaName((String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA))
-        .setWarehouse((String) connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE))
-        .setRole((String) connectionPropertiesMap.get(SFSessionProperty.ROLE))
-        .setValidateDefaultParameters(
-            connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS))
-        .setAuthenticator((String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
-        .setOKTAUserName((String) connectionPropertiesMap.get(SFSessionProperty.OKTA_USERNAME))
-        .setAccountName((String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))
-        .setLoginTimeout(loginTimeout)
-        .setRetryTimeout(retryTimeout)
-        .setAuthTimeout(authTimeout)
-        .setUserName((String) connectionPropertiesMap.get(SFSessionProperty.USER))
-        .setPassword((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
-        .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
-        .setPasscodeInPassword(passcodeInPassword)
-        .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
-        .setConnectionTimeout(httpClientConnectionTimeout)
-        .setSocketTimeout(httpClientSocketTimeout)
-        .setAppId((String) connectionPropertiesMap.get(SFSessionProperty.APP_ID))
-        .setAppVersion((String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
-        .setSessionParameters(sessionParametersMap)
-        .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
-        .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
-        .setPrivateKeyFilePwd(
-            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
-        .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
-        .setServiceName(getServiceName())
-        .setOCSPMode(getOCSPMode())
-        .setHttpClientSettingsKey(httpClientSettingsKey)
-        .setDisableConsoleLogin(
-            connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN) != null
-                ? getBooleanValue(
-                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN))
-                : true)
-        .setDisableSamlURLCheck(
-            connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK) != null
-                ? getBooleanValue(
-                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
-                : false);
-
-    // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
-    // The value may still change later when session parameters from the server are read.
-    if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
-      TelemetryService.enable();
-    } else {
-      TelemetryService.disable();
+  public void open() throws SFException, SnowflakeSQLException {
+    openFunctionLock.lock();
+    try {
+      Stopwatch stopwatch = new Stopwatch();
+      stopwatch.start();
+      performSanityCheckOnProperties();
+      Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+      logger.info(
+          "Opening session with server: {}, account: {}, user: {}, password is {}, role: {}, database: {}, schema: {},"
+              + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
+              + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
+              + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
+              + " query timeout: {}, tracing: {}, private key file: {}, private key file pwd is {},"
+              + " session parameters: client store temporary credential: {}, gzip disabled: {}",
+          connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
+          connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
+          connectionPropertiesMap.get(SFSessionProperty.USER),
+          SFLoggerUtil.isVariableProvided(
+              (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD)),
+          connectionPropertiesMap.get(SFSessionProperty.ROLE),
+          connectionPropertiesMap.get(SFSessionProperty.DATABASE),
+          connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
+          connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE),
+          connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS),
+          connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
+          getOCSPMode().name(),
+          connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
+          SFLoggerUtil.isVariableProvided(
+              (String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE)),
+          SFLoggerUtil.isVariableProvided(connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY)),
+          connectionPropertiesMap.get(SFSessionProperty.DISABLE_SOCKS_PROXY),
+          connectionPropertiesMap.get(SFSessionProperty.APPLICATION),
+          connectionPropertiesMap.get(SFSessionProperty.APP_ID),
+          connectionPropertiesMap.get(SFSessionProperty.APP_VERSION),
+          connectionPropertiesMap.get(SFSessionProperty.LOGIN_TIMEOUT),
+          connectionPropertiesMap.get(SFSessionProperty.RETRY_TIMEOUT),
+          connectionPropertiesMap.get(SFSessionProperty.NETWORK_TIMEOUT),
+          connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
+          connectionPropertiesMap.get(SFSessionProperty.TRACING),
+          connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
+          SFLoggerUtil.isVariableProvided(
+              (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
+          sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
+          connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
+  
+      HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
+      logger.debug(
+          "Connection proxy parameters: use proxy: {}, proxy host: {}, proxy port: {}, proxy user: {},"
+              + " proxy password is {}, non proxy hosts: {}, proxy protocol: {}",
+          httpClientSettingsKey.usesProxy(),
+          httpClientSettingsKey.getProxyHost(),
+          httpClientSettingsKey.getProxyPort(),
+          httpClientSettingsKey.getProxyUser(),
+          SFLoggerUtil.isVariableProvided(httpClientSettingsKey.getProxyPassword()),
+          httpClientSettingsKey.getNonProxyHosts(),
+          httpClientSettingsKey.getProxyHttpProtocol());
+  
+      // TODO: temporarily hardcode sessionParameter debug info. will be changed in the future
+      SFLoginInput loginInput = new SFLoginInput();
+  
+      loginInput
+          .setServerUrl((String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL))
+          .setDatabaseName((String) connectionPropertiesMap.get(SFSessionProperty.DATABASE))
+          .setSchemaName((String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA))
+          .setWarehouse((String) connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE))
+          .setRole((String) connectionPropertiesMap.get(SFSessionProperty.ROLE))
+          .setValidateDefaultParameters(
+              connectionPropertiesMap.get(SFSessionProperty.VALIDATE_DEFAULT_PARAMETERS))
+          .setAuthenticator((String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR))
+          .setOKTAUserName((String) connectionPropertiesMap.get(SFSessionProperty.OKTA_USERNAME))
+          .setAccountName((String) connectionPropertiesMap.get(SFSessionProperty.ACCOUNT))
+          .setLoginTimeout(loginTimeout)
+          .setRetryTimeout(retryTimeout)
+          .setAuthTimeout(authTimeout)
+          .setUserName((String) connectionPropertiesMap.get(SFSessionProperty.USER))
+          .setPassword((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
+          .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
+          .setPasscodeInPassword(passcodeInPassword)
+          .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
+          .setConnectionTimeout(httpClientConnectionTimeout)
+          .setSocketTimeout(httpClientSocketTimeout)
+          .setAppId((String) connectionPropertiesMap.get(SFSessionProperty.APP_ID))
+          .setAppVersion((String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
+          .setSessionParameters(sessionParametersMap)
+          .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
+          .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
+          .setPrivateKeyFilePwd(
+              (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
+          .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
+          .setServiceName(getServiceName())
+          .setOCSPMode(getOCSPMode())
+          .setHttpClientSettingsKey(httpClientSettingsKey)
+          .setDisableConsoleLogin(
+              connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN) != null
+                  ? getBooleanValue(
+                      connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN))
+                  : true)
+          .setDisableSamlURLCheck(
+              connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK) != null
+                  ? getBooleanValue(
+                      connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
+                  : false);
+  
+      // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
+      // The value may still change later when session parameters from the server are read.
+      if (getBooleanValue(
+          connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
+        TelemetryService.enable();
+      } else {
+        TelemetryService.disable();
+      }
+  
+      // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
+      HttpUtil.initHttpClient(httpClientSettingsKey, null);
+      SFLoginOutput loginOutput =
+          SessionUtil.openSession(loginInput, connectionPropertiesMap, tracingLevel.toString());
+      isClosed = false;
+  
+      authTimeout = loginInput.getAuthTimeout();
+      sessionToken = loginOutput.getSessionToken();
+      masterToken = loginOutput.getMasterToken();
+      idToken = loginOutput.getIdToken();
+      mfaToken = loginOutput.getMfaToken();
+      setDatabaseVersion(loginOutput.getDatabaseVersion());
+      setDatabaseMajorVersion(loginOutput.getDatabaseMajorVersion());
+      setDatabaseMinorVersion(loginOutput.getDatabaseMinorVersion());
+      httpClientSocketTimeout = loginOutput.getHttpClientSocketTimeout();
+      masterTokenValidityInSeconds = loginOutput.getMasterTokenValidityInSeconds();
+      setDatabase(loginOutput.getSessionDatabase());
+      setSchema(loginOutput.getSessionSchema());
+      setRole(loginOutput.getSessionRole());
+      setWarehouse(loginOutput.getSessionWarehouse());
+      setSessionId(loginOutput.getSessionId());
+      setAutoCommit(loginOutput.getAutoCommit());
+  
+      // Update common parameter values for this session
+      SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
+      // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
+      if (getBooleanValue(
+          connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
+        TelemetryService.enableHTAP();
+      } else {
+        TelemetryService.disableHTAP();
+      }
+      String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
+      String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
+      String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);
+      String loginWarehouse = (String) connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE);
+  
+      if (loginDatabaseName != null && !loginDatabaseName.equalsIgnoreCase(getDatabase())) {
+        sqlWarnings.add(
+            new SFException(
+                ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+                "Database",
+                loginDatabaseName,
+                getDatabase()));
+      }
+  
+      if (loginSchemaName != null && !loginSchemaName.equalsIgnoreCase(getSchema())) {
+        sqlWarnings.add(
+            new SFException(
+                ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+                "Schema",
+                loginSchemaName,
+                getSchema()));
+      }
+  
+      if (loginRole != null && !loginRole.equalsIgnoreCase(getRole())) {
+        sqlWarnings.add(
+            new SFException(
+                ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP, "Role", loginRole, getRole()));
+      }
+  
+      if (loginWarehouse != null && !loginWarehouse.equalsIgnoreCase(getWarehouse())) {
+        sqlWarnings.add(
+            new SFException(
+                ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
+                "Warehouse",
+                loginWarehouse,
+                getWarehouse()));
+      }
+  
+      boolean disableQueryContextCache = getDisableQueryContextCacheOption();
+      logger.debug(
+          "Query context cache is {}", ((disableQueryContextCache) ? "disabled" : "enabled"));
+  
+      // Initialize QCC
+      if (!disableQueryContextCache) {
+        qcc = new QueryContextCache(this.getQueryContextCacheSize());
+      } else {
+        qcc = null;
+      }
+  
+      // start heartbeat for this session so that the master token will not expire
+      startHeartbeatForThisSession();
+      stopwatch.stop();
+      logger.info("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
+    } finally {
+      openFunctionLock.unlock();
     }
-
-    // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
-    HttpUtil.initHttpClient(httpClientSettingsKey, null);
-    SFLoginOutput loginOutput =
-        SessionUtil.openSession(loginInput, connectionPropertiesMap, tracingLevel.toString());
-    isClosed = false;
-
-    authTimeout = loginInput.getAuthTimeout();
-    sessionToken = loginOutput.getSessionToken();
-    masterToken = loginOutput.getMasterToken();
-    idToken = loginOutput.getIdToken();
-    mfaToken = loginOutput.getMfaToken();
-    setDatabaseVersion(loginOutput.getDatabaseVersion());
-    setDatabaseMajorVersion(loginOutput.getDatabaseMajorVersion());
-    setDatabaseMinorVersion(loginOutput.getDatabaseMinorVersion());
-    httpClientSocketTimeout = loginOutput.getHttpClientSocketTimeout();
-    masterTokenValidityInSeconds = loginOutput.getMasterTokenValidityInSeconds();
-    setDatabase(loginOutput.getSessionDatabase());
-    setSchema(loginOutput.getSessionSchema());
-    setRole(loginOutput.getSessionRole());
-    setWarehouse(loginOutput.getSessionWarehouse());
-    setSessionId(loginOutput.getSessionId());
-    setAutoCommit(loginOutput.getAutoCommit());
-
-    // Update common parameter values for this session
-    SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
-    // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
-    if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
-      TelemetryService.enableHTAP();
-    } else {
-      TelemetryService.disableHTAP();
-    }
-    String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
-    String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
-    String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);
-    String loginWarehouse = (String) connectionPropertiesMap.get(SFSessionProperty.WAREHOUSE);
-
-    if (loginDatabaseName != null && !loginDatabaseName.equalsIgnoreCase(getDatabase())) {
-      sqlWarnings.add(
-          new SFException(
-              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
-              "Database",
-              loginDatabaseName,
-              getDatabase()));
-    }
-
-    if (loginSchemaName != null && !loginSchemaName.equalsIgnoreCase(getSchema())) {
-      sqlWarnings.add(
-          new SFException(
-              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
-              "Schema",
-              loginSchemaName,
-              getSchema()));
-    }
-
-    if (loginRole != null && !loginRole.equalsIgnoreCase(getRole())) {
-      sqlWarnings.add(
-          new SFException(
-              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP, "Role", loginRole, getRole()));
-    }
-
-    if (loginWarehouse != null && !loginWarehouse.equalsIgnoreCase(getWarehouse())) {
-      sqlWarnings.add(
-          new SFException(
-              ErrorCode.CONNECTION_ESTABLISHED_WITH_DIFFERENT_PROP,
-              "Warehouse",
-              loginWarehouse,
-              getWarehouse()));
-    }
-
-    boolean disableQueryContextCache = getDisableQueryContextCacheOption();
-    logger.debug(
-        "Query context cache is {}", ((disableQueryContextCache) ? "disabled" : "enabled"));
-
-    // Initialize QCC
-    if (!disableQueryContextCache) {
-      qcc = new QueryContextCache(this.getQueryContextCacheSize());
-    } else {
-      qcc = null;
-    }
-
-    // start heartbeat for this session so that the master token will not expire
-    startHeartbeatForThisSession();
-    stopwatch.stop();
-    logger.info("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
   }
 
   /**
