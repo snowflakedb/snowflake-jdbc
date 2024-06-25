@@ -911,14 +911,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public int getMaxBinaryLiteralLength() throws SQLException {
     logger.trace("int getMaxBinaryLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    return 8388608;
+    return 67108864;
   }
 
   @Override
   public int getMaxCharLiteralLength() throws SQLException {
     logger.trace("int getMaxCharLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    return 16777216;
+    return 134217728;
   }
 
   @Override
@@ -1348,9 +1348,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                       typeName.substring(typeName.indexOf('(') + 1, typeName.indexOf(')')));
               nextRow[16] = char_octet_len;
             } else if (type == Types.CHAR || type == Types.VARCHAR) {
-              nextRow[16] = 16777216;
+              nextRow[16] = 134217728;
             } else if (type == Types.BINARY || type == Types.VARBINARY) {
-              nextRow[16] = 8388608;
+              nextRow[16] = 67108864;
             }
           } else {
             nextRow[16] = null;
@@ -3567,9 +3567,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                       typeName.substring(typeName.indexOf('(') + 1, typeName.indexOf(')')));
               nextRow[13] = char_octet_len;
             } else if (type == Types.CHAR || type == Types.VARCHAR) {
-              nextRow[13] = 16777216;
+              nextRow[13] = 134217728;
             } else if (type == Types.BINARY || type == Types.VARBINARY) {
-              nextRow[13] = 8388608;
+              nextRow[13] = 67108864;
             }
           } else {
             nextRow[13] = null;

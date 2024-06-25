@@ -34,7 +34,7 @@ import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryStatement.class)
-public class MaxLobSizeLatestIT extends BaseJDBCTest {
+public class LobSizeLatestIT extends BaseJDBCTest {
 
   // Max LOB size is testable from version 3.15.0 and above.
   private static int maxLobSize = 16 * 1024 * 1024;
@@ -79,7 +79,7 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
   private final String resultFormat;
 
-  public MaxLobSizeLatestIT(int lobSize, String resultFormat) throws SQLException {
+  public LobSizeLatestIT(int lobSize, String resultFormat) throws SQLException {
     this.lobSize = lobSize;
     this.resultFormat = resultFormat;
 

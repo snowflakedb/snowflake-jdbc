@@ -877,13 +877,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(134217728, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertTrue(resultSet.getString("SPECIFIC_NAME")
+                .equals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)") ||
+                resultSet.getString("SPECIFIC_NAME")
+                        .equals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -906,9 +907,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertTrue(resultSet.getString("SPECIFIC_NAME")
+                .equals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)") ||
+                resultSet.getString("SPECIFIC_NAME")
+                        .equals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -927,13 +929,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(8388608, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(67108864, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertTrue(resultSet.getString("SPECIFIC_NAME")
+                .equals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)") ||
+                resultSet.getString("SPECIFIC_NAME")
+                        .equals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -956,9 +959,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
-        assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+        assertTrue(resultSet.getString("SPECIFIC_NAME")
+                .equals("FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)") ||
+                resultSet.getString("SPECIFIC_NAME")
+                        .equals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)"));
         assertFalse(resultSet.next());
       }
 
@@ -1290,14 +1294,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           assertEquals("C3", resultSet.getString("COLUMN_NAME"));
           assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
           assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
-          assertEquals(16777216, resultSet.getInt("COLUMN_SIZE"));
+          assertEquals(134217728, resultSet.getInt("COLUMN_SIZE"));
           assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
           assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
           assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
           assertEquals("", resultSet.getString("REMARKS"));
           assertEquals("", resultSet.getString("COLUMN_DEF"));
 
-          assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+          assertEquals(134217728, resultSet.getInt("CHAR_OCTET_LENGTH"));
           assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
           assertEquals("YES", resultSet.getString("IS_NULLABLE"));
           assertNull(resultSet.getString("SCOPE_CATALOG"));
@@ -1465,7 +1469,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           assertEquals("C10", resultSet.getString("COLUMN_NAME"));
           assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
           assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
-          assertEquals(8388608, resultSet.getInt("COLUMN_SIZE"));
+          assertEquals(67108864, resultSet.getInt("COLUMN_SIZE"));
           assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
           assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
           assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));

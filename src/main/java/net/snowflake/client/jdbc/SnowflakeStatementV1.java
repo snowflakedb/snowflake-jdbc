@@ -69,7 +69,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   private int queryTimeout = 0;
 
   // max field size limited to 16MB
-  private final int maxFieldSize = 16777216;
+  private final int maxFieldSize = 134217728;
 
   SFBaseStatement sfBaseStatement;
 

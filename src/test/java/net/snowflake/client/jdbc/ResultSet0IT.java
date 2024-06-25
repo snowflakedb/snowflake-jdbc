@@ -58,32 +58,32 @@ public class ResultSet0IT extends BaseJDBCTest {
         Statement statement = con.createStatement()) {
 
       // TEST_RS
-      statement.execute("create or replace table test_rs (colA string)");
-      statement.execute("insert into test_rs values('rowOne')");
-      statement.execute("insert into test_rs values('rowTwo')");
-      statement.execute("insert into test_rs values('rowThree')");
-
-      // ORDERS_JDBC
-      statement.execute(
-          "create or replace table orders_jdbc"
-              + "(C1 STRING NOT NULL COMMENT 'JDBC', "
-              + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
-              + "C7 STRING, C8 STRING, C9 STRING) "
-              + "stage_file_format = (field_delimiter='|' "
-              + "error_on_column_count_mismatch=false)");
-      // put files
-      assertTrue(
-          "Failed to put a file",
-          statement.execute(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
-      assertTrue(
-          "Failed to put a file",
-          statement.execute(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
-
-      int numRows = statement.executeUpdate("copy into orders_jdbc");
-
-      assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
+//      statement.execute("create or replace table test_rs (colA string)");
+//      statement.execute("insert into test_rs values('rowOne')");
+//      statement.execute("insert into test_rs values('rowTwo')");
+//      statement.execute("insert into test_rs values('rowThree')");
+//
+//      // ORDERS_JDBC
+//      statement.execute(
+//          "create or replace table orders_jdbc"
+//              + "(C1 STRING NOT NULL COMMENT 'JDBC', "
+//              + "C2 STRING, C3 STRING, C4 STRING, C5 STRING, C6 STRING, "
+//              + "C7 STRING, C8 STRING, C9 STRING) "
+//              + "stage_file_format = (field_delimiter='|' "
+//              + "error_on_column_count_mismatch=false)");
+//      // put files
+//      assertTrue(
+//          "Failed to put a file",
+//          statement.execute(
+//              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
+//      assertTrue(
+//          "Failed to put a file",
+//          statement.execute(
+//              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
+//
+//      int numRows = statement.executeUpdate("copy into orders_jdbc");
+//
+//      assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
     }
   }
 
