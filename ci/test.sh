@@ -41,8 +41,10 @@ for name in "${!TARGET_TEST_IMAGES[@]}"; do
     # docker pull "${TEST_IMAGE_NAMES[$name]}"
     docker container run \
         --rm \
+        --privileged \
         -v $JDBC_ROOT:/mnt/host \
         -v $WORKSPACE:/mnt/workspace \
+        -v /var/run/docker.sock:/var/run/docker.sock \
         -e LOCAL_USER_ID=$(id -u ${USER}) \
         -e TERM=xterm \
         -e GIT_COMMIT \
