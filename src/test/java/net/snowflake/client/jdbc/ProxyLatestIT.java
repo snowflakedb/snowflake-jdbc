@@ -80,8 +80,6 @@ public class ProxyLatestIT {
                   + "--keystore-type JKS "
                   + "--ca-keystore /home/wiremock/ca-cert.jks "
                   + "--proxy-pass-through false")
-          //          .withAccessToHost(true)
-          //              .withExtraHost("host.docker.internal", "host-gateway")
           .withExposedPorts(8080, 8443);
 
   @Parameterized.Parameters(name = "protocol: {0}")
