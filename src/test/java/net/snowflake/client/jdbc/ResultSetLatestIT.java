@@ -1049,7 +1049,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       SFBaseSession session = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
-      Integer maxVarcharSize = (Integer) session.getOtherParameter("VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT");
+      Integer maxVarcharSize =
+          (Integer) session.getOtherParameter("VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT");
       if (maxVarcharSize != null) {
         colLength = maxVarcharSize;
       }
