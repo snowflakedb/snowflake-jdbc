@@ -124,7 +124,8 @@ public class SFClientConfigParser {
     }
   }
 
-  public static Boolean checkConfigFilePermissions(String derivedConfigFilePath) {
+  public static Boolean checkConfigFilePermissions(String derivedConfigFilePath)
+      throws IOException {
     try {
       if (Constants.getOS() != Constants.OS.WINDOWS) {
         // Check permissions of config file
@@ -142,8 +143,7 @@ public class SFClientConfigParser {
         }
       }
     } catch (IOException e) {
-      logger.warn(e.getMessage());
-      return false;
+      throw e;
     }
     return true;
   }
