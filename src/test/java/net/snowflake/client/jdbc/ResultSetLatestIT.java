@@ -793,7 +793,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
           assertEquals("SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
           assertEquals("VARCHAR", resultSetMetaData.getColumnTypeName(1));
           assertEquals(0, resultSetMetaData.getScale(1));
-          assertEquals(16777216, resultSetMetaData.getPrecision(1));
+          assertEquals(134217728, resultSetMetaData.getPrecision(1));
         }
       } finally {
         statement.execute("drop procedure if exists SP_ZSDLEADTIME_ARCHIVE_DAILY()");
@@ -1049,6 +1049,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
     int colLength = 16777216;
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
+      SFBaseSession session = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+      Integer maxVarcharSize = (Integer) session.getOtherParameter("VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT");
+      if (maxVarcharSize != null) {
+        colLength = maxVarcharSize;
+      }
       statement.execute("create or replace table " + tableName + " (c1 string(" + colLength + "))");
       statement.execute(
           "insert into " + tableName + " select randstr(" + colLength + ", random())");

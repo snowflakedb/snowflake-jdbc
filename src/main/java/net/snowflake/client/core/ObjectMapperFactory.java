@@ -11,8 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class ObjectMapperFactory {
   @SnowflakeJdbcInternalApi
-  // Snowflake allows up to 128M (after updating Max LOB size) string size and returns base64 encoded value that makes it up to 172M
-  public static final int DEFAULT_MAX_JSON_STRING_LEN = 172_000_000;
+  // Snowflake allows up to 128M (after updating Max LOB size) string size and returns base64 encoded value that makes it up to 180M
+  public static final int DEFAULT_MAX_JSON_STRING_LEN = 180_000_000;
 
   @SnowflakeJdbcInternalApi
   public static final String MAX_JSON_STRING_LENGTH_JVM =
