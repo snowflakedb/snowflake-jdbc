@@ -140,6 +140,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           "VECTOR",
           "VIEW");
 
+  public static final String MAX_VARCHAR_BINARY_SIZE_PARAM_NAME = "VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT";
+
+  // Defaults to 128MB
+  public static final int DEFAULT_MAX_LOB_SIZE = 134217728;
+
   private final Connection connection;
 
   private final SFBaseSession session;
@@ -911,14 +916,19 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public int getMaxBinaryLiteralLength() throws SQLException {
     logger.trace("int getMaxBinaryLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    return 67108864;
+    return getMaxCharLiteralLength()/2; // hex instead of octal, thus divided by 2
   }
 
   @Override
   public int getMaxCharLiteralLength() throws SQLException {
     logger.trace("int getMaxCharLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    return 134217728;
+    int length = DEFAULT_MAX_LOB_SIZE;
+    Integer maxLiteralLengthFromSession = (Integer) session.getOtherParameter(MAX_VARCHAR_BINARY_SIZE_PARAM_NAME);
+    if (maxLiteralLengthFromSession != null) {
+      length = maxLiteralLengthFromSession;
+    }
+    return length;
   }
 
   @Override
@@ -1348,9 +1358,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                       typeName.substring(typeName.indexOf('(') + 1, typeName.indexOf(')')));
               nextRow[16] = char_octet_len;
             } else if (type == Types.CHAR || type == Types.VARCHAR) {
-              nextRow[16] = 134217728;
+              nextRow[16] = getMaxCharLiteralLength();
             } else if (type == Types.BINARY || type == Types.VARBINARY) {
-              nextRow[16] = 67108864;
+              nextRow[16] = getMaxBinaryLiteralLength();
             }
           } else {
             nextRow[16] = null;
@@ -3570,9 +3580,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                       typeName.substring(typeName.indexOf('(') + 1, typeName.indexOf(')')));
               nextRow[13] = char_octet_len;
             } else if (type == Types.CHAR || type == Types.VARCHAR) {
-              nextRow[13] = 134217728;
+              nextRow[13] = getMaxCharLiteralLength();
             } else if (type == Types.BINARY || type == Types.VARBINARY) {
-              nextRow[13] = 67108864;
+              nextRow[13] = getMaxBinaryLiteralLength();
             }
           } else {
             nextRow[13] = null;

@@ -12,9 +12,10 @@ import java.sql.Statement;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
 import org.junit.Test;
 
-public class MaxLobSizeTest extends BaseJDBCTest {
+public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
@@ -30,9 +31,10 @@ public class MaxLobSizeTest extends BaseJDBCTest {
       }
 
       stmt.execute("alter session set ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT=true");
-      ResultSet resultSet = stmt.executeQuery("select randstr(20000000, random()) as large_str");
-      resultSet.next();
-      assertThat(resultSet.getString(1), is(not(emptyOrNullString())));
+      try (ResultSet resultSet = stmt.executeQuery("select randstr(20000000, random()) as large_str")) {
+        Assert.assertTrue(resultSet.next());
+        assertThat(resultSet.getString(1), is(not(emptyOrNullString())));
+      }
     }
   }
 }
