@@ -1044,7 +1044,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
   /** Added in > 3.14.5 */
   @Test
   public void testLargeStringRetrieval() throws SQLException {
-    //TODO: Increase max lob size
     String tableName = "maxJsonStringLength_table";
     int colLength = 16777216;
     try (Connection con = getConnection();
