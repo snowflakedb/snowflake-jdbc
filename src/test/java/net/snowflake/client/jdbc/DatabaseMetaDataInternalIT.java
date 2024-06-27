@@ -61,7 +61,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
       st.execute("create or replace database JDBC_DB2");
       st.execute("create or replace schema JDBC_SCHEMA21");
       st.execute("create or replace table JDBC_TBL211(colA string)");
-      st.execute("create or replace table JDBC_BIN(bin1 binary, bin2 binary(100))");
+      st.execute("create or replace table JDBC_BIN(bin1 binary(8388608), bin2 binary(100))");
 
       //    st.execute("create or replace table JDBC_TBL211(colA string(25) NOT NULL DEFAULT
       // 'defstring')");

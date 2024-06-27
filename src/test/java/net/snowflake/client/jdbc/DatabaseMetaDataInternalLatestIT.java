@@ -91,7 +91,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
               + "sharedCol decimal)");
       statement.execute(
           "create or replace function JDBC_DB1.JDBC_SCHEMA11.FUNC112 "
-              + "() RETURNS TABLE(colA string, colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns "
+              + "() RETURNS TABLE(colA string(16777216), colB decimal, bin2 binary(8388608), sharedCol decimal) COMMENT= 'returns "
               + "table of 4 columns'"
               + " as 'select JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colA, JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colB, "
               + "JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.bin2, JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.sharedCol from JDBC_DB1"
@@ -178,7 +178,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
             resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
@@ -198,7 +198,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
             resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
@@ -219,7 +219,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
             resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
@@ -239,7 +239,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
             resultSet.getString("SPECIFIC_NAME"));
         // setting catalog to % will result in 0 columns. % does not apply for catalog, only for
         // other

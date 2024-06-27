@@ -59,9 +59,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           + "    $$\n"
           + "    ;";
 
-  public static final int EXPECTED_MAX_CHAR_LENGTH = 134217728;
+  public static final int EXPECTED_MAX_CHAR_LENGTH = 16777216;
 
-  public static final int EXPECTED_MAX_BINARY_LENGTH = 67108864;
+  public static final int EXPECTED_MAX_BINARY_LENGTH = 8388608;
 
   @Test
   public void testGetConnection() throws SQLException {

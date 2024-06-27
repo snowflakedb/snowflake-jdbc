@@ -17,6 +17,11 @@ import org.junit.Test;
 
 public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
+  /**
+   * Available since 3.17.0
+   *
+   * @throws SQLException
+   */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMaxLobSize() throws SQLException {
@@ -36,6 +41,7 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
         Assert.assertTrue(resultSet.next());
         assertThat(resultSet.getString(1), is(not(emptyOrNullString())));
       }
+      stmt.execute("alter session unset ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT");
     }
   }
 }

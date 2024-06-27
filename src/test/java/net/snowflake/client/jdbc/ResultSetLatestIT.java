@@ -4,7 +4,6 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.TestUtil.expectSnowflakeLoggedFeatureNotSupportedException;
-import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_CHAR_LENGTH;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;
@@ -745,7 +744,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       try {
         String sp =
             "CREATE OR REPLACE PROCEDURE \"SP_ZSDLEADTIME_ARCHIVE_DAILY\"()\n"
-                + "RETURNS VARCHAR(16777216)\n"
+                + "RETURNS VARCHAR\n"
                 + "LANGUAGE SQL\n"
                 + "EXECUTE AS CALLER\n"
                 + "AS \n"
@@ -794,7 +793,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
           assertEquals("SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
           assertEquals("VARCHAR", resultSetMetaData.getColumnTypeName(1));
           assertEquals(0, resultSetMetaData.getScale(1));
-          assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSetMetaData.getPrecision(1));
         }
       } finally {
         statement.execute("drop procedure if exists SP_ZSDLEADTIME_ARCHIVE_DAILY()");

@@ -144,7 +144,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       "VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT";
 
   // Defaults to 128MB
-  private static final int DEFAULT_MAX_LOB_SIZE = 134217728;
+  private static final int DEFAULT_MAX_LOB_SIZE = 16777216;
 
   private final Connection connection;
 

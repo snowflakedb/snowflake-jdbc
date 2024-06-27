@@ -1225,8 +1225,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         statement.execute(
             "create or replace table "
                 + targetTable
-                + "(C1 int, C2 varchar(100), C3 string default '', C4 number(18,4), C5 double,"
-                + " C6 boolean, C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary,C11"
+                + "(C1 int, C2 varchar(100), C3 string(16777216) default '', C4 number(18,4), C5 double,"
+                + " C6 boolean, C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary(8388608),C11"
                 + " variant, C12 timestamp_ltz(8), C13 timestamp_tz(3))");
 
         DatabaseMetaData metaData = connection.getMetaData();
