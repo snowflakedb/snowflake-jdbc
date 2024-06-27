@@ -173,7 +173,8 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(10, resultSet.getInt("RADIX"));
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-        assertEquals(databaseMetaData.getMaxCharLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(
+            databaseMetaData.getMaxCharLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
@@ -213,7 +214,8 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(10, resultSet.getInt("RADIX"));
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-        assertEquals(databaseMetaData.getMaxBinaryLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(
+            databaseMetaData.getMaxBinaryLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(

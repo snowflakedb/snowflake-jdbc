@@ -39,7 +39,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -141,12 +140,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           "VECTOR",
           "VIEW");
 
-  @SnowflakeJdbcInternalApi
-  public static final String MAX_VARCHAR_BINARY_SIZE_PARAM_NAME = "VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT";
+  private static final String MAX_VARCHAR_BINARY_SIZE_PARAM_NAME =
+      "VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT";
 
   // Defaults to 128MB
-  @SnowflakeJdbcInternalApi
-  public static final int DEFAULT_MAX_LOB_SIZE = 134217728;
+  private static final int DEFAULT_MAX_LOB_SIZE = 134217728;
 
   private final Connection connection;
 
@@ -919,7 +917,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public int getMaxBinaryLiteralLength() throws SQLException {
     logger.trace("int getMaxBinaryLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    return getMaxCharLiteralLength()/2; // hex instead of octal, thus divided by 2
+    return getMaxCharLiteralLength() / 2; // hex instead of octal, thus divided by 2
   }
 
   @Override
@@ -927,7 +925,8 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     logger.trace("int getMaxCharLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     int length = DEFAULT_MAX_LOB_SIZE;
-    Integer maxLiteralLengthFromSession = (Integer) session.getOtherParameter(MAX_VARCHAR_BINARY_SIZE_PARAM_NAME);
+    Integer maxLiteralLengthFromSession =
+        (Integer) session.getOtherParameter(MAX_VARCHAR_BINARY_SIZE_PARAM_NAME);
     if (maxLiteralLengthFromSession != null) {
       length = maxLiteralLengthFromSession;
     }

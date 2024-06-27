@@ -31,7 +31,8 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
       }
 
       stmt.execute("alter session set ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT=true");
-      try (ResultSet resultSet = stmt.executeQuery("select randstr(20000000, random()) as large_str")) {
+      try (ResultSet resultSet =
+          stmt.executeQuery("select randstr(20000000, random()) as large_str")) {
         Assert.assertTrue(resultSet.next());
         assertThat(resultSet.getString(1), is(not(emptyOrNullString())));
       }

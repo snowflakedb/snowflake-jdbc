@@ -189,8 +189,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     // test each column return the right value
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA11", "JDBCFUNCTEST111");
-    verifyResultSetMetaDataColumns(
-        resultSet, DBMetadataResultSetMetadata.GET_FUNCTIONS);
+    verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FUNCTIONS);
     resultSet.next();
     assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
     assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
