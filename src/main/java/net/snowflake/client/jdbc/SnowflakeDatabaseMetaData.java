@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -140,9 +141,11 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           "VECTOR",
           "VIEW");
 
+  @SnowflakeJdbcInternalApi
   public static final String MAX_VARCHAR_BINARY_SIZE_PARAM_NAME = "VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT";
 
   // Defaults to 128MB
+  @SnowflakeJdbcInternalApi
   public static final int DEFAULT_MAX_LOB_SIZE = 134217728;
 
   private final Connection connection;
