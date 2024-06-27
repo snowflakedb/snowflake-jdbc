@@ -122,9 +122,7 @@ public class SFClientConfigParser {
     }
   }
 
-
-  private static void checkConfigFilePermissions(String derivedConfigFilePath)
-      throws IOException {
+  private static void checkConfigFilePermissions(String derivedConfigFilePath) throws IOException {
     try {
       if (Constants.getOS() != Constants.OS.WINDOWS) {
         // Check permissions of config file
@@ -144,9 +142,9 @@ public class SFClientConfigParser {
 
   static Boolean checkGroupOthersWritePermissions(String configFilePath) throws IOException {
     Set<PosixFilePermission> folderPermissions =
-            Files.getPosixFilePermissions(Paths.get(configFilePath));
+        Files.getPosixFilePermissions(Paths.get(configFilePath));
     return folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
-            || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE);
+        || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE);
   }
 
   static String convertToWindowsPath(String filePath) {
