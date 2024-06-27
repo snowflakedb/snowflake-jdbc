@@ -30,12 +30,7 @@ import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
@@ -924,13 +919,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public int getMaxCharLiteralLength() throws SQLException {
     logger.trace("int getMaxCharLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    int length = DEFAULT_MAX_LOB_SIZE;
-    Integer maxLiteralLengthFromSession =
-        (Integer) session.getOtherParameter(MAX_VARCHAR_BINARY_SIZE_PARAM_NAME);
-    if (maxLiteralLengthFromSession != null) {
-      length = maxLiteralLengthFromSession;
-    }
-    return length;
+    Optional<Integer> maxLiteralLengthFromSession =
+         Optional.ofNullable((Integer) session.getOtherParameter(MAX_VARCHAR_BINARY_SIZE_PARAM_NAME));
+    return maxLiteralLengthFromSession.orElse(DEFAULT_MAX_LOB_SIZE);
   }
 
   @Override
