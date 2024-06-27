@@ -24,7 +24,7 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
    */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testMaxLobSize() throws SQLException {
+  public void testIncreasedMaxLobSize() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
       stmt.execute("alter session set FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY='ENABLED'");
@@ -40,8 +40,10 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
           stmt.executeQuery("select randstr(20000000, random()) as large_str")) {
         Assert.assertTrue(resultSet.next());
         assertThat(resultSet.getString(1), is(not(emptyOrNullString())));
+      } finally {
+        stmt.execute("alter session unset ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT");
+        stmt.execute("alter session unset FEATURE_INCREASED_MAX_LOB_SIZE_IN_MEMORY");
       }
-      stmt.execute("alter session unset ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT");
     }
   }
 }
