@@ -67,9 +67,7 @@ public class SFClientConfigParser {
     }
     if (derivedConfigFilePath != null) {
       try {
-        if (!checkConfigFilePermissions(derivedConfigFilePath)) {
-          return null;
-        }
+        checkConfigFilePermissions(derivedConfigFilePath);
 
         File configFile = new File(derivedConfigFilePath);
         ObjectMapper objectMapper = new ObjectMapper();
@@ -124,28 +122,31 @@ public class SFClientConfigParser {
     }
   }
 
-  public static Boolean checkConfigFilePermissions(String derivedConfigFilePath)
+
+  private static void checkConfigFilePermissions(String derivedConfigFilePath)
       throws IOException {
     try {
       if (Constants.getOS() != Constants.OS.WINDOWS) {
         // Check permissions of config file
-        Set<PosixFilePermission> folderPermissions =
-            Files.getPosixFilePermissions(Paths.get(derivedConfigFilePath));
-        if (folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
-            || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE)) {
+        if (checkGroupOthersWritePermissions(derivedConfigFilePath)) {
           String error =
               String.format(
                   "Error due to other users having permission to modify the config file: %s",
                   derivedConfigFilePath);
           // TODO: SNOW-1503722 to change warning log to throw an error instead
           logger.warn(error);
-          return false;
         }
       }
     } catch (IOException e) {
       throw e;
     }
-    return true;
+  }
+
+  static Boolean checkGroupOthersWritePermissions(String configFilePath) throws IOException {
+    Set<PosixFilePermission> folderPermissions =
+            Files.getPosixFilePermissions(Paths.get(configFilePath));
+    return folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
+            || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE);
   }
 
   static String convertToWindowsPath(String filePath) {

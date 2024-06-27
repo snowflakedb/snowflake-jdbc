@@ -6,20 +6,22 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnWin;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import net.snowflake.client.core.Constants;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class SFPermissionsTest {
+  @Rule
+  public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   @Parameterized.Parameters(name = "permission={0}")
   public static Set<Map.Entry<String, Boolean>> data() {
@@ -75,7 +77,7 @@ public class SFPermissionsTest {
     // TODO: SNOW-1503722 Change to check for thrown exceptions
     // Don't run on Windows
     Files.setPosixFilePermissions(configFilePath, PosixFilePermissions.fromString(permission));
-    Boolean result = SFClientConfigParser.checkConfigFilePermissions(configFilePath.toString());
+    Boolean result = SFClientConfigParser.checkGroupOthersWritePermissions(configFilePath.toString());
     if (isSucceed != result) {
       fail("testLogDirectoryPermissions failed. Expected " + isSucceed);
     }
