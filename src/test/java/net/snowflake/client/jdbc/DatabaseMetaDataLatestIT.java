@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_CHAR_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
@@ -877,7 +879,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(134217728, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
@@ -928,7 +930,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(67108864, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
@@ -1291,14 +1293,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           assertEquals("C3", resultSet.getString("COLUMN_NAME"));
           assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
           assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
-          assertEquals(134217728, resultSet.getInt("COLUMN_SIZE"));
+          assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSet.getInt("COLUMN_SIZE"));
           assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
           assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
           assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
           assertEquals("", resultSet.getString("REMARKS"));
           assertEquals("", resultSet.getString("COLUMN_DEF"));
 
-          assertEquals(134217728, resultSet.getInt("CHAR_OCTET_LENGTH"));
+          assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
           assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
           assertEquals("YES", resultSet.getString("IS_NULLABLE"));
           assertNull(resultSet.getString("SCOPE_CATALOG"));
@@ -1466,7 +1468,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           assertEquals("C10", resultSet.getString("COLUMN_NAME"));
           assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
           assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
-          assertEquals(67108864, resultSet.getInt("COLUMN_SIZE"));
+          assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("COLUMN_SIZE"));
           assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
           assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
           assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));

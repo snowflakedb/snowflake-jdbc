@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -111,7 +113,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA21", "JDBC_BIN", "BIN1");
     resultSet.next();
-    assertEquals(67108864, resultSet.getInt("COLUMN_SIZE"));
+    assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("COLUMN_SIZE"));
     assertEquals(1, getSizeOfResultSet(resultSet) + 1);
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA21", "JDBC_BIN", "BIN2");
@@ -187,7 +189,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
     // test each column return the right value
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA11", "JDBCFUNCTEST111");
-    DatabaseMetaDataIT.verifyResultSetMetaDataColumns(
+    verifyResultSetMetaDataColumns(
         resultSet, DBMetadataResultSetMetadata.GET_FUNCTIONS);
     resultSet.next();
     assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
