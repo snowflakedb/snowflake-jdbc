@@ -28,24 +28,24 @@ public class SFPermissionsTest {
     Map<String, Boolean> testConfigFilePermissions =
         new HashMap<String, Boolean>() {
           {
-            put("rwx------", true);
-            put("rw-------", true);
-            put("r-x------", true);
-            put("r--------", true);
-            put("rwxrwx---", false);
-            put("rwxrw----", false);
-            put("rwxr-x---", true);
-            put("rwxr-----", true);
-            put("rwx-wx---", false);
-            put("rwx-w----", false);
-            put("rwx--x---", true);
-            put("rwx---rwx", false);
-            put("rwx---rw-", false);
-            put("rwx---r-x", true);
-            put("rwx---r--", true);
-            put("rwx----wx", false);
-            put("rwx----w-", false);
-            put("rwx-----x", true);
+            put("rwx------", false);
+            put("rw-------", false);
+            put("r-x------", false);
+            put("r--------", false);
+            put("rwxrwx---", true);
+            put("rwxrw----", true);
+            put("rwxr-x---", false);
+            put("rwxr-----", false);
+            put("rwx-wx---", true);
+            put("rwx-w----", true);
+            put("rwx--x---", false);
+            put("rwx---rwx", true);
+            put("rwx---rw-", true);
+            put("rwx---r-x", false);
+            put("rwx---r--", false);
+            put("rwx----wx", true);
+            put("rwx----w-", true);
+            put("rwx-----x", false);
           }
         };
     return testConfigFilePermissions.entrySet();
