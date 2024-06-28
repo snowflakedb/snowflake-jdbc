@@ -20,9 +20,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.logging.Logger;
 import net.snowflake.client.RunningNotOnJava8Java21;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -41,6 +43,8 @@ import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryOthers.class)
 public class ProxyLatestIT {
+
+  private static final Logger logger = Logger.getLogger(ProxyLatestIT.class.getName());
 
   private static final String WIREMOCK_HOST = "localhost";
   private static final String TRUST_STORE_PROPERTY = "javax.net.ssl.trustStore";
@@ -169,6 +173,8 @@ public class ProxyLatestIT {
                 waitForWiremock();
                 return true;
               } catch (Exception e) {
+                logger.info(
+                    "Failed to start wiremock, retrying: " + Arrays.toString(e.getStackTrace()));
                 return false;
               }
             });
@@ -195,7 +201,6 @@ public class ProxyLatestIT {
         .alias("stop wiremock")
         .atMost(Duration.ofSeconds(10))
         .until(() -> !wiremockStandalone.isAlive());
-    wiremockStandalone.isAlive();
   }
 
   private int findFreePort() {
