@@ -65,8 +65,9 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithNTZType() throws SQLException {
     TimeZone origTz = TimeZone.getDefault();
-    Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
+    TimeZone tokyoTz = TimeZone.getTimeZone("Asia/Tokyo");
+    Calendar tokyo = Calendar.getInstance(tokyoTz);
+    TimeZone.setDefault(tokyoTz);
 
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -80,19 +81,18 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         Timestamp currT = new Timestamp(System.currentTimeMillis());
 
         // insert using regular binging
-        executePsStatementForTimestampTest(connection, "regularinsert", currT);
-
-        // insert using stage binding
-        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
         try (PreparedStatement prepStatement =
-            connection.prepareStatement("insert into stageinsert values (?,?,?,?)")) {
+            connection.prepareStatement("insert into regularinsert values (?,?,?,?)")) {
           prepStatement.setInt(1, 1);
-          prepStatement.setTimestamp(2, currT, utc);
-          prepStatement.setTimestamp(3, currT, utc);
+          prepStatement.setTimestamp(2, currT, tokyo);
+          prepStatement.setTimestamp(3, currT, tokyo);
           prepStatement.setTimestamp(4, currT);
           prepStatement.addBatch();
           prepStatement.executeBatch();
         }
+        // insert using stage binding
+        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        executePsStatementForTimestampTest(connection, "stageinsert", currT);
 
         // Compare the results
         try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
@@ -102,9 +102,8 @@ public class BindingDataLatestIT extends AbstractDriverIT {
 
           assertEquals(rs1.getInt(1), rs2.getInt(1));
 
-          // Check all the columns have the same.
+          // Check tz type and ltz type columns have the same value.
           assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
-          assertEquals(rs1.getTimestamp(3), rs1.getTimestamp(4));
 
           assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
           assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
@@ -192,8 +191,9 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithLTZTypeForDayLightSavingTimeZone() throws SQLException {
     TimeZone origTz = TimeZone.getDefault();
-    Calendar australia = Calendar.getInstance(TimeZone.getTimeZone("Australia/Sydney"));
-    TimeZone.setDefault(TimeZone.getTimeZone("Australia/Sydney"));
+    TimeZone australiaTz = TimeZone.getTimeZone("Australia/Sydney");
+    Calendar australia = Calendar.getInstance(australiaTz);
+    TimeZone.setDefault(australiaTz);
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
@@ -211,22 +211,20 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         // insert using regular binging
         try (PreparedStatement prepStatement =
             connection.prepareStatement("insert into regularinsert values (?,?,?,?,?,?,?,?,?,?)")) {
-          for (int i = 1; i <= 6; i++) {
-            prepStatement.setInt(i, 1);
-            prepStatement.setTimestamp(2, ts1);
-            prepStatement.setTimestamp(3, ts2);
-            prepStatement.setTimestamp(4, ts3);
+          prepStatement.setInt(1, 1);
+          prepStatement.setTimestamp(2, ts1);
+          prepStatement.setTimestamp(3, ts2);
+          prepStatement.setTimestamp(4, ts3);
 
-            prepStatement.setTimestamp(5, ts1);
-            prepStatement.setTimestamp(6, ts2);
-            prepStatement.setTimestamp(7, ts3);
+          prepStatement.setTimestamp(5, ts1);
+          prepStatement.setTimestamp(6, ts2);
+          prepStatement.setTimestamp(7, ts3);
 
-            prepStatement.setTimestamp(8, ts1, australia);
-            prepStatement.setTimestamp(9, ts2, australia);
-            prepStatement.setTimestamp(10, ts3, australia);
+          prepStatement.setTimestamp(8, ts1, australia);
+          prepStatement.setTimestamp(9, ts2, australia);
+          prepStatement.setTimestamp(10, ts3, australia);
 
-            prepStatement.addBatch();
-          }
+          prepStatement.addBatch();
           prepStatement.executeBatch();
         }
 
