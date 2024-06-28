@@ -774,8 +774,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           "create or replace table JDBC_TBL111(colA string, colB decimal, colC " + "timestamp)");
       /* Create a UDF that returns a table made up of 4 columns from 2 different tables, joined together */
       statement.execute(
-          "create or replace function FUNC112 () RETURNS TABLE(colA string, colB decimal, bin2"
-              + " binary, sharedCol decimal) COMMENT= 'returns table of 4 columns' as 'select"
+          "create or replace function FUNC112 () RETURNS TABLE(colA string(16777216), colB decimal, bin2 "
+              + "binary(8388608) , sharedCol decimal) COMMENT= 'returns table of 4 columns' as 'select"
               + " JDBC_TBL111.colA, JDBC_TBL111.colB, BIN_TABLE.bin2, BIN_TABLE.sharedCol from"
               + " JDBC_TBL111 inner join BIN_TABLE on JDBC_TBL111.colB =BIN_TABLE.sharedCol'");
       DatabaseMetaData metaData = connection.getMetaData();
@@ -884,7 +884,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
             resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
@@ -909,9 +909,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
-        ;
+                "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+                resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -935,8 +934,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+                "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+                resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
@@ -960,8 +959,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
-            "FUNC112() RETURN TABLE (COLA VARCHAR(134217728), COLB NUMBER, BIN2 BINARY(67108864), SHAREDCOL NUMBER)",
-            resultSet.getString("SPECIFIC_NAME"));
+                "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+                resultSet.getString("SPECIFIC_NAME"));
         assertFalse(resultSet.next());
       }
 
