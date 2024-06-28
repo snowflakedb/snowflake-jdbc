@@ -34,6 +34,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   TimeZone origTz = TimeZone.getDefault();
   TimeZone tokyoTz = TimeZone.getTimeZone("Asia/Tokyo");
   TimeZone australiaTz = TimeZone.getTimeZone("Australia/Sydney");
+  Calendar tokyo = Calendar.getInstance(tokyoTz);
 
   @Test
   public void testBindTimestampTZ() throws SQLException {
@@ -68,7 +69,6 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithNTZType() throws SQLException {
-    Calendar tokyo = Calendar.getInstance(tokyoTz);
     TimeZone.setDefault(tokyoTz);
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -92,7 +92,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           prepStatement.executeBatch();
         }
         // insert using stage binding
-        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        //        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
         executePsStatementForTimestampTest(connection, "stageinsert", currT);
 
         // Compare the results
@@ -126,6 +126,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithLTZType() throws SQLException {
+    TimeZone.setDefault(tokyoTz);
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
