@@ -31,6 +31,10 @@ import org.junit.experimental.categories.Category;
  */
 @Category(TestCategoryOthers.class)
 public class BindingDataLatestIT extends AbstractDriverIT {
+  TimeZone origTz = TimeZone.getDefault();
+  TimeZone tokyoTz = TimeZone.getTimeZone("Asia/Tokyo");
+  TimeZone australiaTz = TimeZone.getTimeZone("Australia/Sydney");
+
   @Test
   public void testBindTimestampTZ() throws SQLException {
     try (Connection connection = getConnection();
@@ -64,11 +68,8 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithNTZType() throws SQLException {
-    TimeZone origTz = TimeZone.getDefault();
-    TimeZone tokyoTz = TimeZone.getTimeZone("Asia/Tokyo");
     Calendar tokyo = Calendar.getInstance(tokyoTz);
     TimeZone.setDefault(tokyoTz);
-
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
@@ -125,7 +126,6 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithLTZType() throws SQLException {
-    TimeZone origTz = TimeZone.getDefault();
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
@@ -135,7 +135,6 @@ public class BindingDataLatestIT extends AbstractDriverIT {
             "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
         statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
         statement.execute("alter session set TIMEZONE='Asia/Tokyo'");
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
         Timestamp currT = new Timestamp(System.currentTimeMillis());
 
         // insert using regular binging
@@ -190,8 +189,6 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testTimestampBindingWithLTZTypeForDayLightSavingTimeZone() throws SQLException {
-    TimeZone origTz = TimeZone.getDefault();
-    TimeZone australiaTz = TimeZone.getTimeZone("Australia/Sydney");
     Calendar australia = Calendar.getInstance(australiaTz);
     TimeZone.setDefault(australiaTz);
     try (Connection connection = getConnection();
