@@ -92,7 +92,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
           prepStatement.executeBatch();
         }
         // insert using stage binding
-        //        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
         executePsStatementForTimestampTest(connection, "stageinsert", currT);
 
         // Compare the results
