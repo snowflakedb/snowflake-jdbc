@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
-import net.snowflake.client.RunningNotOnJava8Java21;
+import net.snowflake.client.RunningNotOnJava21;
+import net.snowflake.client.RunningNotOnJava8;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -55,7 +56,8 @@ public class ProxyLatestIT {
 
   @BeforeClass
   public static void setUpClass() {
-    assumeFalse(RunningNotOnJava8Java21.isRunningOnJava8Java21());
+    assumeFalse(RunningNotOnJava8.isRunningOnJava8());
+    assumeFalse(RunningNotOnJava21.isRunningOnJava21());
     originalTrustStorePath = systemGetProperty(TRUST_STORE_PROPERTY);
   }
 
@@ -181,7 +183,10 @@ public class ProxyLatestIT {
   }
 
   private void waitForWiremock() {
-    await().atMost(Duration.ofSeconds(5)).until(this::isWiremockResponding);
+    await()
+        .pollDelay(Duration.ofSeconds(1))
+        .atMost(Duration.ofSeconds(5))
+        .until(this::isWiremockResponding);
   }
 
   private boolean isWiremockResponding() {
@@ -191,6 +196,7 @@ public class ProxyLatestIT {
       CloseableHttpResponse response = httpClient.execute(request);
       return response.getStatusLine().getStatusCode() == 200;
     } catch (Exception e) {
+      logger.warning("Waiting for wiremock to respond: " + Arrays.toString(e.getStackTrace()));
     }
     return false;
   }
@@ -316,8 +322,7 @@ public class ProxyLatestIT {
   }
 
   private HttpPost createWiremockPostRequest(String body, String path) {
-    HttpPost postRequest;
-    postRequest = new HttpPost("http://" + WIREMOCK_HOST + ":" + getAdminPort() + path);
+    HttpPost postRequest = new HttpPost("http://" + WIREMOCK_HOST + ":" + getAdminPort() + path);
     final StringEntity entity;
     try {
       entity = new StringEntity(body);
@@ -333,8 +338,9 @@ public class ProxyLatestIT {
   private static void restoreTrustStorePathProperty() {
     if (originalTrustStorePath != null) {
       System.setProperty(TRUST_STORE_PROPERTY, originalTrustStorePath);
+    } else {
+      System.clearProperty(TRUST_STORE_PROPERTY);
     }
-    System.clearProperty(TRUST_STORE_PROPERTY);
   }
 
   private int getAdminPort() {
