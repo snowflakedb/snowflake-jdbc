@@ -55,6 +55,7 @@ import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -1368,38 +1369,84 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
+  /** Test added in JDBC driver version > 3.16.1 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testDataSourceGetProperties() {
+  public void testDataSourceSetters() {
     Map<String, String> params = getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+
+    ds.setTracing("all");
+    ds.setApplication("application_name");
     ds.setAccount(params.get("account"));
     ds.setAuthenticator("snowflake");
-    ds.setTracing("all");
+    ds.setArrowTreatDecimalAsInt(true);
+    ds.setAllowUnderscoresInHost(true);
+    ds.setClientConfigFile("/some/path/file.json");
+    ds.setDisableGcsDefaultCredentials(false);
+    ds.setDisableSamlURLCheck(false);
+    ds.setDisableSocksProxy(false);
+    ds.setEnablePatternSearch(true);
+    ds.setDatabaseName("DB_NAME");
+    ds.setEnablePutGet(false);
+    ds.setMaxHttpRetries(5);
+    ds.setNetworkTimeout(10);
+    ds.setOcspFailOpen(false);
+    ds.setProxyHost("proxyHost.com");
+    ds.setProxyPort(8080);
+    ds.setProxyProtocol("http");
+    ds.setProxyUser("proxyUser");
+    ds.setProxyPassword("proxyPassword");
+    ds.setPutGetMaxRetries(3);
+    ds.setStringsQuotedForColumnDef(true);
+
     Properties props = ds.getProperties();
     assertEquals(params.get("account"), props.get("account"));
     assertEquals("snowflake", props.get("authenticator"));
     assertEquals("all", props.get("tracing"));
-  }
+    assertEquals("application_name", props.get(SFSessionProperty.APPLICATION.getPropertyKey()));
+    assertEquals("snowflake", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
+    assertEquals(
+        "true", props.get(SFSessionProperty.JDBC_ARROW_TREAT_DECIMAL_AS_INT.getPropertyKey()));
+    assertEquals("true", props.get(SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey()));
+    assertEquals(
+        "/some/path/file.json", props.get(SFSessionProperty.CLIENT_CONFIG_FILE.getPropertyKey()));
+    assertEquals(
+        "false", props.get(SFSessionProperty.DISABLE_GCS_DEFAULT_CREDENTIALS.getPropertyKey()));
+    assertEquals("false", props.get(SFSessionProperty.DISABLE_SAML_URL_CHECK.getPropertyKey()));
+    assertEquals("false", props.get(SFSessionProperty.DISABLE_SOCKS_PROXY.getPropertyKey()));
+    assertEquals("true", props.get(SFSessionProperty.ENABLE_PATTERN_SEARCH.getPropertyKey()));
+    assertEquals("DB_NAME", props.get(SFSessionProperty.DATABASE.getPropertyKey()));
+    assertEquals("false", props.get(SFSessionProperty.ENABLE_PUT_GET.getPropertyKey()));
+    assertEquals("5", props.get(SFSessionProperty.MAX_HTTP_RETRIES.getPropertyKey()));
+    assertEquals("10", props.get(SFSessionProperty.NETWORK_TIMEOUT.getPropertyKey()));
+    assertEquals("false", props.get(SFSessionProperty.OCSP_FAIL_OPEN.getPropertyKey()));
+    assertEquals("proxyHost.com", props.get(SFSessionProperty.PROXY_HOST.getPropertyKey()));
+    assertEquals("8080", props.get(SFSessionProperty.PROXY_PORT.getPropertyKey()));
+    assertEquals("http", props.get(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey()));
+    assertEquals("proxyUser", props.get(SFSessionProperty.PROXY_USER.getPropertyKey()));
+    assertEquals("proxyPassword", props.get(SFSessionProperty.PROXY_PASSWORD.getPropertyKey()));
+    assertEquals("3", props.get(SFSessionProperty.PUT_GET_MAX_RETRIES.getPropertyKey()));
+    assertEquals("true", props.get(SFSessionProperty.STRINGS_QUOTED.getPropertyKey()));
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testDataSourceSetProperties() {
-    Map<String, String> params = getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-    ds.setAccount(params.get("account"));
-    ds.setAuthenticator("snowflake");
-    ds.setTracing("all");
-    Properties props = new Properties();
-    props.put("role", "test_role");
-    props.put("connection_property_key_1", "connection_property_value_1");
-    props.put("connection_property_key_2", "connection_property_value_2");
-    ds.setProperties(props);
-    Properties mergedProps = ds.getProperties();
-    assertEquals(params.get("account"), mergedProps.get("account"));
-    assertEquals("snowflake", mergedProps.get("authenticator"));
-    assertEquals("all", mergedProps.get("tracing"));
-    assertEquals("connection_property_value_1", mergedProps.get("connection_property_key_1"));
-    assertEquals("connection_property_value_2", mergedProps.get("connection_property_key_2"));
+    ds.setOauthToken("a_token");
+    assertEquals("OAUTH", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
+    assertEquals("a_token", props.get(SFSessionProperty.TOKEN.getPropertyKey()));
+
+    ds.setPasscodeInPassword(true);
+    assertEquals("true", props.get(SFSessionProperty.PASSCODE_IN_PASSWORD.getPropertyKey()));
+    assertEquals(
+        "USERNAME_PASSWORD_MFA", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
+
+    ds.setPrivateKeyFile("key.p8", "pwd");
+    assertEquals("key.p8", props.get(SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey()));
+    assertEquals("pwd", props.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey()));
+    assertEquals("SNOWFLAKE_JWT", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
+
+    ds.setPasscodeInPassword(false);
+    ds.setPasscode("a_passcode");
+    assertEquals("false", props.get(SFSessionProperty.PASSCODE_IN_PASSWORD.getPropertyKey()));
+    assertEquals(
+        "USERNAME_PASSWORD_MFA", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
+    assertEquals("a_passcode", props.get(SFSessionProperty.PASSCODE.getPropertyKey()));
   }
 }
