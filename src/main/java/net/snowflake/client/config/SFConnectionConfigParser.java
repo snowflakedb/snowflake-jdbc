@@ -97,10 +97,7 @@ public class SFConnectionConfigParser {
       Properties conectionProperties = new Properties();
       conectionProperties.putAll(fileConnectionConfiguration);
 
-      String url =
-          Optional.ofNullable(fileConnectionConfiguration.get("account"))
-              .map(ac -> createUrl(ac, fileConnectionConfiguration))
-              .orElse(null);
+      String url = createUrl(fileConnectionConfiguration);
       logger.debug("Url created using parameters from connection configuration file: {}", url);
 
       if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
@@ -127,8 +124,14 @@ public class SFConnectionConfigParser {
     }
   }
 
-  private static String createUrl(String account, Map<String, String> fileConnectionConfiguration) {
-    String host = String.format("%s.snowflakecomputing.com", account);
+  private static String createUrl(Map<String, String> fileConnectionConfiguration) {
+    String account = fileConnectionConfiguration.get("account");
+    String host =
+        Optional.ofNullable(fileConnectionConfiguration.get("host"))
+            .orElse(
+                Optional.ofNullable(account)
+                    .map(acnt -> String.format("%s.snowflakecomputing.com", acnt))
+                    .orElse(null));
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
     if (Strings.isNullOrEmpty(port)) {

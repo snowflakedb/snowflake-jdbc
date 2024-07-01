@@ -130,4 +130,18 @@ public class SFConnectionConfigParserTest {
       return Files.createFile(path);
     }
   }
+
+  @Test
+  public void testLoadSFConnectionConfigWithHostConfigured()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("port", "8082");
+    prepareConnectionConfigurationTomlFile(extraparams, true);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
+  }
 }
