@@ -10,6 +10,7 @@ import static org.junit.Assume.assumeFalse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
@@ -28,6 +29,7 @@ import java.util.logging.Logger;
 import net.snowflake.client.RunningNotOnJava21;
 import net.snowflake.client.RunningNotOnJava8;
 import net.snowflake.client.category.TestCategoryOthers;
+import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -47,6 +49,10 @@ public class ProxyLatestIT {
 
   private static final Logger logger = Logger.getLogger(ProxyLatestIT.class.getName());
 
+  private static final String WIREMOCK_HOME_DIR = System.getProperty("user.dir") + "/.wiremock/";
+  private static final String WIREMOCK_FILE_NAME = "wiremock-standalone-3.8.0.jar";
+  public static final String WIREMOCK_STANDALONE_URL =
+      "https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
   private static final String WIREMOCK_HOST = "localhost";
   private static final String TRUST_STORE_PROPERTY = "javax.net.ssl.trustStore";
   private static int httpProxyPort;
@@ -56,6 +62,7 @@ public class ProxyLatestIT {
 
   @BeforeClass
   public static void setUpClass() {
+    downloadWiremock();
     assumeFalse(RunningNotOnJava8.isRunningOnJava8());
     assumeFalse(RunningNotOnJava21.isRunningOnJava21());
     originalTrustStorePath = systemGetProperty(TRUST_STORE_PROPERTY);
@@ -71,6 +78,7 @@ public class ProxyLatestIT {
   @After
   public void tearDown() {
     stopWiremockStandAlone();
+    unsetJvmProperties();
   }
 
   @AfterClass
@@ -158,8 +166,9 @@ public class ProxyLatestIT {
                     new ProcessBuilder(
                             "java",
                             "-jar",
-                            getResourceURL(
-                                "wiremock" + File.separator + "/wiremock-standalone-3.7.0.jar"),
+                            WIREMOCK_HOME_DIR + WIREMOCK_FILE_NAME,
+                            "--root-dir",
+                            WIREMOCK_HOME_DIR,
                             "--enable-browser-proxying", // work as forward proxy
                             "--proxy-pass-through",
                             "false", // pass through only matched requests
@@ -180,6 +189,21 @@ public class ProxyLatestIT {
                 return false;
               }
             });
+  }
+
+  private static void downloadWiremock() {
+    try (CloseableHttpClient client = HttpClients.createDefault();
+        CloseableHttpResponse response = client.execute(new HttpGet(WIREMOCK_STANDALONE_URL))) {
+      HttpEntity entity = response.getEntity();
+      File wiremockStandaloneFile = new File(WIREMOCK_HOME_DIR + WIREMOCK_FILE_NAME);
+      wiremockStandaloneFile.getParentFile().mkdirs();
+      wiremockStandaloneFile.createNewFile();
+      try (FileOutputStream outputStream = new FileOutputStream(wiremockStandaloneFile, false)) {
+        entity.writeTo(outputStream);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private void waitForWiremock() {
@@ -255,6 +279,15 @@ public class ProxyLatestIT {
       System.setProperty("https.proxyHost", WIREMOCK_HOST);
       System.setProperty("https.proxyPort", String.valueOf(getProxyPort(proxyProtocol)));
     }
+  }
+
+  private void unsetJvmProperties() {
+    System.clearProperty("http.useProxy");
+    System.clearProperty("http.proxyProtocol");
+    System.clearProperty("http.proxyHost");
+    System.clearProperty("http.proxyPort");
+    System.clearProperty("https.proxyHost");
+    System.clearProperty("https.proxyPort");
   }
 
   private String getProxyProtocol(Properties props) {
