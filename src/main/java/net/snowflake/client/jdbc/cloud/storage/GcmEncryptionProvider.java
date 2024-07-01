@@ -121,7 +121,7 @@ class GcmEncryptionProvider {
 
   private static void addEncryptionMetadataToStorageClient(
       StorageObjectMetadata meta,
-      long originalContentLength,
+      long contentLength,
       RemoteStoreFileEncryptionMaterial encMat,
       SnowflakeStorageClient client,
       int keySize,
@@ -130,12 +130,6 @@ class GcmEncryptionProvider {
       byte[] keyIvData,
       byte[] keyAad,
       byte[] dataAad) {
-    // Comment from EncryptionProvider:
-    // Round up length to next multiple of the block size
-    // Sizes that are multiples of the block size need to be padded to next
-    // multiple
-    // TODO GCM SNOW-1431870 do we really need it, if padding is not used?
-    long contentLength = ((originalContentLength + blockSize) / blockSize) * blockSize;
     MatDesc matDesc = new MatDesc(encMat.getSmkId(), encMat.getQueryId(), keySize * 8);
     client.addEncryptionMetadataForGcm(
         meta, matDesc, encryptedKey, dataIvData, keyIvData, keyAad, dataAad, contentLength);
@@ -165,17 +159,17 @@ class GcmEncryptionProvider {
 
   static InputStream decryptStream(
       InputStream inputStream,
-      String encryptedKekBase64,
-      String cekIvBase64,
-      String kekIvBase64,
+      String encryptedKeyBase64,
+      String dataIvBase64,
+      String keyIvBase64,
       RemoteStoreFileEncryptionMaterial encMat,
       String dataAad,
       String keyAad)
       throws InvalidKeyException, BadPaddingException, IllegalBlockSizeException,
           InvalidAlgorithmParameterException, NoSuchPaddingException, NoSuchAlgorithmException {
-    byte[] encryptedKeyBytes = base64Decoder.decode(encryptedKekBase64);
-    byte[] ivBytes = base64Decoder.decode(cekIvBase64);
-    byte[] kekIvBytes = base64Decoder.decode(kekIvBase64);
+    byte[] encryptedKeyBytes = base64Decoder.decode(encryptedKeyBase64);
+    byte[] ivBytes = base64Decoder.decode(dataIvBase64);
+    byte[] kekIvBytes = base64Decoder.decode(keyIvBase64);
     byte[] dataAadBytes = base64Decoder.decode(dataAad);
     byte[] keyAadBytes = base64Decoder.decode(keyAad);
     byte[] kekBytes = base64Decoder.decode(encMat.getQueryStageMasterKey());
@@ -222,8 +216,6 @@ class GcmEncryptionProvider {
       }
     }
 
-    // Discard any padding that the encrypted file had
-    // TODO GCM SNOW-1431870 do we have to do this, when padding is not used?
     try (FileOutputStream fos = new FileOutputStream(file, true);
         FileChannel fc = fos.getChannel()) {
       fc.truncate(totalBytesRead);

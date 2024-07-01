@@ -1,6 +1,8 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -15,6 +17,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
+import javax.crypto.AEADBadTagException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -33,11 +36,11 @@ public class GcmEncryptionProviderTest {
       ArgumentCaptor.forClass(StorageObjectMetadata.class);
   private final ArgumentCaptor<MatDesc> matDescArgumentCaptor =
       ArgumentCaptor.forClass(MatDesc.class);
-  private final ArgumentCaptor<byte[]> cekIvDataArgumentCaptor =
+  private final ArgumentCaptor<byte[]> dataIvDataArgumentCaptor =
       ArgumentCaptor.forClass(byte[].class);
-  private final ArgumentCaptor<byte[]> kekIvDataArgumentCaptor =
+  private final ArgumentCaptor<byte[]> keyIvDataArgumentCaptor =
       ArgumentCaptor.forClass(byte[].class);
-  private final ArgumentCaptor<byte[]> encKekArgumentCaptor = ArgumentCaptor.forClass(byte[].class);
+  private final ArgumentCaptor<byte[]> encKeyArgumentCaptor = ArgumentCaptor.forClass(byte[].class);
   private final ArgumentCaptor<byte[]> keyAadArgumentCaptor = ArgumentCaptor.forClass(byte[].class);
   private final ArgumentCaptor<byte[]> dataAadArgumentCaptor =
       ArgumentCaptor.forClass(byte[].class);
@@ -83,6 +86,121 @@ public class GcmEncryptionProviderTest {
     assertArrayEquals(plainText, decryptedPlainText);
   }
 
+  @Test
+  public void testDecryptStreamWithInvalidKeyAad() throws Exception {
+    InputStream plainTextStream = new ByteArrayInputStream(plainText);
+
+    byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    assertThrows(
+        AEADBadTagException.class, () -> decryptStream(cipherText, dataAad, new byte[] {'a'}));
+  }
+
+  @Test
+  public void testDecryptStreamWithInvalidDataAad() throws Exception {
+    InputStream plainTextStream = new ByteArrayInputStream(plainText);
+
+    byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    IOException ioException =
+        assertThrows(
+            IOException.class,
+            () -> IOUtils.toByteArray(decryptStream(cipherText, new byte[] {'a'}, keyAad)));
+    assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
+  }
+
+  @Test
+  public void testDecryptStreamWithInvalidCipherText() throws Exception {
+    InputStream plainTextStream = new ByteArrayInputStream(plainText);
+
+    byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    cipherText[0] = (byte) ((cipherText[0] + 1) % 255);
+    IOException ioException =
+        assertThrows(
+            IOException.class,
+            () -> IOUtils.toByteArray(decryptStream(cipherText, dataAad, keyAad)));
+    assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
+  }
+
+  @Test
+  public void testDecryptStreamWithInvalidTag() throws Exception {
+    InputStream plainTextStream = new ByteArrayInputStream(plainText);
+
+    byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    cipherText[cipherText.length - 1] = (byte) ((cipherText[cipherText.length - 1] + 1) % 255);
+    IOException ioException =
+        assertThrows(
+            IOException.class,
+            () -> IOUtils.toByteArray(decryptStream(cipherText, dataAad, keyAad)));
+    assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
+  }
+
+  @Test
+  public void testDecryptStreamWithInvalidKey() throws Exception {
+    InputStream plainTextStream = new ByteArrayInputStream(plainText);
+
+    byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    assertThrows(
+        AEADBadTagException.class,
+        () -> {
+          byte[] encryptedKey = encKeyArgumentCaptor.getValue();
+          encryptedKey[0] = (byte) ((encryptedKey[0] + 1) % 255);
+          IOUtils.toByteArray(
+              GcmEncryptionProvider.decryptStream(
+                  new ByteArrayInputStream(cipherText),
+                  Base64.getEncoder().encodeToString(encryptedKey),
+                  Base64.getEncoder().encodeToString(dataIvDataArgumentCaptor.getValue()),
+                  Base64.getEncoder().encodeToString(keyIvDataArgumentCaptor.getValue()),
+                  encMat,
+                  dataAad == null ? "" : Base64.getEncoder().encodeToString(dataAad),
+                  keyAad == null ? "" : Base64.getEncoder().encodeToString(keyAad)));
+        });
+  }
+
+  @Test
+  public void testDecryptStreamWithInvalidDataIV() throws Exception {
+    InputStream plainTextStream = new ByteArrayInputStream(plainText);
+
+    byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    IOException ioException =
+        assertThrows(
+            IOException.class,
+            () -> {
+              byte[] dataIvBase64 = dataIvDataArgumentCaptor.getValue();
+              dataIvBase64[0] = (byte) ((dataIvBase64[0] + 1) % 255);
+              IOUtils.toByteArray(
+                  GcmEncryptionProvider.decryptStream(
+                      new ByteArrayInputStream(cipherText),
+                      Base64.getEncoder().encodeToString(encKeyArgumentCaptor.getValue()),
+                      Base64.getEncoder().encodeToString(dataIvBase64),
+                      Base64.getEncoder().encodeToString(keyIvDataArgumentCaptor.getValue()),
+                      encMat,
+                      dataAad == null ? "" : Base64.getEncoder().encodeToString(dataAad),
+                      keyAad == null ? "" : Base64.getEncoder().encodeToString(keyAad)));
+            });
+    assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
+  }
+
+  @Test
+  public void testDecryptStreamWithInvalidKeyIV() throws Exception {
+    InputStream plainTextStream = new ByteArrayInputStream(plainText);
+
+    byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    assertThrows(
+        AEADBadTagException.class,
+        () -> {
+          byte[] keyIvBase64 = keyIvDataArgumentCaptor.getValue();
+          keyIvBase64[0] = (byte) ((keyIvBase64[0] + 1) % 255);
+          IOUtils.toByteArray(
+              GcmEncryptionProvider.decryptStream(
+                  new ByteArrayInputStream(cipherText),
+                  Base64.getEncoder().encodeToString(encKeyArgumentCaptor.getValue()),
+                  Base64.getEncoder().encodeToString(dataIvDataArgumentCaptor.getValue()),
+                  Base64.getEncoder().encodeToString(keyIvBase64),
+                  encMat,
+                  dataAad == null ? "" : Base64.getEncoder().encodeToString(dataAad),
+                  keyAad == null ? "" : Base64.getEncoder().encodeToString(keyAad)));
+        });
+  }
+
   private byte[] encryptStream(InputStream plainTextStream, byte[] dataAad, byte[] keyAad)
       throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
           BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException, IOException {
@@ -99,9 +217,9 @@ public class GcmEncryptionProviderTest {
           InvalidAlgorithmParameterException, NoSuchPaddingException, NoSuchAlgorithmException {
     return GcmEncryptionProvider.decryptStream(
         new ByteArrayInputStream(cipherText),
-        Base64.getEncoder().encodeToString(encKekArgumentCaptor.getValue()),
-        Base64.getEncoder().encodeToString(cekIvDataArgumentCaptor.getValue()),
-        Base64.getEncoder().encodeToString(kekIvDataArgumentCaptor.getValue()),
+        Base64.getEncoder().encodeToString(encKeyArgumentCaptor.getValue()),
+        Base64.getEncoder().encodeToString(dataIvDataArgumentCaptor.getValue()),
+        Base64.getEncoder().encodeToString(keyIvDataArgumentCaptor.getValue()),
         encMat,
         dataAad == null ? "" : Base64.getEncoder().encodeToString(dataAad),
         keyAad == null ? "" : Base64.getEncoder().encodeToString(keyAad));
@@ -142,9 +260,9 @@ public class GcmEncryptionProviderTest {
           NoSuchAlgorithmException {
     GcmEncryptionProvider.decryptFile(
         tempFile,
-        Base64.getEncoder().encodeToString(encKekArgumentCaptor.getValue()),
-        Base64.getEncoder().encodeToString(cekIvDataArgumentCaptor.getValue()),
-        Base64.getEncoder().encodeToString(kekIvDataArgumentCaptor.getValue()),
+        Base64.getEncoder().encodeToString(encKeyArgumentCaptor.getValue()),
+        Base64.getEncoder().encodeToString(dataIvDataArgumentCaptor.getValue()),
+        Base64.getEncoder().encodeToString(keyIvDataArgumentCaptor.getValue()),
         encMat,
         dataAadArgumentCaptor.getValue() == null
             ? ""
@@ -159,9 +277,9 @@ public class GcmEncryptionProviderTest {
         .addEncryptionMetadataForGcm(
             storageObjectMetadataArgumentCaptor.capture(),
             matDescArgumentCaptor.capture(),
-            encKekArgumentCaptor.capture(),
-            cekIvDataArgumentCaptor.capture(),
-            kekIvDataArgumentCaptor.capture(),
+            encKeyArgumentCaptor.capture(),
+            dataIvDataArgumentCaptor.capture(),
+            keyIvDataArgumentCaptor.capture(),
             keyAadArgumentCaptor.capture(),
             dataAadArgumentCaptor.capture(),
             contentLengthArgumentCaptor.capture());
