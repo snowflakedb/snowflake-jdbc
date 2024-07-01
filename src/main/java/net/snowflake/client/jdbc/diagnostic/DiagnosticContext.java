@@ -16,6 +16,7 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
+@SnowflakeJdbcInternalApi
 public class DiagnosticContext {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(DiagnosticContext.class);
@@ -28,7 +29,6 @@ public class DiagnosticContext {
 
   private final DiagnosticCheck[] tests;
 
-  @SnowflakeJdbcInternalApi
   public DiagnosticContext(
       String allowListFile, Map<SFSessionProperty, Object> connectionPropertiesMap) {
 

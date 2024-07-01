@@ -1299,31 +1299,32 @@ public class SFSession extends SFBaseSession {
             .map(b -> (Boolean) b)
             .orElse(false);
 
-    if (isDiagnosticsEnabled) {
-      logger.info("Running diagnostics tests");
-      String allowListFile =
-          (String) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
-
-      if (allowListFile == null || allowListFile.isEmpty()) {
-        logger.error(
-            "Diagnostics was enabled but an allowlist file was not provided."
-                + " Please provide an allowlist JSON file using the connection parameter {}",
-            SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
-        throw new SnowflakeSQLException(
-            "Diagnostics was enabled but an allowlist file was not provided. "
-                + "Please provide an allowlist JSON file using the connection parameter "
-                + SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
-      } else {
-        DiagnosticContext diagnosticContext =
-            new DiagnosticContext(allowListFile, connectionPropertiesMap);
-        diagnosticContext.runDiagnostics();
-      }
-
-      throw new SnowflakeSQLException(
-          "A connection was not created because the driver is running in diagnostics mode."
-              + " If this is unintended then disable diagnostics check by removing the "
-              + SFSessionProperty.ENABLE_DIAGNOSTICS
-              + " connection parameter");
+    if (!isDiagnosticsEnabled) {
+      return;
     }
+    logger.info("Running diagnostics tests");
+    String allowListFile =
+        (String) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+
+    if (allowListFile == null || allowListFile.isEmpty()) {
+      logger.error(
+          "Diagnostics was enabled but an allowlist file was not provided."
+              + " Please provide an allowlist JSON file using the connection parameter {}",
+          SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+      throw new SnowflakeSQLException(
+          "Diagnostics was enabled but an allowlist file was not provided. "
+              + "Please provide an allowlist JSON file using the connection parameter "
+              + SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+    } else {
+      DiagnosticContext diagnosticContext =
+          new DiagnosticContext(allowListFile, connectionPropertiesMap);
+      diagnosticContext.runDiagnostics();
+    }
+
+    throw new SnowflakeSQLException(
+        "A connection was not created because the driver is running in diagnostics mode."
+            + " If this is unintended then disable diagnostics check by removing the "
+            + SFSessionProperty.ENABLE_DIAGNOSTICS
+            + " connection parameter");
   }
 }

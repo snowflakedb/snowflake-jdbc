@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
+import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_CHAR_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctionsSupported;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
@@ -772,8 +774,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           "create or replace table JDBC_TBL111(colA string, colB decimal, colC " + "timestamp)");
       /* Create a UDF that returns a table made up of 4 columns from 2 different tables, joined together */
       statement.execute(
-          "create or replace function FUNC112 () RETURNS TABLE(colA string, colB decimal, bin2"
-              + " binary, sharedCol decimal) COMMENT= 'returns table of 4 columns' as 'select"
+          "create or replace function FUNC112 () RETURNS TABLE(colA string(16777216), colB decimal, bin2 "
+              + "binary(8388608) , sharedCol decimal) COMMENT= 'returns table of 4 columns' as 'select"
               + " JDBC_TBL111.colA, JDBC_TBL111.colB, BIN_TABLE.bin2, BIN_TABLE.sharedCol from"
               + " JDBC_TBL111 inner join BIN_TABLE on JDBC_TBL111.colB =BIN_TABLE.sharedCol'");
       DatabaseMetaData metaData = connection.getMetaData();
@@ -877,7 +879,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
@@ -927,7 +929,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
-        assertEquals(8388608, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         assertEquals("", resultSet.getString("IS_NULLABLE"));
@@ -1222,8 +1224,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         statement.execute(
             "create or replace table "
                 + targetTable
-                + "(C1 int, C2 varchar(100), C3 string default '', C4 number(18,4), C5 double,"
-                + " C6 boolean, C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary,C11"
+                + "(C1 int, C2 varchar(100), C3 string(16777216) default '', C4 number(18,4), C5 double,"
+                + " C6 boolean, C7 date not null, C8 time, C9 timestamp_ntz(7), C10 binary(8388608),C11"
                 + " variant, C12 timestamp_ltz(8), C13 timestamp_tz(3))");
 
         DatabaseMetaData metaData = connection.getMetaData();
@@ -1290,14 +1292,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           assertEquals("C3", resultSet.getString("COLUMN_NAME"));
           assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
           assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
-          assertEquals(16777216, resultSet.getInt("COLUMN_SIZE"));
+          assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSet.getInt("COLUMN_SIZE"));
           assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
           assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
           assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
           assertEquals("", resultSet.getString("REMARKS"));
           assertEquals("", resultSet.getString("COLUMN_DEF"));
 
-          assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+          assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
           assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
           assertEquals("YES", resultSet.getString("IS_NULLABLE"));
           assertNull(resultSet.getString("SCOPE_CATALOG"));
@@ -1465,7 +1467,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           assertEquals("C10", resultSet.getString("COLUMN_NAME"));
           assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
           assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
-          assertEquals(8388608, resultSet.getInt("COLUMN_SIZE"));
+          assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("COLUMN_SIZE"));
           assertEquals(0, resultSet.getInt("DECIMAL_DIGITS"));
           assertEquals(0, resultSet.getInt("NUM_PREC_RADIX"));
           assertEquals(ResultSetMetaData.columnNullable, resultSet.getInt("NULLABLE"));
@@ -2340,6 +2342,42 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       assertEquals(43, metaData.getSQLKeywords().split(",").length);
+    }
+  }
+  /** Added in > 3.16.1 */
+  @Test
+  public void testVectorDimension() throws SQLException {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          "create or replace table JDBC_VECTOR(text_col varchar(32), float_vec VECTOR(FLOAT, 256), int_vec VECTOR(INT, 16))");
+      DatabaseMetaData metaData = connection.getMetaData();
+      try (ResultSet resultSet =
+          metaData.getColumns(
+              connection.getCatalog(),
+              connection.getSchema().replaceAll("_", "\\\\_"),
+              "JDBC\\_VECTOR",
+              null)) {
+        assertTrue(resultSet.next());
+        assertEquals(32, resultSet.getObject("COLUMN_SIZE"));
+        assertTrue(resultSet.next());
+        assertEquals(256, resultSet.getObject("COLUMN_SIZE"));
+        assertTrue(resultSet.next());
+        assertEquals(16, resultSet.getObject("COLUMN_SIZE"));
+        assertFalse(resultSet.next());
+      }
+
+      try (ResultSet resultSet =
+          statement.executeQuery("Select text_col, float_vec, int_vec from JDBC_VECTOR")) {
+        SnowflakeResultSetMetaData unwrapResultSetMetadata =
+            resultSet.getMetaData().unwrap(SnowflakeResultSetMetaData.class);
+        assertEquals(0, unwrapResultSetMetadata.getDimension("TEXT_COL"));
+        assertEquals(0, unwrapResultSetMetadata.getDimension(1));
+        assertEquals(256, unwrapResultSetMetadata.getDimension("FLOAT_VEC"));
+        assertEquals(256, unwrapResultSetMetadata.getDimension(2));
+        assertEquals(16, unwrapResultSetMetadata.getDimension("INT_VEC"));
+        assertEquals(16, unwrapResultSetMetadata.getDimension(3));
+      }
     }
   }
 }
