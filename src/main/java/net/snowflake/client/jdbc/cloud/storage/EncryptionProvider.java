@@ -51,28 +51,17 @@ public class EncryptionProvider {
       RemoteStoreFileEncryptionMaterial encMat)
       throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException,
           BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException {
-    byte[] decodedKey = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
-
+    byte[] kekBytes = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
     byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
-
     byte[] ivBytes = Base64.getDecoder().decode(ivBase64);
-
-    SecretKey queryStageMasterKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, AES);
-
+    SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
     Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
-
-    keyCipher.init(Cipher.DECRYPT_MODE, queryStageMasterKey);
-
+    keyCipher.init(Cipher.DECRYPT_MODE, kek);
     byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
-
-    SecretKey fileKey = new SecretKeySpec(fileKeyBytes, 0, decodedKey.length, AES);
-
+    SecretKey fileKey = new SecretKeySpec(fileKeyBytes, AES);
     Cipher dataCipher = Cipher.getInstance(FILE_CIPHER);
-
     IvParameterSpec ivy = new IvParameterSpec(ivBytes);
-
     dataCipher.init(Cipher.DECRYPT_MODE, fileKey, ivy);
-
     return new CipherInputStream(inputStream, dataCipher);
   }
 
@@ -87,14 +76,14 @@ public class EncryptionProvider {
           IOException {
     byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
     byte[] ivBytes = Base64.getDecoder().decode(ivBase64);
-    byte[] qsmkBytes = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
+    byte[] kekBytes = Base64.getDecoder().decode(encMat.getQueryStageMasterKey());
     final SecretKey fileKey;
 
     // Decrypt file key
     {
       final Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
-      SecretKey queryStageMasterKey = new SecretKeySpec(qsmkBytes, 0, qsmkBytes.length, AES);
-      keyCipher.init(Cipher.DECRYPT_MODE, queryStageMasterKey);
+      SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
+      keyCipher.init(Cipher.DECRYPT_MODE, kek);
       byte[] fileKeyBytes = keyCipher.doFinal(keyBytes);
 
       // previous version: fileKey = new SecretKeySpec(fileKeyBytes, offset = 0, len = qsmk.length,
@@ -154,13 +143,13 @@ public class EncryptionProvider {
     final byte[] fileKeyBytes = new byte[keySize];
     final byte[] ivData;
     final CipherInputStream cis;
-    final int blockSz;
+    final int blockSize;
     {
       final Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
-      blockSz = fileCipher.getBlockSize();
+      blockSize = fileCipher.getBlockSize();
 
       // Create IV
-      ivData = new byte[blockSz];
+      ivData = new byte[blockSize];
       getSecRnd().nextBytes(ivData);
       final IvParameterSpec iv = new IvParameterSpec(ivData);
 
@@ -175,22 +164,22 @@ public class EncryptionProvider {
       cis = new CipherInputStream(src, fileCipher);
     }
 
-    // Encrypt the file key with the QRMK
+    // Encrypt the file key with the QSMK
     {
       final Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
       SecretKey queryStageMasterKey = new SecretKeySpec(decodedKey, 0, keySize, AES);
 
       // Init cipher
       keyCipher.init(Cipher.ENCRYPT_MODE, queryStageMasterKey);
-      byte[] encKeK = keyCipher.doFinal(fileKeyBytes);
+      byte[] encryptedKey = keyCipher.doFinal(fileKeyBytes);
 
       // Store metadata
       MatDesc matDesc = new MatDesc(encMat.getSmkId(), encMat.getQueryId(), keySize * 8);
       // Round up length to next multiple of the block size
       // Sizes that are multiples of the block size need to be padded to next
       // multiple
-      long contentLength = ((originalContentLength + blockSz) / blockSz) * blockSz;
-      client.addEncryptionMetadata(meta, matDesc, ivData, encKeK, contentLength);
+      long contentLength = ((originalContentLength + blockSize) / blockSize) * blockSize;
+      client.addEncryptionMetadata(meta, matDesc, ivData, encryptedKey, contentLength);
     }
 
     return cis;
