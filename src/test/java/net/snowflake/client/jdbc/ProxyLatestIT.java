@@ -49,7 +49,7 @@ public class ProxyLatestIT {
 
   private static final Logger logger = Logger.getLogger(ProxyLatestIT.class.getName());
 
-  private static final String WIREMOCK_HOME_DIR = System.getProperty("user.dir") + "/.wiremock/";
+  private static final String WIREMOCK_HOME_DIR = ".wiremock";
   private static final String WIREMOCK_FILE_NAME = "wiremock-standalone-3.8.0.jar";
   public static final String WIREMOCK_STANDALONE_URL =
       "https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
@@ -166,9 +166,12 @@ public class ProxyLatestIT {
                     new ProcessBuilder(
                             "java",
                             "-jar",
-                            WIREMOCK_HOME_DIR + WIREMOCK_FILE_NAME,
+                            getWiremockStandAlonePath(),
                             "--root-dir",
-                            WIREMOCK_HOME_DIR,
+                            System.getProperty("user.dir")
+                                + File.separator
+                                + WIREMOCK_HOME_DIR
+                                + File.separator,
                             "--enable-browser-proxying", // work as forward proxy
                             "--proxy-pass-through",
                             "false", // pass through only matched requests
@@ -180,6 +183,7 @@ public class ProxyLatestIT {
                             getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
                             "--ca-keystore",
                             getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
+                        .inheritIO()
                         .start();
                 waitForWiremock();
                 return true;
@@ -195,7 +199,7 @@ public class ProxyLatestIT {
     try (CloseableHttpClient client = HttpClients.createDefault();
         CloseableHttpResponse response = client.execute(new HttpGet(WIREMOCK_STANDALONE_URL))) {
       HttpEntity entity = response.getEntity();
-      File wiremockStandaloneFile = new File(WIREMOCK_HOME_DIR + WIREMOCK_FILE_NAME);
+      File wiremockStandaloneFile = new File(getWiremockStandAlonePath());
       wiremockStandaloneFile.getParentFile().mkdirs();
       wiremockStandaloneFile.createNewFile();
       try (FileOutputStream outputStream = new FileOutputStream(wiremockStandaloneFile, false)) {
@@ -204,6 +208,14 @@ public class ProxyLatestIT {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static String getWiremockStandAlonePath() {
+    return System.getProperty("user.dir")
+        + File.separator
+        + WIREMOCK_HOME_DIR
+        + File.separator
+        + WIREMOCK_FILE_NAME;
   }
 
   private void waitForWiremock() {
