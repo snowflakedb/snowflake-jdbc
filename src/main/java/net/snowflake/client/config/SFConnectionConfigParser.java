@@ -125,11 +125,12 @@ public class SFConnectionConfigParser {
   }
 
   private static String createUrl(Map<String, String> fileConnectionConfiguration) {
-    String account = fileConnectionConfiguration.get("account");
+    String maybeAccount = fileConnectionConfiguration.get("account");
+    String maybeHost = fileConnectionConfiguration.get("host");
     String host =
-        Optional.ofNullable(fileConnectionConfiguration.get("host"))
+        Optional.ofNullable(maybeHost)
             .orElse(
-                Optional.ofNullable(account)
+                Optional.ofNullable(maybeAccount)
                     .map(acnt -> String.format("%s.snowflakecomputing.com", acnt))
                     .orElse(null));
     String port = fileConnectionConfiguration.get("port");
