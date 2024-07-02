@@ -64,6 +64,7 @@ snowflake-whitelist
 Golang
 ClientTelemetryFramework
 lib/*
+.wiremock/**
 
 # WhiteSource Scan
 wss*.config
