@@ -128,6 +128,11 @@ public class SFConnectionConfigParser {
       throws SnowflakeSQLException {
     Optional<String> maybeAccount = Optional.ofNullable(fileConnectionConfiguration.get("account"));
     Optional<String> maybeHost = Optional.ofNullable(fileConnectionConfiguration.get("host"));
+    if (maybeAccount.isPresent()
+        && maybeHost.isPresent()
+        && !maybeHost.get().contains(maybeAccount.get())) {
+      throw new SnowflakeSQLException("Inconsistent host and account values in file configuration");
+    }
     String host =
         maybeHost.orElse(
             maybeAccount
@@ -138,9 +143,9 @@ public class SFConnectionConfigParser {
       throw new SnowflakeSQLException(
           "Unable to connect because neither host nor account is specified in connection parameters");
     }
+    logger.debug("Host created using parameters from connection configuration file: {}", host);
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
-    logger.debug("Host created using parameters from connection configuration file: {}", host);
     if (Strings.isNullOrEmpty(port)) {
       if ("https".equals(protocol)) {
         port = "443";

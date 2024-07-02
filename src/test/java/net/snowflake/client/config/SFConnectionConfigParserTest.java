@@ -139,6 +139,7 @@ public class SFConnectionConfigParserTest {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
     Map<String, String> extraparams = new HashMap();
     extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
     extraparams.put("port", "8082");
     prepareConnectionConfigurationTomlFile(extraparams, true);
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
@@ -153,6 +154,18 @@ public class SFConnectionConfigParserTest {
     Map<String, String> extraparams = new HashMap();
     extraparams.put("host", null);
     extraparams.put("account", null);
+    prepareConnectionConfigurationTomlFile(extraparams, true);
+    Assert.assertThrows(
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+  }
+
+  @Test
+  public void shouldThrowExceptionForInconsistentHostAndAccount() throws IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.aws.com");
+    extraparams.put("account", "test");
     prepareConnectionConfigurationTomlFile(extraparams, true);
     Assert.assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
