@@ -220,14 +220,22 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   public void setPrivateKey(PrivateKey privateKey) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
-    this.properties.put(SFSessionProperty.PRIVATE_KEY.getPropertyKey(), privateKey);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY, privateKey);
   }
 
   public void setPrivateKeyFile(String location, String password) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
-    this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey(), location);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE, location);
     if (!Strings.isNullOrEmpty(password)) {
-      this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey(), password);
+      this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE_PWD, password);
+    }
+  }
+
+  public void setPrivateKeyBase64(String privateKeyBase64, String password) {
+    this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY_BASE64, privateKeyBase64);
+    if (!Strings.isNullOrEmpty(password)) {
+      this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE_PWD, password);
     }
   }
 

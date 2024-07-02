@@ -45,6 +45,7 @@ public class SFLoginInput {
   private OCSPMode ocspMode;
   private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
+  private String privateKeyBase64;
   private String privateKeyFilePwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
 
@@ -314,6 +315,11 @@ public class SFLoginInput {
     return this;
   }
 
+  SFLoginInput setPrivateKeyBase64(String privateKeyBase64) {
+    this.privateKeyBase64 = privateKeyBase64;
+    return this;
+  }
+
   SFLoginInput setPrivateKeyFile(String privateKeyFile) {
     this.privateKeyFile = privateKeyFile;
     return this;
@@ -328,8 +334,18 @@ public class SFLoginInput {
     return privateKeyFile;
   }
 
+  String getPrivateKeyBase64() {
+    return privateKeyBase64;
+  }
+
   String getPrivateKeyFilePwd() {
     return privateKeyFilePwd;
+  }
+
+  boolean isPrivateKeyProvided() {
+    return (getPrivateKey() != null
+        || getPrivateKeyFile() != null
+        || getPrivateKeyBase64() != null);
   }
 
   public String getApplication() {

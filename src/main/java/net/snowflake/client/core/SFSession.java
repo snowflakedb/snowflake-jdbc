@@ -86,6 +86,7 @@ public class SFSession extends SFBaseSession {
   private String idToken;
   private String mfaToken;
   private String privateKeyFileLocation;
+  private String privateKeyBase64;
   private String privateKeyPassword;
   private PrivateKey privateKey;
 
@@ -445,6 +446,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case PRIVATE_KEY_BASE64:
+          if (propertyValue != null) {
+            privateKeyBase64 = (String) propertyValue;
+          }
+          break;
+
         case PRIVATE_KEY_FILE_PWD:
           if (propertyValue != null) {
             privateKeyPassword = (String) propertyValue;
@@ -617,6 +624,8 @@ public class SFSession extends SFBaseSession {
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
+        .setPrivateKeyBase64(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyFilePwd(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
@@ -735,7 +744,10 @@ public class SFSession extends SFBaseSession {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
     PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY);
-    return (authenticator == null && privateKey == null && privateKeyFileLocation == null)
+    return (authenticator == null
+            && privateKey == null
+            && privateKeyFileLocation == null
+            && privateKeyBase64 == null)
         || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
 

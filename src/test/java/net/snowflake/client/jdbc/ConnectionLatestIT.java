@@ -41,6 +41,7 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -776,6 +777,70 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testKeyPairBase64DataSourceSerialization() throws Exception {
+    // test with key/pair authentication where key is passed as a Base64 string value
+    // set up DataSource object and ensure connection works
+    Map<String, String> params = getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setSsl("on".equals(params.get("ssl")));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("user"));
+    String privateKeyBase64 =
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(Paths.get(getFullPathFileInResource("encrypted_rsa_key.p8"))));
+    ds.setPrivateKeyBase64(privateKeyBase64, "test");
+
+    // set up public key
+    try (Connection con = getConnection();
+        Statement statement = con.createStatement()) {
+      statement.execute("use role accountadmin");
+      String pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
+      String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(
+          String.format("alter user %s set rsa_public_key='%s'", params.get("user"), pubKey));
+    }
+
+    try (Connection con = ds.getConnection();
+        Statement statement = con.createStatement();
+        ResultSet resultSet = statement.executeQuery("select 1")) {
+      assertTrue(resultSet.next());
+      assertThat("select 1", resultSet.getInt(1), equalTo(1));
+    }
+    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+    // serialize datasource object into a file
+    try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
+        ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
+      out.writeObject(ds);
+    }
+    // deserialize into datasource object again
+    try (FileInputStream inputFile = new FileInputStream(serializedFile);
+        ObjectInputStream in = new ObjectInputStream(inputFile)) {
+      SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+      // test connection a second time
+      try (Connection con = ds2.getConnection();
+          Statement statement = con.createStatement()) {
+        ResultSet resultSet = statement.executeQuery("select 1");
+        assertTrue(resultSet.next());
+        assertThat("select 1", resultSet.getInt(1), equalTo(1));
+      }
+
+    } finally {
+      // clean up
+      try (Connection connection = getConnection()) {
+        Statement statement = connection.createStatement();
+        statement.execute("use role accountadmin");
+        statement.execute(String.format("alter user %s unset rsa_public_key", params.get("user")));
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPrivateKeyInConnectionString() throws SQLException, IOException {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -890,6 +955,140 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   public void testPrivateKeyInConnectionStringWithBouncyCastle() throws SQLException, IOException {
     System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
     testPrivateKeyInConnectionString();
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPrivateKeyBase64InConnectionString() throws SQLException, IOException {
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+    String pathfile = null;
+    String pubKey = null;
+    // Test with non-password-protected private key file (.pem)
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      pathfile = getFullPathFileInResource("rsa_key.pub");
+      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    }
+
+    // PKCS #8
+    String privateKeyBase64 =
+        Base64.getEncoder()
+            .encodeToString(Files.readAllBytes(Paths.get(getFullPathFileInResource("rsa_key.p8"))));
+    String uri = parameters.get("uri") + "/?private_key_base64=" + privateKeyBase64;
+    Properties properties = new Properties();
+    properties.put("account", parameters.get("account"));
+    properties.put("user", testUser);
+    properties.put("ssl", parameters.get("ssl"));
+    properties.put("port", parameters.get("port"));
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
+
+    // PKCS #1
+    privateKeyBase64 =
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(Paths.get(getFullPathFileInResource("rsa_key.pem"))));
+    uri = parameters.get("uri") + "/?private_key_base64=" + privateKeyBase64;
+    properties = new Properties();
+    properties.put("account", parameters.get("account"));
+    properties.put("user", testUser);
+    properties.put("ssl", parameters.get("ssl"));
+    properties.put("port", parameters.get("port"));
+    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.toString());
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
+
+    // test with password-protected private key file (.p8)
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
+      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    }
+
+    privateKeyBase64 =
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(Paths.get(getFullPathFileInResource("encrypted_rsa_key.p8"))));
+    uri =
+        parameters.get("uri")
+            + "/?private_key_file_pwd=test&private_key_base64="
+            + privateKeyBase64;
+
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
+    // test with incorrect password for private key
+    uri =
+        parameters.get("uri")
+            + "/?private_key_file_pwd=wrong_password&private_key_base64="
+            + privateKeyBase64;
+
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
+      fail();
+    } catch (SQLException e) {
+      assertEquals(
+          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
+    }
+
+    // test with invalid public/private key combo (using 1st public key with 2nd private key)
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      pathfile = getFullPathFileInResource("rsa_key.pub");
+      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    }
+
+    privateKeyBase64 =
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(Paths.get(getFullPathFileInResource("encrypted_rsa_key.p8"))));
+    uri =
+        parameters.get("uri")
+            + "/?private_key_file_pwd=test&private_key_base64="
+            + privateKeyBase64;
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
+      fail();
+    } catch (SQLException e) {
+      assertEquals(390144, e.getErrorCode());
+    }
+
+    // test with invalid private key
+    privateKeyBase64 =
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(
+                    Paths.get(getFullPathFileInResource("invalid_private_key.pem"))));
+    uri = parameters.get("uri") + "/?private_key_base64=" + privateKeyBase64;
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
+      fail();
+    } catch (SQLException e) {
+      assertEquals(
+          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
+    }
+
+    // clean up
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
+    }
+  }
+
+  // This will only work with JDBC driver versions higher than 3.15.1
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPrivateKeyBase64InConnectionStringWithBouncyCastle()
+      throws SQLException, IOException {
+    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    testPrivateKeyBase64InConnectionString();
   }
 
   @Test

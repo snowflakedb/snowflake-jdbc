@@ -13,9 +13,9 @@ import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -80,6 +80,7 @@ class SessionUtilKeyPair {
   SessionUtilKeyPair(
       PrivateKey privateKey,
       String privateKeyFile,
+      String privateKeyBase64,
       String privateKeyFilePwd,
       String accountName,
       String userName)
@@ -100,17 +101,30 @@ class SessionUtilKeyPair {
       }
     }
 
-    // if there is both a file and a private key, there is a problem
+    // Ensure that we only received one of: privateKey, privateKeyFile, or privateKeyBase64
     if (!Strings.isNullOrEmpty(privateKeyFile) && privateKey != null) {
       throw new SFException(
           ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-          "Cannot have both private key value and private key file.");
+          "Cannot have both private key object and private key file.");
+    } else if (!Strings.isNullOrEmpty(privateKeyBase64) && privateKey != null) {
+      throw new SFException(
+          ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+          "Cannot have both private key object and private key string value.");
+    } else if (!Strings.isNullOrEmpty(privateKeyBase64) && !Strings.isNullOrEmpty(privateKeyFile)) {
+      throw new SFException(
+          ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
+          "Cannot have both private key file and private key string value.");
     } else {
-      // if privateKeyFile has a value and privateKey is null
-      this.privateKey =
-          Strings.isNullOrEmpty(privateKeyFile)
-              ? privateKey
-              : extractPrivateKeyFromFile(privateKeyFile, privateKeyFilePwd);
+      if (!Strings.isNullOrEmpty(privateKeyBase64)) {
+        // privateKeyBase64 has a value and other options for passing private key are null
+        this.privateKey = extractPrivateKeyFromBase64(privateKeyBase64, privateKeyFilePwd);
+      } else {
+        // either extract from privateKeyFile or use the passed object
+        this.privateKey =
+            Strings.isNullOrEmpty(privateKeyFile)
+                ? privateKey
+                : extractPrivateKeyFromFile(privateKeyFile, privateKeyFilePwd);
+      }
     }
     // construct public key from raw bytes
     if (this.privateKey instanceof RSAPrivateCrtKey) {
@@ -148,16 +162,30 @@ class SessionUtilKeyPair {
 
   private PrivateKey extractPrivateKeyFromFile(String privateKeyFile, String privateKeyFilePwd)
       throws SFException {
+
+    try {
+      Path privKeyPath = Paths.get(privateKeyFile);
+      FileUtil.logFileUsage(privKeyPath, "Extract private key from file", true);
+      byte[] bytes = Files.readAllBytes(privKeyPath);
+      return extractPrivateKeyFromBytes(bytes, privateKeyFilePwd);
+    } catch (IOException ie) {
+      logger.error("Could not read private key from file", ie);
+      throw new SFException(ie, ErrorCode.INVALID_PARAMETER_VALUE, ie.getCause());
+    }
+  }
+
+  private PrivateKey extractPrivateKeyFromBytes(byte[] privateKeyBytes, String privateKeyFilePwd)
+      throws SFException {
     if (isBouncyCastleProviderEnabled) {
       try {
-        return extractPrivateKeyWithBouncyCastle(privateKeyFile, privateKeyFilePwd);
+        return extractPrivateKeyWithBouncyCastle(privateKeyBytes, privateKeyFilePwd);
       } catch (IOException | PKCSException | OperatorCreationException e) {
         logger.error("Could not extract private key using Bouncy Castle provider", e);
         throw new SFException(e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, e.getCause());
       }
     } else {
       try {
-        return extractPrivateKeyWithJdk(privateKeyFile, privateKeyFilePwd);
+        return extractPrivateKeyWithJdk(privateKeyBytes, privateKeyFilePwd);
       } catch (NoSuchAlgorithmException
           | InvalidKeySpecException
           | IOException
@@ -165,14 +193,19 @@ class SessionUtilKeyPair {
           | NullPointerException
           | InvalidKeyException e) {
         logger.error(
-            "Could not extract private key. Try setting the JVM argument: " + "-D{}" + "=TRUE",
+            "Could not extract private key using standard JDK. Try setting the JVM argument: "
+                + "-D{}"
+                + "=TRUE",
             SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
-        throw new SFException(
-            e,
-            ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
-            privateKeyFile + ": " + e.getMessage());
+        throw new SFException(e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, e.getMessage());
       }
     }
+  }
+
+  private PrivateKey extractPrivateKeyFromBase64(String privateKeyBase64, String privateKeyFilePwd)
+      throws SFException {
+    byte[] decodedKey = Base64.decodeBase64(privateKeyBase64);
+    return extractPrivateKeyFromBytes(decodedKey, privateKeyFilePwd);
   }
 
   public String issueJwtToken() throws SFException {
@@ -232,13 +265,12 @@ class SessionUtilKeyPair {
   }
 
   private PrivateKey extractPrivateKeyWithBouncyCastle(
-      String privateKeyFile, String privateKeyFilePwd)
+      byte[] privateKeyBytes, String privateKeyFilePwd)
       throws IOException, PKCSException, OperatorCreationException {
-    Path privKeyPath = Paths.get(privateKeyFile);
-    FileUtil.logFileUsage(
-        privKeyPath, "Extract private key from file using Bouncy Castle provider", true);
+
     PrivateKeyInfo privateKeyInfo = null;
-    PEMParser pemParser = new PEMParser(new FileReader(privKeyPath.toFile()));
+    PEMParser pemParser =
+        new PEMParser(new StringReader(new String(privateKeyBytes, StandardCharsets.UTF_8)));
     Object pemObject = pemParser.readObject();
     if (pemObject instanceof PKCS8EncryptedPrivateKeyInfo) {
       // Handle the case where the private key is encrypted.
@@ -264,11 +296,9 @@ class SessionUtilKeyPair {
     return converter.getPrivateKey(privateKeyInfo);
   }
 
-  private PrivateKey extractPrivateKeyWithJdk(String privateKeyFile, String privateKeyFilePwd)
+  private PrivateKey extractPrivateKeyWithJdk(byte[] privateKeyFileBytes, String privateKeyFilePwd)
       throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
-    Path privKeyPath = Paths.get(privateKeyFile);
-    FileUtil.logFileUsage(privKeyPath, "Extract private key from file using Jdk", true);
-    String privateKeyContent = new String(Files.readAllBytes(privKeyPath));
+    String privateKeyContent = new String(privateKeyFileBytes, StandardCharsets.UTF_8);
     if (Strings.isNullOrEmpty(privateKeyFilePwd)) {
       // unencrypted private key file
       return generatePrivateKey(false, privateKeyContent, privateKeyFilePwd);
