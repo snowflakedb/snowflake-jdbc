@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +41,7 @@ import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.diagnostic.DiagnosticContext;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -524,6 +526,7 @@ public class SFSession extends SFBaseSession {
             + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
             + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
             + " query timeout: {}, tracing: {}, private key file: {}, private key file pwd is {},"
+            + " enable_diagnostics: {}, diagnostics_allowlist_path: {},"
             + " session parameters: client store temporary credential: {}, gzip disabled: {}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
@@ -553,6 +556,8 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
         SFLoggerUtil.isVariableProvided(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
+        connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
+        connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
         connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
 
@@ -625,6 +630,9 @@ public class SFSession extends SFBaseSession {
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
+
+    runDiagnosticsIfEnabled();
+
     SFLoginOutput loginOutput =
         SessionUtil.openSession(loginInput, connectionPropertiesMap, tracingLevel.toString());
     isClosed = false;
@@ -1277,5 +1285,46 @@ public class SFSession extends SFBaseSession {
 
   public void setSfClientConfig(SFClientConfig sfClientConfig) {
     this.sfClientConfig = sfClientConfig;
+  }
+
+  /**
+   * If the JDBC driver starts in diagnostics mode then the method prints results of the
+   * connectivity tests it performs in the logs. A SQLException is thrown with a message indicating
+   * that the driver is in diagnostics mode, and that a connection was not created.
+   */
+  private void runDiagnosticsIfEnabled() throws SnowflakeSQLException {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+    boolean isDiagnosticsEnabled =
+        Optional.ofNullable(connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS))
+            .map(b -> (Boolean) b)
+            .orElse(false);
+
+    if (!isDiagnosticsEnabled) {
+      return;
+    }
+    logger.info("Running diagnostics tests");
+    String allowListFile =
+        (String) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+
+    if (allowListFile == null || allowListFile.isEmpty()) {
+      logger.error(
+          "Diagnostics was enabled but an allowlist file was not provided."
+              + " Please provide an allowlist JSON file using the connection parameter {}",
+          SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+      throw new SnowflakeSQLException(
+          "Diagnostics was enabled but an allowlist file was not provided. "
+              + "Please provide an allowlist JSON file using the connection parameter "
+              + SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+    } else {
+      DiagnosticContext diagnosticContext =
+          new DiagnosticContext(allowListFile, connectionPropertiesMap);
+      diagnosticContext.runDiagnostics();
+    }
+
+    throw new SnowflakeSQLException(
+        "A connection was not created because the driver is running in diagnostics mode."
+            + " If this is unintended then disable diagnostics check by removing the "
+            + SFSessionProperty.ENABLE_DIAGNOSTICS
+            + " connection parameter");
   }
 }

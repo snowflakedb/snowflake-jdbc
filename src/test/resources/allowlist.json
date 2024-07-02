@@ -1,0 +1,18 @@
+[
+  {"host":"account_name.snowflakecomputing.com","port":443,"type":"SNOWFLAKE_DEPLOYMENT"},
+  {"host":"org-account_name.snowflakecomputing.com","port":443,"type":"SNOWFLAKE_DEPLOYMENT_REGIONLESS"},
+  {"host":"stage-bucket.s3.amazonaws.com","port":443,"type":"STAGE"},
+  {"host":"stage-bucket.s3.us-west-2.amazonaws.com","port":443,"type":"STAGE"},
+  {"host":"stage-bucket.s3-us-west-2.amazonaws.com","port":443,"type":"STAGE"},
+  {"host":"snowsql_repo.snowflakecomputing.com","port":443,"type":"SNOWSQL_REPO"},
+  {"host":"out_of_band_telemetry.snowflakecomputing.com","port":443,"type":"OUT_OF_BAND_TELEMETRY"},
+  {"host":"ocsp_cache.snowflakecomputing.com","port":80,"type":"OCSP_CACHE"},
+  {"host":"duo_security.duosecurity.com","port":443,"type":"DUO_SECURITY"},
+  {"host":"ocsp.rootg2.amazontrust.com","port":80,"type":"OCSP_RESPONDER"},
+  {"host":"o.ss2.us","port":80,"type":"OCSP_RESPONDER"},
+  {"host":"ocsp.sca1b.amazontrust.com","port":80,"type":"OCSP_RESPONDER"},
+  {"host":"ocsp.r2m01.amazontrust.com","port":80,"type":"OCSP_RESPONDER"},
+  {"host":"ocsp.rootca1.amazontrust.com","port":80,"type":"OCSP_RESPONDER"},
+  {"host":"snowsight_deployment.snowflake.com","port":443,"type":"SNOWSIGHT_DEPLOYMENT"},
+  {"host":"snowsight_deployment_2.snowflake.com","port":443,"type":"SNOWSIGHT_DEPLOYMENT"}
+]
