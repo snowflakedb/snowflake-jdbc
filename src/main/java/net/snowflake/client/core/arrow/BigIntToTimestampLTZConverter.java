@@ -11,6 +11,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -65,7 +66,7 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
   private Timestamp getTimestamp(int index, TimeZone tz) throws SFException {
     long val = bigIntVector.getDataBuffer().getLong(index * BigIntVector.TYPE_WIDTH);
     int scale = context.getScale(columnIndex);
-    return getTimestamp(val, scale);
+    return getTimestamp(val, scale, sessionTimeZone, useSessionTimezone);
   }
 
   @Override
@@ -90,8 +91,25 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
         SnowflakeUtil.BOOLEAN_STR, val);
   }
 
+  /**
+   * Use {@link #getTimestamp(long, int, TimeZone, boolean)}
+   *
+   * @param val epoch
+   * @param scale scale
+   * @return Timestamp value without timezone take into account
+   * @throws SFException
+   */
+  @Deprecated
   public static Timestamp getTimestamp(long val, int scale) throws SFException {
     Timestamp ts = ArrowResultUtil.toJavaTimestamp(val, scale);
     return ResultUtil.adjustTimestamp(ts);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static Timestamp getTimestamp(
+      long epoch, int scale, TimeZone sessionTimeZone, boolean useSessionTimezone)
+      throws SFException {
+    return ResultUtil.adjustTimestamp(
+        ArrowResultUtil.toJavaTimestamp(epoch, scale, sessionTimeZone, useSessionTimezone));
   }
 }

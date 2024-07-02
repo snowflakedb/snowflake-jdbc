@@ -11,6 +11,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
 import net.snowflake.client.log.ArgSupplier;
@@ -151,6 +152,19 @@ public class ArrowResultUtil {
    * @return
    */
   public static Timestamp toJavaTimestamp(long epoch, int scale) {
+    return toJavaTimestamp(epoch, scale, TimeZone.getDefault(), false);
+  }
+
+  /**
+   * generate Java Timestamp object
+   *
+   * @param epoch the value since epoch time
+   * @param scale the scale of the value
+   * @return
+   */
+  @SnowflakeJdbcInternalApi
+  public static Timestamp toJavaTimestamp(
+      long epoch, int scale, TimeZone sessionTimezone, boolean useSessionTimezone) {
     long seconds = epoch / powerOfTen(scale);
     int fraction = (int) ((epoch % powerOfTen(scale)) * powerOfTen(9 - scale));
     if (fraction < 0) {
@@ -158,7 +172,7 @@ public class ArrowResultUtil {
       seconds--;
       fraction += 1000000000;
     }
-    return createTimestamp(seconds, fraction, TimeZone.getDefault(), false);
+    return createTimestamp(seconds, fraction, sessionTimezone, useSessionTimezone);
   }
 
   /**
