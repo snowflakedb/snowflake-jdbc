@@ -16,10 +16,10 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -81,7 +81,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
    *
    * @return a mock object for SFLoginInput
    */
-  private SFLoginInput initMockLoginInput() {
+  private SFLoginInput initMockLoginInput() throws SFException {
     // mock SFLoginInput
     SFLoginInput loginInput = mock(SFLoginInput.class);
     when(loginInput.getServerUrl()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_HOST"));
@@ -89,7 +89,18 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
         .thenReturn(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name());
     when(loginInput.getPrivateKeyFile())
         .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
-    when(loginInput.getPrivateKeyFilePwd())
+    try {
+      when(loginInput.getPrivateKeyBase64())
+          .thenReturn(
+              Base64.getEncoder()
+                  .encodeToString(
+                      Files.readAllBytes(
+                          Paths.get(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE")))));
+    } catch (IOException e) {
+      throw new SFException(
+          e, ErrorCode.INVALID_PARAMETER_VALUE, systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
+    }
+    when(loginInput.getPrivateKeyPwd())
         .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE_PWD"));
     when(loginInput.getUserName()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_USER"));
     when(loginInput.getAccountName()).thenReturn("testaccount");
