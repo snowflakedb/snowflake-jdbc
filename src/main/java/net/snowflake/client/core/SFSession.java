@@ -597,6 +597,8 @@ public class SFSession extends SFBaseSession {
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
+        .setPrivateKeyBase64(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyFilePwd(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))

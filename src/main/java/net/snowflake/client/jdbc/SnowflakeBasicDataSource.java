@@ -228,6 +228,14 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     }
   }
 
+  public void setPrivateKeyBase64(String privateKeyBase64, String password) {
+    this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
+    this.properties.put("private_key_base64", privateKeyBase64);
+    if (!Strings.isNullOrEmpty(password)) {
+      this.properties.put("private_key_file_pwd", password);
+    }
+  }
+
   public void setTracing(String tracing) {
     this.properties.put("tracing", tracing);
   }
