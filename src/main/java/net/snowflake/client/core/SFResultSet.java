@@ -111,6 +111,8 @@ public class SFResultSet extends SFJsonResultSet {
     // update the driver/session with common parameters from GS
     SessionUtil.updateSfDriverParamValues(this.parameters, statement.getSFBaseSession());
 
+    sendTelemetryQueryResultFormatJson();
+
     // if server gives a send time, log time it took to arrive
     if (resultSetSerializable.getSendResultTime() != 0) {
       long timeConsumeFirstResult = this.firstChunkTime - resultSetSerializable.getSendResultTime();
@@ -278,6 +280,13 @@ public class SFResultSet extends SFJsonResultSet {
 
   private void logMetric(TelemetryField field, long value) {
     TelemetryData data = TelemetryUtil.buildJobData(this.queryId, field, value);
+    this.telemetryClient.addLogToBatch(data);
+  }
+
+  private void sendTelemetryQueryResultFormatJson() {
+    TelemetryData data =
+        TelemetryUtil.buildJobData(
+            this.queryId, TelemetryField.QUERY_RESULT_FORMAT, QueryResultFormat.JSON.toString());
     this.telemetryClient.addLogToBatch(data);
   }
 
