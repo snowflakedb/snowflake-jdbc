@@ -111,7 +111,9 @@ public class SecretDetector {
    */
   private static boolean isSensitiveParameter(String name) {
     Pattern PASSWORD_IN_NAME =
-        Pattern.compile(".*?(password|pwd|token|proxyuser).*?", Pattern.CASE_INSENSITIVE);
+        Pattern.compile(
+            ".*?(password|pwd|token|proxyuser|privatekey|passcode|proxypassword).*?",
+            Pattern.CASE_INSENSITIVE);
     Matcher matcher = PASSWORD_IN_NAME.matcher(name);
     return isSensitive(name) || matcher.matches();
   }
