@@ -270,6 +270,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
             prepStatement.setTimestamp(14, ts);
             prepStatement.execute();
 
+            statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=FALSE");
             try (ResultSet resultSet =
                 statement
                     .unwrap(SnowflakeStatement.class)
