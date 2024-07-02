@@ -597,7 +597,8 @@ public class SFSession extends SFBaseSession {
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
-        .setPrivateKeyBase64((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
+        .setPrivateKeyBase64(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyFilePwd(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
@@ -615,7 +616,7 @@ public class SFSession extends SFBaseSession {
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
                 : false);
 
-      // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
+    // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
     // The value may still change later when session parameters from the server are read.
     if (getBooleanValue(
         connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {

@@ -91,11 +91,17 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
         .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
     try {
       when(loginInput.getPrivateKeyBase64())
-              .thenReturn(Arrays.toString(Base64.getEncoder().encode(Files.readAllBytes(Paths.get(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"))))));
+          .thenReturn(
+              Arrays.toString(
+                  Base64.getEncoder()
+                      .encode(
+                          Files.readAllBytes(
+                              Paths.get(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"))))));
     } catch (IOException e) {
-        throw new SFException(e,ErrorCode.INVALID_PARAMETER_VALUE, systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
+      throw new SFException(
+          e, ErrorCode.INVALID_PARAMETER_VALUE, systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
     }
-      when(loginInput.getPrivateKeyFilePwd())
+    when(loginInput.getPrivateKeyFilePwd())
         .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE_PWD"));
     when(loginInput.getUserName()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_USER"));
     when(loginInput.getAccountName()).thenReturn("testaccount");

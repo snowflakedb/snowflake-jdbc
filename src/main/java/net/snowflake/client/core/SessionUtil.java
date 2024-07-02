@@ -241,7 +241,9 @@ public class SessionUtil {
     // authenticator is null, then jdbc will decide authenticator depends on
     // if privateKey is specified or not. If yes, authenticator type will be
     // SNOWFLAKE_JWT, otherwise it will use SNOWFLAKE.
-    return (loginInput.getPrivateKey() != null || loginInput.getPrivateKeyFile() != null || loginInput.getPrivateKeyBase64() != null)
+    return (loginInput.getPrivateKey() != null
+            || loginInput.getPrivateKeyFile() != null
+            || loginInput.getPrivateKeyBase64() != null)
         ? ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT
         : ClientAuthnDTO.AuthenticatorType.SNOWFLAKE;
   }

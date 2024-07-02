@@ -334,7 +334,7 @@ public class SFLoginInput {
     return privateKeyFile;
   }
 
-  String getPrivateKeyBase64(){
+  String getPrivateKeyBase64() {
     return privateKeyBase64;
   }
 
