@@ -241,7 +241,7 @@ public class SessionUtil {
     // authenticator is null, then jdbc will decide authenticator depends on
     // if privateKey is specified or not. If yes, authenticator type will be
     // SNOWFLAKE_JWT, otherwise it will use SNOWFLAKE.
-    return (loginInput.getPrivateKey() != null || loginInput.getPrivateKeyFile() != null)
+    return (loginInput.getPrivateKey() != null || loginInput.getPrivateKeyFile() != null || loginInput.getPrivateKeyBase64() != null)
         ? ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT
         : ClientAuthnDTO.AuthenticatorType.SNOWFLAKE;
   }
@@ -422,6 +422,7 @@ public class SessionUtil {
             new SessionUtilKeyPair(
                 loginInput.getPrivateKey(),
                 loginInput.getPrivateKeyFile(),
+                loginInput.getPrivateKeyBase64(),
                 loginInput.getPrivateKeyFilePwd(),
                 loginInput.getAccountName(),
                 loginInput.getUserName());
@@ -677,6 +678,7 @@ public class SessionUtil {
                     new SessionUtilKeyPair(
                         loginInput.getPrivateKey(),
                         loginInput.getPrivateKeyFile(),
+                        loginInput.getPrivateKeyBase64(),
                         loginInput.getPrivateKeyFilePwd(),
                         loginInput.getAccountName(),
                         loginInput.getUserName());
@@ -1730,13 +1732,14 @@ public class SessionUtil {
   public static String generateJWTToken(
       PrivateKey privateKey,
       String privateKeyFile,
+      String privateKeyBase64,
       String privateKeyFilePwd,
       String accountName,
       String userName)
       throws SFException {
     SessionUtilKeyPair s =
         new SessionUtilKeyPair(
-            privateKey, privateKeyFile, privateKeyFilePwd, accountName, userName);
+            privateKey, privateKeyFile, privateKeyBase64, privateKeyFilePwd, accountName, userName);
     return s.issueJwtToken();
   }
 
