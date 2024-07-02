@@ -129,12 +129,11 @@ public class SFConnectionConfigParser {
     Optional<String> maybeHost = Optional.ofNullable(fileConnectionConfiguration.get("host"));
     String host =
         maybeHost
-            .filter(String::isEmpty)
             .orElse(
                 maybeAccount
                     .map(acnt -> String.format("%s.snowflakecomputing.com", acnt))
                     .orElse(null));
-    if (host == null || host.isEmpty()) {
+    if(host == null || host.isEmpty()) {
       logger.warn("Neither host nor account is specified in connection parameters");
       return null;
     }
