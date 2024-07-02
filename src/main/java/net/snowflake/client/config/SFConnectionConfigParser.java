@@ -124,18 +124,19 @@ public class SFConnectionConfigParser {
     }
   }
 
-  private static String createUrl(Map<String, String> fileConnectionConfiguration) {
+  private static String createUrl(Map<String, String> fileConnectionConfiguration)
+      throws SnowflakeSQLException {
     Optional<String> maybeAccount = Optional.ofNullable(fileConnectionConfiguration.get("account"));
     Optional<String> maybeHost = Optional.ofNullable(fileConnectionConfiguration.get("host"));
     String host =
-        maybeHost
-            .orElse(
-                maybeAccount
-                    .map(acnt -> String.format("%s.snowflakecomputing.com", acnt))
-                    .orElse(null));
-    if(host == null || host.isEmpty()) {
+        maybeHost.orElse(
+            maybeAccount
+                .map(acnt -> String.format("%s.snowflakecomputing.com", acnt))
+                .orElse(null));
+    if (host == null || host.isEmpty()) {
       logger.warn("Neither host nor account is specified in connection parameters");
-      return null;
+      throw new SnowflakeSQLException(
+          "Unable to connect because neither host nor account is specified in connection parameters");
     }
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
