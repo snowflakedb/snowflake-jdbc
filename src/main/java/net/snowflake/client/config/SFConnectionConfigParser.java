@@ -125,16 +125,22 @@ public class SFConnectionConfigParser {
   }
 
   private static String createUrl(Map<String, String> fileConnectionConfiguration) {
-    String maybeAccount = fileConnectionConfiguration.get("account");
-    String maybeHost = fileConnectionConfiguration.get("host");
+    Optional<String> maybeAccount = Optional.ofNullable(fileConnectionConfiguration.get("account"));
+    Optional<String> maybeHost = Optional.ofNullable(fileConnectionConfiguration.get("host"));
     String host =
-        Optional.ofNullable(maybeHost)
+        maybeHost
+            .filter(String::isEmpty)
             .orElse(
-                Optional.ofNullable(maybeAccount)
+                maybeAccount
                     .map(acnt -> String.format("%s.snowflakecomputing.com", acnt))
                     .orElse(null));
+    if (host == null || host.isEmpty()) {
+      logger.warn("Neither host nor account is specified in connection parameters");
+      return null;
+    }
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
+    logger.debug("Host created using parameters from connection configuration file: {}", host);
     if (Strings.isNullOrEmpty(port)) {
       if ("https".equals(protocol)) {
         port = "443";
