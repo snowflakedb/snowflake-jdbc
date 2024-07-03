@@ -97,10 +97,7 @@ public class SFConnectionConfigParser {
       Properties conectionProperties = new Properties();
       conectionProperties.putAll(fileConnectionConfiguration);
 
-      String url =
-          Optional.ofNullable(fileConnectionConfiguration.get("account"))
-              .map(ac -> createUrl(ac, fileConnectionConfiguration))
-              .orElse(null);
+      String url = createUrl(fileConnectionConfiguration);
       logger.debug("Url created using parameters from connection configuration file: {}", url);
 
       if ("oauth".equals(fileConnectionConfiguration.get("authenticator"))
@@ -127,8 +124,30 @@ public class SFConnectionConfigParser {
     }
   }
 
-  private static String createUrl(String account, Map<String, String> fileConnectionConfiguration) {
-    String host = String.format("%s.snowflakecomputing.com", account);
+  private static String createUrl(Map<String, String> fileConnectionConfiguration)
+      throws SnowflakeSQLException {
+    Optional<String> maybeAccount = Optional.ofNullable(fileConnectionConfiguration.get("account"));
+    Optional<String> maybeHost = Optional.ofNullable(fileConnectionConfiguration.get("host"));
+    if (maybeAccount.isPresent()
+        && maybeHost.isPresent()
+        && !maybeHost.get().contains(maybeAccount.get())) {
+      logger.warn(
+          String.format(
+              "Inconsistent host and account values in file configuration. ACCOUNT: {} , HOST: {}. The host value will be used.",
+              maybeAccount.get(),
+              maybeHost.get()));
+    }
+    String host =
+        maybeHost.orElse(
+            maybeAccount
+                .map(acnt -> String.format("%s.snowflakecomputing.com", acnt))
+                .orElse(null));
+    if (host == null || host.isEmpty()) {
+      logger.warn("Neither host nor account is specified in connection parameters");
+      throw new SnowflakeSQLException(
+          "Unable to connect because neither host nor account is specified in connection parameters");
+    }
+    logger.debug("Host created using parameters from connection configuration file: {}", host);
     String port = fileConnectionConfiguration.get("port");
     String protocol = fileConnectionConfiguration.get("protocol");
     if (Strings.isNullOrEmpty(port)) {
