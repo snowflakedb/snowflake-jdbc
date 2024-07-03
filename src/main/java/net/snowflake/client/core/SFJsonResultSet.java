@@ -18,6 +18,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -53,6 +54,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     switch (type) {
       case Types.VARCHAR:
       case Types.CHAR:
+      case SnowflakeUtil.EXTRA_TYPES_VECTOR:
         return getString(columnIndex);
 
       case Types.BINARY:

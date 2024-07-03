@@ -361,4 +361,14 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
         SFSessionProperty.STRINGS_QUOTED.getPropertyKey(),
         String.valueOf(stringsQuotedForColumnDef));
   }
+
+  public void setEnableDiagnostics(boolean enableDiagnostics) {
+    this.properties.put(
+        SFSessionProperty.ENABLE_DIAGNOSTICS.getPropertyKey(), String.valueOf(enableDiagnostics));
+  }
+
+  public void setDiagnosticsAllowlistFile(String diagnosticsAllowlistFile) {
+    this.properties.put(
+        SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE.getPropertyKey(), diagnosticsAllowlistFile);
+  }
 }

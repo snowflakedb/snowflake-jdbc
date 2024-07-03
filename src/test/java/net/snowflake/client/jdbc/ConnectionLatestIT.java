@@ -40,6 +40,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -47,6 +48,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningNotOnAWS;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -59,6 +61,8 @@ import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
@@ -82,6 +86,7 @@ import org.junit.rules.TemporaryFolder;
 @Category(TestCategoryConnection.class)
 public class ConnectionLatestIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ConnectionLatestIT.class);
 
   private boolean defaultState;
 
@@ -1170,7 +1175,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * Test case for the method testDownloadStreamWithFileNotFoundException. This test verifies that a
+   * SQLException is thrown when attempting to download a file that does not exist. It verifies that
+   * the error code is ErrorCode.S3_OPERATION_ERROR so only runs on AWS.
+   */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnAWS.class)
   public void testDownloadStreamWithFileNotFoundException() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -1398,6 +1409,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setProxyPassword("proxyPassword");
     ds.setPutGetMaxRetries(3);
     ds.setStringsQuotedForColumnDef(true);
+    ds.setEnableDiagnostics(true);
+    ds.setDiagnosticsAllowlistFile("/some/path/allowlist.json");
 
     Properties props = ds.getProperties();
     assertEquals(params.get("account"), props.get("account"));
@@ -1427,6 +1440,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     assertEquals("proxyPassword", props.get(SFSessionProperty.PROXY_PASSWORD.getPropertyKey()));
     assertEquals("3", props.get(SFSessionProperty.PUT_GET_MAX_RETRIES.getPropertyKey()));
     assertEquals("true", props.get(SFSessionProperty.STRINGS_QUOTED.getPropertyKey()));
+    assertEquals("true", props.get(SFSessionProperty.ENABLE_DIAGNOSTICS.getPropertyKey()));
+    assertEquals(
+        "/some/path/allowlist.json",
+        props.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE.getPropertyKey()));
 
     ds.setOauthToken("a_token");
     assertEquals("OAUTH", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
@@ -1448,5 +1465,98 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     assertEquals(
         "USERNAME_PASSWORD_MFA", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
     assertEquals("a_passcode", props.get(SFSessionProperty.PASSCODE.getPropertyKey()));
+  }
+  /**
+   * SNOW-1465374: For TIMESTAMP_LTZ we were returning timestamps without timezone when scale was
+   * set e.g. to 6 in Arrow format The problem wasn't visible when calling getString, but was
+   * visible when we called toString on passed getTimestamp since we returned {@link
+   * java.sql.Timestamp}, not {@link SnowflakeTimestampWithTimezone}
+   *
+   * <p>Timestamps before 1582-10-05 are always returned as {@link java.sql.Timestamp}, not {@link
+   * SnowflakeTimestampWithTimezone} {SnowflakeTimestampWithTimezone}
+   *
+   * <p>Added in > 3.16.1
+   */
+  @Test
+  public void shouldGetDifferentTimestampLtzConsistentBetweenFormats() throws Exception {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.executeUpdate(
+          "create or replace table DATETIMETZ_TYPE(timestamp_tzcol timestamp_ltz, timestamp_tzpcol timestamp_ltz(6), timestamptzcol timestampltz, timestampwtzcol timestamp with local time zone);");
+      Arrays.asList(
+              "insert into DATETIMETZ_TYPE values('9999-12-31 23:59:59.999999999','9999-12-31 23:59:59.999999','9999-12-31 23:59:59.999999999','9999-12-31 23:59:59.999999999');",
+              "insert into DATETIMETZ_TYPE values('1582-01-01 00:00:00.000000001','1582-01-01 00:00:00.000001','1582-01-01 00:00:00.000000001','1582-01-01 00:00:00.000000001');",
+              "insert into DATETIMETZ_TYPE values('2000-06-18 18:29:30.123456789 +0100','2000-06-18 18:29:30.123456 +0100','2000-06-18 18:29:30.123456789 +0100','2000-06-18 18:29:30.123456789 +0100');",
+              "insert into DATETIMETZ_TYPE values(current_timestamp(),current_timestamp(),current_timestamp(),current_timestamp());",
+              "insert into DATETIMETZ_TYPE values('2000-06-18 18:29:30.12345 -0530','2000-06-18 18:29:30.123 -0530','2000-06-18 18:29:30.123456 -0530','2000-06-18 18:29:30.123 -0530');",
+              "insert into DATETIMETZ_TYPE values('2000-06-18 18:29:30','2000-06-18 18:29:30','2000-06-18 18:29:30','2000-06-18 18:29:30');",
+              "insert into DATETIMETZ_TYPE values('1582-10-04 00:00:00.000000001','1582-10-04 00:00:00.000001','1582-10-04 00:00:00.000000001','1582-10-04 00:00:00.000000001');",
+              "insert into DATETIMETZ_TYPE values('1582-10-05 00:00:00.000000001','1582-10-05 00:00:00.000001','1582-10-05 00:00:00.000000001','1582-10-05 00:00:00.000000001');",
+              "insert into DATETIMETZ_TYPE values('1583-10-05 00:00:00.000000001','1583-10-05 00:00:00.000001','1583-10-05 00:00:00.000000001','1583-10-05 00:00:00.000000001');")
+          .forEach(
+              insert -> {
+                try {
+                  statement.executeUpdate(insert);
+                } catch (SQLException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+      try (ResultSet arrowResultSet = statement.executeQuery("select * from DATETIMETZ_TYPE")) {
+        try (Connection jsonConnection = getConnection();
+            Statement jsonStatement = jsonConnection.createStatement()) {
+          jsonStatement.execute("alter session set JDBC_QUERY_RESULT_FORMAT=JSON");
+          try (ResultSet jsonResultSet =
+              jsonStatement.executeQuery("select * from DATETIMETZ_TYPE")) {
+            int rowIdx = 0;
+            while (arrowResultSet.next()) {
+              logger.debug("Checking row " + rowIdx);
+              assertTrue(jsonResultSet.next());
+              for (int column = 1; column <= 4; ++column) {
+                logger.trace(
+                    "JSON row[{}],column[{}] as string '{}', timestamp string '{}', as timestamp numeric '{}', tz offset={}, timestamp class {}",
+                    rowIdx,
+                    column,
+                    jsonResultSet.getString(column),
+                    jsonResultSet.getTimestamp(column),
+                    jsonResultSet.getTimestamp(column).getTime(),
+                    jsonResultSet.getTimestamp(column).getTimezoneOffset(),
+                    jsonResultSet.getTimestamp(column).getClass());
+                logger.trace(
+                    "ARROW row[{}],column[{}] as string '{}', timestamp string '{}', as timestamp numeric '{}', tz offset={}, timestamp class {}",
+                    rowIdx,
+                    column,
+                    arrowResultSet.getString(column),
+                    arrowResultSet.getTimestamp(column),
+                    arrowResultSet.getTimestamp(column).getTime(),
+                    arrowResultSet.getTimestamp(column).getTimezoneOffset(),
+                    arrowResultSet.getTimestamp(column).getClass());
+                assertEquals(
+                    "Expecting that string representation are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column,
+                    jsonResultSet.getString(column),
+                    arrowResultSet.getString(column));
+                assertEquals(
+                    "Expecting that string representation (via toString) are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column,
+                    jsonResultSet.getTimestamp(column).toString(),
+                    arrowResultSet.getTimestamp(column).toString());
+                assertEquals(
+                    "Expecting that timestamps are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column,
+                    jsonResultSet.getTimestamp(column),
+                    arrowResultSet.getTimestamp(column));
+              }
+              rowIdx++;
+            }
+          }
+        }
+      }
+    }
   }
 }
