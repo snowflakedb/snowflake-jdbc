@@ -15,6 +15,7 @@ import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -74,6 +75,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class for uploading/downloading files
@@ -97,6 +100,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
   private static final String localFSFileSep = systemGetProperty("file.separator");
   private static final int DEFAULT_PARALLEL = 10;
+  private static final Logger log = LoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
 
   private final String command;
 
@@ -1938,7 +1942,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     // For each location, list files and match against the patterns
     for (Map.Entry<String, List<String>> entry : locationToFilePatterns.entrySet()) {
       try {
-        java.io.File dir = new java.io.File(entry.getKey());
+        File dir = new File(entry.getKey());
 
         logger.debug(
             "Listing files under: {} with patterns: {}",
@@ -1950,11 +1954,15 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             && injectedFileTransferException instanceof Exception) {
           throw (Exception) SnowflakeFileTransferAgent.injectedFileTransferException;
         }
-
         // The following currently ignore sub directories
-        for (Object file :
-            FileUtils.listFiles(dir, new WildcardFileFilter(entry.getValue()), null)) {
-          result.add(((java.io.File) file).getCanonicalPath());
+        File[] filesMatchingPattern =
+            dir.listFiles((FileFilter) new WildcardFileFilter(entry.getValue()));
+        if (filesMatchingPattern != null) {
+          for (File file : filesMatchingPattern) {
+            result.add(file.getCanonicalPath());
+          }
+        } else {
+          logger.debug("No files under {} matching pattern {}", entry.getKey(), entry.getValue());
         }
       } catch (Exception ex) {
         throw new SnowflakeSQLException(
