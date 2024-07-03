@@ -77,13 +77,14 @@ public enum SFSessionProperty {
   PUT_GET_MAX_RETRIES("putGetMaxRetries", false, Integer.class),
 
   RETRY_TIMEOUT("retryTimeout", false, Integer.class),
+  ENABLE_DIAGNOSTICS("ENABLE_DIAGNOSTICS", false, Boolean.class),
+  DIAGNOSTICS_ALLOWLIST_FILE("DIAGNOSTICS_ALLOWLIST_FILE", false, String.class),
 
   ENABLE_PATTERN_SEARCH("enablePatternSearch", false, Boolean.class),
 
   DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class),
 
   JDBC_ARROW_TREAT_DECIMAL_AS_INT("JDBC_ARROW_TREAT_DECIMAL_AS_INT", false, Boolean.class),
-
   DISABLE_SAML_URL_CHECK("disableSamlURLCheck", false, Boolean.class);
 
   // property key in string
