@@ -131,7 +131,11 @@ public class SFConnectionConfigParser {
     if (maybeAccount.isPresent()
         && maybeHost.isPresent()
         && !maybeHost.get().contains(maybeAccount.get())) {
-      throw new SnowflakeSQLException("Inconsistent host and account values in file configuration");
+      logger.warn(
+          String.format(
+              "Inconsistent host and account values in file configuration. ACCOUNT: {} , HOST: {}. The host value will be used.",
+              maybeAccount.get(),
+              maybeHost.get()));
     }
     String host =
         maybeHost.orElse(

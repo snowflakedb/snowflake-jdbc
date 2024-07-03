@@ -158,16 +158,4 @@ public class SFConnectionConfigParserTest {
     Assert.assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
-
-  @Test
-  public void shouldThrowExceptionForInconsistentHostAndAccount() throws IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
-    extraparams.put("host", "snowflake.aws.com");
-    extraparams.put("account", "test");
-    prepareConnectionConfigurationTomlFile(extraparams, true);
-    Assert.assertThrows(
-        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
-  }
 }
