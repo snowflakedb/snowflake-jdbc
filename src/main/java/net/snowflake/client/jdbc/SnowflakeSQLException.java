@@ -172,6 +172,10 @@ public class SnowflakeSQLException extends SQLException {
     super(reason);
   }
 
+  public SnowflakeSQLException(Throwable ex, String message) {
+    super(message, ex);
+  }
+
   public String getQueryId() {
     return queryId;
   }
