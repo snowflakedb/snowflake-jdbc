@@ -90,7 +90,6 @@ public enum SFSessionProperty {
 
   JDBC_USE_HARDCODED_TIMEZONE("JDBC_USE_HARDCODED_TIMEZONE", false, Boolean.class);
 
-
   // property key in string
   private String propertyKey;
 
