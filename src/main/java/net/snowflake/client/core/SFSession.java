@@ -728,7 +728,10 @@ public class SFSession extends SFBaseSession {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
     PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY);
-    return (authenticator == null && privateKey == null && privateKeyFileLocation == null && privateKeyBase64 == null)
+    return (authenticator == null
+            && privateKey == null
+            && privateKeyFileLocation == null
+            && privateKeyBase64 == null)
         || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
 

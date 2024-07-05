@@ -92,11 +92,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
     try {
       when(loginInput.getPrivateKeyBase64())
           .thenReturn(
-              Arrays.toString(
-                  Base64.getEncoder()
-                      .encode(
-                          Files.readAllBytes(
-                              Paths.get(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"))))));
+              Base64.getEncoder()
+                  .encodeToString(
+                      Files.readAllBytes(
+                          Paths.get(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE")))));
     } catch (IOException e) {
       throw new SFException(
           e, ErrorCode.INVALID_PARAMETER_VALUE, systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));

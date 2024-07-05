@@ -13,6 +13,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -217,22 +218,22 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   public void setPrivateKey(PrivateKey privateKey) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
-    this.properties.put("privateKey", privateKey);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY, privateKey);
   }
 
   public void setPrivateKeyFile(String location, String password) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
-    this.properties.put("private_key_file", location);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE, location);
     if (!Strings.isNullOrEmpty(password)) {
-      this.properties.put("private_key_file_pwd", password);
+      this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE_PWD, password);
     }
   }
 
   public void setPrivateKeyBase64(String privateKeyBase64, String password) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
-    this.properties.put("private_key_base64", privateKeyBase64);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY_BASE64, privateKeyBase64);
     if (!Strings.isNullOrEmpty(password)) {
-      this.properties.put("private_key_file_pwd", password);
+      this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE_PWD, password);
     }
   }
 

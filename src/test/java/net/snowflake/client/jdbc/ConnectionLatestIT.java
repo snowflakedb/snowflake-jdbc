@@ -780,11 +780,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     ds.setPortNumber(Integer.parseInt(params.get("port")));
     ds.setUser(params.get("user"));
     String privateKeyBase64 =
-        Arrays.toString(
-            Base64.getEncoder()
-                .encode(
-                    Files.readAllBytes(
-                        Paths.get(getFullPathFileInResource("encrypted_rsa_key.p8")))));
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(Paths.get(getFullPathFileInResource("encrypted_rsa_key.p8"))));
     ds.setPrivateKeyBase64(privateKeyBase64, "test");
 
     // set up public key
@@ -802,7 +800,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection con = ds.getConnection();
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("select 1")) {
-      resultSet.next();
+      assertTrue(resultSet.next());
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
     }
     File serializedFile = tmpFolder.newFile("serializedStuff.ser");
@@ -819,10 +817,11 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try (Connection con = ds2.getConnection();
           Statement statement = con.createStatement()) {
         ResultSet resultSet = statement.executeQuery("select 1");
-        resultSet.next();
+        assertTrue(resultSet.next());
         assertThat("select 1", resultSet.getInt(1), equalTo(1));
       }
 
+    } finally {
       // clean up
       try (Connection connection = getConnection()) {
         Statement statement = connection.createStatement();
@@ -970,9 +969,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     // PKCS #8
     String privateKeyBase64 =
-        Arrays.toString(
-            Base64.getEncoder()
-                .encode(Files.readAllBytes(Paths.get(getFullPathFileInResource("rsa_key.p8")))));
+        Base64.getEncoder()
+            .encodeToString(Files.readAllBytes(Paths.get(getFullPathFileInResource("rsa_key.p8"))));
     String uri = parameters.get("uri") + "/?private_key_base64=" + privateKeyBase64;
     Properties properties = new Properties();
     properties.put("account", parameters.get("account"));
@@ -983,9 +981,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     // PKCS #1
     privateKeyBase64 =
-        Arrays.toString(
-            Base64.getEncoder()
-                .encode(Files.readAllBytes(Paths.get(getFullPathFileInResource("rsa_key.pem")))));
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(Paths.get(getFullPathFileInResource("rsa_key.pem"))));
     uri = parameters.get("uri") + "/?private_key_base64=" + privateKeyBase64;
     properties = new Properties();
     properties.put("account", parameters.get("account"));
@@ -1007,11 +1005,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
 
     privateKeyBase64 =
-        Arrays.toString(
-            Base64.getEncoder()
-                .encode(
-                    Files.readAllBytes(
-                        Paths.get(getFullPathFileInResource("encrypted_rsa_key.p8")))));
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(Paths.get(getFullPathFileInResource("encrypted_rsa_key.p8"))));
     uri =
         parameters.get("uri")
             + "/?private_key_file_pwd=test&private_key_base64="
@@ -1043,11 +1039,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
 
     privateKeyBase64 =
-        Arrays.toString(
-            Base64.getEncoder()
-                .encode(
-                    Files.readAllBytes(
-                        Paths.get(getFullPathFileInResource("encrypted_rsa_key.p8")))));
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(Paths.get(getFullPathFileInResource("encrypted_rsa_key.p8"))));
     uri =
         parameters.get("uri")
             + "/?private_key_file_pwd=test&private_key_base64="
@@ -1060,11 +1054,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     // test with invalid private key
     privateKeyBase64 =
-        Arrays.toString(
-            Base64.getEncoder()
-                .encode(
-                    Files.readAllBytes(
-                        Paths.get(getFullPathFileInResource("invalid_private_key.pem")))));
+        Base64.getEncoder()
+            .encodeToString(
+                Files.readAllBytes(
+                    Paths.get(getFullPathFileInResource("invalid_private_key.pem"))));
     uri = parameters.get("uri") + "/?private_key_base64=" + privateKeyBase64;
     try (Connection connection = DriverManager.getConnection(uri, properties)) {
       fail();

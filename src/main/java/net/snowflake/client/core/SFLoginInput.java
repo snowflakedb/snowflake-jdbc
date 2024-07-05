@@ -342,6 +342,12 @@ public class SFLoginInput {
     return privateKeyFilePwd;
   }
 
+  boolean isPrivateKeyProvided() {
+    return (getPrivateKey() != null
+        || getPrivateKeyFile() != null
+        || getPrivateKeyBase64() != null);
+  }
+
   public String getApplication() {
     return application;
   }

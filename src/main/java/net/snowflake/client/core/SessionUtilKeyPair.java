@@ -101,7 +101,7 @@ class SessionUtilKeyPair {
       }
     }
 
-    // if there is both a file and a private key, there is a problem
+    // Ensure that we only received one of: privateKey, privateKeyFile, or privateKeyBase64
     if (!Strings.isNullOrEmpty(privateKeyFile) && privateKey != null) {
       throw new SFException(
           ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY,
@@ -204,7 +204,7 @@ class SessionUtilKeyPair {
 
   private PrivateKey extractPrivateKeyFromBase64(String privateKeyBase64, String privateKeyFilePwd)
       throws SFException {
-    byte[] decodedKey = java.util.Base64.getDecoder().decode(privateKeyBase64);
+    byte[] decodedKey = Base64.decodeBase64(privateKeyBase64);
     return extractPrivateKeyFromBytes(decodedKey, privateKeyFilePwd);
   }
 
