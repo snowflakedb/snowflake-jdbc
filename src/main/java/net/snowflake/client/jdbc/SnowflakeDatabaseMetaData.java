@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -139,6 +140,12 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
           "VARIANT",
           "VECTOR",
           "VIEW");
+
+  private static final String MAX_VARCHAR_BINARY_SIZE_PARAM_NAME =
+      "VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT";
+
+  // Defaults to 16MB
+  private static final int DEFAULT_MAX_LOB_SIZE = 16777216;
 
   private final Connection connection;
 
@@ -911,14 +918,17 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public int getMaxBinaryLiteralLength() throws SQLException {
     logger.trace("int getMaxBinaryLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    return 8388608;
+    return getMaxCharLiteralLength() / 2; // hex instead of octal, thus divided by 2
   }
 
   @Override
   public int getMaxCharLiteralLength() throws SQLException {
     logger.trace("int getMaxCharLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
-    return 16777216;
+    Optional<Integer> maxLiteralLengthFromSession =
+        Optional.ofNullable(
+            (Integer) session.getOtherParameter(MAX_VARCHAR_BINARY_SIZE_PARAM_NAME));
+    return maxLiteralLengthFromSession.orElse(DEFAULT_MAX_LOB_SIZE);
   }
 
   @Override
@@ -1348,9 +1358,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                       typeName.substring(typeName.indexOf('(') + 1, typeName.indexOf(')')));
               nextRow[16] = char_octet_len;
             } else if (type == Types.CHAR || type == Types.VARCHAR) {
-              nextRow[16] = 16777216;
+              nextRow[16] = getMaxCharLiteralLength();
             } else if (type == Types.BINARY || type == Types.VARBINARY) {
-              nextRow[16] = 8388608;
+              nextRow[16] = getMaxBinaryLiteralLength();
             }
           } else {
             nextRow[16] = null;
@@ -3570,9 +3580,9 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                       typeName.substring(typeName.indexOf('(') + 1, typeName.indexOf(')')));
               nextRow[13] = char_octet_len;
             } else if (type == Types.CHAR || type == Types.VARCHAR) {
-              nextRow[13] = 16777216;
+              nextRow[13] = getMaxCharLiteralLength();
             } else if (type == Types.BINARY || type == Types.VARBINARY) {
-              nextRow[13] = 8388608;
+              nextRow[13] = getMaxBinaryLiteralLength();
             }
           } else {
             nextRow[13] = null;

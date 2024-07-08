@@ -28,7 +28,6 @@ public class SnowflakeConnectString implements Serializable {
   private final int port;
   private final Map<String, Object> parameters;
   private final String account;
-
   private static SnowflakeConnectString INVALID_CONNECT_STRING =
       new SnowflakeConnectString("", "", -1, Collections.emptyMap(), "");
 

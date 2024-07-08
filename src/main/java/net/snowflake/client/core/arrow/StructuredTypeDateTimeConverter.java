@@ -92,7 +92,8 @@ public class StructuredTypeDateTimeConverter {
             false);
       }
     } else if (obj instanceof Long) {
-      return BigIntToTimestampLTZConverter.getTimestamp((long) obj, scale);
+      return BigIntToTimestampLTZConverter.getTimestamp(
+          (long) obj, scale, sessionTimeZone, useSessionTimezone);
     }
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT,
