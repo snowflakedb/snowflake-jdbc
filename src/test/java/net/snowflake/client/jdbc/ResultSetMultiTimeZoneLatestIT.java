@@ -19,6 +19,8 @@ import java.util.TimeZone;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,9 +55,21 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     System.setProperty("user.timezone", timeZone);
   }
 
-  public Connection init() throws SQLException {
-    Connection connection = BaseJDBCTest.getConnection();
+  private static Connection connection;
 
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    connection = BaseJDBCTest.getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
+  }
+
+  public Connection init() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       statement.execute(
           "alter session set "
@@ -78,8 +92,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testTimesWithGetTimestamp() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    Connection connection = init();
+    try (Statement statement = connection.createStatement()) {
       String timeStringValue = "10:30:50.123456789";
       String timestampStringValue = "1970-01-01 " + timeStringValue;
       int length = timestampStringValue.length();
@@ -113,8 +127,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testTimestampNTZWithDaylightSavings() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    Connection connection = init();
+    try (Statement statement = connection.createStatement()) {
       statement.execute(
           "alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_NTZ'," + "TIMEZONE='Europe/London'");
       try (ResultSet rs = statement.executeQuery("select TIMESTAMP '2011-09-04 00:00:00'")) {
@@ -135,8 +149,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
     Calendar cal = null;
     SimpleDateFormat sdf = null;
 
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    Connection connection = init();
+    try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=true");
       try (ResultSet rs =
           statement.executeQuery(
@@ -232,8 +246,8 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   private void testUseSessionTimeZoneHelper(boolean useDefaultParamSettings) throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    Connection connection = init();
+    try (Statement statement = connection.createStatement()) {
       try {
         // create table with all timestamp types, time, and date
         statement.execute(

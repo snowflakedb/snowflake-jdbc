@@ -28,9 +28,7 @@ import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
@@ -38,6 +36,20 @@ import org.junit.rules.TemporaryFolder;
 @Category(TestCategoryStatement.class)
 public class StatementIT extends BaseJDBCTest {
   protected static String queryResultFormat = "json";
+
+  private static Connection connection;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    connection = getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
+  }
 
   public static Connection getConnection() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection();
@@ -51,8 +63,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testFetchDirection() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       assertEquals(ResultSet.FETCH_FORWARD, statement.getFetchDirection());
       try {
         statement.setFetchDirection(ResultSet.FETCH_REVERSE);
@@ -65,8 +76,7 @@ public class StatementIT extends BaseJDBCTest {
   @Ignore("Not working for setFetchSize")
   @Test
   public void testFetchSize() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       assertEquals(50, statement.getFetchSize());
       statement.setFetchSize(1);
       ResultSet rs = statement.executeQuery("select * from JDBC_STATEMENT");
@@ -76,8 +86,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testMaxRows() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
       assertEquals(0, statement.getMaxRows());
 
@@ -100,8 +109,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testQueryTimeOut() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       assertEquals(0, statement.getQueryTimeout());
       statement.setQueryTimeout(5);
       assertEquals(5, statement.getQueryTimeout());
@@ -117,8 +125,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testStatementClose() throws SQLException {
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement(); ) {
       assertEquals(connection, statement.getConnection());
       assertTrue(!statement.isClosed());
       statement.close();
@@ -128,8 +135,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteSelect() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
       boolean success = statement.execute(sqlSelect);
@@ -154,8 +160,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteInsert() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_insert(cola number)");
 
@@ -189,8 +194,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteUpdateAndDelete() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute(
             "create or replace table test_update(cola number, colb string) "
@@ -226,8 +230,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteMerge() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String mergeSQL =
           "merge into target using source on target.id = source.id "
               + "when matched and source.sb =22 then update set ta = 'newStr' "
@@ -259,8 +262,7 @@ public class StatementIT extends BaseJDBCTest {
    */
   @Test
   public void testAutogenerateKey() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table t(c1 int)");
       statement.execute("insert into t values(1)", Statement.NO_GENERATED_KEYS);
       try {
@@ -278,8 +280,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteMultiInsert() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String multiInsertionSQL =
           " insert all "
               + "into foo "
@@ -314,8 +315,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteBatch() throws Exception {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         connection.setAutoCommit(false);
         // mixed of ddl/dml in batch
@@ -388,8 +388,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteLargeBatch() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       /**
        * Generate a table with several rows and 1 column named test_large_batch Note: to truly test
        * that executeLargeBatch works with a number of rows greater than MAX_INT, replace rowcount
@@ -477,8 +476,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteUpdateFail() throws Exception {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String[] testCommands = {
         "list @~",
         "ls @~",
@@ -506,8 +504,7 @@ public class StatementIT extends BaseJDBCTest {
   @Test
   public void testTelemetryBatch() throws SQLException {
     Telemetry telemetryClient = null;
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
       statement.execute(sqlSelect);
@@ -539,8 +536,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtNotEnabled() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String multiStmtQuery =
           "create or replace temporary table test_multi (cola int);\n"
               + "insert into test_multi VALUES (1), (2);\n"
@@ -557,8 +553,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testCallStoredProcedure() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(
           "create or replace procedure SP()\n"
               + "returns string not null\n"
@@ -609,8 +604,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testUnwrapper() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       if (statement.isWrapperFor(SnowflakeStatementV1.class)) {
         statement.execute("select 1");
         SnowflakeStatement sfstatement = statement.unwrap(SnowflakeStatement.class);
@@ -629,8 +623,7 @@ public class StatementIT extends BaseJDBCTest {
 
   @Test
   public void testQueryIdIsNullOnFreshStatement() throws SQLException {
-    try (Connection con = getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = connection.createStatement()) {
       assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
     }
   }

@@ -29,6 +29,8 @@ import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,6 +46,20 @@ import org.junit.rules.TemporaryFolder;
 public class StatementLatestIT extends BaseJDBCTest {
   protected static String queryResultFormat = "json";
 
+  private static Connection con;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    con = getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (con != null && !con.isClosed()) {
+      con.close();
+    }
+  }
+
   public static Connection getConnection() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection();
     try (Statement stmt = conn.createStatement()) {
@@ -56,8 +72,7 @@ public class StatementLatestIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteCreateAndDrop() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = con.createStatement()) {
 
       boolean success = statement.execute("create or replace table test_create(colA integer)");
       assertFalse(success);
@@ -178,25 +193,23 @@ public class StatementLatestIT extends BaseJDBCTest {
    */
   @Test
   public void testExecuteOpenResultSets() throws SQLException {
-    try (Connection con = getConnection()) {
-      try (Statement statement = con.createStatement()) {
-        for (int i = 0; i < 10; i++) {
-          statement.execute("select 1");
-          statement.getResultSet();
-        }
-
-        assertEquals(9, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+    try (Statement statement = con.createStatement()) {
+      for (int i = 0; i < 10; i++) {
+        statement.execute("select 1");
+        statement.getResultSet();
       }
 
-      try (Statement statement = con.createStatement()) {
-        for (int i = 0; i < 10; i++) {
-          statement.execute("select 1");
-          ResultSet resultSet = statement.getResultSet();
-          resultSet.close();
-        }
+      assertEquals(9, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+    }
 
-        assertEquals(0, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+    try (Statement statement = con.createStatement()) {
+      for (int i = 0; i < 10; i++) {
+        statement.execute("select 1");
+        ResultSet resultSet = statement.getResultSet();
+        resultSet.close();
       }
+
+      assertEquals(0, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
     }
   }
 
@@ -246,8 +259,7 @@ public class StatementLatestIT extends BaseJDBCTest {
     String schemaName =
         TestUtil.GENERATED_SCHEMA_PREFIX
             + SnowflakeUtil.randomAlphaNumeric(255 - TestUtil.GENERATED_SCHEMA_PREFIX.length());
-    try (Connection con = getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       stmt.execute("create schema " + schemaName);
       stmt.execute("use schema " + schemaName);
       stmt.execute("drop schema " + schemaName);
@@ -257,8 +269,7 @@ public class StatementLatestIT extends BaseJDBCTest {
   /** Added in > 3.14.4 */
   @Test
   public void testQueryIdIsSetOnFailedQueryExecute() throws SQLException {
-    try (Connection con = getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
       try {
         stmt.execute("use database not_existing_database");
@@ -274,8 +285,7 @@ public class StatementLatestIT extends BaseJDBCTest {
   /** Added in > 3.14.4 */
   @Test
   public void testQueryIdIsSetOnFailedExecuteUpdate() throws SQLException {
-    try (Connection con = getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
       try {
         stmt.executeUpdate("update not_existing_table set a = 1 where id = 42");
@@ -291,8 +301,7 @@ public class StatementLatestIT extends BaseJDBCTest {
   /** Added in > 3.14.4 */
   @Test
   public void testQueryIdIsSetOnFailedExecuteQuery() throws SQLException {
-    try (Connection con = getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
       try {
         stmt.executeQuery("select * from not_existing_table");

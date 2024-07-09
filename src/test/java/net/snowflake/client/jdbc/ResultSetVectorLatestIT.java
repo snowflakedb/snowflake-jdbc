@@ -14,6 +14,8 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,10 +44,23 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
     return Arrays.asList("json", "arrow");
   }
 
+  private static Connection con;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    con = BaseJDBCTest.getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (con != null && !con.isClosed()) {
+      con.close();
+    }
+  }
+
   @Test
   public void testGetIntVectorAsIntArray() throws SQLException {
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
       Integer[] vector = {-1, 5};
       try (ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "int"))) {
@@ -60,8 +75,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   @Test
   public void testGetIntVectorAsLongArray() throws SQLException {
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
       Long[] vector = {-1L, 5L};
       try (ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "int"))) {
@@ -75,8 +89,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   @Test
   public void testGetFloatVectorAsFloatArray() throws SQLException {
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
       Float[] vector = {-1.2f, 5.1f, 15.87f};
       try (ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "float"))) {
@@ -90,8 +103,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   @Test
   public void testGetNullAsIntVector() throws SQLException {
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
       try (ResultSet resultSet = stmt.executeQuery("select null::vector(int, 2)")) {
         assertTrue(resultSet.next());
@@ -105,8 +117,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   @Test
   public void testGetNullAsFloatVector() throws SQLException {
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
       try (ResultSet resultSet = stmt.executeQuery("select null::vector(float, 2)")) {
         assertTrue(resultSet.next());
@@ -120,8 +131,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   @Test
   public void testGetIntVectorFromTable() throws SQLException {
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
       stmt.execute("create or replace table test_vector_int(x vector(int, 2), y int)");
       stmt.execute("insert into test_vector_int select [3, 7]::vector(int, 2), 15");
@@ -137,8 +147,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   @Test
   public void testGetFloatVectorFromTable() throws SQLException {
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
       stmt.execute("create or replace table test_vector_float(x vector(float, 2), y float)");
       stmt.execute("insert into test_vector_float select [-3, 7.1]::vector(float, 2), 20.3");
@@ -154,8 +163,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   /** Added in > 3.16.1 */
   @Test
   public void testGetVectorViaGetStringIsEqualToTheGetObject() throws SQLException {
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
+    try (Statement stmt = con.createStatement()) {
       enforceQueryResultFormat(stmt);
       Integer[] intVector = {-1, 5};
       Float[] floatVector = {-1.2f, 5.1f, 15.87f};
