@@ -10,7 +10,9 @@ import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,18 +64,30 @@ public class ClientMemoryLimitParallelIT {
           + rowCount
           + "));";
 
+  private static Connection con;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    con = getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (con != null && !con.isClosed()) {
+      con.close();
+    }
+  }
+
   @Before
   public void setUp() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = con.createStatement()) {
       statement.execute(createTestTableSQL);
     }
   }
 
   @After
   public void tearDown() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = con.createStatement()) {
       statement.execute("drop table if exists testtable_cml");
     }
   }
@@ -126,8 +140,7 @@ public class ClientMemoryLimitParallelIT {
   @Test
   public void testQueryNotHanging() throws SQLException {
     Properties paramProperties = new Properties();
-    try (Connection connection = getConnection(paramProperties);
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = con.createStatement()) {
       queryRows(statement, 100, 160);
     }
   }

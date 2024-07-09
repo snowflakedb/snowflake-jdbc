@@ -47,7 +47,9 @@ import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,6 +71,20 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
+  private static Connection connection;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    connection = getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
+  }
+
   @Test
   public void testSimpleConnection() throws SQLException {
     Connection con = getConnection();
@@ -87,10 +103,9 @@ public class ConnectionIT extends BaseJDBCTest {
   public void test300ConnectionsWithSingleClientInstance() throws SQLException {
     // concurrent testing
     int size = 300;
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       statement.execute(
           "create or replace table bigTable(rowNum number,rando "
               + "number) as (select seq4(),"
@@ -165,8 +180,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Test
   public void testSetCatalogSchema() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String db = connection.getCatalog();
       String schema = connection.getSchema();
       connection.setCatalog(db);
@@ -217,31 +231,30 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testConnectionGetAndSetDBAndSchema() throws SQLException {
     final String SECOND_DATABASE = "SECOND_DATABASE";
     final String SECOND_SCHEMA = "SECOND_SCHEMA";
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         final String database = TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").toUpperCase();
         final String schema = TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").toUpperCase();
 
-        assertEquals(database, con.getCatalog());
-        assertEquals(schema, con.getSchema());
+        assertEquals(database, connection.getCatalog());
+        assertEquals(schema, connection.getSchema());
 
         statement.execute(String.format("create or replace database %s", SECOND_DATABASE));
         statement.execute(String.format("create or replace schema %s", SECOND_SCHEMA));
         statement.execute(String.format("use database %s", database));
 
-        con.setCatalog(SECOND_DATABASE);
-        assertEquals(SECOND_DATABASE, con.getCatalog());
-        assertEquals("PUBLIC", con.getSchema());
+        connection.setCatalog(SECOND_DATABASE);
+        assertEquals(SECOND_DATABASE, connection.getCatalog());
+        assertEquals("PUBLIC", connection.getSchema());
 
-        con.setSchema(SECOND_SCHEMA);
-        assertEquals(SECOND_SCHEMA, con.getSchema());
+        connection.setSchema(SECOND_SCHEMA);
+        assertEquals(SECOND_SCHEMA, connection.getSchema());
 
         statement.execute(String.format("use database %s", database));
         statement.execute(String.format("use schema %s", schema));
 
-        assertEquals(database, con.getCatalog());
-        assertEquals(schema, con.getSchema());
+        assertEquals(database, connection.getCatalog());
+        assertEquals(schema, connection.getSchema());
       } finally {
         statement.execute(String.format("drop database if exists %s", SECOND_DATABASE));
       }
@@ -250,40 +263,39 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Test
   public void testConnectionClientInfo() throws SQLException {
-    try (Connection con = getConnection()) {
-      Properties property = con.getClientInfo();
-      assertEquals(0, property.size());
-      Properties clientInfo = new Properties();
-      clientInfo.setProperty("name", "Peter");
-      clientInfo.setProperty("description", "SNOWFLAKE JDBC");
-      try {
-        con.setClientInfo(clientInfo);
-        fail("setClientInfo should fail for any parameter.");
-      } catch (SQLClientInfoException e) {
-        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-        assertEquals(200047, e.getErrorCode());
-        assertEquals(2, e.getFailedProperties().size());
-      }
-      try {
-        con.setClientInfo("ApplicationName", "valueA");
-        fail("setClientInfo should fail for any parameter.");
-      } catch (SQLClientInfoException e) {
-        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
-        assertEquals(200047, e.getErrorCode());
-        assertEquals(1, e.getFailedProperties().size());
-      }
+    Properties property = connection.getClientInfo();
+    assertEquals(0, property.size());
+    Properties clientInfo = new Properties();
+    clientInfo.setProperty("name", "Peter");
+    clientInfo.setProperty("description", "SNOWFLAKE JDBC");
+    try {
+      connection.setClientInfo(clientInfo);
+      fail("setClientInfo should fail for any parameter.");
+    } catch (SQLClientInfoException e) {
+      assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+      assertEquals(200047, e.getErrorCode());
+      assertEquals(2, e.getFailedProperties().size());
+    }
+    try {
+      connection.setClientInfo("ApplicationName", "valueA");
+      fail("setClientInfo should fail for any parameter.");
+    } catch (SQLClientInfoException e) {
+      assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+      assertEquals(200047, e.getErrorCode());
+      assertEquals(1, e.getFailedProperties().size());
     }
   }
 
   // only support get and set
   @Test
   public void testNetworkTimeout() throws SQLException {
-    try (Connection con = getConnection()) {
-      int millis = con.getNetworkTimeout();
-      assertEquals(0, millis);
-      con.setNetworkTimeout(null, 200);
-      assertEquals(200, con.getNetworkTimeout());
-    }
+    int millis = connection.getNetworkTimeout();
+    assertEquals(0, millis);
+    connection.setNetworkTimeout(null, 200);
+    assertEquals(200, connection.getNetworkTimeout());
+    // Reset timeout to 0 since we are reusing connection in tests
+    connection.setNetworkTimeout(null, 0);
+    assertEquals(0, millis);
   }
 
   @Test
@@ -713,18 +725,14 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Test
   public void testNativeSQL() throws Throwable {
-    try (Connection connection = getConnection()) {
-      // today returning the source SQL.
-      assertEquals("select 1", connection.nativeSQL("select 1"));
-    }
+    // today returning the source SQL.
+    assertEquals("select 1", connection.nativeSQL("select 1"));
   }
 
   @Test
   public void testGetTypeMap() throws Throwable {
-    try (Connection connection = getConnection()) {
-      // return an empty type map. setTypeMap is not supported.
-      assertEquals(Collections.emptyMap(), connection.getTypeMap());
-    }
+    // return an empty type map. setTypeMap is not supported.
+    assertEquals(Collections.emptyMap(), connection.getTypeMap());
   }
 
   @Test
@@ -793,7 +801,6 @@ public class ConnectionIT extends BaseJDBCTest {
 
   @Test
   public void testResultSetsClosedByStatement() throws SQLException {
-    Connection connection = getConnection();
     Statement statement2 = connection.createStatement();
     ResultSet rs1 = statement2.executeQuery("select 2;");
     ResultSet rs2 = statement2.executeQuery("select 2;");
@@ -810,7 +817,6 @@ public class ConnectionIT extends BaseJDBCTest {
     assertTrue(rs2.isClosed());
     assertTrue(rs3.isClosed());
     assertTrue(rs4.isClosed());
-    connection.close();
   }
 
   @Test
