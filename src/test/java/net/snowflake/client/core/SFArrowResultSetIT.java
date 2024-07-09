@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -64,6 +65,8 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -85,6 +88,20 @@ public class SFArrowResultSetIT {
 
   /** temporary folder to store result files */
   @Rule public TemporaryFolder resultFolder = new TemporaryFolder();
+
+  private static Connection con;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    con = getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (con != null && !con.isClosed()) {
+      con.close();
+    }
+  }
 
   /** Test the case that all results are returned in first chunk */
   @Test
@@ -595,155 +612,157 @@ public class SFArrowResultSetIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
   public void testSortedResultChunkWithStructVectors() throws Throwable {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    statement.execute("create or replace table teststructtimestamp (t1 timestamp_ltz)");
-    ResultSet rs = statement.executeQuery("select * from teststructtimestamp");
-    List<SnowflakeResultSetSerializable> resultSetSerializables =
-        ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
-    SnowflakeResultSetSerializableV1 resultSetSerializable =
-        (SnowflakeResultSetSerializableV1) resultSetSerializables.get(0);
+    try (Statement statement = con.createStatement()) {
+      statement.execute("create or replace table teststructtimestamp (t1 timestamp_ltz)");
+      try (ResultSet rs = statement.executeQuery("select * from teststructtimestamp")) {
+        List<SnowflakeResultSetSerializable> resultSetSerializables =
+            ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
+        SnowflakeResultSetSerializableV1 resultSetSerializable =
+            (SnowflakeResultSetSerializableV1) resultSetSerializables.get(0);
 
-    Map<String, String> customFieldMeta = new HashMap<>();
-    customFieldMeta.put("logicalType", "TIMESTAMP_LTZ");
-    customFieldMeta.put("scale", "38");
-    // test normal date
-    FieldType fieldType =
-        new FieldType(true, Types.MinorType.BIGINT.getType(), null, customFieldMeta);
-    FieldType fieldType2 =
-        new FieldType(true, Types.MinorType.INT.getType(), null, customFieldMeta);
+        Map<String, String> customFieldMeta = new HashMap<>();
+        customFieldMeta.put("logicalType", "TIMESTAMP_LTZ");
+        customFieldMeta.put("scale", "38");
+        // test normal date
+        FieldType fieldType =
+            new FieldType(true, Types.MinorType.BIGINT.getType(), null, customFieldMeta);
+        FieldType fieldType2 =
+            new FieldType(true, Types.MinorType.INT.getType(), null, customFieldMeta);
 
-    StructVector structVector = StructVector.empty("testListVector", allocator);
-    List<Field> fieldList = new LinkedList<Field>();
-    Field bigIntField = new Field("epoch", fieldType, null);
+        StructVector structVector = StructVector.empty("testListVector", allocator);
+        List<Field> fieldList = new LinkedList<Field>();
+        Field bigIntField = new Field("epoch", fieldType, null);
 
-    Field intField = new Field("fraction", fieldType2, null);
+        Field intField = new Field("fraction", fieldType2, null);
 
-    fieldList.add(bigIntField);
-    fieldList.add(intField);
+        fieldList.add(bigIntField);
+        fieldList.add(intField);
 
-    FieldType structFieldType =
-        new FieldType(true, Types.MinorType.STRUCT.getType(), null, customFieldMeta);
-    Field structField = new Field("timestamp", structFieldType, fieldList);
+        FieldType structFieldType =
+            new FieldType(true, Types.MinorType.STRUCT.getType(), null, customFieldMeta);
+        Field structField = new Field("timestamp", structFieldType, fieldList);
 
-    structVector.initializeChildrenFromFields(fieldList);
+        structVector.initializeChildrenFromFields(fieldList);
 
-    List<Field> fieldListMajor = new LinkedList<Field>();
-    fieldListMajor.add(structField);
-    Schema dataSchema = new Schema(fieldList);
-    Object[][] data = generateData(dataSchema, 1000);
+        List<Field> fieldListMajor = new LinkedList<Field>();
+        fieldListMajor.add(structField);
+        Schema dataSchema = new Schema(fieldList);
+        Object[][] data = generateData(dataSchema, 1000);
 
-    Schema schema = new Schema(fieldListMajor);
+        Schema schema = new Schema(fieldListMajor);
 
-    File file = createArrowFile("testTimestamp", schema, data, 10);
+        File file = createArrowFile("testTimestamp", schema, data, 10);
 
-    int dataSize = (int) file.length();
-    byte[] dataBytes = new byte[dataSize];
+        int dataSize = (int) file.length();
+        byte[] dataBytes = new byte[dataSize];
 
-    InputStream is = new FileInputStream(file);
-    is.read(dataBytes, 0, dataSize);
+        InputStream is = new FileInputStream(file);
+        is.read(dataBytes, 0, dataSize);
 
-    resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
-    resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
-    resultSetSerializable.setFirstChunkByteData(dataBytes);
-    resultSetSerializable.setChunkFileCount(0);
+        resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
+        resultSetSerializable.setFirstChunkStringData(
+            Base64.getEncoder().encodeToString(dataBytes));
+        resultSetSerializable.setFirstChunkByteData(dataBytes);
+        resultSetSerializable.setChunkFileCount(0);
 
-    SFArrowResultSet resultSet =
-        new SFArrowResultSet(resultSetSerializable, new NoOpTelemetryClient(), true);
+        SFArrowResultSet resultSet =
+            new SFArrowResultSet(resultSetSerializable, new NoOpTelemetryClient(), true);
 
-    for (int i = 0; i < 1000; i++) {
-      resultSet.next();
+        for (int i = 0; i < 1000; i++) {
+          resultSet.next();
+        }
+        // We inserted a null row at the beginning so when sorted, the last row should be null
+        assertEquals(null, resultSet.getObject(1));
+        assertFalse(resultSet.next());
+        statement.execute("drop table teststructtimestamp;");
+      }
     }
-    // We inserted a null row at the beginning so when sorted, the last row should be null
-    assertEquals(null, resultSet.getObject(1));
-    assertFalse(resultSet.next());
-    statement.execute("drop table teststructtimestamp;");
-    con.close();
   }
 
   /** Test that the first chunk can be sorted */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
   public void testSortedResultChunk() throws Throwable {
-    Connection con = getConnection();
-    Statement statement = con.createStatement();
-    statement.execute(
-        "create or replace table alltypes (i1 int, d1 date, b1 bigint, f1 float, s1 smallint, t1 tinyint, b2 binary, t2 text, b3 boolean, d2 decimal)");
-    ResultSet rs = statement.executeQuery("select * from alltypes");
-    List<SnowflakeResultSetSerializable> resultSetSerializables =
-        ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
-    SnowflakeResultSetSerializableV1 resultSetSerializable =
-        (SnowflakeResultSetSerializableV1) resultSetSerializables.get(0);
+    try (Statement statement = con.createStatement()) {
+      statement.execute(
+          "create or replace table alltypes (i1 int, d1 date, b1 bigint, f1 float, s1 smallint, t1 tinyint, b2 binary, t2 text, b3 boolean, d2 decimal)");
+      try (ResultSet rs = statement.executeQuery("select * from alltypes")) {
+        List<SnowflakeResultSetSerializable> resultSetSerializables =
+            ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
+        SnowflakeResultSetSerializableV1 resultSetSerializable =
+            (SnowflakeResultSetSerializableV1) resultSetSerializables.get(0);
 
-    List<Field> fieldList = new ArrayList<>();
-    Map<String, String> customFieldMeta = new HashMap<>();
-    customFieldMeta.put("logicalType", "FIXED");
-    customFieldMeta.put("scale", "0");
-    FieldType type = new FieldType(false, Types.MinorType.INT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        List<Field> fieldList = new ArrayList<>();
+        Map<String, String> customFieldMeta = new HashMap<>();
+        customFieldMeta.put("logicalType", "FIXED");
+        customFieldMeta.put("scale", "0");
+        FieldType type = new FieldType(false, Types.MinorType.INT.getType(), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    customFieldMeta.put("logicalType", "DATE");
-    type = new FieldType(false, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        customFieldMeta.put("logicalType", "DATE");
+        type = new FieldType(false, Types.MinorType.DATEDAY.getType(), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    customFieldMeta.put("logicalType", "FIXED");
-    type = new FieldType(false, Types.MinorType.BIGINT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        customFieldMeta.put("logicalType", "FIXED");
+        type = new FieldType(false, Types.MinorType.BIGINT.getType(), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    customFieldMeta.put("logicalType", "REAL");
-    type = new FieldType(false, Types.MinorType.FLOAT8.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        customFieldMeta.put("logicalType", "REAL");
+        type = new FieldType(false, Types.MinorType.FLOAT8.getType(), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    customFieldMeta.put("logicalType", "FIXED");
-    type = new FieldType(false, Types.MinorType.SMALLINT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        customFieldMeta.put("logicalType", "FIXED");
+        type = new FieldType(false, Types.MinorType.SMALLINT.getType(), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    customFieldMeta.put("logicalType", "FIXED");
-    type = new FieldType(false, Types.MinorType.TINYINT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        customFieldMeta.put("logicalType", "FIXED");
+        type = new FieldType(false, Types.MinorType.TINYINT.getType(), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    customFieldMeta.put("logicalType", "BINARY");
-    type = new FieldType(false, Types.MinorType.VARBINARY.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        customFieldMeta.put("logicalType", "BINARY");
+        type = new FieldType(false, Types.MinorType.VARBINARY.getType(), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    customFieldMeta.put("logicalType", "TEXT");
-    type = new FieldType(false, Types.MinorType.VARCHAR.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        customFieldMeta.put("logicalType", "TEXT");
+        type = new FieldType(false, Types.MinorType.VARCHAR.getType(), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    customFieldMeta.put("logicalType", "BOOLEAN");
-    type = new FieldType(false, Types.MinorType.BIT.getType(), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        customFieldMeta.put("logicalType", "BOOLEAN");
+        type = new FieldType(false, Types.MinorType.BIT.getType(), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    customFieldMeta.put("logicalType", "REAL");
-    type = new FieldType(false, new ArrowType.Decimal(38, 16, 128), null, customFieldMeta);
-    fieldList.add(new Field("", type, null));
+        customFieldMeta.put("logicalType", "REAL");
+        type = new FieldType(false, new ArrowType.Decimal(38, 16, 128), null, customFieldMeta);
+        fieldList.add(new Field("", type, null));
 
-    Schema schema = new Schema(fieldList);
+        Schema schema = new Schema(fieldList);
 
-    Object[][] data = generateData(schema, 1000);
-    File file = createArrowFile("testVectorTypes", schema, data, 10);
+        Object[][] data = generateData(schema, 1000);
+        File file = createArrowFile("testVectorTypes", schema, data, 10);
 
-    int dataSize = (int) file.length();
-    byte[] dataBytes = new byte[dataSize];
+        int dataSize = (int) file.length();
+        byte[] dataBytes = new byte[dataSize];
 
-    InputStream is = new FileInputStream(file);
-    is.read(dataBytes, 0, dataSize);
+        InputStream is = new FileInputStream(file);
+        is.read(dataBytes, 0, dataSize);
 
-    resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
-    resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
-    resultSetSerializable.setFirstChunkByteData(dataBytes);
-    resultSetSerializable.setChunkFileCount(0);
+        resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
+        resultSetSerializable.setFirstChunkStringData(
+            Base64.getEncoder().encodeToString(dataBytes));
+        resultSetSerializable.setFirstChunkByteData(dataBytes);
+        resultSetSerializable.setChunkFileCount(0);
 
-    SFArrowResultSet resultSet =
-        new SFArrowResultSet(resultSetSerializable, new NoOpTelemetryClient(), true);
+        SFArrowResultSet resultSet =
+            new SFArrowResultSet(resultSetSerializable, new NoOpTelemetryClient(), true);
 
-    for (int i = 0; i < 1000; i++) {
-      resultSet.next();
+        for (int i = 0; i < 1000; i++) {
+          resultSet.next();
+        }
+        // We inserted a null row at the beginning so when sorted, the last row should be null
+        assertEquals(null, resultSet.getObject(1));
+        assertFalse(resultSet.next());
+        statement.execute("drop table alltypes;");
+      }
     }
-    // We inserted a null row at the beginning so when sorted, the last row should be null
-    assertEquals(null, resultSet.getObject(1));
-    assertFalse(resultSet.next());
-    statement.execute("drop table alltypes;");
-    con.close();
   }
 }
