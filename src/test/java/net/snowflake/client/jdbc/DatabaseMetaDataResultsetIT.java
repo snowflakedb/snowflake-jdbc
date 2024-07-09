@@ -19,6 +19,8 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.category.TestCategoryOthers;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -68,6 +70,20 @@ public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
     {0, null, null, 0, null, null, false, null, 0}
   };
 
+  private static Connection con;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    con = getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (con != null && !con.isClosed()) {
+      con.close();
+    }
+  }
+
   @Test
   public void testRowIndex() throws SQLException {
     try (ResultSet resultSet = getResultSet(false)) {
@@ -98,7 +114,6 @@ public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   }
 
   private ResultSet getResultSet(boolean doNext) throws SQLException {
-    Connection con = getConnection();
     Statement st = con.createStatement();
     ResultSet resultSet =
         new SnowflakeDatabaseMetaDataResultSet(columnNames, columnTypeNames, columnTypes, rows, st);

@@ -11,7 +11,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.category.TestCategoryStatement;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -19,6 +21,20 @@ import org.junit.experimental.categories.Category;
 public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   protected static String queryResultFormat = "json";
+
+  private static SnowflakeConnectionV1 connection;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    connection = (SnowflakeConnectionV1) getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
+  }
 
   public static Connection getConnection() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection();
@@ -30,8 +46,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteUpdateCount() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
         statement.execute("create or replace table test_multi_bind(c1 number)");
@@ -76,8 +91,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   /** Less bindings than expected in statement */
   @Test
   public void testExecuteLessBindings() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
         statement.execute("create or replace table test_multi_bind(c1 number)");
@@ -109,8 +123,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteMoreBindings() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
         statement.execute("create or replace table test_multi_bind(c1 number)");
@@ -156,8 +169,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteQueryBindings() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
       try (PreparedStatement preparedStatement =
@@ -199,8 +211,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteQueryNoBindings() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
       try (PreparedStatement preparedStatement =
