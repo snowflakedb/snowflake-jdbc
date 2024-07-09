@@ -14,15 +14,31 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
 import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryResultSet.class)
 public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
+
+  private static Connection connection;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    connection = getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
+  }
+
   @Test
   public void testQueryResultSetAlreadyClosed() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       ResultSet resultSet = statement.executeQuery("select 1");
       resultSet.close();
       checkAlreadyClosed(resultSet);
@@ -31,23 +47,20 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
 
   @Test
   public void testMetadataResultSetAlreadyClosed() throws Throwable {
-    try (Connection connection = getConnection()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
-      DatabaseMetaData metaData = connection.getMetaData();
+    String database = connection.getCatalog();
+    String schema = connection.getSchema();
+    DatabaseMetaData metaData = connection.getMetaData();
 
-      checkAlreadyClosed(metaData.getCatalogs());
-      checkAlreadyClosed(metaData.getSchemas());
-      checkAlreadyClosed(metaData.getSchemas(database, null));
-      checkAlreadyClosed(metaData.getTables(database, schema, null, null));
-      checkAlreadyClosed(metaData.getColumns(database, schema, null, null));
-    }
+    checkAlreadyClosed(metaData.getCatalogs());
+    checkAlreadyClosed(metaData.getSchemas());
+    checkAlreadyClosed(metaData.getSchemas(database, null));
+    checkAlreadyClosed(metaData.getTables(database, schema, null, null));
+    checkAlreadyClosed(metaData.getColumns(database, schema, null, null));
   }
 
   @Test
   public void testResultSetAlreadyClosed() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery("SELECT 1")) {
       checkAlreadyClosed(resultSet);
     }

@@ -30,18 +30,34 @@ import java.util.Map;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.common.core.SqlState;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 /** Test AsyncResultSet */
 @Category(TestCategoryResultSet.class)
 public class ResultSetAsyncIT extends BaseJDBCTest {
+
+  private static Connection connection;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    connection = getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
+  }
+
   @Test
   public void testAsyncResultSetFunctionsWithNewSession() throws SQLException {
     final Map<String, String> params = getConnectionParameters();
     String queryID = null;
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
         statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
@@ -97,8 +113,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
 
   @Test
   public void testResultSetMetadata() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
         statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
@@ -148,8 +163,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
   public void testOrderAndClosureFunctions() throws SQLException {
     // Set up environment
     String queryID = null;
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table test_rsmd(colA number(20, 5), colB string)");
       statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
       try {
@@ -192,8 +206,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
 
   @Test
   public void testWasNull() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         Clob emptyClob = connection.createClob();
         emptyClob.setString(1, "");
@@ -244,90 +257,88 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
     Time time = new Time(500);
     Timestamp ts = new Timestamp(333);
 
-    try (Connection connection = getConnection()) {
-      Clob clob = connection.createClob();
-      clob.setString(1, "hello world");
-      try (Statement statement = connection.createStatement()) {
-        try {
-          // TODO structuredType - add to test when WRITE is ready - SNOW-1157904
-          statement.execute(
-              "create or replace table test_get(colA integer, colB number, colC number, colD string, colE double, colF float, colG boolean, colH text, colI binary(3), colJ number(38,9), colK int, colL date, colM time, colN timestamp_ltz)");
+    Clob clob = connection.createClob();
+    clob.setString(1, "hello world");
+    try (Statement statement = connection.createStatement()) {
+      try {
+        // TODO structuredType - add to test when WRITE is ready - SNOW-1157904
+        statement.execute(
+            "create or replace table test_get(colA integer, colB number, colC number, colD string, colE double, colF float, colG boolean, colH text, colI binary(3), colJ number(38,9), colK int, colL date, colM time, colN timestamp_ltz)");
 
-          try (PreparedStatement prepStatement = connection.prepareStatement(prepInsertString)) {
-            prepStatement.setInt(1, bigInt);
-            prepStatement.setLong(2, bigLong);
-            prepStatement.setLong(3, bigShort);
-            prepStatement.setString(4, str);
-            prepStatement.setDouble(5, bigDouble);
-            prepStatement.setFloat(6, bigFloat);
-            prepStatement.setBoolean(7, true);
-            prepStatement.setClob(8, clob);
-            prepStatement.setBytes(9, bytes);
-            prepStatement.setBigDecimal(10, bigDecimal);
-            prepStatement.setByte(11, oneByte);
-            prepStatement.setDate(12, date);
-            prepStatement.setTime(13, time);
-            prepStatement.setTimestamp(14, ts);
-            prepStatement.execute();
+        try (PreparedStatement prepStatement = connection.prepareStatement(prepInsertString)) {
+          prepStatement.setInt(1, bigInt);
+          prepStatement.setLong(2, bigLong);
+          prepStatement.setLong(3, bigShort);
+          prepStatement.setString(4, str);
+          prepStatement.setDouble(5, bigDouble);
+          prepStatement.setFloat(6, bigFloat);
+          prepStatement.setBoolean(7, true);
+          prepStatement.setClob(8, clob);
+          prepStatement.setBytes(9, bytes);
+          prepStatement.setBigDecimal(10, bigDecimal);
+          prepStatement.setByte(11, oneByte);
+          prepStatement.setDate(12, date);
+          prepStatement.setTime(13, time);
+          prepStatement.setTimestamp(14, ts);
+          prepStatement.execute();
 
-            try (ResultSet resultSet =
-                statement
-                    .unwrap(SnowflakeStatement.class)
-                    .executeAsyncQuery("select * from test_get")) {
-              resultSet.next();
-              assertEquals(bigInt, resultSet.getInt(1));
-              assertEquals(bigInt, resultSet.getInt("COLA"));
-              assertEquals(bigLong, resultSet.getLong(2));
-              assertEquals(bigLong, resultSet.getLong("COLB"));
-              assertEquals(bigShort, resultSet.getShort(3));
-              assertEquals(bigShort, resultSet.getShort("COLC"));
-              assertEquals(str, resultSet.getString(4));
-              assertEquals(str, resultSet.getString("COLD"));
-              Reader reader = resultSet.getCharacterStream("COLD");
-              char[] sample = new char[str.length()];
+          try (ResultSet resultSet =
+              statement
+                  .unwrap(SnowflakeStatement.class)
+                  .executeAsyncQuery("select * from test_get")) {
+            resultSet.next();
+            assertEquals(bigInt, resultSet.getInt(1));
+            assertEquals(bigInt, resultSet.getInt("COLA"));
+            assertEquals(bigLong, resultSet.getLong(2));
+            assertEquals(bigLong, resultSet.getLong("COLB"));
+            assertEquals(bigShort, resultSet.getShort(3));
+            assertEquals(bigShort, resultSet.getShort("COLC"));
+            assertEquals(str, resultSet.getString(4));
+            assertEquals(str, resultSet.getString("COLD"));
+            Reader reader = resultSet.getCharacterStream("COLD");
+            char[] sample = new char[str.length()];
 
-              assertEquals(str.length(), reader.read(sample));
-              assertEquals(str.charAt(0), sample[0]);
-              assertEquals(str, new String(sample));
+            assertEquals(str.length(), reader.read(sample));
+            assertEquals(str.charAt(0), sample[0]);
+            assertEquals(str, new String(sample));
 
-              assertEquals(bigDouble, resultSet.getDouble(5), 0);
-              assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
-              assertEquals(bigFloat, resultSet.getFloat(6), 0);
-              assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
-              assertTrue(resultSet.getBoolean(7));
-              assertTrue(resultSet.getBoolean("COLG"));
-              assertEquals("hello world", resultSet.getClob("COLH").toString());
+            assertEquals(bigDouble, resultSet.getDouble(5), 0);
+            assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
+            assertEquals(bigFloat, resultSet.getFloat(6), 0);
+            assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
+            assertTrue(resultSet.getBoolean(7));
+            assertTrue(resultSet.getBoolean("COLG"));
+            assertEquals("hello world", resultSet.getClob("COLH").toString());
 
-              // TODO: figure out why getBytes returns an offset.
-              // assertEquals(bytes, resultSet.getBytes(9));
-              // assertEquals(bytes, resultSet.getBytes("COLI"));
+            // TODO: figure out why getBytes returns an offset.
+            // assertEquals(bytes, resultSet.getBytes(9));
+            // assertEquals(bytes, resultSet.getBytes("COLI"));
 
-              DecimalFormat df = new DecimalFormat("#.00");
-              assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal(10)));
-              assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal("COLJ")));
+            DecimalFormat df = new DecimalFormat("#.00");
+            assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal(10)));
+            assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal("COLJ")));
 
-              assertEquals(oneByte, resultSet.getByte(11));
-              assertEquals(oneByte, resultSet.getByte("COLK"));
+            assertEquals(oneByte, resultSet.getByte(11));
+            assertEquals(oneByte, resultSet.getByte("COLK"));
 
-              SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-              assertEquals(sdf.format(date), sdf.format(resultSet.getDate(12)));
-              assertEquals(sdf.format(date), sdf.format(resultSet.getDate("COLL")));
-              assertEquals(time, resultSet.getTime(13));
-              assertEquals(time, resultSet.getTime("COLM"));
-              assertEquals(ts, resultSet.getTimestamp(14));
-              assertEquals(ts, resultSet.getTimestamp("COLN"));
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            assertEquals(sdf.format(date), sdf.format(resultSet.getDate(12)));
+            assertEquals(sdf.format(date), sdf.format(resultSet.getDate("COLL")));
+            assertEquals(time, resultSet.getTime(13));
+            assertEquals(time, resultSet.getTime("COLM"));
+            assertEquals(ts, resultSet.getTimestamp(14));
+            assertEquals(ts, resultSet.getTimestamp("COLN"));
 
-              // test getObject
-              assertEquals(str, resultSet.getObject(4).toString());
-              assertEquals(str, resultSet.getObject("COLD").toString());
+            // test getObject
+            assertEquals(str, resultSet.getObject(4).toString());
+            assertEquals(str, resultSet.getObject("COLD").toString());
 
-              // test getStatement method
-              assertEquals(statement, resultSet.getStatement());
-            }
+            // test getStatement method
+            assertEquals(statement, resultSet.getStatement());
           }
-        } finally {
-          statement.execute("drop table if exists table_get");
         }
+      } finally {
+        statement.execute("drop table if exists table_get");
       }
     }
   }
@@ -343,8 +354,7 @@ public class ResultSetAsyncIT extends BaseJDBCTest {
    */
   @Test
   public void testEmptyResultSet() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement();
         ResultSet rs =
             statement
                 .unwrap(SnowflakeStatement.class)

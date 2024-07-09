@@ -11,15 +11,31 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Collections;
 import net.snowflake.client.category.TestCategoryResultSet;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryResultSet.class)
 public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
+
+  private static Connection connection;
+
+  @BeforeClass
+  public static void setUpConnection() throws SQLException {
+    connection = getConnection();
+  }
+
+  @AfterClass
+  public static void closeConnection() throws SQLException {
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
+  }
+
   @Test
   public void testQueryResultSetNotSupportedException() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery("select 1")) {
       checkFeatureNotSupportedException(resultSet);
     }
@@ -27,17 +43,15 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
 
   @Test
   public void testMetadataResultSetNotSupportedException() throws Throwable {
-    try (Connection connection = getConnection()) {
-      DatabaseMetaData metaData = connection.getMetaData();
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+    DatabaseMetaData metaData = connection.getMetaData();
+    String database = connection.getCatalog();
+    String schema = connection.getSchema();
 
-      checkFeatureNotSupportedException(metaData.getCatalogs());
-      checkFeatureNotSupportedException(metaData.getSchemas());
-      checkFeatureNotSupportedException(metaData.getSchemas(database, null));
-      checkFeatureNotSupportedException(metaData.getTables(database, schema, null, null));
-      checkFeatureNotSupportedException(metaData.getColumns(database, schema, null, null));
-    }
+    checkFeatureNotSupportedException(metaData.getCatalogs());
+    checkFeatureNotSupportedException(metaData.getSchemas());
+    checkFeatureNotSupportedException(metaData.getSchemas(database, null));
+    checkFeatureNotSupportedException(metaData.getTables(database, schema, null, null));
+    checkFeatureNotSupportedException(metaData.getColumns(database, schema, null, null));
   }
 
   private void checkFeatureNotSupportedException(ResultSet resultSet) throws SQLException {
