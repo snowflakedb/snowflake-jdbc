@@ -178,6 +178,22 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
+  public void testLoadSFConnectionConfigWithInconsistentAccountAndHost()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("account", "SNOWACCOUNT");
+    extraparams.put("region", "CN-NORTHWEST-1.AWS");
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("port", "8082");
+    prepareConnectionConfigurationTomlFile(extraparams, true);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
+  }
+
+  @Test
   public void testLoadSFConnectionConfigWithRegionInChinaUppercasedConfigured()
       throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
