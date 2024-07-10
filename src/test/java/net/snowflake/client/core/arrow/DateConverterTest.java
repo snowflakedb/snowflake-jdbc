@@ -7,8 +7,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.Date;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -65,6 +67,21 @@ public class DateConverterTest extends BaseConverterTest {
     "1970-01-01",
     "2016-04-20"
   };
+
+  // Map of timezone to ArrowResultUtil.getDate value and hours offset for testTimezoneDates test
+  // case
+  Map<String, List<Object>> timezoneDatesData =
+      new HashMap<String, List<Object>>() {
+        {
+          put("UTC", Arrays.asList("2016-04-20", 0));
+          put("America/Los_Angeles", Arrays.asList("2016-04-20", -7));
+          put("America/New_York", Arrays.asList("2016-04-20", -4));
+          put("Pacific/Honolulu", Arrays.asList("2016-04-20", -10));
+          put("Asia/Singapore", Arrays.asList("2016-04-19", 8));
+          put("MEZ", Arrays.asList("2016-04-20", 0));
+          put("MESZ", Arrays.asList("2016-04-20", 0));
+        }
+      };
 
   public static final int MILLIS_IN_ONE_HOUR = 3600000;
   private TimeZone defaultTimeZone;
@@ -207,56 +224,16 @@ public class DateConverterTest extends BaseConverterTest {
     Object utcObj =
         ArrowResultUtil.getDate(testDay, TimeZone.getTimeZone("UTC"), TimeZone.getTimeZone(tz));
 
-    switch (tz) {
-      case ("UTC"):
-        assertThat(obj.toString(), is("2016-04-20"));
-        assertThat(jsonDate.toString(), is(obj.toString()));
-        assertThat(utcObj.toString(), is("2016-04-20"));
-        assertThat(((Date) obj).getTime(), is(((Date) utcObj).getTime()));
-        break;
-      case ("America/Los_Angeles"):
-        assertThat(obj.toString(), is("2016-04-20"));
-        assertThat(jsonDate.toString(), is(obj.toString()));
-        assertThat(utcObj.toString(), is("2016-04-20"));
-        assertThat(
-            ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (7 * MILLIS_IN_ONE_HOUR)));
-        break;
-      case ("America/New_York"):
-        assertThat(obj.toString(), is("2016-04-20"));
-        assertThat(jsonDate.toString(), is(obj.toString()));
-        assertThat(utcObj.toString(), is("2016-04-20"));
-        assertThat(
-            ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (4 * MILLIS_IN_ONE_HOUR)));
-        break;
-      case ("Pacific/Honolulu"):
-        assertThat(obj.toString(), is("2016-04-20"));
-        assertThat(jsonDate.toString(), is(obj.toString()));
-        assertThat(utcObj.toString(), is("2016-04-20"));
-        assertThat(
-            ((Date) obj).getTime(), is(((Date) utcObj).getTime() - (10 * MILLIS_IN_ONE_HOUR)));
-        break;
-      case ("Asia/Singapore"):
-        assertThat(obj.toString(), is("2016-04-20"));
-        assertThat(jsonDate.toString(), is(obj.toString()));
-        assertThat(utcObj.toString(), is("2016-04-19"));
-        assertThat(
-            ((Date) obj).getTime(), is(((Date) utcObj).getTime() + (8 * MILLIS_IN_ONE_HOUR)));
-        break;
-      case ("MEZ"):
-        assertThat(obj.toString(), is("2016-04-20"));
-        assertThat(jsonDate.toString(), is(obj.toString()));
-        assertThat(utcObj.toString(), is("2016-04-20"));
-        assertThat(((Date) obj).getTime(), is(((Date) utcObj).getTime()));
-        break;
-      case ("MESZ"):
-        assertThat(obj.toString(), is("2016-04-20"));
-        assertThat(jsonDate.toString(), is(obj.toString()));
-        assertThat(utcObj.toString(), is("2016-04-20"));
-        assertThat(((Date) obj).getTime(), is(((Date) utcObj).getTime()));
-        break;
-      default:
-        System.console().printf("Untested timezone: " + tz);
-    }
+    List<Object> testValues = this.timezoneDatesData.get(tz);
+    assertTrue(testValues.get(0) instanceof String);
+    assertTrue(testValues.get(1) instanceof Integer);
+    assertThat(obj.toString(), is("2016-04-20"));
+    assertThat(jsonDate.toString(), is(obj.toString()));
+    assertThat(utcObj.toString(), is(testValues.get(0)));
+    assertThat(
+        ((Date) obj).getTime(),
+        is(((Date) utcObj).getTime() + ((Integer) testValues.get(1) * MILLIS_IN_ONE_HOUR)));
+
     vector.clear();
   }
 }
