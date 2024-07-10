@@ -102,8 +102,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
   public Timestamp toTimestamp(int index, TimeZone tz) throws SFException {
     boolean useDateFormat = true;
     if (this.context.getSession() != null) {
-      useDateFormat =
-          this.context.getSession().getUseHardcodedTimezone() ? true : this.useDateFormat;
+      useDateFormat = getUseDateFormat(true);
     }
     Date date = toDate(index, tz, useDateFormat);
     if (date == null) {
@@ -118,26 +117,13 @@ public class DateConverter extends AbstractArrowVectorConverter {
     if (context.getDateFormatter() == null) {
       throw new SFException(ErrorCode.INTERNAL_ERROR, "missing date formatter");
     }
-    Date date =
-        getDate(
-            index,
-            TimeZone.getDefault(),
-            this.context.getSession() == null
-                ? false
-                : (this.context.getSession().getUseHardcodedTimezone()
-                    ? false
-                    : this.useDateFormat));
+    Date date = getDate(index, timeZoneUTC, getUseDateFormat(false));
     return date == null ? null : ResultUtil.getDateAsString(date, context.getDateFormatter());
   }
 
   @Override
   public Object toObject(int index) throws SFException {
-    return toDate(
-        index,
-        TimeZone.getDefault(),
-        this.context.getSession() == null
-            ? false
-            : (this.context.getSession().getUseHardcodedTimezone() ? false : this.useDateFormat));
+    return toDate(index, TimeZone.getDefault(), getUseDateFormat(false));
   }
 
   @Override
@@ -145,15 +131,7 @@ public class DateConverter extends AbstractArrowVectorConverter {
     if (isNull(index)) {
       return false;
     }
-    Date val =
-        toDate(
-            index,
-            TimeZone.getDefault(),
-            this.context.getSession() == null
-                ? false
-                : (this.context.getSession().getUseHardcodedTimezone()
-                    ? false
-                    : this.useDateFormat));
+    Date val = toDate(index, TimeZone.getDefault(), getUseDateFormat(false));
     throw new SFException(
         ErrorCode.INVALID_VALUE_CONVERT, logicalTypeStr,
         SnowflakeUtil.BOOLEAN_STR, val);
@@ -167,5 +145,11 @@ public class DateConverter extends AbstractArrowVectorConverter {
     }
     // Note: use default time zone to match with current getDate() behavior
     return ArrowResultUtil.getDate(value, jvmTz, sessionTimeZone);
+  }
+
+  private Boolean getUseDateFormat(Boolean defaultValue) {
+    return this.context.getSession() == null
+        ? defaultValue
+        : (this.context.getSession().getUseHardcodedTimezone() ? defaultValue : this.useDateFormat);
   }
 }

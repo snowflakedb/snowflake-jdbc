@@ -137,7 +137,6 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
 
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
-      statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
       statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=true");
       try (ResultSet rs =
           statement.executeQuery(

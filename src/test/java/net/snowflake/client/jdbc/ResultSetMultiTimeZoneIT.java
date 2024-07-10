@@ -137,7 +137,6 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
       try {
-        statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=FALSE");
         statement.execute("create or replace table dateTime(colA Date, colB Timestamp, colC Time)");
 
         java.util.Date today = new java.util.Date();
@@ -322,7 +321,6 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
       try {
-        statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=FALSE");
         statement.execute("create or replace table testOldDate(d date)");
         statement.execute(
             "insert into testOldDate values ('0001-01-01'), "
@@ -378,7 +376,6 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
       try {
-        statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=FALSE");
         statement.execute(
             "create or replace table testDateTime"
                 + "(colDate DATE, colTS timestamp_ltz, colTime TIME, colString string)");

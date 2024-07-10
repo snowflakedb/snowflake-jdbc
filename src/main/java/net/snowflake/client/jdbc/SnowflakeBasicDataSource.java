@@ -231,4 +231,8 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public void setTracing(String tracing) {
     this.properties.put("tracing", tracing);
   }
+
+  public void setUseHardcodedTimezone(Boolean useHardcodedTimezone) {
+    this.properties.put("JDBC_USE_HARDCODED_TIMEZONE", useHardcodedTimezone);
+  }
 }
