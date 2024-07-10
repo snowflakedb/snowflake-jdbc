@@ -1222,6 +1222,16 @@ public class ResultSetLatestIT extends ResultSet0IT {
     }
   }
 
+  @Test
+  public void testGetArrayMapSFExceptionToSQLExcepition() throws SQLException {
+    try (Connection con = BaseJDBCTest.getConnection();
+        Statement stmt = con.createStatement()) {
+      try (ResultSet resultSet = stmt.executeQuery("select  null::vector(int, 2)")) {
+        resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Double.class);
+      }
+    }
+  }
+
   private void assertResultValueAndType(
       Statement statement, Object expected, String columnName, Class<?> type) throws SQLException {
     try (ResultSet resultSetString =

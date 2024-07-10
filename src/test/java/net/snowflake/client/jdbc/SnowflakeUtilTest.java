@@ -56,6 +56,31 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     ColumnTypeInfo columnTypeInfoNodeTwo =
         getSnowflakeType(
             fieldTwo.path("type").asText(), null, null, null, Types.DECIMAL, true, false);
+
+    FieldMetadata fieldMetadata1 =
+        new FieldMetadata(
+            fieldOne.path("name").asText(),
+            columnTypeInfoNodeOne.getExtColTypeName(),
+            columnTypeInfoNodeOne.getColumnType(),
+            fieldOne.path("nullable").asBoolean(),
+            fieldOne.path("length").asInt(),
+            fieldOne.path("precision").asInt(),
+            fieldOne.path("scale").asInt(),
+            fieldOne.path("fixed").asBoolean(),
+            columnTypeInfoNodeOne.getSnowflakeType(),
+            new ArrayList<>());
+    FieldMetadata fieldMetadata2 = new FieldMetadata();
+    fieldMetadata2.setName(fieldTwo.path("name").asText());
+    fieldMetadata2.setTypeName(columnTypeInfoNodeTwo.getExtColTypeName());
+    fieldMetadata2.setType(columnTypeInfoNodeTwo.getColumnType());
+    fieldMetadata2.setNullable(fieldTwo.path("nullable").asBoolean());
+    fieldMetadata2.setByteLength(fieldTwo.path("length").asInt());
+    fieldMetadata2.setPrecision(fieldTwo.path("precision").asInt());
+    fieldMetadata2.setScale(fieldTwo.path("scale").asInt());
+    fieldMetadata2.setFixed(fieldTwo.path("fixed").asBoolean());
+    fieldMetadata2.setBase(columnTypeInfoNodeTwo.getSnowflakeType());
+    fieldMetadata2.setFields(new ArrayList<>());
+
     SnowflakeColumnMetadata expectedColumnMetadata =
         new SnowflakeColumnMetadata(
             rootNode.path("name").asText(),
@@ -67,29 +92,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
             columnTypeInfo.getExtColTypeName(),
             false,
             columnTypeInfo.getSnowflakeType(),
-            Arrays.asList(
-                new FieldMetadata(
-                    fieldOne.path("name").asText(),
-                    columnTypeInfoNodeOne.getExtColTypeName(),
-                    columnTypeInfoNodeOne.getColumnType(),
-                    fieldOne.path("nullable").asBoolean(),
-                    fieldOne.path("length").asInt(),
-                    fieldOne.path("precision").asInt(),
-                    fieldOne.path("scale").asInt(),
-                    fieldOne.path("fixed").asBoolean(),
-                    columnTypeInfoNodeOne.getSnowflakeType(),
-                    new ArrayList<>()),
-                new FieldMetadata(
-                    fieldTwo.path("name").asText(),
-                    columnTypeInfoNodeTwo.getExtColTypeName(),
-                    columnTypeInfoNodeTwo.getColumnType(),
-                    fieldTwo.path("nullable").asBoolean(),
-                    fieldTwo.path("length").asInt(),
-                    fieldTwo.path("precision").asInt(),
-                    fieldTwo.path("scale").asInt(),
-                    fieldTwo.path("fixed").asBoolean(),
-                    columnTypeInfoNodeTwo.getSnowflakeType(),
-                    new ArrayList<>())),
+            Arrays.asList(fieldMetadata1, fieldMetadata2),
             rootNode.path("database").asText(),
             rootNode.path("schema").asText(),
             rootNode.path("table").asText(),

@@ -71,6 +71,15 @@ public class BaseJDBCTest extends AbstractDriverIT {
     }
   }
 
+  protected void expectMapSFExceptionToSQLException(MethodRaisesSQLException f) {
+    try {
+      f.run();
+      fail("must raise exception");
+    } catch (SQLException ex) {
+      assertEquals((int) ErrorCode.STATEMENT_CLOSED.getMessageCode(), ex.getErrorCode());
+    }
+  }
+
   protected void expectResultSetAlreadyClosedException(MethodRaisesSQLException f) {
     try {
       f.run();
