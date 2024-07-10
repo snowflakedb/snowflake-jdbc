@@ -126,22 +126,25 @@ public class SFConnectionConfigParser {
 
   private static String createUrl(Map<String, String> fileConnectionConfiguration)
       throws SnowflakeSQLException {
-    Optional<String> maybeAccount = Optional.ofNullable(fileConnectionConfiguration.get("account"));
-    Optional<String> maybeHost = Optional.ofNullable(fileConnectionConfiguration.get("host"));
-    if (maybeAccount.isPresent()
-        && maybeHost.isPresent()
-        && !maybeHost.get().contains(maybeAccount.get())) {
-      logger.warn(
-          String.format(
-              "Inconsistent host and account values in file configuration. ACCOUNT: {} , HOST: {}. The host value will be used.",
-              maybeAccount.get(),
-              maybeHost.get()));
+    String account = fileConnectionConfiguration.get("account");
+    String region = fileConnectionConfiguration.get("region");
+    String host = fileConnectionConfiguration.get("host");
+    if (host != null && !host.isEmpty()) {
+      if (account != null && !host.contains(account)) {
+        logger.warn(
+            "Inconsistent host and account values in file configuration. ACCOUNT: {} , HOST: {}. The host value will be used.",
+            account,
+            host);
+      }
+    } else if (account != null && !account.isEmpty()) {
+      if (region != null && !region.isEmpty()) {
+        String topLevelDomain = region.toLowerCase().startsWith("cn-") ? "cn" : "com";
+        host = String.format("%s.%s.snowflakecomputing.%s", account, region, topLevelDomain);
+      } else {
+        host = String.format("%s.snowflakecomputing.com", account);
+      }
     }
-    String host =
-        maybeHost.orElse(
-            maybeAccount
-                .map(acnt -> String.format("%s.snowflakecomputing.com", acnt))
-                .orElse(null));
+
     if (host == null || host.isEmpty()) {
       logger.warn("Neither host nor account is specified in connection parameters");
       throw new SnowflakeSQLException(

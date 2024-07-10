@@ -148,6 +148,51 @@ public class SFConnectionConfigParserTest {
   }
 
   @Test
+  public void testLoadSFConnectionConfigWithRegionConfigured()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("account", "snowaccount");
+    extraparams.put("region", "us-west-2.aws");
+    prepareConnectionConfigurationTomlFile(extraparams, true);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    assertNotNull(data);
+    assertEquals(
+        "jdbc:snowflake://snowaccount.us-west-2.aws.snowflakecomputing.com:443", data.getUrl());
+  }
+
+  @Test
+  public void testLoadSFConnectionConfigWithRegionInChinaConfigured()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("account", "snowaccount");
+    extraparams.put("region", "cn-northwest-1.aws");
+    prepareConnectionConfigurationTomlFile(extraparams, true);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    assertNotNull(data);
+    assertEquals(
+        "jdbc:snowflake://snowaccount.cn-northwest-1.aws.snowflakecomputing.cn:443", data.getUrl());
+  }
+
+  @Test
+  public void testLoadSFConnectionConfigWithRegionInChinaUppercasedConfigured()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("account", "SNOWACCOUNT");
+    extraparams.put("region", "CN-NORTHWEST-1.AWS");
+    prepareConnectionConfigurationTomlFile(extraparams, true);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    assertNotNull(data);
+    assertEquals(
+        "jdbc:snowflake://SNOWACCOUNT.CN-NORTHWEST-1.AWS.snowflakecomputing.cn:443", data.getUrl());
+  }
+
+  @Test
   public void shouldThrowExceptionIfNoneOfHostAndAccountIsSet() throws IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");

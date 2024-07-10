@@ -237,7 +237,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   }
 
   static String getDomainSuffixForRegionalUrl(String regionName) {
-    return regionName.startsWith("cn-") ? "amazonaws.com.cn" : "amazonaws.com";
+    return regionName.toLowerCase().startsWith("cn-") ? "amazonaws.com.cn" : "amazonaws.com";
   }
 
   // Returns the Max number of retry attempts
