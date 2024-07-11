@@ -223,10 +223,7 @@ public class SFSession extends SFBaseSession {
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
         throw new SnowflakeSQLLoggedException(
-            queryID,
-            this,
-            e.getMessage(),
-            "No response or invalid response from GET request. Error: {}");
+            this, e.getMessage(), "No response or invalid response from GET request. Error: {}");
       }
 
       // Get response as JSON and parse it to get the query status
@@ -260,7 +257,7 @@ public class SFSession extends SFBaseSession {
             else if (ex instanceof SFException) {
               throw new SnowflakeSQLException((SFException) ex);
             }
-            throw new SnowflakeSQLException(queryID, ex.getMessage());
+            throw new SnowflakeSQLException(ex.getMessage());
           }
           sessionRenewed = true;
           // If the error code was not due to session renewal issues, throw an exception

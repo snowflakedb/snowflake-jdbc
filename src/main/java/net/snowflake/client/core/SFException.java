@@ -36,18 +36,6 @@ public class SFException extends Throwable {
     this.params = params;
   }
 
-  public SFException(String queryID, ErrorCode errorCode, Object... params) {
-    super(
-        errorResourceBundleManager.getLocalizedMessage(
-            String.valueOf(errorCode.getMessageCode()), params));
-
-    this.cause = null;
-    this.queryId = queryID;
-    this.sqlState = errorCode.getSqlState();
-    this.vendorCode = errorCode.getMessageCode();
-    this.params = params;
-  }
-
   public SFException(Throwable cause, ErrorCode errorCode, Object... params) {
     super(
         errorResourceBundleManager.getLocalizedMessage(
@@ -56,19 +44,6 @@ public class SFException extends Throwable {
 
     this.cause = null;
     this.queryId = null;
-    this.sqlState = errorCode.getSqlState();
-    this.vendorCode = errorCode.getMessageCode();
-    this.params = params;
-  }
-
-  public SFException(String queryId, Throwable cause, ErrorCode errorCode, Object... params) {
-    super(
-        errorResourceBundleManager.getLocalizedMessage(
-            String.valueOf(errorCode.getMessageCode()), params),
-        cause);
-
-    this.cause = null;
-    this.queryId = queryId;
     this.sqlState = errorCode.getSqlState();
     this.vendorCode = errorCode.getMessageCode();
     this.params = params;

@@ -375,12 +375,11 @@ public class SFResultSetMetaData {
   public int getInternalColumnType(int column) throws SFException {
     int columnIdx = column - 1;
     if (column < 1 || column > columnTypes.size()) {
-      throw new SFException(queryId, ErrorCode.COLUMN_DOES_NOT_EXIST, column);
+      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
     }
 
     if (columnTypes.get(columnIdx) == null) {
-      throw new SFException(
-          queryId, ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
     }
 
     return columnTypes.get(columnIdx);
@@ -388,12 +387,11 @@ public class SFResultSetMetaData {
 
   public String getColumnTypeName(int column) throws SFException {
     if (column < 1 || column > columnTypeNames.size()) {
-      throw new SFException(queryId, ErrorCode.COLUMN_DOES_NOT_EXIST, column);
+      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
     }
 
     if (columnTypeNames.get(column - 1) == null) {
-      throw new SFException(
-          queryId, ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column type for column " + column);
     }
 
     return columnTypeNames.get(column - 1);
@@ -499,12 +497,11 @@ public class SFResultSetMetaData {
   @SnowflakeJdbcInternalApi
   public List<FieldMetadata> getColumnFields(int column) throws SFException {
     if (column < 1 || column > columnMetadata.size()) {
-      throw new SFException(queryId, ErrorCode.COLUMN_DOES_NOT_EXIST, column);
+      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, column);
     }
 
     if (columnMetadata.get(column - 1) == null) {
-      throw new SFException(
-          queryId, ErrorCode.INTERNAL_ERROR, "Missing column fields for column " + column);
+      throw new SFException(ErrorCode.INTERNAL_ERROR, "Missing column fields for column " + column);
     }
 
     return columnMetadata.get(column - 1).getFields();

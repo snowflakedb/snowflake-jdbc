@@ -67,7 +67,6 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
 
     } catch (Exception ex) {
       throw new SnowflakeSQLLoggedException(
-          queryID,
           session,
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
@@ -92,7 +91,6 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
       nextRowList = fixedView.getNextRow();
     } catch (Exception ex) {
       throw new SFException(
-          queryID,
           ErrorCode.INTERNAL_ERROR,
           IncidentUtil.oneLiner("Error getting next row from " + "fixed view:", ex));
     }
@@ -117,11 +115,11 @@ public class SFFixedViewResultSet extends SFJsonResultSet {
     logger.trace("Object getObjectInternal(int columnIndex)", false);
 
     if (nextRow == null) {
-      throw new SFException(queryID, ErrorCode.ROW_DOES_NOT_EXIST);
+      throw new SFException(ErrorCode.ROW_DOES_NOT_EXIST);
     }
 
     if (columnIndex <= 0 || columnIndex > nextRow.length) {
-      throw new SFException(queryID, ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
+      throw new SFException(ErrorCode.COLUMN_DOES_NOT_EXIST, columnIndex);
     }
 
     wasNull = nextRow[columnIndex - 1] == null;
