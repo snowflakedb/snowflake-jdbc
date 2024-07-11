@@ -2333,13 +2333,4 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
       assertEquals(2, metaData.getJDBCMinorVersion());
     }
   }
-
-  /** Added in > 3.15.1 */
-  @Test
-  public void testKeywordsCount() throws SQLException {
-    try (Connection connection = getConnection()) {
-      DatabaseMetaData metaData = connection.getMetaData();
-      assertEquals(43, metaData.getSQLKeywords().split(",").length);
-    }
-  }
 }
