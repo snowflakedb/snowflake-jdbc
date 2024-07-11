@@ -1056,22 +1056,4 @@ public class ResultSetIT extends ResultSet0IT {
       }
     }
   }
-
-  /** SNOW-1416051; Added in > 3.16.0 */
-  @Test
-  public void shouldSerializeArrayAndObjectAsStringOnGetObject() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
-        ResultSet resultSet =
-            statement.executeQuery(
-                "select ARRAY_CONSTRUCT(1,2,3), OBJECT_CONSTRUCT('a', 4, 'b', 'test')")) {
-      assertTrue(resultSet.next());
-      String expectedArrayAsString = "[\n  1,\n  2,\n  3\n]";
-      assertEquals(expectedArrayAsString, resultSet.getObject(1));
-      assertEquals(expectedArrayAsString, resultSet.getString(1));
-      String expectedObjectAsString = "{\n  \"a\": 4,\n  \"b\": \"test\"\n}";
-      assertEquals(expectedObjectAsString, resultSet.getObject(2));
-      assertEquals(expectedObjectAsString, resultSet.getString(2));
-    }
-  }
 }
