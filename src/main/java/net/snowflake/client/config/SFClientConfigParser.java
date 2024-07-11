@@ -8,11 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeDriver;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -28,16 +26,14 @@ public class SFClientConfigParser {
    * connection property. 2. Environment variable: SF_CLIENT_CONFIG_FILE containing full path to
    * sf_client_config file. 3. Searches for default config file name(sf_client_config.json under the
    * driver directory from where the driver gets loaded. 4. Searches for default config file
-   * name(sf_client_config.json) under user home directory.
+   * name(sf_client_config.json) under user home directory 5. Searches for default config file
+   * name(sf_client_config.json) under tmp directory.
    *
    * @param configFilePath SF_CLIENT_CONFIG_FILE parameter read from connection URL or connection
    *     properties
    * @return SFClientConfig
    */
   public static SFClientConfig loadSFClientConfig(String configFilePath) throws IOException {
-    if (configFilePath != null) {
-      logger.info("Attempting to enable easy logging with file path {}", configFilePath);
-    }
     String derivedConfigFilePath = null;
     if (configFilePath != null && !configFilePath.isEmpty()) {
       // 1. Try to read the file at  configFilePath.
@@ -67,16 +63,9 @@ public class SFClientConfigParser {
     }
     if (derivedConfigFilePath != null) {
       try {
-        checkConfigFilePermissions(derivedConfigFilePath);
-
         File configFile = new File(derivedConfigFilePath);
         ObjectMapper objectMapper = new ObjectMapper();
         SFClientConfig clientConfig = objectMapper.readValue(configFile, SFClientConfig.class);
-        logger.info(
-            "Reading values logLevel {} and logPath {} from client configuration",
-            clientConfig.getCommonProps().getLogLevel(),
-            clientConfig.getCommonProps().getLogPath());
-
         Set<String> unknownParams = clientConfig.getUnknownParamKeys();
         if (!unknownParams.isEmpty()) {
           for (String unknownParam : unknownParams) {
@@ -120,31 +109,6 @@ public class SFClientConfigParser {
       // return empty path and move to step 4 of loadSFClientConfig()
       return "";
     }
-  }
-
-  private static void checkConfigFilePermissions(String derivedConfigFilePath) throws IOException {
-    try {
-      if (Constants.getOS() != Constants.OS.WINDOWS) {
-        // Check permissions of config file
-        if (checkGroupOthersWritePermissions(derivedConfigFilePath)) {
-          String error =
-              String.format(
-                  "Error due to other users having permission to modify the config file: %s",
-                  derivedConfigFilePath);
-          // TODO: SNOW-1503722 to change warning log to throw an error instead
-          logger.warn(error);
-        }
-      }
-    } catch (IOException e) {
-      throw e;
-    }
-  }
-
-  static Boolean checkGroupOthersWritePermissions(String configFilePath) throws IOException {
-    Set<PosixFilePermission> folderPermissions =
-        Files.getPosixFilePermissions(Paths.get(configFilePath));
-    return folderPermissions.contains(PosixFilePermission.GROUP_WRITE)
-        || folderPermissions.contains(PosixFilePermission.OTHERS_WRITE);
   }
 
   static String convertToWindowsPath(String filePath) {
