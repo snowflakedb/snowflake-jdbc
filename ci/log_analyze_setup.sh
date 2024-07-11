@@ -31,36 +31,19 @@ fi
 # The new complex password we use for jenkins test
 export SNOWFLAKE_TEST_PASSWORD_NEW="ThisIsRandomPassword123!"
 
-LOG_PROPERTY_FILE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.."; pwd)/src/test/resources/logging.properties
+LOG_PROPERTY_FILE_DOCKER=$(cd "$(dirname "${BASH_SOURCE[0]}")/.."; pwd)/src/test/resources/logging.properties
 
 export CLIENT_DRIVER_NAME=JDBC
 
 function setup_log_env() {
-    if ["$WORKSPACE" == "/mnt/workspace"]; then
-        CLIENT_LOG_DIR_PATH=$LOCAL_CLIENT_LOG_DIR_PATH_DOCKER
-        CLIENT_LOG_FILE_PATH=$CLIENT_LOG_FILE_PATH_DOCKER
-        CLIENT_KNOWN_SSM_FILE_PATH=$CLIENT_KNOWN_SSM_FILE_PATH_DOCKER
-    else
-        CLIENT_LOG_DIR_PATH=$LOCAL_CLIENT_LOG_DIR_PATH
-        CLIENT_LOG_FILE_PATH=$CLIENT_LOG_FILE_PATH
-        CLIENT_KNOWN_SSM_FILE_PATH=$CLIENT_KNOWN_SSM_FILE_PATH
-    fi
-    echo "[INFO] CLIENT_LOG_DIR_PATH=$CLIENT_LOG_DIR_PATH"  
-    echo "[INFO] CLIENT_LOG_FILE_PATH=$CLIENT_LOG_FILE_PATH"
-    echo "[INFO] CLIENT_KNOWN_SSM_FILE_PATH=$CLIENT_KNOWN_SSM_FILE_PATH"
-    echo "[INFO] Replace file handler for log file $LOG_PROPERTY_FILE"
+    sed -i "s|^java.util.logging.FileHandler.pattern.*|java.util.logging.FileHandler.pattern = $CLIENT_LOG_FILE_PATH_DOCKER|" ${LOG_PROPERTY_FILE_DOCKER}
 
-    sed  -i'' -e "s|^java.util.logging.FileHandler.pattern.*|java.util.logging.FileHandler.pattern = $CLIENT_LOG_FILE_PATH|" ${LOG_PROPERTY_FILE}
-
-    if [[ ! -d ${CLIENT_LOG_DIR_PATH} ]]; then
-      echo "[INFO] create clien log directory $CLIENT_LOG_DIR_PATH"
-      mkdir -p ${CLIENT_LOG_DIR_PATH}
+    if [[ ! -d ${LOCAL_CLIENT_LOG_DIR_PATH_DOCKER} ]]; then
+      mkdir -p ${LOCAL_CLIENT_LOG_DIR_PATH_DOCKER}
     fi
 
-    if [[ -f $CLIENT_KNOWN_SSM_FILE_PATH ]]; then
-        rm -f $CLIENT_KNOWN_SSM_FILE_PATH
+    if [[ -f $CLIENT_KNOWN_SSM_FILE_PATH_DOCKER ]]; then
+        rm -f $CLIENT_KNOWN_SSM_FILE_PATH_DOCKER
     fi
-
-    touch $CLIENT_KNOWN_SSM_FILE_PATH
-    echo "[INFO] finish setup log env"
+    touch $CLIENT_KNOWN_SSM_FILE_PATH_DOCKER
 }

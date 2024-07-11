@@ -1,12 +1,11 @@
 #!/bin/bash -e
 #
-# Test JDBC for Linux/MAC
+# Test JDBC for Linux
 #
 set -o pipefail
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export WORKSPACE=${WORKSPACE:-/mnt/workspace}
 export SOURCE_ROOT=${SOURCE_ROOT:-/mnt/host}
-MVNW_EXE=$SOURCE_ROOT/mvnw
 
 echo "[INFO] Download JDBC Integration test cases and libraries"
 source $THIS_DIR/download_artifact.sh
@@ -77,15 +76,15 @@ export MAVEN_OPTS="$MAVEN_OPTS -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=fa
 cd $SOURCE_ROOT
 
 # Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
-$MVNW_EXE --batch-mode --show-version dependency:go-offline
+mvn --batch-mode --show-version dependency:go-offline
 
 for c in "${CATEGORY[@]}"; do
     c=$(echo $c | sed 's/ *$//g')
     if [[ "$is_old_driver" == "true" ]]; then
         pushd TestOnly >& /dev/null
-            JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
+            JDBC_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
             echo "[INFO] Run JDBC $JDBC_VERSION tests"
-            $MVNW_EXE -DjenkinsIT \
+            mvn -DjenkinsIT \
                 -Djava.io.tmpdir=$WORKSPACE \
                 -Djacoco.skip.instrument=false \
                 -DtestCategory=net.snowflake.client.category.$c \
@@ -96,7 +95,7 @@ for c in "${CATEGORY[@]}"; do
     elif [[ "$c" == "TestCategoryFips" ]]; then
         pushd FIPS >& /dev/null
             echo "[INFO] Run Fips tests"
-            $MVNW_EXE -DjenkinsIT \
+            mvn -DjenkinsIT \
                 -Djava.io.tmpdir=$WORKSPACE \
                 -Djacoco.skip.instrument=false \
                 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
@@ -106,7 +105,7 @@ for c in "${CATEGORY[@]}"; do
         popd >& /dev/null
     else
         echo "[INFO] Run $c tests"
-        $MVNW_EXE -DjenkinsIT \
+        mvn -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
             -DtestCategory=net.snowflake.client.category.$c \
