@@ -238,9 +238,13 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(queryId, SQLState, vendorCode, session, this);
   }
 
+  /**
+   * use {@link SnowflakeSQLLoggedException#SnowflakeSQLLoggedException(String, SFBaseSession,
+   * String, String)}
+   */
+  @Deprecated
   public SnowflakeSQLLoggedException(SFBaseSession session, String SQLState, String reason) {
-    super(reason, SQLState);
-    sendTelemetryData(null, SQLState, -1, session, this);
+    this(null, session, SQLState, reason);
   }
 
   public SnowflakeSQLLoggedException(
@@ -283,9 +287,13 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(queryId, SQLState, vendorCode, session, this);
   }
 
+  /**
+   * use {@link SnowflakeSQLLoggedException#SnowflakeSQLLoggedException(String, SFBaseSession,
+   * ErrorCode, Object...)}
+   */
+  @Deprecated
   public SnowflakeSQLLoggedException(SFBaseSession session, ErrorCode errorCode, Object... params) {
-    super(errorCode, params);
-    sendTelemetryData(null, null, -1, session, this);
+    this(null, session, errorCode, params);
   }
 
   public SnowflakeSQLLoggedException(
@@ -299,9 +307,13 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
     sendTelemetryData(null, null, -1, session, this);
   }
 
+  /**
+   * use {@link SnowflakeSQLLoggedException#SnowflakeSQLLoggedException(String, SFBaseSession,
+   * String)}
+   */
+  @Deprecated
   public SnowflakeSQLLoggedException(SFBaseSession session, String reason) {
-    super(reason);
-    sendTelemetryData(null, null, -1, session, this);
+    this(null, session, reason);
   }
 
   public SnowflakeSQLLoggedException(String queryId, SFBaseSession session, String reason) {
