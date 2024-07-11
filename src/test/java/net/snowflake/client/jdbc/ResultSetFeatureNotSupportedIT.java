@@ -18,10 +18,11 @@ import org.junit.experimental.categories.Category;
 public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
   @Test
   public void testQueryResultSetNotSupportedException() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement();
-        ResultSet resultSet = statement.executeQuery("select 1")) {
-      checkFeatureNotSupportedException(resultSet);
+    try (Connection connection = getConnection()) {
+      try (Statement statement = connection.createStatement()) {
+        ResultSet resultSet = statement.executeQuery("select 1");
+        checkFeatureNotSupportedException(resultSet);
+      }
     }
   }
 

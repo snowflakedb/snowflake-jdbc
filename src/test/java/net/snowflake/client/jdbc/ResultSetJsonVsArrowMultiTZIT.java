@@ -5,7 +5,6 @@ package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -45,16 +44,16 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
   public static Connection getConnection(int injectSocketTimeout) throws SQLException {
     Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
 
-    try (Statement statement = connection.createStatement()) {
-      statement.execute(
-          "alter session set "
-              + "TIMEZONE='America/Los_Angeles',"
-              + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
-              + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-    }
+    Statement statement = connection.createStatement();
+    statement.execute(
+        "alter session set "
+            + "TIMEZONE='America/Los_Angeles',"
+            + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
+            + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
+            + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
+            + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
+            + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+    statement.close();
     return connection;
   }
 
@@ -66,12 +65,17 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
 
   private Connection init(String table, String column, String values) throws SQLException {
     Connection con = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    try (Statement statement = con.createStatement()) {
-      statement.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-      statement.execute("create or replace table " + table + " " + column);
-      statement.execute("insert into " + table + " values " + values);
-    }
+    con.createStatement()
+        .execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
+    con.createStatement().execute("create or replace table " + table + " " + column);
+    con.createStatement().execute("insert into " + table + " values " + values);
     return con;
+  }
+
+  private void finish(String table, Connection con) throws SQLException {
+    con.createStatement().execute("drop table " + table);
+    con.close();
+    System.clearProperty("user.timezone");
   }
 
   @Test
@@ -112,25 +116,21 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a date)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement()) {
-      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
-        int i = 0;
-        while (i < cases.length) {
-          assertTrue(rs.next());
-          if (i == cases.length - 2) {
-            assertEquals("0001-01-01", rs.getDate(1).toString());
-          } else {
-            assertEquals(cases[i], rs.getDate(1).toString());
-          }
-          i++;
-        }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
+    Connection con = init(table, column, values);
+    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
+    int i = 0;
+    while (i < cases.length) {
+      rs.next();
+      if (i == cases.length - 2) {
+        assertEquals("0001-01-01", rs.getDate(1).toString());
+      } else {
+        assertEquals(cases[i], rs.getDate(1).toString());
       }
-      statement.execute("drop table " + table);
-      System.clearProperty("user.timezone");
+      i++;
     }
+    rs.next();
+    assertNull(rs.getString(1));
+    finish(table, con);
   }
 
   public void testTimeWithScale(String[] times, int scale) throws SQLException {
@@ -138,17 +138,15 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a time(" + scale + "))";
     String values = "('" + StringUtils.join(times, "'),('") + "'), (null)";
 
-    try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement();
-        ResultSet rs = statement.executeQuery("select * from " + table)) {
-      for (int i = 0; i < times.length; i++) {
-        assertTrue(rs.next());
-        // Java Time class does not have nanoseconds
-        assertEquals("00:01:23", rs.getString(1));
-      }
-      assertTrue(rs.next());
-      assertNull(rs.getTime(1));
+    Connection con = init(table, column, values);
+    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
+    for (int i = 0; i < times.length; i++) {
+      rs.next();
+      // Java Time class does not have nanoseconds
+      assertEquals("00:01:23", rs.getString(1));
     }
+    rs.next();
+    assertNull(rs.getTime(1));
   }
 
   @Test
@@ -186,20 +184,16 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a timestamp_ntz(" + scale + "))";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement()) {
-      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
-        int i = 0;
-        while (i < cases.length) {
-          assertTrue(rs.next());
-          assertEquals(results[i++], rs.getString(1));
-        }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
-      }
-      statement.execute("drop table " + table);
-      System.clearProperty("user.timezone");
+    Connection con = init(table, column, values);
+    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
+    int i = 0;
+    while (i < cases.length) {
+      rs.next();
+      assertEquals(results[i++], rs.getString(1));
     }
+    rs.next();
+    assertNull(rs.getString(1));
+    finish(table, con);
   }
 
   @Test
@@ -220,20 +214,15 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     String column = "(a timestamp_ntz)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    try (Connection con = init(table, column, values);
-        Statement statement = con.createStatement()) {
-      try (ResultSet rs = statement.executeQuery("select * from " + table)) {
-        int i = 0;
-        while (i < cases.length) {
-          assertTrue(rs.next());
-          assertEquals(cases[i++], rs.getTimestamp(1).toString());
-        }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
-      } finally {
-        statement.execute("drop table " + table);
-        System.clearProperty("user.timezone");
-      }
+    Connection con = init(table, column, values);
+    ResultSet rs = con.createStatement().executeQuery("select * from " + table);
+    int i = 0;
+    while (i < cases.length) {
+      rs.next();
+      assertEquals(cases[i++], rs.getTimestamp(1).toString());
     }
+    rs.next();
+    assertNull(rs.getString(1));
+    finish(table, con);
   }
 }
