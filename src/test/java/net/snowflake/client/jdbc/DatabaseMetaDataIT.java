@@ -32,8 +32,6 @@ import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -65,29 +63,15 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   public static final int EXPECTED_MAX_BINARY_LENGTH = 8388608;
 
-  private static Connection con;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    con = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (con != null && !con.isClosed()) {
-      con.close();
-    }
-  }
-
   @Test
   public void testGetConnection() throws SQLException {
-    DatabaseMetaData metaData = con.getMetaData();
-    assertEquals(con, metaData.getConnection());
+    DatabaseMetaData metaData = connection.getMetaData();
+    assertEquals(connection, metaData.getConnection());
   }
 
   @Test
   public void testDatabaseAndDriverInfo() throws SQLException {
-    DatabaseMetaData metaData = con.getMetaData();
+    DatabaseMetaData metaData = connection.getMetaData();
 
     // identifiers
     assertEquals("Snowflake", metaData.getDatabaseProductName());
@@ -105,7 +89,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetCatalogs() throws SQLException {
-    DatabaseMetaData metaData = con.getMetaData();
+    DatabaseMetaData metaData = connection.getMetaData();
     assertEquals(".", metaData.getCatalogSeparator());
     assertEquals("database", metaData.getCatalogTerm());
 
@@ -159,8 +143,8 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   @Test
   public void testGetSchemas() throws Throwable {
     // CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = false
-    DatabaseMetaData metaData = con.getMetaData();
-    String currentSchema = con.getSchema();
+    DatabaseMetaData metaData = connection.getMetaData();
+    String currentSchema = connection.getSchema();
     assertEquals("schema", metaData.getSchemaTerm());
     Set<String> schemas = new HashSet<>();
     try (ResultSet resultSet = metaData.getSchemas()) {
@@ -175,7 +159,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
     assertThat(schemas.size(), greaterThanOrEqualTo(1));
 
     Set<String> schemasInDb = new HashSet<>();
-    try (ResultSet resultSet = metaData.getSchemas(con.getCatalog(), "%")) {
+    try (ResultSet resultSet = metaData.getSchemas(connection.getCatalog(), "%")) {
       while (resultSet.next()) {
         String schema = resultSet.getString(1);
         if (currentSchema.equals(schema) || !TestUtil.isSchemaGeneratedInTests(schema)) {
@@ -208,7 +192,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetTableTypes() throws Throwable {
-    DatabaseMetaData metaData = con.getMetaData();
+    DatabaseMetaData metaData = connection.getMetaData();
     try (ResultSet resultSet = metaData.getTableTypes()) {
       Set<String> types = new HashSet<>();
       while (resultSet.next()) {
@@ -224,16 +208,16 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTables() throws Throwable {
     Set<String> tables = null;
-    try (Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       final String targetTable = "T0";
       final String targetView = "V0";
       try {
         statement.execute("create or replace table " + targetTable + "(C1 int)");
         statement.execute("create or replace view " + targetView + " as select 1 as C");
 
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
 
         // match table
         try (ResultSet resultSet =
@@ -276,15 +260,15 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetPrimarykeys() throws Throwable {
-    try (Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       final String targetTable = "T0";
       try {
         statement.execute(
             "create or replace table " + targetTable + "(C1 int primary key, C2 string)");
 
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
 
         try (ResultSet resultSet = metaData.getPrimaryKeys(database, schema, targetTable)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PRIMARY_KEYS);
@@ -344,9 +328,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetImportedKeys() throws Throwable {
-    try (Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
       try {
@@ -359,7 +343,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
                 + targetTable1
                 + ")");
 
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
 
         try (ResultSet resultSet = metaData.getImportedKeys(database, schema, targetTable2)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
@@ -389,9 +373,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetExportedKeys() throws Throwable {
-    try (Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
       try {
@@ -404,7 +388,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
                 + targetTable1
                 + ")");
 
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
 
         try (ResultSet resultSet = metaData.getExportedKeys(database, schema, targetTable1)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
@@ -435,9 +419,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetCrossReferences() throws Throwable {
-    try (Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       final String targetTable1 = "T0";
       final String targetTable2 = "T1";
       try {
@@ -450,7 +434,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
                 + targetTable1
                 + ")");
 
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
 
         try (ResultSet resultSet =
             metaData.getCrossReference(
@@ -483,16 +467,16 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetObjectsDoesNotExists() throws Throwable {
-    try (Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       final String targetTable = "T0";
       final String targetView = "V0";
       try {
         statement.execute("create or replace table " + targetTable + "(C1 int)");
         statement.execute("create or replace view " + targetView + " as select 1 as C");
 
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
 
         // sanity check if getTables really works.
         try (ResultSet resultSet = metaData.getTables(database, schema, "%", null)) {
@@ -544,7 +528,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testTypeInfo() throws SQLException {
-    DatabaseMetaData metaData = con.getMetaData();
+    DatabaseMetaData metaData = connection.getMetaData();
     ResultSet resultSet = metaData.getTypeInfo();
     resultSet.next();
     assertEquals("NUMBER", resultSet.getString(1));
@@ -567,7 +551,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testProcedure() throws Throwable {
-    DatabaseMetaData metaData = con.getMetaData();
+    DatabaseMetaData metaData = connection.getMetaData();
     assertEquals("procedure", metaData.getProcedureTerm());
     // no stored procedure support
     assertTrue(metaData.supportsStoredProcedures());
@@ -582,13 +566,13 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetTablePrivileges() throws Exception {
-    try (Statement statement = con.createStatement()) {
-      String database = con.getCatalog();
-      String schema = con.getSchema();
+    try (Statement statement = connection.createStatement()) {
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       try {
         statement.execute(
             "create or replace table PRIVTEST(colA string, colB number, colC " + "timestamp)");
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
         try (ResultSet resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST")) {
           verifyResultSetMetaDataColumns(
               resultSet, DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES);
@@ -636,14 +620,14 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testGetProcedures() throws SQLException {
-    try (Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
-        String database = con.getCatalog();
-        String schema = con.getSchema();
+        String database = connection.getCatalog();
+        String schema = connection.getSchema();
 
         /* Create a procedure and put values into it */
         statement.execute(PI_PROCEDURE);
-        DatabaseMetaData metaData = con.getMetaData();
+        DatabaseMetaData metaData = connection.getMetaData();
         /* Call getFunctionColumns on FUNC111 and since there's no parameter name, get all rows back */
         try (ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI")) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURES);
@@ -664,7 +648,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testDatabaseMetadata() throws SQLException {
-    DatabaseMetaData metaData = con.getMetaData();
+    DatabaseMetaData metaData = connection.getMetaData();
 
     String dbVersion = metaData.getDatabaseProductVersion();
     Matcher m = VERSION_PATTERN.matcher(dbVersion);
@@ -820,7 +804,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testOtherEmptyTables() throws Throwable {
-    DatabaseMetaData metaData = con.getMetaData();
+    DatabaseMetaData metaData = connection.getMetaData();
 
     // index is not supported.
     try (ResultSet resultSet = metaData.getIndexInfo(null, null, null, true, true)) {
@@ -834,7 +818,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
   @Test
   public void testFeatureNotSupportedException() throws Throwable {
-    DatabaseMetaData metaData = con.getMetaData();
+    DatabaseMetaData metaData = connection.getMetaData();
     expectFeatureNotSupportedException(
         () -> metaData.getBestRowIdentifier(null, null, null, 0, true));
     expectFeatureNotSupportedException(() -> metaData.getVersionColumns(null, null, null));

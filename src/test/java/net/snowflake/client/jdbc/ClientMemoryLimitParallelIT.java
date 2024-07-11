@@ -64,30 +64,30 @@ public class ClientMemoryLimitParallelIT {
           + rowCount
           + "));";
 
-  private static Connection con;
+  private static Connection connection;
 
   @BeforeClass
   public static void setUpConnection() throws SQLException {
-    con = getConnection();
+    connection = getConnection();
   }
 
   @AfterClass
   public static void closeConnection() throws SQLException {
-    if (con != null && !con.isClosed()) {
-      con.close();
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
     }
   }
 
   @Before
   public void setUp() throws SQLException {
-    try (Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(createTestTableSQL);
     }
   }
 
   @After
   public void tearDown() throws SQLException {
-    try (Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("drop table if exists testtable_cml");
     }
   }
@@ -140,7 +140,7 @@ public class ClientMemoryLimitParallelIT {
   @Test
   public void testQueryNotHanging() throws SQLException {
     Properties paramProperties = new Properties();
-    try (Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       queryRows(statement, 100, 160);
     }
   }

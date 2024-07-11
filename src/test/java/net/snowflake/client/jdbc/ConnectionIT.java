@@ -47,9 +47,7 @@ import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -70,20 +68,6 @@ public class ConnectionIT extends BaseJDBCTest {
   String errorMessage = null;
 
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
-
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
 
   @Test
   public void testSimpleConnection() throws SQLException {
