@@ -159,7 +159,6 @@ public class BindUploader implements Closeable {
     int nano = times.right;
 
     Timestamp v1 = new Timestamp(sec * 1000);
-    ZoneOffset offsetId;
     // For timestamp_ntz, use UTC timezone. For timestamp_ltz, use the local timezone to minimise
     // the gap.
     if ("TIMESTAMP_LTZ".equals(type)) {
@@ -167,10 +166,9 @@ public class BindUploader implements Closeable {
       cal.setTimeZone(tz);
       cal.clear();
       timestampFormat.setCalendar(cal);
-      offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.ofEpochMilli(v1.getTime()));
-    } else {
-      offsetId = ZoneOffset.UTC;
     }
+
+    ZoneOffset offsetId = ZoneId.systemDefault().getRules().getOffset(Instant.now());
 
     return timestampFormat.format(v1) + String.format("%09d", nano) + " " + offsetId;
   }
