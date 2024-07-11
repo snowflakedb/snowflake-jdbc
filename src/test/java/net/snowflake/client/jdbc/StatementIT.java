@@ -28,8 +28,6 @@ import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,20 +38,6 @@ import org.junit.rules.TemporaryFolder;
 @Category(TestCategoryStatement.class)
 public class StatementIT extends BaseJDBCTest {
   protected static String queryResultFormat = "json";
-
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
 
   public static Connection getConnection() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection();
