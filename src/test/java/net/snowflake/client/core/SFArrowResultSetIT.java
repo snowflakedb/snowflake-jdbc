@@ -89,17 +89,17 @@ public class SFArrowResultSetIT {
   /** temporary folder to store result files */
   @Rule public TemporaryFolder resultFolder = new TemporaryFolder();
 
-  private static Connection con;
+  private static Connection connection;
 
   @BeforeClass
   public static void setUpConnection() throws SQLException {
-    con = getConnection();
+    connection = getConnection();
   }
 
   @AfterClass
   public static void closeConnection() throws SQLException {
-    if (con != null && !con.isClosed()) {
-      con.close();
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
     }
   }
 
@@ -612,7 +612,7 @@ public class SFArrowResultSetIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
   public void testSortedResultChunkWithStructVectors() throws Throwable {
-    try (Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table teststructtimestamp (t1 timestamp_ltz)");
       try (ResultSet rs = statement.executeQuery("select * from teststructtimestamp")) {
         List<SnowflakeResultSetSerializable> resultSetSerializables =
@@ -683,7 +683,7 @@ public class SFArrowResultSetIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = SkipOnThinJar.class)
   public void testSortedResultChunk() throws Throwable {
-    try (Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(
           "create or replace table alltypes (i1 int, d1 date, b1 bigint, f1 float, s1 smallint, t1 tinyint, b2 binary, t2 text, b3 boolean, d2 decimal)");
       try (ResultSet rs = statement.executeQuery("select * from alltypes")) {

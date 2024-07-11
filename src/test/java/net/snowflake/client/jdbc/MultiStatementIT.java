@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.AbstractDriverIT.getConnection;
 import static net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -13,7 +12,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -21,10 +19,7 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 
 /** Multi Statement tests */
@@ -32,26 +27,11 @@ import org.junit.experimental.categories.Category;
 public class MultiStatementIT extends BaseJDBCTest {
   protected static String queryResultFormat = "json";
 
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
-
-  public static Connection getConnection() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection();
-    try (Statement stmt = conn.createStatement()) {
+  @Before
+  public void setQueryResultFormat() throws SQLException {
+    try (Statement stmt = connection.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }
-    return conn;
   }
 
   @Test
@@ -266,8 +246,7 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtCommitRollback() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       statement.execute("create or replace table test_multi (cola string)");
       statement.execute("begin");
@@ -321,8 +300,7 @@ public class MultiStatementIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtCommitRollbackNoAutocommit() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
       statement.execute("create or replace table test_multi (cola string)");
       statement.execute("insert into test_multi values ('abc')");
