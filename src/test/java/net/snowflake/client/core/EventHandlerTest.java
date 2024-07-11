@@ -62,11 +62,12 @@ public class EventHandlerTest {
   @Test
   public void testEventFlusher() {
     EventHandler handler = new EventHandler(2, 1000);
-    assertEquals(0, handler.getBufferSize());
+    handler.startFlusher();
     handler.triggerBasicEvent(Event.EventType.STATE_TRANSITION, "test event");
-    assertEquals(1, handler.getBufferSize());
+    assertEquals(handler.getBufferSize(), 1);
     handler.triggerBasicEvent(Event.EventType.STATE_TRANSITION, "test event 2");
     // buffer should flush when max entries is reached
-    assertEquals(0, handler.getBufferSize());
+    assertEquals(handler.getBufferSize(), 0);
+    handler.stopFlusher();
   }
 }
