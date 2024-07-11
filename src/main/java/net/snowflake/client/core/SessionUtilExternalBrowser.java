@@ -256,6 +256,10 @@ public class SessionUtilExternalBrowser {
     return Base64.getEncoder().encodeToString(randomness);
   }
 
+  private int getBrowserResponseTimeout() {
+    return loginInput.getBrowserResponseTimeout() * 1000;
+  }
+
   /**
    * Authenticate
    *
@@ -265,6 +269,7 @@ public class SessionUtilExternalBrowser {
   void authenticate() throws SFException, SnowflakeSQLException {
     ServerSocket ssocket = this.getServerSocket();
     try {
+      ssocket.setSoTimeout(getBrowserResponseTimeout());
       // main procedure
       int port = this.getLocalPort(ssocket);
       logger.debug("Listening localhost: {}", port);
