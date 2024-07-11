@@ -46,7 +46,6 @@ echo [INFO] Database:  %SNOWFLAKE_TEST_DATABASE%
 echo [INFO] Schema:    %SNOWFLAKE_TEST_SCHEMA%
 echo [INFO] Warehouse: %SNOWFLAKE_TEST_WAREHOUSE%
 echo [INFO] Role:      %SNOWFLAKE_TEST_ROLE%
-echo [INFO] PROVIDER:  %CLOUD_PROVIDER%
 
 echo [INFO] Creating schema %SNOWFLAKE_TEST_SCHEMA%
 pushd %GITHUB_WORKSPACE%\ci\container

@@ -47,7 +47,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningNotOnAWS;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -1170,13 +1169,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
-  /**
-   * Test case for the method testDownloadStreamWithFileNotFoundException. This test verifies that a
-   * SQLException is thrown when attempting to download a file that does not exist. It verifies that
-   * the error code is ErrorCode.S3_OPERATION_ERROR so only runs on AWS.
-   */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnAWS.class)
   public void testDownloadStreamWithFileNotFoundException() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
