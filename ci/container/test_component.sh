@@ -76,7 +76,7 @@ export MAVEN_OPTS="$MAVEN_OPTS -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=fa
 cd $SOURCE_ROOT
 
 # Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
-mvn --batch-mode --show-version dependency:go-offline
+mvn --batch-mode --show-version dependency:resolve-plugins
 
 for c in "${CATEGORY[@]}"; do
     c=$(echo $c | sed 's/ *$//g')

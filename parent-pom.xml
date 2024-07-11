@@ -488,18 +488,6 @@
         <version>${awaitility.version}</version>
         <scope>test</scope>
       </dependency>
-      <dependency>
-        <groupId>org.apache.maven.surefire</groupId>
-        <artifactId>surefire-junit4</artifactId>
-        <version>${version.plugin.surefire}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.maven.surefire</groupId>
-        <artifactId>common-junit48</artifactId>
-        <version>${version.plugin.surefire}</version>
-        <scope>test</scope>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -736,15 +724,6 @@
     <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
-    </dependency>
-    <!-- surefire dependencies are autodetected by the test plugins - we want to have them installed explicitly -->
-    <dependency>
-      <groupId>org.apache.maven.surefire</groupId>
-      <artifactId>surefire-junit4</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven.surefire</groupId>
-      <artifactId>common-junit48</artifactId>
     </dependency>
   </dependencies>
 </project>
