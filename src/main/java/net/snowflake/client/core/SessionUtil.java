@@ -1154,16 +1154,6 @@ public class SessionUtil {
               loginInput.getHttpClientSettingsKey());
 
       // step 5
-      validateSAML(responseHtml, loginInput);
-    } catch (IOException | URISyntaxException ex) {
-      handleFederatedFlowError(loginInput, ex);
-    }
-    return responseHtml;
-  }
-
-  private static void validateSAML(String responseHtml, SFLoginInput loginInput)
-      throws SnowflakeSQLException, MalformedURLException {
-    if (!loginInput.getDisableSamlURLCheck()) {
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
       if (!isPrefixEqual(postBackUrl, loginInput.getServerUrl())) {
         URL idpDestinationUrl = new URL(postBackUrl);
@@ -1177,13 +1167,18 @@ public class SessionUtil {
             clientDestinationHostName,
             idpDestinationHostName);
 
-        // Session is in process of getting created, so exception constructor takes in null
+        // Session is in process of getting created, so exception constructor takes in null session
+        // value
         throw new SnowflakeSQLLoggedException(
             null,
             ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(),
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION);
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION
+            /* session = */ );
       }
+    } catch (IOException | URISyntaxException ex) {
+      handleFederatedFlowError(loginInput, ex);
     }
+    return responseHtml;
   }
 
   /**
