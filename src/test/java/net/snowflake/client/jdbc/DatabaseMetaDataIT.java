@@ -59,10 +59,6 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           + "    $$\n"
           + "    ;";
 
-  public static final int EXPECTED_MAX_CHAR_LENGTH = 16777216;
-
-  public static final int EXPECTED_MAX_BINARY_LENGTH = 8388608;
-
   @Test
   public void testGetConnection() throws SQLException {
     try (Connection connection = getConnection()) {
@@ -702,9 +698,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       assertEquals("$", metaData.getExtraNameCharacters());
       assertEquals("\"", metaData.getIdentifierQuoteString());
       assertEquals(0, getSizeOfResultSet(metaData.getIndexInfo(null, null, null, true, true)));
-      assertEquals(EXPECTED_MAX_BINARY_LENGTH, metaData.getMaxBinaryLiteralLength());
+      assertEquals(8388608, metaData.getMaxBinaryLiteralLength());
       assertEquals(255, metaData.getMaxCatalogNameLength());
-      assertEquals(EXPECTED_MAX_CHAR_LENGTH, metaData.getMaxCharLiteralLength());
+      assertEquals(16777216, metaData.getMaxCharLiteralLength());
       assertEquals(255, metaData.getMaxColumnNameLength());
       assertEquals(0, metaData.getMaxColumnsInGroupBy());
       assertEquals(0, metaData.getMaxColumnsInIndex());

@@ -68,6 +68,9 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   // timeout in seconds
   private int queryTimeout = 0;
 
+  // max field size limited to 16MB
+  private final int maxFieldSize = 16777216;
+
   SFBaseStatement sfBaseStatement;
 
   private boolean poolable;
@@ -637,7 +640,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
   public int getMaxFieldSize() throws SQLException {
     logger.trace("getMaxFieldSize()", false);
     raiseSQLExceptionIfStatementIsClosed();
-    return connection.getMetaData().getMaxCharLiteralLength();
+    return maxFieldSize;
   }
 
   @Override
