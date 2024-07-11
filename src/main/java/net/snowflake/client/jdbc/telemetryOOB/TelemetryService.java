@@ -15,7 +15,6 @@ import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
-import net.snowflake.client.util.Stopwatch;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -109,28 +108,24 @@ public class TelemetryService {
 
   public static void enable() {
     synchronized (enableLock) {
-      logger.debug("Enabling out-of-band telemetry", false);
       enabled = true;
     }
   }
 
   public static void disable() {
     synchronized (enableLock) {
-      logger.debug("Disabling out-of-band telemetry", false);
       enabled = false;
     }
   }
 
   public static void enableHTAP() {
     synchronized (enableHTAPLock) {
-      logger.debug("Enabling out-of-band HTAP telemetry");
       htapEnabled = true;
     }
   }
 
   public static void disableHTAP() {
     synchronized (enableHTAPLock) {
-      logger.debug("Disabling out-of-band HTAP telemetry");
       htapEnabled = false;
     }
   }
@@ -314,7 +309,6 @@ public class TelemetryService {
   }
 
   public void setDeployment(TELEMETRY_SERVER_DEPLOYMENT deployment) {
-    logger.debug("Setting out-of-band telemetry sever deployment to {}", deployment);
     serverDeployment = deployment;
   }
 
@@ -427,13 +421,13 @@ public class TelemetryService {
 
       if (!instance.isDeploymentEnabled()) {
         // skip the disabled deployment
-        logger.debug("Skip the disabled deployment: ", instance.serverDeployment.name);
+        logger.debug("skip the disabled deployment: ", instance.serverDeployment.name);
         return;
       }
 
       if (!instance.serverDeployment.url.matches(TELEMETRY_SERVER_URL_PATTERN)) {
         // skip the disabled deployment
-        logger.debug("Ignore invalid url: ", instance.serverDeployment.url);
+        logger.debug("ignore invalid url: ", instance.serverDeployment.url);
         return;
       }
 
@@ -441,10 +435,7 @@ public class TelemetryService {
     }
 
     private void uploadPayload() {
-      Stopwatch stopwatch = new Stopwatch();
-      stopwatch.start();
-      logger.debugNoMask(
-          "Running out-of-band telemetry uploader. The payload is: " + payloadLogStr);
+      logger.debugNoMask("Running telemetry uploader. The payload is: " + payloadLogStr);
       CloseableHttpResponse response = null;
       boolean success = true;
 
@@ -459,14 +450,13 @@ public class TelemetryService {
           int statusCode = response.getStatusLine().getStatusCode();
 
           if (statusCode == 200) {
-            logger.debug("Out-of-band telemetry server request success: {}", response, true);
+            logger.debug("telemetry server request success: {}", response, true);
             instance.count();
           } else if (statusCode == 429) {
-            logger.debug(
-                "Out-of-band telemetry server request hit server cap on response: {}", response);
+            logger.debug("telemetry server request hit server cap on response: {}", response);
             instance.serverFailureCnt.incrementAndGet();
           } else {
-            logger.debug("Out-of-band telemetry server request error: {}", response, true);
+            logger.debug("telemetry server request error: {}", response, true);
             instance.lastClientError = response.toString();
             instance.clientFailureCnt.incrementAndGet();
             success = false;
@@ -477,7 +467,7 @@ public class TelemetryService {
       } catch (Exception e) {
         // exception from here is always captured
         logger.debug(
-            "Out-of-band telemetry request failed, Exception response: {}, exception: {}",
+            "Telemetry request failed, Exception" + "response: {}, exception: {}",
             response,
             e.getMessage());
         String res = "null";
@@ -488,16 +478,7 @@ public class TelemetryService {
         instance.clientFailureCnt.incrementAndGet();
         success = false;
       } finally {
-        stopwatch.stop();
-        logger.debug(
-            "Out-of-band telemetry request success: {} and clean the current queue. It took {} ms."
-                + " Total successful events: {}, total unsuccessful events: {} (client failures: {}, server failures: {})",
-            success,
-            stopwatch.elapsedMillis(),
-            instance.eventCnt,
-            instance.clientFailureCnt.get() + instance.serverFailureCnt.get(),
-            instance.clientFailureCnt,
-            instance.serverFailureCnt);
+        logger.debug("Telemetry request success={} " + "and clean the current queue", success);
       }
     }
   }

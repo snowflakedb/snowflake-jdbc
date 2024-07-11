@@ -46,8 +46,7 @@ import org.apache.http.entity.StringEntity;
  * user can type IdP username and password. 4. Return token and proof key to the GS to gain access.
  */
 public class SessionUtilExternalBrowser {
-  private static final SFLogger logger =
-      SFLoggerFactory.getLogger(SessionUtilExternalBrowser.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilExternalBrowser.class);
 
   public interface AuthExternalBrowserHandlers {
     // build a HTTP post object
@@ -203,14 +202,14 @@ public class SessionUtilExternalBrowser {
               0,
               loginInput.getHttpClientSettingsKey());
 
-      logger.debug("Authenticator-request response: {}", theString);
+      logger.debug("authenticator-request response: {}", theString);
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("Response: {}", theString);
+        logger.debug("response = {}", theString);
         String errorCode = jsonNode.path("code").asText();
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
@@ -241,7 +240,7 @@ public class SessionUtilExternalBrowser {
 
       String consoleLoginUrl = consoleLoginUriBuilder.build().toURL().toString();
 
-      logger.debug("Console login url: {}", consoleLoginUrl);
+      logger.debug("console login url: {}", consoleLoginUrl);
 
       return consoleLoginUrl;
     } catch (Exception ex) {
@@ -267,7 +266,7 @@ public class SessionUtilExternalBrowser {
     try {
       // main procedure
       int port = this.getLocalPort(ssocket);
-      logger.debug("Listening localhost: {}", port);
+      logger.debug("Listening localhost:{}", port);
 
       if (loginInput.getDisableConsoleLogin()) {
         // Access GS to get SSO URL

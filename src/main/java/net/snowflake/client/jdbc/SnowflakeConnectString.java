@@ -21,7 +21,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 public class SnowflakeConnectString implements Serializable {
   private static final long serialVersionUID = 1L;
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectString.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectString.class);
 
   private final String scheme;
   private final String host;

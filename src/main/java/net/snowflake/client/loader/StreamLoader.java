@@ -30,7 +30,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /** Stream Loader */
 public class StreamLoader implements Loader, Runnable {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(StreamLoader.class);
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(StreamLoader.class);
 
   private static final String SYSTEM_PARAMETER_PREFIX = "net.snowflake.client.loader.";
 
@@ -333,7 +333,7 @@ public class StreamLoader implements Loader, Runnable {
   /** Starts the loader */
   @Override
   public void start() {
-    logger.debug("Start Loading", false);
+    LOGGER.debug("Start Loading", false);
     // validate parameters
     validateParameters();
 
@@ -351,10 +351,10 @@ public class StreamLoader implements Loader, Runnable {
 
       try {
         if (_startTransaction) {
-          logger.debug("Begin Transaction", false);
+          LOGGER.debug("Begin Transaction", false);
           _processConn.createStatement().execute("begin transaction");
         } else {
-          logger.debug("No Transaction started", false);
+          LOGGER.debug("No Transaction started", false);
         }
       } catch (SQLException ex) {
         abort(new Loader.ConnectionError("Failed to start Transaction", Utils.getCause(ex)));
@@ -366,7 +366,7 @@ public class StreamLoader implements Loader, Runnable {
 
       try {
         if (_before != null) {
-          logger.debug("Running Execute Before SQL", false);
+          LOGGER.debug("Running Execute Before SQL", false);
           _processConn.createStatement().execute(_before);
         }
       } catch (SQLException ex) {
@@ -379,14 +379,14 @@ public class StreamLoader implements Loader, Runnable {
   }
 
   private void validateParameters() {
-    logger.debug("Validate Parameters", false);
+    LOGGER.debug("Validate Parameters", false);
     if (Operation.INSERT != this._op) {
       if (this._keys == null || this._keys.isEmpty()) {
         throw new ConnectionError("Updating operations require keys");
       }
     }
     setPropertyBySystemProperty();
-    logger.debug(
+    LOGGER.debug(
         "Database Name: {}, Schema Name: {}, Table Name: {}, "
             + "Remote Stage: {}, Columns: {}, Keys: {}, Operation: {}, "
             + "Start Transaction: {}, OneBatch: {}, Truncate Table: {}, "
@@ -427,7 +427,7 @@ public class StreamLoader implements Loader, Runnable {
   public void abort(RuntimeException t) {
     synchronized (this) {
       // Abort once, keep first error.
-      logger.debug("Exception received. Aborting...", t);
+      LOGGER.debug("Exception received. Aborting...", t);
 
       if (_aborted.getAndSet(true)) {
         return;
@@ -451,14 +451,14 @@ public class StreamLoader implements Loader, Runnable {
 
   @Override
   public void rollback() {
-    logger.debug("Rollback", false);
+    LOGGER.debug("Rollback", false);
     try {
       terminate();
 
-      logger.debug("Rollback", false);
+      LOGGER.debug("Rollback", false);
       this._processConn.createStatement().execute("rollback");
     } catch (SQLException ex) {
-      logger.error(ex.getMessage(), ex);
+      LOGGER.error(ex.getMessage(), ex);
     }
   }
 
@@ -478,7 +478,7 @@ public class StreamLoader implements Loader, Runnable {
     byte[] data = null;
     try {
       if (!_active.get()) {
-        logger.debug("Inactive loader. Row ignored", false);
+        LOGGER.debug("Inactive loader. Row ignored", false);
         return;
       }
 
@@ -502,7 +502,7 @@ public class StreamLoader implements Loader, Runnable {
     if (_batchRowSize > 0
         && _listener.getSubmittedRowCount() > 0
         && (_listener.getSubmittedRowCount() % _batchRowSize) == 0) {
-      logger.debug(
+      LOGGER.debug(
           "Flushing Queue: Submitted Row Count: {}, Batch Row Size: {}",
           _listener.getSubmittedRowCount(),
           _batchRowSize);
@@ -522,7 +522,7 @@ public class StreamLoader implements Loader, Runnable {
 
   /** Initializes queues */
   private void initQueues() {
-    logger.debug("Init Queues", false);
+    LOGGER.debug("Init Queues", false);
     if (_active.getAndSet(true)) {
       // NOP if the loader is already active
       return;
@@ -546,7 +546,7 @@ public class StreamLoader implements Loader, Runnable {
   /** Flushes data by joining PUT and PROCESS queues */
   private void flushQueues() {
     // Terminate data loading thread.
-    logger.debug("Flush Queues", false);
+    LOGGER.debug("Flush Queues", false);
     try {
       _queueData.put(new byte[0]);
       _thread.join(10000);
@@ -556,7 +556,7 @@ public class StreamLoader implements Loader, Runnable {
       }
     } catch (Exception ex) {
       String msg = "Failed to join StreamLoader queue: " + ex.getMessage();
-      logger.error(msg, ex);
+      LOGGER.error(msg, ex);
       throw new DataError(msg, Utils.getCause(ex));
     }
     // Put last stage on queue
@@ -597,7 +597,7 @@ public class StreamLoader implements Loader, Runnable {
       // TODO: could be replaced with TRUNCATE?
       _processConn.createStatement().execute("DELETE FROM " + this.getFullTableName());
     } catch (SQLException ex) {
-      logger.error(ex.getMessage(), ex);
+      LOGGER.error(ex.getMessage(), ex);
       abort(new Loader.ConnectionError(Utils.getCause(ex)));
     }
   }
@@ -615,7 +615,7 @@ public class StreamLoader implements Loader, Runnable {
         this.writeBytes(data);
       }
     } catch (Exception ex) {
-      logger.error(ex.getMessage(), ex);
+      LOGGER.error(ex.getMessage(), ex);
       abort(new Loader.ConnectionError(Utils.getCause(ex)));
     }
   }
@@ -642,25 +642,25 @@ public class StreamLoader implements Loader, Runnable {
    */
   @Override
   public void finish() throws Exception {
-    logger.debug("Finish Loading", false);
+    LOGGER.debug("Finish Loading", false);
     flushQueues();
 
     if (_is_last_finish_call) {
       try {
         if (_after != null) {
-          logger.debug("Running Execute After SQL", false);
+          LOGGER.debug("Running Execute After SQL", false);
           _processConn.createStatement().execute(_after);
         }
         // Loader successfully completed. Commit and return.
         _processConn.createStatement().execute("commit");
-        logger.debug("Committed", false);
+        LOGGER.debug("Committed", false);
       } catch (SQLException ex) {
         try {
           _processConn.createStatement().execute("rollback");
         } catch (SQLException ex0) {
-          logger.debug("Failed to rollback", false);
+          LOGGER.debug("Failed to rollback", false);
         }
-        logger.debug(String.format("Execute After SQL failed to run: %s", _after), ex);
+        LOGGER.debug(String.format("Execute After SQL failed to run: %s", _after), ex);
         throw new Loader.ConnectionError(Utils.getCause(ex));
       }
     }
@@ -668,19 +668,19 @@ public class StreamLoader implements Loader, Runnable {
 
   @Override
   public void close() {
-    logger.debug("Close Loader", false);
+    LOGGER.debug("Close Loader", false);
     try {
       this._processConn.close();
       this._putConn.close();
     } catch (SQLException ex) {
-      logger.error(ex.getMessage(), ex);
+      LOGGER.error(ex.getMessage(), ex);
       throw new ConnectionError(Utils.getCause(ex));
     }
   }
 
   /** Set active to false (no-op if not active), add a stage with terminate flag onto the queue */
   private void terminate() {
-    logger.debug("Terminate Loader", false);
+    LOGGER.debug("Terminate Loader", false);
 
     boolean active = _active.getAndSet(false);
 
@@ -697,10 +697,10 @@ public class StreamLoader implements Loader, Runnable {
     try {
       queuePut(_stage);
     } catch (InterruptedException ex) {
-      logger.error("Unknown Error", ex);
+      LOGGER.error("Unknown Error", ex);
     }
 
-    logger.debug("Snowflake loader terminating", false);
+    LOGGER.debug("Snowflake loader terminating", false);
   }
 
   // If operation changes, existing stage needs to be scheduled for processing.
@@ -712,14 +712,14 @@ public class StreamLoader implements Loader, Runnable {
       return;
     }
 
-    logger.debug("Operation is changing from {} to {}", _op, op);
+    LOGGER.debug("Operation is changing from {} to {}", _op, op);
     _op = op;
 
     if (_stage != null) {
       try {
         queuePut(_stage);
       } catch (InterruptedException ex) {
-        logger.error(_stage.getId(), ex);
+        LOGGER.error(_stage.getId(), ex);
       }
     }
 
@@ -802,27 +802,27 @@ public class StreamLoader implements Loader, Runnable {
 
   void throttleUp() {
     int open = this._throttleCounter.incrementAndGet();
-    logger.debug("PUT Throttle Up: {}", open);
+    LOGGER.debug("PUT Throttle Up: {}", open);
     if (open > 8) {
-      logger.debug(
+      LOGGER.debug(
           "Will retry scheduling file for upload after {} seconds", (Math.pow(2, open - 7)));
       try {
         Thread.sleep(1000 * ((int) Math.pow(2, open - 7)));
       } catch (InterruptedException ex) {
-        logger.error("Exception occurs while waiting", ex);
+        LOGGER.error("Exception occurs while waiting", ex);
       }
     }
   }
 
   void throttleDown() {
     int throttleLevel = this._throttleCounter.decrementAndGet();
-    logger.debug("PUT Throttle Down: {}", throttleLevel);
+    LOGGER.debug("PUT Throttle Down: {}", throttleLevel);
     if (throttleLevel < 0) {
-      logger.debug("Unbalanced throttle", false);
+      LOGGER.debug("Unbalanced throttle", false);
       _throttleCounter.set(0);
     }
 
-    logger.debug("Connector throttle {}", throttleLevel);
+    LOGGER.debug("Connector throttle {}", throttleLevel);
   }
 
   private LoadResultListener _listener =

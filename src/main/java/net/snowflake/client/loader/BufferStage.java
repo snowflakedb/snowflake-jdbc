@@ -24,7 +24,7 @@ import net.snowflake.client.log.SFLoggerFactory;
  * single processing stage.
  */
 public class BufferStage {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(BufferStage.class);
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(BufferStage.class);
 
   public enum State {
     CREATED,
@@ -87,7 +87,7 @@ public class BufferStage {
   private ArrayList<FileUploader> _uploaders = new ArrayList<>();
 
   BufferStage(StreamLoader loader, Operation op, long csvFileBucketSize, long csvFileSize) {
-    logger.debug("Operation: {}", op);
+    LOGGER.debug("Operation: {}", op);
 
     _state = State.CREATED;
     _loader = loader;
@@ -145,7 +145,7 @@ public class BufferStage {
       if (_loader._compressDataBeforePut) {
         fName += StreamLoader.FILE_SUFFIX;
       }
-      logger.debug("openFile: {}", fName);
+      LOGGER.debug("openFile: {}", fName);
 
       OutputStream fileStream = new FileOutputStream(fName);
       if (_loader._compressDataBeforePut) {
@@ -173,7 +173,7 @@ public class BufferStage {
   // not thread safe
   boolean stageData(final byte[] line) throws IOException {
     if (this._rowCount % 10000 == 0) {
-      logger.debug("rowCount: {}, currentSize: {}", this._rowCount, _currentSize);
+      LOGGER.debug("rowCount: {}, currentSize: {}", this._rowCount, _currentSize);
     }
     _outstream.write(line);
     _currentSize += line.length;
@@ -191,7 +191,7 @@ public class BufferStage {
     }
 
     if (_currentSize >= this._csvFileSize) {
-      logger.debug(
+      LOGGER.debug(
           "name: {}, currentSize: {}, Threshold: {}," + " fileCount: {}, fileBucketSize: {}",
           _file.getAbsolutePath(),
           _currentSize,
@@ -217,7 +217,7 @@ public class BufferStage {
    * @throws IOException raises an exception if IO error occurs
    */
   void completeUploading() throws IOException {
-    logger.debug(
+    LOGGER.debug(
         "name: {}, currentSize: {}, Threshold: {}," + " fileCount: {}, fileBucketSize: {}",
         _file.getAbsolutePath(),
         _currentSize,

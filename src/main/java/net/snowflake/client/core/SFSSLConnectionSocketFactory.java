@@ -23,8 +23,7 @@ import org.apache.http.protocol.HttpContext;
 
 /** Snowflake custom SSLConnectionSocketFactory */
 public class SFSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
-  private static final SFLogger logger =
-      SFLoggerFactory.getLogger(SFSSLConnectionSocketFactory.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SFSSLConnectionSocketFactory.class);
 
   private static final String SSL_VERSION = "TLSv1.2";
 

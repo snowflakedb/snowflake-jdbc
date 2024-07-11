@@ -4,6 +4,7 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.SFBaseResultSet.OBJECT_MAPPER;
+import static net.snowflake.client.core.SFResultSet.logger;
 import static net.snowflake.client.jdbc.SnowflakeUtil.mapSFExceptionToSQLException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -28,15 +29,12 @@ import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.jdbc.FieldMetadata;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.ThrowingBiFunction;
 import net.snowflake.common.core.SFTimestamp;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 
 @SnowflakeJdbcInternalApi
 public class JsonSqlInput extends BaseSqlInput {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(JsonSqlInput.class);
   private final String text;
   private final JsonNode input;
   private final Iterator<JsonNode> elements;

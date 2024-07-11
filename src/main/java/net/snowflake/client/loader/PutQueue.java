@@ -13,14 +13,14 @@ import net.snowflake.client.log.SFLoggerFactory;
  * ProcessQueue.
  */
 public class PutQueue implements Runnable {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(PutQueue.class);
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(PutQueue.class);
 
   private final Thread _thread;
 
   private final StreamLoader _loader;
 
   public PutQueue(StreamLoader loader) {
-    logger.trace("Creating new PutQueue", false);
+    LOGGER.debug("", false);
     _loader = loader;
     _thread = new Thread(this);
     _thread.setName("PutQueueThread");
@@ -60,7 +60,7 @@ public class PutQueue implements Runnable {
         }
 
       } catch (InterruptedException | IOException ex) {
-        logger.error("Exception: ", ex);
+        LOGGER.error("Exception: ", ex);
         break;
       } finally {
 
@@ -72,7 +72,7 @@ public class PutQueue implements Runnable {
     try {
       _thread.join(0);
     } catch (InterruptedException ex) {
-      logger.error("Exception: ", ex);
+      LOGGER.error("Exception: ", ex);
     }
   }
 }

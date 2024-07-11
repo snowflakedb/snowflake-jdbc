@@ -144,8 +144,4 @@ public abstract class SnowflakeResultChunk {
   public void setDownloadState(DownloadState downloadState) {
     this.downloadState = downloadState;
   }
-
-  long getTotalTime() {
-    return downloadTime + parseTime;
-  }
 }

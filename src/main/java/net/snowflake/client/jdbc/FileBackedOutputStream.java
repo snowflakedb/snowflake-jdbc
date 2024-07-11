@@ -26,7 +26,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import net.snowflake.client.core.FileUtil;
 
 /**
  * An {@link OutputStream} that starts buffering to a byte array, but switches to file buffering
@@ -130,7 +129,6 @@ public final class FileBackedOutputStream extends OutputStream {
 
   private synchronized InputStream openInputStream() throws IOException {
     if (file != null) {
-      FileUtil.logFileUsage(file, "Data buffering stream", false);
       return new FileInputStream(file);
     } else {
       return new ByteArrayInputStream(memory.getBuffer(), 0, memory.getCount());

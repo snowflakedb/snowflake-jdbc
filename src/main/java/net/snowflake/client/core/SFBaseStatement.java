@@ -20,7 +20,7 @@ public abstract class SFBaseStatement {
   // maximum number of parameters for the statement; if this threshold is exceeded,
   // we throw an exception
   protected static final int MAX_STATEMENT_PARAMETERS = 1000;
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseStatement.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseStatement.class);
   // statement level parameters; just a string-key, object-value map.
   protected final Map<String, Object> statementParametersMap = new HashMap<>();
   // timeout in seconds for queries
@@ -125,7 +125,7 @@ public abstract class SFBaseStatement {
    * @param sql the set property sql
    */
   public void executeSetProperty(final String sql) {
-    logger.trace("Setting property", false);
+    logger.debug("setting property", false);
 
     // tokenize the sql
     String[] tokens = sql.split("\\s+");
@@ -136,11 +136,11 @@ public abstract class SFBaseStatement {
 
     if ("sort".equalsIgnoreCase(tokens[1])) {
       if (tokens.length >= 3 && "on".equalsIgnoreCase(tokens[2])) {
-        logger.debug("Setting sort on", false);
+        logger.debug("setting sort on", false);
 
         this.getSFBaseSession().setSessionPropertyByKey("sort", true);
       } else {
-        logger.debug("Setting sort off", false);
+        logger.debug("setting sort off", false);
         this.getSFBaseSession().setSessionPropertyByKey("sort", false);
       }
     }

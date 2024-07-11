@@ -5,14 +5,9 @@ package net.snowflake.client.log;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import com.google.common.base.Strings;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import org.apache.commons.logging.LogFactory;
 
 public class SFLoggerUtil {
-  private static final String NOT_PROVIDED_LOG = "not provided";
-  private static final String PROVIDED_LOG = "provided";
-
   public static void initializeSnowflakeLogger() {
     String logger = systemGetProperty("net.snowflake.jdbc.loggerImpl");
     SFLoggerFactory.LoggerImpl loggerImplementation = SFLoggerFactory.LoggerImpl.fromString(logger);
@@ -33,13 +28,5 @@ public class SFLoggerUtil {
         logFactory.setAttribute(
             "org.apache.commons.logging.Log", "net.snowflake.client.log.JDK14JCLWrapper");
     }
-  }
-
-  @SnowflakeJdbcInternalApi
-  public static <T> String isVariableProvided(T variable) {
-    if (variable instanceof String) {
-      return (Strings.isNullOrEmpty((String) variable)) ? NOT_PROVIDED_LOG : PROVIDED_LOG;
-    }
-    return variable == null ? NOT_PROVIDED_LOG : PROVIDED_LOG;
   }
 }

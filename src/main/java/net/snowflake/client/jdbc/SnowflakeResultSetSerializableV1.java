@@ -74,8 +74,7 @@ public class SnowflakeResultSetSerializableV1
     implements SnowflakeResultSetSerializable, Serializable {
   private static final long serialVersionUID = 1L;
 
-  private static final SFLogger logger =
-      SFLoggerFactory.getLogger(SnowflakeResultSetSerializableV1.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetSerializableV1.class);
 
   static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
   private static final long LOW_MAX_MEMORY = GB;
@@ -545,7 +544,7 @@ public class SnowflakeResultSetSerializableV1
       ResultStreamProvider resultStreamProvider)
       throws SnowflakeSQLException {
     SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
-    logger.trace("Entering create()", false);
+    logger.debug("Entering create()", false);
 
     SnowflakeUtil.checkErrorAndThrowException(rootNode);
 
@@ -582,7 +581,7 @@ public class SnowflakeResultSetSerializableV1
 
     resultSetSerializable.possibleSession = Optional.ofNullable(sfSession);
 
-    logger.debug("Query id: {}", resultSetSerializable.queryId);
+    logger.debug("query id: {}", resultSetSerializable.queryId);
 
     Optional<QueryResultFormat> queryResultFormat =
         QueryResultFormat.lookupByName(rootNode.path("data").path("queryResultFormat").asText());
@@ -671,7 +670,7 @@ public class SnowflakeResultSetSerializableV1
       resultSetSerializable.sendResultTime = sendResultTimeNode.longValue();
     }
 
-    logger.debug("Result version: {}", resultSetSerializable.resultVersion);
+    logger.debug("result version={}", resultSetSerializable.resultVersion);
 
     // Bind parameter metadata
     JsonNode bindData = rootNode.path("data").path("metaDataOfBinds");
@@ -757,7 +756,7 @@ public class SnowflakeResultSetSerializableV1
     this.dateFormatter = SnowflakeDateTimeFormat.fromSqlFormat(sqlDateFormat);
 
     logger.debug(
-        "Sql date format: {}, java date format: {}",
+        "sql date format: {}, java date format: {}",
         sqlDateFormat,
         (ArgSupplier) () -> this.dateFormatter.toSimpleDateTimePattern());
 
@@ -767,7 +766,7 @@ public class SnowflakeResultSetSerializableV1
     this.timeFormatter = SnowflakeDateTimeFormat.fromSqlFormat(sqlTimeFormat);
 
     logger.debug(
-        "Sql time format: {}, java time format: {}",
+        "sql time format: {}, java time format: {}",
         sqlTimeFormat,
         (ArgSupplier) () -> this.timeFormatter.toSimpleDateTimePattern());
 
@@ -804,7 +803,7 @@ public class SnowflakeResultSetSerializableV1
 
       // Determine the prefetch thread count and memoryLimit
       if (this.chunkFileCount > 0) {
-        logger.debug("#chunks: {}, initialize chunk downloader", this.chunkFileCount);
+        logger.debug("#chunks={}, initialize chunk downloader", this.chunkFileCount);
 
         adjustMemorySettings(sfStatement);
 
@@ -817,7 +816,7 @@ public class SnowflakeResultSetSerializableV1
             Map.Entry<String, JsonNode> chunkHeader = chunkHeadersIter.next();
 
             logger.debug(
-                "Add header key: {}, value: {}",
+                "add header key={}, value={}",
                 chunkHeader.getKey(),
                 chunkHeader.getValue().asText());
             this.chunkHeadersMap.put(chunkHeader.getKey(), chunkHeader.getValue().asText());
@@ -836,7 +835,7 @@ public class SnowflakeResultSetSerializableV1
               new ChunkFileMetadata(url, rowCount, compressedSize, uncompressedSize));
 
           logger.debug(
-              "Add chunk, url: {} rowCount: {} " + "compressedSize: {} uncompressedSize: {}",
+              "add chunk, url={} rowCount={} " + "compressedSize={} uncompressedSize={}",
               url,
               rowCount,
               compressedSize,
@@ -856,8 +855,8 @@ public class SnowflakeResultSetSerializableV1
       this.memoryLimit = sfStatement.getConservativeMemoryLimit();
       int chunkSize = (int) this.parameters.get(CLIENT_RESULT_CHUNK_SIZE);
       logger.debug(
-          "Enable conservative memory usage with prefetchThreads: {} and memoryLimit: {} and "
-              + "resultChunkSize: {}",
+          "enable conservative memory usage with prefetchThreads = {} and memoryLimit = {} and "
+              + "resultChunkSize = {}",
           this.resultPrefetchThreads,
           this.memoryLimit,
           chunkSize);

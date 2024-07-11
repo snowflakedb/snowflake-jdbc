@@ -14,7 +14,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /** Class responsible for uploading a single data file. */
 public class FileUploader implements Runnable {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(PutQueue.class);
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(PutQueue.class);
 
   private static final int RETRY = 6;
   private final Thread _thread;
@@ -23,7 +23,7 @@ public class FileUploader implements Runnable {
   private final File _file;
 
   FileUploader(StreamLoader loader, String stage, File file) {
-    logger.trace("Creating new FileUploader", false);
+    LOGGER.debug("", false);
     _loader = loader;
     _thread = new Thread(this);
     _thread.setName("FileUploaderThread");
@@ -33,7 +33,7 @@ public class FileUploader implements Runnable {
 
   public synchronized void upload() {
     // throttle up will wait if too many files are uploading
-    logger.trace("Creating new FileUploader", false);
+    LOGGER.debug("", false);
     _loader.throttleUp();
     _thread.start();
   }
@@ -66,7 +66,7 @@ public class FileUploader implements Runnable {
         }
 
         if (attempt > 0) {
-          logger.debug("Will retry PUT after {} seconds", Math.pow(2, attempt));
+          LOGGER.debug("Will retry PUT after {} seconds", Math.pow(2, attempt));
           Thread.sleep(1000 * ((int) Math.pow(2, attempt)));
         }
 
@@ -114,9 +114,9 @@ public class FileUploader implements Runnable {
 
         Statement statement = _loader.getPutConnection().createStatement();
         try {
-          logger.debug("Put Statement start: {}", putStatement);
+          LOGGER.debug("Put Statement start: {}", putStatement);
           statement.execute(putStatement);
-          logger.debug("Put Statement end: {}", putStatement);
+          LOGGER.debug("Put Statement end: {}", putStatement);
           ResultSet putResult = statement.getResultSet();
 
           putResult.next();
@@ -137,13 +137,13 @@ public class FileUploader implements Runnable {
           } else {
             // The log level should be WARNING for a single upload failure.
             if (message.startsWith("Simulated upload failure")) {
-              logger.debug(
+              LOGGER.debug(
                   "Failed to upload a file:" + " status={}," + " filename={}," + " message={}",
                   status,
                   file,
                   message);
             } else {
-              logger.debug(
+              LOGGER.debug(
                   "Failed to upload a file:" + " status={}," + " filename={}," + " message={}",
                   status,
                   file,
@@ -152,7 +152,7 @@ public class FileUploader implements Runnable {
           }
         } catch (Throwable t) {
           // The log level for unknown error is set to SEVERE
-          logger.error(
+          LOGGER.error(
               String.format(
                   "Failed to PUT on attempt: attempt=[%s], " + "Message=[%s]",
                   attempt, t.getMessage()),
@@ -161,7 +161,7 @@ public class FileUploader implements Runnable {
         }
       }
     } catch (Throwable t) {
-      logger.error("PUT exception", t);
+      LOGGER.error("PUT exception", t);
       _loader.abort(new Loader.ConnectionError(t.getMessage(), t.getCause()));
     } finally {
       _loader.throttleDown();
@@ -169,11 +169,11 @@ public class FileUploader implements Runnable {
   }
 
   public void join() {
-    logger.trace("Joining threads", false);
+    LOGGER.debug("", false);
     try {
       _thread.join(0);
     } catch (InterruptedException ex) {
-      logger.error(ex.getMessage(), ex);
+      LOGGER.error(ex.getMessage(), ex);
     }
   }
 

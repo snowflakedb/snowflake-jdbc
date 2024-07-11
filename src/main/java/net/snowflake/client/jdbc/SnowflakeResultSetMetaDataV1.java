@@ -22,8 +22,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
     SYNC
   };
 
-  private static final SFLogger logger =
-      SFLoggerFactory.getLogger(SnowflakeResultSetMetaDataV1.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetMetaDataV1.class);
 
   private SFResultSetMetaData resultSetMetaData;
   private String queryId;
@@ -87,7 +86,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.trace("<T> T unwrap(Class<T> iface)", false);
+    logger.debug("public <T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(
@@ -98,7 +97,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.trace("boolean isWrapperFor(Class<?> iface)", false);
+    logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }
@@ -162,7 +161,7 @@ class SnowflakeResultSetMetaDataV1 implements ResultSetMetaData, SnowflakeResult
 
   @Override
   public String getColumnClassName(int column) throws SQLException {
-    logger.trace("String getColumnClassName(int column)", false);
+    logger.debug("public String getColumnClassName(int column)", false);
 
     int type = this.getColumnType(column);
 

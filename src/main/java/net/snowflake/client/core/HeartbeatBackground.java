@@ -23,7 +23,7 @@ public class HeartbeatBackground implements Runnable {
   private static HeartbeatBackground singleton = new HeartbeatBackground();
 
   /** The logger. */
-  private static final SFLogger logger = SFLoggerFactory.getLogger(HeartbeatBackground.class);
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(HeartbeatBackground.class);
 
   // default master token validity (in seconds) is 4 hours
   private long masterTokenValidityInSecs = 4 * 3600;
@@ -79,7 +79,7 @@ public class HeartbeatBackground implements Runnable {
       this.heartBeatIntervalInSecs = masterTokenValidityInSecs / 4;
     }
 
-    logger.debug(
+    LOGGER.debug(
         "update heartbeat interval" + " from {} to {}",
         oldHeartBeatIntervalInSecs,
         this.heartBeatIntervalInSecs);
@@ -96,7 +96,7 @@ public class HeartbeatBackground implements Runnable {
      * JVM from exiting.
      */
     if (this.scheduler == null) {
-      logger.debug("create heartbeat thread pool", false);
+      LOGGER.debug("create heartbeat thread pool", false);
       this.scheduler =
           Executors.newScheduledThreadPool(
               1,
@@ -113,19 +113,19 @@ public class HeartbeatBackground implements Runnable {
 
     // schedule a heartbeat task if none exists
     if (heartbeatFuture == null) {
-      logger.debug("Schedule heartbeat task", false);
+      LOGGER.debug("schedule heartbeat task", false);
       this.scheduleHeartbeat();
     }
     // or reschedule if the master token validity has been reduced (rare event)
     else if (requireReschedule) {
-      logger.debug("Cancel existing heartbeat task", false);
+      LOGGER.debug("Cancel existing heartbeat task", false);
 
       // Cancel existing task if not started yet and reschedule
       if (heartbeatFuture.cancel(false)) {
-        logger.debug("Canceled existing heartbeat task, reschedule", false);
+        LOGGER.debug("Canceled existing heartbeat task, reschedule", false);
         this.scheduleHeartbeat();
       } else {
-        logger.debug("Failed to cancel existing heartbeat task", false);
+        LOGGER.debug("Failed to cancel existing heartbeat task", false);
       }
     }
   }
@@ -155,7 +155,7 @@ public class HeartbeatBackground implements Runnable {
      */
     long initialDelay = Math.max(heartBeatIntervalInSecs - elapsedSecsSinceLastHeartBeat, 0);
 
-    logger.debug("Schedule heartbeat task with initial delay of {} seconds", initialDelay);
+    LOGGER.debug("schedule heartbeat task with initial delay of {} seconds", initialDelay);
 
     // Creates and executes a periodic action to send heartbeats
     this.heartbeatFuture = this.scheduler.schedule(this, initialDelay, TimeUnit.SECONDS);
@@ -191,7 +191,7 @@ public class HeartbeatBackground implements Runnable {
       try {
         session.heartbeat();
       } catch (Throwable ex) {
-        logger.error("Heartbeat error - message=" + ex.getMessage(), ex);
+        LOGGER.error("heartbeat error - message=" + ex.getMessage(), ex);
       }
     }
 
@@ -203,11 +203,11 @@ public class HeartbeatBackground implements Runnable {
     synchronized (this) {
       // schedule next heartbeat
       if (sessions.size() > 0) {
-        logger.debug("Schedule next heartbeat run", false);
+        LOGGER.debug("schedule next heartbeat run", false);
 
         scheduleHeartbeat();
       } else {
-        logger.debug("No need for heartbeat since no more sessions", false);
+        LOGGER.debug("no need for heartbeat since no more sessions", false);
 
         // no need to heartbeat if no more session
         this.heartbeatFuture = null;

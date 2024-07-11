@@ -37,7 +37,6 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
-import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
@@ -344,8 +343,6 @@ public class SessionUtil {
       Map<SFSessionProperty, Object> connectionPropertiesMap,
       String tracingLevel)
       throws SFException, SnowflakeSQLException {
-    Stopwatch stopwatch = new Stopwatch();
-    stopwatch.start();
     // build URL for login request
     URIBuilder uriBuilder;
     URI loginURI;
@@ -371,18 +368,6 @@ public class SessionUtil {
     int httpClientSocketTimeout = loginInput.getSocketTimeoutInMillis();
     final ClientAuthnDTO.AuthenticatorType authenticatorType = getAuthenticator(loginInput);
     Map<String, Object> commonParams;
-
-    String oktaUsername = loginInput.getOKTAUserName();
-    logger.debug(
-        "Authenticating user: {}, host: {} with authentication method: {}."
-            + " Login timeout: {} s, auth timeout: {} s, OCSP mode: {}{}",
-        loginInput.getUserName(),
-        loginInput.getHostFromServerUrl(),
-        authenticatorType,
-        loginInput.getLoginTimeout(),
-        loginInput.getAuthTimeout(),
-        loginInput.getOCSPMode(),
-        Strings.isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
 
     try {
 
@@ -654,8 +639,6 @@ public class SessionUtil {
       int leftsocketTimeout = loginInput.getSocketTimeoutInMillis();
       int retryCount = 0;
 
-      Exception lastRestException = null;
-
       while (true) {
         try {
           theString =
@@ -667,7 +650,6 @@ public class SessionUtil {
                   retryCount,
                   loginInput.getHttpClientSettingsKey());
         } catch (SnowflakeSQLException ex) {
-          lastRestException = ex;
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
             if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT
                 || authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
@@ -732,34 +714,8 @@ public class SessionUtil {
           } else {
             throw ex;
           }
-        } catch (Exception ex) {
-          lastRestException = ex;
         }
         break;
-      }
-
-      if (theString == null) {
-        if (lastRestException != null) {
-          logger.error(
-              "Failed to open new session for user: {}, host: {}. Error: {}",
-              loginInput.getUserName(),
-              loginInput.getHostFromServerUrl(),
-              lastRestException);
-          throw lastRestException;
-        } else {
-          SnowflakeSQLException exception =
-              new SnowflakeSQLException(
-                  NO_QUERY_ID,
-                  "empty authentication response",
-                  SqlState.CONNECTION_EXCEPTION,
-                  ErrorCode.CONNECTION_ERROR.getMessageCode());
-          logger.error(
-              "Failed to open new session for user: {}, host: {}. Error: {}",
-              loginInput.getUserName(),
-              loginInput.getHostFromServerUrl(),
-              exception);
-          throw exception;
-        }
       }
 
       // general method, same as with data binding
@@ -767,7 +723,7 @@ public class SessionUtil {
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("Response: {}", theString);
+        logger.debug("response = {}", theString);
 
         int errorCode = jsonNode.path("code").asInt();
         if (errorCode == Constants.ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE) {
@@ -785,16 +741,9 @@ public class SessionUtil {
           deleteMfaTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
         }
 
-        String errorMessage = jsonNode.path("message").asText();
-
-        logger.error(
-            "Failed to open new session for user: {}, host: {}. Error: {}",
-            loginInput.getUserName(),
-            loginInput.getHostFromServerUrl(),
-            errorMessage);
         throw new SnowflakeSQLException(
             NO_QUERY_ID,
-            errorMessage,
+            jsonNode.path("message").asText(),
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             errorCode);
       }
@@ -820,7 +769,7 @@ public class SessionUtil {
       commonParams = SessionUtil.getCommonParams(jsonNode.path("data").path("parameters"));
 
       if (serverVersion != null) {
-        logger.debug("Server version: {}", serverVersion);
+        logger.debug("server version = {}", serverVersion);
 
         if (serverVersion.indexOf(" ") > 0) {
           databaseVersion = serverVersion.substring(0, serverVersion.indexOf(" "));
@@ -828,7 +777,7 @@ public class SessionUtil {
           databaseVersion = serverVersion;
         }
       } else {
-        logger.debug("Server version is null", false);
+        logger.debug("server version is null", false);
       }
 
       if (databaseVersion != null) {
@@ -851,13 +800,13 @@ public class SessionUtil {
       if (!jsonNode.path("data").path("newClientForUpgrade").isNull()) {
         newClientForUpgrade = jsonNode.path("data").path("newClientForUpgrade").asText();
 
-        logger.debug("New client: {}", newClientForUpgrade);
+        logger.debug("new client: {}", newClientForUpgrade);
       }
 
       // get health check interval and adjust network timeouts if different
       int healthCheckIntervalFromGS = jsonNode.path("data").path("healthCheckInterval").asInt();
 
-      logger.debug("Health check interval: {}", healthCheckIntervalFromGS);
+      logger.debug("health check interval = {}", healthCheckIntervalFromGS);
 
       if (healthCheckIntervalFromGS > 0 && healthCheckIntervalFromGS != healthCheckInterval) {
         // add health check interval to socket timeout
@@ -872,9 +821,9 @@ public class SessionUtil {
 
         HttpUtil.setRequestConfig(requestConfig);
 
-        logger.debug("Adjusted connection timeout to: {}", loginInput.getConnectionTimeout());
+        logger.debug("adjusted connection timeout to = {}", loginInput.getConnectionTimeout());
 
-        logger.debug("Adjusted socket timeout to: {}", httpClientSocketTimeout);
+        logger.debug("adjusted socket timeout to = {}", httpClientSocketTimeout);
       }
     } catch (SnowflakeSQLException ex) {
       throw ex; // must catch here to avoid Throwable to get the exception
@@ -924,13 +873,6 @@ public class SessionUtil {
       CredentialManager.getInstance().writeMfaToken(loginInput, ret);
     }
 
-    stopwatch.stop();
-    logger.debug(
-        "User: {}, host: {} with authentication method: {} authenticated successfully in {} ms",
-        loginInput.getUserName(),
-        loginInput.getHostFromServerUrl(),
-        authenticatorType,
-        stopwatch.elapsedMillis());
     return ret;
   }
 
@@ -1038,7 +980,7 @@ public class SessionUtil {
       setServiceNameHeader(loginInput, postRequest);
 
       logger.debug(
-          "Request type: {}, old session token: {}, " + "master token: {}",
+          "request type: {}, old session token: {}, " + "master token: {}",
           requestType.value,
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
           (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
@@ -1057,7 +999,7 @@ public class SessionUtil {
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("Response: {}", theString);
+        logger.debug("response = {}", theString);
 
         String errorCode = jsonNode.path("code").asText();
         String message = jsonNode.path("message").asText();
@@ -1095,7 +1037,7 @@ public class SessionUtil {
    * @throws SFException if failed to close session
    */
   static void closeSession(SFLoginInput loginInput) throws SFException, SnowflakeSQLException {
-    logger.trace("void close() throws SFException");
+    logger.debug(" public void close() throws SFException");
 
     // assert the following inputs are valid
     AssertUtil.assertTrue(
@@ -1147,15 +1089,15 @@ public class SessionUtil {
 
       JsonNode rootNode;
 
-      logger.debug("Connection close response: {}", theString);
+      logger.debug("connection close response: {}", theString);
 
       rootNode = mapper.readTree(theString);
 
       SnowflakeUtil.checkErrorAndThrowException(rootNode);
     } catch (URISyntaxException ex) {
-      throw new RuntimeException("Unexpected URI syntax exception", ex);
+      throw new RuntimeException("unexpected URI syntax exception", ex);
     } catch (IOException ex) {
-      logger.error("Unexpected IO exception for: " + postRequest, ex);
+      logger.error("unexpected IO exception for: " + postRequest, ex);
     } catch (SnowflakeSQLException ex) {
       // ignore exceptions for session expiration exceptions and for
       // sessions that no longer exist
@@ -1292,7 +1234,7 @@ public class SessionUtil {
               null,
               loginInput.getHttpClientSettingsKey());
 
-      logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
+      logger.debug("user is authenticated against {}.", loginInput.getAuthenticator());
 
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
@@ -1380,12 +1322,12 @@ public class SessionUtil {
               loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
-      logger.debug("Authenticator-request response: {}", gsResponse);
+      logger.debug("authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("Response: {}", gsResponse);
+        logger.debug("response = {}", gsResponse);
         int errorCode = jsonNode.path("code").asInt();
 
         throw new SnowflakeSQLException(
@@ -1523,7 +1465,7 @@ public class SessionUtil {
 
       // What type of value is it and what's the value?
       if (!child.hasNonNull("value")) {
-        logger.debug("No value found for Common Parameter: {}", child.path("name").asText());
+        logger.debug("No value found for Common Parameter {}", child.path("name").asText());
         continue;
       }
 
@@ -1558,7 +1500,7 @@ public class SessionUtil {
       session.setCommonParameters(parameters);
     }
     for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-      logger.debug("Processing parameter {}", entry.getKey());
+      logger.debug("processing parameter {}", entry.getKey());
 
       if ("CLIENT_DISABLE_INCIDENTS".equalsIgnoreCase(entry.getKey())) {
         SnowflakeDriver.setDisableIncidents((Boolean) entry.getValue());

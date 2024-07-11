@@ -13,7 +13,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 /** Wrapper for data format errors returned by the COPY/validate command */
 public class LoadingError {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(LoadingError.class);
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(LoadingError.class);
 
   public enum ErrorProperty {
     ERROR,
@@ -65,7 +65,7 @@ public class LoadingError {
       try {
         _properties.put(p, rs.getString(p.name()));
       } catch (SQLException ex) {
-        logger.error("Exception", ex);
+        LOGGER.error("Exception", ex);
       }
     }
   }

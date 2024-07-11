@@ -10,13 +10,13 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 public class LoaderFactory {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(LoaderFactory.class);
+  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(LoaderFactory.class);
 
   public static Loader createLoader(
       Map<LoaderProperty, Object> properties,
       Connection uploadConnection,
       Connection processingConnection) {
-    logger.debug("", false);
+    LOGGER.debug("", false);
     StreamLoader loader = new StreamLoader(properties, uploadConnection, processingConnection);
     return loader;
   }

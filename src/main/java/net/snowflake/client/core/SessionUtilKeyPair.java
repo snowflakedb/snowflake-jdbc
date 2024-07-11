@@ -17,7 +17,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -53,7 +52,7 @@ import org.bouncycastle.util.io.pem.PemReader;
 /** Class used to compute jwt token for key pair authentication Created by hyu on 1/16/18. */
 class SessionUtilKeyPair {
 
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilKeyPair.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilKeyPair.class);
 
   // user name in upper case
   private final String userName;
@@ -148,6 +147,7 @@ class SessionUtilKeyPair {
 
   private PrivateKey extractPrivateKeyFromFile(String privateKeyFile, String privateKeyFilePwd)
       throws SFException {
+
     if (isBouncyCastleProviderEnabled) {
       try {
         return extractPrivateKeyWithBouncyCastle(privateKeyFile, privateKeyFilePwd);
@@ -234,11 +234,8 @@ class SessionUtilKeyPair {
   private PrivateKey extractPrivateKeyWithBouncyCastle(
       String privateKeyFile, String privateKeyFilePwd)
       throws IOException, PKCSException, OperatorCreationException {
-    Path privKeyPath = Paths.get(privateKeyFile);
-    FileUtil.logFileUsage(
-        privKeyPath, "Extract private key from file using Bouncy Castle provider", true);
     PrivateKeyInfo privateKeyInfo = null;
-    PEMParser pemParser = new PEMParser(new FileReader(privKeyPath.toFile()));
+    PEMParser pemParser = new PEMParser(new FileReader(Paths.get(privateKeyFile).toFile()));
     Object pemObject = pemParser.readObject();
     if (pemObject instanceof PKCS8EncryptedPrivateKeyInfo) {
       // Handle the case where the private key is encrypted.
@@ -266,9 +263,7 @@ class SessionUtilKeyPair {
 
   private PrivateKey extractPrivateKeyWithJdk(String privateKeyFile, String privateKeyFilePwd)
       throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
-    Path privKeyPath = Paths.get(privateKeyFile);
-    FileUtil.logFileUsage(privKeyPath, "Extract private key from file using Jdk", true);
-    String privateKeyContent = new String(Files.readAllBytes(privKeyPath));
+    String privateKeyContent = new String(Files.readAllBytes(Paths.get(privateKeyFile)));
     if (Strings.isNullOrEmpty(privateKeyFilePwd)) {
       // unencrypted private key file
       return generatePrivateKey(false, privateKeyContent, privateKeyFilePwd);

@@ -52,7 +52,7 @@ import net.snowflake.common.util.Wildcard;
 
 public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDatabaseMetaData.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDatabaseMetaData.class);
 
   private static final ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
 
@@ -162,7 +162,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   private boolean isPatternMatchingEnabled = true;
 
   SnowflakeDatabaseMetaData(Connection connection) throws SQLException {
-    logger.trace("SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
+    logger.debug("public SnowflakeDatabaseMetaData(SnowflakeConnection connection)", false);
 
     this.connection = connection;
     this.session = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
@@ -273,21 +273,21 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean allProceduresAreCallable() throws SQLException {
-    logger.trace("boolean allProceduresAreCallable()", false);
+    logger.debug("public boolean allProceduresAreCallable()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean allTablesAreSelectable() throws SQLException {
-    logger.trace("boolean allTablesAreSelectable()", false);
+    logger.debug("public boolean allTablesAreSelectable()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public String getURL() throws SQLException {
-    logger.trace("String getURL()", false);
+    logger.debug("public String getURL()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     String url = session.getUrl();
     return url.startsWith("http://")
@@ -297,14 +297,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public String getUserName() throws SQLException {
-    logger.trace("String getUserName()", false);
+    logger.debug("public String getUserName()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return session.getUser();
   }
 
   @Override
   public boolean isReadOnly() throws SQLException {
-    logger.trace("boolean isReadOnly()", false);
+    logger.debug("public boolean isReadOnly()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     // no read only mode is supported.
     return false;
@@ -312,56 +312,56 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean nullsAreSortedHigh() throws SQLException {
-    logger.trace("boolean nullsAreSortedHigh()", false);
+    logger.debug("public boolean nullsAreSortedHigh()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean nullsAreSortedLow() throws SQLException {
-    logger.trace("boolean nullsAreSortedLow()", false);
+    logger.debug("public boolean nullsAreSortedLow()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean nullsAreSortedAtStart() throws SQLException {
-    logger.trace("boolean nullsAreSortedAtStart()", false);
+    logger.debug("public boolean nullsAreSortedAtStart()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean nullsAreSortedAtEnd() throws SQLException {
-    logger.trace("boolean nullsAreSortedAtEnd()", false);
+    logger.debug("public boolean nullsAreSortedAtEnd()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public String getDatabaseProductName() throws SQLException {
-    logger.trace("String getDatabaseProductName()", false);
+    logger.debug("public String getDatabaseProductName()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return DatabaseProductName;
   }
 
   @Override
   public String getDatabaseProductVersion() throws SQLException {
-    logger.trace("String getDatabaseProductVersion()", false);
+    logger.debug("public String getDatabaseProductVersion()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseVersion();
   }
 
   @Override
   public String getDriverName() throws SQLException {
-    logger.trace("String getDriverName()", false);
+    logger.debug("public String getDriverName()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return DriverName;
   }
 
   @Override
   public String getDriverVersion() throws SQLException {
-    logger.trace("String getDriverVersion()", false);
+    logger.debug("public String getDriverVersion()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return SnowflakeDriver.majorVersion
         + "."
@@ -372,705 +372,705 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public int getDriverMajorVersion() {
-    logger.trace("int getDriverMajorVersion()", false);
+    logger.debug("public int getDriverMajorVersion()", false);
     return SnowflakeDriver.majorVersion;
   }
 
   @Override
   public int getDriverMinorVersion() {
-    logger.trace("int getDriverMinorVersion()", false);
+    logger.debug("public int getDriverMinorVersion()", false);
     return SnowflakeDriver.minorVersion;
   }
 
   @Override
   public boolean usesLocalFiles() throws SQLException {
-    logger.trace("boolean usesLocalFiles()", false);
+    logger.debug("public boolean usesLocalFiles()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean usesLocalFilePerTable() throws SQLException {
-    logger.trace("boolean usesLocalFilePerTable()", false);
+    logger.debug("public boolean usesLocalFilePerTable()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsMixedCaseIdentifiers() throws SQLException {
-    logger.trace("boolean supportsMixedCaseIdentifiers()", false);
+    logger.debug("public boolean supportsMixedCaseIdentifiers()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean storesUpperCaseIdentifiers() throws SQLException {
-    logger.trace("boolean storesUpperCaseIdentifiers()", false);
+    logger.debug("public boolean storesUpperCaseIdentifiers()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean storesLowerCaseIdentifiers() throws SQLException {
-    logger.trace("boolean storesLowerCaseIdentifiers()", false);
+    logger.debug("public boolean storesLowerCaseIdentifiers()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean storesMixedCaseIdentifiers() throws SQLException {
-    logger.trace("boolean storesMixedCaseIdentifiers()", false);
+    logger.debug("public boolean storesMixedCaseIdentifiers()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsMixedCaseQuotedIdentifiers() throws SQLException {
-    logger.trace("boolean supportsMixedCaseQuotedIdentifiers()", false);
+    logger.debug("public boolean supportsMixedCaseQuotedIdentifiers()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean storesUpperCaseQuotedIdentifiers() throws SQLException {
-    logger.trace("boolean storesUpperCaseQuotedIdentifiers()", false);
+    logger.debug("public boolean storesUpperCaseQuotedIdentifiers()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean storesLowerCaseQuotedIdentifiers() throws SQLException {
-    logger.trace("boolean storesLowerCaseQuotedIdentifiers()", false);
+    logger.debug("public boolean storesLowerCaseQuotedIdentifiers()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean storesMixedCaseQuotedIdentifiers() throws SQLException {
-    logger.trace("boolean storesMixedCaseQuotedIdentifiers()", false);
+    logger.debug("public boolean storesMixedCaseQuotedIdentifiers()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public String getIdentifierQuoteString() throws SQLException {
-    logger.trace("String getIdentifierQuoteString()", false);
+    logger.debug("public String getIdentifierQuoteString()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return "\"";
   }
 
   @Override
   public String getSQLKeywords() throws SQLException {
-    logger.trace("String getSQLKeywords()", false);
+    logger.debug("public String getSQLKeywords()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return notSQL2003Keywords;
   }
 
   @Override
   public String getNumericFunctions() throws SQLException {
-    logger.trace("String getNumericFunctions()", false);
+    logger.debug("public String getNumericFunctions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return NumericFunctionsSupported;
   }
 
   @Override
   public String getStringFunctions() throws SQLException {
-    logger.trace("String getStringFunctions()", false);
+    logger.debug("public String getStringFunctions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return StringFunctionsSupported;
   }
 
   @Override
   public String getSystemFunctions() throws SQLException {
-    logger.trace("String getSystemFunctions()", false);
+    logger.debug("public String getSystemFunctions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return SystemFunctionsSupported;
   }
 
   @Override
   public String getTimeDateFunctions() throws SQLException {
-    logger.trace("String getTimeDateFunctions()", false);
+    logger.debug("public String getTimeDateFunctions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return DateAndTimeFunctionsSupported;
   }
 
   @Override
   public String getSearchStringEscape() throws SQLException {
-    logger.trace("String getSearchStringEscape()", false);
+    logger.debug("public String getSearchStringEscape()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return Character.toString(SEARCH_STRING_ESCAPE);
   }
 
   @Override
   public String getExtraNameCharacters() throws SQLException {
-    logger.trace("String getExtraNameCharacters()", false);
+    logger.debug("public String getExtraNameCharacters()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return "$";
   }
 
   @Override
   public boolean supportsAlterTableWithAddColumn() throws SQLException {
-    logger.trace("boolean supportsAlterTableWithAddColumn()", false);
+    logger.debug("public boolean supportsAlterTableWithAddColumn()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsAlterTableWithDropColumn() throws SQLException {
-    logger.trace("boolean supportsAlterTableWithDropColumn()", false);
+    logger.debug("public boolean supportsAlterTableWithDropColumn()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsColumnAliasing() throws SQLException {
-    logger.trace("boolean supportsColumnAliasing()", false);
+    logger.debug("public boolean supportsColumnAliasing()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean nullPlusNonNullIsNull() throws SQLException {
-    logger.trace("boolean nullPlusNonNullIsNull()", false);
+    logger.debug("public boolean nullPlusNonNullIsNull()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsConvert() throws SQLException {
-    logger.trace("boolean supportsConvert()", false);
+    logger.debug("public boolean supportsConvert()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsConvert(int fromType, int toType) throws SQLException {
-    logger.trace("boolean supportsConvert(int fromType, int toType)", false);
+    logger.debug("public boolean supportsConvert(int fromType, int toType)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsTableCorrelationNames() throws SQLException {
-    logger.trace("boolean supportsTableCorrelationNames()", false);
+    logger.debug("public boolean supportsTableCorrelationNames()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsDifferentTableCorrelationNames() throws SQLException {
-    logger.trace("boolean supportsDifferentTableCorrelationNames()", false);
+    logger.debug("public boolean supportsDifferentTableCorrelationNames()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsExpressionsInOrderBy() throws SQLException {
-    logger.trace("boolean supportsExpressionsInOrderBy()", false);
+    logger.debug("public boolean supportsExpressionsInOrderBy()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsOrderByUnrelated() throws SQLException {
-    logger.trace("boolean supportsOrderByUnrelated()", false);
+    logger.debug("public boolean supportsOrderByUnrelated()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsGroupBy() throws SQLException {
-    logger.trace("boolean supportsGroupBy()", false);
+    logger.debug("public boolean supportsGroupBy()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsGroupByUnrelated() throws SQLException {
-    logger.trace("boolean supportsGroupByUnrelated()", false);
+    logger.debug("public boolean supportsGroupByUnrelated()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsGroupByBeyondSelect() throws SQLException {
-    logger.trace("boolean supportsGroupByBeyondSelect()", false);
+    logger.debug("public boolean supportsGroupByBeyondSelect()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsLikeEscapeClause() throws SQLException {
-    logger.trace("boolean supportsLikeEscapeClause()", false);
+    logger.debug("public boolean supportsLikeEscapeClause()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsMultipleResultSets() throws SQLException {
-    logger.trace("boolean supportsMultipleResultSets()", false);
+    logger.debug("public boolean supportsMultipleResultSets()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsMultipleTransactions() throws SQLException {
-    logger.trace("boolean supportsMultipleTransactions()", false);
+    logger.debug("public boolean supportsMultipleTransactions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsNonNullableColumns() throws SQLException {
-    logger.trace("boolean supportsNonNullableColumns()", false);
+    logger.debug("public boolean supportsNonNullableColumns()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsMinimumSQLGrammar() throws SQLException {
-    logger.trace("boolean supportsMinimumSQLGrammar()", false);
+    logger.debug("public boolean supportsMinimumSQLGrammar()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsCoreSQLGrammar() throws SQLException {
-    logger.trace("boolean supportsCoreSQLGrammar()", false);
+    logger.debug("public boolean supportsCoreSQLGrammar()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsExtendedSQLGrammar() throws SQLException {
-    logger.trace("boolean supportsExtendedSQLGrammar()", false);
+    logger.debug("public boolean supportsExtendedSQLGrammar()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsANSI92EntryLevelSQL() throws SQLException {
-    logger.trace("boolean supportsANSI92EntryLevelSQL()", false);
+    logger.debug("public boolean supportsANSI92EntryLevelSQL()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsANSI92IntermediateSQL() throws SQLException {
-    logger.trace("boolean supportsANSI92IntermediateSQL()", false);
+    logger.debug("public boolean supportsANSI92IntermediateSQL()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsANSI92FullSQL() throws SQLException {
-    logger.trace("boolean supportsANSI92FullSQL()", false);
+    logger.debug("public boolean supportsANSI92FullSQL()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsIntegrityEnhancementFacility() throws SQLException {
-    logger.trace("boolean supportsIntegrityEnhancementFacility()", false);
+    logger.debug("public boolean supportsIntegrityEnhancementFacility()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsOuterJoins() throws SQLException {
-    logger.trace("boolean supportsOuterJoins()", false);
+    logger.debug("public boolean supportsOuterJoins()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsFullOuterJoins() throws SQLException {
-    logger.trace("boolean supportsFullOuterJoins()", false);
+    logger.debug("public boolean supportsFullOuterJoins()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsLimitedOuterJoins() throws SQLException {
-    logger.trace("boolean supportsLimitedOuterJoins()", false);
+    logger.debug("public boolean supportsLimitedOuterJoins()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public String getSchemaTerm() throws SQLException {
-    logger.trace("String getSchemaTerm()", false);
+    logger.debug("public String getSchemaTerm()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return "schema";
   }
 
   @Override
   public String getProcedureTerm() throws SQLException {
-    logger.trace("String getProcedureTerm()", false);
+    logger.debug("public String getProcedureTerm()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return "procedure";
   }
 
   @Override
   public String getCatalogTerm() throws SQLException {
-    logger.trace("String getCatalogTerm()", false);
+    logger.debug("public String getCatalogTerm()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return "database";
   }
 
   @Override
   public boolean isCatalogAtStart() throws SQLException {
-    logger.trace("boolean isCatalogAtStart()", false);
+    logger.debug("public boolean isCatalogAtStart()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public String getCatalogSeparator() throws SQLException {
-    logger.trace("String getCatalogSeparator()", false);
+    logger.debug("public String getCatalogSeparator()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return ".";
   }
 
   @Override
   public boolean supportsSchemasInDataManipulation() throws SQLException {
-    logger.trace("boolean supportsSchemasInDataManipulation()", false);
+    logger.debug("public boolean supportsSchemasInDataManipulation()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsSchemasInProcedureCalls() throws SQLException {
-    logger.trace("boolean supportsSchemasInProcedureCalls()", false);
+    logger.debug("public boolean supportsSchemasInProcedureCalls()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsSchemasInTableDefinitions() throws SQLException {
-    logger.trace("boolean supportsSchemasInTableDefinitions()", false);
+    logger.debug("public boolean supportsSchemasInTableDefinitions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsSchemasInIndexDefinitions() throws SQLException {
-    logger.trace("boolean supportsSchemasInIndexDefinitions()", false);
+    logger.debug("public boolean supportsSchemasInIndexDefinitions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsSchemasInPrivilegeDefinitions() throws SQLException {
-    logger.trace("boolean supportsSchemasInPrivilegeDefinitions()", false);
+    logger.debug("public boolean supportsSchemasInPrivilegeDefinitions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsCatalogsInDataManipulation() throws SQLException {
-    logger.trace("boolean supportsCatalogsInDataManipulation()", false);
+    logger.debug("public boolean supportsCatalogsInDataManipulation()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsCatalogsInProcedureCalls() throws SQLException {
-    logger.trace("boolean supportsCatalogsInProcedureCalls()", false);
+    logger.debug("public boolean supportsCatalogsInProcedureCalls()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsCatalogsInTableDefinitions() throws SQLException {
-    logger.trace("boolean supportsCatalogsInTableDefinitions()", false);
+    logger.debug("public boolean supportsCatalogsInTableDefinitions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsCatalogsInIndexDefinitions() throws SQLException {
-    logger.trace("boolean supportsCatalogsInIndexDefinitions()", false);
+    logger.debug("public boolean supportsCatalogsInIndexDefinitions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsCatalogsInPrivilegeDefinitions() throws SQLException {
-    logger.trace("boolean supportsCatalogsInPrivilegeDefinitions()", false);
+    logger.debug("public boolean supportsCatalogsInPrivilegeDefinitions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsPositionedDelete() throws SQLException {
-    logger.trace("boolean supportsPositionedDelete()", false);
+    logger.debug("public boolean supportsPositionedDelete()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsPositionedUpdate() throws SQLException {
-    logger.trace("boolean supportsPositionedUpdate()", false);
+    logger.debug("public boolean supportsPositionedUpdate()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsSelectForUpdate() throws SQLException {
-    logger.trace("boolean supportsSelectForUpdate()", false);
+    logger.debug("public boolean supportsSelectForUpdate()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsStoredProcedures() throws SQLException {
-    logger.trace("boolean supportsStoredProcedures()", false);
+    logger.debug("public boolean supportsStoredProcedures()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsSubqueriesInComparisons() throws SQLException {
-    logger.trace("boolean supportsSubqueriesInComparisons()", false);
+    logger.debug("public boolean supportsSubqueriesInComparisons()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsSubqueriesInExists() throws SQLException {
-    logger.trace("boolean supportsSubqueriesInExists()", false);
+    logger.debug("public boolean supportsSubqueriesInExists()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsSubqueriesInIns() throws SQLException {
-    logger.trace("boolean supportsSubqueriesInIns()", false);
+    logger.debug("public boolean supportsSubqueriesInIns()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsSubqueriesInQuantifieds() throws SQLException {
-    logger.trace("boolean supportsSubqueriesInQuantifieds()", false);
+    logger.debug("public boolean supportsSubqueriesInQuantifieds()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsCorrelatedSubqueries() throws SQLException {
-    logger.trace("boolean supportsCorrelatedSubqueries()", false);
+    logger.debug("public boolean supportsCorrelatedSubqueries()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsUnion() throws SQLException {
-    logger.trace("boolean supportsUnion()", false);
+    logger.debug("public boolean supportsUnion()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsUnionAll() throws SQLException {
-    logger.trace("boolean supportsUnionAll()", false);
+    logger.debug("public boolean supportsUnionAll()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsOpenCursorsAcrossCommit() throws SQLException {
-    logger.trace("boolean supportsOpenCursorsAcrossCommit()", false);
+    logger.debug("public boolean supportsOpenCursorsAcrossCommit()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsOpenCursorsAcrossRollback() throws SQLException {
-    logger.trace("boolean supportsOpenCursorsAcrossRollback()", false);
+    logger.debug("public boolean supportsOpenCursorsAcrossRollback()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsOpenStatementsAcrossCommit() throws SQLException {
-    logger.trace("boolean supportsOpenStatementsAcrossCommit()", false);
+    logger.debug("public boolean supportsOpenStatementsAcrossCommit()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsOpenStatementsAcrossRollback() throws SQLException {
-    logger.trace("boolean supportsOpenStatementsAcrossRollback()", false);
+    logger.debug("public boolean supportsOpenStatementsAcrossRollback()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public int getMaxBinaryLiteralLength() throws SQLException {
-    logger.trace("int getMaxBinaryLiteralLength()", false);
+    logger.debug("public int getMaxBinaryLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 8388608;
   }
 
   @Override
   public int getMaxCharLiteralLength() throws SQLException {
-    logger.trace("int getMaxCharLiteralLength()", false);
+    logger.debug("public int getMaxCharLiteralLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 16777216;
   }
 
   @Override
   public int getMaxColumnNameLength() throws SQLException {
-    logger.trace("int getMaxColumnNameLength()", false);
+    logger.debug("public int getMaxColumnNameLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
   @Override
   public int getMaxColumnsInGroupBy() throws SQLException {
-    logger.trace("int getMaxColumnsInGroupBy()", false);
+    logger.debug("public int getMaxColumnsInGroupBy()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxColumnsInIndex() throws SQLException {
-    logger.trace("int getMaxColumnsInIndex()", false);
+    logger.debug("public int getMaxColumnsInIndex()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxColumnsInOrderBy() throws SQLException {
-    logger.trace("int getMaxColumnsInOrderBy()", false);
+    logger.debug("public int getMaxColumnsInOrderBy()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxColumnsInSelect() throws SQLException {
-    logger.trace("int getMaxColumnsInSelect()", false);
+    logger.debug("public int getMaxColumnsInSelect()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxColumnsInTable() throws SQLException {
-    logger.trace("int getMaxColumnsInTable()", false);
+    logger.debug("public int getMaxColumnsInTable()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxConnections() throws SQLException {
-    logger.trace("int getMaxConnections()", false);
+    logger.debug("public int getMaxConnections()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxCursorNameLength() throws SQLException {
-    logger.trace("int getMaxCursorNameLength()", false);
+    logger.debug("public int getMaxCursorNameLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxIndexLength() throws SQLException {
-    logger.trace("int getMaxIndexLength()", false);
+    logger.debug("public int getMaxIndexLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxSchemaNameLength() throws SQLException {
-    logger.trace("int getMaxSchemaNameLength()", false);
+    logger.debug("public int getMaxSchemaNameLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
   @Override
   public int getMaxProcedureNameLength() throws SQLException {
-    logger.trace("int getMaxProcedureNameLength()", false);
+    logger.debug("public int getMaxProcedureNameLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxCatalogNameLength() throws SQLException {
-    logger.trace("int getMaxCatalogNameLength()", false);
+    logger.debug("public int getMaxCatalogNameLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
   @Override
   public int getMaxRowSize() throws SQLException {
-    logger.trace("int getMaxRowSize()", false);
+    logger.debug("public int getMaxRowSize()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public boolean doesMaxRowSizeIncludeBlobs() throws SQLException {
-    logger.trace("boolean doesMaxRowSizeIncludeBlobs()", false);
+    logger.debug("public boolean doesMaxRowSizeIncludeBlobs()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public int getMaxStatementLength() throws SQLException {
-    logger.trace("int getMaxStatementLength()", false);
+    logger.debug("public int getMaxStatementLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxStatements() throws SQLException {
-    logger.trace("int getMaxStatements()", false);
+    logger.debug("public int getMaxStatements()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxTableNameLength() throws SQLException {
-    logger.trace("int getMaxTableNameLength()", false);
+    logger.debug("public int getMaxTableNameLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
   @Override
   public int getMaxTablesInSelect() throws SQLException {
-    logger.trace("int getMaxTablesInSelect()", false);
+    logger.debug("public int getMaxTablesInSelect()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 0;
   }
 
   @Override
   public int getMaxUserNameLength() throws SQLException {
-    logger.trace("int getMaxUserNameLength()", false);
+    logger.debug("public int getMaxUserNameLength()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return 255;
   }
 
   @Override
   public int getDefaultTransactionIsolation() throws SQLException {
-    logger.trace("int getDefaultTransactionIsolation()", false);
+    logger.debug("public int getDefaultTransactionIsolation()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return Connection.TRANSACTION_READ_COMMITTED;
   }
 
   @Override
   public boolean supportsTransactions() throws SQLException {
-    logger.trace("boolean supportsTransactions()", false);
+    logger.debug("public boolean supportsTransactions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
-    logger.trace("boolean supportsTransactionIsolationLevel(int level)", false);
+    logger.debug("public boolean supportsTransactionIsolationLevel(int level)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return (level == Connection.TRANSACTION_NONE)
         || (level == Connection.TRANSACTION_READ_COMMITTED);
@@ -1078,28 +1078,29 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
-    logger.trace("boolean supportsDataDefinitionAndDataManipulationTransactions()", false);
+    logger.debug(
+        "public boolean " + "supportsDataDefinitionAndDataManipulationTransactions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean supportsDataManipulationTransactionsOnly() throws SQLException {
-    logger.trace("boolean supportsDataManipulationTransactionsOnly()", false);
+    logger.debug("public boolean supportsDataManipulationTransactionsOnly()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean dataDefinitionCausesTransactionCommit() throws SQLException {
-    logger.trace("boolean dataDefinitionCausesTransactionCommit()", false);
+    logger.debug("public boolean dataDefinitionCausesTransactionCommit()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean dataDefinitionIgnoredInTransactions() throws SQLException {
-    logger.trace("boolean dataDefinitionIgnoredInTransactions()", false);
+    logger.debug("public boolean dataDefinitionIgnoredInTransactions()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
@@ -1110,7 +1111,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
-    logger.trace(
+    logger.debug(
         "public ResultSet getProcedures(String catalog, "
             + "String schemaPattern,String procedureNamePattern)",
         false);
@@ -1132,7 +1133,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_PROCEDURES, resultSet, statement) {
       public boolean next() throws SQLException {
-        logger.trace("boolean next()", false);
+        logger.debug("public boolean next()", false);
         incrementRow();
 
         // iterate throw the show table result until we find an entry
@@ -1148,7 +1149,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                   || compiledProcedurePattern.matcher(procedureName).matches())
               && (compiledSchemaPattern == null
                   || compiledSchemaPattern.matcher(schemaName).matches())) {
-            logger.trace("Found a matched function:" + schemaName + "." + procedureName);
+            logger.debug("Found a matched function:" + schemaName + "." + procedureName);
 
             nextRow[0] = catalogName;
             nextRow[1] = schemaName;
@@ -1172,7 +1173,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       final String procedureNamePattern,
       final String columnNamePattern)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getProcedureColumns(String catalog, "
             + "String schemaPattern,String procedureNamePattern,"
             + "String columnNamePattern)",
@@ -1430,7 +1431,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         showProcedureCommand += " in schema \"" + catalogEscaped + "\".\"" + schemaPattern + "\"";
       }
     }
-    logger.debug("Sql command to get column metadata: {}", showProcedureCommand);
+    logger.debug("sql command to get column metadata: {}", showProcedureCommand);
 
     return showProcedureCommand;
   }
@@ -1464,7 +1465,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       final String tableNamePattern,
       final String[] types)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getTables(String catalog={}, String "
             + "schemaPattern={}, String tableNamePattern={}, String[] types={})",
         originalCatalog,
@@ -1548,7 +1549,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
 
-    logger.debug("Sql command to get table metadata: {}", showTablesCommand);
+    logger.debug("sql command to get table metadata: {}", showTablesCommand);
 
     resultSet = executeAndReturnEmptyResultIfNotFound(statement, showTablesCommand, GET_TABLES);
     sendInBandTelemetryMetadataMetrics(
@@ -1562,7 +1563,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLES, resultSet, statement) {
       @Override
       public boolean next() throws SQLException {
-        logger.trace("boolean next()", false);
+        logger.debug("public boolean next()", false);
         incrementRow();
 
         // iterate throw the show table result until we find an entry
@@ -1612,14 +1613,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getSchemas() throws SQLException {
-    logger.trace("ResultSet getSchemas()", false);
+    logger.debug("public ResultSet getSchemas()", false);
 
     return getSchemas(null, null);
   }
 
   @Override
   public ResultSet getCatalogs() throws SQLException {
-    logger.trace("ResultSet getCatalogs()", false);
+    logger.debug("public ResultSet getCatalogs()", false);
     raiseSQLExceptionIfConnectionIsClosed();
 
     String showDB = "show /* JDBC:DatabaseMetaData.getCatalogs() */ databases in account";
@@ -1629,7 +1630,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         GET_CATALOGS, statement.executeQuery(showDB), statement) {
       @Override
       public boolean next() throws SQLException {
-        logger.trace("boolean next()", false);
+        logger.debug("public boolean next()", false);
         incrementRow();
 
         // iterate throw the show databases result
@@ -1647,7 +1648,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getTableTypes() throws SQLException {
-    logger.trace("ResultSet getTableTypes()", false);
+    logger.debug("public ResultSet getTableTypes()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
 
@@ -1677,7 +1678,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       final String columnNamePattern,
       final boolean extendedSet)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getColumns(String catalog={}, String schemaPattern={}, "
             + "String tableNamePattern={}, String columnNamePattern={}, boolean extendedSet={}",
         originalCatalog,
@@ -1739,7 +1740,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
 
-    logger.debug("Sql command to get column metadata: {}", showColumnsCommand);
+    logger.debug("sql command to get column metadata: {}", showColumnsCommand);
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(
@@ -1759,7 +1760,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       String currentTableName = null;
 
       public boolean next() throws SQLException {
-        logger.trace("boolean next()", false);
+        logger.debug("public boolean next()", false);
         incrementRow();
 
         // iterate throw the show table result until we find an entry
@@ -1812,13 +1813,13 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
                   "error parsing data type: " + dataTypeStr);
             }
 
-            logger.debug("Data type string: {}", dataTypeStr);
+            logger.debug("data type string: {}", dataTypeStr);
 
             SnowflakeColumnMetadata columnMetadata =
                 SnowflakeUtil.extractColumnMetadata(
                     jsonNode, session.isJdbcTreatDecimalAsInt(), session);
 
-            logger.debug("Nullable: {}", columnMetadata.isNullable());
+            logger.debug("nullable: {}", columnMetadata.isNullable());
 
             // SNOW-16881: add catalog name
             nextRow[0] = catalogName;
@@ -1873,7 +1874,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             nextRow[9] = null;
             nextRow[10] = (columnMetadata.isNullable() ? columnNullable : columnNoNulls);
 
-            logger.debug("Returning nullable: {}", nextRow[10]);
+            logger.debug("returning nullable: {}", nextRow[10]);
 
             nextRow[11] = comment;
             nextRow[12] = defaultValue;
@@ -1909,7 +1910,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getColumnPrivileges(
       String catalog, String schema, String table, String columnNamePattern) throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getColumnPrivileges(String catalog, "
             + "String schema,String table, String columnNamePattern)",
         false);
@@ -1944,7 +1945,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getTablePrivileges(
       String originalCatalog, String originalSchemaPattern, final String tableNamePattern)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getTablePrivileges(String catalog, "
             + "String schemaPattern,String tableNamePattern)",
         false);
@@ -2005,7 +2006,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_TABLE_PRIVILEGES, resultSet, statement) {
       @Override
       public boolean next() throws SQLException {
-        logger.trace("boolean next()", false);
+        logger.debug("public boolean next()", false);
         incrementRow();
 
         while (showObjectResultSet.next()) {
@@ -2044,7 +2045,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getBestRowIdentifier(
       String catalog, String schema, String table, int scope, boolean nullable)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getBestRowIdentifier(String catalog, "
             + "String schema,String table, int scope,boolean nullable)",
         false);
@@ -2054,7 +2055,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getVersionColumns(String catalog, String schema, String table)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getVersionColumns(String catalog, " + "String schema, String table)",
         false);
 
@@ -2064,7 +2065,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getPrimaryKeys(String originalCatalog, String originalSchema, final String table)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getPrimaryKeys(String catalog={}, "
             + "String schema={}, String table={})",
         originalCatalog,
@@ -2120,7 +2121,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     final String schemaIn = schema;
     final String tableIn = table;
 
-    logger.debug("Sql command to get primary key metadata: {}", showPKCommand);
+    logger.debug("sql command to get primary key metadata: {}", showPKCommand);
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showPKCommand, GET_PRIMARY_KEYS);
     sendInBandTelemetryMetadataMetrics(
@@ -2129,7 +2130,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_PRIMARY_KEYS, resultSet, statement) {
       @Override
       public boolean next() throws SQLException {
-        logger.trace("boolean next()", false);
+        logger.debug("public boolean next()", false);
         incrementRow();
 
         while (showObjectResultSet.next()) {
@@ -2315,7 +2316,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_FOREIGN_KEYS, resultSet, statement) {
       @Override
       public boolean next() throws SQLException {
-        logger.trace("boolean next()", false);
+        logger.debug("public boolean next()", false);
         incrementRow();
 
         while (showObjectResultSet.next()) {
@@ -2561,7 +2562,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getImportedKeys(String originalCatalog, String originalSchema, String table)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getImportedKeys(String catalog={}, "
             + "String schema={}, String table={})",
         originalCatalog,
@@ -2579,7 +2580,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getExportedKeys(String catalog, String schema, String table)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getExportedKeys(String catalog={}, "
             + "String schema={}, String table={})",
         catalog,
@@ -2602,7 +2603,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       String foreignSchema,
       String foreignTable)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getCrossReference(String parentCatalog={}, "
             + "String parentSchema={}, String parentTable={}, "
             + "String foreignCatalog={}, String foreignSchema={}, "
@@ -2630,7 +2631,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public ResultSet getTypeInfo() throws SQLException {
-    logger.trace("ResultSet getTypeInfo()", false);
+    logger.debug("public ResultSet getTypeInfo()", false);
     raiseSQLExceptionIfConnectionIsClosed();
 
     Statement statement = connection.createStatement();
@@ -2855,7 +2856,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
    */
   public ResultSet getStreams(
       String originalCatalog, String originalSchemaPattern, String streamName) throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getStreams(String catalog={}, String schemaPattern={}"
             + "String streamName={}",
         originalCatalog,
@@ -2899,7 +2900,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       }
     }
 
-    logger.debug("Sql command to get stream metadata: {}", showStreamsCommand);
+    logger.debug("sql command to get stream metadata: {}", showStreamsCommand);
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showStreamsCommand, GET_STREAMS);
@@ -2909,7 +2910,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_STREAMS, resultSet, statement) {
       @Override
       public boolean next() throws SQLException {
-        logger.trace("boolean next()");
+        logger.debug("public boolean next()");
         incrementRow();
 
         // iterate throw the show streams result until we find an entry
@@ -2958,7 +2959,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getIndexInfo(
       String catalog, String schema, String table, boolean unique, boolean approximate)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getIndexInfo(String catalog, String schema, "
             + "String table,boolean unique, boolean approximate)",
         false);
@@ -3005,14 +3006,14 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean supportsResultSetType(int type) throws SQLException {
-    logger.trace("boolean supportsResultSetType(int type)", false);
+    logger.debug("public boolean supportsResultSetType(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return (type == ResultSet.TYPE_FORWARD_ONLY);
   }
 
   @Override
   public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
-    logger.trace(
+    logger.debug(
         "public boolean supportsResultSetConcurrency(int type, " + "int concurrency)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return (type == ResultSet.TYPE_FORWARD_ONLY && concurrency == ResultSet.CONCUR_READ_ONLY);
@@ -3020,70 +3021,70 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean ownUpdatesAreVisible(int type) throws SQLException {
-    logger.trace("boolean ownUpdatesAreVisible(int type)", false);
+    logger.debug("public boolean ownUpdatesAreVisible(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean ownDeletesAreVisible(int type) throws SQLException {
-    logger.trace("boolean ownDeletesAreVisible(int type)", false);
+    logger.debug("public boolean ownDeletesAreVisible(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean ownInsertsAreVisible(int type) throws SQLException {
-    logger.trace("boolean ownInsertsAreVisible(int type)", false);
+    logger.debug("public boolean ownInsertsAreVisible(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean othersUpdatesAreVisible(int type) throws SQLException {
-    logger.trace("boolean othersUpdatesAreVisible(int type)", false);
+    logger.debug("public boolean othersUpdatesAreVisible(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean othersDeletesAreVisible(int type) throws SQLException {
-    logger.trace("boolean othersDeletesAreVisible(int type)", false);
+    logger.debug("public boolean othersDeletesAreVisible(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean othersInsertsAreVisible(int type) throws SQLException {
-    logger.trace("boolean othersInsertsAreVisible(int type)", false);
+    logger.debug("public boolean othersInsertsAreVisible(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean updatesAreDetected(int type) throws SQLException {
-    logger.trace("boolean updatesAreDetected(int type)", false);
+    logger.debug("public boolean updatesAreDetected(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean deletesAreDetected(int type) throws SQLException {
-    logger.trace("boolean deletesAreDetected(int type)", false);
+    logger.debug("public boolean deletesAreDetected(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean insertsAreDetected(int type) throws SQLException {
-    logger.trace("boolean insertsAreDetected(int type)", false);
+    logger.debug("public boolean insertsAreDetected(int type)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsBatchUpdates() throws SQLException {
-    logger.trace("boolean supportsBatchUpdates()", false);
+    logger.debug("public boolean supportsBatchUpdates()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
@@ -3092,7 +3093,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getUDTs(
       String catalog, String schemaPattern, String typeNamePattern, int[] types)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getUDTs(String catalog, "
             + "String schemaPattern,String typeNamePattern, int[] types)",
         false);
@@ -3123,35 +3124,35 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public Connection getConnection() throws SQLException {
-    logger.trace("Connection getConnection()", false);
+    logger.debug("public Connection getConnection()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return connection;
   }
 
   @Override
   public boolean supportsSavepoints() throws SQLException {
-    logger.trace("boolean supportsSavepoints()", false);
+    logger.debug("public boolean supportsSavepoints()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsNamedParameters() throws SQLException {
-    logger.trace("boolean supportsNamedParameters()", false);
+    logger.debug("public boolean supportsNamedParameters()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsMultipleOpenResults() throws SQLException {
-    logger.trace("boolean supportsMultipleOpenResults()", false);
+    logger.debug("public boolean supportsMultipleOpenResults()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public boolean supportsGetGeneratedKeys() throws SQLException {
-    logger.trace("boolean supportsGetGeneratedKeys()", false);
+    logger.debug("public boolean supportsGetGeneratedKeys()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
@@ -3159,7 +3160,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getSuperTypes(String catalog, "
             + "String schemaPattern,String typeNamePattern)",
         false);
@@ -3170,7 +3171,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   @Override
   public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getSuperTables(String catalog, "
             + "String schemaPattern,String tableNamePattern)",
         false);
@@ -3182,7 +3183,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getAttributes(
       String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getAttributes(String catalog, String "
             + "schemaPattern,"
             + "String typeNamePattern,String attributeNamePattern)",
@@ -3193,75 +3194,75 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean supportsResultSetHoldability(int holdability) throws SQLException {
-    logger.trace("boolean supportsResultSetHoldability(int holdability)", false);
+    logger.debug("public boolean supportsResultSetHoldability(int holdability)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return holdability == ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
 
   @Override
   public int getResultSetHoldability() throws SQLException {
-    logger.trace("int getResultSetHoldability()", false);
+    logger.debug("public int getResultSetHoldability()", false);
     return ResultSet.CLOSE_CURSORS_AT_COMMIT;
   }
 
   @Override
   public int getDatabaseMajorVersion() throws SQLException {
-    logger.trace("int getDatabaseMajorVersion()", false);
+    logger.debug("public int getDatabaseMajorVersion()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseMajorVersion();
   }
 
   @Override
   public int getDatabaseMinorVersion() throws SQLException {
-    logger.trace("int getDatabaseMinorVersion()", false);
+    logger.debug("public int getDatabaseMinorVersion()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return connection.unwrap(SnowflakeConnectionV1.class).getDatabaseMinorVersion();
   }
 
   @Override
   public int getJDBCMajorVersion() throws SQLException {
-    logger.trace("int getJDBCMajorVersion()", false);
+    logger.debug("public int getJDBCMajorVersion()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return Integer.parseInt(JDBCVersion.split("\\.", 2)[0]);
   }
 
   @Override
   public int getJDBCMinorVersion() throws SQLException {
-    logger.trace("int getJDBCMinorVersion()", false);
+    logger.debug("public int getJDBCMinorVersion()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return Integer.parseInt(JDBCVersion.split("\\.", 2)[1]);
   }
 
   @Override
   public int getSQLStateType() throws SQLException {
-    logger.trace("int getSQLStateType()", false);
+    logger.debug("public int getSQLStateType()", false);
     return sqlStateSQL;
   }
 
   @Override
   public boolean locatorsUpdateCopy() {
-    logger.trace("boolean locatorsUpdateCopy()", false);
+    logger.debug("public boolean locatorsUpdateCopy()", false);
 
     return false;
   }
 
   @Override
   public boolean supportsStatementPooling() throws SQLException {
-    logger.trace("boolean supportsStatementPooling()", false);
+    logger.debug("public boolean supportsStatementPooling()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public RowIdLifetime getRowIdLifetime() throws SQLException {
-    logger.trace("RowIdLifetime getRowIdLifetime()", false);
+    logger.debug("public RowIdLifetime getRowIdLifetime()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public ResultSet getSchemas(String originalCatalog, String originalSchema) throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getSchemas(String catalog={}, String " + "schemaPattern={})",
         originalCatalog,
         originalSchema);
@@ -3293,7 +3294,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       showSchemas += " in database \"" + escapeSqlQuotes(catalog) + "\"";
     }
 
-    logger.debug("Sql command to get schemas metadata: {}", showSchemas);
+    logger.debug("sql command to get schemas metadata: {}", showSchemas);
 
     ResultSet resultSet =
         executeAndReturnEmptyResultIfNotFound(statement, showSchemas, GET_SCHEMAS);
@@ -3301,7 +3302,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
         resultSet, "getSchemas", originalCatalog, originalSchema, "none", "none");
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_SCHEMAS, resultSet, statement) {
       public boolean next() throws SQLException {
-        logger.trace("boolean next()", false);
+        logger.debug("public boolean next()", false);
         incrementRow();
 
         // iterate throw the show table result until we find an entry
@@ -3325,21 +3326,21 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean supportsStoredFunctionsUsingCallSyntax() throws SQLException {
-    logger.trace("boolean supportsStoredFunctionsUsingCallSyntax()", false);
+    logger.debug("public boolean supportsStoredFunctionsUsingCallSyntax()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return true;
   }
 
   @Override
   public boolean autoCommitFailureClosesAllResultSets() throws SQLException {
-    logger.trace("boolean autoCommitFailureClosesAllResultSets()", false);
+    logger.debug("public boolean autoCommitFailureClosesAllResultSets()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
 
   @Override
   public ResultSet getClientInfoProperties() throws SQLException {
-    logger.trace("ResultSet getClientInfoProperties()", false);
+    logger.debug("public ResultSet getClientInfoProperties()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
@@ -3350,7 +3351,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
       throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
     Statement statement = connection.createStatement();
-    logger.trace(
+    logger.debug(
         "public ResultSet getFunctions(String catalog={}, String schemaPattern={}, "
             + "String functionNamePattern={}",
         catalog,
@@ -3372,7 +3373,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
     return new SnowflakeDatabaseMetaDataQueryResultSet(GET_FUNCTIONS, resultSet, statement) {
       public boolean next() throws SQLException {
-        logger.trace("boolean next()", false);
+        logger.debug("public boolean next()", false);
         incrementRow();
 
         // iterate throw the show table result until we find an entry
@@ -3445,7 +3446,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getFunctionColumns(
       String catalog, String schemaPattern, String functionNamePattern, String columnNamePattern)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getFunctionColumns(String catalog, "
             + "String schemaPattern,String functionNamePattern,"
             + "String columnNamePattern)",
@@ -3603,7 +3604,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getPseudoColumns(
       String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
       throws SQLException {
-    logger.trace(
+    logger.debug(
         "public ResultSet getPseudoColumns(String catalog, "
             + "String schemaPattern,String tableNamePattern,"
             + "String columnNamePattern)",
@@ -3614,7 +3615,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   // @Override
   public boolean generatedKeyAlwaysReturned() throws SQLException {
-    logger.trace("boolean generatedKeyAlwaysReturned()", false);
+    logger.debug("public boolean generatedKeyAlwaysReturned()", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }
@@ -3622,7 +3623,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
   // unchecked
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.trace("<T> T unwrap(Class<T> iface)", false);
+    logger.debug("<T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(
@@ -3633,7 +3634,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.trace("boolean isWrapperFor(Class<?> iface)", false);
+    logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
   }

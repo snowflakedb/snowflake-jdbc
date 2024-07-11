@@ -33,7 +33,6 @@ public class SecureStorageWindowsManager implements SecureStorageManager {
   }
 
   public static SecureStorageWindowsManager builder() {
-    logger.info("Using Windows Credential Manager as a token cache storage");
     return new SecureStorageWindowsManager();
   }
 

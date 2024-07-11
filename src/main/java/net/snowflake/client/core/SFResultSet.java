@@ -35,7 +35,7 @@ import net.snowflake.common.core.SqlState;
  * @author jhuang
  */
 public class SFResultSet extends SFJsonResultSet {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SFResultSet.class);
 
   private int columnCount = 0;
 
@@ -309,7 +309,7 @@ public class SFResultSet extends SFJsonResultSet {
       }
       return true;
     } else {
-      logger.debug("End of result", false);
+      logger.debug("end of result", false);
 
       /*
        * Here we check if the result has been truncated and throw exception if

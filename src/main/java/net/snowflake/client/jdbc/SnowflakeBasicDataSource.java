@@ -36,7 +36,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   private Properties properties = new Properties();
 
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBasicDataSource.class);
+  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeBasicDataSource.class);
 
   static {
     try {
