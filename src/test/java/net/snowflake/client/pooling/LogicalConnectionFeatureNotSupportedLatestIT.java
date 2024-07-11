@@ -71,6 +71,8 @@ public class LogicalConnectionFeatureNotSupportedLatestIT extends BaseJDBCTest {
     expectFeatureNotSupportedException(
         () -> logicalConnection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
     expectFeatureNotSupportedException(
+        () -> logicalConnection.createArrayOf("fakeType", new Object[] {}));
+    expectFeatureNotSupportedException(
         () -> logicalConnection.createStruct("fakeType", new Object[] {}));
     expectFeatureNotSupportedException(
         () -> logicalConnection.prepareStatement("select 1", Statement.RETURN_GENERATED_KEYS));

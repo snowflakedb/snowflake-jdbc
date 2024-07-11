@@ -95,6 +95,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }
+
       default:
         throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
     }

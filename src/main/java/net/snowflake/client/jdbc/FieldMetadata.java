@@ -3,9 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import java.util.ArrayList;
 import java.util.List;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 
 public class FieldMetadata {
 
@@ -43,11 +41,6 @@ public class FieldMetadata {
     this.fixed = fixed;
     this.base = base;
     this.fields = fields;
-  }
-
-  @SnowflakeJdbcInternalApi
-  public FieldMetadata() {
-    this.fields = new ArrayList<>();
   }
 
   public String getName() {

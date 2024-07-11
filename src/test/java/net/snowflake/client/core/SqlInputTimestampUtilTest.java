@@ -48,7 +48,7 @@ public class SqlInputTimestampUtilTest {
   }
 
   private Timestamp getFromType(int type, String value, TimeZone explicitTimezone) {
-    return SfTimestampUtil.getTimestampFromType(
+    return SqlInputTimestampUtil.getTimestampFromType(
         type, value, mockSession, TimeZone.getTimeZone("GMT"), explicitTimezone);
   }
 }

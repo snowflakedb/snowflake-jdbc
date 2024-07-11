@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SfTimestampUtil;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.core.SqlInputTimestampUtil;
 import net.snowflake.client.core.arrow.StructuredTypeDateTimeConverter;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
@@ -224,7 +224,7 @@ public class Converters {
       TimeZone sessionTimezone) {
     return value -> {
       Timestamp result =
-          SfTimestampUtil.getTimestampFromType(
+          SqlInputTimestampUtil.getTimestampFromType(
               columnSubType, (String) value, session, sessionTimezone, tz);
       if (result != null) {
         return result;

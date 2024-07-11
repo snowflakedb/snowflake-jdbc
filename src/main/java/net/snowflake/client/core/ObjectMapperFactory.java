@@ -1,7 +1,6 @@
 package net.snowflake.client.core;
 
 import com.fasterxml.jackson.core.StreamReadConstraints;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -22,7 +21,6 @@ public class ObjectMapperFactory {
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS, false);
     mapper.configure(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS, false);
-    mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
 
     // override the maxStringLength value in ObjectMapper
     int maxJsonStringLength =

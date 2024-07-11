@@ -17,6 +17,8 @@ public class PreparedStatementFeatureNotSupportedIT extends BaseJDBCTest {
     try (Connection connection = getConnection()) {
       PreparedStatement preparedStatement = connection.prepareStatement("select ?");
       expectFeatureNotSupportedException(
+          () -> preparedStatement.setArray(1, new BaseJDBCTest.FakeArray()));
+      expectFeatureNotSupportedException(
           () -> preparedStatement.setAsciiStream(1, new BaseJDBCTest.FakeInputStream()));
       expectFeatureNotSupportedException(
           () -> preparedStatement.setAsciiStream(1, new BaseJDBCTest.FakeInputStream(), 1));
