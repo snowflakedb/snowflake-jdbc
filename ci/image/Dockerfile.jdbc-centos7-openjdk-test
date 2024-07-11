@@ -89,21 +89,3 @@ RUN export JAVA_HOME=/opt/jdk-17 && \
         --batch-mode --fail-never compile && \
     mv $HOME/.m2 /home/user && \
     chmod -R 777 /home/user/.m2
-
-###### OpenJDK 21 from archive (not available in yum)
-FROM jdbc-centos7-openjdk-base AS jdbc-centos7-openjdk21
-
-# Java
-RUN curl -o - https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz | tar xfz - -C /opt && \
-    ln -s /opt/jdk-21.0.2 /opt/jdk-21
-
-RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export JAVA_HOME=/opt/jdk-21'
-RUN sed -i /usr/local/bin/entrypoint.sh -e '/^exec/i export PATH=$JAVA_HOME/bin:$PATH'
-
-RUN export JAVA_HOME=/opt/jdk-21 && \
-    cd /root && \
-    mvn -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-        -Dnot-self-contained-jar \
-        --batch-mode --fail-never compile && \
-    mv $HOME/.m2 /home/user && \
-    chmod -R 777 /home/user/.m2
