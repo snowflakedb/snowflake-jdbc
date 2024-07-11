@@ -7,7 +7,6 @@ SNOW-XXXXX
 - [ ] The code is correctly formatted (run `mvn -P check-style validate`)
 - [ ] New public API is not unnecessary exposed (run `mvn verify` and inspect `target/japicmp/japicmp.html`)
 - [ ] The pull request name is prefixed with `SNOW-XXXX: `
-- [ ] Code is in compliance with internal logging requirements
 
 ## External contributors - please answer these questions before submitting a pull request. Thanks!
 
