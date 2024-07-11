@@ -10,11 +10,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -22,22 +20,8 @@ import org.junit.experimental.categories.Category;
 @Category(TestCategoryOthers.class)
 public class OpenGroupCLIFuncIT extends BaseJDBCTest {
 
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
-
-  public static Connection getConnection() throws SQLException {
-    Connection connection = AbstractDriverIT.getConnection();
+  @Before
+  public void setSessionTimezone() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       statement.execute(
           "alter session set "
@@ -48,7 +32,6 @@ public class OpenGroupCLIFuncIT extends BaseJDBCTest {
               + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
               + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
     }
-    return connection;
   }
 
   @Test

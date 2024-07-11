@@ -5,16 +5,12 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryStatement.class)
@@ -22,31 +18,18 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   protected static String queryResultFormat = "json";
 
-  private static SnowflakeConnectionV1 connection;
+  private static SnowflakeConnectionV1 sfConnectionV1 = (SnowflakeConnectionV1) connection;
 
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = (SnowflakeConnectionV1) getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
-
-  public static Connection getConnection() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection();
-    try (Statement stmt = conn.createStatement()) {
+  @Before
+  public void setSessionResultFormat() throws SQLException {
+    try (Statement stmt = sfConnectionV1.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }
-    return conn;
   }
 
   @Test
   public void testExecuteUpdateCount() throws Exception {
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
         statement.execute("create or replace table test_multi_bind(c1 number)");
@@ -91,13 +74,13 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   /** Less bindings than expected in statement */
   @Test
   public void testExecuteLessBindings() throws Exception {
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
         statement.execute("create or replace table test_multi_bind(c1 number)");
 
         try (PreparedStatement preparedStatement =
-            connection.prepareStatement(
+            sfConnectionV1.prepareStatement(
                 "insert into test_multi_bind(c1) values(?); insert into "
                     + "test_multi_bind values (?), (?)")) {
 
@@ -123,13 +106,13 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteMoreBindings() throws Exception {
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
         statement.execute("create or replace table test_multi_bind(c1 number)");
 
         try (PreparedStatement preparedStatement =
-            connection.prepareStatement(
+            sfConnectionV1.prepareStatement(
                 "insert into test_multi_bind(c1) values(?); insert into "
                     + "test_multi_bind values (?), (?)")) {
 
@@ -169,11 +152,11 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteQueryBindings() throws Exception {
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
       try (PreparedStatement preparedStatement =
-          connection.prepareStatement("select ?; select ?, ?; select ?, ?, ?")) {
+          sfConnectionV1.prepareStatement("select ?; select ?, ?; select ?, ?, ?")) {
 
         assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(6));
 
@@ -211,11 +194,11 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteQueryNoBindings() throws Exception {
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
       try (PreparedStatement preparedStatement =
-          connection.prepareStatement("select 10; select 20, 30; select 40, 50, 60")) {
+          sfConnectionV1.prepareStatement("select 10; select 20, 30; select 40, 50, 60")) {
 
         assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(0));
 

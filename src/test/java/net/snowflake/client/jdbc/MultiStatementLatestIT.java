@@ -9,13 +9,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -29,26 +27,11 @@ import org.junit.experimental.categories.Category;
 public class MultiStatementLatestIT extends BaseJDBCTest {
   protected static String queryResultFormat = "json";
 
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
-
-  public static Connection getConnection() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection();
-    try (Statement stmt = conn.createStatement()) {
+  @Before
+  public void setQueryResultFormat() throws SQLException {
+    try (Statement stmt = connection.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }
-    return conn;
   }
 
   @Test
