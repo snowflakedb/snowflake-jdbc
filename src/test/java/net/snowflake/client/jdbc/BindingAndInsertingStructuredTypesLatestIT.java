@@ -20,6 +20,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -36,32 +37,12 @@ import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
-import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
 public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
-
-  @Parameterized.Parameters(name = "format={0}")
-  public static Object[][] data() {
-    return new Object[][] {
-      {ResultSetFormatType.JSON},
-      {ResultSetFormatType.ARROW_WITH_JSON_STRUCTURED_TYPES},
-      {ResultSetFormatType.NATIVE_ARROW}
-    };
-  }
-
-  private final ResultSetFormatType queryResultFormat;
-
-  public BindingAndInsertingStructuredTypesLatestIT(ResultSetFormatType queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
-  }
 
   public Connection init() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
@@ -72,25 +53,11 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       stmt.execute("alter session set ENABLE_OBJECT_TYPED_BINDS = true");
       stmt.execute("alter session set enable_structured_types_in_fdn_tables=true");
       stmt.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
-      stmt.execute(
-          "alter session set jdbc_query_result_format = '"
-              + queryResultFormat.sessionParameterTypeValue
-              + "'");
-      if (queryResultFormat == ResultSetFormatType.NATIVE_ARROW) {
-        stmt.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
-        stmt.execute("alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
-      }
     }
     return conn;
   }
 
   @Before
-  public void setup() {
-    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
-    SnowflakeObjectTypeFactories.register(AllTypesClass.class, AllTypesClass::new);
-  }
-
-  @After
   public void clean() {
     SnowflakeObjectTypeFactories.unregister(SimpleClass.class);
     SnowflakeObjectTypeFactories.unregister(AllTypesClass.class);
@@ -100,6 +67,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteObject() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     SimpleClass sc = new SimpleClass("text1", 2);
     SimpleClass sc2 = new SimpleClass("text2", 3);
     try (Connection connection = init()) {
@@ -136,7 +104,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteNullObject() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmtement2 =
@@ -161,6 +129,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteObjectBindingNull() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
@@ -185,6 +154,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteObjectAllTypes() throws SQLException {
     TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
@@ -252,13 +222,13 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
         assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.getTimestampLtz());
         assertEquals(
+            //            toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0,
+            // ZoneId.of("Europe/Warsaw"))),
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
         assertEquals(
             toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
             object.getTimestampTz());
-        // TODO uncomment after merge SNOW-928973: Date field is returning one day less when getting
-        // through getString method
-        //        assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), object.getDate());
+        assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), object.getDate());
         assertEquals(Time.valueOf(LocalTime.of(12, 34, 56)), object.getTime());
         assertArrayEquals(new byte[] {'a', 'b', 'c'}, object.getBinary());
         assertEquals("testString", object.getSimpleClass().getString());
@@ -274,6 +244,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteArray() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
@@ -301,6 +272,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteArrayNoBinds() throws SQLException {
+    SnowflakeObjectTypeFactories.register(SimpleClass.class, SimpleClass::new);
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =

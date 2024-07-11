@@ -261,15 +261,14 @@ public abstract class SFBaseResultSet {
 
   @SnowflakeJdbcInternalApi
   protected SQLInput createJsonSqlInputForColumn(
-      Object input, SFBaseSession session, List<FieldMetadata> fields) {
+      Object input, int columnIndex, SFBaseSession session, List<FieldMetadata> fields) {
     JsonNode inputNode;
     if (input instanceof JsonNode) {
       inputNode = (JsonNode) input;
     } else {
       inputNode = OBJECT_MAPPER.convertValue(input, JsonNode.class);
     }
-    return new JsonSqlInput(
-        input.toString(), inputNode, session, getConverters(), fields, sessionTimeZone);
+    return new JsonSqlInput(inputNode, session, getConverters(), fields, sessionTimeZone);
   }
 
   @SnowflakeJdbcInternalApi
