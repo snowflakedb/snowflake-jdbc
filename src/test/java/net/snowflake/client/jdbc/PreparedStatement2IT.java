@@ -48,8 +48,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testStageBatchDates() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Connection connection = init()) {
       Date dEpoch = new Date(0);
       Date dAfterEpoch = new Date(24 * 60 * 60 * 1000);
       Date dBeforeEpoch = new Date(-1 * 24 * 60 * 60 * 1000);
@@ -60,12 +59,16 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       int[] countResult;
 
       try {
-        statement.execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
+        connection
+            .createStatement()
+            .execute("CREATE OR REPLACE TABLE test_prepst_date (id INTEGER, d DATE)");
         try (PreparedStatement prepStatement =
             connection.prepareStatement("INSERT INTO test_prepst_date(id, d)  VALUES(?,?)")) {
 
           // First, run with non-stage binding
-          statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
+          connection
+              .createStatement()
+              .execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 0");
           for (int i = 0; i < dates.length; i++) {
             prepStatement.setInt(1, i);
             prepStatement.setDate(2, dates[i]);
@@ -77,19 +80,22 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           }
 
           Date[] nonStageResult = new Date[dates.length];
-          try (ResultSet rsNonStage =
-              statement.executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC")) {
-
-            for (int i = 0; i < nonStageResult.length; i++) {
-              assertTrue(rsNonStage.next());
-              nonStageResult[i] = rsNonStage.getDate(2);
-            }
+          ResultSet rsNonStage =
+              connection
+                  .createStatement()
+                  .executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC");
+          for (int i = 0; i < nonStageResult.length; i++) {
+            rsNonStage.next();
+            nonStageResult[i] = rsNonStage.getDate(2);
           }
-          statement.execute("DELETE FROM test_prepst_date WHERE 1=1");
+
+          connection.createStatement().execute("DELETE FROM test_prepst_date WHERE 1=1");
 
           // Now, run with stage binding
-          statement.execute(
-              "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage
+          connection
+              .createStatement()
+              .execute(
+                  "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage
           // bind
           for (int i = 0; i < dates.length; i++) {
             prepStatement.setInt(1, i);
@@ -102,33 +108,35 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           }
 
           Date[] stageResult = new Date[dates.length];
-          try (ResultSet rsStage =
-              statement.executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC")) {
-            for (int i = 0; i < stageResult.length; i++) {
-              assertTrue(rsStage.next());
-              stageResult[i] = rsStage.getDate(2);
-            }
+          ResultSet rsStage =
+              connection
+                  .createStatement()
+                  .executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC");
+          for (int i = 0; i < stageResult.length; i++) {
+            rsStage.next();
+            stageResult[i] = rsStage.getDate(2);
+          }
 
-            for (int i = 0; i < dates.length; i++) {
-              assertEquals(
-                  "Stage binding date should match non-stage binding date",
-                  nonStageResult[i],
-                  stageResult[i]);
-            }
+          for (int i = 0; i < dates.length; i++) {
+            assertEquals(
+                "Stage binding date should match non-stage binding date",
+                nonStageResult[i],
+                stageResult[i]);
           }
         }
       } finally {
-        statement.execute("DROP TABLE IF EXISTS test_prepst_date");
+        connection.createStatement().execute("DROP TABLE IF EXISTS test_prepst_date");
       }
     }
   }
 
   @Test
   public void testBindWithNullValue() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
-      statement.execute(
-          "create or replace table testBindNull(cola date, colb time, colc timestamp, cold number)");
+    try (Connection connection = init()) {
+      connection
+          .createStatement()
+          .execute(
+              "create or replace table testBindNull(cola date, colb time, colc timestamp, cold number)");
 
       try (PreparedStatement prepStatement =
           connection.prepareStatement("insert into testBindNull values (?, ?, ?, ?)")) {
@@ -138,8 +146,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         prepStatement.setBigDecimal(4, null);
         prepStatement.addBatch();
         prepStatement.executeBatch();
-        try (ResultSet resultSet = statement.executeQuery("select * from testBindNull")) {
-          assertTrue(resultSet.next());
+        try (ResultSet resultSet =
+            connection.createStatement().executeQuery("select * from testBindNull")) {
+          resultSet.next();
           Date date = resultSet.getDate(1);
           assertNull(date);
           assertTrue(resultSet.wasNull());
@@ -156,7 +165,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           assertNull(bg);
           assertTrue(resultSet.wasNull());
         }
-        statement.execute("TRUNCATE table testbindnull");
+        connection.createStatement().execute("TRUNCATE table testbindnull");
         prepStatement.setDate(1, null, Calendar.getInstance());
         prepStatement.setTime(2, null, Calendar.getInstance());
         prepStatement.setTimestamp(3, null, Calendar.getInstance());
@@ -165,8 +174,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         prepStatement.addBatch();
         prepStatement.executeBatch();
 
-        try (ResultSet resultSet = statement.executeQuery("select * from testBindNull")) {
-          assertTrue(resultSet.next());
+        try (ResultSet resultSet =
+            connection.createStatement().executeQuery("select * from testBindNull")) {
+          resultSet.next();
           Date date = resultSet.getDate(1);
           assertNull(date);
           assertTrue(resultSet.wasNull());
@@ -185,20 +195,20 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
   @Test
   public void testPrepareDDL() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Connection connection = init()) {
       try {
         try (PreparedStatement prepStatement =
             connection.prepareStatement("create or replace table testprepareddl(cola number)")) {
           prepStatement.execute();
         }
-        try (ResultSet resultSet = statement.executeQuery("show tables like 'testprepareddl'")) {
+        try (ResultSet resultSet =
+            connection.createStatement().executeQuery("show tables like 'testprepareddl'")) {
           // result should only have one row since table is created
           assertThat(resultSet.next(), is(true));
           assertThat(resultSet.next(), is(false));
         }
       } finally {
-        statement.execute("drop table if exists testprepareddl");
+        connection.createStatement().execute("drop table if exists testprepareddl");
       }
     }
   }
@@ -226,7 +236,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       for (String testCase : testCases) {
         try (PreparedStatement prepStatement = connection.prepareStatement(testCase)) {
           try (ResultSet resultSet = prepStatement.executeQuery()) {
-            assertTrue(resultSet.next());
+            resultSet.next();
             assertThat(resultSet.getString(1), is("Statement executed successfully."));
           }
         }
@@ -256,26 +266,26 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPrepareTimeout() throws SQLException, InterruptedException {
-    try (Connection adminCon = getSnowflakeAdminConnection();
-        Statement adminStatement = adminCon.createStatement()) {
-      adminStatement.execute("alter system set enable_combined_describe=true");
+    try (Connection adminCon = getSnowflakeAdminConnection()) {
+      adminCon.createStatement().execute("alter system set enable_combined_describe=true");
       try {
-        try (Connection connection = init();
-            Statement statement = connection.createStatement()) {
-          statement.execute("create or replace table t(c1 string) as select 1");
-          statement.execute("alter session set jdbc_enable_combined_describe=true");
+        try (Connection connection = init()) {
+          connection.createStatement().execute("create or replace table t(c1 string) as select 1");
+          connection
+              .createStatement()
+              .execute("alter session set jdbc_enable_combined_describe=true");
           try (PreparedStatement prepStatement =
               connection.prepareStatement("select c1 from t order by c1 limit 1")) {
             Thread.sleep(5000);
             try (ResultSet resultSet = prepStatement.executeQuery()) {
-              assertTrue(resultSet.next());
+              resultSet.next();
               assertThat(resultSet.getInt(1), is(1));
             }
           }
-          statement.execute("drop table if exists t");
+          connection.createStatement().execute("drop table if exists t");
         }
       } finally {
-        adminStatement.execute("alter system set enable_combined_describe=default");
+        adminCon.createStatement().execute("alter system set enable_combined_describe=default");
       }
     }
   }
@@ -283,41 +293,40 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   /** Test case to make sure 2 non null bind refs was not constant folded into one */
   @Test
   public void testSnow36284() throws Exception {
-    String query = "select * from (values ('a'), ('b')) x where x.COLUMN1 in (?,?);";
+    Connection connection = init();
 
-    try (Connection connection = init();
-        PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-      preparedStatement.setString(1, "a");
-      preparedStatement.setString(2, "b");
-      try (ResultSet rs = preparedStatement.executeQuery()) {
-        int rowcount = 0;
-        Set<String> valuesReturned = Sets.newHashSetWithExpectedSize(2);
-        while (rs.next()) {
-          rowcount++;
-          valuesReturned.add(rs.getString(1));
-        }
-        assertEquals("Should get back 2 rows", 2, rowcount);
-        assertEquals("", valuesReturned, Sets.newHashSet("a", "b"));
-      }
+    String query = "select * from (values ('a'), ('b')) x where x.COLUMN1 in (?,?);";
+    PreparedStatement preparedStatement = connection.prepareStatement(query);
+    preparedStatement.setString(1, "a");
+    preparedStatement.setString(2, "b");
+    ResultSet rs = preparedStatement.executeQuery();
+    int rowcount = 0;
+    Set<String> valuesReturned = Sets.newHashSetWithExpectedSize(2);
+    while (rs.next()) {
+      rowcount++;
+      valuesReturned.add(rs.getString(1));
     }
+    assertEquals("Should get back 2 rows", 2, rowcount);
+    assertEquals("", valuesReturned, Sets.newHashSet("a", "b"));
   }
 
   /** Test for coalesce with bind and null arguments in a prepared statement */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testSnow35923() throws Exception {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
-      statement.execute(
-          "alter session set " + "optimizer_eliminate_scans_for_constant_select=false");
-      statement.execute("create or replace table inc(a int, b int)");
-      statement.execute("insert into inc(a, b) values (1, 2), " + "(NULL, 4), (5,NULL), (7,8)");
+    try (Connection connection = init()) {
+      connection
+          .createStatement()
+          .execute("alter session set " + "optimizer_eliminate_scans_for_constant_select=false");
+      connection.createStatement().execute("create or replace table inc(a int, b int)");
+      connection
+          .createStatement()
+          .execute("insert into inc(a, b) values (1, 2), " + "(NULL, 4), (5,NULL), (7,8)");
       // Query used to cause an incident.
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement("SELECT coalesce(?, NULL) from inc;")) {
-        preparedStatement.setInt(1, 0);
-        try (ResultSet rs = preparedStatement.executeQuery()) {}
-      }
+      PreparedStatement preparedStatement =
+          connection.prepareStatement("SELECT coalesce(?, NULL) from inc;");
+      preparedStatement.setInt(1, 0);
+      ResultSet rs = preparedStatement.executeQuery();
     }
   }
 
@@ -328,180 +337,162 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBindObjectLiteral() throws Exception {
-    long t1Id = 0;
-    long t2Id = 0;
-    String t1 = null;
-
-    try (Connection conn = init();
-        Statement stmt = conn.createStatement()) {
+    try (Connection conn = init()) {
+      Statement stmt = conn.createStatement();
 
       String sqlText = "create or replace table identifier(?) (c1 number)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        t1 = "bindObjectTable1";
-        // Bind the table name
-        pStmt.setString(1, t1);
-        try (ResultSet result = pStmt.executeQuery()) {}
-      }
+      SnowflakePreparedStatementV1 pStmt =
+          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      String t1 = "bindObjectTable1";
+      // Bind the table name
+      pStmt.setString(1, t1);
+      ResultSet result = pStmt.executeQuery();
+
       // Verify the table has been created and get the table ID
       stmt.execute("select parse_json(system$dict_id('table', '" + t1 + "')):entityId;");
-      try (ResultSet result = stmt.getResultSet()) {
-        if (result.next()) {
-          t1Id = Long.valueOf(result.getString(1));
-        }
-        assertTrue(t1Id != 0);
+      result = stmt.getResultSet();
+
+      long t1Id = 0;
+      if (result.next()) {
+        t1Id = Long.valueOf(result.getString(1));
       }
+
+      assertTrue(t1Id != 0);
 
       // Mix of object literal binds and value binds
       sqlText = "insert into identifier(?) values (1), (2), (3)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setParameter("resolve_object_ids", true);
-        // Bind by object IDs
-        pStmt.setLong(1, t1Id);
-        try (ResultSet result = pStmt.executeQuery()) {}
-      }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      // Bind by object IDs
+      pStmt.setLong(1, t1Id);
+
+      result = pStmt.executeQuery();
+
       // Perform some selection
       sqlText = "select * from identifier(?) order by 1";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setString(1, t1);
-        try (ResultSet result = pStmt.executeQuery()) {
-          // Verify 3 rows have been inserted
-          for (int i = 0; i < 3; i++) {
-            assertTrue(result.next());
-          }
-          assertFalse(result.next());
-        }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, t1);
+      result = pStmt.executeQuery();
+      // Verify 3 rows have been inserted
+      for (int i = 0; i < 3; i++) {
+        assertTrue(result.next());
       }
+      assertFalse(result.next());
+
       // Alter Table
       sqlText = "alter table identifier(?) add column c2 number";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setParameter("resolve_object_ids", true);
-        pStmt.setLong(1, t1Id);
-        try (ResultSet result = pStmt.executeQuery()) {}
-      }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      pStmt.setLong(1, t1Id);
+      result = pStmt.executeQuery();
 
       // Describe
       sqlText = "desc table identifier(?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setString(1, t1);
-        try (ResultSet result = pStmt.executeQuery()) {
-          // Verify two columns have been created
-          for (int i = 0; i < 2; i++) {
-            assertTrue(result.next());
-          }
-          assertFalse(result.next());
-        }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, t1);
+      result = pStmt.executeQuery();
+      // Verify two columns have been created
+      for (int i = 0; i < 2; i++) {
+        assertTrue(result.next());
       }
+      assertFalse(result.next());
 
       // Create another table
       String t2 = "bindObjectTable2";
       sqlText = "create or replace table identifier(?) (c1 number)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setString(1, t2);
-        try (ResultSet result = pStmt.executeQuery()) {}
-      }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, t2);
+      result = pStmt.executeQuery();
+
       // Verify the table has been created and get the table ID
       stmt.execute("select parse_json(system$dict_id('table', '" + t2 + "')):entityId;");
-      try (ResultSet result = stmt.getResultSet()) {
-        if (result.next()) {
-          t2Id = Long.valueOf(result.getString(1));
-        }
-        assertTrue(t2Id != 0);
+      result = stmt.getResultSet();
+
+      long t2Id = 0;
+      if (result.next()) {
+        t2Id = Long.valueOf(result.getString(1));
       }
+
+      assertTrue(t2Id != 0);
 
       // Mix object binds with value binds
       sqlText = "insert into identifier(?) values (?), (?), (?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setString(1, t2);
-        pStmt.setInt(2, 1);
-        pStmt.setInt(3, 2);
-        pStmt.setInt(4, 3);
-        try (ResultSet result = pStmt.executeQuery()) {}
-      }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, t2);
+      pStmt.setInt(2, 1);
+      pStmt.setInt(3, 2);
+      pStmt.setInt(4, 3);
+      result = pStmt.executeQuery();
+
       // Verify that 3 rows have been inserted
       sqlText = "select * from identifier(?) order by 1";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setParameter("resolve_object_ids", true);
-        pStmt.setLong(1, t2Id);
-        try (ResultSet result = pStmt.executeQuery()) {
-          for (int i = 0; i < 3; i++) {
-            assertTrue(result.next());
-          }
-          assertFalse(result.next());
-        }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      pStmt.setLong(1, t2Id);
+      result = pStmt.executeQuery();
+      for (int i = 0; i < 3; i++) {
+        assertTrue(result.next());
       }
+      assertFalse(result.next());
 
       // Multiple Object Binds
       sqlText =
           "select t2.c1 from identifier(?) as t1, identifier(?) as t2 "
               + "where t1.c1 = t2.c1 and t1.c1 > (?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setParameter("resolve_object_ids", true);
-        pStmt.setString(1, t1);
-        pStmt.setLong(2, t2Id);
-        pStmt.setInt(3, 1);
-        try (ResultSet result = pStmt.executeQuery()) {
-          for (int i = 0; i < 2; i++) {
-            assertTrue(result.next());
-          }
-          assertFalse(result.next());
-        }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      pStmt.setString(1, t1);
+      pStmt.setLong(2, t2Id);
+      pStmt.setInt(3, 1);
+      result = pStmt.executeQuery();
+      for (int i = 0; i < 2; i++) {
+        assertTrue(result.next());
       }
+      assertFalse(result.next());
 
       // Drop Tables
       sqlText = "drop table identifier(?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setString(1, "bindObjectTable1");
-        try (ResultSet result = pStmt.executeQuery()) {}
-      }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setString(1, "bindObjectTable1");
+      result = pStmt.executeQuery();
 
       sqlText = "drop table identifier(?)";
-      try (SnowflakePreparedStatementV1 pStmt =
-          (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText)) {
-        pStmt.setParameter("resolve_object_ids", true);
-        pStmt.setLong(1, t2Id);
-        try (ResultSet result = pStmt.executeQuery()) {}
-      }
+      pStmt = (SnowflakePreparedStatementV1) conn.prepareStatement(sqlText);
+      pStmt.setParameter("resolve_object_ids", true);
+      pStmt.setLong(1, t2Id);
+      result = pStmt.executeQuery();
 
       // Verify that the tables have been dropped
       stmt.execute("show tables like 'bindobjecttable%'");
-      try (ResultSet result = stmt.getResultSet()) {
-        assertFalse(result.next());
-      }
+      result = stmt.getResultSet();
+      assertFalse(result.next());
     }
   }
 
   @Test
   public void testBindTimestampTZViaString() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.execute(
-            "alter session set timestamp_tz_output_format='YYYY-MM" + "-DD HH24:MI:SS.FF9 TZHTZM'");
-        statement.execute("create or replace  table testbindtstz(cola timestamp_tz)");
+    try (Connection connection = init()) {
+      connection
+          .createStatement()
+          .execute(
+              "alter session set timestamp_tz_output_format='YYYY-MM"
+                  + "-DD HH24:MI:SS.FF9 TZHTZM'");
+      connection
+          .createStatement()
+          .execute("create or replace  table testbindtstz(cola timestamp_tz)");
 
-        try (PreparedStatement preparedStatement =
-            connection.prepareStatement("insert into testbindtstz values(?)")) {
-          preparedStatement.setString(1, "2017-11-30T18:17:05.123456789+08:00");
-          int count = preparedStatement.executeUpdate();
-          assertThat(count, is(1));
-        }
-        try (ResultSet resultSet = statement.executeQuery("select * from testbindtstz")) {
-          assertTrue(resultSet.next());
-          assertThat(resultSet.getString(1), is("2017-11-30 18:17:05.123456789 +0800"));
-        }
-      } finally {
-        statement.execute("drop table if exists testbindtstz");
+      try (PreparedStatement preparedStatement =
+          connection.prepareStatement("insert into testbindtstz values(?)")) {
+        preparedStatement.setString(1, "2017-11-30T18:17:05.123456789+08:00");
+        int count = preparedStatement.executeUpdate();
+        assertThat(count, is(1));
       }
+      try (ResultSet resultSet =
+          connection.createStatement().executeQuery("select * from testbindtstz")) {
+        assertTrue(resultSet.next());
+        assertThat(resultSet.getString(1), is("2017-11-30 18:17:05.123456789 +0800"));
+      }
+      connection.createStatement().execute("drop table if exists testbindtstz");
     }
   }
 
@@ -512,40 +503,41 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBindTimestampTZViaStringBatch() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.execute(
-            "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage bind
-        statement.execute(
-            "create or replace table testbindtstz(cola timestamp_tz, colb timestamp_ntz)");
+    try (Connection connection = init()) {
+      connection
+          .createStatement()
+          .execute(
+              "ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1"); // enable stage bind
+      connection
+          .createStatement()
+          .execute("create or replace table testbindtstz(cola timestamp_tz, colb timestamp_ntz)");
 
-        try (PreparedStatement preparedStatement =
-            connection.prepareStatement("insert into testbindtstz values(?,?)")) {
+      try (PreparedStatement preparedStatement =
+          connection.prepareStatement("insert into testbindtstz values(?,?)")) {
 
-          preparedStatement.setString(1, "2017-11-30 18:17:05.123456789 +08:00");
-          preparedStatement.setString(2, "2017-11-30 18:17:05.123456789");
-          preparedStatement.addBatch();
-          preparedStatement.setString(1, "2017-05-03 16:44:42.0");
-          preparedStatement.setString(2, "2017-05-03 16:44:42.0");
-          preparedStatement.addBatch();
-          int[] count = preparedStatement.executeBatch();
-          assertThat(count[0], is(1));
+        preparedStatement.setString(1, "2017-11-30 18:17:05.123456789 +08:00");
+        preparedStatement.setString(2, "2017-11-30 18:17:05.123456789");
+        preparedStatement.addBatch();
+        preparedStatement.setString(1, "2017-05-03 16:44:42.0");
+        preparedStatement.setString(2, "2017-05-03 16:44:42.0");
+        preparedStatement.addBatch();
+        int[] count = preparedStatement.executeBatch();
+        assertThat(count[0], is(1));
 
-          try (ResultSet resultSet =
-              statement.executeQuery("select * from testbindtstz order by 1 desc")) {
-            assertTrue(resultSet.next());
-            assertThat(resultSet.getString(1), is("Thu, 30 Nov 2017 18:17:05 +0800"));
-            assertThat(resultSet.getString(2), is("Thu, 30 Nov 2017 18:17:05 Z"));
+        try (ResultSet resultSet =
+            connection
+                .createStatement()
+                .executeQuery("select * from testbindtstz order by 1 desc")) {
+          assertTrue(resultSet.next());
+          assertThat(resultSet.getString(1), is("Thu, 30 Nov 2017 18:17:05 +0800"));
+          assertThat(resultSet.getString(2), is("Thu, 30 Nov 2017 18:17:05 Z"));
 
-            assertTrue(resultSet.next());
-            assertThat(resultSet.getString(1), is("Wed, 03 May 2017 16:44:42 -0700"));
-            assertThat(resultSet.getString(2), is("Wed, 03 May 2017 16:44:42 Z"));
-          }
+          assertTrue(resultSet.next());
+          assertThat(resultSet.getString(1), is("Wed, 03 May 2017 16:44:42 -0700"));
+          assertThat(resultSet.getString(2), is("Wed, 03 May 2017 16:44:42 Z"));
         }
-      } finally {
-        statement.execute("drop table if exists testbindtstz");
       }
+      connection.createStatement().execute("drop table if exists testbindtstz");
     }
   }
 
@@ -557,11 +549,14 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    */
   @Test
   public void testSnow41620() throws Exception {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Connection connection = init()) {
       // Create a table and insert 3 records
-      statement.execute("CREATE or REPLACE TABLE SNOW41620 (c1 varchar(20)," + "c2 int" + "  )");
-      statement.execute("insert into SNOW41620 values('value1', 1), ('value2', 2), ('value3', 3)");
+      connection
+          .createStatement()
+          .execute("CREATE or REPLACE TABLE SNOW41620 (c1 varchar(20)," + "c2 int" + "  )");
+      connection
+          .createStatement()
+          .execute("insert into SNOW41620 values('value1', 1), ('value2', 2), ('value3', 3)");
 
       String PARAMETERIZED_QUERY =
           "SELECT t0.C1, "
@@ -569,24 +564,28 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
               + "CASE WHEN t0.C1 IN (?, ?) THEN t0.C2  ELSE null END "
               + "FROM SNOW41620 t0";
 
+      ResultSet bindStmtResultSet;
       try (PreparedStatement pst = connection.prepareStatement(PARAMETERIZED_QUERY)) {
         // bind values
         pst.setObject(1, "value1");
         pst.setObject(2, "value3");
         pst.setObject(3, "value2");
         pst.setObject(4, "value3");
-        try (ResultSet bindStmtResultSet = pst.executeQuery()) {
+        bindStmtResultSet = pst.executeQuery();
 
-          // Execute the same query with bind values replaced in the sql
-          String DIRECT_QUERY =
-              "SELECT t0.C1, "
-                  + "CASE WHEN t0.C1 IN ('value1', 'value3') THEN t0.C2  ELSE null END,"
-                  + "CASE WHEN t0.C1 IN ('value2', 'value3') THEN t0.C2  ELSE null END "
-                  + "FROM SNOW41620 t0";
-          try (PreparedStatement pst1 = connection.prepareStatement(DIRECT_QUERY);
-              ResultSet directStmtResultSet = pst1.executeQuery()) {
-            checkResultSetEqual(bindStmtResultSet, directStmtResultSet);
-          }
+        // Execute the same query with bind values replaced in the sql
+        String DIRECT_QUERY =
+            "SELECT t0.C1, "
+                + "CASE WHEN t0.C1 IN ('value1', 'value3') THEN t0.C2  ELSE null END,"
+                + "CASE WHEN t0.C1 IN ('value2', 'value3') THEN t0.C2  ELSE null END "
+                + "FROM SNOW41620 t0";
+        try (PreparedStatement pst1 = connection.prepareStatement(DIRECT_QUERY)) {
+          ResultSet directStmtResultSet = pst1.executeQuery();
+
+          checkResultSetEqual(bindStmtResultSet, directStmtResultSet);
+
+          bindStmtResultSet.close();
+          directStmtResultSet.close();
         }
       }
     }
@@ -651,9 +650,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
   @Test
   public void testPreparedStatementWithSkipParsingAndBinding() throws Exception {
-    try (Connection con = init();
-        Statement statement = con.createStatement()) {
-      statement.execute("create or replace table t(c1 int)");
+    try (Connection con = init()) {
+      con.createStatement().execute("create or replace table t(c1 int)");
       try {
         try (PreparedStatement stmt =
             con.unwrap(SnowflakeConnectionV1.class)
@@ -663,13 +661,13 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           assertThat(ret, is(1));
         }
         try (PreparedStatement stmt =
-                con.unwrap(SnowflakeConnectionV1.class).prepareStatement("select * from t", true);
-            ResultSet rs = stmt.executeQuery()) {
+            con.unwrap(SnowflakeConnectionV1.class).prepareStatement("select * from t", true)) {
+          ResultSet rs = stmt.executeQuery();
           assertThat(rs.next(), is(true));
           assertThat(rs.getInt(1), is(123));
         }
       } finally {
-        statement.execute("drop table if exists t");
+        con.createStatement().execute("drop table if exists t");
       }
     }
   }
@@ -687,12 +685,11 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
               .execute("alter session set timestamp_ntz_output_format='YYYY-MM-DD HH24:MI:SS'"));
       try (PreparedStatement stmt = con.prepareStatement("select to_timestamp_ntz(?, 3)")) {
         stmt.setBigDecimal(1, new BigDecimal("1261440000000"));
-        try (ResultSet resultSet = stmt.executeQuery()) {
-          assertTrue(resultSet.next());
+        ResultSet resultSet = stmt.executeQuery();
+        resultSet.next();
 
-          String res = resultSet.getString(1);
-          assertThat(res, is("2009-12-22 00:00:00"));
-        }
+        String res = resultSet.getString(1);
+        assertThat(res, is("2009-12-22 00:00:00"));
       }
     }
   }
@@ -778,38 +775,36 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
   @Test
   public void testInvalidUsageOfApi() throws Exception {
-    try (Connection connection = init();
-        PreparedStatement preparedStatement = connection.prepareStatement("select 1")) {
-      final int expectedCode =
-          ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode();
+    Connection connection = init();
+    final PreparedStatement preparedStatement = connection.prepareStatement("select 1");
+    final int expectedCode = ErrorCode.UNSUPPORTED_STATEMENT_TYPE_IN_EXECUTION_API.getMessageCode();
 
-      assertException(
-          new RunnableWithSQLException() {
-            @Override
-            public void run() throws SQLException {
-              preparedStatement.executeUpdate("select 1");
-            }
-          },
-          expectedCode);
+    assertException(
+        new RunnableWithSQLException() {
+          @Override
+          public void run() throws SQLException {
+            preparedStatement.executeUpdate("select 1");
+          }
+        },
+        expectedCode);
 
-      assertException(
-          new RunnableWithSQLException() {
-            @Override
-            public void run() throws SQLException {
-              preparedStatement.execute("select 1");
-            }
-          },
-          expectedCode);
+    assertException(
+        new RunnableWithSQLException() {
+          @Override
+          public void run() throws SQLException {
+            preparedStatement.execute("select 1");
+          }
+        },
+        expectedCode);
 
-      assertException(
-          new RunnableWithSQLException() {
-            @Override
-            public void run() throws SQLException {
-              preparedStatement.addBatch("select 1");
-            }
-          },
-          expectedCode);
-    }
+    assertException(
+        new RunnableWithSQLException() {
+          @Override
+          public void run() throws SQLException {
+            preparedStatement.addBatch("select 1");
+          }
+        },
+        expectedCode);
   }
 
   private void assertException(RunnableWithSQLException runnable, int expectedCode) {

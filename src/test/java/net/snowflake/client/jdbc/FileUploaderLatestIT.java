@@ -67,24 +67,24 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetS3StageDataWithS3Session() throws SQLException {
-    try (Connection con = getConnection("s3testaccount")) {
-      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      // Set UseRegionalS3EndpointsForPresignedURL to true in session
-      sfSession.setUseRegionalS3EndpointsForPresignedURL(true);
+    Connection con = getConnection("s3testaccount");
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    // Set UseRegionalS3EndpointsForPresignedURL to true in session
+    sfSession.setUseRegionalS3EndpointsForPresignedURL(true);
 
-      // Get sample stage info with session
-      StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3JsonNode, sfSession);
-      Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
-      // Assert that true value from session is reflected in StageInfo
-      Assert.assertEquals(true, stageInfo.getUseS3RegionalUrl());
+    // Get sample stage info with session
+    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3JsonNode, sfSession);
+    Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+    // Assert that true value from session is reflected in StageInfo
+    Assert.assertEquals(true, stageInfo.getUseS3RegionalUrl());
 
-      // Set UseRegionalS3EndpointsForPresignedURL to false in session
-      sfSession.setUseRegionalS3EndpointsForPresignedURL(false);
-      stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3JsonNode, sfSession);
-      Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
-      // Assert that false value from session is reflected in StageInfo
-      Assert.assertEquals(false, stageInfo.getUseS3RegionalUrl());
-    }
+    // Set UseRegionalS3EndpointsForPresignedURL to false in session
+    sfSession.setUseRegionalS3EndpointsForPresignedURL(false);
+    stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3JsonNode, sfSession);
+    Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+    // Assert that false value from session is reflected in StageInfo
+    Assert.assertEquals(false, stageInfo.getUseS3RegionalUrl());
+    con.close();
   }
 
   /**
@@ -96,56 +96,56 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetS3StageDataWithAzureSession() throws SQLException {
-    try (Connection con = getConnection("azureaccount")) {
-      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      // Set UseRegionalS3EndpointsForPresignedURL to true in session. This is redundant since
-      // session
-      // is Azure
-      sfSession.setUseRegionalS3EndpointsForPresignedURL(true);
+    Connection con = getConnection("azureaccount");
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    // Set UseRegionalS3EndpointsForPresignedURL to true in session. This is redundant since session
+    // is Azure
+    sfSession.setUseRegionalS3EndpointsForPresignedURL(true);
 
-      // Get sample stage info with session
-      StageInfo stageInfo =
-          SnowflakeFileTransferAgent.getStageInfo(exampleAzureJsonNode, sfSession);
-      Assert.assertEquals(StageInfo.StageType.AZURE, stageInfo.getStageType());
-      Assert.assertEquals("EXAMPLE_LOCATION/", stageInfo.getLocation());
-      // Assert that UseRegionalS3EndpointsForPresignedURL is false in StageInfo even if it was set
-      // to
-      // true.
-      // The value should always be false for non-S3 accounts
-      Assert.assertEquals(false, stageInfo.getUseS3RegionalUrl());
-    }
+    // Get sample stage info with session
+    StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleAzureJsonNode, sfSession);
+    Assert.assertEquals(StageInfo.StageType.AZURE, stageInfo.getStageType());
+    Assert.assertEquals("EXAMPLE_LOCATION/", stageInfo.getLocation());
+    // Assert that UseRegionalS3EndpointsForPresignedURL is false in StageInfo even if it was set to
+    // true.
+    // The value should always be false for non-S3 accounts
+    Assert.assertEquals(false, stageInfo.getUseS3RegionalUrl());
+    con.close();
   }
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetObjectMetadataWithGCS() throws Exception {
-    Properties paramProperties = new Properties();
-    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
-    try (Connection connection = getConnection("gcpaccount", paramProperties);
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
+    Connection connection = null;
+    try {
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+      connection = getConnection("gcpaccount", paramProperties);
+      Statement statement = connection.createStatement();
+      statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
-        String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-        String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
-        statement.execute(putCommand);
+      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+      String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
+      statement.execute(putCommand);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-        StageInfo info = sfAgent.getStageInfo();
-        SnowflakeGCSClient client =
-            SnowflakeGCSClient.createSnowflakeGCSClient(
-                info, sfAgent.getEncryptionMaterial().get(0), sfSession);
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+      StageInfo info = sfAgent.getStageInfo();
+      SnowflakeGCSClient client =
+          SnowflakeGCSClient.createSnowflakeGCSClient(
+              info, sfAgent.getEncryptionMaterial().get(0), sfSession);
 
-        String location = info.getLocation();
-        int idx = location.indexOf('/');
-        String remoteStageLocation = location.substring(0, idx);
-        String path = location.substring(idx + 1) + TEST_DATA_FILE + ".gz";
-        StorageObjectMetadata metadata = client.getObjectMetadata(remoteStageLocation, path);
-        Assert.assertEquals("gzip", metadata.getContentEncoding());
-      } finally {
-        statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
+      String location = info.getLocation();
+      int idx = location.indexOf('/');
+      String remoteStageLocation = location.substring(0, idx);
+      String path = location.substring(idx + 1) + TEST_DATA_FILE + ".gz";
+      StorageObjectMetadata metadata = client.getObjectMetadata(remoteStageLocation, path);
+      Assert.assertEquals("gzip", metadata.getContentEncoding());
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
+        connection.close();
       }
     }
   }
@@ -153,38 +153,41 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetObjectMetadataFileNotFoundWithGCS() throws Exception {
-    Properties paramProperties = new Properties();
-    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
-    try (Connection connection = getConnection("gcpaccount", paramProperties);
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
+    Connection connection = null;
+    try {
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+      connection = getConnection("gcpaccount", paramProperties);
+      Statement statement = connection.createStatement();
+      statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
-        String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-        String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
-        statement.execute(putCommand);
+      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+      String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
+      statement.execute(putCommand);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-        StageInfo info = sfAgent.getStageInfo();
-        SnowflakeGCSClient client =
-            SnowflakeGCSClient.createSnowflakeGCSClient(
-                info, sfAgent.getEncryptionMaterial().get(0), sfSession);
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+      StageInfo info = sfAgent.getStageInfo();
+      SnowflakeGCSClient client =
+          SnowflakeGCSClient.createSnowflakeGCSClient(
+              info, sfAgent.getEncryptionMaterial().get(0), sfSession);
 
-        String location = info.getLocation();
-        int idx = location.indexOf('/');
-        String remoteStageLocation = location.substring(0, idx);
-        String path = location.substring(idx + 1) + "wrong_file.csv.gz";
-        client.getObjectMetadata(remoteStageLocation, path);
-        fail("should raise exception");
-      } catch (Exception ex) {
-        assertTrue(
-            "Wrong type of exception. Message: " + ex.getMessage(),
-            ex instanceof StorageProviderException);
-        assertTrue(ex.getMessage().matches(".*Blob.*not found in bucket.*"));
-      } finally {
-        statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
+      String location = info.getLocation();
+      int idx = location.indexOf('/');
+      String remoteStageLocation = location.substring(0, idx);
+      String path = location.substring(idx + 1) + "wrong_file.csv.gz";
+      client.getObjectMetadata(remoteStageLocation, path);
+      fail("should raise exception");
+    } catch (Exception ex) {
+      assertTrue(
+          "Wrong type of exception. Message: " + ex.getMessage(),
+          ex instanceof StorageProviderException);
+      assertTrue(ex.getMessage().matches(".*Blob.*not found in bucket.*"));
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
+        connection.close();
       }
     }
   }
@@ -192,114 +195,116 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetObjectMetadataStorageExceptionWithGCS() throws Exception {
-    Properties paramProperties = new Properties();
-    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
-    try (Connection connection = getConnection("gcpaccount", paramProperties);
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
+    Connection connection = null;
+    try {
+      Properties paramProperties = new Properties();
+      paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
+      connection = getConnection("gcpaccount", paramProperties);
+      Statement statement = connection.createStatement();
+      statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
-        String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-        String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
-        statement.execute(putCommand);
+      String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
+      String putCommand = "PUT file://" + sourceFilePath + " @" + OBJ_META_STAGE;
+      statement.execute(putCommand);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-        StageInfo info = sfAgent.getStageInfo();
-        SnowflakeGCSClient client =
-            SnowflakeGCSClient.createSnowflakeGCSClient(
-                info, sfAgent.getEncryptionMaterial().get(0), sfSession);
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+      StageInfo info = sfAgent.getStageInfo();
+      SnowflakeGCSClient client =
+          SnowflakeGCSClient.createSnowflakeGCSClient(
+              info, sfAgent.getEncryptionMaterial().get(0), sfSession);
 
-        String location = info.getLocation();
-        int idx = location.indexOf('/');
-        String remoteStageLocation = location.substring(0, idx);
-        client.getObjectMetadata(remoteStageLocation, "");
-        fail("should raise exception");
-      } catch (Exception ex) {
-        assertTrue(
-            "Wrong type of exception. Message: " + ex.getMessage(),
-            ex instanceof StorageProviderException);
-        assertTrue(ex.getMessage().matches(".*Permission.*denied.*"));
-      } finally {
-        statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
+      String location = info.getLocation();
+      int idx = location.indexOf('/');
+      String remoteStageLocation = location.substring(0, idx);
+      client.getObjectMetadata(remoteStageLocation, "");
+      fail("should raise exception");
+    } catch (Exception ex) {
+      assertTrue(
+          "Wrong type of exception. Message: " + ex.getMessage(),
+          ex instanceof StorageProviderException);
+      assertTrue(ex.getMessage().matches(".*Permission.*denied.*"));
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
+        connection.close();
       }
     }
   }
 
   @Test
   public void testGetFileTransferCommandType() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("CREATE OR REPLACE STAGE testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
-        assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, sfAgent.getCommandType());
-      } finally {
-        statement.execute("drop stage if exists testStage");
-      }
-    }
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("CREATE OR REPLACE STAGE testStage");
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    SnowflakeFileTransferAgent sfAgent =
+        new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+    assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, sfAgent.getCommandType());
+    statement.execute("drop stage if exists testStage");
+    con.close();
   }
 
   @Test
   public void testNullCommand() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(null, sfSession, new SFStatement(sfSession));
-      } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(
-            err.getMessage()
-                .contains("JDBC driver internal error: Missing sql for statement execution"));
-      } finally {
-        statement.execute("drop stage if exists testStage");
-      }
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("create or replace stage testStage");
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    try {
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(null, sfSession, new SFStatement(sfSession));
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(
+          err.getMessage()
+              .contains("JDBC driver internal error: Missing sql for statement execution"));
     }
+    statement.execute("drop stage if exists testStage");
+    con.close();
   }
 
   @Test
   public void testCompressStreamWithGzipException() throws Exception {
+    Connection con = null;
     // inject the NoSuchAlgorithmException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(new NoSuchAlgorithmException());
 
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
 
-        List<SnowflakeFileTransferMetadata> metadataList = sfAgent.getFileTransferMetadatas();
-        SnowflakeFileTransferMetadataV1 metadata =
-            (SnowflakeFileTransferMetadataV1) metadataList.get(0);
+      List<SnowflakeFileTransferMetadata> metadataList = sfAgent.getFileTransferMetadatas();
+      SnowflakeFileTransferMetadataV1 metadata =
+          (SnowflakeFileTransferMetadataV1) metadataList.get(0);
 
-        String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
-        InputStream inputStream = new FileInputStream(srcPath);
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
-            SnowflakeFileTransferConfig.Builder.newInstance()
-                .setSnowflakeFileTransferMetadata(metadata)
-                .setUploadStream(inputStream)
-                .setRequireCompress(true)
-                .setNetworkTimeoutInMilli(0)
-                .setOcspMode(OCSPMode.FAIL_OPEN)
-                .setSFSession(sfSession)
-                .setCommand(PUT_COMMAND)
-                .build());
-      } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(
-            err.getMessage()
-                .contains("JDBC driver internal error: error encountered for compression"));
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
+      InputStream inputStream = new FileInputStream(srcPath);
+      SnowflakeFileTransferAgent.uploadWithoutConnection(
+          SnowflakeFileTransferConfig.Builder.newInstance()
+              .setSnowflakeFileTransferMetadata(metadata)
+              .setUploadStream(inputStream)
+              .setRequireCompress(true)
+              .setNetworkTimeoutInMilli(0)
+              .setOcspMode(OCSPMode.FAIL_OPEN)
+              .setSFSession(sfSession)
+              .setCommand(PUT_COMMAND)
+              .build());
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(
+          err.getMessage()
+              .contains("JDBC driver internal error: error encountered for compression"));
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
@@ -307,43 +312,46 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testCompressStreamWithGzipNoDigestException() throws Exception {
+    Connection con = null;
     // inject the IOException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(new IOException());
 
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
 
-        List<SnowflakeFileTransferMetadata> metadataList = sfAgent.getFileTransferMetadatas();
-        SnowflakeFileTransferMetadataV1 metadata =
-            (SnowflakeFileTransferMetadataV1) metadataList.get(0);
-        metadata.setEncryptionMaterial(null, null, null);
+      List<SnowflakeFileTransferMetadata> metadataList = sfAgent.getFileTransferMetadatas();
+      SnowflakeFileTransferMetadataV1 metadata =
+          (SnowflakeFileTransferMetadataV1) metadataList.get(0);
+      metadata.setEncryptionMaterial(null, null, null);
 
-        String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
+      String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
 
-        InputStream inputStream = new FileInputStream(srcPath);
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
-            SnowflakeFileTransferConfig.Builder.newInstance()
-                .setSnowflakeFileTransferMetadata(metadata)
-                .setUploadStream(inputStream)
-                .setRequireCompress(true)
-                .setNetworkTimeoutInMilli(0)
-                .setOcspMode(OCSPMode.FAIL_OPEN)
-                .setSFSession(sfSession)
-                .setCommand(PUT_COMMAND)
-                .build());
-      } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(
-            err.getMessage()
-                .contains("JDBC driver internal error: error encountered for compression"));
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      InputStream inputStream = new FileInputStream(srcPath);
+      SnowflakeFileTransferAgent.uploadWithoutConnection(
+          SnowflakeFileTransferConfig.Builder.newInstance()
+              .setSnowflakeFileTransferMetadata(metadata)
+              .setUploadStream(inputStream)
+              .setRequireCompress(true)
+              .setNetworkTimeoutInMilli(0)
+              .setOcspMode(OCSPMode.FAIL_OPEN)
+              .setSFSession(sfSession)
+              .setCommand(PUT_COMMAND)
+              .build());
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(
+          err.getMessage()
+              .contains("JDBC driver internal error: error encountered for compression"));
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
@@ -351,43 +359,46 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testUploadWithoutConnectionException() throws Exception {
+    Connection con = null;
     // inject the IOException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(
         new Exception("Exception encountered during file upload: failed to push to remote store"));
 
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
 
-        List<SnowflakeFileTransferMetadata> metadataList = sfAgent.getFileTransferMetadatas();
-        SnowflakeFileTransferMetadataV1 metadata =
-            (SnowflakeFileTransferMetadataV1) metadataList.get(0);
+      List<SnowflakeFileTransferMetadata> metadataList = sfAgent.getFileTransferMetadatas();
+      SnowflakeFileTransferMetadataV1 metadata =
+          (SnowflakeFileTransferMetadataV1) metadataList.get(0);
 
-        String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
+      String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
 
-        InputStream inputStream = new FileInputStream(srcPath);
-        SnowflakeFileTransferAgent.uploadWithoutConnection(
-            SnowflakeFileTransferConfig.Builder.newInstance()
-                .setSnowflakeFileTransferMetadata(metadata)
-                .setUploadStream(inputStream)
-                .setRequireCompress(true)
-                .setNetworkTimeoutInMilli(0)
-                .setOcspMode(OCSPMode.FAIL_OPEN)
-                .setSFSession(sfSession)
-                .setCommand(PUT_COMMAND)
-                .build());
-      } catch (Exception err) {
-        Assert.assertTrue(
-            err.getMessage()
-                .contains(
-                    "Exception encountered during file upload: failed to push to remote store"));
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      InputStream inputStream = new FileInputStream(srcPath);
+      SnowflakeFileTransferAgent.uploadWithoutConnection(
+          SnowflakeFileTransferConfig.Builder.newInstance()
+              .setSnowflakeFileTransferMetadata(metadata)
+              .setUploadStream(inputStream)
+              .setRequireCompress(true)
+              .setNetworkTimeoutInMilli(0)
+              .setOcspMode(OCSPMode.FAIL_OPEN)
+              .setSFSession(sfSession)
+              .setCommand(PUT_COMMAND)
+              .build());
+    } catch (Exception err) {
+      Assert.assertTrue(
+          err.getMessage()
+              .contains(
+                  "Exception encountered during file upload: failed to push to remote store"));
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
@@ -395,64 +406,73 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testInitFileMetadataFileNotFound() throws Exception {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+    Connection con = null;
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
 
-        sfAgent.execute();
-      } catch (SnowflakeSQLException err) {
-        Assert.assertEquals(200008, err.getErrorCode());
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      sfAgent.execute();
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals(200008, err.getErrorCode());
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
       }
     }
   }
 
   @Test
   public void testInitFileMetadataFileIsDirectory() throws Exception {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        String srcPath =
-            getFullPathFileInResource(""); // will pull the resources directory without a file
-        String command = "put file://" + srcPath + " @testStage";
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
-        sfAgent.execute();
-      } catch (SnowflakeSQLException err) {
-        Assert.assertEquals(200009, err.getErrorCode());
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+    Connection con = null;
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      String srcPath =
+          getFullPathFileInResource(""); // will pull the resources directory without a file
+      String command = "put file://" + srcPath + " @testStage";
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+      sfAgent.execute();
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals(200009, err.getErrorCode());
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
       }
     }
   }
 
   @Test
   public void testCompareAndSkipFilesException() throws Exception {
+    Connection con = null;
     // inject the NoSuchAlgorithmException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(new NoSuchAlgorithmException());
 
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
 
-        sfAgent.execute();
-      } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(err.getMessage().contains("Error reading:"));
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      sfAgent.execute();
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(err.getMessage().contains("Error reading:"));
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
@@ -460,22 +480,24 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testParseCommandException() throws SQLException {
+    Connection con = null;
     // inject the SnowflakeSQLException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(
         new SnowflakeSQLException("invalid data"));
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
-
-      } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(err.getMessage().contains("Failed to parse the locations"));
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+      Assert.assertTrue(err.getMessage().contains("Failed to parse the locations"));
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
@@ -483,58 +505,63 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testPopulateStatusRowsWithSortOn() throws Exception {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        statement.execute("set-sf-property sort on");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    Connection con = null;
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      statement.execute("set-sf-property sort on");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        // upload files orders_101.csv and orders_100.csv
-        String command =
-            "PUT file://" + getFullPathFileInResource("") + "/orders_10*.csv @testStage";
-        SnowflakeFileTransferAgent sfAgent1 =
-            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
-        sfAgent1.execute(); // upload files
+      // upload files orders_101.csv and orders_100.csv
+      String command = "PUT file://" + getFullPathFileInResource("") + "/orders_10*.csv @testStage";
+      SnowflakeFileTransferAgent sfAgent1 =
+          new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+      sfAgent1.execute(); // upload files
 
-        // check that source files were sorted
-        assertEquals(2, sfAgent1.statusRows.size());
-        assertEquals("orders_100.csv", sfAgent1.getNextRow().get(0).toString());
+      // check that source files were sorted
+      assertEquals(2, sfAgent1.statusRows.size());
+      assertEquals("orders_100.csv", sfAgent1.getNextRow().get(0).toString());
 
-        String getCommand = "GET @testStage file:///tmp";
-        SnowflakeFileTransferAgent sfAgent2 =
-            new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
-        sfAgent2.execute();
-        // check that files are sorted on download
-        assertEquals(2, sfAgent2.statusRows.size());
-        assertEquals("orders_100.csv.gz", sfAgent2.getNextRow().get(0).toString());
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      String getCommand = "GET @testStage file:///tmp";
+      SnowflakeFileTransferAgent sfAgent2 =
+          new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
+      sfAgent2.execute();
+      // check that files are sorted on download
+      assertEquals(2, sfAgent2.statusRows.size());
+      assertEquals("orders_100.csv.gz", sfAgent2.getNextRow().get(0).toString());
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
       }
     }
   }
 
   @Test
   public void testListObjectsStorageException() throws Exception {
+    Connection con = null;
     // inject the StorageProviderException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(
         new StorageProviderException(new Exception("could not list objects")));
 
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("create or replace stage testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+    try {
+      con = getConnection();
+      Statement statement = con.createStatement();
+      statement.execute("create or replace stage testStage");
+      SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
 
-        sfAgent.execute();
-      } catch (SnowflakeSQLException err) {
-        Assert.assertEquals(200016, err.getErrorCode());
-        Assert.assertTrue(err.getMessage().contains("Encountered exception during listObjects"));
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      sfAgent.execute();
+    } catch (SnowflakeSQLException err) {
+      Assert.assertEquals(200016, err.getErrorCode());
+      Assert.assertTrue(err.getMessage().contains("Encountered exception during listObjects"));
+    } finally {
+      if (con != null) {
+        con.createStatement().execute("DROP STAGE if exists testStage");
+        con.close();
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
@@ -545,73 +572,75 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     // inject the InterruptedException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(new InterruptedException());
+    Connection connection = null;
+    Statement statement = null;
 
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      try {
-        FileBackedOutputStream outputStream = new FileBackedOutputStream(1000000);
-        outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
-        outputStream.flush();
+    try {
+      connection = getConnection();
 
-        // upload the data to user stage under testUploadStream with name hello.txt
-        connection
-            .unwrap(SnowflakeConnection.class)
-            .uploadStream(
-                "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", false);
+      statement = connection.createStatement();
 
-      } catch (SnowflakeSQLLoggedException err) {
-        Assert.assertEquals(200003, err.getErrorCode());
-      } finally {
+      FileBackedOutputStream outputStream = new FileBackedOutputStream(1000000);
+      outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
+      outputStream.flush();
+
+      // upload the data to user stage under testUploadStream with name hello.txt
+      connection
+          .unwrap(SnowflakeConnection.class)
+          .uploadStream(
+              "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", false);
+
+    } catch (SnowflakeSQLLoggedException err) {
+      Assert.assertEquals(200003, err.getErrorCode());
+    } finally {
+      if (statement != null) {
         statement.execute("rm @~/" + DEST_PREFIX);
+        statement.close();
       }
+      closeSQLObjects(statement, connection);
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
 
   @Test
   public void testFileTransferStageInfo() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("CREATE OR REPLACE STAGE testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("CREATE OR REPLACE STAGE testStage");
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
+    SnowflakeFileTransferAgent sfAgent =
+        new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
 
-        StageInfo stageInfo = sfAgent.getStageInfo();
-        assertEquals(sfAgent.getStageCredentials(), stageInfo.getCredentials());
-        assertEquals(sfAgent.getStageLocation(), stageInfo.getLocation());
-      } finally {
-        statement.execute("drop stage if exists testStage");
-      }
-    }
+    StageInfo stageInfo = sfAgent.getStageInfo();
+    assertEquals(sfAgent.getStageCredentials(), stageInfo.getCredentials());
+    assertEquals(sfAgent.getStageLocation(), stageInfo.getLocation());
+
+    statement.execute("drop stage if exists testStage");
+    con.close();
   }
 
   @Test
   public void testFileTransferMappingFromSourceFile() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      try {
-        statement.execute("CREATE OR REPLACE STAGE testStage");
-        SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    Connection con = getConnection();
+    Statement statement = con.createStatement();
+    statement.execute("CREATE OR REPLACE STAGE testStage");
+    SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        String command =
-            "PUT file://" + getFullPathFileInResource("") + "/orders_10*.csv @testStage";
-        SnowflakeFileTransferAgent sfAgent1 =
-            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
-        sfAgent1.execute();
+    String command = "PUT file://" + getFullPathFileInResource("") + "/orders_10*.csv @testStage";
+    SnowflakeFileTransferAgent sfAgent1 =
+        new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+    sfAgent1.execute();
 
-        SnowflakeFileTransferAgent sfAgent2 =
-            new SnowflakeFileTransferAgent(
-                "GET @testStage file:///tmp/", sfSession, new SFStatement(sfSession));
+    SnowflakeFileTransferAgent sfAgent2 =
+        new SnowflakeFileTransferAgent(
+            "GET @testStage file:///tmp/", sfSession, new SFStatement(sfSession));
 
-        assertEquals(2, sfAgent2.getSrcToMaterialsMap().size());
-        assertEquals(2, sfAgent2.getSrcToPresignedUrlMap().size());
-      } finally {
-        statement.execute("drop stage if exists testStage");
-      }
-    }
+    assertEquals(2, sfAgent2.getSrcToMaterialsMap().size());
+    assertEquals(2, sfAgent2.getSrcToPresignedUrlMap().size());
+
+    statement.execute("drop stage if exists testStage");
+    con.close();
   }
 
   @Test
@@ -619,20 +648,25 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
     // inject the FileNotFoundException
     SnowflakeFileTransferAgent.setInjectedFileTransferException(
         new FileNotFoundException("file does not exist"));
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.execute("CREATE OR REPLACE STAGE testStage");
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    Connection connection = null;
+    Statement statement = null;
+    try {
+      connection = getConnection();
 
-        String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
-        sfAgent.execute();
-      } catch (Exception err) {
-        assertEquals(err.getCause(), instanceOf(FileNotFoundException.class));
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      statement = connection.createStatement();
+      statement.execute("CREATE OR REPLACE STAGE testStage");
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+
+      String command = "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testStage";
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
+      sfAgent.execute();
+    } catch (Exception err) {
+      assertEquals(err.getCause(), instanceOf(FileNotFoundException.class));
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists testStage");
+        connection.close();
       }
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
@@ -640,59 +674,64 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testUploadFileStreamWithNoOverwrite() throws Exception {
-    String expectedValue = null;
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.execute("CREATE OR REPLACE STAGE testStage");
+    Connection connection = null;
 
-        uploadFileToStageUsingStream(connection, false);
-        try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
-          assertTrue(resultSet.next());
-          expectedValue = resultSet.getString("last_modified");
-        }
-        Thread.sleep(1000); // add 1 sec delay between uploads.
+    try {
+      connection = getConnection();
+      Statement statement = connection.createStatement();
+      statement.execute("CREATE OR REPLACE STAGE testStage");
 
-        uploadFileToStageUsingStream(connection, false);
-        try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
-          assertTrue(resultSet.next());
-          String actualValue = resultSet.getString("last_modified");
-          assertEquals(expectedValue, actualValue);
-        }
-      } catch (Exception e) {
-        Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      uploadFileToStageUsingStream(connection, false);
+      ResultSet resultSet = statement.executeQuery("LIST @testStage");
+      resultSet.next();
+      String expectedValue = resultSet.getString("last_modified");
+
+      Thread.sleep(1000); // add 1 sec delay between uploads.
+
+      uploadFileToStageUsingStream(connection, false);
+      resultSet = statement.executeQuery("LIST @testStage");
+      resultSet.next();
+      String actualValue = resultSet.getString("last_modified");
+
+      assertTrue(expectedValue.equals(actualValue));
+    } catch (Exception e) {
+      Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists testStage");
+        connection.close();
       }
     }
   }
 
   @Test
   public void testUploadFileStreamWithOverwrite() throws Exception {
-    String expectedValue = null;
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      try {
-        statement.execute("CREATE OR REPLACE STAGE testStage");
+    Connection connection = null;
 
-        uploadFileToStageUsingStream(connection, true);
-        try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
-          assertTrue(resultSet.next());
-          expectedValue = resultSet.getString("last_modified");
-        }
-        Thread.sleep(1000); // add 1 sec delay between uploads.
+    try {
+      connection = getConnection();
+      Statement statement = connection.createStatement();
+      statement.execute("CREATE OR REPLACE STAGE testStage");
 
-        uploadFileToStageUsingStream(connection, true);
-        try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
-          assertTrue(resultSet.next());
-          String actualValue = resultSet.getString("last_modified");
+      uploadFileToStageUsingStream(connection, true);
+      ResultSet resultSet = statement.executeQuery("LIST @testStage");
+      resultSet.next();
+      String expectedValue = resultSet.getString("last_modified");
 
-          assertFalse(expectedValue.equals(actualValue));
-        }
-      } catch (Exception e) {
-        Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
-      } finally {
-        statement.execute("DROP STAGE if exists testStage");
+      Thread.sleep(1000); // add 1 sec delay between uploads.
+
+      uploadFileToStageUsingStream(connection, true);
+      resultSet = statement.executeQuery("LIST @testStage");
+      resultSet.next();
+      String actualValue = resultSet.getString("last_modified");
+
+      assertFalse(expectedValue.equals(actualValue));
+    } catch (Exception e) {
+      Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists testStage");
+        connection.close();
       }
     }
   }
@@ -700,67 +739,71 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetS3StorageObjectMetadata() throws Throwable {
-    try (Connection connection = getConnection("s3testaccount");
-        Statement statement = connection.createStatement()) {
+    Connection connection = null;
+    try {
+      connection = getConnection("s3testaccount");
+      Statement statement = connection.createStatement();
+
       // create a stage to put the file in
-      try {
-        statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
+      statement.execute("CREATE OR REPLACE STAGE " + OBJ_META_STAGE);
 
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+      SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        // Test put file with internal compression
-        String putCommand = "put file:///dummy/path/file1.gz @" + OBJ_META_STAGE;
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-        List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
+      // Test put file with internal compression
+      String putCommand = "put file:///dummy/path/file1.gz @" + OBJ_META_STAGE;
+      SnowflakeFileTransferAgent sfAgent =
+          new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
+      List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
 
-        String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
-        for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
-          InputStream inputStream = new FileInputStream(srcPath);
+      String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
+      for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
+        InputStream inputStream = new FileInputStream(srcPath);
 
-          SnowflakeFileTransferAgent.uploadWithoutConnection(
-              SnowflakeFileTransferConfig.Builder.newInstance()
-                  .setSnowflakeFileTransferMetadata(oneMetadata)
-                  .setUploadStream(inputStream)
-                  .setRequireCompress(true)
-                  .setNetworkTimeoutInMilli(0)
-                  .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .setSFSession(sfSession)
-                  .setCommand(putCommand)
-                  .build());
+        SnowflakeFileTransferAgent.uploadWithoutConnection(
+            SnowflakeFileTransferConfig.Builder.newInstance()
+                .setSnowflakeFileTransferMetadata(oneMetadata)
+                .setUploadStream(inputStream)
+                .setRequireCompress(true)
+                .setNetworkTimeoutInMilli(0)
+                .setOcspMode(OCSPMode.FAIL_OPEN)
+                .setSFSession(sfSession)
+                .setCommand(putCommand)
+                .build());
 
-          SnowflakeStorageClient client =
-              StorageClientFactory.getFactory()
-                  .createClient(
-                      ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo(),
-                      1,
-                      null,
-                      /*session = */ null);
+        SnowflakeStorageClient client =
+            StorageClientFactory.getFactory()
+                .createClient(
+                    ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo(),
+                    1,
+                    null,
+                    /*session = */ null);
 
-          String location =
-              ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo().getLocation();
-          int idx = location.indexOf('/');
-          String remoteStageLocation = location.substring(0, idx);
-          String path = location.substring(idx + 1) + "file1.gz";
-          StorageObjectMetadata meta = client.getObjectMetadata(remoteStageLocation, path);
+        String location =
+            ((SnowflakeFileTransferMetadataV1) oneMetadata).getStageInfo().getLocation();
+        int idx = location.indexOf('/');
+        String remoteStageLocation = location.substring(0, idx);
+        String path = location.substring(idx + 1) + "file1.gz";
+        StorageObjectMetadata meta = client.getObjectMetadata(remoteStageLocation, path);
 
-          ObjectMetadata s3Meta = new ObjectMetadata();
-          s3Meta.setContentLength(meta.getContentLength());
-          s3Meta.setContentEncoding(meta.getContentEncoding());
-          s3Meta.setUserMetadata(meta.getUserMetadata());
+        ObjectMetadata s3Meta = new ObjectMetadata();
+        s3Meta.setContentLength(meta.getContentLength());
+        s3Meta.setContentEncoding(meta.getContentEncoding());
+        s3Meta.setUserMetadata(meta.getUserMetadata());
 
-          S3StorageObjectMetadata s3Metadata = new S3StorageObjectMetadata(s3Meta);
-          RemoteStoreFileEncryptionMaterial encMat = sfAgent.getEncryptionMaterial().get(0);
-          Map<String, String> matDesc =
-              mapper.readValue(s3Metadata.getUserMetadata().get("x-amz-matdesc"), Map.class);
+        S3StorageObjectMetadata s3Metadata = new S3StorageObjectMetadata(s3Meta);
+        RemoteStoreFileEncryptionMaterial encMat = sfAgent.getEncryptionMaterial().get(0);
+        Map<String, String> matDesc =
+            mapper.readValue(s3Metadata.getUserMetadata().get("x-amz-matdesc"), Map.class);
 
-          assertEquals(encMat.getQueryId(), matDesc.get("queryId"));
-          assertEquals(encMat.getSmkId().toString(), matDesc.get("smkId"));
-          assertEquals(1360, s3Metadata.getContentLength());
-          assertEquals("gzip", s3Metadata.getContentEncoding());
-        }
-      } finally {
-        statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
+        assertEquals(encMat.getQueryId(), matDesc.get("queryId"));
+        assertEquals(encMat.getSmkId().toString(), matDesc.get("smkId"));
+        assertEquals(1360, s3Metadata.getContentLength());
+        assertEquals("gzip", s3Metadata.getContentEncoding());
+      }
+    } finally {
+      if (connection != null) {
+        connection.createStatement().execute("DROP STAGE if exists " + OBJ_META_STAGE);
+        connection.close();
       }
     }
   }
@@ -789,6 +832,10 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
   @Test
   public void testUploadFileWithTildeInFolderName() throws SQLException, IOException {
+    Connection connection = null;
+    Statement statement = null;
+    ResultSet resultSet = null;
+    Writer writer = null;
     Path topDataDir = null;
 
     try {
@@ -800,40 +847,47 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
       // create a test data
       File dataFile = new File(subDir.toFile(), "test.txt");
-      try (Writer writer =
+      writer =
           new BufferedWriter(
               new OutputStreamWriter(
                   Files.newOutputStream(Paths.get(dataFile.getCanonicalPath())),
-                  StandardCharsets.UTF_8))) {
-        writer.write("1,test1");
-      }
+                  StandardCharsets.UTF_8));
+      writer.write("1,test1");
+      writer.close();
 
-      try (Connection connection = getConnection();
-          Statement statement = connection.createStatement()) {
-        try {
-          statement.execute("create or replace stage testStage");
-          String sql = String.format("PUT 'file://%s' @testStage", dataFile.getCanonicalPath());
+      connection = getConnection();
+      statement = connection.createStatement();
+      statement.execute("create or replace stage testStage");
+      String sql = String.format("PUT 'file://%s' @testStage", dataFile.getCanonicalPath());
 
-          // Escape backslashes. This must be done by the application.
-          sql = sql.replaceAll("\\\\", "\\\\\\\\");
-          try (ResultSet resultSet = statement.executeQuery(sql)) {
-            while (resultSet.next()) {
-              assertEquals("UPLOADED", resultSet.getString("status"));
-            }
-          }
-        } finally {
-          statement.execute("drop stage if exists testStage");
-        }
+      // Escape backslashes. This must be done by the application.
+      sql = sql.replaceAll("\\\\", "\\\\\\\\");
+      resultSet = statement.executeQuery(sql);
+      while (resultSet.next()) {
+        assertEquals("UPLOADED", resultSet.getString("status"));
       }
     } finally {
+      if (connection != null) {
+        connection.createStatement().execute("drop stage if exists testStage");
+      }
+      closeSQLObjects(resultSet, statement, connection);
+      if (writer != null) {
+        writer.close();
+      }
       FileUtils.deleteDirectory(topDataDir.toFile());
     }
   }
 
   @Test
   public void testUploadWithTildeInPath() throws SQLException, IOException {
+    Connection connection = null;
+    Statement statement = null;
+    ResultSet resultSet = null;
+    Writer writer = null;
     Path subDir = null;
+
     try {
+
       String homeDir = systemGetProperty("user.home");
 
       // create sub directory where the name includes ~
@@ -841,29 +895,30 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
       // create a test data
       File dataFile = new File(subDir.toFile(), "test.txt");
-      try (Writer writer =
+      writer =
           new BufferedWriter(
               new OutputStreamWriter(
                   Files.newOutputStream(Paths.get(dataFile.getCanonicalPath())),
-                  StandardCharsets.UTF_8))) {
-        writer.write("1,test1");
-      }
-      try (Connection connection = getConnection();
-          Statement statement = connection.createStatement()) {
-        try {
-          statement.execute("create or replace stage testStage");
+                  StandardCharsets.UTF_8));
+      writer.write("1,test1");
+      writer.close();
 
-          try (ResultSet resultSet =
-              statement.executeQuery("PUT 'file://~/snowflake/test.txt' @testStage")) {
-            while (resultSet.next()) {
-              assertEquals("UPLOADED", resultSet.getString("status"));
-            }
-          }
-        } finally {
-          statement.execute("drop stage if exists testStage");
-        }
+      connection = getConnection();
+      statement = connection.createStatement();
+      statement.execute("create or replace stage testStage");
+
+      resultSet = statement.executeQuery("PUT 'file://~/snowflake/test.txt' @testStage");
+      while (resultSet.next()) {
+        assertEquals("UPLOADED", resultSet.getString("status"));
       }
     } finally {
+      if (connection != null) {
+        connection.createStatement().execute("drop stage if exists testStage");
+      }
+      closeSQLObjects(resultSet, statement, connection);
+      if (writer != null) {
+        writer.close();
+      }
       FileUtils.deleteDirectory(subDir.toFile());
     }
   }

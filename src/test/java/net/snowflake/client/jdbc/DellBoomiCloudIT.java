@@ -26,15 +26,17 @@ public class DellBoomiCloudIT extends AbstractDriverIT {
 
   @Test
   public void testSelectLargeResultSet() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement();
-        ResultSet resultSet =
-            statement.executeQuery(
-                "select seq4() from table" + "(generator" + "(rowcount=>10000))")) {
+    Connection connection = getConnection();
+    Statement statement = connection.createStatement();
+    ResultSet resultSet =
+        statement.executeQuery("select seq4() from table" + "(generator" + "(rowcount=>10000))");
 
-      while (resultSet.next()) {
-        resultSet.getString(1);
-      }
+    while (resultSet.next()) {
+      resultSet.getString(1);
     }
+
+    resultSet.close();
+    statement.close();
+    connection.close();
   }
 }

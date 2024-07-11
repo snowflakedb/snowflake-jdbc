@@ -37,18 +37,17 @@ public class GCPLargeResult extends BaseJDBCTest {
 
   @Test
   public void testLargeResultSetGCP() throws Throwable {
-    try (Connection con = init();
-        PreparedStatement stmt =
-            con.prepareStatement(
-                "select seq8(), randstr(1000, random()) from table(generator(rowcount=>1000))")) {
+    try (Connection con = init()) {
+      PreparedStatement stmt =
+          con.prepareStatement(
+              "select seq8(), randstr(1000, random()) from table(generator(rowcount=>1000))");
       stmt.setMaxRows(999);
-      try (ResultSet rset = stmt.executeQuery()) {
-        int cnt = 0;
-        while (rset.next()) {
-          ++cnt;
-        }
-        assertEquals(cnt, 999);
+      ResultSet rset = stmt.executeQuery();
+      int cnt = 0;
+      while (rset.next()) {
+        ++cnt;
       }
+      assertEquals(cnt, 999);
     }
   }
 }
