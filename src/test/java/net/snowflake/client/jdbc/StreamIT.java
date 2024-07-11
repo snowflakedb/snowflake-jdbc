@@ -32,32 +32,40 @@ public class StreamIT extends BaseJDBCTest {
   @Test
   public void testUploadStream() throws Throwable {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
+    Connection connection = null;
+    Statement statement = null;
 
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      try {
-        FileBackedOutputStream outputStream = new FileBackedOutputStream(1000000);
-        outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
-        outputStream.flush();
+    try {
+      connection = getConnection();
 
-        // upload the data to user stage under testUploadStream with name hello.txt
-        connection
-            .unwrap(SnowflakeConnection.class)
-            .uploadStream(
-                "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", false);
+      statement = connection.createStatement();
 
-        // select from the file to make sure the data is uploaded
-        try (ResultSet rset = statement.executeQuery("SELECT $1 FROM @~/" + DEST_PREFIX)) {
-          String ret = null;
+      FileBackedOutputStream outputStream = new FileBackedOutputStream(1000000);
+      outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
+      outputStream.flush();
 
-          while (rset.next()) {
-            ret = rset.getString(1);
-          }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
-        }
-      } finally {
-        statement.execute("rm @~/" + DEST_PREFIX);
+      // upload the data to user stage under testUploadStream with name hello.txt
+      connection
+          .unwrap(SnowflakeConnection.class)
+          .uploadStream(
+              "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", false);
+
+      // select from the file to make sure the data is uploaded
+      ResultSet rset = statement.executeQuery("SELECT $1 FROM @~/" + DEST_PREFIX);
+
+      String ret = null;
+
+      while (rset.next()) {
+        ret = rset.getString(1);
       }
+      rset.close();
+      assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+    } finally {
+      if (statement != null) {
+        statement.execute("rm @~/" + DEST_PREFIX);
+        statement.close();
+      }
+      closeSQLObjects(statement, connection);
     }
   }
 
@@ -72,37 +80,38 @@ public class StreamIT extends BaseJDBCTest {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDownloadStream() throws Throwable {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
+    Connection connection = null;
+    Statement statement = null;
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
     for (String accountName : supportedAccounts) {
-      try (Connection connection = getConnection(accountName);
-          Statement statement = connection.createStatement()) {
-        try {
-          try (ResultSet rset =
-              statement.executeQuery(
-                  "PUT file://"
-                      + getFullPathFileInResource(TEST_DATA_FILE)
-                      + " @~/"
-                      + DEST_PREFIX)) {
-            assertTrue(rset.next());
-            assertEquals("UPLOADED", rset.getString(7));
+      try {
+        connection = getConnection(accountName);
+        statement = connection.createStatement();
+        ResultSet rset =
+            statement.executeQuery(
+                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~/" + DEST_PREFIX);
+        assertTrue(rset.next());
+        assertEquals("UPLOADED", rset.getString(7));
 
-            InputStream out =
-                connection
-                    .unwrap(SnowflakeConnection.class)
-                    .downloadStream("~", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
-            StringWriter writer = new StringWriter();
-            IOUtils.copy(out, writer, "UTF-8");
-            String output = writer.toString();
-            // the first 2 characters
-            assertEquals("1|", output.substring(0, 2));
+        InputStream out =
+            connection
+                .unwrap(SnowflakeConnection.class)
+                .downloadStream("~", DEST_PREFIX + "/" + TEST_DATA_FILE + ".gz", true);
+        StringWriter writer = new StringWriter();
+        IOUtils.copy(out, writer, "UTF-8");
+        String output = writer.toString();
+        // the first 2 characters
+        assertEquals("1|", output.substring(0, 2));
 
-            // the number of lines
-            String[] lines = output.split("\n");
-            assertEquals(28, lines.length);
-          }
-        } finally {
+        // the number of lines
+        String[] lines = output.split("\n");
+        assertEquals(28, lines.length);
+      } finally {
+        if (statement != null) {
           statement.execute("rm @~/" + DEST_PREFIX);
+          statement.close();
         }
+        closeSQLObjects(statement, connection);
       }
     }
   }
@@ -110,34 +119,42 @@ public class StreamIT extends BaseJDBCTest {
   @Test
   public void testCompressAndUploadStream() throws Throwable {
     final String DEST_PREFIX = TEST_UUID + "/" + "testCompressAndUploadStream";
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      try {
-        FileBackedOutputStream outputStream = new FileBackedOutputStream(1000000);
-        outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
-        outputStream.flush();
+    Connection connection = null;
+    Statement statement = null;
+    ResultSet resultSet = null;
 
-        // upload the data to user stage under testCompressAndUploadStream
-        // with name hello.txt
-        // upload the data to user stage under testUploadStream with name hello.txt
-        connection
-            .unwrap(SnowflakeConnectionV1.class)
-            .uploadStream(
-                "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", true);
+    try {
+      connection = getConnection();
 
-        // select from the file to make sure the data is uploaded
-        try (ResultSet rset = statement.executeQuery("SELECT $1 FROM @~/" + DEST_PREFIX)) {
+      statement = connection.createStatement();
 
-          String ret = null;
-          while (rset.next()) {
-            ret = rset.getString(1);
-          }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
-        }
+      FileBackedOutputStream outputStream = new FileBackedOutputStream(1000000);
+      outputStream.write("hello".getBytes(StandardCharsets.UTF_8));
+      outputStream.flush();
 
-      } finally {
-        statement.execute("rm @~/" + DEST_PREFIX);
+      // upload the data to user stage under testCompressAndUploadStream
+      // with name hello.txt
+      // upload the data to user stage under testUploadStream with name hello.txt
+      connection
+          .unwrap(SnowflakeConnectionV1.class)
+          .uploadStream(
+              "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", true);
+
+      // select from the file to make sure the data is uploaded
+      ResultSet rset = statement.executeQuery("SELECT $1 FROM @~/" + DEST_PREFIX);
+
+      String ret = null;
+      while (rset.next()) {
+        ret = rset.getString(1);
       }
+      rset.close();
+      assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+    } finally {
+      if (statement != null) {
+        statement.execute("rm @~/" + DEST_PREFIX);
+        statement.close();
+      }
+      closeSQLObjects(resultSet, statement, connection);
     }
   }
 }

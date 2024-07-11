@@ -12,7 +12,6 @@ import static org.junit.Assert.fail;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,21 +42,20 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
     TestingConnectionListener listener = new TestingConnectionListener();
     pooledConnection.addConnectionEventListener(listener);
 
-    try (Connection connection = pooledConnection.getConnection();
-        Statement statement = connection.createStatement()) {
-      statement.execute("select 1");
+    Connection connection = pooledConnection.getConnection();
+    connection.createStatement().execute("select 1");
 
-      try {
-        // should fire connection error events
-        connection.setCatalog("nonexistent_database");
-        fail();
-      } catch (SQLException e) {
-        assertThat(e.getErrorCode(), is(2043));
-      }
-
-      // should not close underlying physical connection
-      // and fire connection closed events
+    try {
+      // should fire connection error events
+      connection.setCatalog("nonexistent_database");
+      fail();
+    } catch (SQLException e) {
+      assertThat(e.getErrorCode(), is(2043));
     }
+
+    // should not close underlying physical connection
+    // and fire connection closed events
+    connection.close();
 
     List<ConnectionEvent> connectionClosedEvents = listener.getConnectionClosedEvents();
     List<ConnectionEvent> connectionErrorEvents = listener.getConnectionErrorEvents();
@@ -107,9 +105,9 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
     TestingConnectionListener listener = new TestingConnectionListener();
     pooledConnection.addConnectionEventListener(listener);
 
-    try (Connection connection = pooledConnection.getConnection()) {
-      connection.createStatement().execute("select 1");
-    }
+    Connection connection = pooledConnection.getConnection();
+    connection.createStatement().execute("select 1");
+    connection.close();
     pooledConnection.close();
   }
 
