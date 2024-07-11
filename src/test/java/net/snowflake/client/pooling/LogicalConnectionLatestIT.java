@@ -161,7 +161,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       logicalConnection.setAutoCommit(false);
-      assertFalse(logicalConnection.getAutoCommit());
+      assert (!logicalConnection.getAutoCommit());
       logicalConnection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
       assertEquals(2, logicalConnection.getTransactionIsolation());
 

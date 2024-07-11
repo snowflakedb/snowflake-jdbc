@@ -741,7 +741,7 @@ public class CustomProxyLatestIT {
 
         // Make sure that the downloaded file exists, it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-        assertTrue(downloaded.exists());
+        assert (downloaded.exists());
 
         Process p =
             Runtime.getRuntime()
@@ -750,7 +750,7 @@ public class CustomProxyLatestIT {
 
         File original = new File(sourceFilePath);
         File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
-        assertEquals(original.length(), unzipped.length());
+        assert (original.length() == unzipped.length());
       } catch (Throwable t) {
         t.printStackTrace();
       } finally {
