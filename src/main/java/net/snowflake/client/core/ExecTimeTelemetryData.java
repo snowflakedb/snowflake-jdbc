@@ -154,7 +154,7 @@ public class ExecTimeTelemetryData {
       value.put("ProcessResultChunkStart", this.processResultChunk.getStart());
       value.put("ProcessResultChunkEnd", this.processResultChunk.getEnd());
       value.put("CreateResultSetStart", this.createResultSet.getStart());
-      value.put("CreateResultSetEnd", this.createResultSet.getEnd());
+      value.put("CreatResultSetEnd", this.createResultSet.getEnd());
       value.put("QueryEnd", this.query.getEnd());
       value.put("BatchID", this.batchId);
       value.put("QueryID", this.queryId);

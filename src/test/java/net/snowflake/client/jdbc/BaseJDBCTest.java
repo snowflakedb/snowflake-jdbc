@@ -35,7 +35,6 @@ import java.util.UUID;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.core.SFException;
 
 public class BaseJDBCTest extends AbstractDriverIT {
   // Test UUID unique per session
@@ -43,10 +42,6 @@ public class BaseJDBCTest extends AbstractDriverIT {
 
   protected interface MethodRaisesSQLException {
     void run() throws SQLException;
-  }
-
-  protected interface MethodRaisesSFException {
-    void run() throws SFException;
   }
 
   protected interface MethodRaisesSQLClientInfoException {

@@ -49,6 +49,5 @@ public class LogicalConnectionAlreadyClosedLatestIT extends BaseJDBCTest {
     expectConnectionAlreadyClosedException(() -> logicalConnection.setSchema("fakedb"));
     expectConnectionAlreadyClosedException(
         () -> logicalConnection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED));
-    expectConnectionAlreadyClosedException(() -> logicalConnection.createArrayOf("faketype", null));
   }
 }
