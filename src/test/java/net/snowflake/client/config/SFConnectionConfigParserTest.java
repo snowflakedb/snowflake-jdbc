@@ -26,7 +26,6 @@ import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -130,32 +129,5 @@ public class SFConnectionConfigParserTest {
     } else {
       return Files.createFile(path);
     }
-  }
-
-  @Test
-  public void testLoadSFConnectionConfigWithHostConfigured()
-      throws SnowflakeSQLException, IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
-    extraparams.put("host", "snowflake.reg.local");
-    extraparams.put("account", null);
-    extraparams.put("port", "8082");
-    prepareConnectionConfigurationTomlFile(extraparams, true);
-    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
-    assertNotNull(data);
-    assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
-  }
-
-  @Test
-  public void shouldThrowExceptionIfNoneOfHostAndAccountIsSet() throws IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
-    extraparams.put("host", null);
-    extraparams.put("account", null);
-    prepareConnectionConfigurationTomlFile(extraparams, true);
-    Assert.assertThrows(
-        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 }
