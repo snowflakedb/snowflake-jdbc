@@ -1,7 +1,6 @@
 package net.snowflake.client.jdbc;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -11,28 +10,11 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Collections;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryResultSet.class)
 public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
-
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
-
   @Test
   public void testQueryResultSetNotSupportedException() throws Throwable {
     try (Statement statement = connection.createStatement();

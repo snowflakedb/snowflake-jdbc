@@ -7,34 +7,17 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryResultSet.class)
 public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
-
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
 
   @Test
   public void testQueryResultSetAlreadyClosed() throws Throwable {

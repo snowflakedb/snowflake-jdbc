@@ -30,28 +30,12 @@ import java.util.Map;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.common.core.SqlState;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 /** Test AsyncResultSet */
 @Category(TestCategoryResultSet.class)
 public class ResultSetAsyncIT extends BaseJDBCTest {
-
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
 
   @Test
   public void testAsyncResultSetFunctionsWithNewSession() throws SQLException {

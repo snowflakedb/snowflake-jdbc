@@ -17,6 +17,7 @@ import java.util.List;
 import net.snowflake.client.category.TestCategoryArrow;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,7 +49,7 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
 
   @BeforeClass
   public static void setUpConnection() throws SQLException {
-    con = getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
+    con = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
   }
 
   @AfterClass
@@ -58,10 +59,9 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
     }
   }
 
-  public static Connection getConnection(int injectSocketTimeout) throws SQLException {
-    Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
-
-    try (Statement statement = connection.createStatement()) {
+  @Before
+  public static void setSessionTimezone() throws SQLException {
+    try (Statement statement = con.createStatement()) {
       statement.execute(
           "alter session set "
               + "TIMEZONE='America/Los_Angeles',"
@@ -71,7 +71,6 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
               + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
               + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
     }
-    return connection;
   }
 
   public ResultSetJsonVsArrowMultiTZIT(String queryResultFormat, String timeZone) {
