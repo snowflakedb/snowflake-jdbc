@@ -93,8 +93,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
             rootNode.path("database").asText(),
             rootNode.path("schema").asText(),
             rootNode.path("table").asText(),
-            false,
-            rootNode.path("dimension").asInt());
+            false);
     return expectedColumnMetadata;
   }
 

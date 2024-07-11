@@ -28,7 +28,6 @@ public class SnowflakeColumnMetadata implements Serializable {
   private String columnSrcDatabase;
 
   private boolean isAutoIncrement;
-  private int dimension; // vector type contains dimension
 
   @SnowflakeJdbcInternalApi
   public SnowflakeColumnMetadata(
@@ -45,8 +44,7 @@ public class SnowflakeColumnMetadata implements Serializable {
       String columnSrcDatabase,
       String columnSrcSchema,
       String columnSrcTable,
-      boolean isAutoIncrement,
-      int dimension) {
+      boolean isAutoIncrement) {
     this.name = name;
     this.type = type;
     this.nullable = nullable;
@@ -61,12 +59,11 @@ public class SnowflakeColumnMetadata implements Serializable {
     this.columnSrcSchema = columnSrcSchema;
     this.columnSrcTable = columnSrcTable;
     this.isAutoIncrement = isAutoIncrement;
-    this.dimension = dimension;
   }
 
   /**
    * @deprecated Use {@link SnowflakeColumnMetadata#SnowflakeColumnMetadata(String, int, boolean,
-   *     int, int, int, String, boolean, SnowflakeType, List, String, String, String, boolean, int)}
+   *     int, int, int, String, boolean, SnowflakeType, List, String, String, String, boolean)}
    *     instead
    */
   @Deprecated
@@ -197,11 +194,6 @@ public class SnowflakeColumnMetadata implements Serializable {
     isAutoIncrement = autoIncrement;
   }
 
-  @SnowflakeJdbcInternalApi
-  public int getDimension() {
-    return dimension;
-  }
-
   public String toString() {
     StringBuilder sBuilder = new StringBuilder();
 
@@ -217,7 +209,6 @@ public class SnowflakeColumnMetadata implements Serializable {
     sBuilder.append(",schema=").append(columnSrcSchema);
     sBuilder.append(",table=").append(columnSrcTable);
     sBuilder.append((",isAutoIncrement=")).append(isAutoIncrement);
-    sBuilder.append((",dimension=")).append(dimension);
 
     return sBuilder.toString();
   }

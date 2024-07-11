@@ -13,22 +13,4 @@ public interface SnowflakeResultSetMetaData {
   int getInternalColumnType(int column) throws SQLException;
 
   List<FieldMetadata> getColumnFields(int column) throws SQLException;
-
-  /**
-   * Get vector dimension
-   *
-   * @param column column index
-   * @return vector dimension when the column is vector type or 0 when it is not vector type
-   * @throws SQLException when cannot get column dimension
-   */
-  int getDimension(int column) throws SQLException;
-
-  /**
-   * Get vector dimension
-   *
-   * @param columnName column name
-   * @return vector dimension when the column is vector type or 0 when it is not vector type
-   * @throws SQLException when cannot get column dimension
-   */
-  int getDimension(String columnName) throws SQLException;
 }

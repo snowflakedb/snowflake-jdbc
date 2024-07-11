@@ -37,8 +37,6 @@ public class SFResultSetMetaData {
 
   private List<Integer> precisions;
 
-  private List<Integer> dimensions;
-
   private List<Integer> scales;
 
   private List<Integer> nullables;
@@ -145,7 +143,6 @@ public class SFResultSetMetaData {
     this.columnTypeNames = new ArrayList<>(this.columnCount);
     this.columnTypes = new ArrayList<>(this.columnCount);
     this.precisions = new ArrayList<>(this.columnCount);
-    this.dimensions = new ArrayList<>(this.columnCount);
     this.scales = new ArrayList<>(this.columnCount);
     this.nullables = new ArrayList<>(this.columnCount);
     this.columnSrcDatabases = new ArrayList<>(this.columnCount);
@@ -159,7 +156,6 @@ public class SFResultSetMetaData {
       columnNames.add(columnMetadata.get(colIdx).getName());
       columnTypeNames.add(columnMetadata.get(colIdx).getTypeName());
       precisions.add(calculatePrecision(columnMetadata.get(colIdx)));
-      dimensions.add(calculateDimension(columnMetadata.get(colIdx)));
       columnTypes.add(columnMetadata.get(colIdx).getType());
       scales.add(columnMetadata.get(colIdx).getScale());
       nullables.add(
@@ -202,14 +198,6 @@ public class SFResultSetMetaData {
       default:
         return 0;
     }
-  }
-
-  private Integer calculateDimension(SnowflakeColumnMetadata columnMetadata) {
-    int columnType = columnMetadata.getType();
-    if (columnType == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
-      return columnMetadata.getDimension();
-    }
-    return 0;
   }
 
   private Integer calculateDisplaySize(SnowflakeColumnMetadata columnMetadata) {
@@ -412,14 +400,6 @@ public class SFResultSetMetaData {
     } else {
       // TODO: fix this later to use different defaults for number or timestamp
       return 9;
-    }
-  }
-
-  public int getDimension(int column) {
-    if (dimensions != null && dimensions.size() >= column && column > 0) {
-      return dimensions.get(column - 1);
-    } else {
-      return 0;
     }
   }
 
