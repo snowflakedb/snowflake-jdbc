@@ -151,57 +151,8 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
     }
   }
 
-  /** Added in > 3.16.1 */
-  @Test
-  public void testGetVectorViaGetStringIsEqualToTheGetObject() throws SQLException {
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
-      enforceQueryResultFormat(stmt);
-      Integer[] intVector = {-1, 5};
-      Float[] floatVector = {-1.2f, 5.1f, 15.87f};
-      try (ResultSet resultSet =
-          stmt.executeQuery(
-              "select "
-                  + vectorToString(intVector, "int")
-                  + ", "
-                  + vectorToString(floatVector, "float")
-                  + ", "
-                  + nullVectorToString("int")
-                  + ", "
-                  + nullVectorToString("float"))) {
-
-        assertTrue(resultSet.next());
-        assertGetObjectAndGetStringBeTheSame(resultSet, "[-1,5]", 1);
-        String floatArrayRepresentation =
-            "json".equals(queryResultFormat)
-                // in json we have slightly different format that we accept in the result
-                ? "[-1.200000,5.100000,15.870000]"
-                : "[-1.2,5.1,15.87]";
-        assertGetObjectAndGetStringBeTheSame(resultSet, floatArrayRepresentation, 2);
-        assertGetObjectAndGetStringAreNull(resultSet, 3);
-        assertGetObjectAndGetStringAreNull(resultSet, 4);
-      }
-    }
-  }
-
-  private static void assertGetObjectAndGetStringBeTheSame(
-      ResultSet resultSet, String intArrayRepresentation, int columnIndex) throws SQLException {
-    assertEquals(intArrayRepresentation, resultSet.getString(columnIndex));
-    assertEquals(intArrayRepresentation, resultSet.getObject(columnIndex));
-  }
-
-  private static void assertGetObjectAndGetStringAreNull(ResultSet resultSet, int columnIndex)
-      throws SQLException {
-    assertNull(resultSet.getString(columnIndex));
-    assertNull(resultSet.getObject(columnIndex));
-  }
-
   private <T extends Number> String vectorToString(T[] vector, String vectorType) {
     return Arrays.toString(vector) + "::vector(" + vectorType + ", " + vector.length + ")";
-  }
-
-  private <T extends Number> String nullVectorToString(String vectorType) {
-    return "null::vector(" + vectorType + ", 2)";
   }
 
   private void enforceQueryResultFormat(Statement stmt) throws SQLException {

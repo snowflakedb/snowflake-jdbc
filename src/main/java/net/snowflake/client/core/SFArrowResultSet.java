@@ -37,7 +37,6 @@ import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -560,10 +559,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public Object getObject(int columnIndex) throws SFException {
-    int type = resultSetMetaData.getColumnType(columnIndex);
-    if (type == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
-      return getString(columnIndex);
-    }
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
@@ -571,6 +566,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(sessionTimeZone);
     Object obj = converter.toObject(index);
+    int type = resultSetMetaData.getColumnType(columnIndex);
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
     if (type == Types.STRUCT && isStructuredType) {
       if (converter instanceof VarCharConverter) {
