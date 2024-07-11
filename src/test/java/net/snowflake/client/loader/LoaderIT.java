@@ -145,6 +145,7 @@ public class LoaderIT extends LoaderBase {
       }
       assertThat(String.format("Error: %s", errorMessage), listener.getErrorCount(), equalTo(0));
       try (Statement statement = testConnection.createStatement()) {
+        statement.executeQuery("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=FALSE");
         try (ResultSet rs =
             statement.executeQuery(String.format("SELECT c1, c2 FROM %s LIMIT 1", tableName))) {
           assertTrue(rs.next());
