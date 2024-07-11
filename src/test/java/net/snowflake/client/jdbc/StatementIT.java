@@ -372,7 +372,7 @@ public class StatementIT extends BaseJDBCTest {
                   + getFullPathFileInResource(TEST_DATA_FILE)
                   + " @%test_batch auto_compress=false");
           File tempFolder = tmpFolder.newFolder("test_downloads_folder");
-          statement.addBatch("get @%test_batch file://" + tempFolder.getCanonicalPath());
+          statement.addBatch("get @%test_batch file://" + tempFolder);
 
           rowCounts = statement.executeBatch();
           assertThat(rowCounts.length, is(2));

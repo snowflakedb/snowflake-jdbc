@@ -6,10 +6,8 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -19,7 +17,6 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.RunningNotOnLinuxMac;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -524,9 +521,8 @@ public class RestRequestTest {
     }
   }
 
-  @Test
-  public void testLoginTimeout() throws IOException {
-    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
+  @Test(expected = SnowflakeSQLException.class)
+  public void testLoginTimeout() throws IOException, SnowflakeSQLException {
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
     CloseableHttpClient client = mock(CloseableHttpClient.class);
@@ -548,11 +544,8 @@ public class RestRequestTest {
 
     try {
       TelemetryService.disable();
-      assertThrows(
-          SnowflakeSQLException.class,
-          () -> {
-            execute(client, "/session/v1/login-request", 1, 0, 0, true, false, 10);
-          });
+      execute(client, "/session/v1/login-request", 1, 0, 0, true, false, 10);
+      fail("testMaxRetries");
     } finally {
       if (telemetryEnabled) {
         TelemetryService.enable();

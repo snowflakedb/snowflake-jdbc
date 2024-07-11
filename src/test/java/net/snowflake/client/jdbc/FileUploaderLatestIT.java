@@ -492,10 +492,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
         // upload files orders_101.csv and orders_100.csv
         String command =
-            "PUT file://"
-                + getFullPathFileInResource("")
-                + File.separator
-                + "orders_10*.csv @testStage";
+            "PUT file://" + getFullPathFileInResource("") + "/orders_10*.csv @testStage";
         SnowflakeFileTransferAgent sfAgent1 =
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         sfAgent1.execute(); // upload files
@@ -600,10 +597,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
         String command =
-            "PUT file://"
-                + getFullPathFileInResource("")
-                + File.separator
-                + "orders_10*.csv @testStage";
+            "PUT file://" + getFullPathFileInResource("") + "/orders_10*.csv @testStage";
         SnowflakeFileTransferAgent sfAgent1 =
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         sfAgent1.execute();

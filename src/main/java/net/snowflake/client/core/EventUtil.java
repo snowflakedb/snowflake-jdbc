@@ -6,7 +6,6 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -81,7 +80,7 @@ public class EventUtil {
   }
 
   public static String getDumpPathPrefix() {
-    return DUMP_PATH_PREFIX + File.separator + DUMP_SUBDIR;
+    return DUMP_PATH_PREFIX + "/" + DUMP_SUBDIR;
   }
 
   public static String getDumpFileId() {

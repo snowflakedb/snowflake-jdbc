@@ -263,7 +263,7 @@ public class EventHandler extends Handler {
     cleanupSfDumps(true);
 
     String logDumpPath =
-        logDumpPathPrefix + File.separator + LOG_DUMP_FILE_NAME + identifier + LOG_DUMP_FILE_EXT;
+        logDumpPathPrefix + "/" + LOG_DUMP_FILE_NAME + identifier + LOG_DUMP_FILE_EXT;
 
     if (!disableCompression) {
       logDumpPath += LOG_DUMP_COMP_EXT;

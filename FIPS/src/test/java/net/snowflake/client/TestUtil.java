@@ -37,7 +37,7 @@ public class TestUtil {
   /**
    * System.getenv wrapper. If System.getenv raises an SecurityException, it is ignored and returns
    * null.
-   * @deprecated This method should be replaced by SnowflakeUtil.systemGetEnv.
+   *
    * <p>This is replicated from SnowflakeUtil.systemGetEnv, because the old driver doesn't have that
    * function for the tests to use it. Replace this function call with SnowflakeUtil.systemGetEnv
    * when it is available.
@@ -45,7 +45,6 @@ public class TestUtil {
    * @param env the environment variable name.
    * @return the environment variable value if set, otherwise null.
    */
-  @Deprecated
   public static String systemGetEnv(String env) {
     try {
       return System.getenv(env);
