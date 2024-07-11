@@ -14,12 +14,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
-import net.snowflake.client.config.ConnectionParameters;
-import net.snowflake.client.config.SFConnectionConfigParser;
 import net.snowflake.client.core.SecurityUtil;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
 
@@ -31,8 +26,6 @@ import net.snowflake.common.core.SqlState;
  * loading
  */
 public class SnowflakeDriver implements Driver {
-  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeDriver.class);
-  public static final String AUTO_CONNECTION_STRING_PREFIX = "jdbc:snowflake:auto";
   static SnowflakeDriver INSTANCE;
 
   public static final Properties EMPTY_PROPERTIES = new Properties();
@@ -207,52 +200,18 @@ public class SnowflakeDriver implements Driver {
    */
   @Override
   public Connection connect(String url, Properties info) throws SQLException {
-    ConnectionParameters connectionParameters =
-        overrideByFileConnectionParametersIfAutoConfiguration(url, info);
-
-    if (connectionParameters.getUrl() == null) {
+    if (url == null) {
       // expected return format per the JDBC spec for java.sql.Driver#connect()
       throw new SnowflakeSQLException("Unable to connect to url of 'null'.");
     }
-    if (!SnowflakeConnectString.hasSupportedPrefix(connectionParameters.getUrl())) {
+    if (!SnowflakeConnectString.hasSupportedPrefix(url)) {
       return null; // expected return format per the JDBC spec for java.sql.Driver#connect()
     }
-    SnowflakeConnectString conStr =
-        SnowflakeConnectString.parse(
-            connectionParameters.getUrl(), connectionParameters.getParams());
+    SnowflakeConnectString conStr = SnowflakeConnectString.parse(url, info);
     if (!conStr.isValid()) {
       throw new SnowflakeSQLException("Connection string is invalid. Unable to parse.");
     }
-    return new SnowflakeConnectionV1(
-        connectionParameters.getUrl(), connectionParameters.getParams());
-  }
-
-  private static ConnectionParameters overrideByFileConnectionParametersIfAutoConfiguration(
-      String url, Properties info) throws SnowflakeSQLException {
-    if (url != null && url.contains(AUTO_CONNECTION_STRING_PREFIX)) {
-      // Connect using connection configuration file
-      ConnectionParameters connectionParameters =
-          SFConnectionConfigParser.buildConnectionParameters();
-      if (connectionParameters == null) {
-        throw new SnowflakeSQLException(
-            "Unavailable connection configuration parameters expected for auto configuration using file");
-      }
-      return connectionParameters;
-    } else {
-      return new ConnectionParameters(url, info);
-    }
-  }
-
-  /**
-   * Connect method using connection configuration file
-   *
-   * @return connection
-   * @throws SQLException if failed to create a snowflake connection
-   */
-  @SnowflakeJdbcInternalApi
-  public Connection connect() throws SQLException {
-    logger.debug("Execute internal method connect() without parameters");
-    return connect(AUTO_CONNECTION_STRING_PREFIX, null);
+    return new SnowflakeConnectionV1(url, info);
   }
 
   @Override
