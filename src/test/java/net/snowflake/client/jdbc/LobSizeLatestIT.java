@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.UUIDUtils;
@@ -43,7 +42,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
   private static final Map<Integer, String> LobSizeStringValues = new HashMap<>();
 
   // Max LOB size is testable from version 3.15.0 and above.
-  private static int maxLobSize = 16 * 1024 * 1024; //default value
+  private static int maxLobSize = 16 * 1024 * 1024; // default value
   private static int largeLobSize = maxLobSize / 2;
   private static int mediumLobSize = largeLobSize / 2;
   private static int smallLobSize = 16;
@@ -55,7 +54,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
         // the max json string should be ~1.33 for Arrow response so let's use 1.5 to be sure
         ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, Integer.toString((int) (maxLobSize * 1.5)));
     try (Connection con = BaseJDBCTest.getConnection()) {
-      //get max LOB size from session
+      // get max LOB size from session
       maxLobSize = con.getMetaData().getMaxCharLiteralLength();
       logger.log(Level.INFO, "Using max lob size: " + maxLobSize);
       LobSizeStringValues.put(smallLobSize, generateRandomString(smallLobSize));
