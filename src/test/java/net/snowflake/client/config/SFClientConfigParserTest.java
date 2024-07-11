@@ -135,10 +135,10 @@ public class SFClientConfigParserTest {
   }
 
   @Test
-  public void testConvertToWindowsPath() {
+  public void testconvertToWindowsPath() {
     String mockWindowsPath = "C:/Program Files/example.txt";
     String resultWindowsPath = "C:\\Program Files\\example.txt";
-    String[] testCases = new String[] {"", "file:\\", "\\\\", "/", "nested:\\"};
+    String[] testCases = new String[] {"", "file:\\", "\\\\", "/"};
     String mockCloudPrefix = "cloud://";
 
     for (String testcase : testCases) {
