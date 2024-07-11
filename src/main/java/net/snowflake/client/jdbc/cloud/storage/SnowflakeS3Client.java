@@ -217,10 +217,9 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     } else {
       if (region != null) {
         if (this.isUseS3RegionalUrl) {
-          String domainSuffixForRegionalUrl = getDomainSuffixForRegionalUrl(region.getName());
           amazonS3Builder.withEndpointConfiguration(
               new AwsClientBuilder.EndpointConfiguration(
-                  "s3." + region.getName() + "." + domainSuffixForRegionalUrl, region.getName()));
+                  "s3." + region.getName() + ".amazonaws.com", region.getName()));
         } else {
           amazonS3Builder.withRegion(region.getName());
         }
@@ -229,10 +228,6 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     // Explicitly force to use virtual address style
     amazonS3Builder.withPathStyleAccessEnabled(false);
     amazonClient = (AmazonS3) amazonS3Builder.build();
-  }
-
-  static String getDomainSuffixForRegionalUrl(String regionName) {
-    return regionName.startsWith("cn-") ? "amazonaws.com.cn" : "amazonaws.com";
   }
 
   // Returns the Max number of retry attempts
