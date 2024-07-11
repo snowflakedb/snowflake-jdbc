@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeConnectString;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -133,6 +134,12 @@ public class TelemetryService {
       logger.debug("Disabling out-of-band HTAP telemetry");
       htapEnabled = false;
     }
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void disableOOBTelemetry() {
+    disable();
+    disableHTAP();
   }
 
   public boolean isEnabled() {
