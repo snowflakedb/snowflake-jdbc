@@ -54,6 +54,7 @@ import net.snowflake.client.jdbc.cloud.storage.SnowflakeStorageClient;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.client.jdbc.cloud.storage.StorageClientFactory;
 import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -1763,5 +1764,14 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         statement.execute("DROP STAGE if exists " + testStageName);
       }
     }
+  }
+
+  /** Added in > 3.17.0 */
+  @Test
+  public void shouldLoadDriverWithDisabledTelemetryOob() throws ClassNotFoundException {
+    Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
+
+    assertFalse(TelemetryService.getInstance().isEnabled());
+    assertFalse(TelemetryService.getInstance().isHTAPEnabled());
   }
 }
