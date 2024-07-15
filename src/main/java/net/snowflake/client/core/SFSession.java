@@ -619,6 +619,10 @@ public class SFSession extends SFBaseSession {
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
                 : false);
 
+    logger.info(
+        "Connecting to {} Snowflake domain",
+        loginInput.getHostFromServerUrl().toLowerCase().endsWith(".cn") ? "CHINA" : "GLOBAL");
+
     // we ignore the parameters CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED and htapOOBTelemetryEnabled
     // OOB telemetry is disabled
     TelemetryService.disableOOBTelemetry();
