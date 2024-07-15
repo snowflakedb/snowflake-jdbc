@@ -220,7 +220,7 @@ public class SessionUtilExternalBrowserTest {
       assertTrue(ex.getMessage().contains("Invalid SSOUrl found"));
     }
   }
-  //as;ldkjfslkdjflskdjlfkjsd
+  // as;ldkjfslkdjflskdjlfkjsd
 
   /**
    * Mock HttpUtil and SFLoginInput
