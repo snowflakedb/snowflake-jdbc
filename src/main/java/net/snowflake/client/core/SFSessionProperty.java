@@ -88,7 +88,10 @@ public enum SFSessionProperty {
 
   DISABLE_SAML_URL_CHECK("disableSamlURLCheck", false, Boolean.class),
 
-  JDBC_USE_HARDCODED_TIMEZONE("JDBC_USE_HARDCODED_TIMEZONE", false, Boolean.class);
+  // Used to determine whether a hardcoded value should be used for the formatter (for backwards
+  // compatibility)
+  JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE(
+      "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

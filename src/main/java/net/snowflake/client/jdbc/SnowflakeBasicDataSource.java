@@ -233,6 +233,6 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   }
 
   public void setUseHardcodedTimezone(Boolean useHardcodedTimezone) {
-    this.properties.put("JDBC_USE_HARDCODED_TIMEZONE", useHardcodedTimezone);
+    this.properties.put("JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", useHardcodedTimezone);
   }
 }

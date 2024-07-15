@@ -486,7 +486,7 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
-        case JDBC_USE_HARDCODED_TIMEZONE:
+        case JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE:
           if (propertyValue != null) {
             setUseHardcodedTimezone(getBooleanValue(propertyValue));
           }
