@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.16.1-SNAPSHOT</version>
+    <version>3.17.1-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.16.1-SNAPSHOT</version>
+  <version>3.17.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -462,7 +462,6 @@
               <generatePom>true</generatePom>
             </configuration>
           </execution>
-
           <execution>
             <id>install-tika-core</id>
             <goals>
@@ -747,25 +746,6 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>check-shaded-content</id>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <phase>verify</phase>
-                <configuration>
-                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
-                  <arguments>
-                    <argument>-thin</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
         </plugins>
       </build>
     </profile>
@@ -886,13 +866,6 @@
                     <relocation>
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>com.sun</pattern>
-                      <shadedPattern>${shadeBase}.com.sun</shadedPattern>
-                      <excludes>
-                        <exclude>com.sun.jna.**</exclude>
-                      </excludes>
                     </relocation>
                     <relocation>
                       <pattern>io.netty</pattern>
@@ -1095,22 +1068,6 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>check-shaded-content</id>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <phase>verify</phase>
-                <configuration>
-                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
         </plugins>
       </build>
     </profile>
@@ -1232,6 +1189,75 @@
                 <configuration>
                   <dataFile>target/jacoco-it.exec</dataFile>
                   <outputDirectory>target/jacoco-it</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>check-content</id>
+      <activation>
+        <os>
+          <family>!windows</family>
+        </os>
+        <property>
+          <name>!thin-jar</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${version.plugin.exec}</version>
+            <executions>
+              <execution>
+                <id>check-shaded-content</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>check-content-thin</id>
+      <activation>
+        <os>
+          <family>!windows</family>
+        </os>
+        <property>
+          <name>thin-jar</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${version.plugin.exec}</version>
+            <executions>
+              <execution>
+                <id>check-shaded-content</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
+                  <arguments>
+                    <argument>-thin</argument>
+                  </arguments>
                 </configuration>
               </execution>
             </executions>
