@@ -1655,11 +1655,9 @@ public class SessionUtil {
           session.setClientPrefetchThreads((int) entry.getValue());
         }
       } else if (CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED.equalsIgnoreCase(entry.getKey())) {
-        if ((boolean) entry.getValue()) {
-          TelemetryService.enable();
-        } else {
-          TelemetryService.disable();
-        }
+        // we ignore the parameter CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED
+        // OOB telemetry is always disabled
+        TelemetryService.disableOOBTelemetry();
       } else if (CLIENT_VALIDATE_DEFAULT_PARAMETERS.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session.setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));

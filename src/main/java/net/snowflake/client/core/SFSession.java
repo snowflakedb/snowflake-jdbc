@@ -619,14 +619,9 @@ public class SFSession extends SFBaseSession {
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
                 : false);
 
-    // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
-    // The value may still change later when session parameters from the server are read.
-    if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
-      TelemetryService.enable();
-    } else {
-      TelemetryService.disable();
-    }
+    // we ignore the parameters CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED and htapOOBTelemetryEnabled
+    // OOB telemetry is disabled
+    TelemetryService.disableOOBTelemetry();
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
@@ -656,13 +651,7 @@ public class SFSession extends SFBaseSession {
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
-    // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
-    if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
-      TelemetryService.enableHTAP();
-    } else {
-      TelemetryService.disableHTAP();
-    }
+
     String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
     String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
     String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);
