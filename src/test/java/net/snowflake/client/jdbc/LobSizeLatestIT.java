@@ -139,6 +139,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
       stmt.execute("Drop table if exists " + tableName);
+      stmt.execute("alter session unset ALLOW_LARGE_LOBS_IN_EXTERNAL_SCAN");
     }
   }
 
@@ -254,7 +255,6 @@ public class LobSizeLatestIT extends BaseJDBCTest {
         assertEquals(fileName + ".gz", rsGet.getString(1));
         assertEquals("DOWNLOADED", rsGet.getString(3));
       }
-      stmt.execute("alter session unset ALLOW_LARGE_LOBS_IN_EXTERNAL_SCAN");
     }
   }
 }
