@@ -139,7 +139,6 @@ public class LobSizeLatestIT extends BaseJDBCTest {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
       stmt.execute("Drop table if exists " + tableName);
-      stmt.execute("alter session unset ALLOW_LARGE_LOBS_IN_EXTERNAL_SCAN");
     }
   }
 
