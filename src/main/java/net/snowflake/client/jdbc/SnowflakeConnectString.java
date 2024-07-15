@@ -21,14 +21,13 @@ import net.snowflake.client.log.SFLoggerFactory;
 
 public class SnowflakeConnectString implements Serializable {
   private static final long serialVersionUID = 1L;
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectString.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectString.class);
 
   private final String scheme;
   private final String host;
   private final int port;
   private final Map<String, Object> parameters;
   private final String account;
-
   private static SnowflakeConnectString INVALID_CONNECT_STRING =
       new SnowflakeConnectString("", "", -1, Collections.emptyMap(), "");
 

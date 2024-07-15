@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.TestUtil.expectSnowflakeLoggedFeatureNotSupportedException;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertArrayEquals;
@@ -27,7 +28,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -744,7 +744,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       try {
         String sp =
             "CREATE OR REPLACE PROCEDURE \"SP_ZSDLEADTIME_ARCHIVE_DAILY\"()\n"
-                + "RETURNS VARCHAR(16777216)\n"
+                + "RETURNS VARCHAR\n"
                 + "LANGUAGE SQL\n"
                 + "EXECUTE AS CALLER\n"
                 + "AS \n"
@@ -793,7 +793,6 @@ public class ResultSetLatestIT extends ResultSet0IT {
           assertEquals("SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
           assertEquals("VARCHAR", resultSetMetaData.getColumnTypeName(1));
           assertEquals(0, resultSetMetaData.getScale(1));
-          assertEquals(16777216, resultSetMetaData.getPrecision(1));
         }
       } finally {
         statement.execute("drop procedure if exists SP_ZSDLEADTIME_ARCHIVE_DAILY()");
@@ -808,14 +807,64 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * implemented for synchronous queries *
    */
   @Test
-  public void testNewFeaturesNotSupported() throws SQLException {
+  public void testNewFeaturesNotSupportedExeceptions() throws SQLException {
+    try (Connection con = init();
+        Statement statement = con.createStatement();
+        ResultSet rs = statement.executeQuery("select 1")) {
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          rs.unwrap(SnowflakeResultSet.class)::getQueryErrorMessage);
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          rs.unwrap(SnowflakeResultSet.class)::getStatus);
+      expectSnowflakeLoggedFeatureNotSupportedException(() -> rs.getArray(1));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getList(1, String.class));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getArray(1, String.class));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getMap(1, String.class));
+
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getUnicodeStream(1));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () -> rs.unwrap(SnowflakeBaseResultSet.class).getUnicodeStream("column1"));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateAsciiStream("column1", new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateBinaryStream("column1", new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateCharacterStream("column1", new FakeReader(), 5L));
+
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateAsciiStream(1, new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateBinaryStream(1, new FakeInputStream(), 5L));
+      expectSnowflakeLoggedFeatureNotSupportedException(
+          () ->
+              rs.unwrap(SnowflakeBaseResultSet.class)
+                  .updateCharacterStream(1, new FakeReader(), 5L));
+    }
+  }
+
+  @Test
+  public void testInvalidUnWrap() throws SQLException {
     try (Connection con = init();
         ResultSet rs = con.createStatement().executeQuery("select 1")) {
       try {
-        rs.unwrap(SnowflakeResultSet.class).getQueryErrorMessage();
-      } catch (SQLFeatureNotSupportedException ex) {
-        // catch SQLFeatureNotSupportedException
-        assertEquals("This function is only supported for asynchronous queries.", ex.getMessage());
+        rs.unwrap(SnowflakeUtil.class);
+      } catch (SQLException ex) {
+        assertEquals(
+            ex.getMessage(),
+            "net.snowflake.client.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.jdbc.SnowflakeUtil");
       }
     }
   }
@@ -998,6 +1047,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
     int colLength = 16777216;
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
+      SFBaseSession session = con.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
+      Integer maxVarcharSize =
+          (Integer) session.getOtherParameter("VARCHAR_AND_BINARY_MAX_SIZE_IN_RESULT");
+      if (maxVarcharSize != null) {
+        colLength = maxVarcharSize;
+      }
       statement.execute("create or replace table " + tableName + " (c1 string(" + colLength + "))");
       statement.execute(
           "insert into " + tableName + " select randstr(" + colLength + ", random())");

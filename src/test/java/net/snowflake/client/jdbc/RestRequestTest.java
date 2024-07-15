@@ -5,9 +5,12 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -17,9 +20,11 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.RunningNotOnLinuxMac;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.util.DecorrelatedJitterBackoff;
 import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -272,6 +277,7 @@ public class RestRequestTest {
     testCases.add(new TestCase(509, false, false));
     testCases.add(new TestCase(510, false, false));
     testCases.add(new TestCase(511, false, false));
+    testCases.add(new TestCase(513, false, false));
     // do retry on HTTP 403 option
     testCases.add(new TestCase(100, true, true));
     testCases.add(new TestCase(101, true, true));
@@ -325,6 +331,7 @@ public class RestRequestTest {
     testCases.add(new TestCase(509, true, false));
     testCases.add(new TestCase(510, true, false));
     testCases.add(new TestCase(511, true, false));
+    testCases.add(new TestCase(513, true, false));
 
     for (TestCase t : testCases) {
       if (t.result) {
@@ -519,8 +526,9 @@ public class RestRequestTest {
     }
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  public void testLoginTimeout() throws IOException, SnowflakeSQLException {
+  @Test
+  public void testLoginTimeout() throws IOException {
+    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
     CloseableHttpClient client = mock(CloseableHttpClient.class);
@@ -542,8 +550,11 @@ public class RestRequestTest {
 
     try {
       TelemetryService.disable();
-      execute(client, "/session/v1/login-request", 1, 0, 0, true, false, 10);
-      fail("testMaxRetries");
+      assertThrows(
+          SnowflakeSQLException.class,
+          () -> {
+            execute(client, "/session/v1/login-request", 1, 0, 0, true, false, 10);
+          });
     } finally {
       if (telemetryEnabled) {
         TelemetryService.enable();
@@ -585,6 +596,43 @@ public class RestRequestTest {
       } else {
         TelemetryService.disable();
       }
+    }
+  }
+
+  @Test
+  public void shouldGenerateBackoffInRangeExceptTheLastBackoff() {
+    int minBackoffInMilli = 1000;
+    int maxBackoffInMilli = 16000;
+    long backoffInMilli = minBackoffInMilli;
+    long elapsedMilliForTransientIssues = 0;
+    DecorrelatedJitterBackoff decorrelatedJitterBackoff =
+        new DecorrelatedJitterBackoff(minBackoffInMilli, maxBackoffInMilli);
+    int retryTimeoutInMilli = 5 * 60 * 1000;
+    while (true) {
+      backoffInMilli =
+          RestRequest.getNewBackoffInMilli(
+              backoffInMilli,
+              true,
+              decorrelatedJitterBackoff,
+              10,
+              retryTimeoutInMilli,
+              elapsedMilliForTransientIssues);
+
+      assertTrue(
+          "Backoff should be lower or equal to max backoff limit",
+          backoffInMilli <= maxBackoffInMilli);
+      if (elapsedMilliForTransientIssues + backoffInMilli >= retryTimeoutInMilli) {
+        assertEquals(
+            "Backoff should fill time till retry timeout",
+            retryTimeoutInMilli - elapsedMilliForTransientIssues,
+            backoffInMilli);
+        break;
+      } else {
+        assertTrue(
+            "Backoff should be higher or equal to min backoff limit",
+            backoffInMilli >= minBackoffInMilli);
+      }
+      elapsedMilliForTransientIssues += backoffInMilli;
     }
   }
 }

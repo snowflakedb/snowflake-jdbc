@@ -18,6 +18,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -53,6 +54,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
     switch (type) {
       case Types.VARCHAR:
       case Types.CHAR:
+      case SnowflakeUtil.EXTRA_TYPES_VECTOR:
         return getString(columnIndex);
 
       case Types.BINARY:
@@ -123,7 +125,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public String getString(int columnIndex) throws SFException {
-    logger.debug("public String getString(int columnIndex)", false);
+    logger.trace("String getString(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getInternalColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
@@ -133,21 +135,21 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public boolean getBoolean(int columnIndex) throws SFException {
-    logger.debug("public boolean getBoolean(int columnIndex)", false);
+    logger.trace("boolean getBoolean(int columnIndex)", false);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     return converters.getBooleanConverter().getBoolean(getObjectInternal(columnIndex), columnType);
   }
 
   @Override
   public byte getByte(int columnIndex) throws SFException {
-    logger.debug("public short getByte(int columnIndex)", false);
+    logger.trace("short getByte(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     return converters.getNumberConverter().getByte(obj);
   }
 
   @Override
   public short getShort(int columnIndex) throws SFException {
-    logger.debug("public short getShort(int columnIndex)", false);
+    logger.trace("short getShort(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     return converters.getNumberConverter().getShort(obj, columnType);
@@ -155,7 +157,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public int getInt(int columnIndex) throws SFException {
-    logger.debug("public int getInt(int columnIndex)", false);
+    logger.trace("int getInt(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     return converters.getNumberConverter().getInt(obj, columnType);
@@ -163,7 +165,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public long getLong(int columnIndex) throws SFException {
-    logger.debug("public long getLong(int columnIndex)", false);
+    logger.trace("long getLong(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     return converters.getNumberConverter().getLong(obj, columnType);
@@ -171,7 +173,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SFException {
-    logger.debug("public BigDecimal getBigDecimal(int columnIndex)", false);
+    logger.trace("BigDecimal getBigDecimal(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     return converters.getNumberConverter().getBigDecimal(obj, columnType);
@@ -179,7 +181,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SFException {
-    logger.debug("public BigDecimal getBigDecimal(int columnIndex)", false);
+    logger.trace("BigDecimal getBigDecimal(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     return converters.getNumberConverter().getBigDecimal(obj, columnType, scale);
@@ -187,7 +189,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public Time getTime(int columnIndex) throws SFException {
-    logger.debug("public Time getTime(int columnIndex)", false);
+    logger.trace("Time getTime(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
@@ -199,7 +201,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SFException {
-    logger.debug("public Timestamp getTimestamp(int columnIndex)", false);
+    logger.trace("Timestamp getTimestamp(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
@@ -211,7 +213,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public float getFloat(int columnIndex) throws SFException {
-    logger.debug("public float getFloat(int columnIndex)", false);
+    logger.trace("float getFloat(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     return converters.getNumberConverter().getFloat(obj, columnType);
@@ -219,7 +221,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public double getDouble(int columnIndex) throws SFException {
-    logger.debug("public double getDouble(int columnIndex)", false);
+    logger.trace("double getDouble(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     return converters.getNumberConverter().getDouble(obj, columnType);
@@ -227,7 +229,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public byte[] getBytes(int columnIndex) throws SFException {
-    logger.debug("public byte[] getBytes(int columnIndex)", false);
+    logger.trace("byte[] getBytes(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);
@@ -241,7 +243,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
   @Override
   public Date getDate(int columnIndex, TimeZone tz) throws SFException {
-    logger.debug("public Date getDate(int columnIndex)", false);
+    logger.trace("Date getDate(int columnIndex)", false);
     Object obj = getObjectInternal(columnIndex);
     int columnType = resultSetMetaData.getColumnType(columnIndex);
     int columnSubType = resultSetMetaData.getInternalColumnType(columnIndex);

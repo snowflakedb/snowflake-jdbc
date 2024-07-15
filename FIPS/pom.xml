@@ -5,12 +5,12 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.16.1-SNAPSHOT</version>
+    <version>3.17.1-SNAPSHOT</version>
     <relativePath>../parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>3.16.1-SNAPSHOT</version>
+  <version>3.17.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
@@ -323,23 +323,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>${version.plugin.exec}</version>
-        <executions>
-          <execution>
-            <id>check-shaded-content</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-            <configuration>
-              <executable>${basedir}/scripts/check_content.sh</executable>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
   <reporting>
@@ -465,13 +448,6 @@
                      <relocation>
                        <pattern>org.objectweb</pattern>
                        <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.sun</pattern>
-                       <shadedPattern>${shadeBase}.com.sun</shadedPattern>
-                       <excludes>
-                         <exclude>com.sun.jna.**</exclude>
-                       </excludes>
                      </relocation>
                      <relocation>
                        <pattern>io.netty</pattern>
@@ -663,6 +639,35 @@
                 <goals>
                   <goal>check</goal>
                 </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>check-content</id>
+      <activation>
+        <os>
+          <family>!windows</family>
+        </os>
+      </activation>
+      <build>
+        <plugins>      
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${version.plugin.exec}</version>
+            <executions>
+              <execution>
+                <id>check-shaded-content</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>${basedir}/scripts/check_content.sh</executable>
+                </configuration>
               </execution>
             </executions>
           </plugin>

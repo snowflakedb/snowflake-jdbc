@@ -11,7 +11,7 @@ import net.snowflake.common.core.ResourceBundleManager;
 
 /** Created by jhuang on 1/5/16. */
 public class SFException extends Throwable {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFException.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFException.class);
 
   private static final long serialVersionUID = 1L;
 

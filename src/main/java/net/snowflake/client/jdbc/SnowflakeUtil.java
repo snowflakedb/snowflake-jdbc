@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
@@ -35,6 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -179,6 +181,15 @@ public class SnowflakeUtil {
     int precision = colNode.path("precision").asInt();
     int scale = colNode.path("scale").asInt();
     int length = colNode.path("length").asInt();
+    int dimension =
+        colNode
+            .path("dimension")
+            .asInt(); // vector dimension when checking columns via connection.getMetadata
+    int vectorDimension =
+        colNode
+            .path("vectorDimension")
+            .asInt(); // dimension when checking columns via resultSet.getMetadata
+    int finalVectorDimension = dimension > 0 ? dimension : vectorDimension;
     boolean fixed = colNode.path("fixed").asBoolean();
     JsonNode udtOutputType = colNode.path("outputType");
     JsonNode extColTypeNameNode = colNode.path("extTypeName");
@@ -221,7 +232,8 @@ public class SnowflakeUtil {
         colSrcDatabase,
         colSrcSchema,
         colSrcTable,
-        isAutoIncrement);
+        isAutoIncrement,
+        finalVectorDimension);
   }
 
   static ColumnTypeInfo getSnowflakeType(
@@ -311,8 +323,9 @@ public class SnowflakeUtil {
         break;
 
       case ARRAY:
+        int columnType = isStructuredType ? Types.ARRAY : Types.VARCHAR;
         columnTypeInfo =
-            new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
+            new ColumnTypeInfo(columnType, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
 
       case MAP:
@@ -557,7 +570,9 @@ public class SnowflakeUtil {
               "", // database
               "", // schema
               "",
-              false)); // isAutoincrement
+              false, // isAutoincrement
+              0 // dimension
+              ));
     }
 
     return rowType;
@@ -705,6 +720,18 @@ public class SnowflakeUtil {
       field.setAccessible(true);
       Map<String, String> writableEnv = (Map<String, String>) field.get(env);
       writableEnv.put(key, value);
+
+      // To an environment variable is set on Windows, it uses a different map to store the values
+      // when the system.getenv(VAR_NAME) is used its required to update in this additional place.
+      if (Constants.getOS() == Constants.OS.WINDOWS) {
+        Class<?> pe = Class.forName("java.lang.ProcessEnvironment");
+        Method getenv = pe.getDeclaredMethod("getenv", String.class);
+        getenv.setAccessible(true);
+        Field props = pe.getDeclaredField("theCaseInsensitiveEnvironment");
+        props.setAccessible(true);
+        Map<String, String> writableEnvForGet = (Map<String, String>) props.get(null);
+        writableEnvForGet.put(key, value);
+      }
     } catch (Exception e) {
       System.out.println("Failed to set value");
       logger.error(

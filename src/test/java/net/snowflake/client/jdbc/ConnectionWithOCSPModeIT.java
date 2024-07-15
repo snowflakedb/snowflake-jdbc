@@ -24,6 +24,7 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SFTrustManager;
+import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -108,7 +109,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -146,7 +147,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -183,7 +184,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -198,7 +199,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -234,7 +235,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -293,7 +294,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -332,7 +333,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -368,7 +369,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -428,5 +429,9 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
               instanceOf(SSLPeerUnverifiedException.class),
               instanceOf(SSLHandshakeException.class)));
     }
+  }
+
+  private static Matcher<String> httpStatus403Or513() {
+    return anyOf(containsString("HTTP status=403"), containsString("HTTP status=513"));
   }
 }

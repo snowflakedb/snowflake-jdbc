@@ -1,5 +1,6 @@
 package net.snowflake.client.core.arrow;
 
+import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeType;
@@ -22,6 +23,10 @@ public class VectorTypeConverter extends AbstractArrowVectorConverter {
 
   @Override
   public String toString(int index) throws SFException {
-    return vector.getObject(index).toString();
+    List<?> object = vector.getObject(index);
+    if (object == null) {
+      return null;
+    }
+    return object.toString();
   }
 }

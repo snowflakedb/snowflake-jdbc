@@ -56,6 +56,7 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
@@ -92,6 +93,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
   public static SnowflakeAzureClient createSnowflakeAzureClient(
       StageInfo stage, RemoteStoreFileEncryptionMaterial encMat, SFBaseSession sfSession)
       throws SnowflakeSQLException {
+    logger.info(
+        "Initializing Snowflake Azure client with encryption: {}",
+        encMat != null ? "true" : "false");
     SnowflakeAzureClient azureClient = new SnowflakeAzureClient();
     azureClient.setupAzureClient(stage, encMat, sfSession);
 
@@ -208,6 +212,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
    */
   @Override
   public void renew(Map<?, ?> stageCredentials) throws SnowflakeSQLException {
+    logger.debug("Renewing the Azure client");
     stageInfo.setCredentials(stageCredentials);
     setupAzureClient(stageInfo, encMat, session);
   }
@@ -320,10 +325,14 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
+    String localFilePath = localLocation + localFileSep + destFileName;
+    logger.info(
+        "Staring download of file from Azure stage path: {} to {}", stageFilePath, localFilePath);
     int retryCount = 0;
     do {
       try {
-        String localFilePath = localLocation + localFileSep + destFileName;
         File localFile = new File(localFilePath);
         CloudBlobContainer container = azStorageClient.getContainerReference(remoteStorageLocation);
         CloudBlob blob = container.getBlockBlobReference(stageFilePath);
@@ -332,6 +341,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         transferOptions.setConcurrentRequestCount(parallelism);
 
         blob.downloadToFile(localFilePath, null, transferOptions, opContext);
+        stopwatch.stop();
+        long downloadMillis = stopwatch.elapsedMillis();
 
         // Pull object metadata from Azure
         blob.downloadAttributes(null, transferOptions, opContext);
@@ -345,6 +356,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         String iv = encryptionData.getValue();
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+          stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
                 queryId,
@@ -357,10 +369,27 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           // Decrypt file
           try {
             EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
+            stopwatch.stop();
+            long decryptMillis = stopwatch.elapsedMillis();
+            logger.info(
+                "Azure file {} downloaded to {}. It took {} ms (download: {} ms, decryption: {} ms) with {} retries",
+                remoteStorageLocation,
+                localFile.getAbsolutePath(),
+                downloadMillis + decryptMillis,
+                downloadMillis,
+                decryptMillis,
+                retryCount);
           } catch (Exception ex) {
             logger.error("Error decrypting file", ex);
             throw ex;
           }
+        } else {
+          logger.info(
+              "Azure file {} downloaded to {}. It took {} ms with {} retries",
+              remoteStorageLocation,
+              localFile.getAbsolutePath(),
+              downloadMillis,
+              retryCount);
         }
         return;
 
@@ -403,6 +432,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
+    logger.info(
+        "Staring download of file from Azure stage path: {} to input stream", stageFilePath);
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     int retryCount = 0;
 
     do {
@@ -412,7 +445,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         CloudBlob blob = container.getBlockBlobReference(stageFilePath);
 
         InputStream stream = blob.openInputStream(null, null, opContext);
-
+        stopwatch.stop();
+        long downloadMillis = stopwatch.elapsedMillis();
         Map<String, String> userDefinedMetadata = blob.getMetadata();
 
         AbstractMap.SimpleEntry<String, String> encryptionData =
@@ -423,6 +457,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         String iv = encryptionData.getValue();
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+          stopwatch.restart();
           if (key == null || iv == null) {
             throw new SnowflakeSQLLoggedException(
                 queryId,
@@ -433,8 +468,18 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           }
 
           try {
-
-            return EncryptionProvider.decryptStream(stream, key, iv, encMat);
+            InputStream is = EncryptionProvider.decryptStream(stream, key, iv, encMat);
+            stopwatch.stop();
+            long decryptMillis = stopwatch.elapsedMillis();
+            logger.info(
+                "Azure file {} downloaded to input stream. It took {} ms "
+                    + "(download: {} ms, decryption: {} ms) with {} retries",
+                stageFilePath,
+                downloadMillis + decryptMillis,
+                downloadMillis,
+                decryptMillis,
+                retryCount);
+            return is;
 
           } catch (Exception ex) {
             logger.error("Error in decrypting file", ex);
@@ -442,6 +487,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
           }
 
         } else {
+          logger.info(
+              "Azure file {} downloaded to input stream. Download took {} ms with {} retries",
+              stageFilePath,
+              downloadMillis,
+              retryCount);
           return stream;
         }
 
@@ -493,6 +543,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       String presignedUrl,
       String queryId)
       throws SnowflakeSQLException {
+    logger.info(
+        StorageHelper.getStartUploadLog(
+            "Azure", uploadFromStream, inputStream, fileBackedOutputStream, srcFile, destFileName));
     final List<FileInputStream> toClose = new ArrayList<>();
     long originalContentLength = meta.getContentLength();
 
@@ -512,9 +565,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     }
 
     int retryCount = 0;
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     do {
       try {
-        logger.debug("Starting upload", false);
         InputStream fileInputStream = uploadStreamInfo.left;
         CloudBlobContainer container = azStorageClient.getContainerReference(remoteStorageLocation);
         CloudBlockBlob blob = container.getBlockBlobReference(destFileName);
@@ -531,7 +585,22 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
             null,
             transferOptions,
             opContext);
-        logger.debug("Upload successful", false);
+        stopwatch.stop();
+
+        if (uploadFromStream) {
+          logger.info(
+              "Uploaded data from input stream to Azure location: {}. It took {} ms with {} retries",
+              remoteStorageLocation,
+              stopwatch.elapsedMillis(),
+              retryCount);
+        } else {
+          logger.info(
+              "Uploaded file {} to Azure location: {}. It took {} ms with {} retries",
+              srcFile.getAbsolutePath(),
+              remoteStorageLocation,
+              stopwatch.elapsedMillis(),
+              retryCount);
+        }
 
         blob.uploadMetadata(null, transferOptions, opContext);
 
