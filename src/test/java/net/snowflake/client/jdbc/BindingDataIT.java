@@ -365,7 +365,6 @@ public class BindingDataIT extends AbstractDriverIT {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try {
-        statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=FALSE");
         statement.execute("create or replace table test_bind_date(c1 date)");
 
         try (PreparedStatement preparedStatement =

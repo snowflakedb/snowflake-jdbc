@@ -164,9 +164,9 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCTest {
         // match
         assertEquals(rs.getDate(1, cal), rs.getDate(2, cal));
 
-        // getDate() without Calendar offset called on Date type should return with offset since
-        // JDBC_FORMAT_DATE_WITH_TIMEZONE is set to true
-        assertEquals("1970-01-02 08:00:00", sdf.format(rs.getDate(1)));
+        // getDate() without Calendar offset called on Date type should return the same date with no
+        // timezone offset
+        assertEquals("1970-01-02 00:00:00", sdf.format(rs.getDate(1)));
         // getDate() without Calendar offset called on Timestamp type returns date with timezone
         // offset
         assertEquals("1970-01-02 08:00:00", sdf.format(rs.getDate(2)));
