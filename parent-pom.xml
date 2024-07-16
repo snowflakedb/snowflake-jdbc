@@ -19,7 +19,7 @@
     <apache.commons.text.version>1.10.0</apache.commons.text.version>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
-    <arrow.version>10.0.1</arrow.version>
+    <arrow.version>16.1.0</arrow.version>
     <asm.version>9.3</asm.version>
     <avro.version>1.8.1</avro.version>
     <awaitility.version>4.2.0</awaitility.version>
@@ -30,7 +30,7 @@
     <bouncycastle.bcpkixfips.version>1.0.5</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
     <classworlds.version>1.1</classworlds.version>
-    <checkerframework.version>3.42.0</checkerframework.version>
+    <checkerframework.version>3.33.0</checkerframework.version>
     <commons.cli.version>1.2</commons.cli.version>
     <commons.codec.version>1.15</commons.codec.version>
     <commons.dbcp.version>1.4</commons.dbcp.version>
@@ -73,7 +73,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <relocationBase>net/snowflake/client/jdbc/internal</relocationBase>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
-    <slf4j.version>2.0.9</slf4j.version>
+    <slf4j.version>2.0.13</slf4j.version>
     <snowflake.common.version>5.1.4</snowflake.common.version>
     <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
     <threeten.version>1.6.8</threeten.version>
