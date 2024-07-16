@@ -150,6 +150,6 @@ public class DateConverter extends AbstractArrowVectorConverter {
   private Boolean getUseDateFormat(Boolean defaultValue) {
     return this.context.getSession() == null
         ? defaultValue
-        : (this.context.getSession().getUseHardcodedTimezone() ? defaultValue : this.useDateFormat);
+        : (this.context.getSession().getDefaultFormatDateWithTimezone() ? defaultValue : this.useDateFormat);
   }
 }

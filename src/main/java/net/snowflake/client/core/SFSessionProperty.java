@@ -91,7 +91,10 @@ public enum SFSessionProperty {
   // Used to determine whether a hardcoded value should be used for the formatter (for backwards
   // compatibility)
   JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE(
-      "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", false, Boolean.class);
+      "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", false, Boolean.class),
+
+  // Used as a fix for issue 244. Remove with snowflake-jdbc version 4.x with BCR changes.
+  JDBC_GET_DATE_USE_NULL_TIMEZONE("JDBC_GET_DATE_USE_NULL_TIMEZONE", false, Boolean.class);
 
   // property key in string
   private String propertyKey;

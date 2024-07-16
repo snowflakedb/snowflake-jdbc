@@ -232,7 +232,11 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     this.properties.put("tracing", tracing);
   }
 
-  public void setUseHardcodedTimezone(Boolean useHardcodedTimezone) {
-    this.properties.put("JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", useHardcodedTimezone);
+  public void setJDBCDefaultFormatDateWithTimezone(Boolean jdbcDefaultFormatDateWithTimezone) {
+    this.properties.put("JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", jdbcDefaultFormatDateWithTimezone);
+  }
+
+  public void setGetDateUseNullTimezone(Boolean getDateUseNullTimezone) {
+    this.properties.put("JDBC_GET_DATE_USE_NULL_TIMEZONE", getDateUseNullTimezone);
   }
 }
