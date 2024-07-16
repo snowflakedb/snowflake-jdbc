@@ -233,7 +233,8 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   }
 
   public void setJDBCDefaultFormatDateWithTimezone(Boolean jdbcDefaultFormatDateWithTimezone) {
-    this.properties.put("JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", jdbcDefaultFormatDateWithTimezone);
+    this.properties.put(
+        "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", jdbcDefaultFormatDateWithTimezone);
   }
 
   public void setGetDateUseNullTimezone(Boolean getDateUseNullTimezone) {
