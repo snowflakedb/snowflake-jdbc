@@ -1702,7 +1702,7 @@ public class SessionUtil {
    * @param serverUrl The Snowflake URL includes protocol such as "https://"
    */
   public static void resetOCSPUrlIfNecessary(String serverUrl) throws IOException {
-    if (serverUrl.indexOf(".privatelink.snowflakecomputing.com") > 0) {
+    if (PrivateLinkDetector.isPrivateLink(serverUrl)) {
       // Privatelink uses special OCSP Cache server
       URL url = new URL(serverUrl);
       String host = url.getHost();

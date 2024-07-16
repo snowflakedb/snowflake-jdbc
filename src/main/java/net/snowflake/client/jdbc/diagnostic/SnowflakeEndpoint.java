@@ -1,5 +1,7 @@
 package net.snowflake.client.jdbc.diagnostic;
 
+import net.snowflake.client.core.PrivateLinkDetector;
+
 /*
 The SnowflakeEndpoint class represents an endpoint as returned by the System$allowlist() SQL
 function. Example:
@@ -20,10 +22,6 @@ class SnowflakeEndpoint {
     this.isSecure = (this.port == 443);
   }
 
-  public SnowflakeEndpoint() {
-    this(null, null, -1);
-  }
-
   public String getType() {
     return this.type;
   }
@@ -40,11 +38,8 @@ class SnowflakeEndpoint {
     return this.port;
   }
 
-  // We can only tell if private link is enabled for certain hosts when the hostname contains
-  // the word 'privatelink' but we don't have a good way of telling if a private link connection
-  // is expected for internal stages for example.
   public boolean isPrivateLink() {
-    return (host.contains("privatelink.snowflakecomputing.com"));
+    return PrivateLinkDetector.isPrivateLink(host);
   }
 
   @Override
