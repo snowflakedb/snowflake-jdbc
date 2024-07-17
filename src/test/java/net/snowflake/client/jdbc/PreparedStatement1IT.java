@@ -25,6 +25,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
@@ -788,6 +789,76 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
         statement.executeUpdate(
             "alter session set CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS=false");
       }
+    }
+  }
+
+  /**
+   * This test shows how to use batch requests with variant columns. Syntax <code>
+   * insert into ... Select column1, ... from values (?,...)</code> is crucial there.
+   */
+  @Test
+  public void shouldUseVariantBindParametersSNOW1531307() throws SQLException {
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement()) {
+      String tableName = "SNOW1531307";
+      createTableForVariantBindParametersSNOW1531307(stmt, tableName);
+      executePreparedStatementWithBatchesSNOW1531307(con, tableName, 20);
+    }
+  }
+
+  /**
+   * This test shows how to use batch requests with variant columns. Syntax <code>
+   * insert into ... Select column1, ... from values (?,...)</code> is crucial there.
+   * CLIENT_STAGE_ARRAY_BINDING_THRESHOLD parameter is used on session to set the minimal number of
+   * bind parameters to create stage file with provided parameters - it may be set only by
+   * administrator.
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void shouldUseVariantBindParametersWithStageSNOW1531307() throws SQLException {
+    try (Connection con = getConnection();
+        Statement stmt = con.createStatement()) {
+      String tableName = "SNOW1531307";
+      createTableForVariantBindParametersSNOW1531307(stmt, tableName);
+
+      try {
+        stmt.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 10");
+        executePreparedStatementWithBatchesSNOW1531307(con, tableName, 20);
+      } finally {
+        // we are planning to reuse connection so let's cleanup
+        stmt.execute("ALTER SESSION UNSET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD");
+      }
+    }
+  }
+
+  private static void createTableForVariantBindParametersSNOW1531307(
+      Statement stmt, String tableName) throws SQLException {
+    stmt.execute(
+        "CREATE OR REPLACE TABLE "
+            + tableName
+            + "(id text, array variant, json1 variant, json2 variant, str variant, num variant)");
+  }
+
+  private static void executePreparedStatementWithBatchesSNOW1531307(
+      Connection con, String tableName, int numberOfBatches) throws SQLException {
+    try (PreparedStatement ps =
+        con.prepareStatement(
+            "insert into "
+                + tableName
+                + "(id, array, json1, json2, str, num) "
+                + "Select column1, parse_json(column2), parse_json(column3), parse_json(column4), to_variant(column5), to_variant(column6) "
+                + "from values(?, ?, ?, ?, ?, ?)")) {
+      for (int i = 0; i < numberOfBatches; i++) {
+        int parameterIndex = 1;
+        ps.setString(parameterIndex++, UUID.randomUUID().toString());
+        ps.setObject(parameterIndex++, "[1,2]");
+        ps.setObject(parameterIndex++, null);
+        ps.setObject(parameterIndex++, "{\"a\": 5}");
+        ps.setObject(parameterIndex++, "bla");
+        ps.setObject(parameterIndex++, 5);
+        ps.addBatch();
+      }
+      assertEquals(numberOfBatches, ps.executeBatch().length);
     }
   }
 }
