@@ -4,7 +4,10 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,13 +53,17 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     // given
     ObjectNode rootNode = createRootNode();
     ArrayNode fields = OBJECT_MAPPER.createArrayNode();
-    fields.add(OBJECT_MAPPER.readTree("{\"fieldName\":\"name1\", \"fieldType\": {\"type\":\"text\",\"precision\":null,\"byteLength\":256,\"scale\":null,\"nullable\":false,\"collation\":\"collation\",\"length\":256}}"));
-    fields.add(OBJECT_MAPPER.readTree("{\"fieldName\":\"name2\", \"fieldType\": {\"type\":\"real\",\"precision\":5,\"byteLength\":128,\"scale\":null,\"nullable\":true,\"collation\":\"collation\",\"length\":256}}"));
+    fields.add(
+        OBJECT_MAPPER.readTree(
+            "{\"fieldName\":\"name1\", \"fieldType\": {\"type\":\"text\",\"precision\":null,\"byteLength\":256,\"scale\":null,\"nullable\":false,\"collation\":\"collation\",\"length\":256}}"));
+    fields.add(
+        OBJECT_MAPPER.readTree(
+            "{\"fieldName\":\"name2\", \"fieldType\": {\"type\":\"real\",\"precision\":5,\"byteLength\":128,\"scale\":null,\"nullable\":true,\"collation\":\"collation\",\"length\":256}}"));
     rootNode.putIfAbsent("fields", fields);
 
     // when
     SnowflakeColumnMetadata columnMetadata =
-            SnowflakeUtil.extractColumnMetadata(rootNode, false, null);
+        SnowflakeUtil.extractColumnMetadata(rootNode, false, null);
     // then
     assertNotNull(columnMetadata);
     assertEquals("OBJECT", columnMetadata.getTypeName());
