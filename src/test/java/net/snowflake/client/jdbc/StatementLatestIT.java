@@ -41,7 +41,7 @@ import org.junit.rules.TemporaryFolder;
  * the latest and oldest supported driver run the tests.
  */
 @Category(TestCategoryStatement.class)
-public class StatementLatestIT extends BaseJDBCTest {
+public class StatementLatestIT extends BaseJDBCIT {
   protected static String queryResultFormat = "json";
 
   public static Connection getConnection() throws SQLException {

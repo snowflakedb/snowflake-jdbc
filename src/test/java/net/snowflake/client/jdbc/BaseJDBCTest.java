@@ -36,26 +36,10 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.core.SFException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 
 public class BaseJDBCTest extends AbstractDriverIT {
   // Test UUID unique per session
   static final String TEST_UUID = UUID.randomUUID().toString();
-
-  protected static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
 
   protected interface MethodRaisesSQLException {
     void run() throws SQLException;

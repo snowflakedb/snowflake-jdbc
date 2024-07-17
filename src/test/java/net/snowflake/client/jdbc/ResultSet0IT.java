@@ -17,7 +17,7 @@ import org.junit.experimental.categories.Category;
 
 /** Result set test base class. */
 @Category(TestCategoryResultSet.class)
-public class ResultSet0IT extends BaseJDBCTest {
+public class ResultSet0IT extends BaseJDBCIT {
   private final String queryResultFormat;
 
   public Connection init(int injectSocketTimeout) throws SQLException {
