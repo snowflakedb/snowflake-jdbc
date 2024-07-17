@@ -233,7 +233,7 @@ public class RestRequest {
         // if exception is caused by illegal state, e.g shutdown of http client
         // because of closing of connection, then fail immediately and stop retrying.
         throw new SnowflakeSQLLoggedException(
-            null, ErrorCode.INVALID_STATE, ex, /* session = */ ex.getMessage());
+            null, ErrorCode.INVALID_STATE, ex, /* session= */ ex.getMessage());
 
       } catch (SSLHandshakeException
           | SSLKeyException
@@ -435,28 +435,18 @@ public class RestRequest {
           try {
             logger.debug("sleeping in {}(ms)", backoffInMilli);
             Thread.sleep(backoffInMilli);
-            elapsedMilliForTransientIssues += backoffInMilli;
-            if (isLoginRequest) {
-              long jitteredBackoffInMilli = backoff.getJitterForLogin(backoffInMilli);
-              backoffInMilli =
-                  (long)
-                      backoff.chooseRandom(
-                          jitteredBackoffInMilli + backoffInMilli,
-                          Math.pow(2, retryCount) + jitteredBackoffInMilli);
-            } else {
-              backoffInMilli = backoff.nextSleepTime(backoffInMilli);
-            }
-            if (retryTimeoutInMilliseconds > 0
-                && (elapsedMilliForTransientIssues + backoffInMilli) > retryTimeoutInMilliseconds) {
-              // If the timeout will be reached before the next backoff, just use the remaining
-              // time.
-              backoffInMilli =
-                  Math.min(
-                      backoffInMilli, retryTimeoutInMilliseconds - elapsedMilliForTransientIssues);
-            }
           } catch (InterruptedException ex1) {
             logger.debug("Backoff sleep before retrying login got interrupted", false);
           }
+          elapsedMilliForTransientIssues += backoffInMilli;
+          backoffInMilli =
+              getNewBackoffInMilli(
+                  backoffInMilli,
+                  isLoginRequest,
+                  backoff,
+                  retryCount,
+                  retryTimeoutInMilliseconds,
+                  elapsedMilliForTransientIssues);
         }
 
         retryCount++;
@@ -555,6 +545,46 @@ public class RestRequest {
     }
 
     return response;
+  }
+
+  static long getNewBackoffInMilli(
+      long previousBackoffInMilli,
+      boolean isLoginRequest,
+      DecorrelatedJitterBackoff decorrelatedJitterBackoff,
+      int retryCount,
+      long retryTimeoutInMilliseconds,
+      long elapsedMilliForTransientIssues) {
+    long backoffInMilli;
+    if (isLoginRequest) {
+      long jitteredBackoffInMilli =
+          decorrelatedJitterBackoff.getJitterForLogin(previousBackoffInMilli);
+      backoffInMilli =
+          (long)
+              decorrelatedJitterBackoff.chooseRandom(
+                  jitteredBackoffInMilli + previousBackoffInMilli,
+                  Math.pow(2, retryCount) + jitteredBackoffInMilli);
+    } else {
+      backoffInMilli = decorrelatedJitterBackoff.nextSleepTime(previousBackoffInMilli);
+    }
+
+    backoffInMilli = Math.min(maxBackoffInMilli, Math.max(previousBackoffInMilli, backoffInMilli));
+
+    if (retryTimeoutInMilliseconds > 0
+        && (elapsedMilliForTransientIssues + backoffInMilli) > retryTimeoutInMilliseconds) {
+      // If the timeout will be reached before the next backoff, just use the remaining
+      // time (but cannot be negative) - this is the only place when backoff is not in range
+      // min-max.
+      backoffInMilli =
+          Math.max(
+              0,
+              Math.min(
+                  backoffInMilli, retryTimeoutInMilliseconds - elapsedMilliForTransientIssues));
+      logger.debug(
+          "We are approaching retry timeout {}ms, setting backoff to {}ms",
+          retryTimeoutInMilliseconds,
+          backoffInMilli);
+    }
+    return backoffInMilli;
   }
 
   static boolean isNonRetryableHTTPCode(CloseableHttpResponse response, boolean retryHTTP403) {

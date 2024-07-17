@@ -167,8 +167,10 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final int DEFAULT_OCSP_CACHE_SERVER_CONNECTION_TIMEOUT = 5000;
   /** Default OCSP responder connection timeout */
   private static final int DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT = 10000;
+  /** Default OCSP Cache server host name prefix */
+  private static final String DEFAULT_OCSP_CACHE_HOST_PREFIX = "http://ocsp.snowflakecomputing.";
   /** Default OCSP Cache server host name */
-  private static final String DEFAULT_OCSP_CACHE_HOST = "http://ocsp.snowflakecomputing.com";
+  private static final String DEFAULT_OCSP_CACHE_HOST = DEFAULT_OCSP_CACHE_HOST_PREFIX + "com";
 
   /** OCSP response file cache directory */
   private static final FileCacheManager fileCacheManager;
@@ -200,7 +202,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   /** OCSP Response Cache server Retry URL pattern */
   static String SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN;
   /** OCSP response cache server URL. */
-  private static String SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE;
+  static String SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE;
 
   private static JcaX509CertificateConverter CONVERTER_X509 = new JcaX509CertificateConverter();
   /** RootCA cache */
@@ -312,7 +314,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       return;
     }
     SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheServerUrl;
-    if (!SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE.startsWith(DEFAULT_OCSP_CACHE_HOST)) {
+    if (!SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE.startsWith(DEFAULT_OCSP_CACHE_HOST_PREFIX)) {
       URL url = new URL(SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
       if (url.getPort() > 0) {
         SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
@@ -325,7 +327,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     }
   }
 
-  private static void setOCSPResponseCacheServerURL() {
+  private static void setOCSPResponseCacheServerURL(String topLevelDomain) {
     String ocspCacheUrl = systemGetProperty(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
     if (ocspCacheUrl != null) {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
@@ -342,7 +344,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     }
     if (SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE == null) {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE =
-          String.format("%s/%s", DEFAULT_OCSP_CACHE_HOST, CACHE_FILE_NAME);
+          String.format("%s%s/%s", DEFAULT_OCSP_CACHE_HOST_PREFIX, topLevelDomain, CACHE_FILE_NAME);
     }
   }
 
@@ -784,7 +786,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       ocspCacheServer.resetOCSPResponseCacheServer(peerHost);
     }
 
-    setOCSPResponseCacheServerURL();
+    String topLevelDomain = peerHost.substring(peerHost.lastIndexOf(".") + 1);
+    setOCSPResponseCacheServerURL(topLevelDomain);
     boolean isCached = isCached(pairIssuerSubjectList);
     if (useOCSPResponseCacheServer() && !isCached) {
       if (!ocspCacheServer.new_endpoint_enabled) {
@@ -1537,14 +1540,16 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
     void resetOCSPResponseCacheServer(String host) {
       String ocspCacheServerUrl;
-      if (host.indexOf(".global.snowflakecomputing.com") > 0) {
+      if (host.toLowerCase().contains(".global.snowflakecomputing.")) {
         ocspCacheServerUrl =
             String.format("https://ocspssd%s/%s", host.substring(host.indexOf('-')), "ocsp");
-      } else if (host.indexOf(".snowflakecomputing.com") > 0) {
+      } else if (host.toLowerCase().contains(".snowflakecomputing.")) {
         ocspCacheServerUrl =
             String.format("https://ocspssd%s/%s", host.substring(host.indexOf('.')), "ocsp");
       } else {
-        ocspCacheServerUrl = "https://ocspssd.snowflakecomputing.com/ocsp";
+        String topLevelDomain = host.substring(host.lastIndexOf(".") + 1);
+        ocspCacheServerUrl =
+            String.format("https://ocspssd.snowflakecomputing.%s/ocsp", topLevelDomain);
       }
       SF_OCSP_RESPONSE_CACHE_SERVER = String.format("%s/%s", ocspCacheServerUrl, "fetch");
       SF_OCSP_RESPONSE_RETRY_URL = String.format("%s/%s", ocspCacheServerUrl, "retry");

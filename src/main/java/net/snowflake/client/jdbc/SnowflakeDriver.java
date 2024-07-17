@@ -15,6 +15,10 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.Properties;
 import net.snowflake.client.core.SecurityUtil;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ResourceBundleManager;
 import net.snowflake.common.core.SqlState;
 
@@ -57,6 +61,9 @@ public class SnowflakeDriver implements Driver {
     initializeClientVersionFromManifest();
 
     SecurityUtil.addBouncyCastleProvider();
+
+    // Telemetry OOB is disabled
+    TelemetryService.disableOOBTelemetry();
   }
 
   /** try to initialize Arrow support if fails, JDBC is going to use the legacy format */

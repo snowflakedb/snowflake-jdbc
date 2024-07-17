@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -20,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.util.DecorrelatedJitterBackoff;
 import org.apache.http.StatusLine;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -585,6 +587,43 @@ public class RestRequestTest {
       } else {
         TelemetryService.disable();
       }
+    }
+  }
+
+  @Test
+  public void shouldGenerateBackoffInRangeExceptTheLastBackoff() {
+    int minBackoffInMilli = 1000;
+    int maxBackoffInMilli = 16000;
+    long backoffInMilli = minBackoffInMilli;
+    long elapsedMilliForTransientIssues = 0;
+    DecorrelatedJitterBackoff decorrelatedJitterBackoff =
+        new DecorrelatedJitterBackoff(minBackoffInMilli, maxBackoffInMilli);
+    int retryTimeoutInMilli = 5 * 60 * 1000;
+    while (true) {
+      backoffInMilli =
+          RestRequest.getNewBackoffInMilli(
+              backoffInMilli,
+              true,
+              decorrelatedJitterBackoff,
+              10,
+              retryTimeoutInMilli,
+              elapsedMilliForTransientIssues);
+
+      assertTrue(
+          "Backoff should be lower or equal to max backoff limit",
+          backoffInMilli <= maxBackoffInMilli);
+      if (elapsedMilliForTransientIssues + backoffInMilli >= retryTimeoutInMilli) {
+        assertEquals(
+            "Backoff should fill time till retry timeout",
+            retryTimeoutInMilli - elapsedMilliForTransientIssues,
+            backoffInMilli);
+        break;
+      } else {
+        assertTrue(
+            "Backoff should be higher or equal to min backoff limit",
+            backoffInMilli >= minBackoffInMilli);
+      }
+      elapsedMilliForTransientIssues += backoffInMilli;
     }
   }
 }
