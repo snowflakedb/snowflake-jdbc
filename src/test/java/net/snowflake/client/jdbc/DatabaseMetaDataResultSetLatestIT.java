@@ -36,7 +36,7 @@ public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
     }
   }
 
-  /** Added in > 3.17.0 */
+  /** Added in > 3.17.1 */
   @Test
   public void testObjectColumn() throws SQLException {
     try (Connection connection = getConnection();
@@ -53,6 +53,7 @@ public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
           metaData.getColumns(
               connection.getCatalog(), connection.getSchema(), "TABLEWITHOBJECTCOLUMN", null)) {
         assertTrue(resultSet.next());
+        assertEquals("OBJECT", resultSet.getObject(6)); // column type
         assertFalse(resultSet.next());
       }
     }
