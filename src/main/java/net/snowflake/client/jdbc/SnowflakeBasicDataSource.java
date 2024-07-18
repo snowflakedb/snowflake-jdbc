@@ -231,4 +231,16 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public void setTracing(String tracing) {
     this.properties.put("tracing", tracing);
   }
+
+  public void setBrowserResponseTimeout(int seconds) {
+    this.properties.put("BROWSER_RESPONSE_TIMEOUT", Integer.toString(seconds));
+  }
+
+  public int getBrowserResponseTimeout() {
+    try {
+      return Integer.parseInt(properties.getProperty("BROWSER_RESPONSE_TIMEOUT"));
+    } catch (NumberFormatException e) {
+      return 0;
+    }
+  }
 }

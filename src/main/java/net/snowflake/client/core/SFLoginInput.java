@@ -51,19 +51,19 @@ public class SFLoginInput {
   private boolean disableConsoleLogin = true;
   private boolean disableSamlURLCheck = false;
 
-  private int browserResponseTimeout = 120;
+  private Duration browserResponseTimeout;
 
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
 
   SFLoginInput() {}
 
-  public int getBrowserResponseTimeout() {
+  public Duration getBrowserResponseTimeout() {
     return browserResponseTimeout;
   }
 
   public void setBrowserResponseTimeout(int browserResponseTimeout) {
-    this.browserResponseTimeout = browserResponseTimeout;
+    this.browserResponseTimeout = Duration.ofSeconds(browserResponseTimeout);
   }
 
   public String getServerUrl() {

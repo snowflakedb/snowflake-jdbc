@@ -257,7 +257,7 @@ public class SessionUtilExternalBrowser {
   }
 
   private int getBrowserResponseTimeout() {
-    return loginInput.getBrowserResponseTimeout() * 1000;
+    return (int) loginInput.getBrowserResponseTimeout().toMillis();
   }
 
   /**
