@@ -88,12 +88,12 @@ public enum SFSessionProperty {
 
   DISABLE_SAML_URL_CHECK("disableSamlURLCheck", false, Boolean.class),
 
-  // Used to determine whether a hardcoded value should be used for the formatter (for backwards
-  // compatibility)
+  // Used to determine whether to use the previously hardcoded value for the formatter (for
+  // backwards compatibility) or use the value of JDBC_FORMAT_DATE_WITH_TIMEZONE
   JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE(
       "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", false, Boolean.class),
 
-  // Used as a fix for issue 244. Remove with snowflake-jdbc version 4.x with BCR changes.
+  // Used as a fix for issue SNOW-354859. Remove with snowflake-jdbc version 4.x with BCR changes.
   JDBC_GET_DATE_USE_NULL_TIMEZONE("JDBC_GET_DATE_USE_NULL_TIMEZONE", false, Boolean.class);
 
   // property key in string
