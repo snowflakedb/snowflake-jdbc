@@ -1041,7 +1041,7 @@
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/19/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <!-- org.bouncycastle.* packages are relocated to ${relocationBase}.org.bouncycastle.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
@@ -1049,13 +1049,13 @@
                     <!-- com.fasterxml.* packages are relocated to ${relocationBase}.fasterxml.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/19/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/19/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/19/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                   </target>
                 </configuration>
               </execution>

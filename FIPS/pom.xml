@@ -154,7 +154,7 @@
             </goals>
             <phase>validate</phase>
             <configuration>
-              <file>${project.basedir}/dependencies/arrow-memory-netty-buffer-patch-${arrow.version}.jar</file>
+              <file>${basedir}/../dependencies/arrow-memory-netty-buffer-patch-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-memory-netty-buffer-patch</artifactId>
               <version>${arrow.version}</version>
