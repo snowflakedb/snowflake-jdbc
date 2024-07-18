@@ -44,7 +44,7 @@ jobs:
             fail-fast: false
             matrix:
                 runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader,TestCategoryDiagnostic', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                category: ['TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader', 'TestCategoryOthers', 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic', 'TestCategoryFips']
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
             fail-fast: false
             matrix:
                 runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: ['TestCategoryResultSet,TestCategoryOthers,TestCategoryLoader,TestCategoryDiagnostic', 'TestCategoryConnection,TestCategoryStatement', 'TestCategoryArrow,TestCategoryCore', 'TestCategoryFips']
+                category: ['TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader', 'TestCategoryOthers', 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic', 'TestCategoryFips']
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v4
