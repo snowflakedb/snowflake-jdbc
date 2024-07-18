@@ -139,12 +139,12 @@ public abstract class SFBaseResultSet {
 
   // default implementation
   public boolean next() throws SFException, SnowflakeSQLException {
-    logger.debug("public boolean next()", false);
+    logger.trace("boolean next()", false);
     return false;
   }
 
   public void close() throws SnowflakeSQLException {
-    logger.debug("public void close()", false);
+    logger.trace("void close()", false);
 
     // no exception even if already closed.
     resultSetMetaData = null;
@@ -152,7 +152,7 @@ public abstract class SFBaseResultSet {
   }
 
   public boolean wasNull() {
-    logger.debug("public boolean wasNull() returning {}", wasNull);
+    logger.trace("boolean wasNull() returning {}", wasNull);
 
     return wasNull;
   }
@@ -261,14 +261,15 @@ public abstract class SFBaseResultSet {
 
   @SnowflakeJdbcInternalApi
   protected SQLInput createJsonSqlInputForColumn(
-      Object input, int columnIndex, SFBaseSession session, List<FieldMetadata> fields) {
+      Object input, SFBaseSession session, List<FieldMetadata> fields) {
     JsonNode inputNode;
     if (input instanceof JsonNode) {
       inputNode = (JsonNode) input;
     } else {
       inputNode = OBJECT_MAPPER.convertValue(input, JsonNode.class);
     }
-    return new JsonSqlInput(inputNode, session, getConverters(), fields, sessionTimeZone);
+    return new JsonSqlInput(
+        input.toString(), inputNode, session, getConverters(), fields, sessionTimeZone);
   }
 
   @SnowflakeJdbcInternalApi

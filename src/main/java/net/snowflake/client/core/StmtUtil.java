@@ -23,7 +23,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.api.QueryInProgressResponse;
-import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -43,17 +42,7 @@ public class StmtUtil {
 
   private static final String SF_PATH_QUERY_RESULT = "/queries/%s/result";
 
-  static final String SF_QUERY_REQUEST_ID = "requestId";
-
   private static final String SF_QUERY_COMBINE_DESCRIBE_EXECUTE = "combinedDescribe";
-
-  private static final String SF_QUERY_CONTEXT = "queryContext";
-
-  private static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
-
-  private static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
-
-  private static final String SF_HEADER_TOKEN_TAG = "Token";
 
   static final String SF_MEDIA_TYPE = "application/snowflake";
 
@@ -61,7 +50,7 @@ public class StmtUtil {
   // twice as much as our default socket timeout
   static final int SF_CANCELING_RETRY_TIMEOUT_IN_MILLIS = 600000; // 10 min
 
-  static final SFLogger logger = SFLoggerFactory.getLogger(StmtUtil.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(StmtUtil.class);
 
   /** Input for executing a statement on server */
   static class StmtInput {
@@ -310,12 +299,12 @@ public class StmtUtil {
       // don't need to execute the query again
       if (stmtInput.retry && stmtInput.prevGetResultURL != null) {
         logger.debug(
-            "retrying statement execution with get result URL: {}", stmtInput.prevGetResultURL);
+            "Retrying statement execution with get result URL: {}", stmtInput.prevGetResultURL);
       } else {
         URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
 
         uriBuilder.setPath(SF_PATH_QUERY_V1);
-        uriBuilder.addParameter(SF_QUERY_REQUEST_ID, stmtInput.requestId);
+        uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, stmtInput.requestId);
 
         if (stmtInput.combineDescribe) {
           uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
@@ -376,10 +365,10 @@ public class StmtUtil {
         httpRequest.addHeader("accept", stmtInput.mediaType);
 
         httpRequest.setHeader(
-            SF_HEADER_AUTHORIZATION,
-            SF_HEADER_SNOWFLAKE_AUTHTYPE
+            SFSession.SF_HEADER_AUTHORIZATION,
+            SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
                 + " "
-                + SF_HEADER_TOKEN_TAG
+                + SFSession.SF_HEADER_TOKEN_TAG
                 + "=\""
                 + stmtInput.sessionToken
                 + "\"");
@@ -522,11 +511,11 @@ public class StmtUtil {
           // simulate client pause before trying to fetch result so that
           // we can test query behavior related to disconnected client
           if (stmtInput.injectClientPause != 0) {
-            logger.debug("inject client pause for {} seconds", stmtInput.injectClientPause);
+            logger.debug("Inject client pause for {} seconds", stmtInput.injectClientPause);
             try {
               Thread.sleep(stmtInput.injectClientPause * 1000);
             } catch (InterruptedException ex) {
-              logger.debug("exception encountered while injecting pause", false);
+              logger.debug("Exception encountered while injecting pause", false);
             }
           }
         }
@@ -606,14 +595,14 @@ public class StmtUtil {
   protected static String getQueryResult(String getResultPath, StmtInput stmtInput)
       throws SFException, SnowflakeSQLException {
     HttpGet httpRequest = null;
-    logger.debug("get query result: {}", getResultPath);
+    logger.debug("Get query result: {}", getResultPath);
 
     try {
       URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
 
       uriBuilder.setPath(getResultPath);
 
-      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpGet(uriBuilder.build());
       // Add custom headers before adding common headers
@@ -623,10 +612,10 @@ public class StmtUtil {
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
       httpRequest.setHeader(
-          SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE
+          SFSession.SF_HEADER_AUTHORIZATION,
+          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
               + " "
-              + SF_HEADER_TOKEN_TAG
+              + SFSession.SF_HEADER_TOKEN_TAG
               + "=\""
               + stmtInput.sessionToken
               + "\"");
@@ -717,7 +706,7 @@ public class StmtUtil {
 
       uriBuilder.setPath(SF_PATH_ABORT_REQUEST_V1);
 
-      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpPost(uriBuilder.build());
       // Add custom headers before adding common headers
@@ -742,10 +731,10 @@ public class StmtUtil {
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
       httpRequest.setHeader(
-          SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE
+          SFSession.SF_HEADER_AUTHORIZATION,
+          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
               + " "
-              + SF_HEADER_TOKEN_TAG
+              + SFSession.SF_HEADER_TOKEN_TAG
               + "=\""
               + stmtInput.sessionToken
               + "\"");
@@ -798,7 +787,7 @@ public class StmtUtil {
     // skip commenting prefixed with //
     while (trimmedSql.startsWith("//")) {
       if (logger.isDebugEnabled()) {
-        logger.debug("skipping // comments in: \n{}", trimmedSql);
+        logger.debug("Skipping // comments in: \n{}", trimmedSql);
       }
 
       if (trimmedSql.indexOf('\n') > 0) {

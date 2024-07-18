@@ -4,10 +4,12 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -52,29 +54,30 @@ public class LoaderLatestIT extends LoaderBase {
     assertThat("error count", listener.getErrorCount(), equalTo(0));
     assertThat("error record count", listener.getErrorRecordCount(), equalTo(0));
 
-    ResultSet rs =
+    try (ResultSet rs =
         testConnection
             .createStatement()
             .executeQuery(
                 String.format(
-                    "SELECT C1, C4, C3" + " FROM \"%s\" WHERE ID=10001", TARGET_TABLE_NAME));
+                    "SELECT C1, C4, C3" + " FROM \"%s\" WHERE ID=10001", TARGET_TABLE_NAME))) {
 
-    rs.next();
-    assertThat("C1 is not correct", rs.getString("C1"), equalTo("inserted\\,"));
+      assertTrue(rs.next());
+      assertThat("C1 is not correct", rs.getString("C1"), equalTo("inserted\\,"));
 
-    long l = rs.getTimestamp("C4").getTime();
-    assertThat("C4 is not correct", l, equalTo(d.getTime()));
-    assertThat(
-        "C3 is not correct", Double.toHexString((rs.getDouble("C3"))), equalTo("0x1.044ccp4"));
-
-    rs =
+      long l = rs.getTimestamp("C4").getTime();
+      assertThat("C4 is not correct", l, equalTo(d.getTime()));
+      assertThat(
+          "C3 is not correct", Double.toHexString((rs.getDouble("C3"))), equalTo("0x1.044ccp4"));
+    }
+    try (ResultSet rs =
         testConnection
             .createStatement()
             .executeQuery(
-                String.format("SELECT C1 AS N" + " FROM \"%s\" WHERE ID=39", TARGET_TABLE_NAME));
+                String.format("SELECT C1 AS N" + " FROM \"%s\" WHERE ID=39", TARGET_TABLE_NAME))) {
 
-    rs.next();
-    assertThat("N is not correct", rs.getString("N"), equalTo("modified"));
+      assertTrue(rs.next());
+      assertThat("N is not correct", rs.getString("N"), equalTo("modified"));
+    }
   }
 
   @Test
@@ -82,76 +85,79 @@ public class LoaderLatestIT extends LoaderBase {
     TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
     tdcb.populate();
 
-    PreparedStatement pstmt =
+    try (PreparedStatement pstmt =
         testConnection.prepareStatement(
             String.format(
                 "INSERT INTO \"%s\"(ID,C1,C2,C3,C4,C5)"
                     + " SELECT column1, column2, column3, column4,"
                     + " column5, parse_json(column6)"
                     + " FROM VALUES(?,?,?,?,?,?)",
-                TARGET_TABLE_NAME));
-    pstmt.setInt(1, 10001);
-    pstmt.setString(2, "inserted\\,");
-    pstmt.setString(3, "something");
-    pstmt.setDouble(4, 0x4.11_33p2);
-    pstmt.setDate(5, new java.sql.Date(new Date().getTime()));
-    pstmt.setObject(6, "{}");
-    pstmt.execute();
-    testConnection.commit();
+                TARGET_TABLE_NAME))) {
+      pstmt.setInt(1, 10001);
+      pstmt.setString(2, "inserted\\,");
+      pstmt.setString(3, "something");
+      pstmt.setDouble(4, 0x4.11_33p2);
+      pstmt.setDate(5, new java.sql.Date(new Date().getTime()));
+      pstmt.setObject(6, "{}");
+      pstmt.execute();
+      testConnection.commit();
 
-    TestDataConfigBuilder tdcbUpsert = new TestDataConfigBuilder(testConnection, putConnection);
-    tdcbUpsert
-        .setOperation(Operation.UPSERT)
-        .setTruncateTable(false)
-        .setStartTransaction(true)
-        .setPreserveStageFile(true)
-        .setColumns(Arrays.asList("ID", "C1", "C2", "C3", "C4", "C5"))
-        .setKeys(Collections.singletonList("ID"));
-    StreamLoader loader = tdcbUpsert.getStreamLoader();
-    TestDataConfigBuilder.ResultListener listener = tdcbUpsert.getListener();
-    listener.throwOnError = true; // should trigger rollback
-    loader.start();
-    try {
+      TestDataConfigBuilder tdcbUpsert = new TestDataConfigBuilder(testConnection, putConnection);
+      tdcbUpsert
+          .setOperation(Operation.UPSERT)
+          .setTruncateTable(false)
+          .setStartTransaction(true)
+          .setPreserveStageFile(true)
+          .setColumns(Arrays.asList("ID", "C1", "C2", "C3", "C4", "C5"))
+          .setKeys(Collections.singletonList("ID"));
+      StreamLoader loader = tdcbUpsert.getStreamLoader();
+      TestDataConfigBuilder.ResultListener listener = tdcbUpsert.getListener();
+      listener.throwOnError = true; // should trigger rollback
+      loader.start();
+      try {
 
-      Object[] noerr = new Object[] {"10001", "inserted", "something", "42", new Date(), "{}"};
-      loader.submitRow(noerr);
+        Object[] noerr = new Object[] {"10001", "inserted", "something", "42", new Date(), "{}"};
+        loader.submitRow(noerr);
 
-      Object[] err = new Object[] {"10002-", "inserted", "something", "42-", new Date(), "{}"};
-      loader.submitRow(err);
+        Object[] err = new Object[] {"10002-", "inserted", "something", "42-", new Date(), "{}"};
+        loader.submitRow(err);
 
-      loader.finish();
+        loader.finish();
 
-      fail("Test must raise Loader.DataError exception");
-    } catch (Loader.DataError e) {
-      // we are good
-      assertThat(
-          "error message",
-          e.getMessage(),
-          allOf(containsString("10002-"), containsString("not recognized")));
+        fail("Test must raise Loader.DataError exception");
+      } catch (Loader.DataError e) {
+        // we are good
+        assertThat(
+            "error message",
+            e.getMessage(),
+            allOf(containsString("10002-"), containsString("not recognized")));
+      }
+
+      assertThat("processed", listener.processed.get(), equalTo(0));
+      assertThat("submitted row", listener.getSubmittedRowCount(), equalTo(2));
+      assertThat("updated/inserted", listener.updated.get(), equalTo(0));
+      assertThat("error count", listener.getErrorCount(), equalTo(2));
+      assertThat("error record count", listener.getErrorRecordCount(), equalTo(1));
+
+      try (ResultSet rs =
+          testConnection
+              .createStatement()
+              .executeQuery(String.format("SELECT COUNT(*) AS N FROM \"%s\"", TARGET_TABLE_NAME))) {
+        assertTrue(rs.next());
+        assertThat("N", rs.getInt("N"), equalTo(10001));
+      }
+      try (ResultSet rs =
+          testConnection
+              .createStatement()
+              .executeQuery(
+                  String.format("SELECT C3 FROM \"%s\" WHERE id=10001", TARGET_TABLE_NAME))) {
+        assertTrue(rs.next());
+        assertThat(
+            "C3. No commit should happen",
+            Double.toHexString((rs.getDouble("C3"))),
+            equalTo("0x1.044ccp4"));
+      }
     }
-
-    assertThat("processed", listener.processed.get(), equalTo(0));
-    assertThat("submitted row", listener.getSubmittedRowCount(), equalTo(2));
-    assertThat("updated/inserted", listener.updated.get(), equalTo(0));
-    assertThat("error count", listener.getErrorCount(), equalTo(2));
-    assertThat("error record count", listener.getErrorRecordCount(), equalTo(1));
-
-    ResultSet rs =
-        testConnection
-            .createStatement()
-            .executeQuery(String.format("SELECT COUNT(*) AS N FROM \"%s\"", TARGET_TABLE_NAME));
-    rs.next();
-    assertThat("N", rs.getInt("N"), equalTo(10001));
-
-    rs =
-        testConnection
-            .createStatement()
-            .executeQuery(String.format("SELECT C3 FROM \"%s\" WHERE id=10001", TARGET_TABLE_NAME));
-    rs.next();
-    assertThat(
-        "C3. No commit should happen",
-        Double.toHexString((rs.getDouble("C3"))),
-        equalTo("0x1.044ccp4"));
   }
 
   /**
@@ -163,44 +169,43 @@ public class LoaderLatestIT extends LoaderBase {
   @Test
   public void testKeyClusteringTable() throws Exception {
     String targetTableName = "CLUSTERED_TABLE";
+    try (Statement statement = testConnection.createStatement()) {
+      // create table with spaces in column names
+      statement.execute(
+          String.format(
+              "CREATE OR REPLACE TABLE \"%s\" ("
+                  + "ID int, "
+                  + "\"Column1\" varchar(255), "
+                  + "\"Column2\" varchar(255))",
+              targetTableName));
+      // Add the clustering key; all columns clustered together
+      statement.execute(
+          String.format(
+              "alter table %s cluster by (ID, \"Column1\", \"Column2\")", targetTableName));
+      TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
+      // Only submit data for 2 columns out of 3 in the table so that 1 column will be dropped in
+      // temp
+      // table
+      tdcb.setTableName(targetTableName).setColumns(Arrays.asList("ID", "Column1"));
+      StreamLoader loader = tdcb.getStreamLoader();
+      loader.start();
 
-    // create table with spaces in column names
-    testConnection
-        .createStatement()
-        .execute(
-            String.format(
-                "CREATE OR REPLACE TABLE \"%s\" ("
-                    + "ID int, "
-                    + "\"Column1\" varchar(255), "
-                    + "\"Column2\" varchar(255))",
-                targetTableName));
-    // Add the clustering key; all columns clustered together
-    testConnection
-        .createStatement()
-        .execute(
-            String.format(
-                "alter table %s cluster by (ID, \"Column1\", \"Column2\")", targetTableName));
-    TestDataConfigBuilder tdcb = new TestDataConfigBuilder(testConnection, putConnection);
-    // Only submit data for 2 columns out of 3 in the table so that 1 column will be dropped in temp
-    // table
-    tdcb.setTableName(targetTableName).setColumns(Arrays.asList("ID", "Column1"));
-    StreamLoader loader = tdcb.getStreamLoader();
-    loader.start();
+      for (int i = 0; i < 5; ++i) {
+        Object[] row = new Object[] {i, "foo_" + i};
+        loader.submitRow(row);
+      }
+      loader.finish();
 
-    for (int i = 0; i < 5; ++i) {
-      Object[] row = new Object[] {i, "foo_" + i};
-      loader.submitRow(row);
+      try (ResultSet rs =
+          testConnection
+              .createStatement()
+              .executeQuery(
+                  String.format("SELECT * FROM \"%s\" ORDER BY \"Column1\"", targetTableName))) {
+
+        assertTrue(rs.next());
+        assertThat("The first id", rs.getInt(1), equalTo(0));
+        assertThat("The first str", rs.getString(2), equalTo("foo_0"));
+      }
     }
-    loader.finish();
-
-    ResultSet rs =
-        testConnection
-            .createStatement()
-            .executeQuery(
-                String.format("SELECT * FROM \"%s\" ORDER BY \"Column1\"", targetTableName));
-
-    rs.next();
-    assertThat("The first id", rs.getInt(1), equalTo(0));
-    assertThat("The first str", rs.getString(2), equalTo("foo_0"));
   }
 }

@@ -49,6 +49,7 @@ public class SFLoginInput {
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
 
   private boolean disableConsoleLogin = true;
+  private boolean disableSamlURLCheck = false;
 
   // Additional headers to add for Snowsight.
   Map<String, String> additionalHttpHeadersForSnowsight;
@@ -378,6 +379,15 @@ public class SFLoginInput {
     return this;
   }
 
+  boolean getDisableSamlURLCheck() {
+    return disableSamlURLCheck;
+  }
+
+  SFLoginInput setDisableSamlURLCheck(boolean disableSamlURLCheck) {
+    this.disableSamlURLCheck = disableSamlURLCheck;
+    return this;
+  }
+
   Map<String, String> getAdditionalHttpHeadersForSnowsight() {
     return additionalHttpHeadersForSnowsight;
   }
@@ -416,7 +426,11 @@ public class SFLoginInput {
   String getHostFromServerUrl() throws SFException {
     URL url;
     try {
-      url = new URL(serverUrl);
+      if (!serverUrl.startsWith("http")) {
+        url = new URL("https://" + serverUrl);
+      } else {
+        url = new URL(serverUrl);
+      }
     } catch (MalformedURLException e) {
       throw new SFException(
           e, ErrorCode.INTERNAL_ERROR, "Invalid serverUrl for retrieving host name");

@@ -142,8 +142,8 @@ public class OpenGroupCLIFuncIT extends BaseJDBCTest {
   }
 
   static void testFunction(Connection connection, String sql, String expected) throws SQLException {
-    try (Statement statement = connection.createStatement()) {
-      ResultSet resultSet = statement.executeQuery(sql);
+    try (Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql)) {
       assertTrue(resultSet.next());
       assertEquals(expected, resultSet.getString(1));
     }

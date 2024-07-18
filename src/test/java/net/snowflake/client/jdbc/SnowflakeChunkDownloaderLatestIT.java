@@ -37,24 +37,25 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
 
     SnowflakeChunkDownloader snowflakeChunkDownloaderSpy = null;
 
-    try (Connection connection = getConnection(properties)) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = getConnection(properties);
+        Statement statement = connection.createStatement()) {
       // execute a query that will require chunk downloading
-      ResultSet resultSet =
+      try (ResultSet resultSet =
           statement.executeQuery(
-              "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))");
-      List<SnowflakeResultSetSerializable> resultSetSerializables =
-          ((SnowflakeResultSet) resultSet).getResultSetSerializables(100 * 1024 * 1024);
-      SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
-      SnowflakeChunkDownloader downloader =
-          new SnowflakeChunkDownloader((SnowflakeResultSetSerializableV1) resultSetSerializable);
-      snowflakeChunkDownloaderSpy = Mockito.spy(downloader);
-      snowflakeChunkDownloaderSpy.getNextChunkToConsume();
+              "select seq8(), randstr(1000, random()) from table(generator(rowcount => 10000))")) {
+        List<SnowflakeResultSetSerializable> resultSetSerializables =
+            ((SnowflakeResultSet) resultSet).getResultSetSerializables(100 * 1024 * 1024);
+        SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
+        SnowflakeChunkDownloader downloader =
+            new SnowflakeChunkDownloader((SnowflakeResultSetSerializableV1) resultSetSerializable);
+        snowflakeChunkDownloaderSpy = Mockito.spy(downloader);
+        snowflakeChunkDownloaderSpy.getNextChunkToConsume();
+      }
     } catch (SnowflakeSQLException exception) {
       // verify that request was retried twice before reaching max retries
       Mockito.verify(snowflakeChunkDownloaderSpy, Mockito.times(2)).getResultStreamProvider();
-      assertTrue(exception.getMessage().contains("Max retry reached for the download of #chunk0"));
-      assertTrue(exception.getMessage().contains("retry=2"));
+      assertTrue(exception.getMessage().contains("Max retry reached for the download of chunk#0"));
+      assertTrue(exception.getMessage().contains("retry: 2"));
     }
   }
 }

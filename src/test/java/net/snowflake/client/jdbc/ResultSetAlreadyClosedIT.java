@@ -21,9 +21,10 @@ import org.junit.experimental.categories.Category;
 public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
   @Test
   public void testQueryResultSetAlreadyClosed() throws Throwable {
-    try (Connection connection = getConnection()) {
-      Statement statement = connection.createStatement();
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
       ResultSet resultSet = statement.executeQuery("select 1");
+      resultSet.close();
       checkAlreadyClosed(resultSet);
     }
   }
@@ -44,10 +45,20 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
   }
 
   @Test
+  public void testResultSetAlreadyClosed() throws Throwable {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("SELECT 1")) {
+      checkAlreadyClosed(resultSet);
+    }
+  }
+
+  @Test
   public void testEmptyResultSetAlreadyClosed() throws Throwable {
-    ResultSet resultSet = new SnowflakeResultSetV1.EmptyResultSet();
-    checkAlreadyClosed(resultSet);
-    checkAlreadyClosedEmpty(resultSet);
+    try (SnowflakeResultSetV1.EmptyResultSet resultSet =
+        new SnowflakeResultSetV1.EmptyResultSet()) {
+      checkAlreadyClosedEmpty(resultSet);
+    }
   }
 
   private void checkAlreadyClosed(ResultSet resultSet) throws SQLException {
@@ -67,7 +78,6 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
     expectResultSetAlreadyClosedException(() -> resultSet.getDouble(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getBigDecimal(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getBytes(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getString(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getDate(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getTime(1));
     expectResultSetAlreadyClosedException(() -> resultSet.getTimestamp(1));
@@ -104,7 +114,13 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
     expectResultSetAlreadyClosedException(() -> resultSet.getBigDecimal("col1", 38));
 
     expectResultSetAlreadyClosedException(resultSet::getWarnings);
+    expectResultSetAlreadyClosedException(
+        () -> resultSet.unwrap(SnowflakeBaseResultSet.class).getWarnings());
+
     expectResultSetAlreadyClosedException(resultSet::clearWarnings);
+    expectResultSetAlreadyClosedException(
+        () -> resultSet.unwrap(SnowflakeBaseResultSet.class).clearWarnings());
+
     expectResultSetAlreadyClosedException(resultSet::getMetaData);
 
     expectResultSetAlreadyClosedException(() -> resultSet.findColumn("col1"));
@@ -118,11 +134,20 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
     expectResultSetAlreadyClosedException(
         () -> resultSet.setFetchDirection(ResultSet.FETCH_FORWARD));
     expectResultSetAlreadyClosedException(() -> resultSet.setFetchSize(10));
+    expectResultSetAlreadyClosedException(
+        () -> resultSet.unwrap(SnowflakeBaseResultSet.class).setFetchSize(10));
+
     expectResultSetAlreadyClosedException(resultSet::getFetchDirection);
     expectResultSetAlreadyClosedException(resultSet::getFetchSize);
     expectResultSetAlreadyClosedException(resultSet::getType);
     expectResultSetAlreadyClosedException(resultSet::getConcurrency);
+    expectResultSetAlreadyClosedException(
+        resultSet.unwrap(SnowflakeBaseResultSet.class)::getConcurrency);
+
     expectResultSetAlreadyClosedException(resultSet::getHoldability);
+    expectResultSetAlreadyClosedException(
+        resultSet.unwrap(SnowflakeBaseResultSet.class)::getHoldability);
+
     expectResultSetAlreadyClosedException(resultSet::getStatement);
   }
 
@@ -132,7 +157,8 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
    * @param resultSet
    * @throws SQLException
    */
-  private void checkAlreadyClosedEmpty(ResultSet resultSet) throws SQLException {
+  private void checkAlreadyClosedEmpty(SnowflakeResultSetV1.EmptyResultSet resultSet)
+      throws SQLException {
     resultSet.close();
     resultSet.close(); // second close won't raise exception
     assertTrue(resultSet.isClosed());

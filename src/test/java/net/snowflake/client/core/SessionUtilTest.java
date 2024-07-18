@@ -10,6 +10,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.fasterxml.jackson.databind.node.BooleanNode;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ public class SessionUtilTest {
     parameterMap.put("other_parameter", BooleanNode.getTrue());
     SFBaseSession session = new MockConnectionTest.MockSnowflakeConnectionImpl().getSFSession();
     SessionUtil.updateSfDriverParamValues(parameterMap, session);
-    assert (((BooleanNode) session.getOtherParameter("other_parameter")).asBoolean());
+    assertTrue(((BooleanNode) session.getOtherParameter("other_parameter")).asBoolean());
   }
 
   @Test
@@ -128,5 +129,43 @@ public class SessionUtilTest {
         throw new RuntimeException(e);
       }
     }
+  }
+
+  @Test
+  public void shouldDerivePrivateLinkOcspCacheServerUrlBasedOnHost() throws IOException {
+    resetOcspConfiguration();
+
+    SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.com");
+    assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.com/ocsp_response_cache.json",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
+    assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.com/retry/%s/%s",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
+
+    resetOcspConfiguration();
+
+    SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.cn");
+    assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.cn/ocsp_response_cache.json",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
+    assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.cn/retry/%s/%s",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
+
+    resetOcspConfiguration();
+
+    SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.xyz");
+    assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.xyz/ocsp_response_cache.json",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
+    assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.xyz/retry/%s/%s",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
+  }
+
+  private void resetOcspConfiguration() {
+    SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = null;
+    SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = null;
   }
 }

@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.15.2-SNAPSHOT</version>
+  <version>3.17.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -28,6 +28,7 @@
     <bouncycastle.version>1.74</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.4</bouncycastle.bcfips.version>
     <bouncycastle.bcpkixfips.version>1.0.5</bouncycastle.bcpkixfips.version>
+    <bytebuddy.version>1.14.17</bytebuddy.version>
     <classworlds.version>1.1</classworlds.version>
     <checkerframework.version>3.33.0</checkerframework.version>
     <commons.cli.version>1.2</commons.cli.version>
@@ -63,7 +64,7 @@
     <logback.version>1.3.6</logback.version>
     <metrics.version>2.2.0</metrics.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.100.Final</netty.version>
+    <netty.version>4.1.111.Final</netty.version>
     <nimbusds.version>9.37.3</nimbusds.version>
     <opencensus.version>0.31.1</opencensus.version>
     <plexus.container.version>1.0-alpha-9-stable-1</plexus.container.version>
@@ -483,9 +484,27 @@
         <scope>test</scope>
       </dependency>
       <dependency>
+        <groupId>net.bytebuddy</groupId>
+        <artifactId>byte-buddy</artifactId>
+        <version>${bytebuddy.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
         <groupId>org.awaitility</groupId>
         <artifactId>awaitility</artifactId>
         <version>${awaitility.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.surefire</groupId>
+        <artifactId>surefire-junit4</artifactId>
+        <version>${version.plugin.surefire}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.surefire</groupId>
+        <artifactId>common-junit48</artifactId>
+        <version>${version.plugin.surefire}</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
@@ -515,6 +534,10 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-toml</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.api</groupId>
@@ -724,6 +747,15 @@
     <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
+    </dependency>
+    <!-- surefire dependencies are autodetected by the test plugins - we want to have them installed explicitly -->
+    <dependency>
+      <groupId>org.apache.maven.surefire</groupId>
+      <artifactId>surefire-junit4</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.surefire</groupId>
+      <artifactId>common-junit48</artifactId>
     </dependency>
   </dependencies>
 </project>

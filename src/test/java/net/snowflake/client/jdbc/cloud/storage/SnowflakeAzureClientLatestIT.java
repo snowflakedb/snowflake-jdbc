@@ -1,8 +1,11 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.spy;
 
+import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.sql.Connection;
 import java.sql.SQLException;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -17,7 +20,6 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Test;
 
 public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
-
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testAzureClientSetupInvalidEncryptionKeySize() throws SQLException {
@@ -36,5 +38,15 @@ public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
         assertEquals(200001, ex.getErrorCode());
       }
     }
+  }
+
+  @Test
+  public void testCloudExceptionTest() {
+    Iterable<ListBlobItem> mockList = null;
+    AzureObjectSummariesIterator iterator = new AzureObjectSummariesIterator(mockList);
+    AzureObjectSummariesIterator spyIterator = spy(iterator);
+    UnsupportedOperationException ex =
+        assertThrows(UnsupportedOperationException.class, () -> spyIterator.remove());
+    assertEquals(ex.getMessage(), "remove() method not supported");
   }
 }

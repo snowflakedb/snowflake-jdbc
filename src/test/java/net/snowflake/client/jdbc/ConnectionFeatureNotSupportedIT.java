@@ -42,8 +42,6 @@ public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest {
       expectFeatureNotSupportedException(connection::createNClob);
       expectFeatureNotSupportedException(connection::createSQLXML);
       expectFeatureNotSupportedException(
-          () -> connection.createArrayOf("fakeType", new Object[] {}));
-      expectFeatureNotSupportedException(
           () -> connection.createStruct("fakeType", new Object[] {}));
     }
   }

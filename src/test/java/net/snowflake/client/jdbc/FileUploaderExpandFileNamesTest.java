@@ -3,13 +3,25 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import net.snowflake.client.core.OCSPMode;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -19,6 +31,8 @@ import org.junit.rules.TemporaryFolder;
 /** Tests for SnowflakeFileTransferAgent.expandFileNames */
 public class FileUploaderExpandFileNamesTest {
   @Rule public TemporaryFolder folder = new TemporaryFolder();
+  @Rule public TemporaryFolder secondFolder = new TemporaryFolder();
+  private String localFSFileSep = systemGetProperty("file.separator");
 
   @Test
   public void testProcessFileNames() throws Exception {
@@ -30,20 +44,20 @@ public class FileUploaderExpandFileNamesTest {
     System.setProperty("user.home", folderName);
 
     String[] locations = {
-      folderName + "/Tes*Fil*A",
-      folderName + "/TestFil?B",
-      "~/TestFileC",
+      folderName + File.separator + "Tes*Fil*A",
+      folderName + File.separator + "TestFil?B",
+      "~" + File.separator + "TestFileC",
       "TestFileD",
-      folderName + "/TestFileE~"
+      folderName + File.separator + "TestFileE~"
     };
 
     Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations, null);
 
-    assertTrue(files.contains(folderName + "/TestFileA"));
-    assertTrue(files.contains(folderName + "/TestFileB"));
-    assertTrue(files.contains(folderName + "/TestFileC"));
-    assertTrue(files.contains(folderName + "/TestFileD"));
-    assertTrue(files.contains(folderName + "/TestFileE~"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileA"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileB"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileC"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileD"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileE~"));
   }
 
   @Test
@@ -114,15 +128,98 @@ public class FileUploaderExpandFileNamesTest {
     SnowflakeFileTransferConfig config = builder.build();
 
     // Assert setting fields are in config
-    assert (config.getSnowflakeFileTransferMetadata() == metadata);
-    assert (config.getUploadStream() == input);
-    assert (config.getOcspMode() == OCSPMode.FAIL_CLOSED);
-    assert (!config.getRequireCompress());
-    assert (config.getNetworkTimeoutInMilli() == 12345);
-    assert (config.getProxyProperties() == props);
-    assert (config.getPrefix().equals("dummy_prefix"));
-    assert (config.getDestFileName().equals("dummy_dest_file_name"));
-
+    assertEquals(metadata, config.getSnowflakeFileTransferMetadata());
+    assertEquals(input, config.getUploadStream());
+    assertEquals(OCSPMode.FAIL_CLOSED, config.getOcspMode());
+    assertFalse(config.getRequireCompress());
+    assertEquals(12345, config.getNetworkTimeoutInMilli());
+    assertEquals(props, config.getProxyProperties());
+    assertEquals("dummy_prefix", config.getPrefix());
+    assertEquals("dummy_dest_file_name", config.getDestFileName());
     assertEquals(expectedThrowCount, throwCount);
+  }
+
+  /**
+   * We have N jobs expanding files with exclusive pattern, processing them and deleting. Expanding
+   * the list should not cause the error when file of another pattern is deleted which may happen
+   * when FileUtils.listFiles is used.
+   *
+   * <p>Fix available after version 3.16.1.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testFileListingDoesNotFailOnMissingFilesOfAnotherPattern() throws Exception {
+    folder.newFolder("TestFiles");
+    String folderName = folder.getRoot().getCanonicalPath();
+
+    int filePatterns = 10;
+    int filesPerPattern = 100;
+    IntStream.range(0, filesPerPattern * filePatterns)
+        .forEach(
+            id -> {
+              try {
+                File file =
+                    new File(
+                        folderName
+                            + localFSFileSep
+                            + "foo"
+                            + id % filePatterns
+                            + "-"
+                            + UUID.randomUUID());
+                assertTrue(file.createNewFile());
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            });
+
+    ExecutorService executorService = Executors.newFixedThreadPool(filePatterns / 3);
+    List<Future<Set<String>>> futures = new ArrayList<>();
+    for (int i = 0; i < filePatterns; ++i) {
+      String[] locations = {
+        folderName + localFSFileSep + "foo" + i + "*",
+      };
+      Future<Set<String>> future =
+          executorService.submit(
+              () -> {
+                try {
+                  Set<String> strings = SnowflakeFileTransferAgent.expandFileNames(locations, null);
+                  strings.forEach(
+                      fileName -> {
+                        try {
+                          File file = new File(fileName);
+                          Files.delete(file.toPath());
+                        } catch (IOException e) {
+                          throw new RuntimeException(e);
+                        }
+                      });
+                  return strings;
+                } catch (SnowflakeSQLException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+      futures.add(future);
+    }
+    executorService.shutdown();
+    assertTrue(executorService.awaitTermination(60, TimeUnit.SECONDS));
+    assertEquals(filePatterns, futures.size());
+    for (Future<Set<String>> future : futures) {
+      assertTrue(future.isDone());
+      assertEquals(filesPerPattern, future.get().size());
+    }
+  }
+
+  @Test
+  public void testFileListingDoesNotFailOnNotExistingDirectory() throws Exception {
+    folder.newFolder("TestFiles");
+    String folderName = folder.getRoot().getCanonicalPath();
+    String[] locations = {
+      folderName + localFSFileSep + "foo*",
+    };
+    folder.delete();
+
+    Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations, null);
+
+    assertTrue(files.isEmpty());
   }
 }

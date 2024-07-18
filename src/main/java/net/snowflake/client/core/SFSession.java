@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,11 +41,14 @@ import net.snowflake.client.jdbc.SnowflakeReauthenticationRequest;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.jdbc.diagnostic.DiagnosticContext;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.log.SFLoggerUtil;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.HttpHeaders;
@@ -58,7 +62,7 @@ public class SFSession extends SFBaseSession {
   public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
   public static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
   public static final String SF_HEADER_TOKEN_TAG = "Token";
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFSession.class);
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
   private static final String SF_PATH_SESSION_HEARTBEAT = "/session/heartbeat";
   private static final String SF_PATH_QUERY_MONITOR = "/monitoring/queries/";
@@ -94,6 +98,7 @@ public class SFSession extends SFBaseSession {
    * <p>Default:300 seconds
    */
   private int loginTimeout = 300;
+
   /**
    * Amount of milliseconds a user is willing to tolerate for network related issues (e.g. HTTP
    * 503/504) or database transient issues (e.g. GS not responding)
@@ -213,7 +218,7 @@ public class SFSession extends SFBaseSession {
                 loginTimeout,
                 authTimeout,
                 (int) httpClientSocketTimeout.toMillis(),
-                0,
+                maxHttpRetries,
                 getHttpClientKey());
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
@@ -224,7 +229,7 @@ public class SFSession extends SFBaseSession {
       // Get response as JSON and parse it to get the query status
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", response);
+        logger.debug("Response: {}", response);
 
         int errorCode = jsonNode.path("code").asInt();
         // If the error is due to an expired session token, try renewing the session and trying
@@ -511,21 +516,23 @@ public class SFSession extends SFBaseSession {
    * @throws SnowflakeSQLException exception raised from Snowflake components
    */
   public synchronized void open() throws SFException, SnowflakeSQLException {
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     performSanityCheckOnProperties();
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
-    logger.debug(
-        "input: server={}, account={}, user={}, password={}, role={}, database={}, schema={},"
-            + " warehouse={}, validate_default_parameters={}, authenticator={}, ocsp_mode={},"
-            + " passcode_in_password={}, passcode={}, private_key={}, disable_socks_proxy={},"
-            + " application={}, app_id={}, app_version={}, login_timeout={}, retry_timeout={}, network_timeout={},"
-            + " query_timeout={}, tracing={}, private_key_file={}, private_key_file_pwd={}."
-            + " session_parameters: client_store_temporary_credential={}, gzip_disabled={}",
+    logger.info(
+        "Opening session with server: {}, account: {}, user: {}, password is {}, role: {}, database: {}, schema: {},"
+            + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
+            + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
+            + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
+            + " query timeout: {}, tracing: {}, private key file: {}, private key file pwd is {},"
+            + " enable_diagnostics: {}, diagnostics_allowlist_path: {},"
+            + " session parameters: client store temporary credential: {}, gzip disabled: {}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
-        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD))
-            ? "***"
-            : "(empty)",
+        SFLoggerUtil.isVariableProvided(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PASSWORD)),
         connectionPropertiesMap.get(SFSessionProperty.ROLE),
         connectionPropertiesMap.get(SFSessionProperty.DATABASE),
         connectionPropertiesMap.get(SFSessionProperty.SCHEMA),
@@ -534,12 +541,9 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR),
         getOCSPMode().name(),
         connectionPropertiesMap.get(SFSessionProperty.PASSCODE_IN_PASSWORD),
-        !Strings.isNullOrEmpty((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
-            ? "***"
-            : "(empty)",
-        connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY) != null
-            ? "(not null)"
-            : "(null)",
+        SFLoggerUtil.isVariableProvided(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE)),
+        SFLoggerUtil.isVariableProvided(connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY)),
         connectionPropertiesMap.get(SFSessionProperty.DISABLE_SOCKS_PROXY),
         connectionPropertiesMap.get(SFSessionProperty.APPLICATION),
         connectionPropertiesMap.get(SFSessionProperty.APP_ID),
@@ -550,22 +554,22 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.TRACING),
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
-        !Strings.isNullOrEmpty(
-                (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
-            ? "***"
-            : "(empty)",
+        SFLoggerUtil.isVariableProvided(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
+        connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
+        connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
         connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
 
     HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
     logger.debug(
-        "connection proxy parameters: use_proxy={}, proxy_host={}, proxy_port={}, proxy_user={},"
-            + " proxy_password={}, non_proxy_hosts={}, proxy_protocol={}",
+        "Connection proxy parameters: use proxy: {}, proxy host: {}, proxy port: {}, proxy user: {},"
+            + " proxy password is {}, non proxy hosts: {}, proxy protocol: {}",
         httpClientSettingsKey.usesProxy(),
         httpClientSettingsKey.getProxyHost(),
         httpClientSettingsKey.getProxyPort(),
         httpClientSettingsKey.getProxyUser(),
-        !Strings.isNullOrEmpty(httpClientSettingsKey.getProxyPassword()) ? "***" : "(empty)",
+        SFLoggerUtil.isVariableProvided(httpClientSettingsKey.getProxyPassword()),
         httpClientSettingsKey.getNonProxyHosts(),
         httpClientSettingsKey.getProxyHttpProtocol());
 
@@ -608,19 +612,26 @@ public class SFSession extends SFBaseSession {
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN) != null
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_CONSOLE_LOGIN))
-                : true);
+                : true)
+        .setDisableSamlURLCheck(
+            connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK) != null
+                ? getBooleanValue(
+                    connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
+                : false);
 
-    // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
-    // The value may still change later when session parameters from the server are read.
-    if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
-      TelemetryService.enable();
-    } else {
-      TelemetryService.disable();
-    }
+    logger.info(
+        "Connecting to {} Snowflake domain",
+        loginInput.getHostFromServerUrl().toLowerCase().endsWith(".cn") ? "CHINA" : "GLOBAL");
+
+    // we ignore the parameters CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED and htapOOBTelemetryEnabled
+    // OOB telemetry is disabled
+    TelemetryService.disableOOBTelemetry();
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
+
+    runDiagnosticsIfEnabled();
+
     SFLoginOutput loginOutput =
         SessionUtil.openSession(loginInput, connectionPropertiesMap, tracingLevel.toString());
     isClosed = false;
@@ -644,13 +655,7 @@ public class SFSession extends SFBaseSession {
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
-    // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
-    if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
-      TelemetryService.enableHTAP();
-    } else {
-      TelemetryService.disableHTAP();
-    }
+
     String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
     String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
     String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);
@@ -702,6 +707,8 @@ public class SFSession extends SFBaseSession {
 
     // start heartbeat for this session so that the master token will not expire
     startHeartbeatForThisSession();
+    stopwatch.stop();
+    logger.info("Session {} opened in {} ms.", getSessionId(), stopwatch.elapsedMillis());
   }
 
   /**
@@ -762,10 +769,14 @@ public class SFSession extends SFBaseSession {
   synchronized void renewSession(String prevSessionToken)
       throws SFException, SnowflakeSQLException {
     if (sessionToken != null && !sessionToken.equals(prevSessionToken)) {
-      logger.debug("not renew session because session token has not been updated.", false);
+      logger.debug(
+          "Not renewing session {} because session token has not been updated.", getSessionId());
       return;
     }
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
 
+    logger.debug("Renewing session {}", getSessionId());
     SFLoginInput loginInput = new SFLoginInput();
     loginInput
         .setServerUrl(getServerUrl())
@@ -786,6 +797,9 @@ public class SFSession extends SFBaseSession {
 
     sessionToken = loginOutput.getSessionToken();
     masterToken = loginOutput.getMasterToken();
+    stopwatch.stop();
+    logger.debug(
+        "Session {} renewed successfully in {} ms", getSessionId(), stopwatch.elapsedMillis());
   }
 
   /**
@@ -805,14 +819,17 @@ public class SFSession extends SFBaseSession {
    */
   @Override
   public void close() throws SFException, SnowflakeSQLException {
-    logger.debug(" public void close()", false);
+    logger.debug("Closing session {}", getSessionId());
 
     // stop heartbeat for this session
     stopHeartbeatForThisSession();
 
     if (isClosed) {
+      logger.debug("Session {} is already closed", getSessionId());
       return;
     }
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
 
     SFLoginInput loginInput = new SFLoginInput();
     loginInput
@@ -832,6 +849,11 @@ public class SFSession extends SFBaseSession {
       qcc.clearCache();
     }
 
+    stopwatch.stop();
+    logger.info(
+        "Session {} has been successfully closed in {} ms",
+        getSessionId(),
+        stopwatch.elapsedMillis());
     isClosed = true;
   }
 
@@ -887,23 +909,26 @@ public class SFSession extends SFBaseSession {
   /** Start heartbeat for this session */
   protected void startHeartbeatForThisSession() {
     if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
-      logger.debug("start heartbeat, master token validity: " + masterTokenValidityInSeconds);
+      logger.debug(
+          "Session {} start heartbeat, master token validity: {} s",
+          getSessionId(),
+          masterTokenValidityInSeconds);
 
       HeartbeatBackground.getInstance()
           .addSession(this, masterTokenValidityInSeconds, heartbeatFrequency);
     } else {
-      logger.debug("heartbeat not enabled for the session", false);
+      logger.debug("Heartbeat not enabled for the session {}", getSessionId());
     }
   }
 
   /** Stop heartbeat for this session */
   protected void stopHeartbeatForThisSession() {
     if (getEnableHeartbeat() && !Strings.isNullOrEmpty(masterToken)) {
-      logger.debug("stop heartbeat", false);
+      logger.debug("Session {} stop heartbeat", getSessionId());
 
       HeartbeatBackground.getInstance().removeSession(this);
     } else {
-      logger.debug("heartbeat not enabled for the session", false);
+      logger.debug("Heartbeat not enabled for the session {}", getSessionId());
     }
   }
 
@@ -914,11 +939,14 @@ public class SFSession extends SFBaseSession {
    * @throws SQLException exception raised from SQL generic layers
    */
   protected void heartbeat() throws SFException, SQLException {
-    logger.debug(" public void heartbeat()", false);
+    logger.debug("Session {} heartbeat", getSessionId());
 
     if (isClosed) {
       return;
     }
+
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
 
     HttpPost postRequest = null;
 
@@ -969,14 +997,14 @@ public class SFSession extends SFBaseSession {
 
         JsonNode rootNode;
 
-        logger.debug("connection heartbeat response: {}", theResponse);
+        logger.debug("Connection heartbeat response: {}", theResponse);
 
         rootNode = OBJECT_MAPPER.readTree(theResponse);
 
         // check the response to see if it is session expiration response
         if (rootNode != null
             && (Constants.SESSION_EXPIRED_GS_CODE == rootNode.path("code").asInt())) {
-          logger.debug("renew session and retry", false);
+          logger.debug("Renew session and retry", false);
           this.renewSession(prevSessionToken);
           retry = true;
           continue;
@@ -992,12 +1020,15 @@ public class SFSession extends SFBaseSession {
           throw (SnowflakeSQLException) ex;
         }
 
-        logger.error("unexpected exception", ex);
+        logger.error("Unexpected exception", ex);
 
         throw new SFException(
             ErrorCode.INTERNAL_ERROR, IncidentUtil.oneLiner("unexpected exception", ex));
       }
     } while (retry);
+    stopwatch.stop();
+    logger.debug(
+        "Session {} heartbeat successful in {} ms", getSessionId(), stopwatch.elapsedMillis());
   }
 
   void injectedDelay() {
@@ -1247,5 +1278,46 @@ public class SFSession extends SFBaseSession {
 
   public void setSfClientConfig(SFClientConfig sfClientConfig) {
     this.sfClientConfig = sfClientConfig;
+  }
+
+  /**
+   * If the JDBC driver starts in diagnostics mode then the method prints results of the
+   * connectivity tests it performs in the logs. A SQLException is thrown with a message indicating
+   * that the driver is in diagnostics mode, and that a connection was not created.
+   */
+  private void runDiagnosticsIfEnabled() throws SnowflakeSQLException {
+    Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
+    boolean isDiagnosticsEnabled =
+        Optional.ofNullable(connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS))
+            .map(b -> (Boolean) b)
+            .orElse(false);
+
+    if (!isDiagnosticsEnabled) {
+      return;
+    }
+    logger.info("Running diagnostics tests");
+    String allowListFile =
+        (String) connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+
+    if (allowListFile == null || allowListFile.isEmpty()) {
+      logger.error(
+          "Diagnostics was enabled but an allowlist file was not provided."
+              + " Please provide an allowlist JSON file using the connection parameter {}",
+          SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+      throw new SnowflakeSQLException(
+          "Diagnostics was enabled but an allowlist file was not provided. "
+              + "Please provide an allowlist JSON file using the connection parameter "
+              + SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE);
+    } else {
+      DiagnosticContext diagnosticContext =
+          new DiagnosticContext(allowListFile, connectionPropertiesMap);
+      diagnosticContext.runDiagnostics();
+    }
+
+    throw new SnowflakeSQLException(
+        "A connection was not created because the driver is running in diagnostics mode."
+            + " If this is unintended then disable diagnostics check by removing the "
+            + SFSessionProperty.ENABLE_DIAGNOSTICS
+            + " connection parameter");
   }
 }

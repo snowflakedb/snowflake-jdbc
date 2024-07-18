@@ -28,13 +28,18 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import net.snowflake.client.core.ArrowSqlInput;
+import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /** Snowflake ResultSet implementation */
 public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
     implements SnowflakeResultSet, ResultSet {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeResultSetV1.class);
 
   /**
    * Constructor takes an inputstream from the API response that we get from executing a SQL
@@ -263,11 +268,17 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
 
   public Object getObject(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    try {
-      return sfBaseResultSet.getObject(columnIndex);
-    } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    Object object =
+        SnowflakeUtil.mapSFExceptionToSQLException(() -> sfBaseResultSet.getObject(columnIndex));
+    if (object == null) {
+      return null;
+    } else if (object instanceof JsonSqlInput) {
+      return ((JsonSqlInput) object).getText();
+    } else if (object instanceof ArrowSqlInput) {
+      throw new SQLException(
+          "Arrow native struct couldn't be converted to String. To map to SqlData the method getObject(int columnIndex, Class type) should be used");
+    } else {
+      return object;
     }
   }
 
@@ -351,7 +362,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.debug("public boolean isWrapperFor(Class<?> iface)", false);
+    logger.trace("boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }
@@ -359,7 +370,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
   @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("public <T> T unwrap(Class<T> iface)", false);
+    logger.trace("<T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(

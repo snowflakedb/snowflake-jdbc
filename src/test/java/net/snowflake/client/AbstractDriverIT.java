@@ -6,7 +6,9 @@ package net.snowflake.client;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.google.common.base.Strings;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -385,7 +387,11 @@ public class AbstractDriverIT {
     ClassLoader classLoader = AbstractDriverIT.class.getClassLoader();
     URL url = classLoader.getResource(fileName);
     if (url != null) {
-      return url.getFile();
+      try {
+        return Paths.get(url.toURI()).toAbsolutePath().toString();
+      } catch (URISyntaxException ex) {
+        throw new RuntimeException("Unable to get absolute path: " + fileName);
+      }
     } else {
       throw new RuntimeException("No file is found: " + fileName);
     }

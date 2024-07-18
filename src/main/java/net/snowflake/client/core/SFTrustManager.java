@@ -140,7 +140,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   /** OCSP response cache file name. Should be identical to other driver's cache file name. */
   static final String CACHE_FILE_NAME = "ocsp_response_cache.json";
 
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(SFTrustManager.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFTrustManager.class);
   private static final ASN1ObjectIdentifier OIDocsp =
       new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.1").intern();
   private static final ASN1ObjectIdentifier SHA1RSA =
@@ -167,8 +167,10 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private static final int DEFAULT_OCSP_CACHE_SERVER_CONNECTION_TIMEOUT = 5000;
   /** Default OCSP responder connection timeout */
   private static final int DEFAULT_OCSP_RESPONDER_CONNECTION_TIMEOUT = 10000;
+  /** Default OCSP Cache server host name prefix */
+  private static final String DEFAULT_OCSP_CACHE_HOST_PREFIX = "http://ocsp.snowflakecomputing.";
   /** Default OCSP Cache server host name */
-  private static final String DEFAULT_OCSP_CACHE_HOST = "http://ocsp.snowflakecomputing.com";
+  private static final String DEFAULT_OCSP_CACHE_HOST = DEFAULT_OCSP_CACHE_HOST_PREFIX + "com";
 
   /** OCSP response file cache directory */
   private static final FileCacheManager fileCacheManager;
@@ -200,7 +202,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   /** OCSP Response Cache server Retry URL pattern */
   static String SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN;
   /** OCSP response cache server URL. */
-  private static String SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE;
+  static String SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE;
 
   private static JcaX509CertificateConverter CONVERTER_X509 = new JcaX509CertificateConverter();
   /** RootCA cache */
@@ -283,6 +285,9 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       JsonNode res = fileCacheManager.readCacheFile();
       readJsonStoreCache(res);
     }
+
+    logger.debug(
+        "Initializing trust manager with OCSP mode: {}, cache file: {}", ocspMode, cacheFile);
   }
 
   /** Deletes OCSP response cache file from disk. */
@@ -312,7 +317,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       return;
     }
     SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheServerUrl;
-    if (!SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE.startsWith(DEFAULT_OCSP_CACHE_HOST)) {
+    if (!SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE.startsWith(DEFAULT_OCSP_CACHE_HOST_PREFIX)) {
       URL url = new URL(SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
       if (url.getPort() > 0) {
         SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
@@ -322,10 +327,13 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN =
             String.format("%s://%s/retry/%s", url.getProtocol(), url.getHost(), "%s/%s");
       }
+      logger.debug(
+          "Reset OCSP response cache server URL to: {}",
+          SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
     }
   }
 
-  private static void setOCSPResponseCacheServerURL() {
+  private static void setOCSPResponseCacheServerURL(String topLevelDomain) {
     String ocspCacheUrl = systemGetProperty(SF_OCSP_RESPONSE_CACHE_SERVER_URL);
     if (ocspCacheUrl != null) {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
@@ -336,30 +344,31 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = ocspCacheUrl;
       }
     } catch (Throwable ex) {
-      LOGGER.debug(
+      logger.debug(
           "Failed to get environment variable " + SF_OCSP_RESPONSE_CACHE_SERVER_URL + ". Ignored",
           true);
     }
     if (SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE == null) {
       SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE =
-          String.format("%s/%s", DEFAULT_OCSP_CACHE_HOST, CACHE_FILE_NAME);
+          String.format("%s%s/%s", DEFAULT_OCSP_CACHE_HOST_PREFIX, topLevelDomain, CACHE_FILE_NAME);
     }
+    logger.debug("Set OCSP response cache server to: {}", SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
   }
 
   private static boolean useOCSPResponseCacheServer() {
     String ocspCacheServerEnabled = systemGetProperty(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
     if (Boolean.FALSE.toString().equalsIgnoreCase(ocspCacheServerEnabled)) {
-      LOGGER.debug("No OCSP Response Cache Server is used.", false);
+      logger.debug("No OCSP Response Cache Server is used.", false);
       return false;
     }
     try {
       ocspCacheServerEnabled = systemGetEnv(SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED);
       if (Boolean.FALSE.toString().equalsIgnoreCase(ocspCacheServerEnabled)) {
-        LOGGER.debug("No OCSP Response Cache Server is used.", false);
+        logger.debug("No OCSP Response Cache Server is used.", false);
         return false;
       }
     } catch (Throwable ex) {
-      LOGGER.debug(
+      logger.debug(
           "Failed to get environment variable "
               + SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED
               + ". Ignored",
@@ -383,7 +392,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       CertID cid = new CertID(algo, nameHash, keyHash, snumber);
       return Base64.encodeBase64String(cid.toASN1Primitive().getEncoded());
     } catch (Exception ex) {
-      LOGGER.debug("Failed to encode cache key to base64 encoded cert id", false);
+      logger.debug("Failed to encode cache key to base64 encoded cert id", false);
     }
     return null;
   }
@@ -423,7 +432,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
     JsonNode ocspRespBase64 = elem.getValue();
     if (!ocspRespBase64.isArray() || ocspRespBase64.size() != 2) {
-      LOGGER.debug("Invalid cache file format. Ignored", false);
+      logger.debug("Invalid cache file format. Ignored", false);
       return null;
     }
     long producedAt = ocspRespBase64.get(0).asLong();
@@ -465,14 +474,14 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       }
       return out;
     } catch (IOException ex) {
-      LOGGER.debug("Failed to encode ASN1 object.", false);
+      logger.debug("Failed to encode ASN1 object.", false);
     }
     return null;
   }
 
   private static synchronized void readJsonStoreCache(JsonNode m) {
     if (m == null || !m.getNodeType().equals(JsonNodeType.OBJECT)) {
-      LOGGER.debug("Invalid cache file format.", false);
+      logger.debug("Invalid cache file format.", false);
       return;
     }
     try {
@@ -489,7 +498,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         }
       }
     } catch (IOException ex) {
-      LOGGER.debug("Failed to decode the cache file", false);
+      logger.debug("Failed to decode the cache file", false);
     }
   }
 
@@ -669,7 +678,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     try {
       new_ocsp_ept = systemGetEnv("SF_OCSP_ACTIVATE_NEW_ENDPOINT");
     } catch (Throwable ex) {
-      LOGGER.debug(
+      logger.debug(
           "Could not get environment variable to check for New OCSP Endpoint Availability", false);
       new_ocsp_ept = systemGetProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
     }
@@ -784,22 +793,23 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       ocspCacheServer.resetOCSPResponseCacheServer(peerHost);
     }
 
-    setOCSPResponseCacheServerURL();
+    String topLevelDomain = peerHost.substring(peerHost.lastIndexOf(".") + 1);
+    setOCSPResponseCacheServerURL(topLevelDomain);
     boolean isCached = isCached(pairIssuerSubjectList);
     if (useOCSPResponseCacheServer() && !isCached) {
       if (!ocspCacheServer.new_endpoint_enabled) {
-        LOGGER.debug(
+        logger.debug(
             "Downloading OCSP response cache from the server. URL: {}",
             SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
       } else {
-        LOGGER.debug(
+        logger.debug(
             "Downloading OCSP response cache from the server. URL: {}",
             ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER);
       }
       try {
         readOcspResponseCacheServer();
       } catch (SFOCSPException ex) {
-        LOGGER.debug(
+        logger.debug(
             "Error downloading OCSP Response from cache server : {}."
                 + "OCSP Responses will be fetched directly from the CA OCSP"
                 + "Responder ",
@@ -900,7 +910,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
                 telemetryData.setCacheHit(true);
               }
             } catch (Throwable ex) {
-              LOGGER.debug(
+              logger.debug(
                   "Exception occurred while trying to fetch OCSP Response - {}", ex.getMessage());
               throw new SFOCSPException(
                   OCSPErrorCode.OCSP_RESPONSE_FETCH_FAILURE,
@@ -908,8 +918,8 @@ public class SFTrustManager extends X509ExtendedTrustManager {
                   ex);
             }
 
-            LOGGER.debug(
-                "validating. {}", CertificateIDToString(req.getRequestList()[0].getCertID()));
+            logger.debug(
+                "Validating. {}", CertificateIDToString(req.getRequestList()[0].getCertID()));
             try {
               validateRevocationStatusMain(pairIssuerSubject, value0.right);
               success = true;
@@ -930,12 +940,12 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         } catch (CertificateException ex) {
           WAS_CACHE_UPDATED.set(OCSP_RESPONSE_CACHE.remove(keyOcspResponse) != null);
           if (WAS_CACHE_UPDATED.get()) {
-            LOGGER.debug("deleting the invalid OCSP cache.", false);
+            logger.debug("Deleting the invalid OCSP cache.", false);
           }
 
           cause = ex;
-          LOGGER.debug(
-              "Retrying {}/{} after sleeping {}(ms)", retry + 1, maxRetryCounter, sleepTime);
+          logger.debug(
+              "Retrying {}/{} after sleeping {} ms", retry + 1, maxRetryCounter, sleepTime);
           try {
             if (retry + 1 < maxRetryCounter) {
               Thread.sleep(sleepTime);
@@ -950,7 +960,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       error = new CertificateException(ex);
       ocspLog =
           telemetryData.generateTelemetry(SF_OCSP_EVENT_TYPE_REVOKED_CERTIFICATE_ERROR, error);
-      LOGGER.error(ocspLog, false);
+      logger.error(ocspLog, false);
       throw error;
     }
 
@@ -960,21 +970,21 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         error =
             new CertificateException(
                 "Certificate Revocation check failed. Could not retrieve OCSP Response.", cause);
-        LOGGER.debug(cause.getMessage(), false);
+        logger.debug(cause.getMessage(), false);
       } else {
         error =
             new CertificateException(
                 "Certificate Revocation check failed. Could not retrieve OCSP Response.");
-        LOGGER.debug(error.getMessage(), false);
+        logger.debug(error.getMessage(), false);
       }
 
       ocspLog = telemetryData.generateTelemetry(SF_OCSP_EVENT_TYPE_VALIDATION_ERROR, error);
       if (isOCSPFailOpen()) {
         // Log includes fail-open warning.
-        LOGGER.error(generateFailOpenLog(ocspLog), false);
+        logger.error(generateFailOpenLog(ocspLog), false);
       } else {
         // still not success, raise an error.
-        LOGGER.debug(ocspLog, false);
+        logger.debug(ocspLog, false);
         throw error;
       }
     }
@@ -993,7 +1003,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       for (SFPair<Certificate, Certificate> pairIssuerSubject : pairIssuerSubjectList) {
         OCSPReq req = createRequest(pairIssuerSubject);
         CertificateID certificateId = req.getRequestList()[0].getCertID();
-        LOGGER.debug(CertificateIDToString(certificateId), false);
+        logger.debug(CertificateIDToString(certificateId), false);
         CertID cid = certificateId.toASN1Primitive();
         OcspResponseCacheKey k =
             new OcspResponseCacheKey(
@@ -1003,18 +1013,18 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
         SFPair<Long, String> res = OCSP_RESPONSE_CACHE.get(k);
         if (res == null) {
-          LOGGER.debug("Not all OCSP responses for the certificate is in the cache.", false);
+          logger.debug("Not all OCSP responses for the certificate is in the cache.", false);
           isCached = false;
           break;
         } else if (currentTimeSecond - CACHE_EXPIRATION_IN_SECONDS > res.left) {
-          LOGGER.debug("Cache for CertID expired.", false);
+          logger.debug("Cache for CertID expired.", false);
           isCached = false;
           break;
         } else {
           try {
             validateRevocationStatusMain(pairIssuerSubject, res.right);
           } catch (SFOCSPException ex) {
-            LOGGER.debug(
+            logger.debug(
                 "Cache includes invalid OCSPResponse. "
                     + "Will download the OCSP cache from Snowflake OCSP server",
                 false);
@@ -1023,7 +1033,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         }
       }
     } catch (IOException ex) {
-      LOGGER.debug("Failed to encode CertID.", false);
+      logger.debug("Failed to encode CertID.", false);
     }
     return isCached;
   }
@@ -1059,14 +1069,14 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       JsonNode m = OBJECT_MAPPER.readTree(out.toByteArray());
       out.close();
       readJsonStoreCache(m);
-      LOGGER.debug("Successfully downloaded OCSP cache from the server.", false);
+      logger.debug("Successfully downloaded OCSP cache from the server.", false);
     } catch (IOException ex) {
-      LOGGER.debug(
+      logger.debug(
           "Failed to read the OCSP response cache from the server. " + "Server: {}, Err: {}",
           ocspCacheServerInUse,
           ex);
     } catch (URISyntaxException ex) {
-      LOGGER.debug("Indicate that a string could not be parsed as a URI reference.", false);
+      logger.debug("Indicate that a string could not be parsed as a URI reference.", false);
       throw new SFOCSPException(
           OCSPErrorCode.INVALID_CACHE_SERVER_URL, "Invalid OCSP Cache Server URL used", ex);
     } finally {
@@ -1141,11 +1151,11 @@ public class SFTrustManager extends X509ExtendedTrustManager {
         } else {
           url = new URL(String.format("%s/%s", ocspUrlStr, urlEncodedOCSPReq));
         }
-        LOGGER.debug("not hit cache. Fetching OCSP response from CA OCSP server. {}", url);
+        logger.debug("Not hit cache. Fetching OCSP response from CA OCSP server. {}", url);
       } else {
         url = new URL(ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL);
-        LOGGER.debug(
-            "not hit cache. Fetching OCSP response from Snowflake OCSP Response Fetcher. {}", url);
+        logger.debug(
+            "Not hit cache. Fetching OCSP response from Snowflake OCSP Response Fetcher. {}", url);
       }
 
       long sleepTime = INITIAL_SLEEPING_TIME_IN_MILLISECONDS;
@@ -1180,12 +1190,12 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             break;
           }
         } catch (IOException ex) {
-          LOGGER.debug("Failed to reach out OCSP responder: {}", ex.getMessage());
+          logger.debug("Failed to reach out OCSP responder: {}", ex.getMessage());
           savedEx = ex;
         }
         IOUtils.closeQuietly(response);
 
-        LOGGER.debug("Retrying {}/{} after sleeping {}(ms)", retry + 1, maxRetryCounter, sleepTime);
+        logger.debug("Retrying {}/{} after sleeping {} ms", retry + 1, maxRetryCounter, sleepTime);
         try {
           if (retry + 1 < maxRetryCounter) {
             Thread.sleep(sleepTime);
@@ -1245,8 +1255,10 @@ public class SFTrustManager extends X509ExtendedTrustManager {
   private String overrideOCSPURL(String ocspURL) {
     String ocspURLInput = systemGetProperty(SF_OCSP_TEST_RESPONDER_URL);
     if (ocspURLInput != null) {
+      logger.debug("Overriding OCSP url to: {}", ocspURLInput);
       return ocspURLInput;
     }
+    logger.debug("Overriding OCSP url to: {}", ocspURL);
     return ocspURL;
   }
 
@@ -1272,7 +1284,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
       X509CertificateHolder signVerifyCert;
       checkInvalidSigningCertTestParameter();
       if (attachedCerts.length > 0) {
-        LOGGER.debug(
+        logger.debug(
             "Certificate is attached for verification. "
                 + "Verifying it by the issuer certificate.",
             false);
@@ -1296,15 +1308,15 @@ public class SFTrustManager extends X509ExtendedTrustManager {
               CONVERTER_X509.getCertificate(signVerifyCert).getTBSCertificate(),
               signVerifyCert.getSignatureAlgorithm());
         } catch (CertificateException ex) {
-          LOGGER.debug("OCSP Signing Certificate signature verification failed", false);
+          logger.debug("OCSP Signing Certificate signature verification failed", false);
           throw new SFOCSPException(
               OCSPErrorCode.INVALID_CERTIFICATE_SIGNATURE,
               "OCSP Signing Certificate signature verification failed",
               ex);
         }
-        LOGGER.debug("Verifying OCSP signature by the attached certificate public key.", false);
+        logger.debug("Verifying OCSP signature by the attached certificate public key.", false);
       } else {
-        LOGGER.debug(
+        logger.debug(
             "Certificate is NOT attached for verification. "
                 + "Verifying OCSP signature by the issuer public key.",
             false);
@@ -1317,7 +1329,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             basicOcspResp.getTBSResponseData(),
             basicOcspResp.getSignatureAlgorithmID());
       } catch (CertificateException ex) {
-        LOGGER.debug("OCSP signature verification failed", false);
+        logger.debug("OCSP signature verification failed", false);
         throw new SFOCSPException(
             OCSPErrorCode.INVALID_OCSP_RESPONSE_SIGNATURE,
             "OCSP signature verification failed",
@@ -1376,7 +1388,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
       Date thisUpdate = singleResps.getThisUpdate();
       Date nextUpdate = singleResps.getNextUpdate();
-      LOGGER.debug(
+      logger.debug(
           "Current Time: {}, This Update: {}, Next Update: {}",
           currentTime,
           thisUpdate,
@@ -1392,7 +1404,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
                 DATE_FORMAT_UTC.format(nextUpdate)));
       }
     }
-    LOGGER.debug("OK. Verified the certificate revocation status.", false);
+    logger.debug("OK. Verified the certificate revocation status.", false);
   }
 
   private void checkCertUnknownTestParameter() throws SFOCSPException {
@@ -1516,7 +1528,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     try {
       return Base64.encodeBase64String(ocspResp.getEncoded());
     } catch (Throwable ex) {
-      LOGGER.debug("Could not convert OCSP Response to Base64", false);
+      logger.debug("Could not convert OCSP Response to Base64", false);
       return null;
     }
   }
@@ -1525,7 +1537,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
     try {
       return new OCSPResp(Base64.decodeBase64(ocspRespB64));
     } catch (Throwable ex) {
-      LOGGER.debug("Could not cover OCSP Response from Base64 to OCSPResp object", false);
+      logger.debug("Could not cover OCSP Response from Base64 to OCSPResp object", false);
       return null;
     }
   }
@@ -1537,14 +1549,16 @@ public class SFTrustManager extends X509ExtendedTrustManager {
 
     void resetOCSPResponseCacheServer(String host) {
       String ocspCacheServerUrl;
-      if (host.indexOf(".global.snowflakecomputing.com") > 0) {
+      if (host.toLowerCase().contains(".global.snowflakecomputing.")) {
         ocspCacheServerUrl =
             String.format("https://ocspssd%s/%s", host.substring(host.indexOf('-')), "ocsp");
-      } else if (host.indexOf(".snowflakecomputing.com") > 0) {
+      } else if (host.toLowerCase().contains(".snowflakecomputing.")) {
         ocspCacheServerUrl =
             String.format("https://ocspssd%s/%s", host.substring(host.indexOf('.')), "ocsp");
       } else {
-        ocspCacheServerUrl = "https://ocspssd.snowflakecomputing.com/ocsp";
+        String topLevelDomain = host.substring(host.lastIndexOf(".") + 1);
+        ocspCacheServerUrl =
+            String.format("https://ocspssd.snowflakecomputing.%s/ocsp", topLevelDomain);
       }
       SF_OCSP_RESPONSE_CACHE_SERVER = String.format("%s/%s", ocspCacheServerUrl, "fetch");
       SF_OCSP_RESPONSE_RETRY_URL = String.format("%s/%s", ocspCacheServerUrl, "retry");
@@ -1624,7 +1638,7 @@ public class SFTrustManager extends X509ExtendedTrustManager {
             String.format(
                 "Failed to instantiate the algorithm: %s. err=%s",
                 ALGORITHM_SHA1_NAME, ex.getMessage());
-        LOGGER.error(errMsg, false);
+        logger.error(errMsg, false);
         throw new RuntimeException(errMsg);
       }
     }

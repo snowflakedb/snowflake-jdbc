@@ -41,23 +41,20 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testPrepareUDTF() throws Exception {
-    try (Connection connection = init()) {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       try {
-        connection
-            .createStatement()
-            .execute("create or replace table employee(id number, address text)");
-        connection
-            .createStatement()
-            .execute(
-                "create or replace function employee_detail(sid number, addr text)\n"
-                    + " returns table(id number, address text)\n"
-                    + "LANGUAGE SQL\n"
-                    + "as\n"
-                    + "$$\n"
-                    + "select *\n"
-                    + "from employee\n"
-                    + "where  id=sid\n"
-                    + "$$;");
+        statement.execute("create or replace table employee(id number, address text)");
+        statement.execute(
+            "create or replace function employee_detail(sid number, addr text)\n"
+                + " returns table(id number, address text)\n"
+                + "LANGUAGE SQL\n"
+                + "as\n"
+                + "$$\n"
+                + "select *\n"
+                + "from employee\n"
+                + "where  id=sid\n"
+                + "$$;");
 
         // should resolve successfully
         try (PreparedStatement prepStatement =
@@ -87,17 +84,15 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         }
 
         // create a udf with same name but different arguments and return type
-        connection
-            .createStatement()
-            .execute(
-                "create or replace function employee_detail(name text , addr text)\n"
-                    + " returns table(id number)\n"
-                    + "LANGUAGE SQL\n"
-                    + "as\n"
-                    + "$$\n"
-                    + "select id\n"
-                    + "from employee\n"
-                    + "$$;");
+        statement.execute(
+            "create or replace function employee_detail(name text , addr text)\n"
+                + " returns table(id number)\n"
+                + "LANGUAGE SQL\n"
+                + "as\n"
+                + "$$\n"
+                + "select id\n"
+                + "from employee\n"
+                + "$$;");
 
         try (PreparedStatement prepStatement =
             connection.prepareStatement("select * from table(employee_detail(?, 'abc'))")) {
@@ -105,10 +100,8 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           prepStatement.execute();
         }
       } finally {
-        connection
-            .createStatement()
-            .execute("drop function if exists employee_detail(number, text)");
-        connection.createStatement().execute("drop function if exists employee_detail(text, text)");
+        statement.execute("drop function if exists employee_detail(number, text)");
+        statement.execute("drop function if exists employee_detail(text, text)");
       }
     }
   }
@@ -119,38 +112,34 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
    */
   @Test
   public void testSelectWithBinding() throws Throwable {
-    try (Connection connection = init()) {
-      connection
-          .createStatement()
-          .execute("create or replace table TESTNULL(created_time timestamp_ntz, mid int)");
-      PreparedStatement ps;
-      ResultSet rs;
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
       try {
+        statement.execute("create or replace table TESTNULL(created_time timestamp_ntz, mid int)");
         // skip bind parameter index check if prepare fails and defer the error checks to execute
-        ps =
+        try (PreparedStatement ps =
             connection.prepareStatement(
-                "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?, 3) and MID = ?");
-        ps.setObject(1, 0);
-        ps.setObject(2, null);
-        rs = ps.executeQuery();
-        assertFalse(rs.next());
-        rs.close();
-        ps.close();
+                "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?, 3) and MID = ?")) {
+          ps.setObject(1, 0);
+          ps.setObject(2, null);
+          try (ResultSet rs = ps.executeQuery()) {
+            assertFalse(rs.next());
+          }
+        }
 
         // describe is success and do the index range check
-        ps =
+        try (PreparedStatement ps =
             connection.prepareStatement(
-                "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?::NUMBER, 3) and MID = ?");
-        ps.setObject(1, 0);
-        ps.setObject(2, null);
+                "SELECT 1 FROM TESTNULL WHERE CREATED_TIME = TO_TIMESTAMP(?::NUMBER, 3) and MID = ?")) {
+          ps.setObject(1, 0);
+          ps.setObject(2, null);
 
-        rs = ps.executeQuery();
-        assertFalse(rs.next());
-        rs.close();
-        ps.close();
-
+          try (ResultSet rs = ps.executeQuery()) {
+            assertFalse(rs.next());
+          }
+        }
       } finally {
-        connection.createStatement().execute("drop table if exists TESTNULL");
+        statement.execute("drop table if exists TESTNULL");
       }
     }
   }
@@ -175,7 +164,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         prepStatement.setInt(1, 10);
         prepStatement.setInt(2, 0);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          resultSet.next();
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(1));
           assertThat(resultSet.next(), is(false));
         }
@@ -198,8 +187,9 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @Test
   public void testExecuteLargeBatch() throws SQLException {
-    try (Connection con = init()) {
-      try (Statement statement = con.createStatement()) {
+    try (Connection con = init();
+        Statement statement = con.createStatement()) {
+      try {
         statement.execute("create or replace table mytab(id int)");
         try (PreparedStatement pstatement =
             con.prepareStatement("insert into mytab(id) values (?)")) {
@@ -212,117 +202,138 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           pstatement.executeLargeBatch();
           con.commit();
           try (ResultSet resultSet = statement.executeQuery("select * from mytab")) {
-            resultSet.next();
+            assertTrue(resultSet.next());
             assertEquals(4, resultSet.getInt(1));
           }
-          statement.execute("drop table if exists mytab");
         }
+      } finally {
+        statement.execute("drop table if exists mytab");
       }
     }
   }
 
   @Test
   public void testRemoveExtraDescribeCalls() throws SQLException {
-    Connection connection = init();
-    Statement statement = connection.createStatement();
-    statement.execute("create or replace table test_uuid_with_bind(c1 number)");
+    String queryId1 = null;
+    String queryId2 = null;
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute("create or replace table test_uuid_with_bind(c1 number)");
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("insert into test_uuid_with_bind values (?)")) {
+          preparedStatement.setInt(1, 5);
+          assertEquals(1, preparedStatement.executeUpdate());
+          queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+          // Calling getMetadata() should no longer require an additional server call because we
+          // have
+          // the
+          // metadata form the executeUpdate
+          queryId2 =
+              preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
+          // Assert the query IDs are the same. This will be the case if there is no additional
+          // describe
+          // call for getMetadata().
+          assertEquals(queryId1, queryId2);
 
-    PreparedStatement preparedStatement =
-        connection.prepareStatement("insert into test_uuid_with_bind values (?)");
-    preparedStatement.setInt(1, 5);
-    assertEquals(1, preparedStatement.executeUpdate());
-    String queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
-    // Calling getMetadata() should no longer require an additional server call because we have the
-    // metadata form the executeUpdate
-    String queryId2 =
-        preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
-    // Assert the query IDs are the same. This will be the case if there is no additional describe
-    // call for getMetadata().
-    assertEquals(queryId1, queryId2);
+          preparedStatement.addBatch();
+        }
+        try (PreparedStatement preparedStatement =
+            connection.prepareStatement("select * from test_uuid_with_bind where c1 = ?")) {
+          assertFalse(
+              preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          preparedStatement.setInt(1, 5);
 
-    preparedStatement.addBatch();
-
-    preparedStatement =
-        connection.prepareStatement("select * from test_uuid_with_bind where c1 = ?");
-    assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-    preparedStatement.setInt(1, 5);
-
-    ResultSet resultSet = preparedStatement.executeQuery();
-    assertThat(resultSet.next(), is(true));
-    queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
-    queryId2 =
-        preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
-    String queryId3 = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-    // Assert all 3 query IDs are the same because only 1 server call was executed
-    assertEquals(queryId1, queryId2);
-    assertEquals(queryId1, queryId3);
-
-    resultSet.close();
-    preparedStatement.close();
-
-    statement.execute("drop table if exists test_uuid_with_bind");
-    connection.close();
+          try (ResultSet resultSet = preparedStatement.executeQuery()) {
+            assertThat(resultSet.next(), is(true));
+            queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+            queryId2 =
+                preparedStatement
+                    .getMetaData()
+                    .unwrap(SnowflakeResultSetMetaData.class)
+                    .getQueryID();
+            String queryId3 = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+            // Assert all 3 query IDs are the same because only 1 server call was executed
+            assertEquals(queryId1, queryId2);
+            assertEquals(queryId1, queryId3);
+          }
+        }
+      } finally {
+        statement.execute("drop table if exists test_uuid_with_bind");
+      }
+    }
   }
 
   @Test
   public void testRemoveExtraDescribeCallsSanityCheck() throws SQLException {
-    Connection connection = init();
-    PreparedStatement preparedStatement =
-        connection.prepareStatement(
-            "create or replace table test_uuid_with_bind(c1 number, c2 string)");
-    preparedStatement.execute();
-    String queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
-    preparedStatement =
-        connection.prepareStatement("insert into test_uuid_with_bind values (?, ?)");
-    assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-    preparedStatement.setInt(1, 5);
-    preparedStatement.setString(2, "hello");
-    preparedStatement.addBatch();
-    preparedStatement.setInt(1, 7);
-    preparedStatement.setString(2, "hello1");
-    preparedStatement.addBatch();
-    String queryId2 =
-        preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
-    // These query IDs should not match because they are from 2 different prepared statements
-    assertNotEquals(queryId1, queryId2);
-    preparedStatement.executeBatch();
-    String queryId3 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
-    // Another execute call was created, so prepared statement has new query ID
-    assertNotEquals(queryId2, queryId3);
-    // Calling getMetadata() should no longer require an additional server call because we have the
-    // metadata form the executeUpdate
-    String queryId4 =
-        preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
-    // Assert the query IDs for the 2 identical getMetadata() calls are the same. They should match
-    // since metadata no longer gets overwritten after successive query calls.
-    assertEquals(queryId2, queryId4);
-
-    connection.createStatement().execute("drop table if exists test_uuid_with_bind");
-    preparedStatement.close();
-    connection.close();
+    String queryId1;
+    try (Connection connection = init()) {
+      try (PreparedStatement preparedStatement =
+          connection.prepareStatement(
+              "create or replace table test_uuid_with_bind(c1 number, c2 string)")) {
+        preparedStatement.execute();
+        queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+      }
+      try (PreparedStatement preparedStatement =
+          connection.prepareStatement("insert into test_uuid_with_bind values (?, ?)")) {
+        assertFalse(
+            preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        preparedStatement.setInt(1, 5);
+        preparedStatement.setString(2, "hello");
+        preparedStatement.addBatch();
+        preparedStatement.setInt(1, 7);
+        preparedStatement.setString(2, "hello1");
+        preparedStatement.addBatch();
+        String queryId2 =
+            preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
+        // These query IDs should not match because they are from 2 different prepared statements
+        assertNotEquals(queryId1, queryId2);
+        preparedStatement.executeBatch();
+        String queryId3 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
+        // Another execute call was created, so prepared statement has new query ID
+        assertNotEquals(queryId2, queryId3);
+        // Calling getMetadata() should no longer require an additional server call because we
+        // have
+        // the
+        // metadata form the executeUpdate
+        String queryId4 =
+            preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
+        // Assert the query IDs for the 2 identical getMetadata() calls are the same. They should
+        // match
+        // since metadata no longer gets overwritten after successive query calls.
+        assertEquals(queryId2, queryId4);
+        connection.createStatement().execute("drop table if exists test_uuid_with_bind");
+      }
+    }
   }
 
   @Test
   public void testAlreadyDescribedMultipleResults() throws SQLException {
-    Connection connection = init();
-    PreparedStatement prepStatement = connection.prepareStatement(insertSQL);
-    bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
-    prepStatement.execute();
-    // The statement above has already been described since it has been executed
-    assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-    prepStatement = connection.prepareStatement(selectSQL);
-    // Assert the statement, once it has been re-created, has already described set to false
-    assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-    prepStatement.setInt(1, 1);
-    ResultSet rs = prepStatement.executeQuery();
-    assertTrue(rs.next());
-    assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-    prepStatement = connection.prepareStatement(selectAllSQL);
-    // Assert the statement, once it has been re-created, has already described set to false
-    assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-    rs = prepStatement.executeQuery();
-    assertTrue(rs.next());
-    assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+    try (Connection connection = init()) {
+      try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
+        bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
+        prepStatement.execute();
+        // The statement above has already been described since it has been executed
+        assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+      }
+      try (PreparedStatement prepStatement = connection.prepareStatement(selectSQL)) {
+        // Assert the statement, once it has been re-created, has already described set to false
+        assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        prepStatement.setInt(1, 1);
+        try (ResultSet rs = prepStatement.executeQuery()) {
+          assertTrue(rs.next());
+          assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        }
+      }
+      try (PreparedStatement prepStatement = connection.prepareStatement(selectAllSQL)) {
+        // Assert the statement, once it has been re-created, has already described set to false
+        assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        try (ResultSet rs = prepStatement.executeQuery()) {
+          assertTrue(rs.next());
+          assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        }
+      }
+    }
   }
 
   /**
@@ -333,40 +344,48 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
    */
   @Test
   public void testConsecutiveBatchInsertError() throws SQLException {
-    try (Connection connection = init()) {
-      connection
-          .createStatement()
-          .execute("create or replace table testStageArrayBind(c1 integer, c2 string)");
-      PreparedStatement prepStatement =
-          connection.prepareStatement("insert into testStageArrayBind values (?, ?)");
-      // Assert to begin with that before the describe call, array binding is not supported
-      assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-      assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
-      // Insert enough rows to hit the default binding array threshold
-      for (int i = 0; i < 35000; i++) {
-        prepStatement.setInt(1, i);
-        prepStatement.setString(2, "test" + i);
-        prepStatement.addBatch();
+    try (Connection connection = init();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute("create or replace table testStageArrayBind(c1 integer, c2 string)");
+        try (PreparedStatement prepStatement =
+            connection.prepareStatement("insert into testStageArrayBind values (?, ?)")) {
+          // Assert to begin with that before the describe call, array binding is not supported
+          assertFalse(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          assertFalse(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+          // Insert enough rows to hit the default binding array threshold
+          for (int i = 0; i < 35000; i++) {
+            prepStatement.setInt(1, i);
+            prepStatement.setString(2, "test" + i);
+            prepStatement.addBatch();
+          }
+          prepStatement.executeBatch();
+          // After executing the first batch, verify that array bind support is still true
+          assertTrue(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+          for (int i = 0; i < 35000; i++) {
+            prepStatement.setInt(1, i);
+            prepStatement.setString(2, "test" + i);
+            prepStatement.addBatch();
+          }
+          prepStatement.executeBatch();
+          // After executing the second batch, verify that array bind support is still true
+          assertTrue(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+        }
+      } finally {
+        statement.execute("drop table if exists testStageArrayBind");
       }
-      prepStatement.executeBatch();
-      // After executing the first batch, verify that array bind support is still true
-      assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
-      for (int i = 0; i < 35000; i++) {
-        prepStatement.setInt(1, i);
-        prepStatement.setString(2, "test" + i);
-        prepStatement.addBatch();
-      }
-      prepStatement.executeBatch();
-      // After executing the second batch, verify that array bind support is still true
-      assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
     }
   }
 
   @Test
   public void testToString() throws SQLException {
-    try (Connection connection = init()) {
-      PreparedStatement prepStatement =
-          connection.prepareStatement("select current_version() --testing toString()");
+    try (Connection connection = init();
+        PreparedStatement prepStatement =
+            connection.prepareStatement("select current_version() --testing toString()")) {
 
       // Query ID is going to be null since we didn't execute the statement yet
       assertEquals(

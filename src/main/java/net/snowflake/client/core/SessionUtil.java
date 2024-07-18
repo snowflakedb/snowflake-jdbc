@@ -37,6 +37,7 @@ import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
@@ -71,12 +72,11 @@ public class SessionUtil {
   public static final String SF_QUERY_SESSION_DELETE = "delete";
 
   // Headers
-  public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
+  @Deprecated
+  public static final String SF_HEADER_AUTHORIZATION = SFSession.SF_HEADER_AUTHORIZATION;
 
   // Authentication type
   private static final String SF_HEADER_BASIC_AUTHTYPE = "Basic";
-  private static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
-  private static final String SF_HEADER_TOKEN_TAG = "Token";
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   private static final String CLIENT_REQUEST_MFA_TOKEN = "CLIENT_REQUEST_MFA_TOKEN";
@@ -343,6 +343,8 @@ public class SessionUtil {
       Map<SFSessionProperty, Object> connectionPropertiesMap,
       String tracingLevel)
       throws SFException, SnowflakeSQLException {
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
     // build URL for login request
     URIBuilder uriBuilder;
     URI loginURI;
@@ -368,6 +370,18 @@ public class SessionUtil {
     int httpClientSocketTimeout = loginInput.getSocketTimeoutInMillis();
     final ClientAuthnDTO.AuthenticatorType authenticatorType = getAuthenticator(loginInput);
     Map<String, Object> commonParams;
+
+    String oktaUsername = loginInput.getOKTAUserName();
+    logger.debug(
+        "Authenticating user: {}, host: {} with authentication method: {}."
+            + " Login timeout: {} s, auth timeout: {} s, OCSP mode: {}{}",
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl(),
+        authenticatorType,
+        loginInput.getLoginTimeout(),
+        loginInput.getAuthTimeout(),
+        loginInput.getOCSPMode(),
+        Strings.isNullOrEmpty(oktaUsername) ? "" : ", okta username: " + oktaUsername);
 
     try {
 
@@ -629,7 +643,7 @@ public class SessionUtil {
        * HttpClient should take authorization header from char[] instead of
        * String.
        */
-      postRequest.setHeader(SF_HEADER_AUTHORIZATION, SF_HEADER_BASIC_AUTHTYPE);
+      postRequest.setHeader(SFSession.SF_HEADER_AUTHORIZATION, SF_HEADER_BASIC_AUTHTYPE);
 
       setServiceNameHeader(loginInput, postRequest);
 
@@ -638,6 +652,8 @@ public class SessionUtil {
       int leftRetryTimeout = loginInput.getLoginTimeout();
       int leftsocketTimeout = loginInput.getSocketTimeoutInMillis();
       int retryCount = 0;
+
+      Exception lastRestException = null;
 
       while (true) {
         try {
@@ -650,6 +666,7 @@ public class SessionUtil {
                   retryCount,
                   loginInput.getHttpClientSettingsKey());
         } catch (SnowflakeSQLException ex) {
+          lastRestException = ex;
           if (ex.getErrorCode() == ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT.getMessageCode()) {
             if (authenticatorType == ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT
                 || authenticatorType == ClientAuthnDTO.AuthenticatorType.OKTA) {
@@ -714,8 +731,34 @@ public class SessionUtil {
           } else {
             throw ex;
           }
+        } catch (Exception ex) {
+          lastRestException = ex;
         }
         break;
+      }
+
+      if (theString == null) {
+        if (lastRestException != null) {
+          logger.error(
+              "Failed to open new session for user: {}, host: {}. Error: {}",
+              loginInput.getUserName(),
+              loginInput.getHostFromServerUrl(),
+              lastRestException);
+          throw lastRestException;
+        } else {
+          SnowflakeSQLException exception =
+              new SnowflakeSQLException(
+                  NO_QUERY_ID,
+                  "empty authentication response",
+                  SqlState.CONNECTION_EXCEPTION,
+                  ErrorCode.CONNECTION_ERROR.getMessageCode());
+          logger.error(
+              "Failed to open new session for user: {}, host: {}. Error: {}",
+              loginInput.getUserName(),
+              loginInput.getHostFromServerUrl(),
+              exception);
+          throw exception;
+        }
       }
 
       // general method, same as with data binding
@@ -723,7 +766,7 @@ public class SessionUtil {
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", theString);
+        logger.debug("Response: {}", theString);
 
         int errorCode = jsonNode.path("code").asInt();
         if (errorCode == Constants.ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE) {
@@ -741,9 +784,16 @@ public class SessionUtil {
           deleteMfaTokenCache(loginInput.getHostFromServerUrl(), loginInput.getUserName());
         }
 
+        String errorMessage = jsonNode.path("message").asText();
+
+        logger.error(
+            "Failed to open new session for user: {}, host: {}. Error: {}",
+            loginInput.getUserName(),
+            loginInput.getHostFromServerUrl(),
+            errorMessage);
         throw new SnowflakeSQLException(
             NO_QUERY_ID,
-            jsonNode.path("message").asText(),
+            errorMessage,
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
             errorCode);
       }
@@ -769,7 +819,7 @@ public class SessionUtil {
       commonParams = SessionUtil.getCommonParams(jsonNode.path("data").path("parameters"));
 
       if (serverVersion != null) {
-        logger.debug("server version = {}", serverVersion);
+        logger.debug("Server version: {}", serverVersion);
 
         if (serverVersion.indexOf(" ") > 0) {
           databaseVersion = serverVersion.substring(0, serverVersion.indexOf(" "));
@@ -777,7 +827,7 @@ public class SessionUtil {
           databaseVersion = serverVersion;
         }
       } else {
-        logger.debug("server version is null", false);
+        logger.debug("Server version is null", false);
       }
 
       if (databaseVersion != null) {
@@ -800,13 +850,13 @@ public class SessionUtil {
       if (!jsonNode.path("data").path("newClientForUpgrade").isNull()) {
         newClientForUpgrade = jsonNode.path("data").path("newClientForUpgrade").asText();
 
-        logger.debug("new client: {}", newClientForUpgrade);
+        logger.debug("New client: {}", newClientForUpgrade);
       }
 
       // get health check interval and adjust network timeouts if different
       int healthCheckIntervalFromGS = jsonNode.path("data").path("healthCheckInterval").asInt();
 
-      logger.debug("health check interval = {}", healthCheckIntervalFromGS);
+      logger.debug("Health check interval: {}", healthCheckIntervalFromGS);
 
       if (healthCheckIntervalFromGS > 0 && healthCheckIntervalFromGS != healthCheckInterval) {
         // add health check interval to socket timeout
@@ -821,9 +871,9 @@ public class SessionUtil {
 
         HttpUtil.setRequestConfig(requestConfig);
 
-        logger.debug("adjusted connection timeout to = {}", loginInput.getConnectionTimeout());
+        logger.debug("Adjusted connection timeout to: {}", loginInput.getConnectionTimeout());
 
-        logger.debug("adjusted socket timeout to = {}", httpClientSocketTimeout);
+        logger.debug("Adjusted socket timeout to: {}", httpClientSocketTimeout);
       }
     } catch (SnowflakeSQLException ex) {
       throw ex; // must catch here to avoid Throwable to get the exception
@@ -873,6 +923,13 @@ public class SessionUtil {
       CredentialManager.getInstance().writeMfaToken(loginInput, ret);
     }
 
+    stopwatch.stop();
+    logger.debug(
+        "User: {}, host: {} with authentication method: {} authenticated successfully in {} ms",
+        loginInput.getUserName(),
+        loginInput.getHostFromServerUrl(),
+        authenticatorType,
+        stopwatch.elapsedMillis());
     return ret;
   }
 
@@ -974,13 +1031,18 @@ public class SessionUtil {
       postRequest.addHeader("accept", "application/json");
 
       postRequest.setHeader(
-          SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG + "=\"" + headerToken + "\"");
+          SFSession.SF_HEADER_AUTHORIZATION,
+          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
+              + " "
+              + SFSession.SF_HEADER_TOKEN_TAG
+              + "=\""
+              + headerToken
+              + "\"");
 
       setServiceNameHeader(loginInput, postRequest);
 
       logger.debug(
-          "request type: {}, old session token: {}, " + "master token: {}",
+          "Request type: {}, old session token: {}, " + "master token: {}",
           requestType.value,
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
           (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
@@ -999,7 +1061,7 @@ public class SessionUtil {
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", theString);
+        logger.debug("Response: {}", theString);
 
         String errorCode = jsonNode.path("code").asText();
         String message = jsonNode.path("message").asText();
@@ -1037,7 +1099,7 @@ public class SessionUtil {
    * @throws SFException if failed to close session
    */
   static void closeSession(SFLoginInput loginInput) throws SFException, SnowflakeSQLException {
-    logger.debug(" public void close() throws SFException");
+    logger.trace("void close() throws SFException");
 
     // assert the following inputs are valid
     AssertUtil.assertTrue(
@@ -1068,10 +1130,10 @@ public class SessionUtil {
           postRequest, loginInput.getAdditionalHttpHeadersForSnowsight());
 
       postRequest.setHeader(
-          SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE
+          SFSession.SF_HEADER_AUTHORIZATION,
+          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
               + " "
-              + SF_HEADER_TOKEN_TAG
+              + SFSession.SF_HEADER_TOKEN_TAG
               + "=\""
               + loginInput.getSessionToken()
               + "\"");
@@ -1089,15 +1151,15 @@ public class SessionUtil {
 
       JsonNode rootNode;
 
-      logger.debug("connection close response: {}", theString);
+      logger.debug("Connection close response: {}", theString);
 
       rootNode = mapper.readTree(theString);
 
       SnowflakeUtil.checkErrorAndThrowException(rootNode);
     } catch (URISyntaxException ex) {
-      throw new RuntimeException("unexpected URI syntax exception", ex);
+      throw new RuntimeException("Unexpected URI syntax exception", ex);
     } catch (IOException ex) {
-      logger.error("unexpected IO exception for: " + postRequest, ex);
+      logger.error("Unexpected IO exception for: " + postRequest, ex);
     } catch (SnowflakeSQLException ex) {
       // ignore exceptions for session expiration exceptions and for
       // sessions that no longer exist
@@ -1154,6 +1216,16 @@ public class SessionUtil {
               loginInput.getHttpClientSettingsKey());
 
       // step 5
+      validateSAML(responseHtml, loginInput);
+    } catch (IOException | URISyntaxException ex) {
+      handleFederatedFlowError(loginInput, ex);
+    }
+    return responseHtml;
+  }
+
+  private static void validateSAML(String responseHtml, SFLoginInput loginInput)
+      throws SnowflakeSQLException, MalformedURLException {
+    if (!loginInput.getDisableSamlURLCheck()) {
       String postBackUrl = getPostBackUrlFromHTML(responseHtml);
       if (!isPrefixEqual(postBackUrl, loginInput.getServerUrl())) {
         URL idpDestinationUrl = new URL(postBackUrl);
@@ -1167,18 +1239,13 @@ public class SessionUtil {
             clientDestinationHostName,
             idpDestinationHostName);
 
-        // Session is in process of getting created, so exception constructor takes in null session
-        // value
+        // Session is in process of getting created, so exception constructor takes in null
         throw new SnowflakeSQLLoggedException(
             null,
             ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(),
-            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION
-            /* session = */ );
+            SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION);
       }
-    } catch (IOException | URISyntaxException ex) {
-      handleFederatedFlowError(loginInput, ex);
     }
-    return responseHtml;
   }
 
   /**
@@ -1229,7 +1296,7 @@ public class SessionUtil {
               null,
               loginInput.getHttpClientSettingsKey());
 
-      logger.debug("user is authenticated against {}.", loginInput.getAuthenticator());
+      logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
 
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
@@ -1268,7 +1335,7 @@ public class SessionUtil {
             null,
             ErrorCode.IDP_CONNECTION_ERROR.getMessageCode(),
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION
-            /* session = */ );
+            /* session= */ );
       }
     } catch (MalformedURLException ex) {
       handleFederatedFlowError(loginInput, ex);
@@ -1317,12 +1384,12 @@ public class SessionUtil {
               loginInput.getSocketTimeoutInMillis(),
               0,
               loginInput.getHttpClientSettingsKey());
-      logger.debug("authenticator-request response: {}", gsResponse);
+      logger.debug("Authenticator-request response: {}", gsResponse);
       JsonNode jsonNode = mapper.readTree(gsResponse);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", gsResponse);
+        logger.debug("Response: {}", gsResponse);
         int errorCode = jsonNode.path("code").asInt();
 
         throw new SnowflakeSQLException(
@@ -1460,7 +1527,7 @@ public class SessionUtil {
 
       // What type of value is it and what's the value?
       if (!child.hasNonNull("value")) {
-        logger.debug("No value found for Common Parameter {}", child.path("name").asText());
+        logger.debug("No value found for Common Parameter: {}", child.path("name").asText());
         continue;
       }
 
@@ -1495,7 +1562,7 @@ public class SessionUtil {
       session.setCommonParameters(parameters);
     }
     for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-      logger.debug("processing parameter {}", entry.getKey());
+      logger.debug("Processing parameter {}", entry.getKey());
 
       if ("CLIENT_DISABLE_INCIDENTS".equalsIgnoreCase(entry.getKey())) {
         SnowflakeDriver.setDisableIncidents((Boolean) entry.getValue());
@@ -1592,11 +1659,9 @@ public class SessionUtil {
           session.setClientPrefetchThreads((int) entry.getValue());
         }
       } else if (CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED.equalsIgnoreCase(entry.getKey())) {
-        if ((boolean) entry.getValue()) {
-          TelemetryService.enable();
-        } else {
-          TelemetryService.disable();
-        }
+        // we ignore the parameter CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED
+        // OOB telemetry is always disabled
+        TelemetryService.disableOOBTelemetry();
       } else if (CLIENT_VALIDATE_DEFAULT_PARAMETERS.equalsIgnoreCase(entry.getKey())) {
         if (session != null) {
           session.setValidateDefaultParameters(SFLoginInput.getBooleanValue(entry.getValue()));
@@ -1641,7 +1706,7 @@ public class SessionUtil {
    * @param serverUrl The Snowflake URL includes protocol such as "https://"
    */
   public static void resetOCSPUrlIfNecessary(String serverUrl) throws IOException {
-    if (serverUrl.indexOf(".privatelink.snowflakecomputing.com") > 0) {
+    if (PrivateLinkDetector.isPrivateLink(serverUrl)) {
       // Privatelink uses special OCSP Cache server
       URL url = new URL(serverUrl);
       String host = url.getHost();

@@ -6,7 +6,9 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.base.Strings;
 import java.io.BufferedReader;
@@ -15,6 +17,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
@@ -33,8 +36,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
+import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSessionProperty;
@@ -55,6 +60,7 @@ import org.apache.http.HttpResponse;
 public class SnowflakeUtil {
 
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeUtil.class);
+  private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   /** Additional data types not covered by standard JDBC */
   public static final int EXTRA_TYPES_TIMESTAMP_LTZ = 50000;
@@ -85,6 +91,10 @@ public class SnowflakeUtil {
   public static final String DATE_STR = "date";
   public static final String BYTE_STR = "byte";
   public static final String BYTES_STR = "byte array";
+
+  public static String mapJson(Object ob) throws JsonProcessingException {
+    return OBJECT_MAPPER.writeValueAsString(ob);
+  }
 
   public static void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
       throws SnowflakeSQLException {
@@ -171,6 +181,15 @@ public class SnowflakeUtil {
     int precision = colNode.path("precision").asInt();
     int scale = colNode.path("scale").asInt();
     int length = colNode.path("length").asInt();
+    int dimension =
+        colNode
+            .path("dimension")
+            .asInt(); // vector dimension when checking columns via connection.getMetadata
+    int vectorDimension =
+        colNode
+            .path("vectorDimension")
+            .asInt(); // dimension when checking columns via resultSet.getMetadata
+    int finalVectorDimension = dimension > 0 ? dimension : vectorDimension;
     boolean fixed = colNode.path("fixed").asBoolean();
     JsonNode udtOutputType = colNode.path("outputType");
     JsonNode extColTypeNameNode = colNode.path("extTypeName");
@@ -213,7 +232,8 @@ public class SnowflakeUtil {
         colSrcDatabase,
         colSrcSchema,
         colSrcTable,
-        isAutoIncrement);
+        isAutoIncrement,
+        finalVectorDimension);
   }
 
   static ColumnTypeInfo getSnowflakeType(
@@ -303,8 +323,9 @@ public class SnowflakeUtil {
         break;
 
       case ARRAY:
+        int columnType = isStructuredType ? Types.ARRAY : Types.VARCHAR;
         columnTypeInfo =
-            new ColumnTypeInfo(Types.ARRAY, defaultIfNull(extColTypeName, "ARRAY"), baseType);
+            new ColumnTypeInfo(columnType, defaultIfNull(extColTypeName, "ARRAY"), baseType);
         break;
 
       case MAP:
@@ -374,7 +395,13 @@ public class SnowflakeUtil {
       throws SnowflakeSQLLoggedException {
     List<FieldMetadata> fields = new ArrayList<>();
     for (JsonNode node : fieldsJson) {
-      String colName = node.path("name").asText();
+      String colName;
+      if (!node.path("fieldType").isEmpty()) {
+        colName = node.path("fieldName").asText();
+        node = node.path("fieldType");
+      } else {
+        colName = node.path("name").asText();
+      }
       int scale = node.path("scale").asInt();
       int precision = node.path("precision").asInt();
       String internalColTypeName = node.path("type").asText();
@@ -437,7 +464,8 @@ public class SnowflakeUtil {
     return SnowflakeType.javaTypeToSFType(javaType, session).name();
   }
 
-  static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
+  @SnowflakeJdbcInternalApi
+  public static SnowflakeType javaTypeToSFType(int javaType, SFBaseSession session)
       throws SnowflakeSQLException {
     return SnowflakeType.javaTypeToSFType(javaType, session);
   }
@@ -548,7 +576,9 @@ public class SnowflakeUtil {
               "", // database
               "", // schema
               "",
-              false)); // isAutoincrement
+              false, // isAutoincrement
+              0 // dimension
+              ));
     }
 
     return rowType;
@@ -696,6 +726,18 @@ public class SnowflakeUtil {
       field.setAccessible(true);
       Map<String, String> writableEnv = (Map<String, String>) field.get(env);
       writableEnv.put(key, value);
+
+      // To an environment variable is set on Windows, it uses a different map to store the values
+      // when the system.getenv(VAR_NAME) is used its required to update in this additional place.
+      if (Constants.getOS() == Constants.OS.WINDOWS) {
+        Class<?> pe = Class.forName("java.lang.ProcessEnvironment");
+        Method getenv = pe.getDeclaredMethod("getenv", String.class);
+        getenv.setAccessible(true);
+        Field props = pe.getDeclaredField("theCaseInsensitiveEnvironment");
+        props.setAccessible(true);
+        Map<String, String> writableEnvForGet = (Map<String, String>) props.get(null);
+        writableEnvForGet.put(key, value);
+      }
     } catch (Exception e) {
       System.out.println("Failed to set value");
       logger.error(

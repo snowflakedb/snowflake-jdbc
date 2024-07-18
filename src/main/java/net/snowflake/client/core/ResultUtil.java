@@ -29,7 +29,7 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.util.TimeUtil;
 
 public class ResultUtil {
-  static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ResultUtil.class);
 
   public static final int MILLIS_IN_ONE_DAY = 86400000;
   public static final int DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS =
@@ -184,7 +184,7 @@ public class ResultUtil {
       TimeZone sessionTZ,
       SFBaseSession session)
       throws SFException {
-    logger.debug("public Timestamp getTimestamp(int columnIndex)", false);
+    logger.trace("Timestamp getTimestamp(int columnIndex)", false);
 
     try {
       TimeUtil.TimestampType tsType = null;
@@ -278,7 +278,7 @@ public class ResultUtil {
       throws SFException {
     // Derive the timestamp formatter to use
     SnowflakeDateTimeFormat formatter;
-    if (columnType == Types.TIMESTAMP) {
+    if (columnType == Types.TIMESTAMP || columnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ) {
       formatter = timestampNTZFormatter;
     } else if (columnType == SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ) {
       formatter = timestampLTZFormatter;

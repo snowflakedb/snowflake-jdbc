@@ -37,6 +37,7 @@ import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -278,7 +279,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           if (currentChunkIterator.next()) {
 
             logger.debug(
-                "Moving to chunk index {}, row count={}", nextChunkIndex, nextChunk.getRowCount());
+                "Moving to chunk index: {}, row count: {}",
+                nextChunkIndex,
+                nextChunk.getRowCount());
 
             nextChunkIndex++;
             return true;
@@ -378,7 +381,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       SFBaseSession session,
       List<FieldMetadata> fields) {
     if (parentObjectClass.equals(JsonSqlInput.class)) {
-      return createJsonSqlInputForColumn(input, columnIndex, session, fields);
+      return createJsonSqlInputForColumn(input, session, fields);
     } else {
       return new ArrowSqlInput((Map<String, Object>) input, session, converters, fields);
     }
@@ -435,7 +438,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       }
       return true;
     } else {
-      logger.debug("end of result", false);
+      logger.debug("End of result", false);
 
       /*
        * Here we check if the result has been truncated and throw exception if
@@ -557,6 +560,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public Object getObject(int columnIndex) throws SFException {
+    int type = resultSetMetaData.getColumnType(columnIndex);
+    if (type == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
+      return getString(columnIndex);
+    }
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
@@ -564,7 +571,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(sessionTimeZone);
     Object obj = converter.toObject(index);
-    int type = resultSetMetaData.getColumnType(columnIndex);
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
     if (type == Types.STRUCT && isStructuredType) {
       if (converter instanceof VarCharConverter) {
@@ -581,8 +587,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       if (obj == null) {
         return null;
       }
-      JsonNode jsonNode = OBJECT_MAPPER.readTree((String) obj);
+      String text = (String) obj;
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(text);
       return new JsonSqlInput(
+          text,
           jsonNode,
           session,
           converters,
@@ -595,6 +603,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   private Object createArrowSqlInput(int columnIndex, Map<String, Object> input)
       throws SFException {
+    if (input == null) {
+      return null;
+    }
     return new ArrowSqlInput(
         input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
   }
@@ -800,7 +811,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         rootAllocator.close();
       }
     } catch (InterruptedException ie) {
-      logger.debug("interrupted during closing root allocator", false);
+      logger.debug("Interrupted during closing root allocator", false);
     } catch (Exception e) {
       logger.debug("Exception happened when closing rootAllocator: ", e.getLocalizedMessage());
     }
