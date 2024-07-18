@@ -72,21 +72,20 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   }
 
   ResultSet numberCrossTesting() throws SQLException {
-    try (Statement statement = connection.createStatement()) {
-      statement.execute(
-          "create or replace table test_types(c1 number, c2 integer, c3 float, c4 boolean,"
-              + "c5 char, c6 varchar, c7 date, c8 datetime, c9 time, c10 timestamp_ltz, "
-              + "c11 timestamp_tz, c12 binary)");
-      statement.execute(
-          "insert into test_types values (null, null, null, null, null, null, null, null, null, null, "
-              + "null, null)");
-      statement.execute(
-          "insert into test_types values(2, 5, 3.5, true,"
-              + "'1','1', '1994-12-27', "
-              + "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05', '1994-12-27 05:05:05', '48454C4C4F')");
-      statement.execute("insert into test_types (c5, c6) values('h', 'hello')");
-      return statement.executeQuery("select * from test_types");
-    }
+    Statement statement = connection.createStatement();
+    statement.execute(
+        "create or replace table test_types(c1 number, c2 integer, c3 float, c4 boolean,"
+            + "c5 char, c6 varchar, c7 date, c8 datetime, c9 time, c10 timestamp_ltz, "
+            + "c11 timestamp_tz, c12 binary)");
+    statement.execute(
+        "insert into test_types values (null, null, null, null, null, null, null, null, null, null, "
+            + "null, null)");
+    statement.execute(
+        "insert into test_types values(2, 5, 3.5, true,"
+            + "'1','1', '1994-12-27', "
+            + "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05', '1994-12-27 05:05:05', '48454C4C4F')");
+    statement.execute("insert into test_types (c5, c6) values('h', 'hello')");
+    return statement.executeQuery("select * from test_types");
   }
 
   ResultSet0IT(String queryResultFormat) {
