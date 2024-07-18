@@ -2265,7 +2265,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     ResultSetMetaData resultSetMetaData = null;
     // use v1 query request API and inject 200ms socket timeout for first
     // http request to simulate network failure
-    try (Connection connection = getConnection(); // inject socket timeout = 200m
+    try (Connection connection = getConnection(200); // inject socket timeout = 200m
         Statement statement = connection.createStatement()) {
 
       // execute query

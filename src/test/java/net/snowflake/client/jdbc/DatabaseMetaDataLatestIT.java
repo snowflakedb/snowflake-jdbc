@@ -376,19 +376,14 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testDoubleQuotedDatabaseInGetProcedures() throws SQLException {
-    System.out.println(System.getProperty("http.useProxy"));
-    System.out.println(System.getProperty("http.proxyProtocol"));
-    System.out.println(System.getProperty("http.proxyHost"));
-    System.out.println(System.getProperty("http.proxyPort"));
-    System.out.println(System.getProperty("https.proxyHost"));
-    System.out.println(System.getProperty("https.proxyPort"));
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       // Create a database and schema with double quotes inside the database name
       createDoubleQuotedSchemaAndCatalog(statement);
       // Create a procedure
-      //      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
-      statement.execute("SELECT 1;");
+      statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
+      statement.execute(
+          "USE DATABASE \"dbwith\"\"quotes\"; USE SCHEMA \"schemawith\"\"quotes\"; " + TEST_PROC);
       DatabaseMetaData metaData = con.getMetaData();
       try (ResultSet rs = metaData.getProcedures("dbwith\"quotes", null, "TESTPROC")) {
         assertEquals(1, getSizeOfResultSet(rs));

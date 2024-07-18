@@ -9,11 +9,9 @@ import static org.junit.Assume.assumeFalse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.nio.file.Paths;
@@ -31,7 +29,7 @@ import java.util.logging.Logger;
 import net.snowflake.client.RunningNotOnJava21;
 import net.snowflake.client.RunningNotOnJava8;
 import net.snowflake.client.category.TestCategoryOthers;
-import net.snowflake.client.core.Constants;
+import net.snowflake.client.core.HttpUtil;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -56,7 +54,7 @@ public class ProxyLatestIT {
   private static final String WIREMOCK_FILE_NAME = "wiremock-standalone-3.8.0.jar";
   public static final String WIREMOCK_STANDALONE_URL =
       "https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
-  private static final String WIREMOCK_HOST = "localhost";
+  private static final String WIREMOCK_HOST = "127.0.0.1";
   private static final String TRUST_STORE_PROPERTY = "javax.net.ssl.trustStore";
   private static int httpProxyPort;
   private static int httpsProxyPort;
@@ -72,7 +70,7 @@ public class ProxyLatestIT {
   }
 
   @Before
-  public void setUp() throws IOException, InterruptedException {
+  public void setUp() throws IOException {
     System.setProperty(
         TRUST_STORE_PROPERTY, getResourceURL("wiremock" + File.separator + "ca-cert.jks"));
     startWiremockStandAlone();
@@ -82,12 +80,12 @@ public class ProxyLatestIT {
   public void tearDown() {
     stopWiremockStandAlone();
     unsetJvmProperties();
+    HttpUtil.httpClient.clear();
   }
 
   @AfterClass
   public static void tearDownClass() {
     restoreTrustStorePathProperty();
-    unsetJvmProperties();
   }
 
   @Test
@@ -156,95 +154,47 @@ public class ProxyLatestIT {
     verifyProxyWasUsed();
   }
 
-  private void startWiremockStandAlone() throws IOException, InterruptedException {
-    if (Constants.getOS() == Constants.OS.MAC) {
-      httpProxyPort = findFreePort();
-      httpsProxyPort = findFreePort();
-      System.out.println(httpProxyPort);
-      System.out.println(httpsProxyPort);
-      wiremockStandalone =
-          new ProcessBuilder(
-                  "java",
-                  "-jar",
-                  getWiremockStandAlonePath(),
-                  "--root-dir",
-                  System.getProperty("user.dir")
-                      + File.separator
-                      + WIREMOCK_HOME_DIR
-                      + File.separator,
-                  "--enable-browser-proxying", // work as forward proxy
-                  "--proxy-pass-through",
-                  "false", // pass through only matched requests
-                  "--port",
-                  String.valueOf(httpProxyPort),
-                  "--https-port",
-                  String.valueOf(httpsProxyPort),
-                  "--https-keystore",
-                  getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
-                  "--ca-keystore",
-                  getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
-              .inheritIO()
-              .redirectErrorStream(true)
-              .start();
-      Thread.sleep(5000);
-      BufferedReader stdIn =
-          new BufferedReader(new InputStreamReader(wiremockStandalone.getInputStream()));
-      String s;
-      while ((s = stdIn.readLine()) != null) {
-        System.out.println(s);
-      }
-      BufferedReader stdError =
-          new BufferedReader(new InputStreamReader(wiremockStandalone.getErrorStream()));
-      String s2;
-      while ((s2 = stdError.readLine()) != null) {
-        System.out.println(s2);
-      }
-      System.out.println("AAAAA");
-    } else {
-      // retrying in case of fail in port bindings
-      await()
-          .alias("wait for wiremock responding")
-          .atMost(Duration.ofSeconds(20))
-          .until(
-              () -> {
-                try {
-                  httpProxyPort = findFreePort();
-                  httpsProxyPort = findFreePort();
-                  System.out.println(httpProxyPort);
-                  System.out.println(httpsProxyPort);
-                  wiremockStandalone =
-                      new ProcessBuilder(
-                              "java",
-                              "-jar",
-                              getWiremockStandAlonePath(),
-                              "--root-dir",
-                              System.getProperty("user.dir")
-                                  + File.separator
-                                  + WIREMOCK_HOME_DIR
-                                  + File.separator,
-                              "--enable-browser-proxying", // work as forward proxy
-                              "--proxy-pass-through",
-                              "false", // pass through only matched requests
-                              "--port",
-                              String.valueOf(httpProxyPort),
-                              "--https-port",
-                              String.valueOf(httpsProxyPort),
-                              "--https-keystore",
-                              getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
-                              "--ca-keystore",
-                              getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
-                          .inheritIO()
-                          .redirectErrorStream(true)
-                          .start();
-                  waitForWiremock();
-                  return true;
-                } catch (Exception e) {
-                  logger.info(
-                      "Failed to start wiremock, retrying: " + Arrays.toString(e.getStackTrace()));
-                  return false;
-                }
-              });
-    }
+  private void startWiremockStandAlone() {
+    // retrying in case of fail in port bindings
+    await()
+        .alias("wait for wiremock responding")
+        .atMost(Duration.ofSeconds(20))
+        .until(
+            () -> {
+              try {
+                httpProxyPort = findFreePort();
+                httpsProxyPort = findFreePort();
+                wiremockStandalone =
+                    new ProcessBuilder(
+                            "java",
+                            "-jar",
+                            getWiremockStandAlonePath(),
+                            "--root-dir",
+                            System.getProperty("user.dir")
+                                + File.separator
+                                + WIREMOCK_HOME_DIR
+                                + File.separator,
+                            "--enable-browser-proxying", // work as forward proxy
+                            "--proxy-pass-through",
+                            "false", // pass through only matched requests
+                            "--port",
+                            String.valueOf(httpProxyPort),
+                            "--https-port",
+                            String.valueOf(httpsProxyPort),
+                            "--https-keystore",
+                            getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
+                            "--ca-keystore",
+                            getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
+                        .inheritIO()
+                        .start();
+                waitForWiremock();
+                return true;
+              } catch (Exception e) {
+                logger.info(
+                    "Failed to start wiremock, retrying: " + Arrays.toString(e.getStackTrace()));
+                return false;
+              }
+            });
   }
 
   private static void downloadWiremock() {
@@ -282,7 +232,6 @@ public class ProxyLatestIT {
       HttpGet request =
           new HttpGet(String.format("http://%s:%d/__admin/mappings", WIREMOCK_HOST, httpProxyPort));
       CloseableHttpResponse response = httpClient.execute(request);
-      System.out.println(response.getStatusLine().getStatusCode());
       return response.getStatusLine().getStatusCode() == 200;
     } catch (Exception e) {
       logger.warning("Waiting for wiremock to respond: " + Arrays.toString(e.getStackTrace()));
@@ -346,8 +295,8 @@ public class ProxyLatestIT {
     }
   }
 
-  private static void unsetJvmProperties() {
-    System.setProperty("http.useProxy", "false");
+  private void unsetJvmProperties() {
+    System.clearProperty("http.useProxy");
     System.clearProperty("http.proxyProtocol");
     System.clearProperty("http.proxyHost");
     System.clearProperty("http.proxyPort");
