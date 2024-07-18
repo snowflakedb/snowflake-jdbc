@@ -20,6 +20,7 @@ import org.junit.experimental.categories.Category;
 public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   private final String queryResultFormat;
 
+  // TODO: Clean up init() methods when updating other test classes to use a common connection.
   public Connection init() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     try (Statement stmt = conn.createStatement()) {
