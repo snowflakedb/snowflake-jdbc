@@ -55,10 +55,10 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     ArrayNode fields = OBJECT_MAPPER.createArrayNode();
     fields.add(
         OBJECT_MAPPER.readTree(
-            "{\"fieldName\":\"name1\", \"fieldType\": {\"type\":\"text\",\"precision\":null,\"byteLength\":256,\"scale\":null,\"nullable\":false,\"collation\":\"collation\",\"length\":256}}"));
+            "{\"fieldName\":\"name1\", \"fieldType\": {\"type\":\"text\",\"precision\":null,\"length\":256,\"scale\":null,\"nullable\":false}}"));
     fields.add(
         OBJECT_MAPPER.readTree(
-            "{\"fieldName\":\"name2\", \"fieldType\": {\"type\":\"real\",\"precision\":5,\"byteLength\":128,\"scale\":null,\"nullable\":true,\"collation\":\"collation\",\"length\":256}}"));
+            "{\"fieldName\":\"name2\", \"fieldType\": {\"type\":\"real\",\"precision\":5,\"length\":128,\"scale\":null,\"nullable\":true}}"));
     rootNode.putIfAbsent("fields", fields);
 
     // when
@@ -77,7 +77,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     FieldMetadata secondField = columnMetadata.getFields().get(1);
     assertEquals("name2", secondField.getName());
     assertEquals(SnowflakeType.REAL, secondField.getBase());
-    assertEquals(256, secondField.getByteLength());
+    assertEquals(128, secondField.getByteLength());
     assertEquals(5, secondField.getPrecision());
     assertTrue(secondField.isNullable());
   }
