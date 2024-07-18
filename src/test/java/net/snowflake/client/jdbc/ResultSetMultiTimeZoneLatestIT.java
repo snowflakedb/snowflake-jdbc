@@ -29,7 +29,7 @@ import org.junit.runners.Parameterized;
  */
 @RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
-public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCIT {
+public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
   public static Collection<Object[]> data() {
     // all tests in this class need to run for both query result formats json and arrow

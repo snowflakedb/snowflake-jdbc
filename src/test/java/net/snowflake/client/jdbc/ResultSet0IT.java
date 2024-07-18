@@ -17,23 +17,8 @@ import org.junit.experimental.categories.Category;
 
 /** Result set test base class. */
 @Category(TestCategoryResultSet.class)
-public class ResultSet0IT extends BaseJDBCIT {
+public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   private final String queryResultFormat;
-
-  public Connection init(int injectSocketTimeout) throws SQLException {
-    Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
-    try (Statement statement = connection.createStatement()) {
-      statement.execute(
-          "alter session set "
-              + "TIMEZONE='America/Los_Angeles',"
-              + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
-              + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-    }
-    return connection;
-  }
 
   public Connection init() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
@@ -54,8 +39,7 @@ public class ResultSet0IT extends BaseJDBCIT {
 
   @Before
   public void setUp() throws SQLException {
-    try (Connection con = init();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       // TEST_RS
       statement.execute("create or replace table test_rs (colA string)");
@@ -88,22 +72,21 @@ public class ResultSet0IT extends BaseJDBCIT {
   }
 
   ResultSet numberCrossTesting() throws SQLException {
-    Connection con = init();
-    Statement statement = con.createStatement();
-
-    statement.execute(
-        "create or replace table test_types(c1 number, c2 integer, c3 float, c4 boolean,"
-            + "c5 char, c6 varchar, c7 date, c8 datetime, c9 time, c10 timestamp_ltz, "
-            + "c11 timestamp_tz, c12 binary)");
-    statement.execute(
-        "insert into test_types values (null, null, null, null, null, null, null, null, null, null, "
-            + "null, null)");
-    statement.execute(
-        "insert into test_types values(2, 5, 3.5, true,"
-            + "'1','1', '1994-12-27', "
-            + "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05', '1994-12-27 05:05:05', '48454C4C4F')");
-    statement.execute("insert into test_types (c5, c6) values('h', 'hello')");
-    return statement.executeQuery("select * from test_types");
+    try (Statement statement = connection.createStatement()) {
+      statement.execute(
+          "create or replace table test_types(c1 number, c2 integer, c3 float, c4 boolean,"
+              + "c5 char, c6 varchar, c7 date, c8 datetime, c9 time, c10 timestamp_ltz, "
+              + "c11 timestamp_tz, c12 binary)");
+      statement.execute(
+          "insert into test_types values (null, null, null, null, null, null, null, null, null, null, "
+              + "null, null)");
+      statement.execute(
+          "insert into test_types values(2, 5, 3.5, true,"
+              + "'1','1', '1994-12-27', "
+              + "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05', '1994-12-27 05:05:05', '48454C4C4F')");
+      statement.execute("insert into test_types (c5, c6) values('h', 'hello')");
+      return statement.executeQuery("select * from test_types");
+    }
   }
 
   ResultSet0IT(String queryResultFormat) {

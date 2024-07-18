@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-public class BaseJDBCIT extends BaseJDBCTest {
+public class BaseJDBCWithSharedConnectionIT extends BaseJDBCTest {
 
   protected static Connection connection;
 

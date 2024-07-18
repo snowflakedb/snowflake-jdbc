@@ -36,7 +36,7 @@ import org.junit.rules.TemporaryFolder;
 
 /** Statement tests */
 @Category(TestCategoryStatement.class)
-public class StatementIT extends BaseJDBCIT {
+public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
   public static Connection getConnection() throws SQLException {
