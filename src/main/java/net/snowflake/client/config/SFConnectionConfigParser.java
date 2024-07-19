@@ -108,13 +108,14 @@ public class SFConnectionConfigParser {
                     .orElse(SNOWFLAKE_TOKEN_FILE_PATH));
         logger.debug("Token used in connect is read from file: {}", path);
         try {
+          varifyFilePermissionSecure(path);
           String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
           if (!token.isEmpty()) {
             putPropertyIfNotNull(conectionProperties, "token", token.trim());
           } else {
             logger.warn("The token has empty value");
           }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
           throw new SnowflakeSQLException(ex, "There is a problem during reading token from file");
         }
       }
