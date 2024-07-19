@@ -86,10 +86,6 @@ jobs:
             - uses: actions/setup-python@v4
               with:
                 python-version: '3.7'
-            - name: 'localhost access workaround'
-              run: |
-                echo -e "127.0.0.1     $(hostname -f) $(hostname -s)" | sudo tee -a /etc/hosts
-                echo -e "" | sudo tee -a /etc/hosts
             - name: Install Homebrew Bash
               shell: bash
               run: brew install bash

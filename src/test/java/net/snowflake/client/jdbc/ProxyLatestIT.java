@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
+import net.snowflake.client.RunningNotOnGithubActionsMac;
 import net.snowflake.client.RunningNotOnJava21;
 import net.snowflake.client.RunningNotOnJava8;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -54,7 +55,7 @@ public class ProxyLatestIT {
   private static final String WIREMOCK_FILE_NAME = "wiremock-standalone-3.8.0.jar";
   public static final String WIREMOCK_STANDALONE_URL =
       "https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
-  private static final String WIREMOCK_HOST = "127.0.0.1";
+  private static final String WIREMOCK_HOST = "localhost";
   private static final String TRUST_STORE_PROPERTY = "javax.net.ssl.trustStore";
   private static int httpProxyPort;
   private static int httpsProxyPort;
@@ -66,6 +67,10 @@ public class ProxyLatestIT {
     downloadWiremock();
     assumeFalse(RunningNotOnJava8.isRunningOnJava8());
     assumeFalse(RunningNotOnJava21.isRunningOnJava21());
+    assumeFalse(
+        RunningNotOnGithubActionsMac
+            .isRunningOnGithubActionsMac()); // disabled until issue with access to localhost is
+    // fixed on github actions mac image
     originalTrustStorePath = systemGetProperty(TRUST_STORE_PROPERTY);
   }
 
@@ -185,7 +190,6 @@ public class ProxyLatestIT {
                             getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
                             "--ca-keystore",
                             getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
-                        .inheritIO()
                         .start();
                 waitForWiremock();
                 return true;
