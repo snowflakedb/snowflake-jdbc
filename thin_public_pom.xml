@@ -41,9 +41,10 @@
     <commons.codec.version>1.15</commons.codec.version>
     <commons.io.version>2.11.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
+    <eclipse.collections.version>11.1.0</eclipse.collections.version>
     <google.cloud.core.version>2.21.0</google.cloud.core.version>
     <google.cloud.storage.version>2.22.6</google.cloud.storage.version>
-    <google.flatbuffers.version>1.12.0</google.flatbuffers.version>
+    <google.flatbuffers.version>23.5.26</google.flatbuffers.version>
     <google.auth.library.oauth2.http.version>1.19.0</google.auth.library.oauth2.http.version>
     <google.gax.version>2.31.0</google.gax.version>
     <google.guava.version>32.1.1-jre</google.guava.version>
@@ -51,7 +52,7 @@
     <google.jsr305.version>3.0.2</google.jsr305.version>
     <google.protobuf.java.version>3.23.3</google.protobuf.java.version>
     <grpc.version>1.60.0</grpc.version>
-    <jackson.version>2.15.3</jackson.version>
+    <jackson.version>2.16.0</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
     <joda.time.version>2.8.1</joda.time.version>
@@ -272,6 +273,10 @@
       <artifactId>flatbuffers-java</artifactId>
       <version>${google.flatbuffers.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.eclipse.collections</groupId>
+      <artifactId>eclipse-collections</artifactId>
+      <version>eclipse.collections.version</version>
+    </dependency>
   </dependencies>
-
 </project>
