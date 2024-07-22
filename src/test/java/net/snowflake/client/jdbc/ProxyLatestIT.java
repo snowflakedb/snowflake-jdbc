@@ -21,7 +21,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -41,7 +40,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,14 +73,9 @@ public class ProxyLatestIT {
     startWiremockStandAlone();
   }
 
-  @Before
-  public void setUp() throws IOException {
-    System.setProperty(
-        TRUST_STORE_PROPERTY, getResourceURL("wiremock" + File.separator + "ca-cert.jks"));
-  }
-
   @After
   public void tearDown() {
+    restoreTrustStorePathProperty();
     unsetJvmProperties();
     resetWiremock();
     HttpUtil.httpClient.clear();
@@ -91,11 +84,11 @@ public class ProxyLatestIT {
   @AfterClass
   public static void tearDownClass() {
     stopWiremockStandAlone();
-    restoreTrustStorePathProperty();
   }
 
   @Test
   public void testProxyIsUsedWhenSetInProperties() throws SQLException {
+    setCustomTrustStorePropertyPath();
     Properties props = getProperties();
     addProxyProperties(props);
     proxyAll(props);
@@ -106,6 +99,7 @@ public class ProxyLatestIT {
 
   @Test
   public void testProxyIsUsedWhenSetInJVMParams() throws SQLException {
+    setCustomTrustStorePropertyPath();
     Properties props = getProperties();
     setJvmProperties(props);
     proxyAll(props);
@@ -116,7 +110,6 @@ public class ProxyLatestIT {
 
   @Test
   public void testProxyNotUsedWhenNonProxyHostsMatchingInProperties() throws SQLException {
-    restoreTrustStorePathProperty();
     Properties props = getProperties();
     addProxyProperties(props);
     props.put("nonProxyHosts", "*");
@@ -128,6 +121,7 @@ public class ProxyLatestIT {
 
   @Test
   public void testProxyIsUsedWhenNonProxyHostsNotMatchingInProperties() throws SQLException {
+    setCustomTrustStorePropertyPath();
     Properties props = getProperties();
     addProxyProperties(props);
     props.put("nonProxyHosts", "notMatchingHost");
@@ -139,7 +133,6 @@ public class ProxyLatestIT {
 
   @Test
   public void testProxyNotUsedWhenNonProxyHostsMatchingInJVMParams() throws SQLException {
-    restoreTrustStorePathProperty();
     Properties props = getProperties();
     setJvmProperties(props);
     System.setProperty("http.nonProxyHosts", "*");
@@ -151,6 +144,7 @@ public class ProxyLatestIT {
 
   @Test
   public void testProxyUsedWhenNonProxyHostsNotMatchingInJVMParams() throws SQLException {
+    setCustomTrustStorePropertyPath();
     Properties props = getProperties();
     setJvmProperties(props);
     System.setProperty("http.nonProxyHosts", "notMatchingHost");
@@ -195,8 +189,7 @@ public class ProxyLatestIT {
                 waitForWiremock();
                 return true;
               } catch (Exception e) {
-                logger.info(
-                    "Failed to start wiremock, retrying: " + Arrays.toString(e.getStackTrace()));
+                logger.warning("Failed to start wiremock, retrying: " + e);
                 return false;
               }
             });
@@ -250,17 +243,19 @@ public class ProxyLatestIT {
       CloseableHttpResponse response = httpClient.execute(request);
       return response.getStatusLine().getStatusCode() == 200;
     } catch (Exception e) {
-      logger.warning("Waiting for wiremock to respond: " + Arrays.toString(e.getStackTrace()));
+      logger.warning("Waiting for wiremock to respond: " + e);
     }
     return false;
   }
 
   private static void stopWiremockStandAlone() {
-    wiremockStandalone.destroyForcibly();
-    await()
-        .alias("stop wiremock")
-        .atMost(Duration.ofSeconds(10))
-        .until(() -> !wiremockStandalone.isAlive());
+    if (wiremockStandalone != null) {
+      wiremockStandalone.destroyForcibly();
+      await()
+          .alias("stop wiremock")
+          .atMost(Duration.ofSeconds(10))
+          .until(() -> !wiremockStandalone.isAlive());
+    }
   }
 
   private static int findFreePort() {
@@ -419,5 +414,10 @@ public class ProxyLatestIT {
     return Paths.get(systemGetProperty("user.dir"), "src", "test", "resources", relativePath)
         .toAbsolutePath()
         .toString();
+  }
+
+  private void setCustomTrustStorePropertyPath() {
+    System.setProperty(
+        TRUST_STORE_PROPERTY, getResourceURL("wiremock" + File.separator + "ca-cert.jks"));
   }
 }
