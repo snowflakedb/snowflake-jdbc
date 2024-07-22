@@ -7,7 +7,7 @@ import net.snowflake.client.core.Constants;
 
 public class RunningNotOnGithubActionsMac implements ConditionalIgnoreRule.IgnoreCondition {
   public boolean isSatisfied() {
-    return TestUtil.systemGetEnv("GITHUB_ACTIONS") != null && Constants.getOS() == Constants.OS.MAC;
+    return isRunningOnGithubActionsMac();
   }
 
   public static boolean isRunningOnGithubActionsMac() {

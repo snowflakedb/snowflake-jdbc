@@ -64,7 +64,6 @@ public class ProxyLatestIT {
 
   @BeforeClass
   public static void setUpClass() {
-    downloadWiremock();
     assumeFalse(RunningNotOnJava8.isRunningOnJava8());
     assumeFalse(RunningNotOnJava21.isRunningOnJava21());
     assumeFalse(
@@ -72,24 +71,26 @@ public class ProxyLatestIT {
             .isRunningOnGithubActionsMac()); // disabled until issue with access to localhost is
     // fixed on github actions mac image
     originalTrustStorePath = systemGetProperty(TRUST_STORE_PROPERTY);
+    downloadWiremock();
+    startWiremockStandAlone();
   }
 
   @Before
   public void setUp() throws IOException {
     System.setProperty(
         TRUST_STORE_PROPERTY, getResourceURL("wiremock" + File.separator + "ca-cert.jks"));
-    startWiremockStandAlone();
   }
 
   @After
   public void tearDown() {
-    stopWiremockStandAlone();
     unsetJvmProperties();
+    resetWiremock();
     HttpUtil.httpClient.clear();
   }
 
   @AfterClass
   public static void tearDownClass() {
+    stopWiremockStandAlone();
     restoreTrustStorePathProperty();
   }
 
@@ -159,11 +160,11 @@ public class ProxyLatestIT {
     verifyProxyWasUsed();
   }
 
-  private void startWiremockStandAlone() {
+  private static void startWiremockStandAlone() {
     // retrying in case of fail in port bindings
     await()
         .alias("wait for wiremock responding")
-        .atMost(Duration.ofSeconds(20))
+        .atMost(Duration.ofSeconds(10))
         .until(
             () -> {
               try {
@@ -216,6 +217,17 @@ public class ProxyLatestIT {
     }
   }
 
+  private void resetWiremock() {
+    HttpPost postRequest;
+    postRequest = new HttpPost("http://" + WIREMOCK_HOST + ":" + getAdminPort() + "/__admin/reset");
+    try (CloseableHttpClient client = HttpClients.createDefault();
+        CloseableHttpResponse response = client.execute(postRequest)) {
+      assertEquals(200, response.getStatusLine().getStatusCode());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   private static String getWiremockStandAlonePath() {
     return System.getProperty("user.dir")
         + File.separator
@@ -224,14 +236,14 @@ public class ProxyLatestIT {
         + WIREMOCK_FILE_NAME;
   }
 
-  private void waitForWiremock() {
+  private static void waitForWiremock() {
     await()
         .pollDelay(Duration.ofSeconds(1))
-        .atMost(Duration.ofSeconds(5))
-        .until(this::isWiremockResponding);
+        .atMost(Duration.ofSeconds(3))
+        .until(ProxyLatestIT::isWiremockResponding);
   }
 
-  private boolean isWiremockResponding() {
+  private static boolean isWiremockResponding() {
     try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
       HttpGet request =
           new HttpGet(String.format("http://%s:%d/__admin/mappings", WIREMOCK_HOST, httpProxyPort));
@@ -243,7 +255,7 @@ public class ProxyLatestIT {
     return false;
   }
 
-  private void stopWiremockStandAlone() {
+  private static void stopWiremockStandAlone() {
     wiremockStandalone.destroyForcibly();
     await()
         .alias("stop wiremock")
@@ -251,7 +263,7 @@ public class ProxyLatestIT {
         .until(() -> !wiremockStandalone.isAlive());
   }
 
-  private int findFreePort() {
+  private static int findFreePort() {
     try {
       ServerSocket socket = new ServerSocket(0);
       int port = socket.getLocalPort();
@@ -403,7 +415,7 @@ public class ProxyLatestIT {
     return String.format("%s://%s:%s", protocol, props.get("host"), props.get("port"));
   }
 
-  private String getResourceURL(String relativePath) {
+  private static String getResourceURL(String relativePath) {
     return Paths.get(systemGetProperty("user.dir"), "src", "test", "resources", relativePath)
         .toAbsolutePath()
         .toString();
