@@ -276,7 +276,7 @@
     <dependency>
       <groupId>org.eclipse.collections</groupId>
       <artifactId>eclipse-collections</artifactId>
-      <version>eclipse.collections.version</version>
+      <version>${eclipse.collections.version}</version>
     </dependency>
   </dependencies>
 </project>
