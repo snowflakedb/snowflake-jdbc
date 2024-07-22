@@ -155,6 +155,13 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>org.eclipse.collections</groupId>
+        <artifactId>eclipse-collections</artifactId>
+        <version>11.1.0</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>classworlds</groupId>
         <artifactId>classworlds</artifactId>
         <version>${classworlds.version}</version>
@@ -411,12 +418,6 @@
         <version>${arrow.version}</version>
         <scope>runtime</scope>
       </dependency>
-<!--      <dependency>-->
-<!--        <groupId>org.apache.arrow</groupId>-->
-<!--        <artifactId>arrow-memory-netty-buffer-patch</artifactId>-->
-<!--        <version>${arrow.version}</version>-->
-<!--        <scope>runtime</scope>-->
-<!--      </dependency>-->
       <dependency>
         <groupId>org.apache.arrow</groupId>
         <artifactId>arrow-memory-unsafe</artifactId>
@@ -446,12 +447,6 @@
         <artifactId>HikariCP</artifactId>
         <version>${hikaricp.version}</version>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.eclipse.collections</groupId>
-        <artifactId>eclipse-collections</artifactId>
-        <version>11.1.0</version>
-        <scope>runtime</scope>
       </dependency>
       <dependency>
         <!-- for non-FIPS JAR -->
@@ -529,10 +524,6 @@
   </dependencyManagement>
 
   <dependencies>
-    <dependency>
-      <groupId>org.eclipse.collections</groupId>
-      <artifactId>eclipse-collections</artifactId>
-    </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-core</artifactId>
@@ -712,6 +703,10 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.collections</groupId>
+      <artifactId>eclipse-collections</artifactId>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
