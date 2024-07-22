@@ -86,8 +86,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeS3Client.class);
   private static final String localFileSep = systemGetProperty("file.separator");
   private static final String AES = "AES";
-  private static final String AMZ_KEY = "x-amz-key";
-  private static final String AMZ_IV = "x-amz-iv";
+  static final String AMZ_KEY = "x-amz-key";
+  static final String AMZ_DATA_IV = "x-amz-iv";
+  static final String AMZ_KEY_IV = "x-amz-key-iv";
+  static final String AMZ_CIPHER = "x-amz-cipher";
+  static final String AMZ_KEY_AAD = "x-amz-key-aad";
+  static final String AMZ_DATA_AAD = "x-amz-data-aad";
   private static final String S3_STREAMING_INGEST_CLIENT_NAME = "ingestclientname";
   private static final String S3_STREAMING_INGEST_CLIENT_KEY = "ingestclientkey";
 
@@ -104,10 +108,14 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
   private SFBaseSession session = null;
   private boolean isClientSideEncrypted = true;
   private boolean isUseS3RegionalUrl = false;
+  private StageInfo.Ciphers ciphers = null;
+
+  private StorageClientHelper storageClientHelper;
 
   // socket factory used by s3 client's http client.
   private static SSLConnectionSocketFactory s3ConnectionSocketFactory = null;
 
+  @Deprecated
   public SnowflakeS3Client(
       Map<?, ?> stageCredentials,
       ClientConfiguration clientConfig,
@@ -118,6 +126,31 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       boolean isClientSideEncrypted,
       SFBaseSession session,
       boolean useS3RegionalUrl)
+      throws SnowflakeSQLException {
+    this(
+        stageCredentials,
+        clientConfig,
+        encMat,
+        proxyProperties,
+        stageRegion,
+        stageEndPoint,
+        isClientSideEncrypted,
+        session,
+        useS3RegionalUrl,
+        null);
+  }
+
+  public SnowflakeS3Client(
+      Map<?, ?> stageCredentials,
+      ClientConfiguration clientConfig,
+      RemoteStoreFileEncryptionMaterial encMat,
+      Properties proxyProperties,
+      String stageRegion,
+      String stageEndPoint,
+      boolean isClientSideEncrypted,
+      SFBaseSession session,
+      boolean useS3RegionalUrl,
+      StageInfo.Ciphers ciphers)
       throws SnowflakeSQLException {
     logger.debug(
         "Initializing Snowflake S3 client with encryption: {}, client side encrypted: {}",
@@ -133,7 +166,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         stageRegion,
         stageEndPoint,
         isClientSideEncrypted,
-        session);
+        session,
+        ciphers);
   }
 
   private void setupSnowflakeS3Client(
@@ -144,7 +178,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       String stageRegion,
       String stageEndPoint,
       boolean isClientSideEncrypted,
-      SFBaseSession session)
+      SFBaseSession session,
+      StageInfo.Ciphers ciphers)
       throws SnowflakeSQLException {
     // Save the client creation parameters so that we can reuse them,
     // to reset the AWS client. We won't save the awsCredentials since
@@ -235,7 +270,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
     // Explicitly force to use virtual address style
     amazonS3Builder.withPathStyleAccessEnabled(false);
-    amazonClient = (AmazonS3) amazonS3Builder.build();
+    amazonClient = amazonS3Builder.build();
+    storageClientHelper = new StorageClientHelper(this, encMat, session, ciphers);
   }
 
   static String getDomainSuffixForRegionalUrl(String regionName) {
@@ -296,7 +332,8 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         this.stageRegion,
         this.stageEndPoint,
         this.isClientSideEncrypted,
-        this.session);
+        this.session,
+        this.ciphers);
   }
 
   @Override
@@ -381,30 +418,21 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         // Pull object metadata from S3
         ObjectMetadata meta = amazonClient.getObjectMetadata(remoteStorageLocation, stageFilePath);
 
-        Map<String, String> metaMap =
-            SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
-        String key = metaMap.get(AMZ_KEY);
-        String iv = metaMap.get(AMZ_IV);
-
         myDownload.waitForCompletion();
 
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
 
-        if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
-          stopwatch.restart();
-          if (key == null || iv == null) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
-          }
+        if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+          Map<String, String> metaMap =
+              SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
+          DecryptionHelper decryptionHelper =
+              storageClientHelper.buildEncryptionMetadataFromAwsMetadata(queryId, metaMap);
 
+          stopwatch.restart();
           // Decrypt file
           try {
-            EncryptionProvider.decrypt(localFile, key, iv, this.encMat);
+            decryptionHelper.decryptFile(localFile, encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
@@ -487,22 +515,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         Map<String, String> metaMap =
             SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
 
-        String key = metaMap.get(AMZ_KEY);
-        String iv = metaMap.get(AMZ_IV);
-
-        if (this.isEncrypting() && this.getEncryptionKeySize() < 256) {
+        if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
+          DecryptionHelper decryptionHelper =
+              storageClientHelper.buildEncryptionMetadataFromAwsMetadata(queryId, metaMap);
           stopwatch.restart();
-          if (key == null || iv == null) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "File metadata incomplete");
-          }
 
           try {
-            InputStream is = EncryptionProvider.decryptStream(stream, key, iv, encMat);
+            InputStream is = decryptionHelper.decryptStream(stream, encMat);
             stopwatch.stop();
             long decryptMillis = stopwatch.elapsedMillis();
             logger.info(
@@ -727,7 +746,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         this.getEncryptionKeySize());
     final InputStream result;
     FileInputStream srcFileStream = null;
-    if (isEncrypting() && getEncryptionKeySize() < 256) {
+    if (isEncrypting() && getEncryptionKeySize() <= 256) {
       try {
         final InputStream uploadStream =
             uploadFromStream
@@ -739,9 +758,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
 
         // Encrypt
         S3StorageObjectMetadata s3Metadata = new S3StorageObjectMetadata(meta);
-        result =
-            EncryptionProvider.encrypt(
-                s3Metadata, originalContentLength, uploadStream, this.encMat, this);
+        result = storageClientHelper.encrypt(s3Metadata, originalContentLength, inputStream);
         uploadFromStream = true;
       } catch (Exception ex) {
         logger.error("Failed to encrypt input", ex);
@@ -970,7 +987,28 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       long contentLength) {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
     meta.addUserMetadata(AMZ_KEY, Base64.getEncoder().encodeToString(encryptedKey));
-    meta.addUserMetadata(AMZ_IV, Base64.getEncoder().encodeToString(ivData));
+    meta.addUserMetadata(AMZ_DATA_IV, Base64.getEncoder().encodeToString(ivData));
+    meta.addUserMetadata(AMZ_CIPHER, "AES_CBC");
+    meta.setContentLength(contentLength);
+  }
+
+  @Override
+  public void addEncryptionMetadataForGcm(
+      StorageObjectMetadata meta,
+      MatDesc matDesc,
+      byte[] encryptedKey,
+      byte[] dataIvBytes,
+      byte[] keyIvBytes,
+      byte[] keyAad,
+      byte[] dataAad,
+      long contentLength) {
+    meta.addUserMetadata(getMatdescKey(), matDesc.toString());
+    meta.addUserMetadata(AMZ_KEY, Base64.getEncoder().encodeToString(encryptedKey));
+    meta.addUserMetadata(AMZ_KEY_IV, Base64.getEncoder().encodeToString(keyIvBytes));
+    meta.addUserMetadata(AMZ_KEY_AAD, Base64.getEncoder().encodeToString(keyAad));
+    meta.addUserMetadata(AMZ_DATA_IV, Base64.getEncoder().encodeToString(dataIvBytes));
+    meta.addUserMetadata(AMZ_DATA_AAD, Base64.getEncoder().encodeToString(dataAad));
+    meta.addUserMetadata(AMZ_CIPHER, "AES_GCM");
     meta.setContentLength(contentLength);
   }
 

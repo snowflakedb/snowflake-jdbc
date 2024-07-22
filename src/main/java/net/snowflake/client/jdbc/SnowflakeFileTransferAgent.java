@@ -1105,6 +1105,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
       isClientSideEncrypted =
           jsonNode.path("data").path("stageInfo").path("isClientSideEncrypted").asBoolean(true);
     }
+    String ciphers = jsonNode.path("data").path("stageInfo").path("ciphers").asText();
 
     // endPoint is currently known to be set for Azure stages or S3. For S3 it will be set
     // specifically
@@ -1165,7 +1166,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
             stageRegion,
             endPoint,
             stgAcct,
-            isClientSideEncrypted);
+            isClientSideEncrypted,
+            ciphers);
 
     // Setup pre-signed URL into stage info if pre-signed URL is returned.
     if (stageInfo.getStageType() == StageInfo.StageType.GCS) {

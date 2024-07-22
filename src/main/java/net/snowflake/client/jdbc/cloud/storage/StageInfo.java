@@ -3,14 +3,27 @@ package net.snowflake.client.jdbc.cloud.storage;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Properties;
+import net.snowflake.client.core.Event;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /** Encapsulates all the required stage properties used by GET/PUT for Azure and S3 stages */
 public class StageInfo implements Serializable {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(Event.class);
+
   public enum StageType {
     S3,
     AZURE,
     LOCAL_FS,
     GCS
+  }
+
+  // First value represents key encryption mode, second value represents file content encryption
+  // mode.
+  public enum Ciphers {
+    AESECB_AESCBC,
+    AESGCM_AESGCM
   }
 
   private static final long serialVersionUID = 1L;
@@ -22,8 +35,33 @@ public class StageInfo implements Serializable {
   private String storageAccount; // The Azure Storage account (Azure only)
   private String presignedUrl; // GCS gives us back a presigned URL instead of a cred
   private boolean isClientSideEncrypted; // whether to encrypt/decrypt files on the stage
+  private Ciphers ciphers;
   private boolean useS3RegionalUrl; // whether to use s3 regional URL (AWS Only)
   private Properties proxyProperties;
+
+  /*
+   * @deprecated Use {@link #createStageInfo(String, String, Map, String, String, String, boolean, String)}
+   */
+  @Deprecated
+  public static StageInfo createStageInfo(
+      String locationType,
+      String location,
+      Map<?, ?> credentials,
+      String region,
+      String endPoint,
+      String storageAccount,
+      boolean isClientSideEncrypted)
+      throws IllegalArgumentException {
+    return createStageInfo(
+        locationType,
+        location,
+        credentials,
+        region,
+        endPoint,
+        storageAccount,
+        isClientSideEncrypted,
+        null);
+  }
 
   /*
    * Creates a StageInfo object
@@ -38,6 +76,7 @@ public class StageInfo implements Serializable {
    * @param isClientSideEncrypted Whether the stage should use client-side encryption
    * @throws IllegalArgumentException one or more parameters required were missing
    */
+  @SnowflakeJdbcInternalApi
   public static StageInfo createStageInfo(
       String locationType,
       String location,
@@ -45,8 +84,8 @@ public class StageInfo implements Serializable {
       String region,
       String endPoint,
       String storageAccount,
-      boolean isClientSideEncrypted)
-      throws IllegalArgumentException {
+      boolean isClientSideEncrypted,
+      String ciphersString) {
     StageType stageType;
     // Ensure that all the required parameters are specified
     switch (locationType) {
@@ -84,8 +123,28 @@ public class StageInfo implements Serializable {
       default:
         throw new IllegalArgumentException("Invalid stage type: " + locationType);
     }
+    Ciphers ciphers = null;
+    if (isClientSideEncrypted) {
+      if (ciphersString == null || ciphersString.isEmpty()) {
+        logger.debug("No ciphers specified for stage, using ECB/CBC mode");
+        ciphers = Ciphers.AESECB_AESCBC;
+      } else if (ciphersString.equals("AES_CBC")) {
+        ciphers = Ciphers.AESECB_AESCBC;
+      } else if (ciphersString.equals("AES_GCM") || ciphersString.equals("AES_GCM,AES_CBC")) {
+        ciphers = Ciphers.AESGCM_AESGCM;
+      } else {
+        throw new IllegalArgumentException("Invalid ciphers: " + ciphersString);
+      }
+    }
     return new StageInfo(
-        stageType, location, credentials, region, endPoint, storageAccount, isClientSideEncrypted);
+        stageType,
+        location,
+        credentials,
+        region,
+        endPoint,
+        storageAccount,
+        isClientSideEncrypted,
+        ciphers);
   }
 
   /*
@@ -108,7 +167,8 @@ public class StageInfo implements Serializable {
       String region,
       String endPoint,
       String storageAccount,
-      boolean isClientSideEncrypted) {
+      boolean isClientSideEncrypted,
+      Ciphers ciphers) {
     this.stageType = stageType;
     this.location = location;
     this.credentials = credentials;
@@ -116,6 +176,7 @@ public class StageInfo implements Serializable {
     this.endPoint = endPoint;
     this.storageAccount = storageAccount;
     this.isClientSideEncrypted = isClientSideEncrypted;
+    this.ciphers = ciphers;
   }
 
   public StageType getStageType() {
@@ -156,6 +217,10 @@ public class StageInfo implements Serializable {
 
   public boolean getIsClientSideEncrypted() {
     return isClientSideEncrypted;
+  }
+
+  public Ciphers getCiphers() {
+    return ciphers;
   }
 
   public void setUseS3RegionalUrl(boolean useS3RegionalUrl) {
