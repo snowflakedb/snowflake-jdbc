@@ -24,7 +24,7 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
 
   @Before
   public void setSessionResultFormat() throws SQLException {
-    try (Statement stmt = sfConnectionV1.createStatement()) {
+    try (Statement stmt = connection.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }
   }
@@ -37,7 +37,7 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
         statement.execute("create or replace table test_multi_bind(c1 number)");
 
         try (PreparedStatement preparedStatement =
-            connection.prepareStatement(
+            sfConnectionV1.prepareStatement(
                 "insert into test_multi_bind(c1) values(?); insert into "
                     + "test_multi_bind values (?), (?)")) {
 
