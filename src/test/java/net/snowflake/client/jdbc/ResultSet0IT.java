@@ -17,24 +17,10 @@ import org.junit.experimental.categories.Category;
 
 /** Result set test base class. */
 @Category(TestCategoryResultSet.class)
-public class ResultSet0IT extends BaseJDBCTest {
+public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   private final String queryResultFormat;
 
-  public Connection init(int injectSocketTimeout) throws SQLException {
-    Connection connection = BaseJDBCTest.getConnection(injectSocketTimeout);
-    try (Statement statement = connection.createStatement()) {
-      statement.execute(
-          "alter session set "
-              + "TIMEZONE='America/Los_Angeles',"
-              + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
-              + "TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
-              + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-    }
-    return connection;
-  }
-
+  // TODO: Clean up init() methods when updating other test classes to use a common connection.
   public Connection init() throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
     try (Statement stmt = conn.createStatement()) {
@@ -54,8 +40,7 @@ public class ResultSet0IT extends BaseJDBCTest {
 
   @Before
   public void setUp() throws SQLException {
-    try (Connection con = init();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       // TEST_RS
       statement.execute("create or replace table test_rs (colA string)");
@@ -88,9 +73,7 @@ public class ResultSet0IT extends BaseJDBCTest {
   }
 
   ResultSet numberCrossTesting() throws SQLException {
-    Connection con = init();
-    Statement statement = con.createStatement();
-
+    Statement statement = connection.createStatement();
     statement.execute(
         "create or replace table test_types(c1 number, c2 integer, c3 float, c4 boolean,"
             + "c5 char, c6 varchar, c7 date, c8 datetime, c9 time, c10 timestamp_ltz, "
