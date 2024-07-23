@@ -1,7 +1,6 @@
 package net.snowflake.client.core.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Date;
 import java.sql.Time;
@@ -12,8 +11,6 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.TimeZone;
-
-import net.snowflake.client.core.JsonSqlInput;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SfTimestampUtil;

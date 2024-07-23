@@ -2,6 +2,7 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.core.FieldSchemaCreator.buildBindingSchemaForType;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.Array;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
@@ -10,8 +11,6 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.jdbc.BindingParameterMetadata;
 
 @SnowflakeJdbcInternalApi
@@ -27,7 +26,7 @@ public class SfSqlArray implements Array {
     this.elements = elements;
   }
 
-  public SfSqlArray( int baseType, Object elements) {
+  public SfSqlArray(int baseType, Object elements) {
     this.input = null;
     this.baseType = baseType;
     this.elements = elements;
@@ -91,7 +90,7 @@ public class SfSqlArray implements Array {
   public void free() throws SQLException {}
 
   public Object getElements() {
-      return elements;
+    return elements;
   }
 
   public BindingParameterMetadata getSchema() throws SQLException {
@@ -101,7 +100,8 @@ public class SfSqlArray implements Array {
         .build();
   }
 
-  public BindingParameterMetadata getSchema(List<BindingParameterMetadata> fields) throws SQLException {
+  public BindingParameterMetadata getSchema(List<BindingParameterMetadata> fields)
+      throws SQLException {
     return BindingParameterMetadata.BindingParameterMetadataBuilder.bindingParameterMetadata()
         .withType("array")
         .withFields(fields)

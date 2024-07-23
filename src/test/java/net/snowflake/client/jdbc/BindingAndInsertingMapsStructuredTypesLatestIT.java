@@ -3,24 +3,13 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryResultSet;
-import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
-import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
-import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -30,7 +19,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -39,12 +27,18 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
+import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
@@ -132,13 +126,13 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, SimpleClass.class);
         assertEquals("string1", map.get("x").getString());
         assertEquals(Integer.valueOf(1), map.get("x").getIntValue());
-        assertEquals("string2",  map.get("y").getString());
-        assertEquals(Integer.valueOf(2),  map.get("y").getIntValue());
+        assertEquals("string2", map.get("y").getString());
+        assertEquals(Integer.valueOf(2), map.get("y").getIntValue());
       }
     }
   }
 
- @Test
+  @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteMapOfAllTypes() throws SQLException {
     try (Connection connection = init();
@@ -151,62 +145,74 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
                 connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
 
       statement.execute(
-          " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, " +
-                  "                             OBJECT(string VARCHAR, "
-                                  + "                  b TINYINT, "
-                                  + "                  s SMALLINT, "
-                                  + "                  i INTEGER, "
-                                  + "                  l BIGINT, "
-                                  + "                  f FLOAT, "
-                                  + "                  d DOUBLE, "
-                                  + "                  bd NUMBER(38,2), "
-                                  + "                  bool BOOLEAN, "
-                                  + "                  timestampLtz TIMESTAMP_LTZ, "
-                                  + "                  timestampNtz TIMESTAMP_NTZ, "
-                                  + "                  timestampTz TIMESTAMP_TZ, "
-                                  + "                  date DATE,"
-                                  + "                  time TIME, "
-                                  + "                   binary BINARY, "
-                                  + "                  simpleClass OBJECT(string VARCHAR, intValue INTEGER)"
-                                  + "                  )))");
+          " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, "
+              + "                             OBJECT(string VARCHAR, "
+              + "                  b TINYINT, "
+              + "                  s SMALLINT, "
+              + "                  i INTEGER, "
+              + "                  l BIGINT, "
+              + "                  f FLOAT, "
+              + "                  d DOUBLE, "
+              + "                  bd NUMBER(38,2), "
+              + "                  bool BOOLEAN, "
+              + "                  timestampLtz TIMESTAMP_LTZ, "
+              + "                  timestampNtz TIMESTAMP_NTZ, "
+              + "                  timestampTz TIMESTAMP_TZ, "
+              + "                  date DATE,"
+              + "                  time TIME, "
+              + "                   binary BINARY, "
+              + "                  simpleClass OBJECT(string VARCHAR, intValue INTEGER)"
+              + "                  )))");
 
       Map<String, AllTypesClass> mapStruct =
           Stream.of(
                   new Object[][] {
-                    {"x", new AllTypesClass(
-                            "string",
-                            "1".getBytes(StandardCharsets.UTF_8)[0],
-                            Short.valueOf("2"),
-                            Integer.valueOf(3),
-                            Long.valueOf(4),
-                            1.1f,
-                            2.24,
-                            new BigDecimal("999999999999999999999999999999999999.55"),
-                            Boolean.TRUE,
-                            Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
-                            toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("UTC"))),
-                            toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
-                            Date.valueOf("2023-12-24"),
-                            Time.valueOf("12:34:56"),
-                            new byte[] {'a', 'b', 'c'},
-                            new SimpleClass("testString", 2))},
-                    {"y", new AllTypesClass(
-                            "string",
-                            "1".getBytes(StandardCharsets.UTF_8)[0],
-                            Short.valueOf("2"),
-                            Integer.valueOf(3),
-                            Long.valueOf(4),
-                            1.1f,
-                            2.24,
-                            new BigDecimal("999999999999999999999999999999999999.55"),
-                            Boolean.TRUE,
-                            Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
-                            toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("UTC"))),
-                            toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
-                            Date.valueOf("2023-12-24"),
-                            Time.valueOf("12:34:56"),
-                            new byte[] {'a', 'b', 'c'},
-                            new SimpleClass("testString", 2))},
+                    {
+                      "x",
+                      new AllTypesClass(
+                          "string",
+                          "1".getBytes(StandardCharsets.UTF_8)[0],
+                          Short.valueOf("2"),
+                          Integer.valueOf(3),
+                          Long.valueOf(4),
+                          1.1f,
+                          2.24,
+                          new BigDecimal("999999999999999999999999999999999999.55"),
+                          Boolean.TRUE,
+                          Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
+                          toTimestamp(
+                              ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("UTC"))),
+                          toTimestamp(
+                              ZonedDateTime.of(
+                                  2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
+                          Date.valueOf("2023-12-24"),
+                          Time.valueOf("12:34:56"),
+                          new byte[] {'a', 'b', 'c'},
+                          new SimpleClass("testString", 2))
+                    },
+                    {
+                      "y",
+                      new AllTypesClass(
+                          "string",
+                          "1".getBytes(StandardCharsets.UTF_8)[0],
+                          Short.valueOf("2"),
+                          Integer.valueOf(3),
+                          Long.valueOf(4),
+                          1.1f,
+                          2.24,
+                          new BigDecimal("999999999999999999999999999999999999.55"),
+                          Boolean.TRUE,
+                          Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
+                          toTimestamp(
+                              ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("UTC"))),
+                          toTimestamp(
+                              ZonedDateTime.of(
+                                  2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
+                          Date.valueOf("2023-12-24"),
+                          Time.valueOf("12:34:56"),
+                          new byte[] {'a', 'b', 'c'},
+                          new SimpleClass("testString", 2))
+                    },
                   })
               .collect(Collectors.toMap(data -> (String) data[0], data -> (AllTypesClass) data[1]));
 
@@ -241,7 +247,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       Map<String, Integer> mapStruct = new HashMap<>();
       mapStruct.put("x", 1);
       mapStruct.put("y", 2);
-//      mapStruct.put("z", null);
+      //      mapStruct.put("z", null);
 
       stmt.setMap(1, mapStruct, Types.INTEGER);
       stmt.executeUpdate();
@@ -254,7 +260,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Integer.class);
         assertEquals(Integer.valueOf(1), resultMap.get("x"));
         assertEquals(Integer.valueOf(2), resultMap.get("y"));
-//        assertNull(resultMap.get("z"));
+        //        assertNull(resultMap.get("z"));
       }
     }
   }
@@ -271,7 +277,8 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
             (SnowflakePreparedStatementV1)
                 connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIMESTAMP_LTZ))");
+      statement.execute(
+          " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIMESTAMP_LTZ))");
 
       Map<String, Timestamp> mapStruct = new HashMap<>();
       mapStruct.put("x", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)));
@@ -287,15 +294,15 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Map<String, Timestamp> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
         assertEquals(
-                LocalDateTime.of(2021, 12, 22, 9, 43, 44)
-                        .atZone(ZoneId.of("Europe/Warsaw"))
-                        .toInstant(),
-                map.get("x").toInstant());
+            LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            map.get("x").toInstant());
         assertEquals(
-                LocalDateTime.of(2021, 12, 22, 9, 43, 45)
-                        .atZone(ZoneId.of("Europe/Warsaw"))
-                        .toInstant(),
-                map.get("y").toInstant());
+            LocalDateTime.of(2021, 12, 22, 9, 43, 45)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            map.get("y").toInstant());
       }
     }
   }
@@ -313,7 +320,8 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
             (SnowflakePreparedStatementV1)
                 connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIMESTAMP_NTZ))");
+      statement.execute(
+          " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIMESTAMP_NTZ))");
 
       Map<String, Timestamp> mapStruct = new HashMap<>();
       mapStruct.put("x", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)));
@@ -328,8 +336,12 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         assertTrue(resultSet.next());
         Map<String, Timestamp> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
-        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)).toInstant(), map.get("x").toInstant());
-        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)).toInstant(), map.get("y").toInstant());
+        assertEquals(
+            Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)).toInstant(),
+            map.get("x").toInstant());
+        assertEquals(
+            Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)).toInstant(),
+            map.get("y").toInstant());
       }
     }
   }
@@ -362,15 +374,15 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Map<String, Timestamp> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
         assertEquals(
-                LocalDateTime.of(2021, 12, 22, 9, 43, 44)
-                        .atZone(ZoneId.of("Europe/Warsaw"))
-                        .toInstant(),
-                map.get("x").toInstant());
+            LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            map.get("x").toInstant());
         assertEquals(
-                LocalDateTime.of(2021, 12, 22, 9, 43, 45)
-                        .atZone(ZoneId.of("Europe/Warsaw"))
-                        .toInstant(),
-                map.get("y").toInstant());
+            LocalDateTime.of(2021, 12, 22, 9, 43, 45)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            map.get("y").toInstant());
       }
     }
   }
