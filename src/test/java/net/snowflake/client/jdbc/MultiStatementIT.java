@@ -250,50 +250,54 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
   public void testMultiStmtCommitRollback() throws SQLException {
     try (Statement statement = connection.createStatement()) {
 
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       statement.execute("begin");
-      statement.execute("insert into test_multi values ('abc')");
+      statement.execute("insert into test_multi_commit_rollback values ('abc')");
       // "commit" inside multistatement commits previous DML calls
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("insert into test_multi values ('def'); commit");
+      statement.execute("insert into test_multi_commit_rollback values ('def'); commit");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("rollback");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(2, rs.getInt(1));
       }
 
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       statement.execute("begin");
-      statement.execute("insert into test_multi values ('abc')");
+      statement.execute("insert into test_multi_commit_rollback values ('abc')");
       // "rollback" inside multistatement rolls back previous DML calls
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("insert into test_multi values ('def'); rollback");
+      statement.execute("insert into test_multi_commit_rollback values ('def'); rollback");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("commit");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
       }
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("begin; insert into test_multi values ('abc')");
+      statement.execute("begin; insert into test_multi_commit_rollback values ('abc')");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
-      statement.execute("insert into test_multi values ('def')");
+      statement.execute("insert into test_multi_commit_rollback values ('def')");
       statement.execute("commit");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(2, rs.getInt(1));
       }
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("begin; insert into test_multi values ('abc')");
+      statement.execute("begin; insert into test_multi_commit_rollback values ('abc')");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
-      statement.execute("insert into test_multi values ('def')");
+      statement.execute("insert into test_multi_commit_rollback values ('def')");
       statement.execute("rollback");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
       }
@@ -304,49 +308,53 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
   public void testMultiStmtCommitRollbackNoAutocommit() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
-      statement.execute("create or replace table test_multi (cola string)");
-      statement.execute("insert into test_multi values ('abc')");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
+      statement.execute("insert into test_multi_commit_rollback values ('abc')");
       // "commit" inside multistatement commits previous DML calls
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("insert into test_multi values ('def'); commit");
+      statement.execute("insert into test_multi_commit_rollback values ('def'); commit");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("rollback");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(2, rs.getInt(1));
       }
 
-      statement.execute("create or replace table test_multi (cola string)");
-      statement.execute("insert into test_multi values ('abc')");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
+      statement.execute("insert into test_multi_commit_rollback values ('abc')");
       // "rollback" inside multistatement rolls back previous DML calls
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
-      statement.execute("insert into test_multi values ('def'); rollback");
+      statement.execute("insert into test_multi_commit_rollback values ('def'); rollback");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("commit");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
       }
 
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute(
-          "insert into test_multi values ('abc'); insert into test_multi values ('def')");
+          "insert into test_multi_commit_rollback values ('abc'); insert into test_multi_commit_rollback values ('def')");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("commit");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(2, rs.getInt(1));
       }
-      statement.execute("create or replace table test_multi (cola string)");
+      statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute(
-          "insert into test_multi values ('abc'); insert into test_multi values ('def')");
+          "insert into test_multi_commit_rollback values ('abc'); insert into test_multi_commit_rollback values ('def')");
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       statement.execute("rollback");
-      try (ResultSet rs = statement.executeQuery("select count(*) from test_multi")) {
+      try (ResultSet rs =
+          statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
         assertTrue(rs.next());
         assertEquals(0, rs.getInt(1));
       }

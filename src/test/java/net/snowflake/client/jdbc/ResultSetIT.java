@@ -925,6 +925,7 @@ public class ResultSetIT extends ResultSet0IT {
         metaData = ret.getMetaData();
         assertThat(metaData.getColumnType(1), equalTo(Types.DECIMAL));
       }
+      statement.execute("alter session set jdbc_treat_decimal_as_int = true");
     }
   }
 
