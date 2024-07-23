@@ -1,7 +1,7 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.SnowflakeChunkDownloader.*;
-import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.*;
+import static net.snowflake.client.jdbc.SnowflakeChunkDownloader.NoOpChunkDownloader;
+import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.ChunkFileMetadata;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

@@ -12,7 +12,7 @@ import static net.snowflake.client.core.SessionUtil.CLIENT_PREFETCH_THREADS;
 import static net.snowflake.client.core.SessionUtil.CLIENT_RESULT_CHUNK_SIZE;
 import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
 import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
-import static net.snowflake.client.jdbc.SnowflakeChunkDownloader.*;
+import static net.snowflake.client.jdbc.SnowflakeChunkDownloader.NoOpChunkDownloader;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

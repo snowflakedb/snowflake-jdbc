@@ -4,7 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.jdbc.SnowflakeRichResultSetSerializableV1.*;
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
