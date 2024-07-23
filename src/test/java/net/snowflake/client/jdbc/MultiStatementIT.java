@@ -19,7 +19,9 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 /** Multi Statement tests */
