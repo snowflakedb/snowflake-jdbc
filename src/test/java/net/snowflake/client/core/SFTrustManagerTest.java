@@ -46,6 +46,18 @@ public class SFTrustManagerTest {
     SFTrustManager.resetOCSPResponseCacherServerURL(
         "http://ocsp.snowflakecomputing.com:80/" + SFTrustManager.CACHE_FILE_NAME);
     assertThat(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN, nullValue());
+
+    // default OCSP Cache server URL in specific domain without port
+    SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = null;
+    SFTrustManager.resetOCSPResponseCacherServerURL(
+        "http://ocsp.snowflakecomputing.cn/" + SFTrustManager.CACHE_FILE_NAME);
+    assertThat(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN, nullValue());
+
+    // default OCSP Cache server URL in specific domain with port
+    SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = null;
+    SFTrustManager.resetOCSPResponseCacherServerURL(
+        "http://ocsp.snowflakecomputing.cn:80/" + SFTrustManager.CACHE_FILE_NAME);
+    assertThat(SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN, nullValue());
   }
 
   @Test
@@ -65,6 +77,14 @@ public class SFTrustManagerTest {
           tManager.ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL,
           equalTo("https://ocspssd.snowflakecomputing.com/ocsp/retry"));
 
+      tManager.ocspCacheServer.resetOCSPResponseCacheServer("a1.snowflakecomputing.cn");
+      assertThat(
+          tManager.ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER,
+          equalTo("https://ocspssd.snowflakecomputing.cn/ocsp/fetch"));
+      assertThat(
+          tManager.ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL,
+          equalTo("https://ocspssd.snowflakecomputing.cn/ocsp/retry"));
+
       tManager.ocspCacheServer.resetOCSPResponseCacheServer(
           "a1-12345.global.snowflakecomputing.com");
       assertThat(
@@ -73,6 +93,15 @@ public class SFTrustManagerTest {
       assertThat(
           tManager.ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL,
           equalTo("https://ocspssd-12345.global.snowflakecomputing.com/ocsp/retry"));
+
+      tManager.ocspCacheServer.resetOCSPResponseCacheServer(
+          "a1-12345.global.snowflakecomputing.cn");
+      assertThat(
+          tManager.ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER,
+          equalTo("https://ocspssd-12345.global.snowflakecomputing.cn/ocsp/fetch"));
+      assertThat(
+          tManager.ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL,
+          equalTo("https://ocspssd-12345.global.snowflakecomputing.cn/ocsp/retry"));
 
       tManager.ocspCacheServer.resetOCSPResponseCacheServer("okta.snowflake.com");
       assertThat(
@@ -90,6 +119,15 @@ public class SFTrustManagerTest {
       assertThat(
           tManager.ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL,
           equalTo("https://ocspssd.us-east-1.privatelink.snowflakecomputing.com/ocsp/retry"));
+
+      tManager.ocspCacheServer.resetOCSPResponseCacheServer(
+          "a1.us-east-1.privatelink.snowflakecomputing.cn");
+      assertThat(
+          tManager.ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER,
+          equalTo("https://ocspssd.us-east-1.privatelink.snowflakecomputing.cn/ocsp/fetch"));
+      assertThat(
+          tManager.ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL,
+          equalTo("https://ocspssd.us-east-1.privatelink.snowflakecomputing.cn/ocsp/retry"));
     } finally {
       System.clearProperty("net.snowflake.jdbc.ocsp_activate_new_endpoint");
     }

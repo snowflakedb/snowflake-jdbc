@@ -85,7 +85,16 @@ public enum SFSessionProperty {
   DISABLE_GCS_DEFAULT_CREDENTIALS("disableGcsDefaultCredentials", false, Boolean.class),
 
   JDBC_ARROW_TREAT_DECIMAL_AS_INT("JDBC_ARROW_TREAT_DECIMAL_AS_INT", false, Boolean.class),
-  DISABLE_SAML_URL_CHECK("disableSamlURLCheck", false, Boolean.class);
+
+  DISABLE_SAML_URL_CHECK("disableSamlURLCheck", false, Boolean.class),
+
+  // Used to determine whether to use the previously hardcoded value for the formatter (for
+  // backwards compatibility) or use the value of JDBC_FORMAT_DATE_WITH_TIMEZONE
+  JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE(
+      "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", false, Boolean.class),
+
+  // Used as a fix for issue SNOW-354859. Remove with snowflake-jdbc version 4.x with BCR changes.
+  JDBC_GET_DATE_USE_NULL_TIMEZONE("JDBC_GET_DATE_USE_NULL_TIMEZONE", false, Boolean.class);
 
   // property key in string
   private String propertyKey;
