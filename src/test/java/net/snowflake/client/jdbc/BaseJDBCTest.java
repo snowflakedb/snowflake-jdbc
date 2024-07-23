@@ -36,8 +36,6 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.core.SFException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 
 public class BaseJDBCTest extends AbstractDriverIT {
   // Test UUID unique per session
