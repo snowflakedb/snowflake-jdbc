@@ -10,7 +10,6 @@ import static org.junit.Assume.assumeFalse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
@@ -30,7 +29,6 @@ import net.snowflake.client.RunningNotOnJava21;
 import net.snowflake.client.RunningNotOnJava8;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.HttpUtil;
-import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -50,9 +48,8 @@ public class ProxyLatestIT {
   private static final Logger logger = Logger.getLogger(ProxyLatestIT.class.getName());
 
   private static final String WIREMOCK_HOME_DIR = ".wiremock";
-  private static final String WIREMOCK_FILE_NAME = "wiremock-standalone-3.8.0.jar";
-  public static final String WIREMOCK_STANDALONE_URL =
-      "https://repo1.maven.org/maven2/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
+  private static final String WIREMOCK_M2_PATH =
+      "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
   private static final String WIREMOCK_HOST = "localhost";
   private static final String TRUST_STORE_PROPERTY = "javax.net.ssl.trustStore";
   private static int httpProxyPort;
@@ -69,7 +66,6 @@ public class ProxyLatestIT {
             .isRunningOnGithubActionsMac()); // disabled until issue with access to localhost is
     // fixed on github actions mac image
     originalTrustStorePath = systemGetProperty(TRUST_STORE_PROPERTY);
-    downloadWiremock();
     startWiremockStandAlone();
   }
 
@@ -185,6 +181,7 @@ public class ProxyLatestIT {
                             getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
                             "--ca-keystore",
                             getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
+                        .inheritIO()
                         .start();
                 waitForWiremock();
                 return true;
@@ -193,21 +190,6 @@ public class ProxyLatestIT {
                 return false;
               }
             });
-  }
-
-  private static void downloadWiremock() {
-    try (CloseableHttpClient client = HttpClients.createDefault();
-        CloseableHttpResponse response = client.execute(new HttpGet(WIREMOCK_STANDALONE_URL))) {
-      HttpEntity entity = response.getEntity();
-      File wiremockStandaloneFile = new File(getWiremockStandAlonePath());
-      wiremockStandaloneFile.getParentFile().mkdirs();
-      wiremockStandaloneFile.createNewFile();
-      try (FileOutputStream outputStream = new FileOutputStream(wiremockStandaloneFile, false)) {
-        entity.writeTo(outputStream);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private void resetWiremock() {
@@ -222,11 +204,7 @@ public class ProxyLatestIT {
   }
 
   private static String getWiremockStandAlonePath() {
-    return System.getProperty("user.dir")
-        + File.separator
-        + WIREMOCK_HOME_DIR
-        + File.separator
-        + WIREMOCK_FILE_NAME;
+    return System.getProperty("user.home") + WIREMOCK_M2_PATH;
   }
 
   private static void waitForWiremock() {

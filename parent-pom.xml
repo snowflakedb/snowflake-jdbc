@@ -507,6 +507,12 @@
         <version>${version.plugin.surefire}</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>org.wiremock</groupId>
+        <artifactId>wiremock-standalone</artifactId>
+        <version>3.8.0</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -756,6 +762,10 @@
     <dependency>
       <groupId>org.apache.maven.surefire</groupId>
       <artifactId>common-junit48</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.wiremock</groupId>
+      <artifactId>wiremock-standalone</artifactId>
     </dependency>
   </dependencies>
 </project>
