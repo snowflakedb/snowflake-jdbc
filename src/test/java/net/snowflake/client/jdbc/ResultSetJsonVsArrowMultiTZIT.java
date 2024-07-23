@@ -27,7 +27,7 @@ import org.junit.runners.Parameterized;
 /** Completely compare json and arrow resultSet behaviors */
 @RunWith(Parameterized.class)
 @Category(TestCategoryArrow.class)
-public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
+public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionIT {
   @Parameterized.Parameters(name = "format={0}, tz={1}")
   public static Collection<Object[]> data() {
     // all tests in this class need to run for both query result formats json and arrow
@@ -45,23 +45,9 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
   private final String queryResultFormat;
   private final String tz;
 
-  private static Connection con;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    con = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (con != null && !con.isClosed()) {
-      con.close();
-    }
-  }
-
   @Before
-  public static void setSessionTimezone() throws SQLException {
-    try (Statement statement = con.createStatement()) {
+  public void setSessionTimezone() throws SQLException {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(
           "alter session set "
               + "TIMEZONE='America/Los_Angeles',"
@@ -80,12 +66,12 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCTest {
   }
 
   private Connection init(String table, String column, String values) throws SQLException {
-    try (Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
       statement.execute("create or replace table " + table + " " + column);
       statement.execute("insert into " + table + " values " + values);
     }
-    return con;
+    return connection;
   }
 
   @Test

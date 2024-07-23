@@ -14,7 +14,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryResultSet.class)
-public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
+public class ResultSetFeatureNotSupportedIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testQueryResultSetNotSupportedException() throws Throwable {
     try (Statement statement = connection.createStatement();

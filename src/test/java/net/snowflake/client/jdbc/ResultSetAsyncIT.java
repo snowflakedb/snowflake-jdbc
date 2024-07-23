@@ -35,7 +35,7 @@ import org.junit.experimental.categories.Category;
 
 /** Test AsyncResultSet */
 @Category(TestCategoryResultSet.class)
-public class ResultSetAsyncIT extends BaseJDBCTest {
+public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testAsyncResultSetFunctionsWithNewSession() throws SQLException {

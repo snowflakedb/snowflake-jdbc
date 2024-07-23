@@ -43,20 +43,6 @@ public class BaseJDBCTest extends AbstractDriverIT {
   // Test UUID unique per session
   static final String TEST_UUID = UUID.randomUUID().toString();
 
-  protected static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
-
   protected interface MethodRaisesSQLException {
     void run() throws SQLException;
   }

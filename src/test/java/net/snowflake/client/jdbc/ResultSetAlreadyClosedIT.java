@@ -17,7 +17,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryResultSet.class)
-public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
+public class ResultSetAlreadyClosedIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testQueryResultSetAlreadyClosed() throws Throwable {
