@@ -32,8 +32,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryOthers.class)
-public class BindUploaderIT extends BaseJDBCWithSharedConnectionIT {
+public class BindUploaderIT extends BaseJDBCTest {
   BindUploader bindUploader;
+  Connection conn;
   SFSession session;
 
   TimeZone prevTimeZone; // store last time zone and restore after tests
@@ -42,12 +43,12 @@ public class BindUploaderIT extends BaseJDBCWithSharedConnectionIT {
   // are constructed by SnowflakePreparedStatementV1.
   // The class first typechecks the query to determine whether array bind is
   // supported, so we need this to force the class to construct array binds
-  protected static final String createTableSQL =
+  private static final String createTableSQL =
       "create or replace table test_binduploader(col1 INTEGER, "
           + "col2 INTEGER, col3 DOUBLE, col4 DOUBLE, col5 DOUBLE, col6 VARCHAR, col7 BINARY, "
           + "col8 DATE, col9 TIME, col10 TIMESTAMP)";
   static final String dummyInsert = "insert into test_binduploader VALUES(?,?,?,?,?,?,?,?,?,?)";
-  protected static final String deleteTableSQL = "drop table if exists test_binduploader";
+  private static final String deleteTableSQL = "drop table if exists test_binduploader";
 
   static final Object[] row1 = {
     42,
@@ -87,19 +88,22 @@ public class BindUploaderIT extends BaseJDBCWithSharedConnectionIT {
 
   @BeforeClass
   public static void classSetUp() throws Exception {
+    Connection connection = getConnection();
     connection.createStatement().execute(createTableSQL);
+    connection.close();
   }
 
   @AfterClass
   public static void classTearDown() throws Exception {
-    if (connection != null && !connection.isClosed()) {
-      connection.createStatement().execute(deleteTableSQL);
-    }
+    Connection connection = getConnection();
+    connection.createStatement().execute(deleteTableSQL);
+    connection.close();
   }
 
   @Before
   public void setUp() throws Exception {
-    session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    conn = getConnection();
+    session = conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
     bindUploader = BindUploader.newInstance(session, STAGE_DIR);
     prevTimeZone = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
@@ -107,6 +111,7 @@ public class BindUploaderIT extends BaseJDBCWithSharedConnectionIT {
 
   @After
   public void tearDown() throws SQLException {
+    conn.close();
     bindUploader.close();
     TimeZone.setDefault(prevTimeZone);
   }
