@@ -58,7 +58,7 @@ public class SnowflakeSerializableTest {
           + "        \"1\"\n"
           + "      ]\n"
           + "    ],\n"
-          + "    \"qrmk\": \"TaQAof44L361XkkKyYhiF81aC0wT0IU+NN8QtobPWCk=\",\n"
+          + "    \"qrmk\": \"ADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=\",\n"
           + "    \"chunkHeaders\": {\n"
           + "      \"x-amz-server-side-encryption-customer-key-md5\": \"A2dDf2ff7HI8OCdsR3pK82g==\"\n"
           + "    },\n"
@@ -136,7 +136,7 @@ public class SnowflakeSerializableTest {
           + "        \"1\"\n"
           + "      ]\n"
           + "    ],\n"
-          + "    \"qrmk\": \"TaQAof44L361XkkKyYhiF81aC0wT0IU+NN8QtobPWCk=\",\n"
+          + "    \"qrmk\": \"ADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=\",\n"
           + "    \"chunkHeaders\": {\n"
           + "      \"x-amz-server-side-encryption-customer-key-md5\": \"A2dDf2ff7HI8OCdsR3pK82g==\"\n"
           + "    },\n"
@@ -214,7 +214,7 @@ public class SnowflakeSerializableTest {
           + "      ]\n"
           + "\n"
           + "    ],\n"
-          + "    \"qrmk\": \"GHaQAofAD234D361XkkKyYhiF81aC0wT0IU+NN8QtobPWCk=\",\n"
+          + "    \"qrmk\": \"ZXYADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=\",\n"
           + "    \"chunkHeaders\": {\n"
           + "      \"x-amz-server-side-encryption-customer-key-md5\": \"f342lkkftyf7HI8OCdsR3pK82g==\"\n"
           + "    },\n"
@@ -291,7 +291,7 @@ public class SnowflakeSerializableTest {
           }
         },
         s.getParameters());
-    assertEquals("TaQAof44L361XkkKyYhiF81aC0wT0IU+NN8QtobPWCk=", s.getQrmk());
+    assertEquals("ADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=", s.getQrmk());
     assertFalse(s.isArrayBindSupported());
     assertEquals(1, s.getResultVersion());
 
@@ -363,7 +363,7 @@ public class SnowflakeSerializableTest {
     assertEquals(
         "[[\"value1_lower\",\"value1_upper\"],[\"value2_lower\",\"value2_upper\"]]",
         s.getRichResultsFirstChunkStringData());
-    assertEquals("GHaQAofAD234D361XkkKyYhiF81aC0wT0IU+NN8QtobPWCk=", s.getRichResultsQrmk());
+    assertEquals("ZXYADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=", s.getRichResultsQrmk());
     assertEquals(1, s.getRichResultsChunkHeadersMap().size());
     assertEquals(
         "f342lkkftyf7HI8OCdsR3pK82g==",
