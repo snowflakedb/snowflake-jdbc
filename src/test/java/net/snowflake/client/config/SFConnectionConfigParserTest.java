@@ -53,7 +53,7 @@ public class SFConnectionConfigParserTest {
       throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "unknown");
-    prepareConnectionConfigurationTomlFile(null, true);
+    prepareConnectionConfigurationTomlFile();
     ConnectionParameters connectionParameters =
         SFConnectionConfigParser.buildConnectionParameters();
     assertNull(connectionParameters);
@@ -62,7 +62,7 @@ public class SFConnectionConfigParserTest {
   @Test
   public void testLoadSFConnectionConfigInValidPath() throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, Paths.get("unknownPath").toString());
-    prepareConnectionConfigurationTomlFile(null, true);
+    prepareConnectionConfigurationTomlFile();
     assertNull(SFConnectionConfigParser.buildConnectionParameters());
   }
 
@@ -73,12 +73,23 @@ public class SFConnectionConfigParserTest {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     prepareConnectionConfigurationTomlFile(
-        Collections.singletonMap("token_file_path", tokenFile.toString()), true);
+        Collections.singletonMap("token_file_path", tokenFile.toString()));
 
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
     assertNotNull(data);
     assertEquals(tokenFile.toString(), data.getParams().get("token_file_path"));
-    assertEquals("testToken", data.getParams().get("token"));
+  }
+
+  @Test
+  public void testThrowErrorWhenWrongPermissionsForConnectionConfigurationFile()
+      throws IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
+    prepareConnectionConfigurationTomlFile(
+        Collections.singletonMap("token_file_path", tokenFile.toString()), false, false);
+    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
+    assertThrows(
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 
   @Test
@@ -86,24 +97,63 @@ public class SFConnectionConfigParserTest {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     prepareConnectionConfigurationTomlFile(
-        Collections.singletonMap("token_file_path", tokenFile.toString()), false);
+        Collections.singletonMap("token_file_path", tokenFile.toString()), true, false);
     assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
     assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 
+  @Test
+  public void testLoadSFConnectionConfigWithHostConfigured()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", "snowflake.reg.local");
+    extraparams.put("account", null);
+    extraparams.put("port", "8082");
+    extraparams.put("token", "testToken");
+    prepareConnectionConfigurationTomlFile(extraparams);
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
+    assertEquals("oauth", data.getParams().get("authenticator"));
+    assertEquals("testToken", data.getParams().get("token"));
+  }
+
+  @Test
+  public void shouldThrowExceptionIfNoneOfHostAndAccountIsSet() throws IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    Map<String, String> extraparams = new HashMap();
+    extraparams.put("host", null);
+    extraparams.put("account", null);
+    prepareConnectionConfigurationTomlFile(extraparams);
+    Assert.assertThrows(
+        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+  }
+
+  private void prepareConnectionConfigurationTomlFile() throws IOException {
+    prepareConnectionConfigurationTomlFile(null, true, true);
+  }
+
+  private void prepareConnectionConfigurationTomlFile(Map moreParameters) throws IOException {
+    prepareConnectionConfigurationTomlFile(moreParameters, true, true);
+  }
+
   private void prepareConnectionConfigurationTomlFile(
-      Map moreParameters, boolean onlyUserPermission) throws IOException {
+      Map moreParameters, boolean onlyUserPermissionConnection, boolean onlyUserPermissionToken)
+      throws IOException {
     Path path = Paths.get(tempPath.toString(), "connections.toml");
-    Path filePath = createFilePathWithPermission(path, onlyUserPermission);
+    Path filePath = createFilePathWithPermission(path, onlyUserPermissionConnection);
     File file = filePath.toFile();
 
     Map configuration = new HashMap();
     Map configurationParams = new HashMap();
     configurationParams.put("account", "snowaccount.us-west-2.aws");
     configurationParams.put("user", "user1");
-    configurationParams.put("token", "testToken");
     configurationParams.put("port", "443");
+    configurationParams.put("authenticator", "oauth");
 
     if (moreParameters != null) {
       moreParameters.forEach((k, v) -> configurationParams.put(k, v));
@@ -114,7 +164,8 @@ public class SFConnectionConfigParserTest {
     if (configurationParams.containsKey("token_file_path")) {
       Path tokenFilePath =
           createFilePathWithPermission(
-              Paths.get(configurationParams.get("token_file_path").toString()), onlyUserPermission);
+              Paths.get(configurationParams.get("token_file_path").toString()),
+              onlyUserPermissionToken);
       Files.write(tokenFilePath, "token_from_file".getBytes());
     }
   }
@@ -130,32 +181,5 @@ public class SFConnectionConfigParserTest {
     } else {
       return Files.createFile(path);
     }
-  }
-
-  @Test
-  public void testLoadSFConnectionConfigWithHostConfigured()
-      throws SnowflakeSQLException, IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
-    extraparams.put("host", "snowflake.reg.local");
-    extraparams.put("account", null);
-    extraparams.put("port", "8082");
-    prepareConnectionConfigurationTomlFile(extraparams, true);
-    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
-    assertNotNull(data);
-    assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
-  }
-
-  @Test
-  public void shouldThrowExceptionIfNoneOfHostAndAccountIsSet() throws IOException {
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
-    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
-    Map<String, String> extraparams = new HashMap();
-    extraparams.put("host", null);
-    extraparams.put("account", null);
-    prepareConnectionConfigurationTomlFile(extraparams, true);
-    Assert.assertThrows(
-        SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 }

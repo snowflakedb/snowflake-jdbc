@@ -970,6 +970,7 @@ public class SnowflakeResultSetSerializableV1
             (this.firstChunkStringData != null) ? mapper.readTree(this.firstChunkStringData) : null;
       } catch (IOException ex) {
         throw new SnowflakeSQLLoggedException(
+            queryId,
             possibleSession.orElse(/* session = */ null),
             "The JSON data is invalid. The error is: " + ex.getMessage());
       }
@@ -1009,6 +1010,7 @@ public class SnowflakeResultSetSerializableV1
 
     if (this.chunkFileMetadatas.isEmpty() && this.firstChunkStringData == null) {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           this.possibleSession.orElse(/* session = */ null),
           "The Result Set serializable is invalid.");
     }
@@ -1067,6 +1069,7 @@ public class SnowflakeResultSetSerializableV1
       SessionUtil.resetOCSPUrlIfNecessary(resultSetRetrieveConfig.getSfFullURL());
     } catch (IOException e) {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           /*session = */ null, // There is no connection
           ErrorCode.INTERNAL_ERROR,
           "Hit exception when adjusting OCSP cache server. The original message is: "
@@ -1139,6 +1142,7 @@ public class SnowflakeResultSetSerializableV1
         }
       default:
         throw new SnowflakeSQLLoggedException(
+            queryId,
             this.possibleSession.orElse(/*session = */ null),
             ErrorCode.INTERNAL_ERROR,
             "Unsupported query result format: " + getQueryResultFormat().name());
@@ -1182,6 +1186,7 @@ public class SnowflakeResultSetSerializableV1
         logger.debug("Interrupted when loading Arrow first chunk row count.", cbie);
       } catch (Exception ex) {
         throw new SnowflakeSQLLoggedException(
+            queryId,
             possibleSession.orElse(/* session = */ null),
             ErrorCode.INTERNAL_ERROR,
             "Fail to retrieve row count for first arrow chunk: " + ex.getMessage());
@@ -1193,6 +1198,7 @@ public class SnowflakeResultSetSerializableV1
     } else {
       // This shouldn't happen
       throw new SnowflakeSQLLoggedException(
+          queryId,
           this.possibleSession.orElse(/*session = */ null),
           ErrorCode.INTERNAL_ERROR,
           "setFirstChunkRowCountForArrow() should only be called for Arrow.");
