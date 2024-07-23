@@ -18,7 +18,7 @@ import org.junit.experimental.categories.Category;
 
 /** Test OpenGroup CLI */
 @Category(TestCategoryOthers.class)
-public class OpenGroupCLIFuncIT extends BaseJDBCTest {
+public class OpenGroupCLIFuncIT extends BaseJDBCWithSharedConnectionIT {
 
   @Before
   public void setSessionTimezone() throws SQLException {

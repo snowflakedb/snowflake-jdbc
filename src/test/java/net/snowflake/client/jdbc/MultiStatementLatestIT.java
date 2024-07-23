@@ -24,7 +24,7 @@ import org.junit.experimental.categories.Category;
  * both the latest and oldest supported driver run the tests.
  */
 @Category(TestCategoryStatement.class)
-public class MultiStatementLatestIT extends BaseJDBCTest {
+public class MultiStatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
   @Before

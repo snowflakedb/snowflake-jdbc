@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryOthers.class)
-public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
+public class DatabaseMetaDataResultsetIT extends BaseJDBCWithSharedConnectionIT {
   private static final int columnCount = 9;
   private static final int INT_DATA = 1;
   private static final String TEXT_DATA = "TEST";

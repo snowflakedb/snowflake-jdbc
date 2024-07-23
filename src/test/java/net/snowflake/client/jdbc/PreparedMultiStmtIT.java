@@ -16,7 +16,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryStatement.class)
-public class PreparedMultiStmtIT extends BaseJDBCTest {
+public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
 
   protected static String queryResultFormat = "json";
 
