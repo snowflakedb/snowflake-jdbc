@@ -1139,8 +1139,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     Properties properties = new Properties();
     properties.put(ENABLE_PATTERN_SEARCH, false);
 
-    try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
+    try (Connection con = getConnection(properties);
+        Statement statement = con.createStatement()) {
+      String database = con.getCatalog();
       TestUtil.withRandomSchema(
           statement,
           customSchema -> {
