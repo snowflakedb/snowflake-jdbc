@@ -745,19 +745,16 @@ public class SnowflakeResultSetSerializableV1
   }
 
   /**
-   * A factory function for internal usage only It creates SnowflakeResultSetSerializableV1 with
-   * NoOpChunksDownloader which disables chunks prefetch
+   * A factory function for internal usage only. It creates SnowflakeResultSetSerializableV1 with
+   * NoOpChunksDownloader which disables chunks prefetch.
    */
   @SnowflakeJdbcInternalApi
   public static SnowflakeResultSetSerializableV1 createWithChunksPrefetchDisabled(
-      JsonNode rootNode,
-      SFBaseSession sfSession,
-      SFBaseStatement sfStatement,
-      ResultStreamProvider resultStreamProvider)
+      JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)
       throws SnowflakeSQLException {
     logger.trace("Entering create()", false);
     return new SnowflakeResultSetSerializableV1(
-        rootNode, sfSession, sfStatement, resultStreamProvider, true);
+        rootNode, sfSession, sfStatement, new DefaultResultStreamProvider(), true);
   }
 
   /**

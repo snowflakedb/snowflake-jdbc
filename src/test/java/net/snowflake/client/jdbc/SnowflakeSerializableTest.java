@@ -256,7 +256,7 @@ public class SnowflakeSerializableTest {
     JsonNode rootNode = OBJECT_MAPPER.readTree(STANDARD_SERIALIZABLE_V1_JSON_STRING);
     SnowflakeResultSetSerializableV1 s =
         SnowflakeResultSetSerializableV1.createWithChunksPrefetchDisabled(
-            rootNode, MOCK_SESSION, MOCK_STATEMENT, new DefaultResultStreamProvider());
+            rootNode, MOCK_SESSION, MOCK_STATEMENT);
     assertRegularResultSetSerializable(s, NoOpChunkDownloader.class);
   }
 
@@ -266,7 +266,7 @@ public class SnowflakeSerializableTest {
     JsonNode rootNode = OBJECT_MAPPER.readTree(RICH_RESULTS_SERIALIZABLE_V1_JSON_STRING);
     SnowflakeRichResultSetSerializableV1 s =
         SnowflakeRichResultSetSerializableV1.createWithChunksPrefetchDisabled(
-            rootNode, MOCK_SESSION, MOCK_STATEMENT, new DefaultResultStreamProvider());
+            rootNode, MOCK_SESSION, MOCK_STATEMENT);
     assertRegularResultSetSerializable(s, NoOpChunkDownloader.class);
     assertRichResultSetSerializable(s);
   }
