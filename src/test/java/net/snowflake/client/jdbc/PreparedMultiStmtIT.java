@@ -34,16 +34,13 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
 
   @Before
   public void setSessionResultFormat() throws SQLException {
-    System.out.println("sfConnection is closed? " + sfConnectionV1.isClosed());
     try (Statement stmt = connection.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }
-    System.out.println("sfConnection is closed after? " + sfConnectionV1.isClosed());
   }
 
   @Test
   public void testExecuteUpdateCount() throws Exception {
-    System.out.println("sfConnection is closed in test? " + sfConnectionV1.isClosed());
     try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
@@ -84,13 +81,11 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
         statement.execute("drop table if exists test_multi_bind");
       }
     }
-    System.out.println("sfConnection is closed after test? " + sfConnectionV1.isClosed());
   }
 
   /** Less bindings than expected in statement */
   @Test
   public void testExecuteLessBindings() throws Exception {
-    System.out.println("sfConnection is closed in test? " + sfConnectionV1.isClosed());
     try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
@@ -119,12 +114,10 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
         statement.execute("drop table if exists test_multi_bind");
       }
     }
-    System.out.println("sfConnection is closed after test? " + sfConnectionV1.isClosed());
   }
 
   @Test
   public void testExecuteMoreBindings() throws Exception {
-    System.out.println("sfConnection is closed in test? " + sfConnectionV1.isClosed());
     try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
@@ -167,12 +160,10 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
         statement.execute("drop table if exists test_multi_bind");
       }
     }
-    System.out.println("sfConnection is closed after test? " + sfConnectionV1.isClosed());
   }
 
   @Test
   public void testExecuteQueryBindings() throws Exception {
-    System.out.println("sfConnection is closed in test? " + sfConnectionV1.isClosed());
     try (Statement statement = sfConnectionV1.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
@@ -211,12 +202,10 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
         }
       }
     }
-    System.out.println("sfConnection is closed after test? " + sfConnectionV1.isClosed());
   }
 
   @Test
   public void testExecuteQueryNoBindings() throws Exception {
-    System.out.println("sfConnection is closed in test? " + sfConnectionV1.isClosed());
     try (Statement statement = sfConnectionV1.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
@@ -249,6 +238,5 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
         }
       }
     }
-    System.out.println("sfConnection is closed after test? " + sfConnectionV1.isClosed());
   }
 }
