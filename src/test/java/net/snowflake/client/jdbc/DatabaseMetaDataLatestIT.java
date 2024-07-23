@@ -1151,7 +1151,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
                 "create or replace table PK_TEST (c1 int PRIMARY KEY, c2 VARCHAR(10))");
             statement.execute(
                 "create or replace table FK_TEST (c1 int REFERENCES PK_TEST(c1), c2 VARCHAR(10))");
-            DatabaseMetaData metaData = connection.getMetaData();
+            DatabaseMetaData metaData = con.getMetaData();
             // We have disabled the pattern search so we should get no results.
             try (ResultSet rs = metaData.getPrimaryKeys(database, escapedSchema, null)) {
               assertEquals(0, getSizeOfResultSet(rs));
