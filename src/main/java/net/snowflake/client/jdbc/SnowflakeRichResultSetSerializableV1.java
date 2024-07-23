@@ -36,8 +36,8 @@ public class SnowflakeRichResultSetSerializableV1 extends SnowflakeResultSetSeri
   transient JsonNode richResultFirstChunkRowset = null;
 
   /**
-   * A factory function for internal usage only
-   * It creates SnowflakeRichResultSetSerializableV1 with NoOpChunksDownloader which disables chunks prefetch
+   * A factory function for internal usage only It creates SnowflakeRichResultSetSerializableV1 with
+   * NoOpChunksDownloader which disables chunks prefetch
    */
   public static SnowflakeRichResultSetSerializableV1 createWithChunksPrefetchDisabled(
       JsonNode rootNode,
