@@ -58,7 +58,7 @@
     <json.smart.version>2.4.9</json.smart.version>
     <jsoup.version>1.15.3</jsoup.version>
     <metrics.version>2.2.0</metrics.version>
-    <netty.version>4.1.100.Final</netty.version>
+    <netty.version>4.1.111.Final</netty.version>
     <nimbusds.version>9.37.3</nimbusds.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

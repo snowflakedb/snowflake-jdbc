@@ -4,8 +4,11 @@
 package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -29,6 +32,29 @@ public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
               columnNames, columnTypeNames, columnTypes, rows, st)) {
         resultSet.next();
         assertEquals(1.2F, resultSet.getObject(1));
+      }
+    }
+  }
+
+  /** Added in > 3.17.0 */
+  @Test
+  public void testObjectColumn() throws SQLException {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute(
+          "CREATE OR REPLACE TABLE TABLEWITHOBJECTCOLUMN ("
+              + "    col OBJECT("
+              + "      str VARCHAR,"
+              + "      num NUMBER(38,0)"
+              + "      )"
+              + "   )");
+      DatabaseMetaData metaData = connection.getMetaData();
+      try (ResultSet resultSet =
+          metaData.getColumns(
+              connection.getCatalog(), connection.getSchema(), "TABLEWITHOBJECTCOLUMN", null)) {
+        assertTrue(resultSet.next());
+        assertEquals("OBJECT", resultSet.getObject("TYPE_NAME"));
+        assertFalse(resultSet.next());
       }
     }
   }

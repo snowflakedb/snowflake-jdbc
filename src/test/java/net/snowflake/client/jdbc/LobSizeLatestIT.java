@@ -21,6 +21,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.UUIDUtils;
@@ -36,29 +38,31 @@ import org.junit.runners.Parameterized;
 @Category(TestCategoryStatement.class)
 public class LobSizeLatestIT extends BaseJDBCTest {
 
+  private static final Logger logger = Logger.getLogger(SnowflakeDriverIT.class.getName());
+  private static final Map<Integer, String> LobSizeStringValues = new HashMap<>();
+
   // Max LOB size is testable from version 3.15.0 and above.
-  private static int maxLobSize = 16 * 1024 * 1024;
+  private static int maxLobSize = 16 * 1024 * 1024; // default value
   private static int largeLobSize = maxLobSize / 2;
   private static int mediumLobSize = largeLobSize / 2;
-  private static int originLobSize = mediumLobSize / 2;
   private static int smallLobSize = 16;
-
-  private static Map<Integer, String> LobSizeStringValues =
-      new HashMap<Integer, String>() {
-        {
-          put(smallLobSize, generateRandomString(smallLobSize));
-          put(originLobSize, generateRandomString(originLobSize));
-          put(mediumLobSize, generateRandomString(mediumLobSize));
-          put(largeLobSize, generateRandomString(largeLobSize));
-          put(maxLobSize, generateRandomString(maxLobSize));
-        }
-      };
+  private static int originLobSize = 16 * 1024 * 1024;
 
   @BeforeClass
-  public static void setUp() {
+  public static void setUp() throws SQLException {
     System.setProperty(
         // the max json string should be ~1.33 for Arrow response so let's use 1.5 to be sure
         ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, Integer.toString((int) (maxLobSize * 1.5)));
+    try (Connection con = BaseJDBCTest.getConnection()) {
+      // get max LOB size from session
+      maxLobSize = con.getMetaData().getMaxCharLiteralLength();
+      logger.log(Level.INFO, "Using max lob size: " + maxLobSize);
+      LobSizeStringValues.put(smallLobSize, generateRandomString(smallLobSize));
+      LobSizeStringValues.put(originLobSize, generateRandomString(originLobSize));
+      LobSizeStringValues.put(mediumLobSize, generateRandomString(mediumLobSize));
+      LobSizeStringValues.put(largeLobSize, generateRandomString(largeLobSize));
+      LobSizeStringValues.put(maxLobSize, generateRandomString(maxLobSize));
+    }
   }
 
   @Parameterized.Parameters(name = "lobSize={0}, resultFormat={1}")
@@ -198,7 +202,9 @@ public class LobSizeLatestIT extends BaseJDBCTest {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
       setResultFormat(stmt, resultFormat);
-
+      if (lobSize > originLobSize) { // for increased LOB size (16MB < lobSize < 128MB)
+        stmt.execute("alter session set ALLOW_LARGE_LOBS_IN_EXTERNAL_SCAN = true");
+      }
       // Test PUT
       String sqlPut = "PUT 'file://" + filePathEscaped + "' @%" + tableName;
 
