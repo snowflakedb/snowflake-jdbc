@@ -18,8 +18,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.sql.Date;
+import java.sql.SQLData;
 import java.sql.SQLException;
 import java.sql.Time;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -27,19 +30,24 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
+import java.util.TimeZone;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import net.minidev.json.JSONObject;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.HttpClientSettingsKey;
+import net.snowflake.client.core.JsonSqlOutput;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.ObjectMapperFactory;
+import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSessionProperty;
@@ -47,6 +55,10 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.ThrowingCallable;
+import net.snowflake.common.core.SFBinary;
+import net.snowflake.common.core.SFTime;
+import net.snowflake.common.core.SFTimestamp;
+import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import net.snowflake.common.core.SqlState;
 import net.snowflake.common.util.ClassUtil;
 import net.snowflake.common.util.FixedViewColumn;
@@ -92,8 +104,117 @@ public class SnowflakeUtil {
   public static final String BYTE_STR = "byte";
   public static final String BYTES_STR = "byte array";
 
-  public static String mapJson(Object ob) throws JsonProcessingException {
-    return OBJECT_MAPPER.writeValueAsString(ob);
+  public static String mapMapValuesJson(Map map, int type, SnowflakeConnectionV1 connection ) throws JsonProcessingException, SQLException {
+    if (type == Types.STRUCT) {
+      Map<Object, JSONObject> jObjects = new HashMap<>();
+      for (Object key : map.keySet()) {
+        SQLData element = (SQLData) map.get(key);
+        JsonSqlOutput sqlOutput= new JsonSqlOutput(element, connection.getSFBaseSession());
+        element.writeSQL(sqlOutput);
+        jObjects.put(key, sqlOutput.getJsonObject());
+      }
+      return OBJECT_MAPPER.writeValueAsString(jObjects);
+    } else if (Arrays.asList(Types.VARCHAR,
+            Types.CHAR,
+            Types.FLOAT,
+            Types.DOUBLE,
+            Types.DECIMAL,
+            Types.NUMERIC,
+            Types.INTEGER,
+            Types.SMALLINT,
+            Types.TINYINT,
+            Types.BIGINT,
+            Types.BOOLEAN,
+            Types.TIMESTAMP,
+            Types.TIME,
+            Types.DATE,
+            Types.BINARY).contains(type)) {
+      Map<Object, String> mappedValues = new HashMap<>();
+      for (Object key : map.keySet()) {
+        if(map.get(key) == null) {
+          mappedValues.put(key, null);
+        } else {
+          mappedValues.put(key, formatStringForType(map.get(key), type, connection));
+        }
+      }
+      return OBJECT_MAPPER.writeValueAsString(mappedValues);
+    } else {
+      throw new SQLException("Unsupported type in array: " + type);
+    }
+  }
+  public static <T> String mapArrayElements(Object ob, int type, SnowflakeConnectionV1 connection) throws JsonProcessingException, SQLException {
+    if (ob == null) {
+      return OBJECT_MAPPER.writeValueAsString(ob);
+    } else if (type == Types.STRUCT) {
+      SQLData[] elements = (SQLData[]) ob;
+      ArrayList<JSONObject> jObjects = new ArrayList<>();
+      for (SQLData element : elements) {
+          JsonSqlOutput sqlOutput= new JsonSqlOutput(element, connection.getSFBaseSession());
+          element.writeSQL(sqlOutput);
+          jObjects.add(sqlOutput.getJsonObject());
+      }
+      return OBJECT_MAPPER.writeValueAsString(jObjects);
+    } else if (Arrays.asList(Types.VARCHAR,
+            Types.CHAR,
+            Types.FLOAT,
+            Types.DOUBLE,
+            Types.DECIMAL,
+            Types.NUMERIC,
+            Types.INTEGER,
+            Types.SMALLINT,
+            Types.TINYINT,
+            Types.BIGINT,
+            Types.BOOLEAN,
+            Types.TIMESTAMP,
+            Types.TIME,
+            Types.DATE,
+            Types.BINARY).contains(type)) {
+      Object[] array = (Object[]) ob;
+      ArrayList<String> str = new ArrayList();
+      for (Object element : array) {
+        if(element == null) {
+          str.add(null);
+        } else {
+          str.add(formatStringForType(element, type, connection));
+        }
+      }
+      return OBJECT_MAPPER.writeValueAsString(str);
+    } else {
+      throw new SQLException("Unsupported type in array: " + type);
+    }
+  }
+
+  private static String formatStringForType(Object value, int javaType, SnowflakeConnectionV1 connection) throws SQLException {
+    if ( value == null) {
+      return String.valueOf(value);
+    } else if ( javaType == Types.TIMESTAMP) {
+        try {
+            return ResultUtil.getSFTimestampAsString(
+                    new SFTimestamp((Timestamp) value, TimeZone.getDefault()),
+                    javaType,
+                    9,
+                    getFormat(connection.getSFBaseSession(), "TIMESTAMP_NTZ_OUTPUT_FORMAT"),
+                    getFormat(connection.getSFBaseSession(), "TIMESTAMP_LTZ_OUTPUT_FORMAT"),
+                    getFormat(connection.getSFBaseSession(), "TIMESTAMP_TZ_OUTPUT_FORMAT"),
+                    connection.getSFBaseSession());
+        } catch (SFException e) {
+            throw new SQLException(e);
+        }
+    } else if ( javaType == Types.TIME) {
+      SnowflakeDateTimeFormat formatter = getFormat(connection.getSFBaseSession(), "TIME_OUTPUT_FORMAT");
+      return formatter.format(SFTime.fromNanoseconds(((Time) value).getTime() * 1000 * 1000), 9);
+    } else if ( javaType == Types.DATE) {
+      Date date = (Date) value;
+      return String.valueOf(
+              date.getTime()
+                      + TimeZone.getDefault().getOffset(date.getTime())
+                      - ResultUtil.msDiffJulianToGregorian(date));
+    } else if ( javaType == Types.BINARY) {
+      byte[] bytes = (byte[]) value;
+      return new SFBinary(bytes).toHex();
+    } else {
+      return String.valueOf(value);
+    }
   }
 
   public static void checkErrorAndThrowExceptionIncludingReauth(JsonNode rootNode)
@@ -890,5 +1011,10 @@ public class SnowflakeUtil {
       return null;
     }
     return node.isValueNode() ? node.asText() : node.toString();
+  }
+
+  public static SnowflakeDateTimeFormat getFormat(SFBaseSession session, String format) {
+    return SnowflakeDateTimeFormat.fromSqlFormat(
+            (String) session.getCommonParameters().get(format));
   }
 }

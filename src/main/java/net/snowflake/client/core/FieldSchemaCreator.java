@@ -85,9 +85,14 @@ public class FieldSchemaCreator {
       case Types.DATE:
         return FieldSchemaCreator.buildSchemaTypeAndNameOnly(name, "date", Optional.empty());
       case Types.TIMESTAMP:
+        return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
+                name, "timestamp", 9, 0, Optional.empty());
       case Types.TIME:
         return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
-            name, "timestamp", 9, 0, Optional.empty());
+            name, "time", 9, 0, Optional.empty());
+      case Types.BINARY:
+        return FieldSchemaCreator.buildSchemaForBytesType(
+                name,  Optional.empty());
       default:
         logger.error("Could not create schema for type : " + baseType);
         throw new SQLException("Could not create schema for type : " + baseType);

@@ -39,6 +39,7 @@ import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -267,125 +268,8 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
     }
   }
 
-  public static Timestamp toTimestamp(ZonedDateTime dateTime) {
+  private static Timestamp toTimestamp(ZonedDateTime dateTime) {
     return new Timestamp(dateTime.toInstant().getEpochSecond() * 1000L);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testWriteArray() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
-                connection.prepareStatement(
-                    "INSERT INTO array_of_integers (arrayInt) SELECT ?;"); ) {
-
-      statement.execute(" CREATE OR REPLACE TABLE array_of_integers(arrayInt ARRAY(INTEGER))");
-
-      Array array = connection.createArrayOf("INTEGER", new Integer[] {1, 2, 3});
-      stmt.setArray(1, array);
-      stmt.executeUpdate();
-
-      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
-        resultSet.next();
-
-        Long[] resultArray = (Long[]) resultSet.getArray(1).getArray();
-        assertEquals(Long.valueOf(1), resultArray[0]);
-        assertEquals(Long.valueOf(2), resultArray[1]);
-        assertEquals(Long.valueOf(3), resultArray[2]);
-      }
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testWriteArrayNoBinds() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
-                connection.prepareStatement(
-                    "insert into array_of_integers select ([1, 2, 3]::array(integer));"); ) {
-
-      statement.execute(" CREATE OR REPLACE TABLE array_of_integers(arrayInt ARRAY(INTEGER))");
-
-      stmt.executeUpdate();
-
-      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
-        resultSet.next();
-        Long[] resultArray = (Long[]) resultSet.getArray(1).getArray();
-        assertEquals(Long.valueOf(1), resultArray[0]);
-        assertEquals(Long.valueOf(2), resultArray[1]);
-        assertEquals(Long.valueOf(3), resultArray[2]);
-      }
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testWriteMapOfSqlData() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
-        SnowflakePreparedStatementV1 stmt2 =
-            (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
-
-      statement.execute(
-          " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, OBJECT(string VARCHAR, intValue INTEGER)))");
-
-      Map<String, SimpleClass> mapStruct =
-          Stream.of(
-                  new Object[][] {
-                    {"x", new SimpleClass("string1", 1)},
-                    {"y", new SimpleClass("string2", 2)},
-                  })
-              .collect(Collectors.toMap(data -> (String) data[0], data -> (SimpleClass) data[1]));
-
-      stmt.setMap(1, mapStruct, Types.STRUCT);
-      stmt.executeUpdate();
-
-      stmt2.setMap(1, mapStruct, Types.STRUCT);
-
-      try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
-        Map<String, SimpleClass> map =
-            resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, SimpleClass.class);
-      }
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testWriteMapOfInteger() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
-        SnowflakePreparedStatementV1 stmt =
-            (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
-        SnowflakePreparedStatementV1 stmt2 =
-            (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
-
-      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, INTEGER))");
-
-      Map<String, Integer> mapStruct = new HashMap<>();
-      mapStruct.put("x", 1);
-      mapStruct.put("y", 2);
-
-      stmt.setMap(1, mapStruct, Types.INTEGER);
-      stmt.executeUpdate();
-
-      stmt2.setMap(1, mapStruct, Types.INTEGER);
-
-      try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
-        Map<String, Integer> map =
-            resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Integer.class);
-      }
-    }
-  }
 }

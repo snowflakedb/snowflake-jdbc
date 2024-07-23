@@ -1729,6 +1729,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                         sfBaseResultSet.convertToTimestamp(
                             entry.getValue(), columnType, columnSubType, tz, scale)));
 
+      } else if (byte[].class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet.getConverters().getBytesConverter().getBytes( entry.getValue(), columnType, columnSubType, scale)));
+
       } else {
         logger.debug(
             "Unsupported type passed to getObject(int columnIndex,Class<T> type): "

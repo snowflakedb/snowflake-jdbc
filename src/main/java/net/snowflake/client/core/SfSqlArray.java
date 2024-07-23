@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import net.snowflake.client.jdbc.BindingParameterMetadata;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -81,9 +82,13 @@ public class SfSqlArray implements Array {
   @Override
   public void free() throws SQLException {}
 
-  public String getJsonString() throws SQLException {
+  public Object getElements() {
+      return elements;
+  }
+
+  public <T> String getArrayJsonString(int type) throws SQLException {
     try {
-      return SnowflakeUtil.mapJson(elements);
+      return SnowflakeUtil.mapArrayElements(elements, type, null);
     } catch (JsonProcessingException e) {
       throw new SQLException("There is exception during array to json string.", e);
     }
@@ -93,6 +98,13 @@ public class SfSqlArray implements Array {
     return BindingParameterMetadata.BindingParameterMetadataBuilder.bindingParameterMetadata()
         .withType("array")
         .withFields(Arrays.asList(buildBindingSchemaForType(getBaseType(), false)))
+        .build();
+  }
+
+  public BindingParameterMetadata getSchema(List<BindingParameterMetadata> fields) throws SQLException {
+    return BindingParameterMetadata.BindingParameterMetadataBuilder.bindingParameterMetadata()
+        .withType("array")
+        .withFields(fields)
         .build();
   }
 }
