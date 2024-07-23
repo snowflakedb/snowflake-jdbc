@@ -147,21 +147,6 @@
               <generatePom>true</generatePom>
             </configuration>
           </execution>
-          <!--          <execution>-->
-          <!--            <id>install-arrow-memory-netty-buffer-patch</id>-->
-          <!--            <goals>-->
-          <!--              <goal>install-file</goal>-->
-          <!--            </goals>-->
-          <!--            <phase>validate</phase>-->
-          <!--            <configuration>-->
-          <!--              <file>${basedir}/../dependencies/arrow-memory-netty-buffer-patch-${arrow.version}.jar</file>-->
-          <!--              <groupId>org.apache.arrow</groupId>-->
-          <!--              <artifactId>arrow-memory-netty-buffer-patch</artifactId>-->
-          <!--              <version>${arrow.version}</version>-->
-          <!--              <packaging>jar</packaging>-->
-          <!--              <generatePom>true</generatePom>-->
-          <!--            </configuration>-->
-          <!--          </execution>-->
           <execution>
             <id>install-arrow-format</id>
             <phase>validate</phase>
