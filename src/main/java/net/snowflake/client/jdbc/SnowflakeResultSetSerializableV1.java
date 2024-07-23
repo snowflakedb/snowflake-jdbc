@@ -708,6 +708,12 @@ public class SnowflakeResultSetSerializableV1
   /**
    * A factory function to create SnowflakeResultSetSerializable object from result JSON node, using
    * the DefaultResultStreamProvider.
+   *
+   * @param rootNode result JSON node received from GS
+   * @param sfSession the Snowflake session
+   * @param sfStatement the Snowflake statement
+   * @return processed ResultSetSerializable object
+   * @throws SnowflakeSQLException if failed to parse the result JSON node
    */
   public static SnowflakeResultSetSerializableV1 create(
       JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)
@@ -718,6 +724,14 @@ public class SnowflakeResultSetSerializableV1
   /**
    * A factory function to create SnowflakeResultSetSerializable object from result JSON node, with
    * an overridable ResultStreamProvider.
+   *
+   * @param rootNode result JSON node received from GS
+   * @param sfSession the Snowflake session
+   * @param sfStatement the Snowflake statement
+   * @param resultStreamProvider a ResultStreamProvider for computing a custom data source for
+   *     result-file streams
+   * @return processed ResultSetSerializable object
+   * @throws SnowflakeSQLException if failed to parse the result JSON node
    */
   public static SnowflakeResultSetSerializableV1 create(
       JsonNode rootNode,

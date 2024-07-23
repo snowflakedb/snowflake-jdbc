@@ -107,51 +107,47 @@ public class SnowflakeRichResultSetSerializableV1 extends SnowflakeResultSetSeri
 
   private void initializeChunkFiles(JsonNode richResultsNode) {
     JsonNode chunksNode = richResultsNode.path("chunks");
-
     if (!chunksNode.isMissingNode()) {
       this.richResultsChunkFileCount = chunksNode.size();
       JsonNode qrmkNode = richResultsNode.path("qrmk");
       this.richResultsQrmk = qrmkNode.isMissingNode() ? null : qrmkNode.textValue();
       if (this.richResultsChunkFileCount > 0) {
         logger.debug("Number of rich results metadata chunks: {}", this.richResultsChunkFileCount);
-
-        // Parse chunk headers
-        JsonNode chunkHeaders = richResultsNode.path("chunkHeaders");
-        if (chunkHeaders != null && !chunkHeaders.isMissingNode()) {
-          Iterator<Map.Entry<String, JsonNode>> chunkHeadersIter = chunkHeaders.fields();
-
-          while (chunkHeadersIter.hasNext()) {
-            Map.Entry<String, JsonNode> chunkHeader = chunkHeadersIter.next();
-
-            logger.debug(
-                "Add header key: {}, value: {}",
-                chunkHeader.getKey(),
-                chunkHeader.getValue().asText());
-            this.richResultsChunkHeadersMap.put(
-                chunkHeader.getKey(), chunkHeader.getValue().asText());
-          }
-        }
-
-        // parse chunk files metadata e.g. url and row count
-        for (int idx = 0; idx < this.richResultsChunkFileCount; idx++) {
-          JsonNode chunkNode = chunksNode.get(idx);
-          String url = chunkNode.path("url").asText();
-          int rowCount = chunkNode.path("rowCount").asInt();
-          int compressedSize = chunkNode.path("compressedSize").asInt();
-          int uncompressedSize = chunkNode.path("uncompressedSize").asInt();
-
-          this.richResultsChunkFilesMetadata.add(
-              new ChunkFileMetadata(url, rowCount, compressedSize, uncompressedSize));
-
-          logger.debug(
-              "Add rich results metadata chunk, url: {} rowCount: {} "
-                  + "compressedSize: {} uncompressedSize: {}",
-              url,
-              rowCount,
-              compressedSize,
-              uncompressedSize);
-        }
+        initializeChunkHeaders(richResultsNode);
+        initializeChunkFilesMetadata(chunksNode);
       }
+    }
+  }
+
+  private void initializeChunkHeaders(JsonNode richResultsNode) {
+    JsonNode chunkHeaders = richResultsNode.path("chunkHeaders");
+    if (chunkHeaders != null && !chunkHeaders.isMissingNode()) {
+      Iterator<Map.Entry<String, JsonNode>> chunkHeadersIter = chunkHeaders.fields();
+      while (chunkHeadersIter.hasNext()) {
+        Map.Entry<String, JsonNode> chunkHeader = chunkHeadersIter.next();
+        logger.debug(
+            "Add header key: {}, value: {}", chunkHeader.getKey(), chunkHeader.getValue().asText());
+        this.richResultsChunkHeadersMap.put(chunkHeader.getKey(), chunkHeader.getValue().asText());
+      }
+    }
+  }
+
+  private void initializeChunkFilesMetadata(JsonNode chunksNode) {
+    for (int idx = 0; idx < this.richResultsChunkFileCount; idx++) {
+      JsonNode chunkNode = chunksNode.get(idx);
+      String url = chunkNode.path("url").asText();
+      int rowCount = chunkNode.path("rowCount").asInt();
+      int compressedSize = chunkNode.path("compressedSize").asInt();
+      int uncompressedSize = chunkNode.path("uncompressedSize").asInt();
+      this.richResultsChunkFilesMetadata.add(
+          new ChunkFileMetadata(url, rowCount, compressedSize, uncompressedSize));
+      logger.debug(
+          "Add rich results metadata chunk, url: {} rowCount: {} "
+              + "compressedSize: {} uncompressedSize: {}",
+          url,
+          rowCount,
+          compressedSize,
+          uncompressedSize);
     }
   }
 

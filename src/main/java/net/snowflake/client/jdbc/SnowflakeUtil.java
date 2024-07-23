@@ -172,7 +172,8 @@ public class SnowflakeUtil {
     throw new SnowflakeSQLException(queryId, errorMessage, sqlState, errorCode);
   }
 
-  @SnowflakeJdbcInternalApi
+  /** This method should only be used internally */
+  @Deprecated
   public static SnowflakeColumnMetadata extractColumnMetadata(
       JsonNode colNode, boolean jdbcTreatDecimalAsInt, SFBaseSession session)
       throws SnowflakeSQLException {
