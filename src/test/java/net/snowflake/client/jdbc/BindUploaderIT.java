@@ -32,7 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryOthers.class)
-public class BindUploaderIT extends BaseJDBCTest {
+public class BindUploaderIT extends BaseJDBCWithSharedConnectionIT {
   BindUploader bindUploader;
   SFSession session;
 
@@ -85,25 +85,21 @@ public class BindUploaderIT extends BaseJDBCTest {
           + STAGE_DIR
           + "' ORDER BY $1 ASC";
 
-  protected static Connection conn;
-
   @BeforeClass
   public static void classSetUp() throws Exception {
-    conn = getConnection();
-    conn.createStatement().execute(createTableSQL);
+    connection.createStatement().execute(createTableSQL);
   }
 
   @AfterClass
   public static void classTearDown() throws Exception {
-    if (conn != null && !conn.isClosed()) {
-      conn.createStatement().execute(deleteTableSQL);
-      conn.close();
+    if (connection != null && !connection.isClosed()) {
+      connection.createStatement().execute(deleteTableSQL);
     }
   }
 
   @Before
   public void setUp() throws Exception {
-    session = conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
+    session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
     bindUploader = BindUploader.newInstance(session, STAGE_DIR);
     prevTimeZone = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));

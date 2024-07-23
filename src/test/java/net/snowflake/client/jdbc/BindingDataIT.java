@@ -9,7 +9,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,10 +18,7 @@ import java.sql.Time;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
-import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.experimental.theories.DataPoints;
@@ -33,22 +29,8 @@ import org.junit.runner.RunWith;
 /** Integration tests for binding variable */
 @RunWith(Theories.class)
 @Category(TestCategoryOthers.class)
-public class BindingDataIT extends AbstractDriverIT {
+public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
   @DataPoints public static short[] shortValues = {0, 1, -1, Short.MIN_VALUE, Short.MAX_VALUE};
-
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
 
   @Theory
   public void testBindShort(short shortValue) throws SQLException {

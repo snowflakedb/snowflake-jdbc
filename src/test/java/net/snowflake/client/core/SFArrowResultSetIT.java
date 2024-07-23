@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.core;
 
-import static net.snowflake.client.AbstractDriverIT.getConnection;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -16,9 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -32,13 +29,7 @@ import java.util.Random;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.SkipOnThinJar;
 import net.snowflake.client.category.TestCategoryArrow;
-import net.snowflake.client.jdbc.ArrowResultChunk;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.SnowflakeResultChunk;
-import net.snowflake.client.jdbc.SnowflakeResultSet;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -65,15 +56,13 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryArrow.class)
-public class SFArrowResultSetIT {
+public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
 
   /** Necessary to conditional ignore tests */
   @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
@@ -88,20 +77,6 @@ public class SFArrowResultSetIT {
 
   /** temporary folder to store result files */
   @Rule public TemporaryFolder resultFolder = new TemporaryFolder();
-
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
 
   /** Test the case that all results are returned in first chunk */
   @Test

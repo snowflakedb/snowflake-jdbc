@@ -57,8 +57,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testFindColumn() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
       assertEquals(1, resultSet.findColumn("COLA"));
     }
@@ -66,8 +65,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetColumnClassNameForBinary() throws Throwable {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table bintable (b binary)");
         statement.execute("insert into bintable values ('00f1f2')");
@@ -100,72 +98,68 @@ public class ResultSetIT extends ResultSet0IT {
     double bigDouble = Double.MAX_VALUE;
     float bigFloat = Float.MAX_VALUE;
 
-    try (Connection connection = init()) {
-      Clob clob = connection.createClob();
-      clob.setString(1, "hello world");
-      try (Statement statement = connection.createStatement()) {
-        try {
-          statement.execute(
-              "create or replace table test_get(colA integer, colB number, colC number, "
-                  + "colD string, colE double, colF float, colG boolean, colH text)");
+    Clob clob = connection.createClob();
+    clob.setString(1, "hello world");
+    try (Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "create or replace table test_get(colA integer, colB number, colC number, "
+                + "colD string, colE double, colF float, colG boolean, colH text)");
 
-          try (PreparedStatement prepStatement = connection.prepareStatement(prepInsertString)) {
-            prepStatement.setInt(1, bigInt);
-            prepStatement.setLong(2, bigLong);
-            prepStatement.setLong(3, bigShort);
-            prepStatement.setString(4, str);
-            prepStatement.setDouble(5, bigDouble);
-            prepStatement.setFloat(6, bigFloat);
-            prepStatement.setBoolean(7, true);
-            prepStatement.setClob(8, clob);
-            prepStatement.execute();
+        try (PreparedStatement prepStatement = connection.prepareStatement(prepInsertString)) {
+          prepStatement.setInt(1, bigInt);
+          prepStatement.setLong(2, bigLong);
+          prepStatement.setLong(3, bigShort);
+          prepStatement.setString(4, str);
+          prepStatement.setDouble(5, bigDouble);
+          prepStatement.setFloat(6, bigFloat);
+          prepStatement.setBoolean(7, true);
+          prepStatement.setClob(8, clob);
+          prepStatement.execute();
 
-            statement.execute("select * from test_get");
-            try (ResultSet resultSet = statement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(bigInt, resultSet.getInt(1));
-              assertEquals(bigInt, resultSet.getInt("COLA"));
-              assertEquals(bigLong, resultSet.getLong(2));
-              assertEquals(bigLong, resultSet.getLong("COLB"));
-              assertEquals(bigShort, resultSet.getShort(3));
-              assertEquals(bigShort, resultSet.getShort("COLC"));
-              assertEquals(str, resultSet.getString(4));
-              assertEquals(str, resultSet.getString("COLD"));
-              Reader reader = resultSet.getCharacterStream("COLD");
-              char[] sample = new char[str.length()];
+          statement.execute("select * from test_get");
+          try (ResultSet resultSet = statement.getResultSet()) {
+            assertTrue(resultSet.next());
+            assertEquals(bigInt, resultSet.getInt(1));
+            assertEquals(bigInt, resultSet.getInt("COLA"));
+            assertEquals(bigLong, resultSet.getLong(2));
+            assertEquals(bigLong, resultSet.getLong("COLB"));
+            assertEquals(bigShort, resultSet.getShort(3));
+            assertEquals(bigShort, resultSet.getShort("COLC"));
+            assertEquals(str, resultSet.getString(4));
+            assertEquals(str, resultSet.getString("COLD"));
+            Reader reader = resultSet.getCharacterStream("COLD");
+            char[] sample = new char[str.length()];
 
-              assertEquals(str.length(), reader.read(sample));
-              assertEquals(str.charAt(0), sample[0]);
-              assertEquals(str, new String(sample));
+            assertEquals(str.length(), reader.read(sample));
+            assertEquals(str.charAt(0), sample[0]);
+            assertEquals(str, new String(sample));
 
-              // assertEquals(bigDouble, resultSet.getDouble(5), 0);
-              // assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
-              assertEquals(bigFloat, resultSet.getFloat(6), 0);
-              assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
-              assertTrue(resultSet.getBoolean(7));
-              assertTrue(resultSet.getBoolean("COLG"));
-              assertEquals("hello world", resultSet.getClob("COLH").toString());
+            // assertEquals(bigDouble, resultSet.getDouble(5), 0);
+            // assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
+            assertEquals(bigFloat, resultSet.getFloat(6), 0);
+            assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
+            assertTrue(resultSet.getBoolean(7));
+            assertTrue(resultSet.getBoolean("COLG"));
+            assertEquals("hello world", resultSet.getClob("COLH").toString());
 
-              // test getStatement method
-              assertEquals(statement, resultSet.getStatement());
-            }
+            // test getStatement method
+            assertEquals(statement, resultSet.getStatement());
           }
-        } finally {
-          statement.execute("drop table if exists table_get");
         }
+      } finally {
+        statement.execute("drop table if exists table_get");
       }
     }
   }
 
   @Test
   public void testGetObjectOnDatabaseMetadataResultSet() throws SQLException {
-    try (Connection connection = init()) {
-      DatabaseMetaData databaseMetaData = connection.getMetaData();
-      try (ResultSet resultSet = databaseMetaData.getTypeInfo()) {
-        assertTrue(resultSet.next());
-        // SNOW-21375 "NULLABLE" Column is a SMALLINT TYPE
-        assertEquals(DatabaseMetaData.typeNullable, resultSet.getObject("NULLABLE"));
-      }
+    DatabaseMetaData databaseMetaData = connection.getMetaData();
+    try (ResultSet resultSet = databaseMetaData.getTypeInfo()) {
+      assertTrue(resultSet.next());
+      // SNOW-21375 "NULLABLE" Column is a SMALLINT TYPE
+      assertEquals(DatabaseMetaData.typeNullable, resultSet.getObject("NULLABLE"));
     }
   }
 
@@ -377,8 +371,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetBigDecimal() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table test_get(colA number(38,9))");
       try (PreparedStatement preparedStatement =
           connection.prepareStatement("insert into test_get values(?)")) {
@@ -435,8 +428,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetBigDecimalNegative() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_dec(colA time)");
         try (PreparedStatement preparedStatement =
@@ -464,8 +456,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testCursorPosition() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(selectAllSQL);
       try (ResultSet resultSet = statement.getResultSet()) {
         assertTrue(resultSet.next());
@@ -568,8 +559,7 @@ public class ResultSetIT extends ResultSet0IT {
   // SNOW-31647
   @Test
   public void testColumnMetaWithZeroPrecision() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute(
             "create or replace table testColDecimal(cola number(38, 0), " + "colb number(17, 5))");
@@ -590,8 +580,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetObjectOnFixedView() throws Exception {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute(
             "create or replace table testFixedView"
@@ -628,8 +617,7 @@ public class ResultSetIT extends ResultSet0IT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetColumnDisplaySizeAndPrecision() throws SQLException {
     ResultSetMetaData resultSetMetaData = null;
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
       try (ResultSet resultSet = statement.executeQuery("select cast(1 as char)")) {
         resultSetMetaData = resultSet.getMetaData();
@@ -679,8 +667,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetBoolean() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table testBoolean(cola boolean)");
       statement.execute("insert into testBoolean values(false)");
       try (ResultSet resultSet = statement.executeQuery("select * from testBoolean")) {
@@ -748,8 +735,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetClob() throws Throwable {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table testClob(cola text)");
       statement.execute("insert into testClob values('hello world')");
       statement.execute("insert into testClob values('hello world1')");
@@ -788,8 +774,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testFetchOnClosedResultSet() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       ResultSet resultSet = statement.executeQuery(selectAllSQL);
       assertFalse(resultSet.isClosed());
       resultSet.close();
@@ -800,23 +785,21 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testReleaseDownloaderCurrentMemoryUsage() throws SQLException {
-    try (Connection connection = init()) {
-      final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
+    final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
 
-      try (Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
 
-        statement.executeQuery(
-            "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>1000000))");
+      statement.executeQuery(
+          "select current_date(), true,2345234, 2343.0, 'testrgint\\n\\t' from table(generator(rowcount=>1000000))");
 
-        assertThat(
-            "hold memory usage for the resultSet before close",
-            SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
-      }
       assertThat(
-          "closing statement didn't release memory allocated for result",
-          SnowflakeChunkDownloader.getCurrentMemoryUsage(),
-          equalTo(initialMemoryUsage));
+          "hold memory usage for the resultSet before close",
+          SnowflakeChunkDownloader.getCurrentMemoryUsage() - initialMemoryUsage >= 0);
     }
+    assertThat(
+        "closing statement didn't release memory allocated for result",
+        SnowflakeChunkDownloader.getCurrentMemoryUsage(),
+        equalTo(initialMemoryUsage));
   }
 
   @Test
@@ -866,8 +849,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testInvalidColumnIndex() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
 
       assertTrue(resultSet.next());
@@ -889,13 +871,13 @@ public class ResultSetIT extends ResultSet0IT {
   /** SNOW-28882: wasNull was not set properly */
   @Test
   public void testWasNull() throws Exception {
-    try (Connection con = init();
-        ResultSet ret =
-            con.createStatement()
-                .executeQuery(
-                    "select cast(1/nullif(0,0) as double),"
-                        + "cast(1/nullif(0,0) as int), 100, "
-                        + "cast(1/nullif(0,0) as number(8,2))")) {
+    try (ResultSet ret =
+        connection
+            .createStatement()
+            .executeQuery(
+                "select cast(1/nullif(0,0) as double),"
+                    + "cast(1/nullif(0,0) as int), 100, "
+                    + "cast(1/nullif(0,0) as number(8,2))")) {
       assertTrue(ret.next());
       assertThat("Double value cannot be null", ret.getDouble(1), equalTo(0.0));
       assertThat("wasNull should be true", ret.wasNull());
@@ -911,8 +893,7 @@ public class ResultSetIT extends ResultSet0IT {
   /** SNOW-28390 */
   @Test
   public void testParseInfAndNaNNumber() throws Exception {
-    try (Connection con = init();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try (ResultSet ret = statement.executeQuery("select to_double('inf'), to_double('-inf')")) {
         assertTrue(ret.next());
         assertThat("Positive Infinite Number", ret.getDouble(1), equalTo(Double.POSITIVE_INFINITY));
@@ -932,8 +913,7 @@ public class ResultSetIT extends ResultSet0IT {
   @Test
   public void testTreatDecimalAsInt() throws Exception {
     ResultSetMetaData metaData;
-    try (Connection con = init();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try (ResultSet ret = statement.executeQuery("select 1")) {
 
         metaData = ret.getMetaData();
@@ -950,8 +930,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testIsLast() throws Exception {
-    try (Connection con = init();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try (ResultSet ret = statement.executeQuery("select * from orders_jdbc")) {
         assertTrue("should be before the first", ret.isBeforeFirst());
         assertFalse("should not be the first", ret.isFirst());
@@ -1002,8 +981,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testUpdateCountOnCopyCmd() throws Exception {
-    try (Connection con = init();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table testcopy(cola string)");
 
@@ -1024,8 +1002,7 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testGetTimeNullTimestampAndTimestampNullTime() throws Throwable {
-    try (Connection con = init();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table testnullts(c1 timestamp, c2 time)");
         statement.execute("insert into testnullts(c1, c2) values(null, null)");
@@ -1042,26 +1019,23 @@ public class ResultSetIT extends ResultSet0IT {
 
   @Test
   public void testNextNegative() throws SQLException {
-    try (Connection con = init()) {
-      try (ResultSet rs = con.createStatement().executeQuery("select 1")) {
+    try (ResultSet rs = connection.createStatement().executeQuery("select 1")) {
+      assertTrue(rs.next());
+      System.setProperty("snowflake.enable_incident_test2", "true");
+      try {
         assertTrue(rs.next());
-        System.setProperty("snowflake.enable_incident_test2", "true");
-        try {
-          assertTrue(rs.next());
-          fail();
-        } catch (SQLException ex) {
-          assertEquals(200014, ex.getErrorCode());
-        }
-        System.setProperty("snowflake.enable_incident_test2", "false");
+        fail();
+      } catch (SQLException ex) {
+        assertEquals(200014, ex.getErrorCode());
       }
+      System.setProperty("snowflake.enable_incident_test2", "false");
     }
   }
 
   /** SNOW-1416051; Added in > 3.16.0 */
   @Test
   public void shouldSerializeArrayAndObjectAsStringOnGetObject() throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement();
         ResultSet resultSet =
             statement.executeQuery(
                 "select ARRAY_CONSTRUCT(1,2,3), OBJECT_CONSTRUCT('a', 4, 'b', 'test')")) {
