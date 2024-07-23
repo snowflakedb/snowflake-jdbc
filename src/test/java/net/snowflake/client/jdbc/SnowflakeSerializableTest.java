@@ -60,7 +60,7 @@ public class SnowflakeSerializableTest {
           + "    ],\n"
           + "    \"qrmk\": \"TaQAof44L361XkkKyYhiF81aC0wT0IU+NN8QtobPWCk=\",\n"
           + "    \"chunkHeaders\": {\n"
-          + "      \"some-header\": \"r1Qftyf7HI8OCdsR3pK82g==\"\n"
+          + "      \"x-amz-server-side-encryption-customer-key-md5\": \"A2dDf2ff7HI8OCdsR3pK82g==\"\n"
           + "    },\n"
           + "    \"chunks\": [\n"
           + "      {\n"
@@ -138,7 +138,7 @@ public class SnowflakeSerializableTest {
           + "    ],\n"
           + "    \"qrmk\": \"TaQAof44L361XkkKyYhiF81aC0wT0IU+NN8QtobPWCk=\",\n"
           + "    \"chunkHeaders\": {\n"
-          + "      \"some-header\": \"r1Qftyf7HI8OCdsR3pK82g==\"\n"
+          + "      \"x-amz-server-side-encryption-customer-key-md5\": \"A2dDf2ff7HI8OCdsR3pK82g==\"\n"
           + "    },\n"
           + "    \"chunks\": [\n"
           + "      {\n"
@@ -216,7 +216,7 @@ public class SnowflakeSerializableTest {
           + "    ],\n"
           + "    \"qrmk\": \"GHaQAofAD234D361XkkKyYhiF81aC0wT0IU+NN8QtobPWCk=\",\n"
           + "    \"chunkHeaders\": {\n"
-          + "      \"some-header\": \"f342lkkftyf7HI8OCdsR3pK82g==\"\n"
+          + "      \"x-amz-server-side-encryption-customer-key-md5\": \"f342lkkftyf7HI8OCdsR3pK82g==\"\n"
           + "    },\n"
           + "    \"chunks\": [\n"
           + "      {\n"
@@ -314,7 +314,9 @@ public class SnowflakeSerializableTest {
     // chunks metadata
     assertEquals("[[\"1\"]]", s.getFirstChunkStringData());
     assertEquals(1, s.getChunkHeadersMap().size());
-    assertEquals("r1Qftyf7HI8OCdsR3pK82g==", s.getChunkHeadersMap().get("some-header"));
+    assertEquals(
+        "A2dDf2ff7HI8OCdsR3pK82g==",
+        s.getChunkHeadersMap().get("x-amz-server-side-encryption-customer-key-md5"));
     assertEquals(1, s.getChunkFileCount());
     assertEquals(1, s.getChunkFileMetadatas().size());
     ChunkFileMetadata chunkMeta = s.getChunkFileMetadatas().get(0);
@@ -364,7 +366,8 @@ public class SnowflakeSerializableTest {
     assertEquals("GHaQAofAD234D361XkkKyYhiF81aC0wT0IU+NN8QtobPWCk=", s.getRichResultsQrmk());
     assertEquals(1, s.getRichResultsChunkHeadersMap().size());
     assertEquals(
-        "f342lkkftyf7HI8OCdsR3pK82g==", s.getRichResultsChunkHeadersMap().get("some-header"));
+        "f342lkkftyf7HI8OCdsR3pK82g==",
+        s.getRichResultsChunkHeadersMap().get("x-amz-server-side-encryption-customer-key-md5"));
     assertEquals(1, s.getRichResultsChunkFileCount());
     assertEquals(1, s.getRichResultsChunkFilesMetadata().size());
     ChunkFileMetadata chunkMeta = s.getRichResultsChunkFilesMetadata().get(0);
