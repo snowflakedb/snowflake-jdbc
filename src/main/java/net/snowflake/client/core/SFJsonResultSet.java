@@ -255,7 +255,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
   @SnowflakeJdbcInternalApi
   public SQLInput createSqlInputForColumn(
       Object input,
-      Class<?> parentObjectClass,
+      boolean isJsonMapping,
       int columnIndex,
       SFBaseSession session,
       List<FieldMetadata> fields) {

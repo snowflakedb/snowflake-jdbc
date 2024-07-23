@@ -127,7 +127,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       stmt2.setMap(1, mapStruct, Types.STRUCT);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         Map<String, SimpleClass> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, SimpleClass.class);
         assertEquals("string1", map.get("x").getString());
@@ -216,7 +216,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       stmt2.setMap(1, mapStruct, Types.STRUCT);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         Map<String, AllTypesClass> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, AllTypesClass.class);
         assertEquals("string", map.get("x").getString());
@@ -249,7 +249,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       stmt2.setMap(1, mapStruct, Types.INTEGER);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         Map<String, Integer> resultMap =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Integer.class);
         assertEquals(Integer.valueOf(1), resultMap.get("x"));
@@ -261,8 +261,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testWriteMapOfTimestamp() throws SQLException {
-    TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
+  public void testWriteMapOfTimestampLtz() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
@@ -278,17 +277,100 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       mapStruct.put("x", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)));
       mapStruct.put("y", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)));
 
-      stmt.setMap(1, mapStruct, Types.TIMESTAMP);
+      stmt.setMap(1, mapStruct, Types.TIMESTAMP, SnowflakeType.TIMESTAMP_LTZ);
       stmt.executeUpdate();
 
-      stmt2.setMap(1, mapStruct, Types.TIMESTAMP);
+      stmt2.setMap(1, mapStruct, Types.TIMESTAMP, SnowflakeType.TIMESTAMP_LTZ);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         Map<String, Timestamp> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
-        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), map.get("x"));
-        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)), map.get("y"));
+        assertEquals(
+                LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+                        .atZone(ZoneId.of("Europe/Warsaw"))
+                        .toInstant(),
+                map.get("x").toInstant());
+        assertEquals(
+                LocalDateTime.of(2021, 12, 22, 9, 43, 45)
+                        .atZone(ZoneId.of("Europe/Warsaw"))
+                        .toInstant(),
+                map.get("y").toInstant());
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testWriteMapOfTimestampNtz() throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+        SnowflakePreparedStatementV1 stmt2 =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+
+      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIMESTAMP_NTZ))");
+
+      Map<String, Timestamp> mapStruct = new HashMap<>();
+      mapStruct.put("x", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)));
+      mapStruct.put("y", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)));
+
+      stmt.setMap(1, mapStruct, Types.TIMESTAMP, SnowflakeType.TIMESTAMP_NTZ);
+      stmt.executeUpdate();
+
+      stmt2.setMap(1, mapStruct, Types.TIMESTAMP, SnowflakeType.TIMESTAMP_NTZ);
+
+      try (ResultSet resultSet = stmt2.executeQuery()) {
+        assertTrue(resultSet.next());
+        Map<String, Timestamp> map =
+            resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
+        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)).toInstant(), map.get("x").toInstant());
+        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)).toInstant(), map.get("y").toInstant());
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testWriteMapOfTimestampTz() throws SQLException {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+        SnowflakePreparedStatementV1 stmt2 =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+
+      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIMESTAMP_TZ))");
+
+      Map<String, Timestamp> mapStruct = new HashMap<>();
+      mapStruct.put("x", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)));
+      mapStruct.put("y", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)));
+
+      stmt.setMap(1, mapStruct, Types.TIMESTAMP, SnowflakeType.TIMESTAMP_TZ);
+      stmt.executeUpdate();
+
+      stmt2.setMap(1, mapStruct, Types.TIMESTAMP, SnowflakeType.TIMESTAMP_TZ);
+
+      try (ResultSet resultSet = stmt2.executeQuery()) {
+        assertTrue(resultSet.next());
+        Map<String, Timestamp> map =
+            resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
+        assertEquals(
+                LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+                        .atZone(ZoneId.of("Europe/Warsaw"))
+                        .toInstant(),
+                map.get("x").toInstant());
+        assertEquals(
+                LocalDateTime.of(2021, 12, 22, 9, 43, 45)
+                        .atZone(ZoneId.of("Europe/Warsaw"))
+                        .toInstant(),
+                map.get("y").toInstant());
       }
     }
   }
@@ -318,7 +400,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       stmt2.setMap(1, mapStruct, Types.TIME);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         Map<String, Time> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Time.class);
         assertEquals(Time.valueOf("12:34:56"), map.get("x"));
@@ -352,7 +434,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       stmt2.setMap(1, mapStruct, Types.DATE);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         Map<String, Date> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Date.class);
         assertEquals(Date.valueOf("2023-12-24"), map.get("x"));
@@ -385,7 +467,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       stmt2.setMap(1, mapStruct, Types.BINARY);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         Map<String, byte[]> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, byte[].class);
 
@@ -419,7 +501,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       stmt2.setMap(1, mapStruct, Types.VARCHAR);
 
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         Map<String, String> map =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, String.class);
         assertNull(map.get("x"));

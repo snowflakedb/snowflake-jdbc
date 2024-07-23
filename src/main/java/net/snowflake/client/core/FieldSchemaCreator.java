@@ -58,10 +58,14 @@ public class FieldSchemaCreator {
 
   public static BindingParameterMetadata buildBindingSchemaForType(int baseType)
       throws SQLException {
-    return buildBindingSchemaForType(baseType, true);
+    return buildBindingSchemaForType(baseType, true, null);
   }
 
-  public static BindingParameterMetadata buildBindingSchemaForType(int baseType, boolean addName)
+  public static BindingParameterMetadata buildBindingSchemaForType(int baseType, boolean addName) throws SQLException {
+    return buildBindingSchemaForType(baseType, addName, null);
+  }
+
+  public static BindingParameterMetadata buildBindingSchemaForType(int baseType, boolean addName, String typeName)
       throws SQLException {
     String name = addName ? SnowflakeType.javaTypeToSFType(baseType, null).name() : null;
     switch (baseType) {
@@ -86,7 +90,7 @@ public class FieldSchemaCreator {
         return FieldSchemaCreator.buildSchemaTypeAndNameOnly(name, "date", Optional.empty());
       case Types.TIMESTAMP:
         return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
-                name, "timestamp", 9, 0, Optional.empty());
+                name, Optional.ofNullable(typeName).orElse("timestamp"), 9, 0, Optional.empty());
       case Types.TIME:
         return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
             name, "time", 9, 0, Optional.empty());

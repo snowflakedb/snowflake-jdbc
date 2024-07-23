@@ -124,7 +124,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
 
         try (ResultSet resultSet = stmt3.executeQuery()) {
 
-          resultSet.next();
+          assertTrue(resultSet.next());
           SimpleClass object = resultSet.getObject(1, SimpleClass.class);
           assertEquals("text2", object.getString());
           assertEquals(Integer.valueOf("3"), object.getIntValue());
@@ -175,7 +175,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       stmt.setObject(1, null);
       stmt.executeUpdate();
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         SimpleClass object = resultSet.getObject(1, SimpleClass.class);
         assertNull(object);
       }
@@ -239,7 +239,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
 
       stmt2.setObject(1, allTypeInstance);
       try (ResultSet resultSet = stmt2.executeQuery()) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
         assertEquals("string", object.getString());
         assertEquals(49, (long) object.getB());

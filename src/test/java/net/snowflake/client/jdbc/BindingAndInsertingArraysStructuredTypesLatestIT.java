@@ -37,6 +37,7 @@ import java.util.TimeZone;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Category(TestCategoryResultSet.class)
@@ -45,9 +46,9 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
   @Parameterized.Parameters(name = "format={0}")
   public static Object[][] data() {
     return new Object[][] {
-//      {ResultSetFormatType.JSON},
+      {ResultSetFormatType.JSON},
       {ResultSetFormatType.ARROW_WITH_JSON_STRUCTURED_TYPES},
-//      {ResultSetFormatType.NATIVE_ARROW}
+      {ResultSetFormatType.NATIVE_ARROW}
     };
   }
 
@@ -146,7 +147,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testWriteArrayOfTimestamp() throws SQLException {
+  public void testWriteArrayOfTimestampLtz() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
@@ -158,7 +159,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
 
       Array array = connection.createArrayOf("TIMESTAMP",
               new Timestamp[] {Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
-                      Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44))});
+                      Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45))});
       stmt.setArray(1, array);
       stmt.executeUpdate();
 
@@ -168,14 +169,61 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
         Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
         assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), resultArray[0]);
         assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), resultArray[1]);
+//        assertEquals(
+//                LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+//                        .atZone(ZoneId.of("Europe/Warsaw"))
+//                        .toInstant(),
+//                resultArray[0].toInstant());
+//        assertEquals(
+//                LocalDateTime.of(2021, 12, 22, 9, 43, 45)
+//                        .atZone(ZoneId.of("Europe/Warsaw"))
+//                        .toInstant(),
+//                resultArray[1].toInstant());
+
       }
     }
   }
 
-  @Ignore
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testWriteArrayOfTimestampTz() throws SQLException {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement(
+                    "INSERT INTO array_of_integers (arrayInt) SELECT ?;"); ) {
+
+      statement.execute(" CREATE OR REPLACE TABLE array_of_integers(arrayInt ARRAY(TIMESTAMP_TZ))");
+
+      Array array = connection.createArrayOf("TIMESTAMP",
+              new Timestamp[] {Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
+                      Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45))});
+      stmt.setArray(1, array, SnowflakeType.TIMESTAMP_TZ);
+      stmt.executeUpdate();
+
+      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
+        assertTrue(resultSet.next());
+
+        Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
+        assertEquals(
+                LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+                        .atZone(ZoneId.of("Europe/Warsaw"))
+                        .toInstant(),
+                resultArray[0].toInstant());
+        assertEquals(
+                LocalDateTime.of(2021, 12, 22, 9, 43, 45)
+                        .atZone(ZoneId.of("Europe/Warsaw"))
+                        .toInstant(),
+                resultArray[1].toInstant());
+      }
+    }
+  }
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteArrayOfTime() throws SQLException {
+    TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
@@ -191,7 +239,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.executeUpdate();
 
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_time"); ) {
-        resultSet.next();
+        assertTrue(resultSet.next());
 
         Time[] resultArray = (Time[]) resultSet.getArray(1).getArray();
         assertEquals(Time.valueOf("12:34:56"), resultArray[0]);
@@ -218,7 +266,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.executeUpdate();
 
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_date"); ) {
-        resultSet.next();
+        assertTrue(resultSet.next());
 
         Date[] resultArray = (Date[]) resultSet.getArray(1).getArray();
         assertEquals(Date.valueOf("2023-12-24").toString(), resultArray[0].toString());
@@ -244,7 +292,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.executeUpdate();
 
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_varchars"); ) {
-        resultSet.next();
+        assertTrue(resultSet.next());
 
         Object resultArray =  resultSet.getArray(1);
         assertNull(resultArray);
@@ -270,7 +318,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.executeUpdate();
 
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_varchars"); ) {
-        resultSet.next();
+        assertTrue(resultSet.next());
 
         SimpleClass[] resultArray = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, SimpleClass.class);
         assertEquals(Integer.valueOf(1), resultArray[0].getIntValue());
@@ -332,7 +380,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.executeUpdate();
 
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_varchars"); ) {
-        resultSet.next();
+        assertTrue(resultSet.next());
 
         AllTypesClass[] resultArray = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, AllTypesClass.class);
         System.out.println(resultArray);
@@ -383,7 +431,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.executeUpdate();
 
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
-        resultSet.next();
+        assertTrue(resultSet.next());
         Long[] resultArray = (Long[]) resultSet.getArray(1).getArray();
         assertEquals(Long.valueOf(1), resultArray[0]);
         assertEquals(Long.valueOf(2), resultArray[1]);

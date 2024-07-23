@@ -230,7 +230,7 @@ public class JsonSqlOutput implements SQLOutput {
                       .filter(str -> !str.isEmpty())
                       .orElse(timestampSessionType));
           int columnType = snowflakeTypeToJavaType(snowflakeType);
-          TimeZone timeZone = timeZoneDependOnType(snowflakeType, session, null);
+          TimeZone timeZone = SnowflakeUtil.timeZoneDependOnType(snowflakeType, session, null);
           String timestampAsString =
               SnowflakeUtil.mapSFExceptionToSQLException(
                   () ->
@@ -372,18 +372,6 @@ public class JsonSqlOutput implements SQLOutput {
 
   public BindingParameterMetadata getSchema() {
     return schema;
-  }
-
-  private TimeZone timeZoneDependOnType(
-      SnowflakeType snowflakeType, SFBaseSession session, TimeZone tz) {
-    if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ) {
-      return null;
-    } else if (snowflakeType == SnowflakeType.TIMESTAMP_LTZ) {
-      return getSessionTimezone(session);
-    } else if (snowflakeType == SnowflakeType.TIMESTAMP_TZ) {
-      return Optional.ofNullable(tz).orElse(sessionTimezone);
-    }
-    return TimeZone.getDefault();
   }
 
   private int snowflakeTypeToJavaType(SnowflakeType snowflakeType) {

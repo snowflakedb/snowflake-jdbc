@@ -2,7 +2,6 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.core.FieldSchemaCreator.buildBindingSchemaForType;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.Array;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
@@ -11,16 +10,25 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import net.snowflake.client.jdbc.BindingParameterMetadata;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 
 @SnowflakeJdbcInternalApi
 public class SfSqlArray implements Array {
 
+  private JsonNode input;
   private int baseType;
   private Object elements;
 
-  public SfSqlArray(int baseType, Object elements) {
+  public SfSqlArray(JsonNode input, int baseType, Object elements) {
+    this.input = input;
+    this.baseType = baseType;
+    this.elements = elements;
+  }
+
+  public SfSqlArray( int baseType, Object elements) {
+    this.input = null;
     this.baseType = baseType;
     this.elements = elements;
   }
@@ -86,14 +94,6 @@ public class SfSqlArray implements Array {
       return elements;
   }
 
-  public <T> String getArrayJsonString(int type) throws SQLException {
-    try {
-      return SnowflakeUtil.mapArrayElements(elements, type, null);
-    } catch (JsonProcessingException e) {
-      throw new SQLException("There is exception during array to json string.", e);
-    }
-  }
-
   public BindingParameterMetadata getSchema() throws SQLException {
     return BindingParameterMetadata.BindingParameterMetadataBuilder.bindingParameterMetadata()
         .withType("array")
@@ -106,5 +106,9 @@ public class SfSqlArray implements Array {
         .withType("array")
         .withFields(fields)
         .build();
+  }
+
+  public JsonNode getInput() {
+    return input;
   }
 }

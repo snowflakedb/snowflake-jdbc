@@ -1,6 +1,6 @@
 package net.snowflake.client.core.arrow;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.core.DataConversionContext;
@@ -22,7 +22,7 @@ public class MapConverter extends AbstractArrowVectorConverter {
   public Object toObject(int index) throws SFException {
     List<JsonStringHashMap<String, Object>> entriesList =
         (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
-    Map<String, Object> converted = new HashMap<>();
+    Map<String, Object> converted = new LinkedHashMap<>();
     for (Map map : entriesList) {
       converted.put(map.get("key").toString(), map.get("value"));
     }
