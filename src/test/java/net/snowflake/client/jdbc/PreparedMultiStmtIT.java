@@ -12,6 +12,7 @@ import java.sql.Statement;
 import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -20,7 +21,16 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
 
   protected static String queryResultFormat = "json";
 
-  private static SnowflakeConnectionV1 sfConnectionV1 = (SnowflakeConnectionV1) connection;
+  private static SnowflakeConnectionV1 sfConnectionV1;
+
+  @BeforeClass
+  public static void setUpPreparedStatementConnection() throws SQLException {
+    if (!connection.isClosed()) {
+      sfConnectionV1 = (SnowflakeConnectionV1) connection;
+    } else {
+      sfConnectionV1 = (SnowflakeConnectionV1) getConnection();
+    }
+  }
 
   @Before
   public void setSessionResultFormat() throws SQLException {
