@@ -56,7 +56,7 @@ import org.junit.rules.TemporaryFolder;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
-public class ConnectionIT extends BaseJDBCTest {
+public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   // create a local constant for this code for testing purposes (already defined in GS)
   public static final int INVALID_CONNECTION_INFO_CODE = 390100;
   private static final int SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED = 390201;

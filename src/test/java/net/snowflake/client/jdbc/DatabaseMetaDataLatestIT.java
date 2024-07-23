@@ -47,7 +47,7 @@ import org.junit.experimental.categories.Category;
  * the latest and oldest supported driver run the tests.
  */
 @Category(TestCategoryOthers.class)
-public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
+public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   private static final String TEST_PROC =
       "create or replace procedure testproc(param1 float, param2 string)\n"
           + "    returns varchar\n"

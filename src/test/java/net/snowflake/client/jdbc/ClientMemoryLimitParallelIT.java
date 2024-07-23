@@ -10,9 +10,7 @@ import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -23,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * @author azhan attempts to test the CLIENT_MEMORY_LIMIT working in multi-threading
  */
 @Category(TestCategoryOthers.class)
-public class ClientMemoryLimitParallelIT {
+public class ClientMemoryLimitParallelIT extends BaseJDBCWithSharedConnectionIT {
   private static Logger LOGGER =
       LoggerFactory.getLogger(ClientMemoryLimitParallelIT.class.getName());
 
@@ -63,20 +61,6 @@ public class ClientMemoryLimitParallelIT {
           + "from table(generator(rowcount => "
           + rowCount
           + "));";
-
-  private static Connection connection;
-
-  @BeforeClass
-  public static void setUpConnection() throws SQLException {
-    connection = getConnection();
-  }
-
-  @AfterClass
-  public static void closeConnection() throws SQLException {
-    if (connection != null && !connection.isClosed()) {
-      connection.close();
-    }
-  }
 
   @Before
   public void setUp() throws SQLException {

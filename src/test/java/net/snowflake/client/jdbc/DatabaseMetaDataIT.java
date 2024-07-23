@@ -37,7 +37,7 @@ import org.junit.experimental.categories.Category;
 
 /** Database Metadata IT */
 @Category(TestCategoryOthers.class)
-public class DatabaseMetaDataIT extends BaseJDBCTest {
+public class DatabaseMetaDataIT extends BaseJDBCWithSharedConnectionIT {
   private static final Pattern VERSION_PATTERN =
       Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
   private static final String PI_PROCEDURE =
