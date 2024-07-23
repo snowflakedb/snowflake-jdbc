@@ -731,8 +731,8 @@ public class SnowflakeResultSetSerializableV1
   }
 
   /**
-   * A factory function for internal usage only It creates SnowflakeResultSetSerializableV1 with
-   * NoOpChunksDownloader which disables chunks prefetch
+   * A factory function for internal usage only
+   * It creates SnowflakeResultSetSerializableV1 with NoOpChunksDownloader which disables chunks prefetch
    */
   @SnowflakeJdbcInternalApi
   public static SnowflakeResultSetSerializableV1 createWithChunksPrefetchDisabled(
