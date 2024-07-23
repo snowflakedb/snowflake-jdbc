@@ -395,7 +395,13 @@ public class SnowflakeUtil {
       throws SnowflakeSQLLoggedException {
     List<FieldMetadata> fields = new ArrayList<>();
     for (JsonNode node : fieldsJson) {
-      String colName = node.path("name").asText();
+      String colName;
+      if (!node.path("fieldType").isEmpty()) {
+        colName = node.path("fieldName").asText();
+        node = node.path("fieldType");
+      } else {
+        colName = node.path("name").asText();
+      }
       int scale = node.path("scale").asInt();
       int precision = node.path("precision").asInt();
       String internalColTypeName = node.path("type").asText();

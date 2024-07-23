@@ -223,7 +223,10 @@ public class SFSession extends SFBaseSession {
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
         throw new SnowflakeSQLLoggedException(
-            this, e.getMessage(), "No response or invalid response from GET request. Error: {}");
+            queryID,
+            this,
+            e.getMessage(),
+            "No response or invalid response from GET request. Error: {}");
       }
 
       // Get response as JSON and parse it to get the query status
@@ -257,7 +260,7 @@ public class SFSession extends SFBaseSession {
             else if (ex instanceof SFException) {
               throw new SnowflakeSQLException((SFException) ex);
             }
-            throw new SnowflakeSQLException(ex.getMessage());
+            throw new SnowflakeSQLException(queryID, ex.getMessage());
           }
           sessionRenewed = true;
           // If the error code was not due to session renewal issues, throw an exception
@@ -486,6 +489,18 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE:
+          if (propertyValue != null) {
+            setDefaultFormatDateWithTimezone(getBooleanValue(propertyValue));
+          }
+          break;
+
+        case JDBC_GET_DATE_USE_NULL_TIMEZONE:
+          if (propertyValue != null) {
+            setGetDateUseNullTimezone(getBooleanValue(propertyValue));
+          }
+          break;
+
         default:
           break;
       }
@@ -619,14 +634,13 @@ public class SFSession extends SFBaseSession {
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
                 : false);
 
-    // Enable or disable OOB telemetry based on connection parameter. Default is disabled.
-    // The value may still change later when session parameters from the server are read.
-    if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED))) {
-      TelemetryService.enable();
-    } else {
-      TelemetryService.disable();
-    }
+    logger.info(
+        "Connecting to {} Snowflake domain",
+        loginInput.getHostFromServerUrl().toLowerCase().endsWith(".cn") ? "CHINA" : "GLOBAL");
+
+    // we ignore the parameters CLIENT_OUT_OF_BAND_TELEMETRY_ENABLED and htapOOBTelemetryEnabled
+    // OOB telemetry is disabled
+    TelemetryService.disableOOBTelemetry();
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
@@ -656,13 +670,7 @@ public class SFSession extends SFBaseSession {
 
     // Update common parameter values for this session
     SessionUtil.updateSfDriverParamValues(loginOutput.getCommonParams(), this);
-    // Enable or disable HTAP OOB telemetry based on connection parameter. Default is disabled.
-    if (getBooleanValue(
-        connectionPropertiesMap.get(SFSessionProperty.HTAP_OOB_TELEMETRY_ENABLED))) {
-      TelemetryService.enableHTAP();
-    } else {
-      TelemetryService.disableHTAP();
-    }
+
     String loginDatabaseName = (String) connectionPropertiesMap.get(SFSessionProperty.DATABASE);
     String loginSchemaName = (String) connectionPropertiesMap.get(SFSessionProperty.SCHEMA);
     String loginRole = (String) connectionPropertiesMap.get(SFSessionProperty.ROLE);
