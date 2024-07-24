@@ -139,13 +139,13 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+                connection.prepareStatement("INSERT INTO map_of_objects_all_types (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+                connection.prepareStatement("select * from map_of_objects_all_types where mapp=?"); ) {
 
       statement.execute(
-          " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, "
+          " CREATE OR REPLACE TABLE map_of_objects_all_types(mapp MAP(VARCHAR, "
               + "                             OBJECT(string VARCHAR, "
               + "                  b TINYINT, "
               + "                  s SMALLINT, "
@@ -237,12 +237,12 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+                connection.prepareStatement("INSERT INTO map_of_integers (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+                connection.prepareStatement("select * from map_of_integers where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, INTEGER))");
+      statement.execute(" CREATE OR REPLACE TABLE map_of_integers(mapp MAP(VARCHAR, INTEGER))");
 
       Map<String, Integer> mapStruct = new HashMap<>();
       mapStruct.put("x", 1);
@@ -272,13 +272,13 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+                connection.prepareStatement("INSERT INTO map_of_timestamp_ltz (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+                connection.prepareStatement("select * from map_of_timestamp_ltz where mapp=?"); ) {
 
       statement.execute(
-          " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIMESTAMP_LTZ))");
+          " CREATE OR REPLACE TABLE map_of_timestamp_ltz(mapp MAP(VARCHAR, TIMESTAMP_LTZ))");
 
       Map<String, Timestamp> mapStruct = new HashMap<>();
       mapStruct.put("x", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)));
@@ -315,13 +315,13 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+                connection.prepareStatement("INSERT INTO map_of_timestamp_ntz (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+                connection.prepareStatement("select * from map_of_timestamp_ntz where mapp=?"); ) {
 
       statement.execute(
-          " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIMESTAMP_NTZ))");
+          " CREATE OR REPLACE TABLE map_of_timestamp_ntz(mapp MAP(VARCHAR, TIMESTAMP_NTZ))");
 
       Map<String, Timestamp> mapStruct = new HashMap<>();
       mapStruct.put("x", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)));
@@ -353,12 +353,12 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+                connection.prepareStatement("INSERT INTO map_of_timestamp_tz (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+                connection.prepareStatement("select * from map_of_timestamp_tz where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIMESTAMP_TZ))");
+      statement.execute(" CREATE OR REPLACE TABLE map_of_timestamp_tz(mapp MAP(VARCHAR, TIMESTAMP_TZ))");
 
       Map<String, Timestamp> mapStruct = new HashMap<>();
       mapStruct.put("x", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)));
@@ -395,12 +395,12 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+                connection.prepareStatement("INSERT INTO map_of_time (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+                connection.prepareStatement("select * from map_of_time where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, TIME))");
+      statement.execute(" CREATE OR REPLACE TABLE map_of_time(mapp MAP(VARCHAR, TIME))");
 
       Map<String, Time> mapStruct = new HashMap<>();
       mapStruct.put("x", Time.valueOf("12:34:56"));
@@ -429,12 +429,12 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+                connection.prepareStatement("INSERT INTO map_of_date (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+                connection.prepareStatement("select * from map_of_date where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, DATE))");
+      statement.execute(" CREATE OR REPLACE TABLE map_of_date(mapp MAP(VARCHAR, DATE))");
 
       Map<String, Date> mapStruct = new HashMap<>();
       mapStruct.put("x", Date.valueOf("2023-12-24"));
@@ -462,12 +462,12 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+                connection.prepareStatement("INSERT INTO map_of_binary (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+                connection.prepareStatement("select * from map_of_binary where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, BINARY))");
+      statement.execute(" CREATE OR REPLACE TABLE map_of_binary(mapp MAP(VARCHAR, BINARY))");
 
       Map<String, byte[]> mapStruct = new HashMap<>();
       mapStruct.put("x", new byte[] {'a', 'b', 'c'});
@@ -496,12 +496,12 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects (mapp) SELECT ?;");
+                connection.prepareStatement("INSERT INTO map_of_object_with_nulls (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects where mapp=?"); ) {
+                connection.prepareStatement("select * from map_of_object_with_nulls where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, VARCHAR))");
+      statement.execute(" CREATE OR REPLACE TABLE map_of_object_with_nulls(mapp MAP(VARCHAR, VARCHAR))");
 
       Map<String, String> mapStruct = new HashMap<>();
       mapStruct.put("x", null);

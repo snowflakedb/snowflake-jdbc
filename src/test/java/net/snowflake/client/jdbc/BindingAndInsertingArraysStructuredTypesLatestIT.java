@@ -151,10 +151,10 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
                 connection.prepareStatement(
-                    "INSERT INTO array_of_integers (arrayInt) SELECT ?;"); ) {
+                    "INSERT INTO array_of_timestamp_ltz (arrayInt) SELECT ?;"); ) {
 
       statement.execute(
-          " CREATE OR REPLACE TABLE array_of_integers(arrayInt ARRAY(TIMESTAMP_LTZ))");
+          " CREATE OR REPLACE TABLE array_of_timestamp_ltz(arrayInt ARRAY(TIMESTAMP_LTZ))");
 
       Array array =
           connection.createArrayOf(
@@ -166,23 +166,55 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.setArray(1, array);
       stmt.executeUpdate();
 
-      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
+      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_timestamp_ltz"); ) {
+        resultSet.next();
+
+        Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
+//        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), resultArray[0]);
+//        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)), resultArray[1]);
+                assertEquals(
+                        LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+                                .atZone(ZoneId.of("Europe/Warsaw"))
+                                .toInstant(),
+                        resultArray[0].toInstant());
+                assertEquals(
+                        LocalDateTime.of(2021, 12, 22, 9, 43, 45)
+                                .atZone(ZoneId.of("Europe/Warsaw"))
+                                .toInstant(),
+                        resultArray[1].toInstant());
+
+      }
+    }
+  }
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testWriteArrayOfTimestampNtz() throws SQLException {
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement(
+                    "INSERT INTO array_of_timestamp_ntz (arrayInt) SELECT ?;"); ) {
+
+      statement.execute(
+          " CREATE OR REPLACE TABLE array_of_timestamp_ntz(arrayInt ARRAY(TIMESTAMP_NTZ))");
+
+      Array array =
+          connection.createArrayOf(
+              "TIMESTAMP",
+              new Timestamp[] {
+                Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
+                Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45))
+              });
+      stmt.setArray(1, array, SnowflakeType.TIMESTAMP_NTZ);
+      stmt.executeUpdate();
+
+      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_timestamp_ntz"); ) {
         resultSet.next();
 
         Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
         assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), resultArray[0]);
-        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), resultArray[1]);
-        //        assertEquals(
-        //                LocalDateTime.of(2021, 12, 22, 9, 43, 44)
-        //                        .atZone(ZoneId.of("Europe/Warsaw"))
-        //                        .toInstant(),
-        //                resultArray[0].toInstant());
-        //        assertEquals(
-        //                LocalDateTime.of(2021, 12, 22, 9, 43, 45)
-        //                        .atZone(ZoneId.of("Europe/Warsaw"))
-        //                        .toInstant(),
-        //                resultArray[1].toInstant());
-
+        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)), resultArray[1]);
       }
     }
   }
@@ -195,9 +227,9 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
                 connection.prepareStatement(
-                    "INSERT INTO array_of_integers (arrayInt) SELECT ?;"); ) {
+                    "INSERT INTO array_of_timestamp_tz (arrayInt) SELECT ?;"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE array_of_integers(arrayInt ARRAY(TIMESTAMP_TZ))");
+      statement.execute(" CREATE OR REPLACE TABLE array_of_timestamp_tz(arrayInt ARRAY(TIMESTAMP_TZ))");
 
       Array array =
           connection.createArrayOf(
@@ -209,7 +241,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.setArray(1, array, SnowflakeType.TIMESTAMP_TZ);
       stmt.executeUpdate();
 
-      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
+      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_timestamp_tz"); ) {
         assertTrue(resultSet.next());
 
         Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
@@ -315,10 +347,10 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
                 connection.prepareStatement(
-                    "INSERT INTO array_of_varchars (arrayType) SELECT ?;"); ) {
+                    "INSERT INTO array_of_struct (arrayType) SELECT ?;"); ) {
 
       statement.execute(
-          " CREATE OR REPLACE TABLE array_of_varchars(arrayType ARRAY(OBJECT(string VARCHAR, intValue INTEGER)) )");
+          " CREATE OR REPLACE TABLE array_of_struct(arrayType ARRAY(OBJECT(string VARCHAR, intValue INTEGER)) )");
 
       Array array =
           connection.createArrayOf(
@@ -327,7 +359,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.setArray(1, array);
       stmt.executeUpdate();
 
-      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_varchars"); ) {
+      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_struct"); ) {
         assertTrue(resultSet.next());
 
         SimpleClass[] resultArray =
@@ -343,16 +375,15 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteArrayOfAllTypesObject() throws SQLException {
-    TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
     try (Connection connection = init();
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
                 connection.prepareStatement(
-                    "INSERT INTO array_of_varchars (arrayType) SELECT ?;"); ) {
+                    "INSERT INTO array_of_all_types (arrayType) SELECT ?;"); ) {
 
       statement.execute(
-          " CREATE OR REPLACE TABLE array_of_varchars(arrayType ARRAY(OBJECT(string VARCHAR, "
+          " CREATE OR REPLACE TABLE array_of_all_types(arrayType ARRAY(OBJECT(string VARCHAR, "
               + "                  b TINYINT, "
               + "                  s SMALLINT, "
               + "                  i INTEGER, "
@@ -396,7 +427,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
       stmt.setArray(1, array);
       stmt.executeUpdate();
 
-      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_varchars"); ) {
+      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_all_types"); ) {
         assertTrue(resultSet.next());
 
         AllTypesClass[] resultArray =
@@ -444,13 +475,13 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
                 connection.prepareStatement(
-                    "insert into array_of_integers select ([1, 2, 3]::array(integer));"); ) {
+                    "insert into array_no_binds select ([1, 2, 3]::array(integer));"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE array_of_integers(arrayInt ARRAY(INTEGER))");
+      statement.execute(" CREATE OR REPLACE TABLE array_no_binds(arrayInt ARRAY(INTEGER))");
 
       stmt.executeUpdate();
 
-      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
+      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_no_binds"); ) {
         assertTrue(resultSet.next());
         Long[] resultArray = (Long[]) resultSet.getArray(1).getArray();
         assertEquals(Long.valueOf(1), resultArray[0]);
