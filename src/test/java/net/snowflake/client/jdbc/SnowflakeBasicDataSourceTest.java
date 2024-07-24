@@ -19,12 +19,4 @@ public class SnowflakeBasicDataSourceTest {
     ds.setLoginTimeout(10);
     assertThat(ds.getLoginTimeout(), is(10));
   }
-
-  @Test
-  public void testSetBrowserResponseTimeout() throws SQLException {
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-
-    ds.setBrowserResponseTimeout(10);
-    assertThat(ds.getBrowserResponseTimeout(), is(10));
-  }
 }

@@ -22,6 +22,9 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   private static final long serialversionUID = 1L;
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
+
+  private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNALBROWSER";
+
   private String url;
 
   private String serverName;
@@ -233,14 +236,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   }
 
   public void setBrowserResponseTimeout(int seconds) {
+    this.setAuthenticator(AUTHENTICATOR_EXTERNAL_BROWSER);
     this.properties.put("BROWSER_RESPONSE_TIMEOUT", Integer.toString(seconds));
-  }
-
-  public int getBrowserResponseTimeout() {
-    try {
-      return Integer.parseInt(properties.getProperty("BROWSER_RESPONSE_TIMEOUT"));
-    } catch (NumberFormatException e) {
-      return 0;
-    }
   }
 }

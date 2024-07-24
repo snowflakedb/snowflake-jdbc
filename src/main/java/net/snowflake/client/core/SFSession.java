@@ -146,7 +146,7 @@ public class SFSession extends SFBaseSession {
    *
    * <p>Default: 120
    */
-  private int browserResponseTimeout = 120;
+  private Duration browserResponseTimeout = Duration.ofSeconds(120);
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
@@ -494,7 +494,7 @@ public class SFSession extends SFBaseSession {
           break;
         case BROWSER_RESPONSE_TIMEOUT:
           if (propertyValue != null) {
-            browserResponseTimeout = (Integer) propertyValue;
+            browserResponseTimeout = Duration.ofSeconds((Integer) propertyValue);
           }
 
         default:
