@@ -51,10 +51,17 @@ public class SnowflakeSQLException extends SQLException {
         queryId);
   }
 
+  /** use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, String)} */
+  @Deprecated
   public SnowflakeSQLException(String reason, String sqlState) {
+    this((String) null, reason, sqlState);
+  }
+
+  public SnowflakeSQLException(String queryId, String reason, String sqlState) {
     super(reason, sqlState);
+    this.queryId = queryId;
     // log user error from GS at fine level
-    logger.debug("Snowflake exception: {}, sqlState: {}", reason, sqlState);
+    logger.debug("Snowflake exception: {}, sqlState:{}", reason, sqlState);
   }
 
   /** use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, int)} */

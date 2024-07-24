@@ -13,6 +13,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -24,6 +25,8 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
 
   private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNALBROWSER";
+
+  private static final String AUTHENTICATOR_USERNAME_PASSWORD_MFA = "USERNAME_PASSWORD_MFA";
 
   private String url;
 
@@ -91,12 +94,12 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public Connection getConnection(String username, String password) throws SQLException {
     if (!AUTHENTICATOR_OAUTH.equalsIgnoreCase(
         authenticator)) { // For OAuth, no username is required
-      properties.put("user", username);
+      properties.put(SFSessionProperty.USER.getPropertyKey(), username);
     }
 
     // The driver needs password for OAUTH as part of SNOW-533673 feature request.
     if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)) {
-      properties.put("password", password);
+      properties.put(SFSessionProperty.PASSWORD.getPropertyKey(), password);
     }
 
     try {
@@ -122,7 +125,8 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   @Override
   public int getLoginTimeout() throws SQLException {
     try {
-      return Integer.parseInt(properties.getProperty("loginTimeout"));
+      return Integer.parseInt(
+          properties.getProperty(SFSessionProperty.LOGIN_TIMEOUT.getPropertyKey()));
     } catch (NumberFormatException e) {
       return 0;
     }
@@ -130,7 +134,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   @Override
   public void setLoginTimeout(int seconds) throws SQLException {
-    properties.put("loginTimeout", Integer.toString(seconds));
+    properties.put(SFSessionProperty.LOGIN_TIMEOUT.getPropertyKey(), Integer.toString(seconds));
   }
 
   @Override
@@ -153,19 +157,19 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   }
 
   public void setDatabaseName(String databaseName) {
-    properties.put("db", databaseName);
+    properties.put(SFSessionProperty.DATABASE.getPropertyKey(), databaseName);
   }
 
   public void setSchema(String schema) {
-    properties.put("schema", schema);
+    properties.put(SFSessionProperty.SCHEMA.getPropertyKey(), schema);
   }
 
   public void setWarehouse(String warehouse) {
-    properties.put("warehouse", warehouse);
+    properties.put(SFSessionProperty.WAREHOUSE.getPropertyKey(), warehouse);
   }
 
   public void setRole(String role) {
-    properties.put("role", role);
+    properties.put(SFSessionProperty.ROLE.getPropertyKey(), role);
   }
 
   public void setUser(String user) {
@@ -185,7 +189,7 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   }
 
   public void setAccount(String account) {
-    this.properties.put("account", account);
+    this.properties.put(SFSessionProperty.ACCOUNT.getPropertyKey(), account);
   }
 
   public void setSsl(boolean ssl) {
@@ -194,12 +198,12 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   public void setAuthenticator(String authenticator) {
     this.authenticator = authenticator;
-    this.properties.put("authenticator", authenticator);
+    this.properties.put(SFSessionProperty.AUTHENTICATOR.getPropertyKey(), authenticator);
   }
 
   public void setOauthToken(String oauthToken) {
     this.setAuthenticator(AUTHENTICATOR_OAUTH);
-    this.properties.put("token", oauthToken);
+    this.properties.put(SFSessionProperty.TOKEN.getPropertyKey(), oauthToken);
   }
 
   public String getUrl() {
@@ -220,19 +224,165 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   public void setPrivateKey(PrivateKey privateKey) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
-    this.properties.put("privateKey", privateKey);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY.getPropertyKey(), privateKey);
   }
 
   public void setPrivateKeyFile(String location, String password) {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
-    this.properties.put("private_key_file", location);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey(), location);
     if (!Strings.isNullOrEmpty(password)) {
-      this.properties.put("private_key_file_pwd", password);
+      this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey(), password);
     }
   }
 
   public void setTracing(String tracing) {
-    this.properties.put("tracing", tracing);
+    this.properties.put(SFSessionProperty.TRACING.getPropertyKey(), tracing);
+  }
+
+  protected Properties getProperties() {
+    return this.properties;
+  }
+
+  public void setAllowUnderscoresInHost(boolean allowUnderscoresInHost) {
+    this.properties.put(
+        SFSessionProperty.ALLOW_UNDERSCORES_IN_HOST.getPropertyKey(),
+        String.valueOf(allowUnderscoresInHost));
+  }
+
+  public void setDisableGcsDefaultCredentials(boolean isGcsDefaultCredentialsDisabled) {
+    this.properties.put(
+        SFSessionProperty.DISABLE_GCS_DEFAULT_CREDENTIALS.getPropertyKey(),
+        String.valueOf(isGcsDefaultCredentialsDisabled));
+  }
+
+  public void setDisableSamlURLCheck(boolean disableSamlURLCheck) {
+    this.properties.put(
+        SFSessionProperty.DISABLE_SAML_URL_CHECK.getPropertyKey(),
+        String.valueOf(disableSamlURLCheck));
+  }
+
+  public void setPasscode(String passcode) {
+    this.setAuthenticator(AUTHENTICATOR_USERNAME_PASSWORD_MFA);
+    this.properties.put(SFSessionProperty.PASSCODE.getPropertyKey(), passcode);
+  }
+
+  public void setPasscodeInPassword(boolean isPasscodeInPassword) {
+    this.properties.put(
+        SFSessionProperty.PASSCODE_IN_PASSWORD.getPropertyKey(),
+        String.valueOf(isPasscodeInPassword));
+    if (isPasscodeInPassword) {
+      this.setAuthenticator(AUTHENTICATOR_USERNAME_PASSWORD_MFA);
+    }
+  }
+
+  public void setDisableSocksProxy(boolean ignoreJvmSocksProxy) {
+    this.properties.put(
+        SFSessionProperty.DISABLE_SOCKS_PROXY.getPropertyKey(),
+        String.valueOf(ignoreJvmSocksProxy));
+  }
+
+  public void setNonProxyHosts(String nonProxyHosts) {
+    this.properties.put(SFSessionProperty.NON_PROXY_HOSTS.getPropertyKey(), nonProxyHosts);
+  }
+
+  public void setProxyHost(String proxyHost) {
+    this.properties.put(SFSessionProperty.PROXY_HOST.getPropertyKey(), proxyHost);
+  }
+
+  public void setProxyPassword(String proxyPassword) {
+    this.properties.put(SFSessionProperty.PROXY_PASSWORD.getPropertyKey(), proxyPassword);
+  }
+
+  public void setProxyPort(int proxyPort) {
+    this.properties.put(SFSessionProperty.PROXY_PORT.getPropertyKey(), Integer.toString(proxyPort));
+  }
+
+  public void setProxyProtocol(String proxyProtocol) {
+    this.properties.put(SFSessionProperty.PROXY_PROTOCOL.getPropertyKey(), proxyProtocol);
+  }
+
+  public void setProxyUser(String proxyUser) {
+    this.properties.put(SFSessionProperty.PROXY_USER.getPropertyKey(), proxyUser);
+  }
+
+  public void setUseProxy(boolean useProxy) {
+    this.properties.put(SFSessionProperty.USE_PROXY.getPropertyKey(), String.valueOf(useProxy));
+  }
+
+  public void setNetworkTimeout(int networkTimeoutSeconds) {
+    this.properties.put(
+        SFSessionProperty.NETWORK_TIMEOUT.getPropertyKey(),
+        Integer.toString(networkTimeoutSeconds));
+  }
+
+  public void setQueryTimeout(int queryTimeoutSeconds) {
+    this.properties.put(
+        SFSessionProperty.QUERY_TIMEOUT.getPropertyKey(), Integer.toString(queryTimeoutSeconds));
+  }
+
+  public void setApplication(String application) {
+    this.properties.put(SFSessionProperty.APPLICATION.getPropertyKey(), application);
+  }
+
+  public void setClientConfigFile(String clientConfigFile) {
+    this.properties.put(SFSessionProperty.CLIENT_CONFIG_FILE.getPropertyKey(), clientConfigFile);
+  }
+
+  public void setEnablePatternSearch(boolean enablePatternSearch) {
+    this.properties.put(
+        SFSessionProperty.ENABLE_PATTERN_SEARCH.getPropertyKey(),
+        String.valueOf(enablePatternSearch));
+  }
+
+  public void setEnablePutGet(boolean enablePutGet) {
+    this.properties.put(
+        SFSessionProperty.ENABLE_PUT_GET.getPropertyKey(), String.valueOf(enablePutGet));
+  }
+
+  public void setArrowTreatDecimalAsInt(boolean treatDecimalAsInt) {
+    this.properties.put(
+        SFSessionProperty.JDBC_ARROW_TREAT_DECIMAL_AS_INT.getPropertyKey(),
+        String.valueOf(treatDecimalAsInt));
+  }
+
+  public void setMaxHttpRetries(int maxHttpRetries) {
+    this.properties.put(
+        SFSessionProperty.MAX_HTTP_RETRIES.getPropertyKey(), Integer.toString(maxHttpRetries));
+  }
+
+  public void setOcspFailOpen(boolean ocspFailOpen) {
+    this.properties.put(
+        SFSessionProperty.OCSP_FAIL_OPEN.getPropertyKey(), String.valueOf(ocspFailOpen));
+  }
+
+  public void setPutGetMaxRetries(int putGetMaxRetries) {
+    this.properties.put(
+        SFSessionProperty.PUT_GET_MAX_RETRIES.getPropertyKey(), Integer.toString(putGetMaxRetries));
+  }
+
+  public void setStringsQuotedForColumnDef(boolean stringsQuotedForColumnDef) {
+    this.properties.put(
+        SFSessionProperty.STRINGS_QUOTED.getPropertyKey(),
+        String.valueOf(stringsQuotedForColumnDef));
+  }
+
+  public void setEnableDiagnostics(boolean enableDiagnostics) {
+    this.properties.put(
+        SFSessionProperty.ENABLE_DIAGNOSTICS.getPropertyKey(), String.valueOf(enableDiagnostics));
+  }
+
+  public void setDiagnosticsAllowlistFile(String diagnosticsAllowlistFile) {
+    this.properties.put(
+        SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE.getPropertyKey(), diagnosticsAllowlistFile);
+  }
+
+  public void setJDBCDefaultFormatDateWithTimezone(Boolean jdbcDefaultFormatDateWithTimezone) {
+    this.properties.put(
+        "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", jdbcDefaultFormatDateWithTimezone);
+  }
+
+  public void setGetDateUseNullTimezone(Boolean getDateUseNullTimezone) {
+    this.properties.put("JDBC_GET_DATE_USE_NULL_TIMEZONE", getDateUseNullTimezone);
   }
 
   public void setBrowserResponseTimeout(int seconds) {
