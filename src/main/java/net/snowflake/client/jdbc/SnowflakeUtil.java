@@ -224,9 +224,9 @@ public class SnowflakeUtil {
                 new SFTimestamp((Timestamp) value, timeZone),
                 javaType,
                 9,
-                getFormat(connection.getSFBaseSession(), "TIMESTAMP_NTZ_OUTPUT_FORMAT"),
-                getFormat(connection.getSFBaseSession(), "TIMESTAMP_LTZ_OUTPUT_FORMAT"),
-                getFormat(connection.getSFBaseSession(), "TIMESTAMP_TZ_OUTPUT_FORMAT"),
+                getFormat(connection.getSFBaseSession(), "TIMESTAMP_NTZ_OUTPUT_FORMAT", "TIMESTAMP_OUTPUT_FORMAT"),
+                getFormat(connection.getSFBaseSession(), "TIMESTAMP_LTZ_OUTPUT_FORMAT", "TIMESTAMP_OUTPUT_FORMAT"),
+                getFormat(connection.getSFBaseSession(), "TIMESTAMP_TZ_OUTPUT_FORMAT", "TIMESTAMP_OUTPUT_FORMAT"),
                 connection.getSFBaseSession());
         System.out.println("Timestamp result : " + sfTimestampAsString);
         return sfTimestampAsString;
@@ -1050,6 +1050,11 @@ public class SnowflakeUtil {
   public static SnowflakeDateTimeFormat getFormat(SFBaseSession session, String format) {
     return SnowflakeDateTimeFormat.fromSqlFormat(
         (String) session.getCommonParameters().get(format));
+  }
+  public static SnowflakeDateTimeFormat getFormat(SFBaseSession session, String format, String usedIfFirstEmpty) {
+    String mainSqlFormat = (String) session.getCommonParameters().get(format);
+    String sqlFormat = !Strings.isNullOrEmpty(mainSqlFormat) ? mainSqlFormat : (String) session.getCommonParameters().get(usedIfFirstEmpty);
+    return SnowflakeDateTimeFormat.fromSqlFormat(sqlFormat);
   }
 
   @SnowflakeJdbcInternalApi
