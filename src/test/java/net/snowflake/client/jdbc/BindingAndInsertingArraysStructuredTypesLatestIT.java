@@ -167,7 +167,7 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
 
         String[] resultArray = (String[]) resultSet.getArray(1).getArray();
         assertEquals("a", resultArray[0]);
-        assertNull("c", resultArray[3]);
+        assertNull(resultArray[1]);
       }
     }
   }

@@ -212,18 +212,24 @@ public class SnowflakeUtil {
   private static String formatStringForType(
       Object value, int javaType, SnowflakeType snowflakeType, SnowflakeConnectionV1 connection)
       throws SQLException {
+    System.out.println("Value to format: " + value);
     if (value == null) {
       return String.valueOf(value);
     } else if (javaType == Types.TIMESTAMP) {
       try {
-        return ResultUtil.getSFTimestampAsString(
-            new SFTimestamp((Timestamp) value, TimeZone.getDefault()),
-            javaType,
-            9,
-            getFormat(connection.getSFBaseSession(), "TIMESTAMP_NTZ_OUTPUT_FORMAT"),
-            getFormat(connection.getSFBaseSession(), "TIMESTAMP_LTZ_OUTPUT_FORMAT"),
-            getFormat(connection.getSFBaseSession(), "TIMESTAMP_TZ_OUTPUT_FORMAT"),
-            connection.getSFBaseSession());
+        TimeZone timeZone =
+            SnowflakeUtil.timeZoneDependOnType(snowflakeType, connection.getSFBaseSession(), null);
+        String sfTimestampAsString =
+            ResultUtil.getSFTimestampAsString(
+                new SFTimestamp((Timestamp) value, timeZone),
+                javaType,
+                9,
+                getFormat(connection.getSFBaseSession(), "TIMESTAMP_NTZ_OUTPUT_FORMAT"),
+                getFormat(connection.getSFBaseSession(), "TIMESTAMP_LTZ_OUTPUT_FORMAT"),
+                getFormat(connection.getSFBaseSession(), "TIMESTAMP_TZ_OUTPUT_FORMAT"),
+                connection.getSFBaseSession());
+        System.out.println("Timestamp result : " + sfTimestampAsString);
+        return sfTimestampAsString;
       } catch (SFException e) {
         throw new SQLException(e);
       }

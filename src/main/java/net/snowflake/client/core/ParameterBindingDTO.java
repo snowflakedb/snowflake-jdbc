@@ -21,13 +21,13 @@ public class ParameterBindingDTO {
 
   public ParameterBindingDTO(
       String fmt, String type, Object value, BindingParameterMetadata schema) {
-    System.out.println("VALUE "+value);
-      try {
-          System.out.println("SCHEMA "+ SnowflakeUtil.mapJson(schema));
-      } catch (JsonProcessingException e) {
-          throw new RuntimeException(e);
-      }
-      this.fmt = fmt;
+    System.out.println("VALUE " + value);
+    try {
+      System.out.println("SCHEMA " + SnowflakeUtil.mapJson(schema));
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    this.fmt = fmt;
     this.type = type;
     this.value = value;
     this.schema = schema;
