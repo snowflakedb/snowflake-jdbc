@@ -98,7 +98,6 @@ public enum SFSessionProperty {
 
   BROWSER_RESPONSE_TIMEOUT("BROWSER_RESPONSE_TIMEOUT", false, Integer.class);
 
-
   // property key in string
   private String propertyKey;
 
