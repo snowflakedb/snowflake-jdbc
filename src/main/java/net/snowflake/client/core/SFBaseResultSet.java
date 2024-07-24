@@ -263,7 +263,11 @@ public abstract class SFBaseResultSet {
   protected SQLInput createJsonSqlInputForColumn(
       Object input, SFBaseSession session, List<FieldMetadata> fields) {
     JsonNode inputNode;
+
     if (input instanceof JsonNode) {
+      if (((JsonNode) input).isNull()) {
+        return null;
+      }
       inputNode = (JsonNode) input;
     } else {
       inputNode = OBJECT_MAPPER.convertValue(input, JsonNode.class);

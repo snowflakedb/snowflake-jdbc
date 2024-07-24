@@ -91,7 +91,7 @@ public class FieldSchemaCreator {
         return FieldSchemaCreator.buildSchemaTypeAndNameOnly(name, "date", Optional.empty());
       case Types.TIMESTAMP:
         return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
-            name, Optional.ofNullable(typeName).orElse("timestamp"), 9, 0, Optional.empty());
+            name, Optional.ofNullable(typeName).orElse("timestamp"), 0, 0, Optional.empty());
       case Types.TIME:
         return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
             name, "time", 9, 0, Optional.empty());

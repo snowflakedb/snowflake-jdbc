@@ -1605,10 +1605,11 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
-      if (SQLData.class.isAssignableFrom(type)) {
+      if (entry.getValue() == null) {
+        resultMap.put(entry.getKey(), null);
+      } else if (SQLData.class.isAssignableFrom(type)) {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
         boolean isJsonMapping = JsonNode.class.isAssignableFrom(entry.getValue().getClass());
-        ;
         SQLInput sqlInput =
             sfBaseResultSet.createSqlInputForColumn(
                 entry.getValue(),
@@ -1616,8 +1617,12 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                 columnIndex,
                 session,
                 valueFieldMetadata.getFields());
-        instance.readSQL(sqlInput, null);
-        resultMap.put(entry.getKey(), (T) instance);
+        if (sqlInput != null) {
+          instance.readSQL(sqlInput, null);
+          resultMap.put(entry.getKey(), (T) instance);
+        } else {
+          resultMap.put(entry.getKey(), null);
+        }
       } else if (String.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),

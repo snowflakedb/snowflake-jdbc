@@ -31,6 +31,7 @@ import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -145,6 +146,34 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testWriteArrayNullableString() throws SQLException {
+    //    Nulls aren't supported for data returned in JSON format
+    Assume.assumeTrue(queryResultFormat == ResultSetFormatType.NATIVE_ARROW);
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement(
+                    "INSERT INTO array_of_varchars (arrayType) SELECT ?;"); ) {
+
+      statement.execute(" CREATE OR REPLACE TABLE array_of_varchars(arrayType ARRAY(VARCHAR))");
+
+      Array array = connection.createArrayOf("VARCHAR", new String[] {"a", null});
+      stmt.setArray(1, array);
+      stmt.executeUpdate();
+
+      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_varchars"); ) {
+        resultSet.next();
+
+        String[] resultArray = (String[]) resultSet.getArray(1).getArray();
+        assertEquals("a", resultArray[0]);
+        assertNull("c", resultArray[3]);
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteArrayOfTimestampLtz() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement();
@@ -170,22 +199,24 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
         resultSet.next();
 
         Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
-//        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), resultArray[0]);
-//        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)), resultArray[1]);
-                assertEquals(
-                        LocalDateTime.of(2021, 12, 22, 9, 43, 44)
-                                .atZone(ZoneId.of("Europe/Warsaw"))
-                                .toInstant(),
-                        resultArray[0].toInstant());
-                assertEquals(
-                        LocalDateTime.of(2021, 12, 22, 9, 43, 45)
-                                .atZone(ZoneId.of("Europe/Warsaw"))
-                                .toInstant(),
-                        resultArray[1].toInstant());
-
+        //        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)),
+        // resultArray[0]);
+        //        assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 45)),
+        // resultArray[1]);
+        assertEquals(
+            LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            resultArray[0].toInstant());
+        assertEquals(
+            LocalDateTime.of(2021, 12, 22, 9, 43, 45)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            resultArray[1].toInstant());
       }
     }
   }
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testWriteArrayOfTimestampNtz() throws SQLException {
@@ -229,7 +260,8 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
                 connection.prepareStatement(
                     "INSERT INTO array_of_timestamp_tz (arrayInt) SELECT ?;"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE array_of_timestamp_tz(arrayInt ARRAY(TIMESTAMP_TZ))");
+      statement.execute(
+          " CREATE OR REPLACE TABLE array_of_timestamp_tz(arrayInt ARRAY(TIMESTAMP_TZ))");
 
       Array array =
           connection.createArrayOf(
@@ -368,6 +400,39 @@ public class BindingAndInsertingArraysStructuredTypesLatestIT extends BaseJDBCTe
         assertEquals("string1", resultArray[0].getString());
         assertEquals(Integer.valueOf(2), resultArray[1].getIntValue());
         assertEquals("string12", resultArray[1].getString());
+      }
+    }
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testWriteArrayOfNullableSqlData() throws SQLException {
+    //    Nulls aren't supported for data returned in JSON format
+    Assume.assumeTrue(queryResultFormat == ResultSetFormatType.NATIVE_ARROW);
+    try (Connection connection = init();
+        Statement statement = connection.createStatement();
+        SnowflakePreparedStatementV1 stmt =
+            (SnowflakePreparedStatementV1)
+                connection.prepareStatement(
+                    "INSERT INTO array_of_struct (arrayType) SELECT ?;"); ) {
+
+      statement.execute(
+          " CREATE OR REPLACE TABLE array_of_struct(arrayType ARRAY(OBJECT(string VARCHAR, intValue INTEGER)) )");
+
+      Array array =
+          connection.createArrayOf(
+              "STRUCT", new SimpleClass[] {new SimpleClass("string1", 1), null});
+      stmt.setArray(1, array);
+      stmt.executeUpdate();
+
+      try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_struct"); ) {
+        assertTrue(resultSet.next());
+
+        SimpleClass[] resultArray =
+            resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, SimpleClass.class);
+        assertEquals(Integer.valueOf(1), resultArray[0].getIntValue());
+        assertEquals("string1", resultArray[0].getString());
+        assertNull(resultArray[1]);
       }
     }
   }

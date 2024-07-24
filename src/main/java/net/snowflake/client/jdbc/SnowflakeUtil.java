@@ -114,11 +114,17 @@ public class SnowflakeUtil {
       throws JsonProcessingException, SQLException {
     if (type == Types.STRUCT) {
       Map<Object, JSONObject> jObjects = new HashMap<>();
+
       for (Object key : map.keySet()) {
-        SQLData element = (SQLData) map.get(key);
-        JsonSqlOutput sqlOutput = new JsonSqlOutput(element, connection.getSFBaseSession());
-        element.writeSQL(sqlOutput);
-        jObjects.put(key, sqlOutput.getJsonObject());
+        Object value = map.get(key);
+        if (value != null) {
+          SQLData element = (SQLData) value;
+          JsonSqlOutput sqlOutput = new JsonSqlOutput(element, connection.getSFBaseSession());
+          element.writeSQL(sqlOutput);
+          jObjects.put(key, sqlOutput.getJsonObject());
+        } else {
+          jObjects.put(key, null);
+        }
       }
       return OBJECT_MAPPER.writeValueAsString(jObjects);
     } else if (Arrays.asList(
@@ -162,9 +168,13 @@ public class SnowflakeUtil {
       SQLData[] elements = (SQLData[]) ob;
       List<JSONObject> jObjects = new ArrayList<>();
       for (SQLData element : elements) {
-        JsonSqlOutput sqlOutput = new JsonSqlOutput(element, connection.getSFBaseSession());
-        element.writeSQL(sqlOutput);
-        jObjects.add(sqlOutput.getJsonObject());
+        if (element != null) {
+          JsonSqlOutput sqlOutput = new JsonSqlOutput(element, connection.getSFBaseSession());
+          element.writeSQL(sqlOutput);
+          jObjects.add(sqlOutput.getJsonObject());
+        } else {
+          jObjects.add(null);
+        }
       }
       return OBJECT_MAPPER.writeValueAsString(jObjects);
     } else if (Arrays.asList(

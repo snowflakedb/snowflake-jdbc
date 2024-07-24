@@ -28,6 +28,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -74,6 +75,9 @@ public class JsonSqlOutput implements SQLOutput {
   }
 
   private static List<Field> getClassFields(SQLData original) {
+    if (original == null) {
+      return Collections.emptyList();
+    }
     return Arrays.stream(original.getClass().getDeclaredFields())
         .filter(
             field ->

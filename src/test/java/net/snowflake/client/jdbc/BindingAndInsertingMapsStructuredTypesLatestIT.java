@@ -107,13 +107,10 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       statement.execute(
           " CREATE OR REPLACE TABLE map_of_objects(mapp MAP(VARCHAR, OBJECT(string VARCHAR, intValue INTEGER)))");
 
-      Map<String, SimpleClass> mapStruct =
-          Stream.of(
-                  new Object[][] {
-                    {"x", new SimpleClass("string1", 1)},
-                    {"y", new SimpleClass("string2", 2)},
-                  })
-              .collect(Collectors.toMap(data -> (String) data[0], data -> (SimpleClass) data[1]));
+      Map<String, SimpleClass> mapStruct = new HashMap<>();
+      mapStruct.put("x", new SimpleClass("string1", 1));
+      mapStruct.put("y", new SimpleClass("string2", 2));
+      mapStruct.put("z", null);
 
       stmt.setMap(1, mapStruct, Types.STRUCT);
       stmt.executeUpdate();
@@ -128,6 +125,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         assertEquals(Integer.valueOf(1), map.get("x").getIntValue());
         assertEquals("string2", map.get("y").getString());
         assertEquals(Integer.valueOf(2), map.get("y").getIntValue());
+        assertNull(map.get("z"));
       }
     }
   }
@@ -139,10 +137,12 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_objects_all_types (mapp) SELECT ?;");
+                connection.prepareStatement(
+                    "INSERT INTO map_of_objects_all_types (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_objects_all_types where mapp=?"); ) {
+                connection.prepareStatement(
+                    "select * from map_of_objects_all_types where mapp=?"); ) {
 
       statement.execute(
           " CREATE OR REPLACE TABLE map_of_objects_all_types(mapp MAP(VARCHAR, "
@@ -247,7 +247,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
       Map<String, Integer> mapStruct = new HashMap<>();
       mapStruct.put("x", 1);
       mapStruct.put("y", 2);
-      //      mapStruct.put("z", null);
+      mapStruct.put("z", null);
 
       stmt.setMap(1, mapStruct, Types.INTEGER);
       stmt.executeUpdate();
@@ -260,7 +260,7 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
             resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Integer.class);
         assertEquals(Integer.valueOf(1), resultMap.get("x"));
         assertEquals(Integer.valueOf(2), resultMap.get("y"));
-        //        assertNull(resultMap.get("z"));
+        assertNull(resultMap.get("z"));
       }
     }
   }
@@ -358,7 +358,8 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
             (SnowflakePreparedStatementV1)
                 connection.prepareStatement("select * from map_of_timestamp_tz where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_timestamp_tz(mapp MAP(VARCHAR, TIMESTAMP_TZ))");
+      statement.execute(
+          " CREATE OR REPLACE TABLE map_of_timestamp_tz(mapp MAP(VARCHAR, TIMESTAMP_TZ))");
 
       Map<String, Timestamp> mapStruct = new HashMap<>();
       mapStruct.put("x", Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)));
@@ -496,12 +497,15 @@ public class BindingAndInsertingMapsStructuredTypesLatestIT extends BaseJDBCTest
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmt =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("INSERT INTO map_of_object_with_nulls (mapp) SELECT ?;");
+                connection.prepareStatement(
+                    "INSERT INTO map_of_object_with_nulls (mapp) SELECT ?;");
         SnowflakePreparedStatementV1 stmt2 =
             (SnowflakePreparedStatementV1)
-                connection.prepareStatement("select * from map_of_object_with_nulls where mapp=?"); ) {
+                connection.prepareStatement(
+                    "select * from map_of_object_with_nulls where mapp=?"); ) {
 
-      statement.execute(" CREATE OR REPLACE TABLE map_of_object_with_nulls(mapp MAP(VARCHAR, VARCHAR))");
+      statement.execute(
+          " CREATE OR REPLACE TABLE map_of_object_with_nulls(mapp MAP(VARCHAR, VARCHAR))");
 
       Map<String, String> mapStruct = new HashMap<>();
       mapStruct.put("x", null);
