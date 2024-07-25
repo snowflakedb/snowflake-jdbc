@@ -98,7 +98,8 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     }
 
     // The driver needs password for OAUTH as part of SNOW-533673 feature request.
-    if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)) {
+    if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)
+        && !AUTHENTICATOR_EXTERNAL_BROWSER.equalsIgnoreCase(authenticator)) {
       properties.put(SFSessionProperty.PASSWORD.getPropertyKey(), password);
     }
 

@@ -58,12 +58,13 @@ public class SFLoginInput {
 
   SFLoginInput() {}
 
-  public Duration getBrowserResponseTimeout() {
+  Duration getBrowserResponseTimeout() {
     return browserResponseTimeout;
   }
 
-  public void setBrowserResponseTimeout(Duration browserResponseTimeout) {
+  SFLoginInput setBrowserResponseTimeout(Duration browserResponseTimeout) {
     this.browserResponseTimeout = browserResponseTimeout;
+    return this;
   }
 
   public String getServerUrl() {

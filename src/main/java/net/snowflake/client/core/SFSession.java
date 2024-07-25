@@ -495,10 +495,12 @@ public class SFSession extends SFBaseSession {
             setJdbcArrowTreatDecimalAsInt(getBooleanValue(propertyValue));
           }
           break;
+
         case BROWSER_RESPONSE_TIMEOUT:
           if (propertyValue != null) {
             browserResponseTimeout = Duration.ofSeconds((Integer) propertyValue);
           }
+          break;
 
         case JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE:
           if (propertyValue != null) {
