@@ -10,11 +10,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -310,6 +306,13 @@ public class SessionUtilExternalBrowser {
           socket.close();
         }
       }
+    } catch (SocketTimeoutException e) {
+      throw new SFException(
+          e,
+          ErrorCode.NETWORK_ERROR,
+          "External browser authentication failed within timeout of "
+              + getBrowserResponseTimeout()
+              + " milliseconds");
     } catch (IOException ex) {
       throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
     } finally {
