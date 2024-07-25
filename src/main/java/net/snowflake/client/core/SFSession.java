@@ -141,6 +141,9 @@ public class SFSession extends SFBaseSession {
    */
   private int retryTimeout = 300;
 
+  private boolean enableClientStoreTemporaryCredential = true;
+  private boolean enableClientRequestMfaToken = true;
+
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
   @VisibleForTesting
@@ -501,6 +504,18 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ENABLE_CLIENT_STORE_TEMPORARY_CREDENTIAL:
+          if (propertyValue != null) {
+            enableClientStoreTemporaryCredential = getBooleanValue(propertyValue);
+          }
+          break;
+
+        case ENABLE_CLIENT_REQUEST_MFA_TOKEN:
+          if (propertyValue != null) {
+            enableClientRequestMfaToken = getBooleanValue(propertyValue);
+          }
+          break;
+
         default:
           break;
       }
@@ -632,7 +647,9 @@ public class SFSession extends SFBaseSession {
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK) != null
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
-                : false);
+                : false)
+        .setEnableClientStoreTemporaryCredential(enableClientStoreTemporaryCredential)
+        .setEnableClientRequestMfaToken(enableClientRequestMfaToken);
 
     logger.info(
         "Connecting to {} Snowflake domain",
