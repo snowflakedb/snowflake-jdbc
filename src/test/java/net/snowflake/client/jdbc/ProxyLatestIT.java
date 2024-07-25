@@ -23,12 +23,13 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.logging.Logger;
 import net.snowflake.client.RunningNotOnGithubActionsMac;
 import net.snowflake.client.RunningNotOnJava21;
 import net.snowflake.client.RunningNotOnJava8;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.HttpUtil;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -45,8 +46,7 @@ import org.junit.experimental.categories.Category;
 @Category(TestCategoryOthers.class)
 public class ProxyLatestIT {
 
-  private static final Logger logger = Logger.getLogger(ProxyLatestIT.class.getName());
-
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ProxyLatestIT.class);
   private static final String WIREMOCK_HOME_DIR = ".wiremock";
   private static final String WIREMOCK_M2_PATH =
       "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
@@ -63,8 +63,9 @@ public class ProxyLatestIT {
     assumeFalse(RunningNotOnJava21.isRunningOnJava21());
     assumeFalse(
         RunningNotOnGithubActionsMac
-            .isRunningOnGithubActionsMac()); // disabled until issue with access to localhost is
-    // fixed on github actions mac image
+            .isRunningOnGithubActionsMac()); // disabled until issue with access to localhost
+    // (https://github.com/snowflakedb/snowflake-jdbc/pull/1807#discussion_r1686229430) is fixed on
+    // github actions mac image. Ticket to enable when fixed: SNOW-1555950
     originalTrustStorePath = systemGetProperty(TRUST_STORE_PROPERTY);
     startWiremockStandAlone();
   }
@@ -186,7 +187,7 @@ public class ProxyLatestIT {
                 waitForWiremock();
                 return true;
               } catch (Exception e) {
-                logger.warning("Failed to start wiremock, retrying: " + e);
+                logger.warn("Failed to start wiremock, retrying: ", e);
                 return false;
               }
             });
@@ -221,7 +222,7 @@ public class ProxyLatestIT {
       CloseableHttpResponse response = httpClient.execute(request);
       return response.getStatusLine().getStatusCode() == 200;
     } catch (Exception e) {
-      logger.warning("Waiting for wiremock to respond: " + e);
+      logger.warn("Waiting for wiremock to respond: ", e);
     }
     return false;
   }
