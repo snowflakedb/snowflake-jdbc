@@ -7,7 +7,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -63,13 +62,12 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
     tz = timeZone;
   }
 
-  private Connection init(String table, String column, String values) throws SQLException {
+  private void init(String table, String column, String values) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
       statement.execute("create or replace table " + table + " " + column);
       statement.execute("insert into " + table + " values " + values);
     }
-    return connection;
   }
 
   @Test
@@ -110,8 +108,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
     String column = "(a date)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    Connection con = init(table, column, values);
-    try (Statement statement = con.createStatement()) {
+    init(table, column, values);
+    try (Statement statement = connection.createStatement()) {
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
@@ -135,8 +133,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
     String table = "test_arrow_time";
     String column = "(a time(" + scale + "))";
     String values = "('" + StringUtils.join(times, "'),('") + "'), (null)";
-    Connection con = init(table, column, values);
-    try (Statement statement = con.createStatement();
+    init(table, column, values);
+    try (Statement statement = connection.createStatement();
         ResultSet rs = statement.executeQuery("select * from " + table)) {
       for (int i = 0; i < times.length; i++) {
         assertTrue(rs.next());
@@ -183,8 +181,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
     String column = "(a timestamp_ntz(" + scale + "))";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    Connection con = init(table, column, values);
-    try (Statement statement = con.createStatement()) {
+    init(table, column, values);
+    try (Statement statement = connection.createStatement()) {
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
@@ -217,8 +215,8 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
     String column = "(a timestamp_ntz)";
 
     String values = "('" + StringUtils.join(cases, "'),('") + "'), (null)";
-    Connection con = init(table, column, values);
-    try (Statement statement = con.createStatement()) {
+    init(table, column, values);
+    try (Statement statement = connection.createStatement()) {
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
