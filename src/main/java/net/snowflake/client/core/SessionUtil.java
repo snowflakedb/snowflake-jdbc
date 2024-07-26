@@ -72,12 +72,11 @@ public class SessionUtil {
   public static final String SF_QUERY_SESSION_DELETE = "delete";
 
   // Headers
-  public static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
+  @Deprecated
+  public static final String SF_HEADER_AUTHORIZATION = SFSession.SF_HEADER_AUTHORIZATION;
 
   // Authentication type
   private static final String SF_HEADER_BASIC_AUTHTYPE = "Basic";
-  private static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
-  private static final String SF_HEADER_TOKEN_TAG = "Token";
   private static final String CLIENT_STORE_TEMPORARY_CREDENTIAL =
       "CLIENT_STORE_TEMPORARY_CREDENTIAL";
   private static final String CLIENT_REQUEST_MFA_TOKEN = "CLIENT_REQUEST_MFA_TOKEN";
@@ -644,7 +643,7 @@ public class SessionUtil {
        * HttpClient should take authorization header from char[] instead of
        * String.
        */
-      postRequest.setHeader(SF_HEADER_AUTHORIZATION, SF_HEADER_BASIC_AUTHTYPE);
+      postRequest.setHeader(SFSession.SF_HEADER_AUTHORIZATION, SF_HEADER_BASIC_AUTHTYPE);
 
       setServiceNameHeader(loginInput, postRequest);
 
@@ -1032,8 +1031,13 @@ public class SessionUtil {
       postRequest.addHeader("accept", "application/json");
 
       postRequest.setHeader(
-          SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE + " " + SF_HEADER_TOKEN_TAG + "=\"" + headerToken + "\"");
+          SFSession.SF_HEADER_AUTHORIZATION,
+          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
+              + " "
+              + SFSession.SF_HEADER_TOKEN_TAG
+              + "=\""
+              + headerToken
+              + "\"");
 
       setServiceNameHeader(loginInput, postRequest);
 
@@ -1126,10 +1130,10 @@ public class SessionUtil {
           postRequest, loginInput.getAdditionalHttpHeadersForSnowsight());
 
       postRequest.setHeader(
-          SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE
+          SFSession.SF_HEADER_AUTHORIZATION,
+          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
               + " "
-              + SF_HEADER_TOKEN_TAG
+              + SFSession.SF_HEADER_TOKEN_TAG
               + "=\""
               + loginInput.getSessionToken()
               + "\"");
@@ -1331,7 +1335,7 @@ public class SessionUtil {
             null,
             ErrorCode.IDP_CONNECTION_ERROR.getMessageCode(),
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION
-            /* session = */ );
+            /* session= */ );
       }
     } catch (MalformedURLException ex) {
       handleFederatedFlowError(loginInput, ex);
@@ -1702,7 +1706,7 @@ public class SessionUtil {
    * @param serverUrl The Snowflake URL includes protocol such as "https://"
    */
   public static void resetOCSPUrlIfNecessary(String serverUrl) throws IOException {
-    if (serverUrl.indexOf(".privatelink.snowflakecomputing.com") > 0) {
+    if (PrivateLinkDetector.isPrivateLink(serverUrl)) {
       // Privatelink uses special OCSP Cache server
       URL url = new URL(serverUrl);
       String host = url.getHost();
