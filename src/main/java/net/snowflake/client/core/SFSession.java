@@ -547,7 +547,7 @@ public class SFSession extends SFBaseSession {
             + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
             + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
             + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
-            + " query timeout: {}, tracing: {}, private key file: {}, private key file pwd is {},"
+            + " query timeout: {}, tracing: {}, private key file: {}, private key base64 is {}, private key file pwd is {},"
             + " enable_diagnostics: {}, diagnostics_allowlist_path: {},"
             + " session parameters: client store temporary credential: {}, gzip disabled: {}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
@@ -576,6 +576,8 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.TRACING),
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
+        SFLoggerUtil.isVariableProvided(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64)),
         SFLoggerUtil.isVariableProvided(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
         connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),

@@ -1747,7 +1747,8 @@ public class SessionUtil {
   }
 
   /**
-   * Helper function to generate a JWT token
+   * Helper function to generate a JWT token. Use {@link #generateJWTToken(PrivateKey, String,
+   * String, String, String, String)}
    *
    * @param privateKey private key
    * @param privateKeyFile path to private key file
@@ -1757,7 +1758,7 @@ public class SessionUtil {
    * @return JWT token
    * @throws SFException if Snowflake error occurs
    */
-  @Deprecated()
+  @Deprecated
   public static String generateJWTToken(
       PrivateKey privateKey,
       String privateKeyFile,
@@ -1765,10 +1766,8 @@ public class SessionUtil {
       String accountName,
       String userName)
       throws SFException {
-    SessionUtilKeyPair s =
-        new SessionUtilKeyPair(
-            privateKey, privateKeyFile, null, privateKeyFilePwd, accountName, userName);
-    return s.issueJwtToken();
+    return generateJWTToken(
+        privateKey, privateKeyFile, null, privateKeyFilePwd, accountName, userName);
   }
 
   /**

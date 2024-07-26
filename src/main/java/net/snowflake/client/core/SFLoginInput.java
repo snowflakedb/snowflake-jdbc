@@ -315,6 +315,10 @@ public class SFLoginInput {
     return this;
   }
 
+  String getPrivateKeyBase64() {
+    return privateKeyBase64;
+  }
+
   SFLoginInput setPrivateKeyBase64(String privateKeyBase64) {
     this.privateKeyBase64 = privateKeyBase64;
     return this;
@@ -332,10 +336,6 @@ public class SFLoginInput {
 
   String getPrivateKeyFile() {
     return privateKeyFile;
-  }
-
-  String getPrivateKeyBase64() {
-    return privateKeyBase64;
   }
 
   String getPrivateKeyFilePwd() {
