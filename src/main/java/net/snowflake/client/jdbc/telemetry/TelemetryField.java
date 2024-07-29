@@ -10,6 +10,10 @@ public enum TelemetryField {
   TIME_WAITING_FOR_CHUNKS("client_time_waiting_for_chunks"),
   TIME_DOWNLOADING_CHUNKS("client_time_downloading_chunks"),
   TIME_PARSING_CHUNKS("client_time_parsing_chunks"),
+  TIME_BINDING("client_time_binding"),
+  TIME_CREATE_RESULT_SET("client_time_create_result_set"),
+  TIME_PROCESS_RESULT_CHUNK("client_time_process_result_chunk"),
+  TIME_SERVER_RESPONSE("client_time_response_from_server"),
 
   FAILED_BIND_SERIALIZATION("client_failed_bind_serialization"),
   FAILED_BIND_UPLOAD("client_failed_bind_upload"),
@@ -17,7 +21,9 @@ public enum TelemetryField {
 
   SQL_EXCEPTION("client_sql_exception"),
 
-  METADATA_METRICS("client_metadata_api_metrics");
+  METADATA_METRICS("client_metadata_api_metrics"),
+
+  QUERY_RESULT_FORMAT("client_query_result_format");
 
   public final String field;
 

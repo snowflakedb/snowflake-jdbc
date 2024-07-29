@@ -251,22 +251,26 @@ public class ResultSetLatestIT extends ResultSet0IT {
       String schema = con.getSchema();
       metadata.getColumns(catalog, schema, null, null);
       logs = ((TelemetryClient) telemetry).logBuffer();
-      assertEquals(logs.size(), 2);
-      // first item in log buffer is metrics on time to consume first result set chunk
+      assertEquals(logs.size(), 7);
+      // first item in log buffer is query result format
       assertEquals(
-          logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
-          TelemetryField.TIME_CONSUME_FIRST_RESULT.toString());
-      // second item in log buffer is metrics on getProcedureColumns() parameters
+          TelemetryField.QUERY_RESULT_FORMAT.toString(),
+          logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue());
+      // second item in log buffer is metrics on time to consume first result set chunk
+      assertEquals(
+          TelemetryField.TIME_CONSUME_FIRST_RESULT.toString(),
+          logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue());
+      // last item in log buffer is metrics on getProcedureColumns() parameters
       // Assert the log is of type client_metadata_api_metrics
       assertEquals(
-          logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(),
-          TelemetryField.METADATA_METRICS.toString());
+          TelemetryField.METADATA_METRICS.toString(),
+          logs.get(6).getMessage().get(TelemetryUtil.TYPE).textValue());
       // Assert function name and params match and that query id exists
-      assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
-      TestUtil.assertValidQueryId(logs.get(1).getMessage().get("query_id").textValue());
-      parameterValues = logs.get(1).getMessage().get("function_parameters");
-      assertEquals(parameterValues.get("catalog").textValue(), catalog);
-      assertEquals(parameterValues.get("schema").textValue(), schema);
+      assertEquals("getColumns", logs.get(6).getMessage().get("function_name").textValue());
+      TestUtil.assertValidQueryId(logs.get(6).getMessage().get("query_id").textValue());
+      parameterValues = logs.get(6).getMessage().get("function_parameters");
+      assertEquals(catalog, parameterValues.get("catalog").textValue());
+      assertEquals(schema, parameterValues.get("schema").textValue());
       assertNull(parameterValues.get("general_name_pattern").textValue());
       assertNull(parameterValues.get("specific_name_pattern").textValue());
     }

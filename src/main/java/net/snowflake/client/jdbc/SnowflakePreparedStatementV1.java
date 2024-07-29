@@ -158,6 +158,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     ResultSet rs = executeQueryInternal(sql, false, parameterBindings, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
+    execTimeData.sendInBoundTelemetry(this.sfBaseStatement.getSFBaseSession().getTelemetryClient());
     logger.debug("Query completed. {}", execTimeData.getLogString());
     return rs;
   }
@@ -180,6 +181,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
     ResultSet rs = executeQueryInternal(sql, true, parameterBindings, execTimeData);
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
+    execTimeData.sendInBoundTelemetry(this.sfBaseStatement.getSFBaseSession().getTelemetryClient());
     logger.debug("Query completed. {}", execTimeData.getLogString());
     return rs;
   }
@@ -517,6 +519,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     execTimeData.setQueryEnd();
     execTimeData.generateTelemetry();
+    execTimeData.sendInBoundTelemetry(this.sfBaseStatement.getSFBaseSession().getTelemetryClient());
     logger.debug("Query completed. {}", execTimeData.getLogString());
     return success;
   }
