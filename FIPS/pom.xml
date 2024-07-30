@@ -553,6 +553,9 @@
                             <exclude>arrow-git.properties</exclude>
                             <exclude>google-http-client.properties</exclude>
                             <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                           <exclude>about.html</exclude>
+                           <exclude>LICENSE-EDL-1.0.txt</exclude>
+                           <exclude>LICENSE-EPL-1.0.txt</exclude>
                            <exclude>dependencies.properties</exclude>
                          </excludes>
                       </filter>
