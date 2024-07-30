@@ -908,6 +908,10 @@
                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
                     </relocation>
                     <relocation>
+                      <pattern>org.eclipse.collections</pattern>
+                      <shadedPattern>${shadeBase}org.eclipse.collections</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>google.longrunning</pattern>
                       <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
                     </relocation>
