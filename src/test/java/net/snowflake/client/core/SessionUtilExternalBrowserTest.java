@@ -249,8 +249,6 @@ public class SessionUtilExternalBrowserTest {
   @Test
   @Ignore
   public void testExternalBrowserTimeout() throws Exception {
-    // test with username/password authentication
-    // set up DataSource object and ensure connection works
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
     ds.setServerName(params.get("host"));
