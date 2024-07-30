@@ -9,10 +9,14 @@ import static org.junit.Assert.assertTrue;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Calendar;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.TimeZone;
 import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -23,9 +27,12 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
   public void testQueryResultSetAlreadyClosed() throws Throwable {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
-      ResultSet resultSet = statement.executeQuery("select 1");
-      resultSet.close();
-      checkAlreadyClosed(resultSet);
+      try (ResultSet resultSet = statement.executeQuery("select null::vector(float, 2)")) {
+        checkAlreadyClosed(resultSet);
+      }
+      try (ResultSet resultSet = statement.executeQuery("select 1")) {
+        checkAlreadyClosedInSnowflakeBaseResultSet(resultSet);
+      }
     }
   }
 
@@ -36,317 +43,347 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCTest {
       String schema = connection.getSchema();
       DatabaseMetaData metaData = connection.getMetaData();
 
-      checkAlreadyClosed(metaData.getCatalogs());
-      checkAlreadyClosed(metaData.getSchemas());
-      checkAlreadyClosed(metaData.getSchemas(database, null));
-      checkAlreadyClosed(metaData.getTables(database, schema, null, null));
-      checkAlreadyClosed(metaData.getColumns(database, schema, null, null));
-    }
-  }
-
-  @Test
-  public void testResultSetAlreadyClosed() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement();
-        ResultSet resultSet = statement.executeQuery("SELECT 1")) {
-      checkAlreadyClosed(resultSet);
+      checkAlreadyClosedMetaData(metaData.getCatalogs());
+      checkAlreadyClosedMetaData(metaData.getSchemas());
+      checkAlreadyClosedMetaData(metaData.getSchemas(database, null));
+      checkAlreadyClosedMetaData(metaData.getTables(database, schema, null, null));
+      checkAlreadyClosedMetaData(metaData.getColumns(database, schema, null, null));
     }
   }
 
   @Test
   public void testEmptyResultSetAlreadyClosed() throws Throwable {
-    try (SnowflakeResultSetV1.EmptyResultSet resultSet =
-        new SnowflakeResultSetV1.EmptyResultSet()) {
+    try (ResultSet resultSet = new SnowflakeResultSetV1.EmptyResultSet()) {
       checkAlreadyClosedEmpty(resultSet);
     }
   }
 
+  public void checkAlreadyClosedInSnowflakeBaseResultSet(ResultSet resultSet) throws SQLException {
+    SnowflakeBaseResultSet rs = resultSet.unwrap(SnowflakeBaseResultSet.class);
+    rs.close();
+    rs.close(); // second close won't raise exception
+    assertTrue(rs.isClosed());
+    expectResultSetAlreadyClosedException(() -> rs.getDate(1));
+    expectResultSetAlreadyClosedException(() -> rs.getTimestamp(1));
+    expectResultSetAlreadyClosedException(rs::getWarnings);
+    expectResultSetAlreadyClosedException(rs::clearWarnings);
+    expectResultSetAlreadyClosedException(rs::getMetaData);
+    expectResultSetAlreadyClosedException(() -> rs.getTimestamp("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getCharacterStream(1));
+    expectResultSetAlreadyClosedException(rs::getFetchDirection);
+    expectResultSetAlreadyClosedException(() -> rs.setFetchDirection(1));
+    expectResultSetAlreadyClosedException(rs::getFetchSize);
+    expectResultSetAlreadyClosedException(() -> rs.setFetchSize(1));
+    expectResultSetAlreadyClosedException(rs::getType);
+    expectResultSetAlreadyClosedException(rs::getConcurrency);
+    expectResultSetAlreadyClosedException(rs::getHoldability);
+  }
+
+  public void checkAlreadyClosedMetaData(ResultSet resultSet) throws SQLException {
+    SnowflakeDatabaseMetaDataResultSet metaDataResultSet =
+        resultSet.unwrap(SnowflakeDatabaseMetaDataResultSet.class);
+    metaDataResultSet.close();
+    metaDataResultSet.close(); // second close won't raise exception
+    assertTrue(metaDataResultSet.isClosed());
+    assertFalse(metaDataResultSet.next()); // next after close should return false.
+
+    expectResultSetAlreadyClosedException(metaDataResultSet::isFirst);
+    expectResultSetAlreadyClosedException(metaDataResultSet::isBeforeFirst);
+    expectResultSetAlreadyClosedException(metaDataResultSet::isLast);
+    expectResultSetAlreadyClosedException(metaDataResultSet::isAfterLast);
+    expectResultSetAlreadyClosedException(metaDataResultSet::getRow);
+    expectResultSetAlreadyClosedException(() -> metaDataResultSet.getBytes(1));
+    expectResultSetAlreadyClosedException(() -> metaDataResultSet.getTime(1));
+    expectResultSetAlreadyClosedException(
+        () -> metaDataResultSet.getTimestamp(1, TimeZone.getDefault()));
+    expectResultSetAlreadyClosedException(
+        () -> metaDataResultSet.getDate(1, TimeZone.getDefault()));
+    expectResultSetAlreadyClosedException(
+        () -> metaDataResultSet.getDate(1, TimeZone.getDefault()));
+    expectResultSetAlreadyClosedException(metaDataResultSet::wasNull);
+  }
+
   private void checkAlreadyClosed(ResultSet resultSet) throws SQLException {
-    resultSet.close();
-    resultSet.close(); // second close won't raise exception
-    assertTrue(resultSet.isClosed());
-    assertFalse(resultSet.next()); // next after close should return false.
+    SnowflakeResultSetV1 rs = resultSet.unwrap(SnowflakeResultSetV1.class);
+
+    rs.close();
+    rs.close(); // second close won't raise exception
+    assertTrue(rs.isClosed());
+    assertFalse(rs.next()); // next after close should return false.
 
     expectResultSetAlreadyClosedException(resultSet::wasNull);
-    expectResultSetAlreadyClosedException(() -> resultSet.getString(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBoolean(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getByte(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getShort(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getInt(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getLong(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getFloat(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getDouble(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBigDecimal(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBytes(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getDate(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getTime(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getTimestamp(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getObject(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getCharacterStream(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getClob(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getDate(1, Calendar.getInstance()));
-    expectResultSetAlreadyClosedException(() -> resultSet.getTime(1, Calendar.getInstance()));
-    expectResultSetAlreadyClosedException(() -> resultSet.getTimestamp(1, Calendar.getInstance()));
+    expectResultSetAlreadyClosedException(() -> rs.getString(1));
+    expectResultSetAlreadyClosedException(() -> rs.getBoolean(1));
+    expectResultSetAlreadyClosedException(() -> rs.getByte(1));
+    expectResultSetAlreadyClosedException(() -> rs.getShort(1));
+    expectResultSetAlreadyClosedException(() -> rs.getInt(1));
+    expectResultSetAlreadyClosedException(() -> rs.getLong(1));
+    expectResultSetAlreadyClosedException(() -> rs.getFloat(1));
+    expectResultSetAlreadyClosedException(() -> rs.getDouble(1));
 
-    expectResultSetAlreadyClosedException(() -> resultSet.getString("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBoolean("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getByte("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getShort("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getInt("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getLong("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getFloat("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getDouble("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBigDecimal("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBytes("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getString("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getDate("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getTime("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getTimestamp("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getObject("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getCharacterStream("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getClob("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getDate("col1", Calendar.getInstance()));
-    expectResultSetAlreadyClosedException(() -> resultSet.getTime("col1", Calendar.getInstance()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.getTimestamp("col1", Calendar.getInstance()));
-
-    expectResultSetAlreadyClosedException(() -> resultSet.getBigDecimal(1, 28));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBigDecimal("col1", 38));
-
-    expectResultSetAlreadyClosedException(resultSet::getWarnings);
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.unwrap(SnowflakeBaseResultSet.class).getWarnings());
-
-    expectResultSetAlreadyClosedException(resultSet::clearWarnings);
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.unwrap(SnowflakeBaseResultSet.class).clearWarnings());
+    expectResultSetAlreadyClosedException(() -> rs.getDate(1, TimeZone.getDefault()));
+    expectResultSetAlreadyClosedException(() -> rs.getTime(1));
+    expectResultSetAlreadyClosedException(() -> rs.getTimestamp(1, TimeZone.getDefault()));
 
     expectResultSetAlreadyClosedException(resultSet::getMetaData);
+    expectResultSetAlreadyClosedException(() -> rs.getObject(1));
+    expectResultSetAlreadyClosedException(() -> rs.getArray(1));
 
-    expectResultSetAlreadyClosedException(() -> resultSet.findColumn("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getBigDecimal(1));
+    expectResultSetAlreadyClosedException(() -> rs.getBigDecimal(1, 1));
 
-    expectResultSetAlreadyClosedException(resultSet::isBeforeFirst);
-    expectResultSetAlreadyClosedException(resultSet::isAfterLast);
-    expectResultSetAlreadyClosedException(resultSet::isFirst);
-    expectResultSetAlreadyClosedException(resultSet::isLast);
-    expectResultSetAlreadyClosedException(resultSet::getRow);
+    expectResultSetAlreadyClosedException(() -> rs.getBytes(1));
 
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.setFetchDirection(ResultSet.FETCH_FORWARD));
-    expectResultSetAlreadyClosedException(() -> resultSet.setFetchSize(10));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.unwrap(SnowflakeBaseResultSet.class).setFetchSize(10));
+    expectResultSetAlreadyClosedException(rs::getRow);
+    expectResultSetAlreadyClosedException(rs::isFirst);
+    expectResultSetAlreadyClosedException(rs::isLast);
+    expectResultSetAlreadyClosedException(rs::isAfterLast);
+    expectResultSetAlreadyClosedException(rs::isBeforeFirst);
 
-    expectResultSetAlreadyClosedException(resultSet::getFetchDirection);
-    expectResultSetAlreadyClosedException(resultSet::getFetchSize);
-    expectResultSetAlreadyClosedException(resultSet::getType);
-    expectResultSetAlreadyClosedException(resultSet::getConcurrency);
-    expectResultSetAlreadyClosedException(
-        resultSet.unwrap(SnowflakeBaseResultSet.class)::getConcurrency);
-
-    expectResultSetAlreadyClosedException(resultSet::getHoldability);
-    expectResultSetAlreadyClosedException(
-        resultSet.unwrap(SnowflakeBaseResultSet.class)::getHoldability);
-
-    expectResultSetAlreadyClosedException(resultSet::getStatement);
+    expectResultSetAlreadyClosedException(() -> rs.getResultSetSerializables(1));
   }
 
   /**
    * These tests are specific to an empty resultset object
    *
-   * @param resultSet
+   * @param rs
    * @throws SQLException
    */
-  private void checkAlreadyClosedEmpty(SnowflakeResultSetV1.EmptyResultSet resultSet)
-      throws SQLException {
-    resultSet.close();
-    resultSet.close(); // second close won't raise exception
-    assertTrue(resultSet.isClosed());
-    assertFalse(resultSet.next()); // next after close should return false.
+  private void checkAlreadyClosedEmpty(ResultSet rs) throws SQLException {
+    rs.close();
+    rs.close();
+    assertTrue(rs.isClosed());
+    assertFalse(rs.next()); // next after close should return false.
 
-    expectResultSetAlreadyClosedException(resultSet::beforeFirst);
-    expectResultSetAlreadyClosedException(resultSet::afterLast);
-    expectResultSetAlreadyClosedException(resultSet::first);
-    expectResultSetAlreadyClosedException(resultSet::last);
-    expectResultSetAlreadyClosedException(resultSet::getRow);
-    expectResultSetAlreadyClosedException(resultSet::previous);
-    expectResultSetAlreadyClosedException(resultSet::rowUpdated);
-    expectResultSetAlreadyClosedException(resultSet::rowInserted);
-    expectResultSetAlreadyClosedException(resultSet::rowDeleted);
+    expectResultSetAlreadyClosedException(rs::wasNull);
+    expectResultSetAlreadyClosedException(() -> rs.getBoolean(1));
+    expectResultSetAlreadyClosedException(() -> rs.getInt(1));
+    expectResultSetAlreadyClosedException(() -> rs.getLong(1));
+    expectResultSetAlreadyClosedException(() -> rs.getFloat(1));
+    expectResultSetAlreadyClosedException(() -> rs.getDouble(1));
+    expectResultSetAlreadyClosedException(() -> rs.getShort(1));
+    expectResultSetAlreadyClosedException(() -> rs.getByte(1));
+    expectResultSetAlreadyClosedException(() -> rs.getString(1));
+    expectResultSetAlreadyClosedException(() -> rs.getBytes(1));
+    expectResultSetAlreadyClosedException(() -> rs.getBytes(1));
+    expectResultSetAlreadyClosedException(() -> rs.getDate(1));
+    expectResultSetAlreadyClosedException(() -> rs.getTime(1));
+    expectResultSetAlreadyClosedException(() -> rs.getTimestamp(1));
+    expectResultSetAlreadyClosedException(() -> rs.getAsciiStream(1));
+    expectResultSetAlreadyClosedException(() -> rs.getUnicodeStream(1));
+    expectResultSetAlreadyClosedException(() -> rs.getBinaryStream(1));
 
-    expectResultSetAlreadyClosedException(() -> resultSet.absolute(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.relative(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.setFetchDirection(1));
-    expectResultSetAlreadyClosedException(resultSet::getFetchDirection);
-    expectResultSetAlreadyClosedException(() -> resultSet.setFetchSize(1));
-    expectResultSetAlreadyClosedException(resultSet::getFetchSize);
-    expectResultSetAlreadyClosedException(resultSet::getType);
-    expectResultSetAlreadyClosedException(resultSet::getConcurrency);
+    expectResultSetAlreadyClosedException(() -> rs.getString("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getBoolean("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getByte("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getShort("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getInt("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getLong("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getFloat("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getDouble("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getBigDecimal("col1", 1));
+    expectResultSetAlreadyClosedException(() -> rs.getBytes("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getDate("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getTime("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getTimestamp("col1"));
 
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNull(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNull("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateBoolean(2, true));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateBoolean("col2", true));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateByte(3, (byte) 0));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateByte("col3", (byte) 0));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateShort(4, (short) 0));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateShort("col4", (short) 0));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateInt(5, 0));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateInt("col5", 0));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateLong(6, 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateLong("col6", 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateFloat(6, 4F));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateFloat("col6", 4F));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateDouble(7, 12.5));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateDouble("col7", 12.5));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBigDecimal(8, BigDecimal.valueOf(12.5)));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBigDecimal("col8", BigDecimal.valueOf(12.5)));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateString(9, "hello"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateString("col9", "hello"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateBytes(10, new byte[0]));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateBytes("col10", new byte[0]));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateDate(11, new java.sql.Date(System.currentTimeMillis())));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateDate("col11", new java.sql.Date(System.currentTimeMillis())));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateTime(12, new java.sql.Time(System.currentTimeMillis())));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateTime("col12", new java.sql.Time(System.currentTimeMillis())));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateTimestamp(13, new java.sql.Timestamp(System.currentTimeMillis())));
-    expectResultSetAlreadyClosedException(
-        () ->
-            resultSet.updateTimestamp("col13", new java.sql.Timestamp(System.currentTimeMillis())));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateAsciiStream(14, new FakeInputStream()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateAsciiStream(14, new FakeInputStream(), 5));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateAsciiStream(14, new FakeInputStream(), 5L));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateAsciiStream("col14", new FakeInputStream()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateAsciiStream("col14", new FakeInputStream(), 5));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateAsciiStream("col14", new FakeInputStream(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.getAsciiStream(14));
-    expectResultSetAlreadyClosedException(() -> resultSet.getAsciiStream("col14"));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBinaryStream(15, new FakeInputStream()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBinaryStream(15, new FakeInputStream(), 5));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBinaryStream(15, new FakeInputStream(), 5L));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBinaryStream("col15", new FakeInputStream()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBinaryStream("col15", new FakeInputStream(), 5));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBinaryStream("col15", new FakeInputStream(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBinaryStream(15));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBinaryStream("col15"));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateCharacterStream(16, new FakeReader()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateCharacterStream(16, new FakeReader(), 5));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateCharacterStream(16, new FakeReader(), 5L));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateCharacterStream("col16", new FakeReader()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateCharacterStream("col16", new FakeReader(), 5));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateCharacterStream("col16", new FakeReader(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateObject(17, new Object()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateObject(17, new Object(), 5));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateObject("col17", new Object()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateObject("col17", new Object(), 5));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.getObject(17, SnowflakeResultSetV1.class));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.getObject("col17", SnowflakeResultSetV1.class));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.getObject(17, SnowflakeResultSetV1.class));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.getObject("col17", SnowflakeResultSetV1.class));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateBlob(18, new FakeBlob()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateBlob(18, new FakeInputStream()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBlob(18, new FakeInputStream(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateBlob("col18", new FakeBlob()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBlob("col18", new FakeInputStream()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateBlob("col18", new FakeInputStream(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBlob(18));
-    expectResultSetAlreadyClosedException(() -> resultSet.getBlob("col18"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNull(19));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNull("col19"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getUnicodeStream(20));
-    expectResultSetAlreadyClosedException(() -> resultSet.getUnicodeStream("col20"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateRef(21, new FakeRef()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateRef("col21", new FakeRef()));
-    expectResultSetAlreadyClosedException(() -> resultSet.getRef(21));
-    expectResultSetAlreadyClosedException(() -> resultSet.getRef("col21"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateArray(22, new FakeArray()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateArray("col22", new FakeArray()));
-    expectResultSetAlreadyClosedException(() -> resultSet.getArray(22));
-    expectResultSetAlreadyClosedException(() -> resultSet.getArray("col22"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getURL(23));
-    expectResultSetAlreadyClosedException(() -> resultSet.getURL("col23"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateClob(24, new FakeNClob()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateClob(24, new FakeReader(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateClob(24, new FakeReader()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateClob("col24", new FakeNClob()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateClob("col24", new FakeReader(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateClob("col24", new FakeReader()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNString(25, "hello"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNString("col25", "hello"));
-    expectResultSetAlreadyClosedException(() -> resultSet.getNString(25));
-    expectResultSetAlreadyClosedException(() -> resultSet.getNString("col25"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNClob(26, new FakeNClob()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNClob(26, new FakeReader(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNClob(26, new FakeReader()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNClob("col26", new FakeNClob()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateNClob("col26", new FakeReader(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateNClob("col26", new FakeReader()));
-    expectResultSetAlreadyClosedException(() -> resultSet.getNClob(26));
-    expectResultSetAlreadyClosedException(() -> resultSet.getNClob("col26"));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateNCharacterStream(27, new FakeReader()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateNCharacterStream(27, new FakeReader(), 5L));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateNCharacterStream("col26", new FakeReader()));
-    expectResultSetAlreadyClosedException(
-        () -> resultSet.updateNCharacterStream("col26", new FakeReader(), 5L));
-    expectResultSetAlreadyClosedException(() -> resultSet.getNCharacterStream(26));
-    expectResultSetAlreadyClosedException(() -> resultSet.getNCharacterStream("col26"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateSQLXML(27, new FakeSQLXML()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateSQLXML("col27", new FakeSQLXML()));
-    expectResultSetAlreadyClosedException(() -> resultSet.getSQLXML(27));
-    expectResultSetAlreadyClosedException(() -> resultSet.getSQLXML("col27"));
+    expectResultSetAlreadyClosedException(() -> rs.getBigDecimal(1));
+    expectResultSetAlreadyClosedException(() -> rs.getBigDecimal("col1"));
 
-    expectResultSetAlreadyClosedException(() -> resultSet.getRowId(1));
-    expectResultSetAlreadyClosedException(() -> resultSet.getRowId("col1"));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateRowId(1, new FakeRowId()));
-    expectResultSetAlreadyClosedException(() -> resultSet.updateRowId("col1", new FakeRowId()));
+    expectResultSetAlreadyClosedException(rs::isBeforeFirst);
+    expectResultSetAlreadyClosedException(rs::isAfterLast);
+    expectResultSetAlreadyClosedException(rs::isFirst);
+    expectResultSetAlreadyClosedException(rs::isLast);
+    expectResultSetAlreadyClosedException(rs::beforeFirst);
+    expectResultSetAlreadyClosedException(rs::afterLast);
+    expectResultSetAlreadyClosedException(rs::first);
+    expectResultSetAlreadyClosedException(rs::last);
+    expectResultSetAlreadyClosedException(rs::getRow);
 
-    expectResultSetAlreadyClosedException(resultSet::insertRow);
-    expectResultSetAlreadyClosedException(resultSet::updateRow);
-    expectResultSetAlreadyClosedException(resultSet::deleteRow);
-    expectResultSetAlreadyClosedException(resultSet::refreshRow);
-    expectResultSetAlreadyClosedException(resultSet::cancelRowUpdates);
-    expectResultSetAlreadyClosedException(resultSet::moveToInsertRow);
-    expectResultSetAlreadyClosedException(resultSet::moveToCurrentRow);
-    expectResultSetAlreadyClosedException(resultSet::cancelRowUpdates);
+    expectResultSetAlreadyClosedException(() -> rs.absolute(1));
+    expectResultSetAlreadyClosedException(() -> rs.relative(1));
 
-    expectResultSetAlreadyClosedException(() -> resultSet.isWrapperFor(SnowflakeResultSetV1.class));
-    expectResultSetAlreadyClosedException(() -> resultSet.unwrap(SnowflakeResultSetV1.class));
+    expectResultSetAlreadyClosedException(rs::previous);
+
+    expectResultSetAlreadyClosedException(() -> rs.setFetchDirection(1));
+    expectResultSetAlreadyClosedException(rs::getFetchDirection);
+    expectResultSetAlreadyClosedException(() -> rs.setFetchSize(1));
+    expectResultSetAlreadyClosedException(rs::getFetchSize);
+    expectResultSetAlreadyClosedException(rs::getType);
+    expectResultSetAlreadyClosedException(rs::getConcurrency);
+    expectResultSetAlreadyClosedException(rs::rowUpdated);
+    expectResultSetAlreadyClosedException(rs::rowInserted);
+    expectResultSetAlreadyClosedException(rs::rowDeleted);
+
+    expectResultSetAlreadyClosedException(() -> rs.updateNull(1));
+    expectResultSetAlreadyClosedException(() -> rs.updateBoolean(1, true));
+    expectResultSetAlreadyClosedException(() -> rs.updateByte(1, (byte) 0));
+    expectResultSetAlreadyClosedException(() -> rs.updateShort(1, (short) 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateInt(1, 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateLong(1, 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateFloat(1, 1.0f));
+    expectResultSetAlreadyClosedException(() -> rs.updateDouble(1, 1.0));
+    expectResultSetAlreadyClosedException(() -> rs.updateBigDecimal(1, BigDecimal.ONE));
+    expectResultSetAlreadyClosedException(() -> rs.updateString(1, "a"));
+    expectResultSetAlreadyClosedException(() -> rs.updateBytes(1, new byte[] {}));
+
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateDate(1, new Date(System.currentTimeMillis())));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateTime(1, new Time(System.currentTimeMillis())));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateTimestamp(1, new Timestamp(System.currentTimeMillis())));
+
+    expectResultSetAlreadyClosedException(() -> rs.updateAsciiStream(1, new FakeInputStream(), 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateBinaryStream(1, new FakeInputStream(), 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateCharacterStream(1, new FakeReader(), 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateObject(1, new Object(), 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateObject(1, new Object()));
+
+    expectResultSetAlreadyClosedException(() -> rs.updateNull("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.updateBoolean("col1", false));
+    expectResultSetAlreadyClosedException(() -> rs.updateByte("col1", (byte) 0));
+    expectResultSetAlreadyClosedException(() -> rs.updateShort("col1", (short) 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateInt("col1", 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateLong("col1", 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateFloat("col1", 1f));
+    expectResultSetAlreadyClosedException(() -> rs.updateDouble("col1", 1.0));
+    expectResultSetAlreadyClosedException(() -> rs.updateBigDecimal("col1", BigDecimal.ONE));
+    expectResultSetAlreadyClosedException(() -> rs.updateString("col1", "a"));
+    expectResultSetAlreadyClosedException(() -> rs.updateBytes("col1", new byte[] {}));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateDate("col1", new Date(System.currentTimeMillis())));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateTime("col1", new Time(System.currentTimeMillis())));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateTimestamp("col1", new Timestamp(System.currentTimeMillis())));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateAsciiStream("col1", new FakeInputStream(), 1));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateBinaryStream("col1", new FakeInputStream(), 1));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateCharacterStream("col1", new FakeReader(), 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateObject("col1", new Object(), 1));
+    expectResultSetAlreadyClosedException(() -> rs.updateObject("col1", new Object()));
+
+    expectResultSetAlreadyClosedException(rs::insertRow);
+    expectResultSetAlreadyClosedException(rs::updateRow);
+    expectResultSetAlreadyClosedException(rs::deleteRow);
+    expectResultSetAlreadyClosedException(rs::refreshRow);
+    expectResultSetAlreadyClosedException(rs::cancelRowUpdates);
+    expectResultSetAlreadyClosedException(rs::moveToInsertRow);
+    expectResultSetAlreadyClosedException(rs::moveToCurrentRow);
+    expectResultSetAlreadyClosedException(rs::getStatement);
+
+    expectResultSetAlreadyClosedException(() -> rs.getObject(1, new HashMap<>()));
+    expectResultSetAlreadyClosedException(() -> rs.getRef(1));
+    expectResultSetAlreadyClosedException(() -> rs.getBlob(1));
+    expectResultSetAlreadyClosedException(() -> rs.getClob(1));
+    expectResultSetAlreadyClosedException(() -> rs.getArray(1));
+    expectResultSetAlreadyClosedException(() -> rs.getArray(1));
+    expectResultSetAlreadyClosedException(() -> rs.getObject("col1", new HashMap<>()));
+    expectResultSetAlreadyClosedException(() -> rs.getRef("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getBlob("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getClob("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getArray("col1"));
+
+    expectResultSetAlreadyClosedException(() -> rs.getDate(1, new FakeCalendar()));
+    expectResultSetAlreadyClosedException(() -> rs.getDate("col1", new FakeCalendar()));
+    expectResultSetAlreadyClosedException(() -> rs.getTime(1, new FakeCalendar()));
+    expectResultSetAlreadyClosedException(() -> rs.getTime("col1", new FakeCalendar()));
+    expectResultSetAlreadyClosedException(() -> rs.getTimestamp(1, new FakeCalendar()));
+    expectResultSetAlreadyClosedException(() -> rs.getTimestamp("col1", new FakeCalendar()));
+    expectResultSetAlreadyClosedException(() -> rs.getURL(1));
+    expectResultSetAlreadyClosedException(() -> rs.getURL("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.updateRef(1, new FakeRef()));
+    expectResultSetAlreadyClosedException(() -> rs.updateRef("col1", new FakeRef()));
+    expectResultSetAlreadyClosedException(() -> rs.updateBlob(1, new FakeBlob()));
+    expectResultSetAlreadyClosedException(() -> rs.updateBlob("col1", new FakeBlob()));
+    expectResultSetAlreadyClosedException(() -> rs.updateClob(1, new FakeNClob()));
+    expectResultSetAlreadyClosedException(() -> rs.updateClob("col1", new FakeNClob()));
+    expectResultSetAlreadyClosedException(() -> rs.updateArray(1, new FakeArray()));
+    expectResultSetAlreadyClosedException(() -> rs.updateArray("col1", new FakeArray()));
+
+    expectResultSetAlreadyClosedException(() -> rs.getRowId(1));
+    expectResultSetAlreadyClosedException(() -> rs.getRowId("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.updateRowId(1, new FakeRowId()));
+    expectResultSetAlreadyClosedException(() -> rs.updateRowId("col1", new FakeRowId()));
+
+    expectResultSetAlreadyClosedException(rs::getHoldability);
+
+    expectResultSetAlreadyClosedException(() -> rs.updateNString(1, "a"));
+    expectResultSetAlreadyClosedException(() -> rs.updateNString("col1", "a"));
+    expectResultSetAlreadyClosedException(() -> rs.updateNClob(1, new FakeNClob()));
+    expectResultSetAlreadyClosedException(() -> rs.updateNClob("col1", new FakeNClob()));
+    expectResultSetAlreadyClosedException(() -> rs.updateNClob("col1", new FakeNClob()));
+    expectResultSetAlreadyClosedException(() -> rs.getNClob(1));
+    expectResultSetAlreadyClosedException(() -> rs.getNClob("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getSQLXML(1));
+    expectResultSetAlreadyClosedException(() -> rs.getSQLXML("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.updateSQLXML(1, new FakeSQLXML()));
+    expectResultSetAlreadyClosedException(() -> rs.updateSQLXML("col1", new FakeSQLXML()));
+
+    expectResultSetAlreadyClosedException(() -> rs.getNString(1));
+    expectResultSetAlreadyClosedException(() -> rs.getNString("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getNCharacterStream(1));
+    expectResultSetAlreadyClosedException(() -> rs.getNCharacterStream("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.updateNCharacterStream(1, new FakeReader(), 1L));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateNCharacterStream("col1", new FakeReader(), 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateAsciiStream(1, new FakeInputStream(), 1L));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateBinaryStream(1, new FakeInputStream(), 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateCharacterStream(1, new FakeReader(), 1L));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateAsciiStream("col1", new FakeInputStream(), 1L));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateBinaryStream("col1", new FakeInputStream(), 1L));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateCharacterStream("col1", new FakeReader(), 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateBlob(1, new FakeInputStream(), 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateBlob("col1", new FakeInputStream(), 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateClob(1, new FakeReader(), 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateClob("col1", new FakeReader(), 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateNClob(1, new FakeReader(), 1L));
+    expectResultSetAlreadyClosedException(() -> rs.updateNClob("col1", new FakeReader(), 1L));
+
+    expectResultSetAlreadyClosedException(() -> rs.updateNCharacterStream(1, new FakeReader()));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateNCharacterStream("col1", new FakeReader()));
+    expectResultSetAlreadyClosedException(() -> rs.updateAsciiStream(1, new FakeInputStream()));
+    expectResultSetAlreadyClosedException(() -> rs.updateBinaryStream(1, new FakeInputStream()));
+    expectResultSetAlreadyClosedException(() -> rs.updateCharacterStream(1, new FakeReader()));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateAsciiStream("col1", new FakeInputStream()));
+    expectResultSetAlreadyClosedException(
+        () -> rs.updateBinaryStream("col1", new FakeInputStream()));
+    expectResultSetAlreadyClosedException(() -> rs.updateCharacterStream("col1", new FakeReader()));
+    expectResultSetAlreadyClosedException(() -> rs.updateBlob(1, new FakeInputStream()));
+    expectResultSetAlreadyClosedException(() -> rs.updateBlob("col1", new FakeInputStream()));
+    expectResultSetAlreadyClosedException(() -> rs.updateClob(1, new FakeReader()));
+    expectResultSetAlreadyClosedException(() -> rs.updateClob("col1", new FakeReader()));
+    expectResultSetAlreadyClosedException(() -> rs.updateNClob(1, new FakeReader()));
+    expectResultSetAlreadyClosedException(() -> rs.updateNClob("col1", new FakeReader()));
+
+    expectResultSetAlreadyClosedException(() -> rs.getObject(1, SnowflakeResultSetV1.class));
+    expectResultSetAlreadyClosedException(() -> rs.getObject("col1", SnowflakeResultSetV1.class));
+    expectResultSetAlreadyClosedException(() -> rs.getBigDecimal(1, 1));
+
+    expectResultSetAlreadyClosedException(() -> rs.getAsciiStream("a"));
+    expectResultSetAlreadyClosedException(() -> rs.getUnicodeStream("a"));
+    expectResultSetAlreadyClosedException(() -> rs.getBinaryStream("a"));
+
+    expectResultSetAlreadyClosedException(rs::getWarnings);
+    expectResultSetAlreadyClosedException(rs::clearWarnings);
+    expectResultSetAlreadyClosedException(rs::getCursorName);
+    expectResultSetAlreadyClosedException(rs::getMetaData);
+
+    expectResultSetAlreadyClosedException(() -> rs.getObject(1));
+    expectResultSetAlreadyClosedException(() -> rs.getObject("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.findColumn("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.getCharacterStream(1));
+    expectResultSetAlreadyClosedException(() -> rs.getCharacterStream("col1"));
+    expectResultSetAlreadyClosedException(() -> rs.unwrap(SnowflakeResultSetV1.class));
+    expectResultSetAlreadyClosedException(() -> rs.isWrapperFor(SnowflakeResultSetV1.class));
   }
 }

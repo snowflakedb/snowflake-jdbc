@@ -195,5 +195,8 @@ public class ResultSetFeatureNotSupportedIT extends BaseJDBCTest {
     expectFeatureNotSupportedException(() -> resultSet.updateClob("col2", new FakeReader()));
     expectFeatureNotSupportedException(() -> resultSet.updateNClob("col2", new FakeReader(), 100));
     expectFeatureNotSupportedException(() -> resultSet.updateNClob("col2", new FakeReader()));
+
+    expectFeatureNotSupportedException(
+        () -> resultSet.unwrap(SnowflakeResultSetV1.class).getStatusV2());
   }
 }
