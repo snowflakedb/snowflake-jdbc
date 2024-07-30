@@ -78,10 +78,11 @@ public class SFConnectionConfigParser {
                   Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
                       .contains(o))) {
         logger.error(
-            "Reading from file {} is not safe because of insufficient permissions", configFilePath);
+            "Reading from file %s is not safe because file permissions are different than read/write for user",
+            configFilePath);
         throw new SnowflakeSQLException(
             String.format(
-                "Reading from file %s is not safe because of insufficient permissions",
+                "Reading from file %s is not safe because file permissions are different than read/write for user",
                 configFilePath));
       }
     }
