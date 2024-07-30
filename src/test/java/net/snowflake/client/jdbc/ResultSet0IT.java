@@ -20,15 +20,6 @@ import org.junit.experimental.categories.Category;
 public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   private final String queryResultFormat;
 
-  // TODO: Clean up init() methods when updating other test classes to use a common connection.
-  public Connection init() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
-    try (Statement stmt = conn.createStatement()) {
-      stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
-    }
-    return conn;
-  }
-
   public Connection init(Properties paramProperties) throws SQLException {
     Connection conn =
         BaseJDBCTest.getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
@@ -42,6 +33,7 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   public void setUp() throws SQLException {
     try (Statement statement = connection.createStatement()) {
 
+      statement.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
       // TEST_RS
       statement.execute("create or replace table test_rs (colA string)");
       statement.execute("insert into test_rs values('rowOne')");
