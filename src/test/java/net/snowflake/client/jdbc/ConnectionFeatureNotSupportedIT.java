@@ -43,6 +43,7 @@ public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest {
       expectFeatureNotSupportedException(connection::createSQLXML);
       expectFeatureNotSupportedException(
           () -> connection.createStruct("fakeType", new Object[] {}));
+      expectFeatureNotSupportedException(() -> connection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
     }
   }
 
