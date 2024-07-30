@@ -23,7 +23,6 @@ import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SecretDetector;
 import net.snowflake.common.api.QueryInProgressResponse;
-import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -43,17 +42,7 @@ public class StmtUtil {
 
   private static final String SF_PATH_QUERY_RESULT = "/queries/%s/result";
 
-  static final String SF_QUERY_REQUEST_ID = "requestId";
-
   private static final String SF_QUERY_COMBINE_DESCRIBE_EXECUTE = "combinedDescribe";
-
-  private static final String SF_QUERY_CONTEXT = "queryContext";
-
-  private static final String SF_HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
-
-  private static final String SF_HEADER_SNOWFLAKE_AUTHTYPE = "Snowflake";
-
-  private static final String SF_HEADER_TOKEN_TAG = "Token";
 
   static final String SF_MEDIA_TYPE = "application/snowflake";
 
@@ -315,7 +304,7 @@ public class StmtUtil {
         URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
 
         uriBuilder.setPath(SF_PATH_QUERY_V1);
-        uriBuilder.addParameter(SF_QUERY_REQUEST_ID, stmtInput.requestId);
+        uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, stmtInput.requestId);
 
         if (stmtInput.combineDescribe) {
           uriBuilder.addParameter(SF_QUERY_COMBINE_DESCRIBE_EXECUTE, Boolean.TRUE.toString());
@@ -376,10 +365,10 @@ public class StmtUtil {
         httpRequest.addHeader("accept", stmtInput.mediaType);
 
         httpRequest.setHeader(
-            SF_HEADER_AUTHORIZATION,
-            SF_HEADER_SNOWFLAKE_AUTHTYPE
+            SFSession.SF_HEADER_AUTHORIZATION,
+            SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
                 + " "
-                + SF_HEADER_TOKEN_TAG
+                + SFSession.SF_HEADER_TOKEN_TAG
                 + "=\""
                 + stmtInput.sessionToken
                 + "\"");
@@ -613,7 +602,7 @@ public class StmtUtil {
 
       uriBuilder.setPath(getResultPath);
 
-      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpGet(uriBuilder.build());
       // Add custom headers before adding common headers
@@ -623,10 +612,10 @@ public class StmtUtil {
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
       httpRequest.setHeader(
-          SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE
+          SFSession.SF_HEADER_AUTHORIZATION,
+          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
               + " "
-              + SF_HEADER_TOKEN_TAG
+              + SFSession.SF_HEADER_TOKEN_TAG
               + "=\""
               + stmtInput.sessionToken
               + "\"");
@@ -717,7 +706,7 @@ public class StmtUtil {
 
       uriBuilder.setPath(SF_PATH_ABORT_REQUEST_V1);
 
-      uriBuilder.addParameter(SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
+      uriBuilder.addParameter(SFSession.SF_QUERY_REQUEST_ID, UUIDUtils.getUUID().toString());
 
       httpRequest = new HttpPost(uriBuilder.build());
       // Add custom headers before adding common headers
@@ -742,10 +731,10 @@ public class StmtUtil {
       httpRequest.addHeader("accept", stmtInput.mediaType);
 
       httpRequest.setHeader(
-          SF_HEADER_AUTHORIZATION,
-          SF_HEADER_SNOWFLAKE_AUTHTYPE
+          SFSession.SF_HEADER_AUTHORIZATION,
+          SFSession.SF_HEADER_SNOWFLAKE_AUTHTYPE
               + " "
-              + SF_HEADER_TOKEN_TAG
+              + SFSession.SF_HEADER_TOKEN_TAG
               + "=\""
               + stmtInput.sessionToken
               + "\"");

@@ -9,7 +9,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,7 +18,6 @@ import java.sql.Time;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
-import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,13 +29,12 @@ import org.junit.runner.RunWith;
 /** Integration tests for binding variable */
 @RunWith(Theories.class)
 @Category(TestCategoryOthers.class)
-public class BindingDataIT extends AbstractDriverIT {
+public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
   @DataPoints public static short[] shortValues = {0, 1, -1, Short.MIN_VALUE, Short.MAX_VALUE};
 
   @Theory
   public void testBindShort(short shortValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_short(c1 number)");
 
@@ -63,8 +60,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Theory
   public void testBindShortViaSetObject(short shortValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_short(c1 number)");
 
@@ -92,8 +88,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Theory
   public void testBindInt(int intValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_int(c1 number)");
 
@@ -122,8 +117,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Theory
   public void testBindByte(byte byteValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_byte(c1 integer)");
 
@@ -149,8 +143,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Test
   public void testBindNull() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_null(id number, val " + "number)");
 
@@ -204,8 +197,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Theory
   public void testBindTime(Time timeVal) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_time(c1 time)");
 
@@ -238,8 +230,7 @@ public class BindingDataIT extends AbstractDriverIT {
     Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     Calendar laCal = Calendar.getInstance(TimeZone.getTimeZone("PST"));
 
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_time_calendar(c1 " + "time)");
 
@@ -267,8 +258,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Theory
   public void testBindTimeViaSetObject(Time timeVal) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_time(c1 time)");
 
@@ -294,8 +284,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Theory
   public void testBindTimeViaSetObjectCast(Time timeVal) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_time(c1 time)");
 
@@ -332,8 +321,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Theory
   public void testBindDate(Date dateValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_date(c1 date)");
 
@@ -362,8 +350,7 @@ public class BindingDataIT extends AbstractDriverIT {
   public void testBindDateWithCalendar(Date dateValue) throws SQLException {
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_date(c1 date)");
 
@@ -390,8 +377,7 @@ public class BindingDataIT extends AbstractDriverIT {
 
   @Theory
   public void testBindObjectWithScaleZero(int intValue) throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("create or replace table test_bind_object_0(c1 number)");
 
@@ -419,8 +405,7 @@ public class BindingDataIT extends AbstractDriverIT {
   /** Binding null as all types. */
   @Test
   public void testBindNullForAllTypes() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(
           "create or replace table TEST_BIND_ALL_TYPES(C0 string,"
               + "C1 number(20, 3), C2 INTEGER, C3 double, C4 varchar(1000),"

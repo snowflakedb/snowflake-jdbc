@@ -60,14 +60,14 @@ public class SFConnectionConfigParser {
       throws SnowflakeSQLException {
     try {
       File file = new File(configFilePath.toUri());
-      varifyFilePermissionSecure(configFilePath);
+      verifyFilePermissionSecure(configFilePath);
       return mapper.readValue(file, Map.class);
     } catch (IOException ex) {
       throw new SnowflakeSQLException(ex, "Problem during reading a configuration file.");
     }
   }
 
-  private static void varifyFilePermissionSecure(Path configFilePath)
+  private static void verifyFilePermissionSecure(Path configFilePath)
       throws IOException, SnowflakeSQLException {
     if (Constants.getOS() != Constants.OS.WINDOWS) {
       PosixFileAttributeView posixFileAttributeView =
@@ -78,10 +78,11 @@ public class SFConnectionConfigParser {
                   Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_READ)
                       .contains(o))) {
         logger.error(
-            "Reading from file {} is not safe because of insufficient permissions", configFilePath);
+            "Reading from file %s is not safe because file permissions are different than read/write for user",
+            configFilePath);
         throw new SnowflakeSQLException(
             String.format(
-                "Reading from file %s is not safe because of insufficient permissions",
+                "Reading from file %s is not safe because file permissions are different than read/write for user",
                 configFilePath));
       }
     }
@@ -108,13 +109,14 @@ public class SFConnectionConfigParser {
                     .orElse(SNOWFLAKE_TOKEN_FILE_PATH));
         logger.debug("Token used in connect is read from file: {}", path);
         try {
+          verifyFilePermissionSecure(path);
           String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
           if (!token.isEmpty()) {
             putPropertyIfNotNull(conectionProperties, "token", token.trim());
           } else {
             logger.warn("The token has empty value");
           }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
           throw new SnowflakeSQLException(ex, "There is a problem during reading token from file");
         }
       }

@@ -223,7 +223,10 @@ public class SFSession extends SFBaseSession {
         jsonNode = OBJECT_MAPPER.readTree(response);
       } catch (Exception e) {
         throw new SnowflakeSQLLoggedException(
-            this, e.getMessage(), "No response or invalid response from GET request. Error: {}");
+            queryID,
+            this,
+            e.getMessage(),
+            "No response or invalid response from GET request. Error: {}");
       }
 
       // Get response as JSON and parse it to get the query status
@@ -257,7 +260,7 @@ public class SFSession extends SFBaseSession {
             else if (ex instanceof SFException) {
               throw new SnowflakeSQLException((SFException) ex);
             }
-            throw new SnowflakeSQLException(ex.getMessage());
+            throw new SnowflakeSQLException(queryID, ex.getMessage());
           }
           sessionRenewed = true;
           // If the error code was not due to session renewal issues, throw an exception
@@ -483,6 +486,18 @@ public class SFSession extends SFBaseSession {
         case JDBC_ARROW_TREAT_DECIMAL_AS_INT:
           if (propertyValue != null) {
             setJdbcArrowTreatDecimalAsInt(getBooleanValue(propertyValue));
+          }
+          break;
+
+        case JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE:
+          if (propertyValue != null) {
+            setDefaultFormatDateWithTimezone(getBooleanValue(propertyValue));
+          }
+          break;
+
+        case JDBC_GET_DATE_USE_NULL_TIMEZONE:
+          if (propertyValue != null) {
+            setGetDateUseNullTimezone(getBooleanValue(propertyValue));
           }
           break;
 

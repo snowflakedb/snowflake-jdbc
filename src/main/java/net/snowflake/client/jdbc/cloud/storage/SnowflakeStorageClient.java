@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.util.Map;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FileBackedOutputStream;
 import net.snowflake.client.jdbc.MatDesc;
@@ -456,20 +457,45 @@ public interface SnowflakeStorageClient {
   String getMatdescKey();
 
   /**
-   * Adds encryption metadata to the StorageObjectMetadata object
+   * Adds encryption metadata to the StorageObjectMetadata object for AES-ECB/AES-CBC
    *
    * @param meta the storage metadata object to add the encryption info to
    * @param matDesc the material descriptor
    * @param ivData the initialization vector
-   * @param encKeK the key encryption key
+   * @param encryptedKey the encrypted content encryption key
    * @param contentLength the length of the encrypted content
    */
   void addEncryptionMetadata(
       StorageObjectMetadata meta,
       MatDesc matDesc,
       byte[] ivData,
-      byte[] encKeK,
+      byte[] encryptedKey,
       long contentLength);
+
+  /**
+   * Adds encryption metadata to the StorageObjectMetadata object for AES-GCM/AES-GCM
+   *
+   * @param meta the storage metadata object to add the encryption info to
+   * @param matDesc the material descriptor
+   * @param encryptedKey encrypted key
+   * @param dataIvBytes the initialization vector for data
+   * @param keyIvBytes the initialization vector for file key
+   * @param keyAad the additional authenticated data for file key
+   * @param dataAad the additional authenticated data for data
+   * @param contentLength the length of the encrypted content
+   */
+  @SnowflakeJdbcInternalApi
+  default void addEncryptionMetadataForGcm(
+      StorageObjectMetadata meta,
+      MatDesc matDesc,
+      byte[] encryptedKey,
+      byte[] dataIvBytes,
+      byte[] keyIvBytes,
+      byte[] keyAad,
+      byte[] dataAad,
+      long contentLength) {
+    // TODO GCM SNOW-1431870
+  }
 
   /**
    * Adds digest metadata to the StorageObjectMetadata object

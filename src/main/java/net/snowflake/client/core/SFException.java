@@ -24,26 +24,32 @@ public class SFException extends Throwable {
   private int vendorCode;
   private Object[] params;
 
+  /** use {@link SFException#SFException(String, Throwable, ErrorCode, Object...)} */
+  @Deprecated
   public SFException(ErrorCode errorCode, Object... params) {
-    super(
-        errorResourceBundleManager.getLocalizedMessage(
-            String.valueOf(errorCode.getMessageCode()), params));
-
-    this.cause = null;
-    this.queryId = null;
-    this.sqlState = errorCode.getSqlState();
-    this.vendorCode = errorCode.getMessageCode();
-    this.params = params;
+    this(null, null, errorCode, params);
   }
 
+  /** use {@link SFException#SFException(String, Throwable, ErrorCode, Object...)} */
+  @Deprecated
+  public SFException(String queryID, ErrorCode errorCode, Object... params) {
+    this(queryID, null, errorCode, params);
+  }
+
+  /** use {@link SFException#SFException(String, Throwable, ErrorCode, Object...)} */
+  @Deprecated
   public SFException(Throwable cause, ErrorCode errorCode, Object... params) {
+    this(null, cause, errorCode, params);
+  }
+
+  public SFException(String queryId, Throwable cause, ErrorCode errorCode, Object... params) {
     super(
         errorResourceBundleManager.getLocalizedMessage(
             String.valueOf(errorCode.getMessageCode()), params),
         cause);
 
     this.cause = null;
-    this.queryId = null;
+    this.queryId = queryId;
     this.sqlState = errorCode.getSqlState();
     this.vendorCode = errorCode.getMessageCode();
     this.params = params;
