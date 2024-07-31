@@ -35,10 +35,10 @@
   <properties>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
-    <awssdk.version>1.12.566</awssdk.version>
+    <awssdk.version>1.12.655</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
     <bouncycastle.version>1.74</bouncycastle.version>
-    <commons.codec.version>1.15</commons.codec.version>
+    <commons.codec.version>1.17.0</commons.codec.version>
     <commons.io.version>2.11.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
     <google.cloud.core.version>2.21.0</google.cloud.core.version>
