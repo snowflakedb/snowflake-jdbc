@@ -12,24 +12,27 @@ import java.sql.Statement;
 import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 @Category(TestCategoryStatement.class)
 public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
 
-  protected static String queryResultFormat = "json";
+  @Parameterized.Parameters(name = "format={0}")
+  public static Object[][] data() {
+    // all tests in this class need to run for both query result formats json and arrow
+    return new Object[][] {{"JSON"}, {"Arrow"}};
+  }
 
+  protected String queryResultFormat;
   private static SnowflakeConnectionV1 sfConnectionV1;
 
-  @BeforeClass
-  public static void setUpPreparedStatementConnection() throws SQLException {
-    if (!connection.isClosed()) {
-      sfConnectionV1 = (SnowflakeConnectionV1) connection;
-    } else {
-      sfConnectionV1 = (SnowflakeConnectionV1) getConnection();
-    }
+  public PreparedMultiStmtIT(String queryResultFormat) {
+    this.queryResultFormat = queryResultFormat;
+    this.sfConnectionV1 = (SnowflakeConnectionV1) connection;
   }
 
   @Before
