@@ -94,7 +94,9 @@ public enum SFSessionProperty {
       "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", false, Boolean.class),
 
   // Used as a fix for issue SNOW-354859. Remove with snowflake-jdbc version 4.x with BCR changes.
-  JDBC_GET_DATE_USE_NULL_TIMEZONE("JDBC_GET_DATE_USE_NULL_TIMEZONE", false, Boolean.class);
+  JDBC_GET_DATE_USE_NULL_TIMEZONE("JDBC_GET_DATE_USE_NULL_TIMEZONE", false, Boolean.class),
+
+  BROWSER_RESPONSE_TIMEOUT("BROWSER_RESPONSE_TIMEOUT", false, Integer.class);
 
   // property key in string
   private String propertyKey;
