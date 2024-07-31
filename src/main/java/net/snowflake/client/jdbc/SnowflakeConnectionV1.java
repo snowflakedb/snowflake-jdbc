@@ -597,14 +597,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public void setHoldability(int holdability) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();
-    if ((holdability != ResultSet.CLOSE_CURSORS_AT_COMMIT &&
-            holdability != ResultSet.HOLD_CURSORS_OVER_COMMIT)) {
-        throw new SQLException("The given parameter is not a ResultSet holdability constant.");
+    if ((holdability != ResultSet.CLOSE_CURSORS_AT_COMMIT
+        && holdability != ResultSet.HOLD_CURSORS_OVER_COMMIT)) {
+      throw new SQLException("The given parameter is not a ResultSet holdability constant.");
     }
     // HOLD_CURSORS_OVER_COMMIT holdability is currently not supported.
     // no-op if the holdability is CLOSE_CURSORS_AT_COMMIT
     if (holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT) {
-        throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
+      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
     }
   }
 
