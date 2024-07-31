@@ -1038,16 +1038,17 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         if (resultSet.next()) {
           fileFound = true;
+
+          // assert the first column not null
+          assertNotNull("Null result", resultSet.getString(1));
+
           break;
         }
         // give enough time for s3 eventual consistency for US region
         Thread.sleep(1000);
-        assertTrue("Could not find a file", fileFound);
-
-        // assert the first column not null
-        assertNotNull("Null result", resultSet.getString(1));
       }
     }
+    assertTrue("Could not find a file", fileFound);
   }
 
   @Test

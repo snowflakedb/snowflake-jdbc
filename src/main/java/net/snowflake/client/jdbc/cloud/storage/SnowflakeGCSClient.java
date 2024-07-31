@@ -993,12 +993,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           SqlState.INTERNAL_ERROR,
           "Unexpected: upload presigned URL invalid");
     } catch (Exception e) {
+      e.printStackTrace();
       throw new SnowflakeSQLLoggedException(
           queryId,
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
-          "Unexpected: upload with presigned url failed");
+          "Unexpected: upload with presigned url failed: " + e.getMessage());
     }
   }
 
