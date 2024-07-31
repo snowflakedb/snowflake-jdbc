@@ -22,10 +22,17 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.Map;
+import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -236,5 +243,28 @@ public class SessionUtilExternalBrowserTest {
     when(loginInput.getUserName()).thenReturn("testuser");
     when(loginInput.getDisableConsoleLogin()).thenReturn(true);
     return loginInput;
+  }
+
+  // Run this test manually to test disabling storing temporary credetials with external browser
+  // auth. This is valid for versions after 3.18.0.
+  @Test
+  @Ignore
+  public void testEnableClientStoreTemporaryCredential() throws Exception {
+    Map<String, String> params = AbstractDriverIT.getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("user"));
+    ds.setEnableClientStoreTemporaryCredential(false);
+
+    try (Connection con = ds.getConnection()) {
+      Statement stmt = con.createStatement();
+      for (int i = 0; i < 3; i++) {
+        try (ResultSet rs = stmt.executeQuery("SELECT CURRENT_USER()")) {
+          assertTrue(rs.next());
+        }
+      }
+    }
   }
 }
