@@ -36,6 +36,7 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,10 +81,30 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   private static final String ENABLE_PATTERN_SEARCH =
       SFSessionProperty.ENABLE_PATTERN_SEARCH.getPropertyKey();
 
+  private static final String startingSchema;
+  private static final String startingDatabase;
+
+  static {
+    try {
+      startingSchema = connection.getSchema();
+      startingDatabase = connection.getCatalog();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   /** Create catalog and schema for tests with double quotes */
   public void createDoubleQuotedSchemaAndCatalog(Statement statement) throws SQLException {
     statement.execute("create or replace database \"dbwith\"\"quotes\"");
     statement.execute("create or replace schema \"dbwith\"\"quotes\".\"schemawith\"\"quotes\"");
+  }
+
+  @Before
+  public void setUp() throws SQLException {
+    try (Statement stmt = connection.createStatement()) {
+      stmt.execute("USE SCHEMA " + startingSchema);
+      stmt.execute("USE DATABASE " + startingDatabase);
+    }
   }
 
   /**
@@ -200,7 +221,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testDoubleQuotedDatabaseAndSchema() throws Exception {
     try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
+      String database = startingDatabase;
       // To query the schema and table, we can use a normal java escaped quote. Wildcards are also
       // escaped here
       String schemaRandomPart = SnowflakeUtil.randomAlphaNumeric(5);
@@ -449,7 +470,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testGetProcedureColumnsWildcards() throws Exception {
     try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
+      String database = startingDatabase;
       String schemaPrefix =
           TestUtil.GENERATED_SCHEMA_PREFIX + SnowflakeUtil.randomAlphaNumeric(5).toUpperCase();
       String schema1 = schemaPrefix + "SCH1";
@@ -544,8 +565,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testGetColumnsNullable() throws Throwable {
     try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String database = startingDatabase;
+      String schema = startingSchema;
       final String targetTable = "T0";
 
       statement.execute(
@@ -738,8 +759,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetFunctionColumns() throws Exception {
     try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String database = startingDatabase;
+      String schema = startingSchema;
 
       /* Create a table and put values into it */
       statement.execute(
@@ -999,8 +1020,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testHandlingSpecialChars() throws Exception {
     try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String database = startingDatabase;
+      String schema = startingSchema;
       DatabaseMetaData metaData = connection.getMetaData();
       String escapeChar = metaData.getSearchStringEscape();
       // test getColumns with escaped special characters in table name
@@ -1108,7 +1129,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testUnderscoreInSchemaNamePatternForPrimaryAndForeignKeys() throws Exception {
     try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
+      String database = startingDatabase;
       TestUtil.withRandomSchema(
           statement,
           customSchema -> {
@@ -1202,8 +1223,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testGetColumns() throws Throwable {
     try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String database = startingDatabase;
+      String schema = startingSchema;
       final String targetTable = "T0";
       try {
         statement.execute(
@@ -1596,8 +1617,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     final String targetStream = "S0";
     final String targetTable = "T0";
     try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String database = startingDatabase;
+      String schema = startingSchema;
       String owner = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession().getRole();
       String tableName = database + "." + schema + "." + targetTable;
 
@@ -1658,8 +1679,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testGetProcedureColumns() throws Exception {
     try (Statement statement = connection.createStatement()) {
-      String database = connection.getCatalog();
-      String schema = connection.getSchema();
+      String database = startingDatabase;
+      String schema = startingSchema;
       try {
         statement.execute(PI_PROCEDURE);
         DatabaseMetaData metaData = connection.getMetaData();
@@ -2096,7 +2117,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           statement,
           schemaName,
           () -> {
-            String schema = connection.getSchema();
+            String schema = startingSchema;
             statement.execute(
                 "create or replace table " + table1 + "(C1 int primary key, C2 string)");
             statement.execute(
@@ -2325,10 +2346,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       DatabaseMetaData metaData = connection.getMetaData();
       try (ResultSet resultSet =
           metaData.getColumns(
-              connection.getCatalog(),
-              connection.getSchema().replaceAll("_", "\\\\_"),
-              "JDBC\\_VECTOR",
-              null)) {
+              startingDatabase, startingSchema.replaceAll("_", "\\\\_"), "JDBC\\_VECTOR", null)) {
         assertTrue(resultSet.next());
         assertEquals(32, resultSet.getObject("COLUMN_SIZE"));
         assertTrue(resultSet.next());
