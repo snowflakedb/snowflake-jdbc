@@ -1280,6 +1280,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   @Override
   public void addDigestMetadata(StorageObjectMetadata meta, String digest) {
     if (!SnowflakeUtil.isBlank(digest)) {
+      System.out.println("Setting digest to '" + digest + "'");
       meta.addUserMetadata("sfc-digest", digest);
     }
   }
