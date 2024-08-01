@@ -731,9 +731,9 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testHolderbility() throws Throwable {
     try (Connection connection = getConnection()) {
       try {
-        connection.setHoldability(0);
+        connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
       } catch (SQLFeatureNotSupportedException ex) {
-        // nop
+        fail("should not fail");
       }
       // return an empty type map. setTypeMap is not supported.
       assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, connection.getHoldability());
