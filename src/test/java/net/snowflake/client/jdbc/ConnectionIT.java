@@ -731,7 +731,7 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testHolderbility() throws Throwable {
     try (Connection connection = getConnection()) {
       try {
-        connection.setHoldability(1);
+        connection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
       } catch (SQLFeatureNotSupportedException ex) {
         // nop
       }
