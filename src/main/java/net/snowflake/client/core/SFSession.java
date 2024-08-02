@@ -141,6 +141,13 @@ public class SFSession extends SFBaseSession {
    */
   private int retryTimeout = 300;
 
+  /**
+   * Max timeout for external browser authentication in seconds
+   *
+   * <p>Default: 120
+   */
+  private Duration browserResponseTimeout = Duration.ofSeconds(120);
+
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.
   @VisibleForTesting
@@ -489,6 +496,12 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case BROWSER_RESPONSE_TIMEOUT:
+          if (propertyValue != null) {
+            browserResponseTimeout = Duration.ofSeconds((Integer) propertyValue);
+          }
+          break;
+
         case JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE:
           if (propertyValue != null) {
             setDefaultFormatDateWithTimezone(getBooleanValue(propertyValue));
@@ -542,7 +555,7 @@ public class SFSession extends SFBaseSession {
             + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
             + " query timeout: {}, tracing: {}, private key file: {}, private key file pwd is {},"
             + " enable_diagnostics: {}, diagnostics_allowlist_path: {},"
-            + " session parameters: client store temporary credential: {}, gzip disabled: {}",
+            + " session parameters: client store temporary credential: {}, gzip disabled: {}, browser response timeout: {}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
         connectionPropertiesMap.get(SFSessionProperty.ACCOUNT),
         connectionPropertiesMap.get(SFSessionProperty.USER),
@@ -574,7 +587,8 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
         connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
-        connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED));
+        connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED),
+        connectionPropertiesMap.get(SFSessionProperty.BROWSER_RESPONSE_TIMEOUT));
 
     HttpClientSettingsKey httpClientSettingsKey = getHttpClientKey();
     logger.debug(
@@ -632,7 +646,8 @@ public class SFSession extends SFBaseSession {
             connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK) != null
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
-                : false);
+                : false)
+        .setBrowserResponseTimeout(browserResponseTimeout);
 
     logger.info(
         "Connecting to {} Snowflake domain",
