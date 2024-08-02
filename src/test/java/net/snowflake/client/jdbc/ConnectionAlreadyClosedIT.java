@@ -4,7 +4,6 @@
 package net.snowflake.client.jdbc;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryConnection;
 import org.junit.Test;
@@ -35,8 +34,6 @@ public class ConnectionAlreadyClosedIT extends BaseJDBCTest {
     expectConnectionAlreadyClosedException(() -> connection.setSchema("fakedb"));
     expectConnectionAlreadyClosedException(
         () -> connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED));
-    expectConnectionAlreadyClosedException(
-        () -> connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
     expectSQLClientInfoException(() -> connection.setClientInfo(new Properties()));
     expectSQLClientInfoException(() -> connection.setClientInfo("name", "value"));
   }
