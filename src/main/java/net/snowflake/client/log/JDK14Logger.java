@@ -26,7 +26,7 @@ import net.snowflake.client.util.SecretDetector;
 public class JDK14Logger implements SFLogger {
   private Logger jdkLogger;
 
-  private Set<String> logMethods =
+  private final Set<String> logMethods =
       new HashSet<>(Arrays.asList("debug", "error", "info", "trace", "warn", "debugNoMask"));
 
   private static boolean isLoggerInit = false;
