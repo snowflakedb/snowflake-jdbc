@@ -1470,9 +1470,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     }
   }
 
-
   @Test
-  @Ignore //ignored until SNOW-1616480 is resolved
+  @Ignore // ignored until SNOW-1616480 is resolved
   public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
