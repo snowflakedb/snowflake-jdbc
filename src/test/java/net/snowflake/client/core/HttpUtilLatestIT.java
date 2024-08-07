@@ -14,13 +14,22 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryCore.class)
 public class HttpUtilLatestIT {
 
-  private static final String HANG_WEBSERVER_ADDRESS = "http://localhost:12345/hang";
+  private static final String HANG_WEBSERVER_ADDRESS = "http://localhost:1234/hang";
+
+  /** Added in > 3.14.5 */
+  @Test
+  public void shouldGetDefaultConnectionAndSocketTimeouts() {
+    assertEquals(Duration.ofMillis(60_000), HttpUtil.getConnectionTimeout());
+    assertEquals(Duration.ofMillis(300_000), HttpUtil.getSocketTimeout());
+  }
 
   /** Added in > 3.14.5 */
   @Test(timeout = 1000L)
@@ -36,13 +45,10 @@ public class HttpUtilLatestIT {
       fail("Request should fail with exception");
     } catch (IOException e) {
       MatcherAssert.assertThat(e, CoreMatchers.instanceOf(SocketTimeoutException.class));
+    }finally {
+      HttpUtil.setSocketTimeout(300000);
+      HttpUtil.setConnectionTimeout(60000);
     }
   }
 
-  /** Added in > 3.14.5 */
-  @Test
-  public void shouldGetDefaultConnectionAndSocketTimeouts() {
-    assertEquals(Duration.ofMillis(60_000), HttpUtil.getConnectionTimeout());
-    assertEquals(Duration.ofMillis(300_000), HttpUtil.getSocketTimeout());
-  }
 }
