@@ -23,7 +23,11 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   private static final long serialversionUID = 1L;
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
+
+  private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNALBROWSER";
+
   private static final String AUTHENTICATOR_USERNAME_PASSWORD_MFA = "USERNAME_PASSWORD_MFA";
+
   private String url;
 
   private String serverName;
@@ -94,7 +98,8 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     }
 
     // The driver needs password for OAUTH as part of SNOW-533673 feature request.
-    if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)) {
+    if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)
+        && !AUTHENTICATOR_EXTERNAL_BROWSER.equalsIgnoreCase(authenticator)) {
       properties.put(SFSessionProperty.PASSWORD.getPropertyKey(), password);
     }
 
@@ -387,5 +392,10 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   public void setGetDateUseNullTimezone(Boolean getDateUseNullTimezone) {
     this.properties.put("JDBC_GET_DATE_USE_NULL_TIMEZONE", getDateUseNullTimezone);
+  }
+
+  public void setBrowserResponseTimeout(int seconds) {
+    this.setAuthenticator(AUTHENTICATOR_EXTERNAL_BROWSER);
+    this.properties.put("BROWSER_RESPONSE_TIMEOUT", Integer.toString(seconds));
   }
 }
