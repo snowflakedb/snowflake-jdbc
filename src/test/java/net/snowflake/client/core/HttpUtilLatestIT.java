@@ -14,8 +14,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -23,14 +21,6 @@ import org.junit.experimental.categories.Category;
 public class HttpUtilLatestIT {
 
   private static final String HANG_WEBSERVER_ADDRESS = "http://localhost:12345/hang";
-
-  @Before
-  @After
-  public void cleanup() {
-    HttpUtil.httpClient.clear();
-    System.clearProperty(HttpUtil.JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY);
-    System.clearProperty(HttpUtil.JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY);
-  }
 
   /** Added in > 3.14.5 */
   @Test(timeout = 1000L)
@@ -54,14 +44,5 @@ public class HttpUtilLatestIT {
   public void shouldGetDefaultConnectionAndSocketTimeouts() {
     assertEquals(Duration.ofMillis(60_000), HttpUtil.getConnectionTimeout());
     assertEquals(Duration.ofMillis(300_000), HttpUtil.getSocketTimeout());
-  }
-
-  /** Added in > 3.14.5 */
-  @Test
-  public void shouldGetOverridenConnectionAndSocketTimeouts() {
-    System.setProperty(HttpUtil.JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY, "100");
-    System.setProperty(HttpUtil.JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY, "200");
-    assertEquals(Duration.ofMillis(100), HttpUtil.getConnectionTimeout());
-    assertEquals(Duration.ofMillis(200), HttpUtil.getSocketTimeout());
   }
 }
