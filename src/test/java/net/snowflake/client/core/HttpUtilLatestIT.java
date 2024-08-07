@@ -3,12 +3,6 @@
  */
 package net.snowflake.client.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.net.SocketTimeoutException;
-import java.time.Duration;
 import net.snowflake.client.category.TestCategoryCore;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -16,6 +10,13 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.time.Duration;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @Category(TestCategoryCore.class)
 public class HttpUtilLatestIT {
@@ -25,9 +26,8 @@ public class HttpUtilLatestIT {
   /** Added in > 3.14.5 */
   @Test(timeout = 1000L)
   public void shouldOverrideConnectionAndSocketTimeouts() {
-    // it's hard to test connection timeout so there is only a test for socket timeout
-    System.setProperty(HttpUtil.JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY, "100");
-    System.setProperty(HttpUtil.JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY, "200");
+    HttpUtil.setConnectionTimeout(100);
+    HttpUtil.setSocketTimeout(200);
 
     CloseableHttpClient httpClient =
         HttpUtil.getHttpClient(new HttpClientSettingsKey(OCSPMode.INSECURE));
