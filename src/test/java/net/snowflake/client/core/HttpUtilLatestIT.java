@@ -14,8 +14,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -45,10 +43,9 @@ public class HttpUtilLatestIT {
       fail("Request should fail with exception");
     } catch (IOException e) {
       MatcherAssert.assertThat(e, CoreMatchers.instanceOf(SocketTimeoutException.class));
-    }finally {
+    } finally {
       HttpUtil.setSocketTimeout(300000);
       HttpUtil.setConnectionTimeout(60000);
     }
   }
-
 }
