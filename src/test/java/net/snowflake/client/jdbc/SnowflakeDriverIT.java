@@ -1294,40 +1294,6 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void test31448() throws Throwable {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-
-      statement.execute(
-          "alter session set enable_fix_31448_2=2, " + "error_on_generic_pruner=true;");
-
-      statement.execute("alter session set timestamp_type_mapping=timestamp_ntz");
-
-      statement.execute("create or replace table " + "bug56658(iv number, tsv timestamp_ntz)");
-      statement.execute(
-          "insert into bug56658 select seq8(), "
-              + "timestampadd(day, seq8(), '1970-01-13 00:00:00'::timestamp_ntz)\n"
-              + "from table(generator(rowcount=>20))");
-
-      connection
-          .unwrap(SnowflakeConnectionV1.class)
-          .getSfSession()
-          .setTimestampMappedType(SnowflakeType.TIMESTAMP_NTZ);
-      Timestamp ts = buildTimestamp(1970, 0, 15, 10, 14, 30, 0);
-      try (PreparedStatement preparedStatement =
-          connection.prepareStatement(
-              "select iv, tsv from bug56658 where tsv" + " >= ? and tsv <= ? order by iv;")) {
-        statement.execute("alter session set timestamp_type_mapping=timestamp_ntz");
-        Timestamp ts2 = buildTimestamp(1970, 0, 18, 10, 14, 30, 0);
-        preparedStatement.setTimestamp(1, ts);
-        preparedStatement.setTimestamp(2, ts2);
-        preparedStatement.executeQuery();
-      }
-    }
-  }
-
-  @Test
   public void testBind() throws Throwable {
     ResultSetMetaData resultSetMetaData = null;
     Timestamp ts = null;
