@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -20,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.util.List;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -28,6 +30,7 @@ import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
+import org.awaitility.Awaitility;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -513,13 +516,11 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       // there should be logs ready to be sent
       assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
     }
-    // closing the statement should flush the buffer, however, flush is async,
-    // sleep some time before check buffer size
-    try {
-      Thread.sleep(1000);
-    } catch (Throwable e) {
-    }
-    assertEquals(((TelemetryClient) telemetryClient).bufferSize(), 0);
+
+    Telemetry finalTelemetryClient = telemetryClient;
+    Awaitility.await()
+        .atMost(Duration.ofSeconds(10))
+        .until(() -> ((TelemetryClient) finalTelemetryClient).bufferSize(), equalTo(0));
   }
 
   @Test

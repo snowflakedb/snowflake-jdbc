@@ -12,6 +12,7 @@ import static net.snowflake.client.core.SessionUtil.CLIENT_PREFETCH_THREADS;
 import static net.snowflake.client.core.SessionUtil.CLIENT_RESULT_CHUNK_SIZE;
 import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_MEMORY_LIMIT;
 import static net.snowflake.client.core.SessionUtil.DEFAULT_CLIENT_PREFETCH_THREADS;
+import static net.snowflake.client.jdbc.SnowflakeChunkDownloader.NoOpChunkDownloader;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,6 +47,7 @@ import net.snowflake.client.core.SFResultSetMetaData;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatementType;
 import net.snowflake.client.core.SessionUtil;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.telemetry.NoOpTelemetryClient;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.log.ArgSupplier;
@@ -270,6 +272,199 @@ public class SnowflakeResultSetSerializableV1
     this.rootAllocator = toCopy.rootAllocator;
     this.resultSetMetaData = toCopy.resultSetMetaData;
     this.resultStreamProvider = toCopy.resultStreamProvider;
+  }
+
+  /**
+   * @param rootNode result JSON node received from GS
+   * @param sfSession the Snowflake session
+   * @param sfStatement the Snowflake statement
+   * @param resultStreamProvider a ResultStreamProvider for computing a custom data source for
+   *     result-file streams
+   * @throws SnowflakeSQLException if failed to parse the result JSON node
+   */
+  protected SnowflakeResultSetSerializableV1(
+      JsonNode rootNode,
+      SFBaseSession sfSession,
+      SFBaseStatement sfStatement,
+      ResultStreamProvider resultStreamProvider,
+      boolean disableChunksPrefetch)
+      throws SnowflakeSQLException {
+    SnowflakeUtil.checkErrorAndThrowException(rootNode);
+
+    // get the query id
+    this.queryId = rootNode.path("data").path("queryId").asText();
+
+    JsonNode databaseNode = rootNode.path("data").path("finalDatabaseName");
+    this.finalDatabaseName =
+        databaseNode.isNull()
+            ? (sfSession != null ? sfSession.getDatabase() : null)
+            : databaseNode.asText();
+
+    JsonNode schemaNode = rootNode.path("data").path("finalSchemaName");
+    this.finalSchemaName =
+        schemaNode.isNull()
+            ? (sfSession != null ? sfSession.getSchema() : null)
+            : schemaNode.asText();
+
+    JsonNode roleNode = rootNode.path("data").path("finalRoleName");
+    this.finalRoleName =
+        roleNode.isNull() ? (sfSession != null ? sfSession.getRole() : null) : roleNode.asText();
+
+    JsonNode warehouseNode = rootNode.path("data").path("finalWarehouseName");
+    this.finalWarehouseName =
+        warehouseNode.isNull()
+            ? (sfSession != null ? sfSession.getWarehouse() : null)
+            : warehouseNode.asText();
+
+    this.statementType =
+        SFStatementType.lookUpTypeById(rootNode.path("data").path("statementTypeId").asLong());
+
+    this.totalRowCountTruncated = rootNode.path("data").path("totalTruncated").asBoolean();
+
+    this.possibleSession = Optional.ofNullable(sfSession);
+
+    logger.debug("Query id: {}", this.queryId);
+
+    Optional<QueryResultFormat> queryResultFormat =
+        QueryResultFormat.lookupByName(rootNode.path("data").path("queryResultFormat").asText());
+    this.queryResultFormat = queryResultFormat.orElse(QueryResultFormat.JSON);
+
+    // extract query context and save it in current session
+    JsonNode queryContextNode = rootNode.path("data").path("queryContext");
+    String queryContext = queryContextNode.isNull() ? null : queryContextNode.toString();
+
+    if (!sfSession.isAsyncSession()) {
+      sfSession.setQueryContext(queryContext);
+    }
+
+    // extract parameters
+    this.parameters = SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
+    if (this.parameters.isEmpty()) {
+      this.parameters = new HashMap<>(sfSession.getCommonParameters());
+      this.setStatemementLevelParameters(sfStatement.getStatementParameters());
+    }
+
+    // initialize column metadata
+    this.columnCount = rootNode.path("data").path("rowtype").size();
+
+    for (int i = 0; i < this.columnCount; i++) {
+      JsonNode colNode = rootNode.path("data").path("rowtype").path(i);
+
+      SnowflakeColumnMetadata columnMetadata =
+          new SnowflakeColumnMetadata(colNode, sfSession.isJdbcTreatDecimalAsInt(), sfSession);
+
+      this.resultColumnMetadata.add(columnMetadata);
+
+      logger.debug("Get column metadata: {}", (ArgSupplier) columnMetadata::toString);
+    }
+
+    this.resultStreamProvider = resultStreamProvider;
+
+    // process the content of first chunk.
+    if (this.queryResultFormat == QueryResultFormat.ARROW) {
+      this.firstChunkStringData = rootNode.path("data").path("rowsetBase64").asText();
+      this.rootAllocator = new RootAllocator(Long.MAX_VALUE);
+      // Set first chunk row count from firstChunkStringData
+      this.setFirstChunkRowCountForArrow();
+    } else {
+      this.firstChunkRowset = rootNode.path("data").path("rowset");
+
+      if (this.firstChunkRowset == null || this.firstChunkRowset.isMissingNode()) {
+        this.firstChunkRowCount = 0;
+        this.firstChunkStringData = null;
+        this.firstChunkByteData = new byte[0];
+      } else {
+        this.firstChunkRowCount = this.firstChunkRowset.size();
+        this.firstChunkStringData = this.firstChunkRowset.toString();
+      }
+    }
+    logger.debug("First chunk row count: {}", this.firstChunkRowCount);
+
+    // parse file chunks
+    this.parseChunkFiles(rootNode, sfStatement);
+
+    // result version
+    JsonNode versionNode = rootNode.path("data").path("version");
+
+    if (!versionNode.isMissingNode()) {
+      this.resultVersion = versionNode.longValue();
+    }
+
+    // number of binds
+    JsonNode numberOfBindsNode = rootNode.path("data").path("numberOfBinds");
+
+    if (!numberOfBindsNode.isMissingNode()) {
+      this.numberOfBinds = numberOfBindsNode.intValue();
+    }
+
+    JsonNode arrayBindSupported = rootNode.path("data").path("arrayBindSupported");
+    this.arrayBindSupported = !arrayBindSupported.isMissingNode() && arrayBindSupported.asBoolean();
+
+    // time result sent by GS (epoch time in millis)
+    JsonNode sendResultTimeNode = rootNode.path("data").path("sendResultTime");
+    if (!sendResultTimeNode.isMissingNode()) {
+      this.sendResultTime = sendResultTimeNode.longValue();
+    }
+
+    logger.debug("Result version: {}", this.resultVersion);
+
+    // Bind parameter metadata
+    JsonNode bindData = rootNode.path("data").path("metaDataOfBinds");
+    if (!bindData.isMissingNode()) {
+      List<MetaDataOfBinds> returnVal = new ArrayList<>();
+      for (JsonNode child : bindData) {
+        int precision = child.path("precision").asInt();
+        boolean nullable = child.path("nullable").asBoolean();
+        int scale = child.path("scale").asInt();
+        int byteLength = child.path("byteLength").asInt();
+        int length = child.path("length").asInt();
+        String name = child.path("name").asText();
+        String type = child.path("type").asText();
+        MetaDataOfBinds param =
+            new MetaDataOfBinds(precision, nullable, scale, byteLength, length, name, type);
+        returnVal.add(param);
+      }
+      this.metaDataOfBinds = returnVal;
+    }
+
+    // setup fields from sessions.
+    this.ocspMode = sfSession.getOCSPMode();
+    this.httpClientKey = sfSession.getHttpClientKey();
+    this.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
+    this.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
+    this.authTimeout = 0;
+    this.maxHttpRetries = sfSession.getMaxHttpRetries();
+    this.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
+    this.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
+    this.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();
+    this.useSessionTimezone = sfSession.getUseSessionTimezone();
+
+    // setup transient fields from parameter
+    this.setupFieldsFromParameters();
+
+    if (disableChunksPrefetch) {
+      this.chunkDownloader = new NoOpChunkDownloader();
+    } else {
+      this.chunkDownloader =
+          (this.chunkFileCount > 0)
+              // The chunk downloader will start prefetching
+              // first few chunk files in background thread(s)
+              ? new SnowflakeChunkDownloader(this)
+              : new NoOpChunkDownloader();
+    }
+
+    // Setup ResultSet metadata
+    this.resultSetMetaData =
+        new SFResultSetMetaData(
+            this.getResultColumnMetadata(),
+            this.queryId,
+            sfSession,
+            this.isResultColumnCaseInsensitive,
+            this.timestampNTZFormatter,
+            this.timestampLTZFormatter,
+            this.timestampTZFormatter,
+            this.dateFormatter,
+            this.timeFormatter);
   }
 
   public void setRootAllocator(RootAllocator rootAllocator) {
@@ -544,190 +739,22 @@ public class SnowflakeResultSetSerializableV1
       SFBaseStatement sfStatement,
       ResultStreamProvider resultStreamProvider)
       throws SnowflakeSQLException {
-    SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     logger.trace("Entering create()", false);
+    return new SnowflakeResultSetSerializableV1(
+        rootNode, sfSession, sfStatement, resultStreamProvider, false);
+  }
 
-    SnowflakeUtil.checkErrorAndThrowException(rootNode);
-
-    // get the query id
-    resultSetSerializable.queryId = rootNode.path("data").path("queryId").asText();
-
-    JsonNode databaseNode = rootNode.path("data").path("finalDatabaseName");
-    resultSetSerializable.finalDatabaseName =
-        databaseNode.isNull()
-            ? (sfSession != null ? sfSession.getDatabase() : null)
-            : databaseNode.asText();
-
-    JsonNode schemaNode = rootNode.path("data").path("finalSchemaName");
-    resultSetSerializable.finalSchemaName =
-        schemaNode.isNull()
-            ? (sfSession != null ? sfSession.getSchema() : null)
-            : schemaNode.asText();
-
-    JsonNode roleNode = rootNode.path("data").path("finalRoleName");
-    resultSetSerializable.finalRoleName =
-        roleNode.isNull() ? (sfSession != null ? sfSession.getRole() : null) : roleNode.asText();
-
-    JsonNode warehouseNode = rootNode.path("data").path("finalWarehouseName");
-    resultSetSerializable.finalWarehouseName =
-        warehouseNode.isNull()
-            ? (sfSession != null ? sfSession.getWarehouse() : null)
-            : warehouseNode.asText();
-
-    resultSetSerializable.statementType =
-        SFStatementType.lookUpTypeById(rootNode.path("data").path("statementTypeId").asLong());
-
-    resultSetSerializable.totalRowCountTruncated =
-        rootNode.path("data").path("totalTruncated").asBoolean();
-
-    resultSetSerializable.possibleSession = Optional.ofNullable(sfSession);
-
-    logger.debug("Query id: {}", resultSetSerializable.queryId);
-
-    Optional<QueryResultFormat> queryResultFormat =
-        QueryResultFormat.lookupByName(rootNode.path("data").path("queryResultFormat").asText());
-    resultSetSerializable.queryResultFormat = queryResultFormat.orElse(QueryResultFormat.JSON);
-
-    // extract query context and save it in current session
-    JsonNode queryContextNode = rootNode.path("data").path("queryContext");
-    String queryContext = queryContextNode.isNull() ? null : queryContextNode.toString();
-
-    if (!sfSession.isAsyncSession()) {
-      sfSession.setQueryContext(queryContext);
-    }
-
-    // extract parameters
-    resultSetSerializable.parameters =
-        SessionUtil.getCommonParams(rootNode.path("data").path("parameters"));
-    if (resultSetSerializable.parameters.isEmpty()) {
-      resultSetSerializable.parameters = new HashMap<>(sfSession.getCommonParameters());
-      resultSetSerializable.setStatemementLevelParameters(sfStatement.getStatementParameters());
-    }
-
-    // initialize column metadata
-    resultSetSerializable.columnCount = rootNode.path("data").path("rowtype").size();
-
-    for (int i = 0; i < resultSetSerializable.columnCount; i++) {
-      JsonNode colNode = rootNode.path("data").path("rowtype").path(i);
-
-      SnowflakeColumnMetadata columnMetadata =
-          SnowflakeUtil.extractColumnMetadata(
-              colNode, sfSession.isJdbcTreatDecimalAsInt(), sfSession);
-
-      resultSetSerializable.resultColumnMetadata.add(columnMetadata);
-
-      logger.debug("Get column metadata: {}", (ArgSupplier) () -> columnMetadata.toString());
-    }
-
-    resultSetSerializable.resultStreamProvider = resultStreamProvider;
-
-    // process the content of first chunk.
-    if (resultSetSerializable.queryResultFormat == QueryResultFormat.ARROW) {
-      resultSetSerializable.firstChunkStringData =
-          rootNode.path("data").path("rowsetBase64").asText();
-      resultSetSerializable.rootAllocator = new RootAllocator(Long.MAX_VALUE);
-      // Set first chunk row count from firstChunkStringData
-      resultSetSerializable.setFirstChunkRowCountForArrow();
-    } else {
-      resultSetSerializable.firstChunkRowset = rootNode.path("data").path("rowset");
-
-      if (resultSetSerializable.firstChunkRowset == null
-          || resultSetSerializable.firstChunkRowset.isMissingNode()) {
-        resultSetSerializable.firstChunkRowCount = 0;
-        resultSetSerializable.firstChunkStringData = null;
-        resultSetSerializable.firstChunkByteData = new byte[0];
-      } else {
-        resultSetSerializable.firstChunkRowCount = resultSetSerializable.firstChunkRowset.size();
-        resultSetSerializable.firstChunkStringData =
-            resultSetSerializable.firstChunkRowset.toString();
-      }
-    }
-    logger.debug("First chunk row count: {}", resultSetSerializable.firstChunkRowCount);
-
-    // parse file chunks
-    resultSetSerializable.parseChunkFiles(rootNode, sfStatement);
-
-    // result version
-    JsonNode versionNode = rootNode.path("data").path("version");
-
-    if (!versionNode.isMissingNode()) {
-      resultSetSerializable.resultVersion = versionNode.longValue();
-    }
-
-    // number of binds
-    JsonNode numberOfBindsNode = rootNode.path("data").path("numberOfBinds");
-
-    if (!numberOfBindsNode.isMissingNode()) {
-      resultSetSerializable.numberOfBinds = numberOfBindsNode.intValue();
-    }
-
-    JsonNode arrayBindSupported = rootNode.path("data").path("arrayBindSupported");
-    resultSetSerializable.arrayBindSupported =
-        !arrayBindSupported.isMissingNode() && arrayBindSupported.asBoolean();
-
-    // time result sent by GS (epoch time in millis)
-    JsonNode sendResultTimeNode = rootNode.path("data").path("sendResultTime");
-    if (!sendResultTimeNode.isMissingNode()) {
-      resultSetSerializable.sendResultTime = sendResultTimeNode.longValue();
-    }
-
-    logger.debug("Result version: {}", resultSetSerializable.resultVersion);
-
-    // Bind parameter metadata
-    JsonNode bindData = rootNode.path("data").path("metaDataOfBinds");
-    if (!bindData.isMissingNode()) {
-      List<MetaDataOfBinds> returnVal = new ArrayList<>();
-      for (JsonNode child : bindData) {
-        int precision = child.path("precision").asInt();
-        boolean nullable = child.path("nullable").asBoolean();
-        int scale = child.path("scale").asInt();
-        int byteLength = child.path("byteLength").asInt();
-        int length = child.path("length").asInt();
-        String name = child.path("name").asText();
-        String type = child.path("type").asText();
-        MetaDataOfBinds param =
-            new MetaDataOfBinds(precision, nullable, scale, byteLength, length, name, type);
-        returnVal.add(param);
-      }
-      resultSetSerializable.metaDataOfBinds = returnVal;
-    }
-
-    // setup fields from sessions.
-    resultSetSerializable.ocspMode = sfSession.getOCSPMode();
-    resultSetSerializable.httpClientKey = sfSession.getHttpClientKey();
-    resultSetSerializable.snowflakeConnectionString = sfSession.getSnowflakeConnectionString();
-    resultSetSerializable.networkTimeoutInMilli = sfSession.getNetworkTimeoutInMilli();
-    resultSetSerializable.authTimeout = 0;
-    resultSetSerializable.maxHttpRetries = sfSession.getMaxHttpRetries();
-    resultSetSerializable.isResultColumnCaseInsensitive = sfSession.isResultColumnCaseInsensitive();
-    resultSetSerializable.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
-    resultSetSerializable.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();
-    resultSetSerializable.useSessionTimezone = sfSession.getUseSessionTimezone();
-
-    // setup transient fields from parameter
-    resultSetSerializable.setupFieldsFromParameters();
-
-    // The chunk downloader will start prefetching
-    // first few chunk files in background thread(s)
-    resultSetSerializable.chunkDownloader =
-        (resultSetSerializable.chunkFileCount > 0)
-            ? new SnowflakeChunkDownloader(resultSetSerializable)
-            : new SnowflakeChunkDownloader.NoOpChunkDownloader();
-
-    // Setup ResultSet metadata
-    resultSetSerializable.resultSetMetaData =
-        new SFResultSetMetaData(
-            resultSetSerializable.getResultColumnMetadata(),
-            resultSetSerializable.queryId,
-            sfSession,
-            resultSetSerializable.isResultColumnCaseInsensitive,
-            resultSetSerializable.timestampNTZFormatter,
-            resultSetSerializable.timestampLTZFormatter,
-            resultSetSerializable.timestampTZFormatter,
-            resultSetSerializable.dateFormatter,
-            resultSetSerializable.timeFormatter);
-
-    return resultSetSerializable;
+  /**
+   * A factory function for internal usage only. It creates SnowflakeResultSetSerializableV1 with
+   * NoOpChunksDownloader which disables chunks prefetch.
+   */
+  @SnowflakeJdbcInternalApi
+  public static SnowflakeResultSetSerializableV1 createWithChunksPrefetchDisabled(
+      JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)
+      throws SnowflakeSQLException {
+    logger.trace("Entering create()", false);
+    return new SnowflakeResultSetSerializableV1(
+        rootNode, sfSession, sfStatement, new DefaultResultStreamProvider(), true);
   }
 
   /**
@@ -975,9 +1002,7 @@ public class SnowflakeResultSetSerializableV1
 
     // Allocate chunk downloader if necessary
     chunkDownloader =
-        (this.chunkFileCount > 0)
-            ? new SnowflakeChunkDownloader(this)
-            : new SnowflakeChunkDownloader.NoOpChunkDownloader();
+        (this.chunkFileCount > 0) ? new SnowflakeChunkDownloader(this) : new NoOpChunkDownloader();
 
     this.possibleSession = Optional.empty(); // we don't have session object during deserializing
   }
