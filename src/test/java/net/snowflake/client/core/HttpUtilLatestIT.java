@@ -20,7 +20,7 @@ import org.junit.experimental.categories.Category;
 @Category(TestCategoryCore.class)
 public class HttpUtilLatestIT {
 
-  private static final String HANG_WEBSERVER_ADDRESS = "http://localhost:1234/hang";
+  private static final String HANG_WEBSERVER_ADDRESS = "http://localhost:12345/hang";
 
   /** Added in > 3.14.5 */
   @Test
