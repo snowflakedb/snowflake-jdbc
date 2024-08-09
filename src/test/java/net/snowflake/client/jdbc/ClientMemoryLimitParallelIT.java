@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * @author azhan attempts to test the CLIENT_MEMORY_LIMIT working in multi-threading
  */
 @Category(TestCategoryOthers.class)
-public class ClientMemoryLimitParallelIT {
+public class ClientMemoryLimitParallelIT extends BaseJDBCWithSharedConnectionIT {
   private static Logger LOGGER =
       LoggerFactory.getLogger(ClientMemoryLimitParallelIT.class.getName());
 
@@ -64,16 +64,14 @@ public class ClientMemoryLimitParallelIT {
 
   @Before
   public void setUp() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(createTestTableSQL);
     }
   }
 
   @After
   public void tearDown() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("drop table if exists testtable_cml");
     }
   }
@@ -126,8 +124,7 @@ public class ClientMemoryLimitParallelIT {
   @Test
   public void testQueryNotHanging() throws SQLException {
     Properties paramProperties = new Properties();
-    try (Connection connection = getConnection(paramProperties);
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       queryRows(statement, 100, 160);
     }
   }
