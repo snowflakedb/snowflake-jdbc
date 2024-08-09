@@ -133,15 +133,15 @@
             </configuration>
           </execution>
           <execution>
-            <id>install-arrow-memory-netty</id>
+            <id>install-arrow-memory-netty-buffer-patch</id>
             <phase>validate</phase>
             <goals>
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${basedir}/../dependencies/arrow-memory-netty-${arrow.version}.jar</file>
+              <file>${basedir}/../dependencies/arrow-memory-netty-buffer-patch-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
-              <artifactId>arrow-memory-netty</artifactId>
+              <artifactId>arrow-memory-netty-buffer-patch</artifactId>
               <version>${arrow.version}</version>
               <packaging>jar</packaging>
               <generatePom>true</generatePom>

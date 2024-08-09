@@ -1,2 +1,2 @@
-Arrow dependencies are built from internal branch `upgradeTo10.0.1-v2`.
-The artifacts should have version 10.0.2, but on maven central there is no higher version of arrow 10.x artifacts and maven build fails at the beginning of parsing pom, when dependencies are downloaded when we try to set higher version e.g. 10.0.2 so we need to keep old version `10.0.1` and let maven to download artifacts first and then we can replace them in the build process.
+Arrow dependencies are built from internal branch `upgradeto17.0.0`. This build was applied the AIX fix.
+
