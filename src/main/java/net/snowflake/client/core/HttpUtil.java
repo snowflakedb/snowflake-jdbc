@@ -85,6 +85,9 @@ public class HttpUtil {
   public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
       "net.snowflake.jdbc.max_connections_per_route";
 
+  private static Duration connectionTimeout;
+  private static Duration socketTimeout;
+
   /**
    * The unique httpClient shared by all connections. This will benefit long-lived clients. Key =
    * proxy host + proxy port + nonProxyHosts, Value = Map of [OCSPMode, HttpClient]
@@ -114,16 +117,26 @@ public class HttpUtil {
 
   @SnowflakeJdbcInternalApi
   public static Duration getConnectionTimeout() {
-    return Duration.ofMillis(
-        SystemUtil.convertSystemPropertyToIntValue(
-            JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY, DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS));
+    return connectionTimeout != null
+        ? connectionTimeout
+        : Duration.ofMillis(DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS);
   }
 
   @SnowflakeJdbcInternalApi
   public static Duration getSocketTimeout() {
-    return Duration.ofMillis(
-        SystemUtil.convertSystemPropertyToIntValue(
-            JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY, DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS));
+    return socketTimeout != null
+        ? socketTimeout
+        : Duration.ofMillis(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void setConnectionTimeout(int timeout) {
+    connectionTimeout = Duration.ofMillis(timeout);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void setSocketTimeout(int timeout) {
+    socketTimeout = Duration.ofMillis(timeout);
   }
 
   public static long getDownloadedConditionTimeoutInSeconds() {

@@ -38,6 +38,7 @@ public class SFLoginOutput {
       int databaseMajorVersion,
       int databaseMinorVersion,
       int httpClientSocketTimeout,
+      int httpClientConnectionTimeout,
       String sessionDatabase,
       String sessionSchema,
       String sessionRole,
@@ -108,6 +109,10 @@ public class SFLoginOutput {
   }
 
   Duration getHttpClientSocketTimeout() {
+    return httpClientSocketTimeout;
+  }
+
+  Duration getHttpClientConnectionTimeout() {
     return httpClientSocketTimeout;
   }
 
