@@ -28,6 +28,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -74,6 +75,9 @@ public class JsonSqlOutput implements SQLOutput {
   }
 
   private static List<Field> getClassFields(SQLData original) {
+    if (original == null) {
+      return Collections.emptyList();
+    }
     return Arrays.stream(original.getClass().getDeclaredFields())
         .filter(
             field ->
@@ -230,7 +234,7 @@ public class JsonSqlOutput implements SQLOutput {
                       .filter(str -> !str.isEmpty())
                       .orElse(timestampSessionType));
           int columnType = snowflakeTypeToJavaType(snowflakeType);
-          TimeZone timeZone = timeZoneDependOnType(snowflakeType, session, null);
+          TimeZone timeZone = SnowflakeUtil.timeZoneDependOnType(snowflakeType, session, null);
           String timestampAsString =
               SnowflakeUtil.mapSFExceptionToSQLException(
                   () ->
@@ -372,18 +376,6 @@ public class JsonSqlOutput implements SQLOutput {
 
   public BindingParameterMetadata getSchema() {
     return schema;
-  }
-
-  private TimeZone timeZoneDependOnType(
-      SnowflakeType snowflakeType, SFBaseSession session, TimeZone tz) {
-    if (snowflakeType == SnowflakeType.TIMESTAMP_NTZ) {
-      return null;
-    } else if (snowflakeType == SnowflakeType.TIMESTAMP_LTZ) {
-      return getSessionTimezone(session);
-    } else if (snowflakeType == SnowflakeType.TIMESTAMP_TZ) {
-      return Optional.ofNullable(tz).orElse(sessionTimezone);
-    }
-    return TimeZone.getDefault();
   }
 
   private int snowflakeTypeToJavaType(SnowflakeType snowflakeType) {

@@ -293,7 +293,7 @@ public class ResultUtil {
 
     try {
       Timestamp adjustedTimestamp = ResultUtil.adjustTimestamp(sfTS.getTimestamp());
-
+      System.out.println("Using formatter " + formatter.getSqlFormat());
       return formatter.format(adjustedTimestamp, sfTS.getTimeZone(), scale);
     } catch (SFTimestamp.TimestampOperationNotAvailableException e) {
       // this timestamp doesn't fit into a Java timestamp, and therefore we
