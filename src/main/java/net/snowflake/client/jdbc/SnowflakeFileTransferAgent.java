@@ -75,8 +75,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Class for uploading/downloading files
@@ -100,7 +98,6 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
   private static final String localFSFileSep = systemGetProperty("file.separator");
   private static final int DEFAULT_PARALLEL = 10;
-  private static final Logger log = LoggerFactory.getLogger(SnowflakeFileTransferAgent.class);
 
   private final String command;
 
