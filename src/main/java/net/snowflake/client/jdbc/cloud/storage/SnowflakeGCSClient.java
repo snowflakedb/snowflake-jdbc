@@ -993,12 +993,13 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           SqlState.INTERNAL_ERROR,
           "Unexpected: upload presigned URL invalid");
     } catch (Exception e) {
+      e.printStackTrace();
       throw new SnowflakeSQLLoggedException(
           queryId,
           session,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           SqlState.INTERNAL_ERROR,
-          "Unexpected: upload with presigned url failed");
+          "Unexpected: upload with presigned url failed: " + e.getMessage());
     }
   }
 
@@ -1279,6 +1280,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   @Override
   public void addDigestMetadata(StorageObjectMetadata meta, String digest) {
     if (!SnowflakeUtil.isBlank(digest)) {
+      System.out.println("Setting digest to '" + digest + "'");
       meta.addUserMetadata("sfc-digest", digest);
     }
   }
