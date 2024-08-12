@@ -20,6 +20,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.net.SocketTimeoutException;
+import java.time.Duration;
+import net.snowflake.client.core.OCSPMode;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,7 +45,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1557,6 +1563,24 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           }
         }
       }
+    }
+  }
+
+  /** Added in > 3.14.5 */
+  @Test(timeout = 1000L)
+  public void shouldOverrideConnectionAndSocketTimeouts() throws Exception {
+    // it's hard to test connection timeout so there is only a test for socket timeout
+    Properties paramProperties = new Properties();
+    paramProperties.put("HTTP_CLIENT_CONNECTION_TIMEOUT", 100);
+    paramProperties.put("HTTP_CLIENT_SOCKET_TIMEOUT", 200);
+
+    try (Connection connection = getConnection(paramProperties)) {
+      CloseableHttpClient httpClient =
+              HttpUtil.getHttpClient(new HttpClientSettingsKey(OCSPMode.INSECURE));
+      httpClient.execute(new HttpGet("http://localhost:12345/hang"));
+      fail("Request should fail with exception");
+    } catch (IOException e) {
+      MatcherAssert.assertThat(e, CoreMatchers.instanceOf(SocketTimeoutException.class));
     }
   }
 
