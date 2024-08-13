@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -256,6 +257,10 @@ public class SessionUtilExternalBrowser {
     return Base64.getEncoder().encodeToString(randomness);
   }
 
+  private int getBrowserResponseTimeout() {
+    return (int) loginInput.getBrowserResponseTimeout().toMillis();
+  }
+
   /**
    * Authenticate
    *
@@ -265,6 +270,7 @@ public class SessionUtilExternalBrowser {
   void authenticate() throws SFException, SnowflakeSQLException {
     ServerSocket ssocket = this.getServerSocket();
     try {
+      ssocket.setSoTimeout(getBrowserResponseTimeout());
       // main procedure
       int port = this.getLocalPort(ssocket);
       logger.debug("Listening localhost: {}", port);
@@ -305,6 +311,13 @@ public class SessionUtilExternalBrowser {
           socket.close();
         }
       }
+    } catch (SocketTimeoutException e) {
+      throw new SFException(
+          e,
+          ErrorCode.NETWORK_ERROR,
+          "External browser authentication failed within timeout of "
+              + getBrowserResponseTimeout()
+              + " milliseconds");
     } catch (IOException ex) {
       throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
     } finally {

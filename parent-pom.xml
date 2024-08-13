@@ -102,6 +102,7 @@
     <version.plugin.sortpom>3.0.1</version.plugin.sortpom>
     <version.plugin.source>3.2.1</version.plugin.source>
     <version.plugin.surefire>3.0.0</version.plugin.surefire>
+    <version.plugin.wiremock>3.8.0</version.plugin.wiremock>
   </properties>
 
   <dependencyManagement>
@@ -507,6 +508,12 @@
         <version>${version.plugin.surefire}</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>org.wiremock</groupId>
+        <artifactId>wiremock-standalone</artifactId>
+        <version>${version.plugin.wiremock}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -756,6 +763,10 @@
     <dependency>
       <groupId>org.apache.maven.surefire</groupId>
       <artifactId>common-junit48</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.wiremock</groupId>
+      <artifactId>wiremock-standalone</artifactId>
     </dependency>
   </dependencies>
 </project>
