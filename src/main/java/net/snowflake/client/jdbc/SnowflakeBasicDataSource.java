@@ -23,13 +23,9 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   private static final long serialversionUID = 1L;
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
-<<<<<<< HEAD
-  private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNALBROWSER";
-=======
 
   private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNALBROWSER";
 
->>>>>>> master
   private static final String AUTHENTICATOR_USERNAME_PASSWORD_MFA = "USERNAME_PASSWORD_MFA";
 
   private String url;

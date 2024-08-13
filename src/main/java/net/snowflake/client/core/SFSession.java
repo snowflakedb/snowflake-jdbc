@@ -141,17 +141,15 @@ public class SFSession extends SFBaseSession {
    */
   private int retryTimeout = 300;
 
-<<<<<<< HEAD
   private boolean enableClientStoreTemporaryCredential = true;
   private boolean enableClientRequestMfaToken = true;
-=======
+
   /**
    * Max timeout for external browser authentication in seconds
    *
    * <p>Default: 120
    */
   private Duration browserResponseTimeout = Duration.ofSeconds(120);
->>>>>>> master
 
   // This constructor is used only by tests with no real connection.
   // For real connections, the other constructor is always used.

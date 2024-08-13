@@ -269,24 +269,24 @@ public class SessionUtilExternalBrowserTest {
     }
   }
 
-    // Run this test manually to confirm external browser timeout is working. When test runs it will
-    // open a browser window for authentication, close the window, and you should get the expected
-    // error message within the set timeout. Valid for driver versions after 3.18.0.
-    @Test
-    @Ignore
-    public void testExternalBrowserTimeout() throws Exception {
-      Map<String, String> params = AbstractDriverIT.getConnectionParameters();
-      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-      ds.setServerName(params.get("host"));
-      ds.setAccount(params.get("account"));
-      ds.setPortNumber(Integer.parseInt(params.get("port")));
-      ds.setUser(params.get("user"));
-      ds.setBrowserResponseTimeout(10);
-      try {
-        ds.getConnection();
-        fail();
-      } catch (SnowflakeSQLLoggedException e) {
-        assertTrue(e.getMessage().contains("External browser authentication failed"));
-      }
+  // Run this test manually to confirm external browser timeout is working. When test runs it will
+  // open a browser window for authentication, close the window, and you should get the expected
+  // error message within the set timeout. Valid for driver versions after 3.18.0.
+  @Test
+  @Ignore
+  public void testExternalBrowserTimeout() throws Exception {
+    Map<String, String> params = AbstractDriverIT.getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("user"));
+    ds.setBrowserResponseTimeout(10);
+    try {
+      ds.getConnection();
+      fail();
+    } catch (SnowflakeSQLLoggedException e) {
+      assertTrue(e.getMessage().contains("External browser authentication failed"));
     }
+  }
 }
