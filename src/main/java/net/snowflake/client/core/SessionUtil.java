@@ -422,7 +422,7 @@ public class SessionUtil {
                 loginInput.getPrivateKey(),
                 loginInput.getPrivateKeyFile(),
                 loginInput.getPrivateKeyBase64(),
-                loginInput.getPrivateKeyFilePwd(),
+                loginInput.getPrivateKeyPwd(),
                 loginInput.getAccountName(),
                 loginInput.getUserName());
 
@@ -678,7 +678,7 @@ public class SessionUtil {
                         loginInput.getPrivateKey(),
                         loginInput.getPrivateKeyFile(),
                         loginInput.getPrivateKeyBase64(),
-                        loginInput.getPrivateKeyFilePwd(),
+                        loginInput.getPrivateKeyPwd(),
                         loginInput.getAccountName(),
                         loginInput.getUserName());
 
@@ -1726,7 +1726,7 @@ public class SessionUtil {
    * @param privateKey private key
    * @param privateKeyFile path to private key file
    * @param privateKeyBase64 base64 encoded content of the private key file
-   * @param privateKeyFilePwd password for private key file
+   * @param privateKeyPwd password for private key file or base64 encoded private key
    * @param accountName account name
    * @param userName user name
    * @return JWT token
@@ -1736,13 +1736,13 @@ public class SessionUtil {
       PrivateKey privateKey,
       String privateKeyFile,
       String privateKeyBase64,
-      String privateKeyFilePwd,
+      String privateKeyPwd,
       String accountName,
       String userName)
       throws SFException {
     SessionUtilKeyPair s =
         new SessionUtilKeyPair(
-            privateKey, privateKeyFile, privateKeyBase64, privateKeyFilePwd, accountName, userName);
+            privateKey, privateKeyFile, privateKeyBase64, privateKeyPwd, accountName, userName);
     return s.issueJwtToken();
   }
 

@@ -202,7 +202,7 @@ public class SecretDetectorTest {
     testParametersMasked.put("passcodeInPassword", "test");
     testParametersMasked.put("passcode", "test");
     testParametersMasked.put("id_token", "test");
-    testParametersMasked.put("private_key_file_pwd", "test");
+    testParametersMasked.put("private_key_pwd", "test");
     testParametersMasked.put("proxyPassword", "test");
     testParametersMasked.put("proxyUser", "test");
 

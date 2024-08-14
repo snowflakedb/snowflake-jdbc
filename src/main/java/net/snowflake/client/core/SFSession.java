@@ -460,6 +460,7 @@ public class SFSession extends SFBaseSession {
           break;
 
         case PRIVATE_KEY_FILE_PWD:
+        case PRIVATE_KEY_PWD:
           if (propertyValue != null) {
             privateKeyPassword = (String) propertyValue;
           }
@@ -592,7 +593,8 @@ public class SFSession extends SFBaseSession {
         SFLoggerUtil.isVariableProvided(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64)),
         SFLoggerUtil.isVariableProvided(
-            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
+            (String) connectionPropertiesMap.getOrDefault(SFSessionProperty.PRIVATE_KEY_PWD,
+                    connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))),
         connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
         connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
@@ -642,8 +644,9 @@ public class SFSession extends SFBaseSession {
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
-        .setPrivateKeyFilePwd(
-            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
+        .setPrivateKeyPwd(
+            (String) connectionPropertiesMap.getOrDefault(SFSessionProperty.PRIVATE_KEY_PWD,
+                    connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)))
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
         .setServiceName(getServiceName())
         .setOCSPMode(getOCSPMode())

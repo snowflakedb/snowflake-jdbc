@@ -97,7 +97,7 @@ public class SnowflakeBasicDataSourceTest {
 
     ds.setPrivateKeyFile("key.p8", "pwd");
     assertEquals("key.p8", props.get(SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey()));
-    assertEquals("pwd", props.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey()));
+    assertEquals("pwd", props.get(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey()));
     assertEquals("SNOWFLAKE_JWT", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
 
     ds.setPasscodeInPassword(false);
@@ -109,7 +109,7 @@ public class SnowflakeBasicDataSourceTest {
 
     ds.setPrivateKeyBase64("fake_key", "pwd");
     assertEquals("fake_key", props.get(SFSessionProperty.PRIVATE_KEY_BASE64.getPropertyKey()));
-    assertEquals("pwd", props.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey()));
+    assertEquals("pwd", props.get(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey()));
     assertEquals("SNOWFLAKE_JWT", props.get(SFSessionProperty.AUTHENTICATOR.getPropertyKey()));
   }
 }

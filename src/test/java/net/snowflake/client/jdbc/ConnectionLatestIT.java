@@ -1396,7 +1396,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String privateKeyLocation = getFullPathFileInResource(privateKeyFile);
     String uri =
         parameters.get("uri")
-            + "/?private_key_file_pwd="
+            + "/?private_key_pwd="
             + passphrase
             + "&private_key_file="
             + privateKeyLocation;

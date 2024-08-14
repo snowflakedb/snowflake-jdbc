@@ -81,7 +81,7 @@ class SessionUtilKeyPair {
       PrivateKey privateKey,
       String privateKeyFile,
       String privateKeyBase64,
-      String privateKeyFilePwd,
+      String privateKeyPwd,
       String accountName,
       String userName)
       throws SFException {
@@ -103,7 +103,7 @@ class SessionUtilKeyPair {
 
     ensurePrivateKeyProvidedInOnlyOneProperty(privateKey, privateKeyFile, privateKeyBase64);
     this.privateKey =
-        buildPrivateKey(privateKey, privateKeyFile, privateKeyBase64, privateKeyFilePwd);
+        buildPrivateKey(privateKey, privateKeyFile, privateKeyBase64, privateKeyPwd);
 
     // construct public key from raw bytes
     if (this.privateKey instanceof RSAPrivateCrtKey) {
@@ -146,15 +146,15 @@ class SessionUtilKeyPair {
       PrivateKey privateKey,
       String privateKeyFile,
       String privateKeyBase64,
-      String privateKeyFilePwd)
+      String privateKeyPwd)
       throws SFException {
     if (!Strings.isNullOrEmpty(privateKeyBase64)) {
       logger.trace("Reading private key from base64 string");
-      return extractPrivateKeyFromBase64(privateKeyBase64, privateKeyFilePwd);
+      return extractPrivateKeyFromBase64(privateKeyBase64, privateKeyPwd);
     }
     if (!Strings.isNullOrEmpty(privateKeyFile)) {
       logger.trace("Reading private key from file");
-      return extractPrivateKeyFromFile(privateKeyFile, privateKeyFilePwd);
+      return extractPrivateKeyFromFile(privateKeyFile, privateKeyPwd);
     }
     return privateKey;
   }
@@ -175,32 +175,32 @@ class SessionUtilKeyPair {
     }
   }
 
-  private PrivateKey extractPrivateKeyFromFile(String privateKeyFile, String privateKeyFilePwd)
+  private PrivateKey extractPrivateKeyFromFile(String privateKeyFile, String privateKeyPwd)
       throws SFException {
 
     try {
       Path privKeyPath = Paths.get(privateKeyFile);
       FileUtil.logFileUsage(privKeyPath, "Extract private key from file", true);
       byte[] bytes = Files.readAllBytes(privKeyPath);
-      return extractPrivateKeyFromBytes(bytes, privateKeyFilePwd);
+      return extractPrivateKeyFromBytes(bytes, privateKeyPwd);
     } catch (IOException ie) {
       logger.error("Could not read private key from file", ie);
       throw new SFException(ie, ErrorCode.INVALID_PARAMETER_VALUE, ie.getCause());
     }
   }
 
-  private PrivateKey extractPrivateKeyFromBytes(byte[] privateKeyBytes, String privateKeyFilePwd)
+  private PrivateKey extractPrivateKeyFromBytes(byte[] privateKeyBytes, String privateKeyPwd)
       throws SFException {
     if (isBouncyCastleProviderEnabled) {
       try {
-        return extractPrivateKeyWithBouncyCastle(privateKeyBytes, privateKeyFilePwd);
+        return extractPrivateKeyWithBouncyCastle(privateKeyBytes, privateKeyPwd);
       } catch (IOException | PKCSException | OperatorCreationException e) {
         logger.error("Could not extract private key using Bouncy Castle provider", e);
         throw new SFException(e, ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY, e.getCause());
       }
     } else {
       try {
-        return extractPrivateKeyWithJdk(privateKeyBytes, privateKeyFilePwd);
+        return extractPrivateKeyWithJdk(privateKeyBytes, privateKeyPwd);
       } catch (NoSuchAlgorithmException
           | InvalidKeySpecException
           | IOException
@@ -217,10 +217,10 @@ class SessionUtilKeyPair {
     }
   }
 
-  private PrivateKey extractPrivateKeyFromBase64(String privateKeyBase64, String privateKeyFilePwd)
+  private PrivateKey extractPrivateKeyFromBase64(String privateKeyBase64, String privateKeyPwd)
       throws SFException {
     byte[] decodedKey = Base64.decodeBase64(privateKeyBase64);
-    return extractPrivateKeyFromBytes(decodedKey, privateKeyFilePwd);
+    return extractPrivateKeyFromBytes(decodedKey, privateKeyPwd);
   }
 
   public String issueJwtToken() throws SFException {
@@ -280,7 +280,7 @@ class SessionUtilKeyPair {
   }
 
   private PrivateKey extractPrivateKeyWithBouncyCastle(
-      byte[] privateKeyBytes, String privateKeyFilePwd)
+      byte[] privateKeyBytes, String privateKeyPwd)
       throws IOException, PKCSException, OperatorCreationException {
     logger.trace("Extracting private key using Bouncy Castle provider");
     PrivateKeyInfo privateKeyInfo = null;
@@ -292,7 +292,7 @@ class SessionUtilKeyPair {
       PKCS8EncryptedPrivateKeyInfo encryptedPrivateKeyInfo =
           (PKCS8EncryptedPrivateKeyInfo) pemObject;
       InputDecryptorProvider pkcs8Prov =
-          new JceOpenSSLPKCS8DecryptorProviderBuilder().build(privateKeyFilePwd.toCharArray());
+          new JceOpenSSLPKCS8DecryptorProviderBuilder().build(privateKeyPwd.toCharArray());
       privateKeyInfo = encryptedPrivateKeyInfo.decryptPrivateKeyInfo(pkcs8Prov);
     } else if (pemObject instanceof PEMKeyPair) {
       // PKCS#1 private key
@@ -311,28 +311,28 @@ class SessionUtilKeyPair {
     return converter.getPrivateKey(privateKeyInfo);
   }
 
-  private PrivateKey extractPrivateKeyWithJdk(byte[] privateKeyFileBytes, String privateKeyFilePwd)
+  private PrivateKey extractPrivateKeyWithJdk(byte[] privateKeyFileBytes, String privateKeyPwd)
       throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
     logger.trace("Extracting private key using JDK");
     String privateKeyContent = new String(privateKeyFileBytes, StandardCharsets.UTF_8);
-    if (Strings.isNullOrEmpty(privateKeyFilePwd)) {
+    if (Strings.isNullOrEmpty(privateKeyPwd)) {
       // unencrypted private key file
-      return generatePrivateKey(false, privateKeyContent, privateKeyFilePwd);
+      return generatePrivateKey(false, privateKeyContent, privateKeyPwd);
     } else {
       // encrypted private key file
-      return generatePrivateKey(true, privateKeyContent, privateKeyFilePwd);
+      return generatePrivateKey(true, privateKeyContent, privateKeyPwd);
     }
   }
 
   private PrivateKey generatePrivateKey(
-      boolean isEncrypted, String privateKeyContent, String privateKeyFilePwd)
+      boolean isEncrypted, String privateKeyContent, String privateKeyPwd)
       throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
     if (isEncrypted) {
       try (PemReader pr = new PemReader(new StringReader(privateKeyContent))) {
         byte[] decoded = pr.readPemObject().getContent();
         pr.close();
         EncryptedPrivateKeyInfo pkInfo = new EncryptedPrivateKeyInfo(decoded);
-        PBEKeySpec keySpec = new PBEKeySpec(privateKeyFilePwd.toCharArray());
+        PBEKeySpec keySpec = new PBEKeySpec(privateKeyPwd.toCharArray());
         SecretKeyFactory pbeKeyFactory = this.getSecretKeyFactory(pkInfo.getAlgName());
         PKCS8EncodedKeySpec encodedKeySpec =
             pkInfo.getKeySpec(pbeKeyFactory.generateSecret(keySpec));

@@ -46,7 +46,7 @@ public class SFLoginInput {
   private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
   private String privateKeyBase64;
-  private String privateKeyFilePwd;
+  private String privateKeyPwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
 
   private boolean disableConsoleLogin = true;
@@ -340,8 +340,8 @@ public class SFLoginInput {
     return this;
   }
 
-  SFLoginInput setPrivateKeyFilePwd(String privateKeyFilePwd) {
-    this.privateKeyFilePwd = privateKeyFilePwd;
+  SFLoginInput setPrivateKeyPwd(String privateKeyPwd) {
+    this.privateKeyPwd = privateKeyPwd;
     return this;
   }
 
@@ -349,8 +349,8 @@ public class SFLoginInput {
     return privateKeyFile;
   }
 
-  String getPrivateKeyFilePwd() {
-    return privateKeyFilePwd;
+  String getPrivateKeyPwd() {
+    return privateKeyPwd;
   }
 
   boolean isPrivateKeyProvided() {

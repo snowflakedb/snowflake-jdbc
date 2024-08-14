@@ -89,8 +89,8 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
         .thenReturn(ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.name());
     when(loginInput.getPrivateKeyFile())
         .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE"));
-    when(loginInput.getPrivateKeyFilePwd())
-        .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_FILE_PWD"));
+    when(loginInput.getPrivateKeyPwd())
+        .thenReturn(systemGetEnv("SNOWFLAKE_TEST_PRIVATE_KEY_PWD"));
     when(loginInput.getUserName()).thenReturn(systemGetEnv("SNOWFLAKE_TEST_USER"));
     when(loginInput.getAccountName()).thenReturn("testaccount");
     when(loginInput.getAppId()).thenReturn("testid");
