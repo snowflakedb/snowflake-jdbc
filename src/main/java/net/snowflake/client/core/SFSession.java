@@ -593,7 +593,9 @@ public class SFSession extends SFBaseSession {
         SFLoggerUtil.isVariableProvided(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64)),
         SFLoggerUtil.isVariableProvided(
-            (String) connectionPropertiesMap.getOrDefault(SFSessionProperty.PRIVATE_KEY_PWD,
+            (String)
+                connectionPropertiesMap.getOrDefault(
+                    SFSessionProperty.PRIVATE_KEY_PWD,
                     connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))),
         connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
         connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
@@ -645,7 +647,9 @@ public class SFSession extends SFBaseSession {
         .setPrivateKeyBase64(
             (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
         .setPrivateKeyPwd(
-            (String) connectionPropertiesMap.getOrDefault(SFSessionProperty.PRIVATE_KEY_PWD,
+            (String)
+                connectionPropertiesMap.getOrDefault(
+                    SFSessionProperty.PRIVATE_KEY_PWD,
                     connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)))
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
         .setServiceName(getServiceName())

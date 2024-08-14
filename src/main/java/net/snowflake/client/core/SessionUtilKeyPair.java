@@ -102,8 +102,7 @@ class SessionUtilKeyPair {
     }
 
     ensurePrivateKeyProvidedInOnlyOneProperty(privateKey, privateKeyFile, privateKeyBase64);
-    this.privateKey =
-        buildPrivateKey(privateKey, privateKeyFile, privateKeyBase64, privateKeyPwd);
+    this.privateKey = buildPrivateKey(privateKey, privateKeyFile, privateKeyBase64, privateKeyPwd);
 
     // construct public key from raw bytes
     if (this.privateKey instanceof RSAPrivateCrtKey) {
@@ -143,10 +142,7 @@ class SessionUtilKeyPair {
   }
 
   private PrivateKey buildPrivateKey(
-      PrivateKey privateKey,
-      String privateKeyFile,
-      String privateKeyBase64,
-      String privateKeyPwd)
+      PrivateKey privateKey, String privateKeyFile, String privateKeyBase64, String privateKeyPwd)
       throws SFException {
     if (!Strings.isNullOrEmpty(privateKeyBase64)) {
       logger.trace("Reading private key from base64 string");
@@ -279,8 +275,7 @@ class SessionUtilKeyPair {
     return jwtAuthTimeout;
   }
 
-  private PrivateKey extractPrivateKeyWithBouncyCastle(
-      byte[] privateKeyBytes, String privateKeyPwd)
+  private PrivateKey extractPrivateKeyWithBouncyCastle(byte[] privateKeyBytes, String privateKeyPwd)
       throws IOException, PKCSException, OperatorCreationException {
     logger.trace("Extracting private key using Bouncy Castle provider");
     PrivateKeyInfo privateKeyInfo = null;

@@ -56,8 +56,9 @@ public enum SFSessionProperty {
   PRIVATE_KEY_FILE("private_key_file", false, String.class),
   PRIVATE_KEY_BASE64("private_key_base64", false, String.class),
   /**
-   * @deprecated Use {@link #PRIVATE_KEY_PWD} for clarity. The given password will be used to decrypt
-   * the private key value independent of whether that value is supplied as a file or base64 string
+   * @deprecated Use {@link #PRIVATE_KEY_PWD} for clarity. The given password will be used to
+   *     decrypt the private key value independent of whether that value is supplied as a file or
+   *     base64 string
    */
   @Deprecated
   PRIVATE_KEY_FILE_PWD("private_key_file_pwd", false, String.class),
