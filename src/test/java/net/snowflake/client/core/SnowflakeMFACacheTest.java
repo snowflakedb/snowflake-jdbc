@@ -22,7 +22,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
@@ -348,12 +347,10 @@ public class SnowflakeMFACacheTest {
     ds.setPassword(params.get("password"));
     ds.setEnableClientRequestMfaToken(false);
 
-    try (Connection con = ds.getConnection()) {
-      for (int i = 0; i < 3; i++) {
-        try (Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT CURRENT_USER()")) {
-          assertTrue(rs.next());
-        }
+    for (int i = 0; i < 3; i++) {
+      try (Connection con = ds.getConnection();
+          ResultSet rs = con.createStatement().executeQuery("SELECT 1")) {
+        assertTrue(rs.next());
       }
     }
   }

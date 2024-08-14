@@ -24,7 +24,6 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
@@ -259,12 +258,10 @@ public class SessionUtilExternalBrowserTest {
     ds.setUser(params.get("user"));
     ds.setEnableClientStoreTemporaryCredential(false);
 
-    try (Connection con = ds.getConnection()) {
-      Statement stmt = con.createStatement();
-      for (int i = 0; i < 3; i++) {
-        try (ResultSet rs = stmt.executeQuery("SELECT CURRENT_USER()")) {
-          assertTrue(rs.next());
-        }
+    for (int i = 0; i < 3; i++) {
+      try (Connection con = ds.getConnection();
+          ResultSet rs = con.createStatement().executeQuery("SELECT 1")) {
+        assertTrue(rs.next());
       }
     }
   }
