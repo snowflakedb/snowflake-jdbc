@@ -647,7 +647,7 @@ public class SessionUtil {
 
       setServiceNameHeader(loginInput, postRequest);
 
-      String theString = null;
+      String response = null;
 
       int leftRetryTimeout = loginInput.getLoginTimeout();
       int leftsocketTimeout = loginInput.getSocketTimeoutInMillis();
@@ -657,7 +657,7 @@ public class SessionUtil {
 
       while (true) {
         try {
-          theString =
+          response =
               HttpUtil.executeGeneralRequest(
                   postRequest,
                   leftRetryTimeout,
@@ -737,7 +737,7 @@ public class SessionUtil {
         break;
       }
 
-      if (theString == null) {
+      if (response == null) {
         if (lastRestException != null) {
           logger.error(
               "Failed to open new session for user: {}, host: {}. Error: {}",
@@ -762,11 +762,11 @@ public class SessionUtil {
       }
 
       // general method, same as with data binding
-      JsonNode jsonNode = mapper.readTree(theString);
+      JsonNode jsonNode = mapper.readTree(response);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("Response: {}", theString);
+        logger.debug("Response: {}", response);
 
         int errorCode = jsonNode.path("code").asInt();
         if (errorCode == Constants.ID_TOKEN_INVALID_LOGIN_REQUEST_GS_CODE) {
@@ -1047,7 +1047,7 @@ public class SessionUtil {
           (ArgSupplier) () -> loginInput.getSessionToken() != null ? "******" : null,
           (ArgSupplier) () -> loginInput.getMasterToken() != null ? "******" : null);
 
-      String theString =
+      String response =
           HttpUtil.executeGeneralRequest(
               postRequest,
               loginInput.getLoginTimeout(),
@@ -1057,11 +1057,11 @@ public class SessionUtil {
               loginInput.getHttpClientSettingsKey());
 
       // general method, same as with data binding
-      JsonNode jsonNode = mapper.readTree(theString);
+      JsonNode jsonNode = mapper.readTree(response);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("Response: {}", theString);
+        logger.debug("Response: {}", response);
 
         String errorCode = jsonNode.path("code").asText();
         String message = jsonNode.path("message").asText();
@@ -1140,7 +1140,7 @@ public class SessionUtil {
 
       setServiceNameHeader(loginInput, postRequest);
 
-      String theString =
+      String response =
           HttpUtil.executeGeneralRequest(
               postRequest,
               loginInput.getLoginTimeout(),
@@ -1151,9 +1151,9 @@ public class SessionUtil {
 
       JsonNode rootNode;
 
-      logger.debug("Connection close response: {}", theString);
+      logger.debug("Connection close response: {}", response);
 
-      rootNode = mapper.readTree(theString);
+      rootNode = mapper.readTree(response);
 
       SnowflakeUtil.checkErrorAndThrowException(rootNode);
     } catch (URISyntaxException ex) {
