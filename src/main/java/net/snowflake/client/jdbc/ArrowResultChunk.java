@@ -9,38 +9,10 @@ import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.arrow.ArrayConverter;
-import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
-import net.snowflake.client.core.arrow.ArrowVectorConverter;
-import net.snowflake.client.core.arrow.BigIntToFixedConverter;
-import net.snowflake.client.core.arrow.BigIntToScaledFixedConverter;
-import net.snowflake.client.core.arrow.BigIntToTimeConverter;
-import net.snowflake.client.core.arrow.BigIntToTimestampLTZConverter;
-import net.snowflake.client.core.arrow.BigIntToTimestampNTZConverter;
-import net.snowflake.client.core.arrow.BitToBooleanConverter;
-import net.snowflake.client.core.arrow.DateConverter;
-import net.snowflake.client.core.arrow.DecimalToScaledFixedConverter;
-import net.snowflake.client.core.arrow.DoubleToRealConverter;
-import net.snowflake.client.core.arrow.IntToFixedConverter;
-import net.snowflake.client.core.arrow.IntToScaledFixedConverter;
-import net.snowflake.client.core.arrow.IntToTimeConverter;
-import net.snowflake.client.core.arrow.MapConverter;
-import net.snowflake.client.core.arrow.SmallIntToFixedConverter;
-import net.snowflake.client.core.arrow.SmallIntToScaledFixedConverter;
-import net.snowflake.client.core.arrow.StructConverter;
-import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
-import net.snowflake.client.core.arrow.TinyIntToFixedConverter;
-import net.snowflake.client.core.arrow.TinyIntToScaledFixedConverter;
-import net.snowflake.client.core.arrow.TwoFieldStructToTimestampLTZConverter;
-import net.snowflake.client.core.arrow.TwoFieldStructToTimestampNTZConverter;
-import net.snowflake.client.core.arrow.TwoFieldStructToTimestampTZConverter;
-import net.snowflake.client.core.arrow.VarBinaryToBinaryConverter;
-import net.snowflake.client.core.arrow.VarCharConverter;
-import net.snowflake.client.core.arrow.VectorTypeConverter;
+import net.snowflake.client.core.arrow.*;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -58,12 +30,8 @@ import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.complex.FixedSizeListVector;
-import org.apache.arrow.vector.complex.ListVector;
-import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.ipc.ArrowStreamReader;
-import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.TransferPair;
 
 public class ArrowResultChunk extends SnowflakeResultChunk {
@@ -168,224 +136,6 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   }
 
   /**
-   * Given a list of arrow vectors (all columns in a single record batch), return list of arrow
-   * vector converter. Note, converter is built on top of arrow vector, so that arrow data can be
-   * converted back to java data
-   *
-   * <p>
-   *
-   * <p>Arrow converter mappings for Snowflake fixed-point numbers
-   * ----------------------------------------------------------------------------------------- Max
-   * position & scale Converter
-   * -----------------------------------------------------------------------------------------
-   * number(3,0) {@link TinyIntToFixedConverter} number(3,2) {@link TinyIntToScaledFixedConverter}
-   * number(5,0) {@link SmallIntToFixedConverter} number(5,4) {@link SmallIntToScaledFixedConverter}
-   * number(10,0) {@link IntToFixedConverter} number(10,9) {@link IntToScaledFixedConverter}
-   * number(19,0) {@link BigIntToFixedConverter} number(19,18) {@link BigIntToFixedConverter}
-   * number(38,37) {@link DecimalToScaledFixedConverter}
-   * ------------------------------------------------------------------------------------------
-   *
-   * @param vectors list of arrow vectors
-   * @return list of converters on top of each converters
-   */
-  private static List<ArrowVectorConverter> initConverters(
-      List<ValueVector> vectors, DataConversionContext context) throws SnowflakeSQLException {
-    List<ArrowVectorConverter> converters = new ArrayList<>();
-    for (int i = 0; i < vectors.size(); i++) {
-      ValueVector vector = vectors.get(i);
-      // arrow minor type
-      Types.MinorType type = Types.getMinorTypeForArrowType(vector.getField().getType());
-
-      // each column's metadata
-      Map<String, String> customMeta = vector.getField().getMetadata();
-      if (type == Types.MinorType.DECIMAL) {
-        // Note: Decimal vector is different from others
-        converters.add(new DecimalToScaledFixedConverter(vector, i, context));
-      } else if (!customMeta.isEmpty()) {
-        SnowflakeType st = SnowflakeType.valueOf(customMeta.get("logicalType"));
-        switch (st) {
-          case ANY:
-          case CHAR:
-          case TEXT:
-          case VARIANT:
-            converters.add(new VarCharConverter(vector, i, context));
-            break;
-
-          case MAP:
-            if (vector instanceof MapVector) {
-              converters.add(new MapConverter((MapVector) vector, i, context));
-            } else {
-              converters.add(new VarCharConverter(vector, i, context));
-            }
-            break;
-
-          case VECTOR:
-            converters.add(new VectorTypeConverter((FixedSizeListVector) vector, i, context));
-            break;
-
-          case ARRAY:
-            if (vector instanceof ListVector) {
-              converters.add(new ArrayConverter((ListVector) vector, i, context));
-            } else {
-              converters.add(new VarCharConverter(vector, i, context));
-            }
-            break;
-
-          case OBJECT:
-            if (vector instanceof StructVector) {
-              converters.add(new StructConverter((StructVector) vector, i, context));
-            } else {
-              converters.add(new VarCharConverter(vector, i, context));
-            }
-            break;
-
-          case BINARY:
-            converters.add(new VarBinaryToBinaryConverter(vector, i, context));
-            break;
-
-          case BOOLEAN:
-            converters.add(new BitToBooleanConverter(vector, i, context));
-            break;
-
-          case DATE:
-            boolean getFormatDateWithTimeZone = false;
-            if (context.getSession() != null) {
-              getFormatDateWithTimeZone = context.getSession().getFormatDateWithTimezone();
-            }
-            converters.add(new DateConverter(vector, i, context, getFormatDateWithTimeZone));
-            break;
-
-          case FIXED:
-            String scaleStr = vector.getField().getMetadata().get("scale");
-            int sfScale = Integer.parseInt(scaleStr);
-            switch (type) {
-              case TINYINT:
-                if (sfScale == 0) {
-                  converters.add(new TinyIntToFixedConverter(vector, i, context));
-                } else {
-                  converters.add(new TinyIntToScaledFixedConverter(vector, i, context, sfScale));
-                }
-                break;
-              case SMALLINT:
-                if (sfScale == 0) {
-                  converters.add(new SmallIntToFixedConverter(vector, i, context));
-                } else {
-                  converters.add(new SmallIntToScaledFixedConverter(vector, i, context, sfScale));
-                }
-                break;
-              case INT:
-                if (sfScale == 0) {
-                  converters.add(new IntToFixedConverter(vector, i, context));
-                } else {
-                  converters.add(new IntToScaledFixedConverter(vector, i, context, sfScale));
-                }
-                break;
-              case BIGINT:
-                if (sfScale == 0) {
-                  converters.add(new BigIntToFixedConverter(vector, i, context));
-                } else {
-                  converters.add(new BigIntToScaledFixedConverter(vector, i, context, sfScale));
-                }
-                break;
-            }
-            break;
-
-          case REAL:
-            converters.add(new DoubleToRealConverter(vector, i, context));
-            break;
-
-          case TIME:
-            switch (type) {
-              case INT:
-                converters.add(new IntToTimeConverter(vector, i, context));
-                break;
-              case BIGINT:
-                converters.add(new BigIntToTimeConverter(vector, i, context));
-                break;
-              default:
-                throw new SnowflakeSQLLoggedException(
-                    session,
-                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                    SqlState.INTERNAL_ERROR,
-                    "Unexpected Arrow Field for ",
-                    st.name());
-            }
-            break;
-
-          case TIMESTAMP_LTZ:
-            if (vector.getField().getChildren().isEmpty()) {
-              // case when the scale of the timestamp is equal or smaller than millisecs since epoch
-              converters.add(new BigIntToTimestampLTZConverter(vector, i, context));
-            } else if (vector.getField().getChildren().size() == 2) {
-              // case when the scale of the timestamp is larger than millisecs since epoch, e.g.,
-              // nanosecs
-              converters.add(new TwoFieldStructToTimestampLTZConverter(vector, i, context));
-            } else {
-              throw new SnowflakeSQLLoggedException(
-                  session,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                  SqlState.INTERNAL_ERROR,
-                  "Unexpected Arrow Field for ",
-                  st.name());
-            }
-            break;
-
-          case TIMESTAMP_NTZ:
-            if (vector.getField().getChildren().isEmpty()) {
-              // case when the scale of the timestamp is equal or smaller than 7
-              converters.add(new BigIntToTimestampNTZConverter(vector, i, context));
-            } else if (vector.getField().getChildren().size() == 2) {
-              // when the timestamp is represent in two-field struct
-              converters.add(new TwoFieldStructToTimestampNTZConverter(vector, i, context));
-            } else {
-              throw new SnowflakeSQLLoggedException(
-                  session,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                  SqlState.INTERNAL_ERROR,
-                  "Unexpected Arrow Field for ",
-                  st.name());
-            }
-            break;
-
-          case TIMESTAMP_TZ:
-            if (vector.getField().getChildren().size() == 2) {
-              // case when the scale of the timestamp is equal or smaller than millisecs since epoch
-              converters.add(new TwoFieldStructToTimestampTZConverter(vector, i, context));
-            } else if (vector.getField().getChildren().size() == 3) {
-              // case when the scale of the timestamp is larger than millisecs since epoch, e.g.,
-              // nanosecs
-              converters.add(new ThreeFieldStructToTimestampTZConverter(vector, i, context));
-            } else {
-              throw new SnowflakeSQLLoggedException(
-                  session,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                  SqlState.INTERNAL_ERROR,
-                  "Unexpected SnowflakeType ",
-                  st.name());
-            }
-            break;
-
-          default:
-            throw new SnowflakeSQLLoggedException(
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "Unexpected Arrow Field for ",
-                st.name());
-        }
-      } else {
-        throw new SnowflakeSQLLoggedException(
-            session,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            SqlState.INTERNAL_ERROR,
-            "Unexpected Arrow Field for ",
-            type.toString());
-      }
-    }
-    return converters;
-  }
-
-  /**
    * @return an iterator to iterate over current chunk
    */
   public ArrowChunkIterator getIterator(DataConversionContext dataConversionContext) {
@@ -444,6 +194,36 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
       this.currentConverters = Collections.emptyList();
     }
 
+    /**
+     * Given a list of arrow vectors (all columns in a single record batch), return list of arrow
+     * vector converter. Note, converter is built on top of arrow vector, so that arrow data can be
+     * converted back to java data
+     *
+     * <p>
+     *
+     * <p>Arrow converter mappings for Snowflake fixed-point numbers
+     * ----------------------------------------------------------------------------------------- Max
+     * position & scale Converter
+     * -----------------------------------------------------------------------------------------
+     * number(3,0) {@link TinyIntToFixedConverter} number(3,2) {@link TinyIntToScaledFixedConverter}
+     * number(5,0) {@link SmallIntToFixedConverter} number(5,4) {@link SmallIntToScaledFixedConverter}
+     * number(10,0) {@link IntToFixedConverter} number(10,9) {@link IntToScaledFixedConverter}
+     * number(19,0) {@link BigIntToFixedConverter} number(19,18) {@link BigIntToFixedConverter}
+     * number(38,37) {@link DecimalToScaledFixedConverter}
+     * ------------------------------------------------------------------------------------------
+     *
+     * @param vectors list of arrow vectors
+     * @return list of converters on top of each converters
+     */
+    private List<ArrowVectorConverter> initConverters(
+            List<ValueVector> vectors) throws SnowflakeSQLException {
+      List<ArrowVectorConverter> converters = new ArrayList<>();
+      for (int i = 0; i < vectors.size(); i++) {
+        converters.add(AbstractArrowVectorConverter.initConverter(vectors.get(i), dataConversionContext,  session, i));
+      }
+      return converters;
+    }
+
     /** advance to next row */
     public boolean next() throws SnowflakeSQLException {
       currentRowInRecordBatch++;
@@ -466,14 +246,14 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
                 resultChunk.batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
             currentConverters =
                 initConverters(
-                    resultChunk.batchOfVectors.get(currentRecordBatchIndex), dataConversionContext);
+                    resultChunk.batchOfVectors.get(currentRecordBatchIndex));
             resultChunk.sortFirstResultChunk(currentConverters);
           } else {
             this.rowCountInCurrentRecordBatch =
                 resultChunk.batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
             currentConverters =
                 initConverters(
-                    resultChunk.batchOfVectors.get(currentRecordBatchIndex), dataConversionContext);
+                    resultChunk.batchOfVectors.get(currentRecordBatchIndex));
           }
           return true;
         }
