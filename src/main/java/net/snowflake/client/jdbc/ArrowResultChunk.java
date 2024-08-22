@@ -220,14 +220,12 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
             }
             this.rowCountInCurrentRecordBatch =
                 batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
-            currentConverters =
-                initConverters(batchOfVectors.get(currentRecordBatchIndex));
+            currentConverters = initConverters(batchOfVectors.get(currentRecordBatchIndex));
             sortFirstResultChunk(currentConverters);
           } else {
             this.rowCountInCurrentRecordBatch =
                 batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
-            currentConverters =
-                initConverters(batchOfVectors.get(currentRecordBatchIndex));
+            currentConverters = initConverters(batchOfVectors.get(currentRecordBatchIndex));
           }
           return true;
         }
