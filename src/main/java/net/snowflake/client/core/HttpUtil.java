@@ -77,10 +77,6 @@ public class HttpUtil {
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
   public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
-  static final String JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY =
-      "net.snowflake.jdbc.http_client_connection_timeout_in_ms";
-  static final String JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY =
-      "net.snowflake.jdbc.http_client_socket_timeout_in_ms";
   public static final String JDBC_MAX_CONNECTIONS_PROPERTY = "net.snowflake.jdbc.max_connections";
   public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
       "net.snowflake.jdbc.max_connections_per_route";
