@@ -226,7 +226,7 @@ public abstract class AbstractArrowVectorConverter implements ArrowVectorConvert
    *
    * <p>Arrow converter mappings for Snowflake fixed-point numbers
    * ----------------------------------------------------------------------------------------- Max
-   * position & scale Converter
+   * position and scale Converter
    * -----------------------------------------------------------------------------------------
    * number(3,0) {@link TinyIntToFixedConverter} number(3,2) {@link TinyIntToScaledFixedConverter}
    * number(5,0) {@link SmallIntToFixedConverter} number(5,4) {@link SmallIntToScaledFixedConverter}
