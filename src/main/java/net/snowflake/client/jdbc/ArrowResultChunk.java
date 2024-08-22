@@ -12,7 +12,9 @@ import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.arrow.*;
+import net.snowflake.client.core.arrow.AbstractArrowVectorConverter;
+import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
+import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -198,19 +200,6 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
      * Given a list of arrow vectors (all columns in a single record batch), return list of arrow
      * vector converter. Note, converter is built on top of arrow vector, so that arrow data can be
      * converted back to java data
-     *
-     * <p>
-     *
-     * <p>Arrow converter mappings for Snowflake fixed-point numbers
-     * ----------------------------------------------------------------------------------------- Max
-     * position & scale Converter
-     * -----------------------------------------------------------------------------------------
-     * number(3,0) {@link TinyIntToFixedConverter} number(3,2) {@link TinyIntToScaledFixedConverter}
-     * number(5,0) {@link SmallIntToFixedConverter} number(5,4) {@link
-     * SmallIntToScaledFixedConverter} number(10,0) {@link IntToFixedConverter} number(10,9) {@link
-     * IntToScaledFixedConverter} number(19,0) {@link BigIntToFixedConverter} number(19,18) {@link
-     * BigIntToFixedConverter} number(38,37) {@link DecimalToScaledFixedConverter}
-     * ------------------------------------------------------------------------------------------
      *
      * @param vectors list of arrow vectors
      * @return list of converters on top of each converters
