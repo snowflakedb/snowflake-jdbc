@@ -214,9 +214,9 @@ public abstract class AbstractArrowVectorConverter implements ArrowVectorConvert
   }
 
   /**
-   * Given an arrow vector (a single column in a single record batch), return an arrow
-   * vector converter. Note, converter is built on top of arrow vector, so that arrow data can be
-   * converted back to java data
+   * Given an arrow vector (a single column in a single record batch), return an arrow vector
+   * converter. Note, converter is built on top of arrow vector, so that arrow data can be converted
+   * back to java data
    *
    * <p>
    *
@@ -238,7 +238,8 @@ public abstract class AbstractArrowVectorConverter implements ArrowVectorConvert
    * @return A converter on top og the vector
    */
   public static ArrowVectorConverter initConverter(
-          ValueVector vector, DataConversionContext context, SFBaseSession session, int idx) throws SnowflakeSQLException {
+      ValueVector vector, DataConversionContext context, SFBaseSession session, int idx)
+      throws SnowflakeSQLException {
     // arrow minor type
     Types.MinorType type = Types.getMinorTypeForArrowType(vector.getField().getType());
 
@@ -335,11 +336,11 @@ public abstract class AbstractArrowVectorConverter implements ArrowVectorConvert
               return new BigIntToTimeConverter(vector, idx, context);
             default:
               throw new SnowflakeSQLLoggedException(
-                      session,
-                      ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                      SqlState.INTERNAL_ERROR,
-                      "Unexpected Arrow Field for ",
-                      st.name());
+                  session,
+                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                  SqlState.INTERNAL_ERROR,
+                  "Unexpected Arrow Field for ",
+                  st.name());
           }
 
         case TIMESTAMP_LTZ:
@@ -352,11 +353,11 @@ public abstract class AbstractArrowVectorConverter implements ArrowVectorConvert
             return new TwoFieldStructToTimestampLTZConverter(vector, idx, context);
           } else {
             throw new SnowflakeSQLLoggedException(
-                    session,
-                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                    SqlState.INTERNAL_ERROR,
-                    "Unexpected Arrow Field for ",
-                    st.name());
+                session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
+                "Unexpected Arrow Field for ",
+                st.name());
           }
 
         case TIMESTAMP_NTZ:
@@ -368,11 +369,11 @@ public abstract class AbstractArrowVectorConverter implements ArrowVectorConvert
             return new TwoFieldStructToTimestampNTZConverter(vector, idx, context);
           } else {
             throw new SnowflakeSQLLoggedException(
-                    session,
-                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                    SqlState.INTERNAL_ERROR,
-                    "Unexpected Arrow Field for ",
-                    st.name());
+                session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
+                "Unexpected Arrow Field for ",
+                st.name());
           }
 
         case TIMESTAMP_TZ:
@@ -385,28 +386,27 @@ public abstract class AbstractArrowVectorConverter implements ArrowVectorConvert
             return new ThreeFieldStructToTimestampTZConverter(vector, idx, context);
           } else {
             throw new SnowflakeSQLLoggedException(
-                    session,
-                    ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                    SqlState.INTERNAL_ERROR,
-                    "Unexpected SnowflakeType ",
-                    st.name());
+                session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
+                "Unexpected SnowflakeType ",
+                st.name());
           }
 
         default:
           throw new SnowflakeSQLLoggedException(
-                  session,
-                  ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                  SqlState.INTERNAL_ERROR,
-                  "Unexpected Arrow Field for ",
-                  st.name());
+              session,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              SqlState.INTERNAL_ERROR,
+              "Unexpected Arrow Field for ",
+              st.name());
       }
     }
     throw new SnowflakeSQLLoggedException(
-            session,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            SqlState.INTERNAL_ERROR,
-            "Unexpected Arrow Field for ",
-            type.toString());
-
+        session,
+        ErrorCode.INTERNAL_ERROR.getMessageCode(),
+        SqlState.INTERNAL_ERROR,
+        "Unexpected Arrow Field for ",
+        type.toString());
   }
 }

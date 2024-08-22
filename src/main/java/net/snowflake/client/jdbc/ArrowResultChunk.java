@@ -206,20 +206,22 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
      * position & scale Converter
      * -----------------------------------------------------------------------------------------
      * number(3,0) {@link TinyIntToFixedConverter} number(3,2) {@link TinyIntToScaledFixedConverter}
-     * number(5,0) {@link SmallIntToFixedConverter} number(5,4) {@link SmallIntToScaledFixedConverter}
-     * number(10,0) {@link IntToFixedConverter} number(10,9) {@link IntToScaledFixedConverter}
-     * number(19,0) {@link BigIntToFixedConverter} number(19,18) {@link BigIntToFixedConverter}
-     * number(38,37) {@link DecimalToScaledFixedConverter}
+     * number(5,0) {@link SmallIntToFixedConverter} number(5,4) {@link
+     * SmallIntToScaledFixedConverter} number(10,0) {@link IntToFixedConverter} number(10,9) {@link
+     * IntToScaledFixedConverter} number(19,0) {@link BigIntToFixedConverter} number(19,18) {@link
+     * BigIntToFixedConverter} number(38,37) {@link DecimalToScaledFixedConverter}
      * ------------------------------------------------------------------------------------------
      *
      * @param vectors list of arrow vectors
      * @return list of converters on top of each converters
      */
-    private List<ArrowVectorConverter> initConverters(
-            List<ValueVector> vectors) throws SnowflakeSQLException {
+    private List<ArrowVectorConverter> initConverters(List<ValueVector> vectors)
+        throws SnowflakeSQLException {
       List<ArrowVectorConverter> converters = new ArrayList<>();
       for (int i = 0; i < vectors.size(); i++) {
-        converters.add(AbstractArrowVectorConverter.initConverter(vectors.get(i), dataConversionContext,  session, i));
+        converters.add(
+            AbstractArrowVectorConverter.initConverter(
+                vectors.get(i), dataConversionContext, session, i));
       }
       return converters;
     }
@@ -245,15 +247,13 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
             this.rowCountInCurrentRecordBatch =
                 resultChunk.batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
             currentConverters =
-                initConverters(
-                    resultChunk.batchOfVectors.get(currentRecordBatchIndex));
+                initConverters(resultChunk.batchOfVectors.get(currentRecordBatchIndex));
             resultChunk.sortFirstResultChunk(currentConverters);
           } else {
             this.rowCountInCurrentRecordBatch =
                 resultChunk.batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
             currentConverters =
-                initConverters(
-                    resultChunk.batchOfVectors.get(currentRecordBatchIndex));
+                initConverters(resultChunk.batchOfVectors.get(currentRecordBatchIndex));
           }
           return true;
         }
