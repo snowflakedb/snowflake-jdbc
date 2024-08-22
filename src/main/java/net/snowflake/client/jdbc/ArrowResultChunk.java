@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
@@ -55,7 +54,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   private boolean enableSortFirstResultChunk;
   private IntVector firstResultChunkSortedIndices;
   private VectorSchemaRoot root;
-  private static SFBaseSession session;
+  private SFBaseSession session;
 
   public ArrowResultChunk(
       String url,
@@ -142,11 +141,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
    * @return an iterator to iterate over current chunk
    */
   public ArrowChunkIterator getIterator(DataConversionContext dataConversionContext) {
-    return new ArrowChunkIterator(this, dataConversionContext);
+    return new ArrowChunkIterator(dataConversionContext);
   }
 
   public static ArrowChunkIterator getEmptyChunkIterator() {
-    return new ArrowChunkIterator(new EmptyArrowResultChunk());
+    return new EmptyArrowResultChunk().new ArrowChunkIterator(null);
   }
 
   public void enableSortFirstResultChunk() {
@@ -154,10 +153,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   }
 
   /** Iterator class used to go through the arrow chunk row by row */
-  public static class ArrowChunkIterator {
-    /** chunk that iterator will iterate through */
-    private ArrowResultChunk resultChunk;
-
+  public class ArrowChunkIterator {
     /** index of record batch that iterator currently points to */
     private int currentRecordBatchIndex;
 
@@ -179,22 +175,12 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     /** formatters to each data type */
     private DataConversionContext dataConversionContext;
 
-    ArrowChunkIterator(ArrowResultChunk resultChunk, DataConversionContext dataConversionContext) {
-      this.resultChunk = resultChunk;
+    ArrowChunkIterator(DataConversionContext dataConversionContext) {
       this.currentRecordBatchIndex = -1;
-      this.totalRecordBatch = resultChunk.batchOfVectors.size();
+      this.totalRecordBatch = batchOfVectors.size();
       this.currentRowInRecordBatch = -1;
       this.rowCountInCurrentRecordBatch = 0;
       this.dataConversionContext = dataConversionContext;
-    }
-
-    ArrowChunkIterator(EmptyArrowResultChunk emptyArrowResultChunk) {
-      this.resultChunk = emptyArrowResultChunk;
-      this.currentRecordBatchIndex = 0;
-      this.totalRecordBatch = 0;
-      this.currentRowInRecordBatch = -1;
-      this.rowCountInCurrentRecordBatch = 0;
-      this.currentConverters = Collections.emptyList();
     }
 
     /**
@@ -224,24 +210,24 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
         currentRecordBatchIndex++;
         if (currentRecordBatchIndex < totalRecordBatch) {
           this.currentRowInRecordBatch = 0;
-          if (currentRecordBatchIndex == 0 && resultChunk.sortFirstResultChunkEnabled()) {
+          if (currentRecordBatchIndex == 0 && sortFirstResultChunkEnabled()) {
             // perform client-side sorting for the first chunk (only used in Snowflake internal
             // regression tests)
             // if first chunk has multiple record batches, merge them into one and sort it
-            if (resultChunk.batchOfVectors.size() > 1) {
-              resultChunk.mergeBatchesIntoOne();
+            if (batchOfVectors.size() > 1) {
+              mergeBatchesIntoOne();
               totalRecordBatch = 1;
             }
             this.rowCountInCurrentRecordBatch =
-                resultChunk.batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
+                batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
             currentConverters =
-                initConverters(resultChunk.batchOfVectors.get(currentRecordBatchIndex));
-            resultChunk.sortFirstResultChunk(currentConverters);
+                initConverters(batchOfVectors.get(currentRecordBatchIndex));
+            sortFirstResultChunk(currentConverters);
           } else {
             this.rowCountInCurrentRecordBatch =
-                resultChunk.batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
+                batchOfVectors.get(currentRecordBatchIndex).get(0).getValueCount();
             currentConverters =
-                initConverters(resultChunk.batchOfVectors.get(currentRecordBatchIndex));
+                initConverters(batchOfVectors.get(currentRecordBatchIndex));
           }
           return true;
         }
@@ -260,7 +246,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     }
 
     public ArrowResultChunk getChunk() {
-      return resultChunk;
+      return ArrowResultChunk.this;
     }
 
     public ArrowVectorConverter getCurrentConverter(int columnIdx) throws SFException {
@@ -275,8 +261,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
      * @return index of row in current record batch
      */
     public int getCurrentRowInRecordBatch() {
-      if (resultChunk.sortFirstResultChunkEnabled() && currentRecordBatchIndex == 0) {
-        return resultChunk.firstResultChunkSortedIndices.get(currentRowInRecordBatch);
+      if (sortFirstResultChunkEnabled() && currentRecordBatchIndex == 0) {
+        return firstResultChunkSortedIndices.get(currentRowInRecordBatch);
       } else {
         return currentRowInRecordBatch;
       }
