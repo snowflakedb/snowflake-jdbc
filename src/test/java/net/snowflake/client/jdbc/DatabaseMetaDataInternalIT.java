@@ -638,7 +638,14 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
           st.executeQuery("select database_name from information_schema.databases")) {
         while (dbNameRS.next()) {
           String databaseName = dbNameRS.getString(1);
+          if (databaseName.contains("\"")) {
+            databaseName = "\"" + databaseName.replace("\"", "\"\"") + "\"";
+          }
+          else {
+            databaseName = "\"" + databaseName + "\"";
+          }
           String execSQLCmd = SQLCmdTemplate.replaceAll("db", databaseName);
+          System.out.println(execSQLCmd);
           ResultSet object = st.executeQuery(execSQLCmd);
           object.next();
           objectCount += object.getInt(1);
