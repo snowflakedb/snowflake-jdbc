@@ -1560,9 +1560,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       }
     }
   }
-  // Test setHolderbility() API.
+
   @Test
-  public void testHolderbility() throws Throwable {
+  public void testSetHoldability() throws Throwable {
     try (Connection connection = getConnection()) {
       try {
         connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
