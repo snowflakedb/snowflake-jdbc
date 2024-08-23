@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryOthers.class)
-public class RestRequestWiremockTest extends BaseWiremockTest {
+public class RestRequestWiremockIT extends BaseWiremockTest {
 
   String connectionResetByPeerScenario =
       "{\n"
