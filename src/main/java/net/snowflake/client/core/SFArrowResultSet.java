@@ -30,14 +30,8 @@ import net.snowflake.client.core.arrow.StructConverter;
 import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.arrow.VectorTypeConverter;
 import net.snowflake.client.core.json.Converters;
-import net.snowflake.client.jdbc.ArrowResultChunk;
+import net.snowflake.client.jdbc.*;
 import net.snowflake.client.jdbc.ArrowResultChunk.ArrowChunkIterator;
-import net.snowflake.client.jdbc.ErrorCode;
-import net.snowflake.client.jdbc.FieldMetadata;
-import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
-import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -111,6 +105,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    * timezone, set to true
    */
   private boolean formatDateWithTimezone;
+
+  private boolean arrowBatchesMode = false;
+  private boolean rowIteratorMode = false;
 
   @SnowflakeJdbcInternalApi protected Converters converters;
 
@@ -246,6 +243,31 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
   }
 
+  private ArrowResultChunk fetchNextChunk() throws SnowflakeSQLException {
+    try {
+      eventHandler.triggerStateTransition(
+              BasicEvent.QueryState.CONSUMING_RESULT,
+              String.format(
+                      BasicEvent.QueryState.CONSUMING_RESULT.getArgString(), queryId, nextChunkIndex));
+
+      ArrowResultChunk nextChunk = (ArrowResultChunk) chunkDownloader.getNextChunkToConsume();
+
+      if (nextChunk == null) {
+        throw new SnowflakeSQLLoggedException(
+                queryId,
+                session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
+                "Expect chunk but got null for chunk index " + nextChunkIndex);
+      }
+
+      return nextChunk;
+    } catch (InterruptedException ex) {
+      throw new SnowflakeSQLLoggedException(
+              queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+    }
+  }
+
   /**
    * Goto next row. If end of current chunk, update currentChunkIterator to the beginning of next
    * chunk, if any chunk not being consumed yet.
@@ -259,40 +281,21 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       return true;
     } else {
       if (nextChunkIndex < chunkCount) {
-        try {
-          eventHandler.triggerStateTransition(
-              BasicEvent.QueryState.CONSUMING_RESULT,
-              String.format(
-                  BasicEvent.QueryState.CONSUMING_RESULT.getArgString(), queryId, nextChunkIndex));
+        ArrowResultChunk nextChunk = fetchNextChunk();
 
-          ArrowResultChunk nextChunk = (ArrowResultChunk) chunkDownloader.getNextChunkToConsume();
+        currentChunkIterator.getChunk().freeData();
+        currentChunkIterator = nextChunk.getIterator(this);
+        if (currentChunkIterator.next()) {
 
-          if (nextChunk == null) {
-            throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "Expect chunk but got null for chunk index " + nextChunkIndex);
-          }
+          logger.debug(
+              "Moving to chunk index: {}, row count: {}",
+              nextChunkIndex,
+              nextChunk.getRowCount());
 
-          currentChunkIterator.getChunk().freeData();
-          currentChunkIterator = nextChunk.getIterator(this);
-          if (currentChunkIterator.next()) {
-
-            logger.debug(
-                "Moving to chunk index: {}, row count: {}",
-                nextChunkIndex,
-                nextChunk.getRowCount());
-
-            nextChunkIndex++;
-            return true;
-          } else {
-            return false;
-          }
-        } catch (InterruptedException ex) {
-          throw new SnowflakeSQLLoggedException(
-              queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+          nextChunkIndex++;
+          return true;
+        } else {
+          return false;
         }
       } else {
         // always free current chunk
@@ -428,9 +431,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   @Override
   public boolean next() throws SFException, SnowflakeSQLException {
-    if (isClosed()) {
+    if (isClosed() || arrowBatchesMode) {
       return false;
     }
+    rowIteratorMode = true;
 
     // otherwise try to fetch again
     if (fetchNextRow()) {
@@ -761,6 +765,39 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   public BigDecimal getBigDecimal(int columnIndex, int scale) throws SFException {
     BigDecimal bigDec = getBigDecimal(columnIndex);
     return bigDec == null ? null : bigDec.setScale(scale, RoundingMode.HALF_UP);
+  }
+
+  public ArrowBatches getArrowBatches() {
+    if (rowIteratorMode) {
+      return null;
+    }
+    arrowBatchesMode = true;
+    return new SFArrowBatchesIterator();
+  }
+
+  private class SFArrowBatchesIterator implements ArrowBatches {
+    private boolean firstFetched = false;
+
+    @Override
+    public long getRowCount() {
+      return 0;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return nextChunkIndex < chunkCount || !firstFetched;
+    }
+
+    @Override
+    public ArrowBatch next() throws SQLException {
+      if (!firstFetched) {
+        firstFetched = true;
+        return currentChunkIterator.getChunk().getArrowBatch(SFArrowResultSet.this);
+      } else {
+        nextChunkIndex++;
+        return fetchNextChunk().getArrowBatch(SFArrowResultSet.this);
+      }
+    }
   }
 
   @Override

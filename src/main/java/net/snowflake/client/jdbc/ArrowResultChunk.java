@@ -9,12 +9,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.fullvectorconverters.AbstractArrowFullVectorConverter;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -55,6 +57,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   private IntVector firstResultChunkSortedIndices;
   private VectorSchemaRoot root;
   private SFBaseSession session;
+  private boolean batchesMode = false;
 
   public ArrowResultChunk(
       String url,
@@ -126,6 +129,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
 
   @Override
   public void freeData() {
+    if (batchesMode) {
+      return;
+    }
     batchOfVectors.forEach(list -> list.forEach(ValueVector::close));
     this.batchOfVectors.clear();
     if (firstResultChunkSortedIndices != null) {
@@ -491,6 +497,37 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
           SqlState.INTERNAL_ERROR,
           ErrorCode.INTERNAL_ERROR.getMessageCode(),
           "Failed to sort first result chunk: " + ex.getLocalizedMessage());
+    }
+  }
+
+  public ArrowBatch getArrowBatch(DataConversionContext context) {
+    batchesMode = true;
+    return new ArrowResultBatch(context);
+  }
+
+  public class ArrowResultBatch implements ArrowBatch {
+    private DataConversionContext context;
+
+    ArrowResultBatch(DataConversionContext context){
+      this.context = context;
+    }
+
+    public List<VectorSchemaRoot> fetch() throws SnowflakeSQLException {
+      List<VectorSchemaRoot> result = new ArrayList<>();
+      for (List<ValueVector> record: batchOfVectors){
+        List<FieldVector> convertedVectors = new ArrayList<>();
+        for (int i = 0; i < record.size(); i++){
+          ValueVector vector = record.get(i);
+          convertedVectors.add(AbstractArrowFullVectorConverter.convert(rootAllocator, vector, context, session, i, null));
+        }
+        result.add(new VectorSchemaRoot(convertedVectors));
+      }
+      return result;
+    }
+
+    @Override
+    public long getRowCount() {
+      return rowCount;
     }
   }
 
