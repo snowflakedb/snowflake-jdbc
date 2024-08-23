@@ -1,13 +1,16 @@
 package net.snowflake.client.jdbc;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryOthers.class)
 public class RestRequestWiremockTest extends BaseWiremockTest {
 
   String connectionResetByPeerScenario =
