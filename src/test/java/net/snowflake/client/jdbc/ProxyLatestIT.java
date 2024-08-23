@@ -38,9 +38,9 @@ public class ProxyLatestIT extends BaseWiremockTest {
 
   private int getProxyPort(String proxyProtocol) {
     if (Objects.equals(proxyProtocol, "http")) {
-      return httpProxyPort;
+      return wiremockHttpPort;
     } else {
-      return httpsProxyPort;
+      return wiremockHttpsPort;
     }
   }
 

@@ -40,8 +40,8 @@ public abstract class BaseWiremockTest {
       "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
   protected static final String WIREMOCK_HOST = "localhost";
   protected static final String TRUST_STORE_PROPERTY = "javax.net.ssl.trustStore";
-  protected static int httpProxyPort;
-  protected static int httpsProxyPort;
+  protected static int wiremockHttpPort;
+  protected static int wiremockHttpsPort;
   private static String originalTrustStorePath;
   protected static Process wiremockStandalone;
 
@@ -78,8 +78,8 @@ public abstract class BaseWiremockTest {
         .until(
             () -> {
               try {
-                httpProxyPort = findFreePort();
-                httpsProxyPort = findFreePort();
+                wiremockHttpPort = findFreePort();
+                wiremockHttpsPort = findFreePort();
                 wiremockStandalone =
                     new ProcessBuilder(
                             "java",
@@ -94,9 +94,9 @@ public abstract class BaseWiremockTest {
                             "--proxy-pass-through",
                             "false", // pass through only matched requests
                             "--port",
-                            String.valueOf(httpProxyPort),
+                            String.valueOf(wiremockHttpPort),
                             "--https-port",
-                            String.valueOf(httpsProxyPort),
+                            String.valueOf(wiremockHttpsPort),
                             "--https-keystore",
                             getResourceURL("wiremock" + File.separator + "ca-cert.jks"),
                             "--ca-keystore",
@@ -137,7 +137,7 @@ public abstract class BaseWiremockTest {
   private static boolean isWiremockResponding() {
     try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
       HttpGet request =
-          new HttpGet(String.format("http://%s:%d/__admin/mappings", WIREMOCK_HOST, httpProxyPort));
+          new HttpGet(String.format("http://%s:%d/__admin/mappings", WIREMOCK_HOST, wiremockHttpPort));
       CloseableHttpResponse response = httpClient.execute(request);
       return response.getStatusLine().getStatusCode() == 200;
     } catch (Exception e) {
@@ -206,7 +206,7 @@ public abstract class BaseWiremockTest {
   }
 
   private int getAdminPort() {
-    return httpProxyPort;
+    return wiremockHttpPort;
   }
 
   private static String getResourceURL(String relativePath) {

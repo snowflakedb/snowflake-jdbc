@@ -52,7 +52,7 @@ public class RestRequestWiremockTest extends BaseWiremockTest {
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create().disableAutomaticRetries();
     try (CloseableHttpClient httpClient = httpClientBuilder.build()) {
       HttpGet request =
-          new HttpGet(String.format("http://%s:%d/endpoint", WIREMOCK_HOST, httpProxyPort));
+          new HttpGet(String.format("http://%s:%d/endpoint", WIREMOCK_HOST, wiremockHttpPort));
       RestRequest.execute(
           httpClient,
           request,
