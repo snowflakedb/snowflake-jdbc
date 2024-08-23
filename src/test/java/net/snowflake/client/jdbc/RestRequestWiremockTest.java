@@ -1,7 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assume.*;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import org.apache.http.client.methods.CloseableHttpResponse;
