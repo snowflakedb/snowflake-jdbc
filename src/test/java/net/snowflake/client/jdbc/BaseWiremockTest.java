@@ -137,7 +137,8 @@ public abstract class BaseWiremockTest {
   private static boolean isWiremockResponding() {
     try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
       HttpGet request =
-          new HttpGet(String.format("http://%s:%d/__admin/mappings", WIREMOCK_HOST, wiremockHttpPort));
+          new HttpGet(
+              String.format("http://%s:%d/__admin/mappings", WIREMOCK_HOST, wiremockHttpPort));
       CloseableHttpResponse response = httpClient.execute(request);
       return response.getStatusLine().getStatusCode() == 200;
     } catch (Exception e) {
