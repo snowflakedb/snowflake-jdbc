@@ -10,24 +10,30 @@ import org.apache.arrow.vector.ValueVector;
 
 public class BigIntVectorConverter extends SimpleArrowFullVectorConverter<BigIntVector> {
 
-    public BigIntVectorConverter(RootAllocator allocator, ValueVector vector, DataConversionContext context, SFBaseSession session, int idx) {
-        super(allocator, vector, context, session, idx);
-    }
+  public BigIntVectorConverter(
+      RootAllocator allocator,
+      ValueVector vector,
+      DataConversionContext context,
+      SFBaseSession session,
+      int idx) {
+    super(allocator, vector, context, session, idx);
+  }
 
-    @Override
-    protected boolean matchingType() {
-        return (vector instanceof BigIntVector);
-    }
+  @Override
+  protected boolean matchingType() {
+    return (vector instanceof BigIntVector);
+  }
 
-    @Override
-    protected BigIntVector initVector() {
-        BigIntVector resultVector = new BigIntVector(vector.getName(), allocator);
-        resultVector.allocateNew(vector.getValueCount());
-        return resultVector;
-    }
+  @Override
+  protected BigIntVector initVector() {
+    BigIntVector resultVector = new BigIntVector(vector.getName(), allocator);
+    resultVector.allocateNew(vector.getValueCount());
+    return resultVector;
+  }
 
-    @Override
-    protected void convertValue(ArrowVectorConverter from, BigIntVector to, int idx) throws SFException {
-        to.set(idx, from.toLong(idx));
-    }
+  @Override
+  protected void convertValue(ArrowVectorConverter from, BigIntVector to, int idx)
+      throws SFException {
+    to.set(idx, from.toLong(idx));
+  }
 }

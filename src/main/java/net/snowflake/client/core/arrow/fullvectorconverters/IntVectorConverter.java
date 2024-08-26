@@ -10,24 +10,29 @@ import org.apache.arrow.vector.ValueVector;
 
 public class IntVectorConverter extends SimpleArrowFullVectorConverter<IntVector> {
 
-    public IntVectorConverter(RootAllocator allocator, ValueVector vector, DataConversionContext context, SFBaseSession session, int idx) {
-        super(allocator, vector, context, session, idx);
-    }
+  public IntVectorConverter(
+      RootAllocator allocator,
+      ValueVector vector,
+      DataConversionContext context,
+      SFBaseSession session,
+      int idx) {
+    super(allocator, vector, context, session, idx);
+  }
 
-    @Override
-    protected boolean matchingType() {
-        return (vector instanceof IntVector);
-    }
+  @Override
+  protected boolean matchingType() {
+    return (vector instanceof IntVector);
+  }
 
-    @Override
-    protected IntVector initVector() {
-        IntVector resultVector = new IntVector(vector.getName(), allocator);
-        resultVector.allocateNew(vector.getValueCount());
-        return resultVector;
-    }
+  @Override
+  protected IntVector initVector() {
+    IntVector resultVector = new IntVector(vector.getName(), allocator);
+    resultVector.allocateNew(vector.getValueCount());
+    return resultVector;
+  }
 
-    @Override
-    protected void convertValue(ArrowVectorConverter from, IntVector to, int idx) throws SFException {
-        to.set(idx, from.toInt(idx));
-    }
+  @Override
+  protected void convertValue(ArrowVectorConverter from, IntVector to, int idx) throws SFException {
+    to.set(idx, from.toInt(idx));
+  }
 }

@@ -251,25 +251,25 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   private ArrowResultChunk fetchNextChunk() throws SnowflakeSQLException {
     try {
       eventHandler.triggerStateTransition(
-              BasicEvent.QueryState.CONSUMING_RESULT,
-              String.format(
-                      BasicEvent.QueryState.CONSUMING_RESULT.getArgString(), queryId, nextChunkIndex));
+          BasicEvent.QueryState.CONSUMING_RESULT,
+          String.format(
+              BasicEvent.QueryState.CONSUMING_RESULT.getArgString(), queryId, nextChunkIndex));
 
       ArrowResultChunk nextChunk = (ArrowResultChunk) chunkDownloader.getNextChunkToConsume();
 
       if (nextChunk == null) {
         throw new SnowflakeSQLLoggedException(
-                queryId,
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "Expect chunk but got null for chunk index " + nextChunkIndex);
+            queryId,
+            session,
+            ErrorCode.INTERNAL_ERROR.getMessageCode(),
+            SqlState.INTERNAL_ERROR,
+            "Expect chunk but got null for chunk index " + nextChunkIndex);
       }
 
       return nextChunk;
     } catch (InterruptedException ex) {
       throw new SnowflakeSQLLoggedException(
-              queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+          queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
     }
   }
 
@@ -293,9 +293,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         if (currentChunkIterator.next()) {
 
           logger.debug(
-              "Moving to chunk index: {}, row count: {}",
-              nextChunkIndex,
-              nextChunk.getRowCount());
+              "Moving to chunk index: {}, row count: {}", nextChunkIndex, nextChunk.getRowCount());
 
           nextChunkIndex++;
           return true;

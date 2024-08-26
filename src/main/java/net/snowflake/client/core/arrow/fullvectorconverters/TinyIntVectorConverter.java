@@ -10,24 +10,30 @@ import org.apache.arrow.vector.ValueVector;
 
 public class TinyIntVectorConverter extends SimpleArrowFullVectorConverter<TinyIntVector> {
 
-    public TinyIntVectorConverter(RootAllocator allocator, ValueVector vector, DataConversionContext context, SFBaseSession session, int idx) {
-        super(allocator, vector, context, session, idx);
-    }
+  public TinyIntVectorConverter(
+      RootAllocator allocator,
+      ValueVector vector,
+      DataConversionContext context,
+      SFBaseSession session,
+      int idx) {
+    super(allocator, vector, context, session, idx);
+  }
 
-    @Override
-    protected boolean matchingType() {
-        return (vector instanceof TinyIntVector);
-    }
+  @Override
+  protected boolean matchingType() {
+    return (vector instanceof TinyIntVector);
+  }
 
-    @Override
-    protected TinyIntVector initVector() {
-        TinyIntVector resultVector = new TinyIntVector(vector.getName(), allocator);
-        resultVector.allocateNew(vector.getValueCount());
-        return resultVector;
-    }
+  @Override
+  protected TinyIntVector initVector() {
+    TinyIntVector resultVector = new TinyIntVector(vector.getName(), allocator);
+    resultVector.allocateNew(vector.getValueCount());
+    return resultVector;
+  }
 
-    @Override
-    protected void convertValue(ArrowVectorConverter from, TinyIntVector to, int idx) throws SFException {
-        to.set(idx, from.toByte(idx));
-    }
+  @Override
+  protected void convertValue(ArrowVectorConverter from, TinyIntVector to, int idx)
+      throws SFException {
+    to.set(idx, from.toByte(idx));
+  }
 }

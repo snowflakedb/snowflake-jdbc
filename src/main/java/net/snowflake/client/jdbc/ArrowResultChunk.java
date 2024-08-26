@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
@@ -508,17 +507,19 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   public class ArrowResultBatch implements ArrowBatch {
     private DataConversionContext context;
 
-    ArrowResultBatch(DataConversionContext context){
+    ArrowResultBatch(DataConversionContext context) {
       this.context = context;
     }
 
     public List<VectorSchemaRoot> fetch() throws SnowflakeSQLException {
       List<VectorSchemaRoot> result = new ArrayList<>();
-      for (List<ValueVector> record: batchOfVectors){
+      for (List<ValueVector> record : batchOfVectors) {
         List<FieldVector> convertedVectors = new ArrayList<>();
-        for (int i = 0; i < record.size(); i++){
+        for (int i = 0; i < record.size(); i++) {
           ValueVector vector = record.get(i);
-          convertedVectors.add(AbstractArrowFullVectorConverter.convert(rootAllocator, vector, context, session, i, null));
+          convertedVectors.add(
+              AbstractArrowFullVectorConverter.convert(
+                  rootAllocator, vector, context, session, i, null));
         }
         result.add(new VectorSchemaRoot(convertedVectors));
       }
