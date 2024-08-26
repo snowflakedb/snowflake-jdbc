@@ -1825,8 +1825,7 @@ public class SnowflakeDatabaseMetaData implements DatabaseMetaData {
             logger.debug("Data type string: {}", dataTypeStr);
 
             SnowflakeColumnMetadata columnMetadata =
-                SnowflakeUtil.extractColumnMetadata(
-                    jsonNode, session.isJdbcTreatDecimalAsInt(), session);
+                new SnowflakeColumnMetadata(jsonNode, session.isJdbcTreatDecimalAsInt(), session);
 
             logger.debug("Nullable: {}", columnMetadata.isNullable());
 

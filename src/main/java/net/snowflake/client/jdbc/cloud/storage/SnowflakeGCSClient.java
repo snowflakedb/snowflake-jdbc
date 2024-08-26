@@ -1220,14 +1220,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
       StorageObjectMetadata meta,
       MatDesc matDesc,
       byte[] ivData,
-      byte[] encKeK,
+      byte[] encryptedKey,
       long contentLength) {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
     meta.addUserMetadata(
         GCS_ENCRYPTIONDATAPROP,
         buildEncryptionMetadataJSON(
             Base64.getEncoder().encodeToString(ivData),
-            Base64.getEncoder().encodeToString(encKeK)));
+            Base64.getEncoder().encodeToString(encryptedKey)));
     meta.setContentLength(contentLength);
   }
 

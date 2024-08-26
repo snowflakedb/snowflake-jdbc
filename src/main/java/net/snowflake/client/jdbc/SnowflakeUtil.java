@@ -172,68 +172,12 @@ public class SnowflakeUtil {
     throw new SnowflakeSQLException(queryId, errorMessage, sqlState, errorCode);
   }
 
+  /** This method should only be used internally */
+  @Deprecated
   public static SnowflakeColumnMetadata extractColumnMetadata(
       JsonNode colNode, boolean jdbcTreatDecimalAsInt, SFBaseSession session)
       throws SnowflakeSQLException {
-    String colName = colNode.path("name").asText();
-    String internalColTypeName = colNode.path("type").asText();
-    boolean nullable = colNode.path("nullable").asBoolean();
-    int precision = colNode.path("precision").asInt();
-    int scale = colNode.path("scale").asInt();
-    int length = colNode.path("length").asInt();
-    int dimension =
-        colNode
-            .path("dimension")
-            .asInt(); // vector dimension when checking columns via connection.getMetadata
-    int vectorDimension =
-        colNode
-            .path("vectorDimension")
-            .asInt(); // dimension when checking columns via resultSet.getMetadata
-    int finalVectorDimension = dimension > 0 ? dimension : vectorDimension;
-    boolean fixed = colNode.path("fixed").asBoolean();
-    JsonNode udtOutputType = colNode.path("outputType");
-    JsonNode extColTypeNameNode = colNode.path("extTypeName");
-    String extColTypeName = null;
-    if (!extColTypeNameNode.isMissingNode()
-        && !Strings.isNullOrEmpty(extColTypeNameNode.asText())) {
-      extColTypeName = extColTypeNameNode.asText();
-    }
-    List<FieldMetadata> fieldsMetadata =
-        getFieldMetadata(jdbcTreatDecimalAsInt, internalColTypeName, colNode);
-
-    int fixedColType = jdbcTreatDecimalAsInt && scale == 0 ? Types.BIGINT : Types.DECIMAL;
-    ColumnTypeInfo columnTypeInfo =
-        getSnowflakeType(
-            internalColTypeName,
-            extColTypeName,
-            udtOutputType,
-            session,
-            fixedColType,
-            fieldsMetadata.size() > 0,
-            isVectorType(internalColTypeName));
-
-    String colSrcDatabase = colNode.path("database").asText();
-    String colSrcSchema = colNode.path("schema").asText();
-    String colSrcTable = colNode.path("table").asText();
-
-    boolean isAutoIncrement = colNode.path("isAutoIncrement").asBoolean();
-
-    return new SnowflakeColumnMetadata(
-        colName,
-        columnTypeInfo.getColumnType(),
-        nullable,
-        length,
-        precision,
-        scale,
-        columnTypeInfo.getExtColTypeName(),
-        fixed,
-        columnTypeInfo.getSnowflakeType(),
-        fieldsMetadata,
-        colSrcDatabase,
-        colSrcSchema,
-        colSrcTable,
-        isAutoIncrement,
-        finalVectorDimension);
+    return new SnowflakeColumnMetadata(colNode, jdbcTreatDecimalAsInt, session);
   }
 
   static ColumnTypeInfo getSnowflakeType(
@@ -443,11 +387,11 @@ public class SnowflakeUtil {
     return fields;
   }
 
-  private static boolean isVectorType(String internalColumnTypeName) {
+  static boolean isVectorType(String internalColumnTypeName) {
     return internalColumnTypeName.equalsIgnoreCase("vector");
   }
 
-  private static List<FieldMetadata> getFieldMetadata(
+  static List<FieldMetadata> getFieldMetadata(
       boolean jdbcTreatDecimalAsInt, String internalColumnTypeName, JsonNode node)
       throws SnowflakeSQLLoggedException {
     if (!node.path("fields").isEmpty()) {
