@@ -235,6 +235,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
   }
 
+  @SnowflakeJdbcInternalApi
+  public long getAllocatedMemory() {
+    return rootAllocator.getAllocatedMemory();
+  }
+
   private boolean fetchNextRow() throws SnowflakeSQLException {
     if (sortResult) {
       return fetchNextRowSorted();
