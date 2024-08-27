@@ -133,7 +133,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   public abstract Date getDate(int columnIndex, TimeZone tz) throws SQLException;
 
-  public boolean getGetDateUseNullTimezone() {
+  private boolean getGetDateUseNullTimezone() {
     if (this.session != null) {
       return this.session.getGetDateUseNullTimezone();
     }
