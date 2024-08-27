@@ -114,8 +114,14 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   private boolean formatDateWithTimezone;
 
-  private boolean arrowBatchesMode = false;
-  private boolean rowIteratorMode = false;
+  /** The result set should be read either only as rows or only as batches */
+  private enum ReadingMode {
+    UNSPECIFIED,
+    ROW_MODE,
+    BATCH_MODE
+  }
+
+  private ReadingMode readingMode = ReadingMode.UNSPECIFIED;
 
   @SnowflakeJdbcInternalApi protected Converters converters;
 
@@ -258,11 +264,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   private ArrowResultChunk fetchNextChunk() throws SnowflakeSQLException {
     try {
+      logger.debug("Fetching chunk number " + nextChunkIndex);
       eventHandler.triggerStateTransition(
           BasicEvent.QueryState.CONSUMING_RESULT,
           String.format(
               BasicEvent.QueryState.CONSUMING_RESULT.getArgString(), queryId, nextChunkIndex));
-
       ArrowResultChunk nextChunk = (ArrowResultChunk) chunkDownloader.getNextChunkToConsume();
 
       if (nextChunk == null) {
@@ -273,7 +279,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
             SqlState.INTERNAL_ERROR,
             "Expect chunk but got null for chunk index " + nextChunkIndex);
       }
-
+      logger.debug("Chunk fetched successfully.");
       return nextChunk;
     } catch (InterruptedException ex) {
       throw new SnowflakeSQLLoggedException(
@@ -442,10 +448,14 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
    */
   @Override
   public boolean next() throws SFException, SnowflakeSQLException {
-    if (isClosed() || arrowBatchesMode) {
+    if (isClosed()) {
       return false;
     }
-    rowIteratorMode = true;
+    if (readingMode == ReadingMode.BATCH_MODE) {
+      logger.warn("Cannot read rows after getArrowBatches() was called.");
+      return false;
+    }
+    readingMode = ReadingMode.ROW_MODE;
 
     // otherwise try to fetch again
     if (fetchNextRow()) {
@@ -779,10 +789,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   }
 
   public ArrowBatches getArrowBatches() {
-    if (rowIteratorMode) {
+    if (readingMode == ReadingMode.ROW_MODE) {
+      logger.warn("Cannot read arrow batches after next() was called.");
       return null;
     }
-    arrowBatchesMode = true;
+    readingMode = ReadingMode.BATCH_MODE;
     return new SFArrowBatchesIterator();
   }
 
@@ -790,8 +801,8 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     private boolean firstFetched = false;
 
     @Override
-    public long getRowCount() {
-      return 0;
+    public long getRowCount() throws SQLException {
+      return resultSetSerializable.getRowCount();
     }
 
     @Override

@@ -7,5 +7,5 @@ public interface ArrowBatches {
 
   ArrowBatch next() throws SQLException;
 
-  long getRowCount();
+  long getRowCount() throws SQLException;
 }

@@ -3,11 +3,13 @@ package net.snowflake.client.core.arrow.fullvectorconverters;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.ValueVector;
 
+@SnowflakeJdbcInternalApi
 public class TinyIntVectorConverter extends SimpleArrowFullVectorConverter<TinyIntVector> {
 
   public TinyIntVectorConverter(

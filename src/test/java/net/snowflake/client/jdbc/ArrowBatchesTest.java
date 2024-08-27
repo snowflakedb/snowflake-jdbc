@@ -16,6 +16,7 @@ import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.SmallIntVector;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,6 +25,13 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   public void setUp() throws Exception {
     try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set jdbc_query_result_format = 'arrow'");
+    }
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    try (Statement statement = connection.createStatement()) {
+      statement.execute("alter session unset jdbc_query_result_format");
     }
   }
 
@@ -37,11 +45,11 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testMultipleBatches() throws Exception {
     Statement statement = connection.createStatement();
-    ;
     ResultSet rs =
         statement.executeQuery(
-            "select seq1(), seq2(), seq4(), seq8() from TABLE (generator(rowcount => 30000))");
+            "select seq1(), seq2(), seq4(), seq8() from TABLE (generator(rowcount => 300000))");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+    assertEquals(batches.getRowCount(), 300000);
     int totalRows = 0;
     ArrayList<VectorSchemaRoot> allRoots = new ArrayList<>();
     while (batches.hasNext()) {
@@ -65,7 +73,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
       root.close();
     }
     assertNoMemoryLeaks(rs);
-    assertEquals(30000, totalRows);
+    assertEquals(300000, totalRows);
   }
 
   @Test
