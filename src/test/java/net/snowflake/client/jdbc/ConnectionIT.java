@@ -12,6 +12,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -1021,20 +1022,21 @@ public class ConnectionIT extends BaseJDBCTest {
     return kvMap2Properties(params, validateDefaultParameters);
   }
 
-  //  @Test
-  //  public void testFailOverOrgAccount() throws SQLException {
-  //    // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
-  //    assumeTrue(RunningOnGithubAction.isRunningOnGithubAction());
-  //
-  //    Map<String, String> kvParams = getConnectionParameters(null, "ORG");
-  //    Properties connProps = kvMap2Properties(kvParams, false);
-  //    String uri = kvParams.get("uri");
-  //
-  //    try (Connection con = DriverManager.getConnection(uri, connProps);
-  //        Statement statement = con.createStatement()) {
-  //      statement.execute("select 1");
-  //    }
-  //  }
+  @Ignore
+  @Test
+  public void testFailOverOrgAccount() throws SQLException {
+    // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
+    assumeTrue(RunningOnGithubAction.isRunningOnGithubAction());
+
+    Map<String, String> kvParams = getConnectionParameters(null, "ORG");
+    Properties connProps = kvMap2Properties(kvParams, false);
+    String uri = kvParams.get("uri");
+
+    try (Connection con = DriverManager.getConnection(uri, connProps);
+        Statement statement = con.createStatement()) {
+      statement.execute("select 1");
+    }
+  }
 
   private class ConcurrentConnections implements Runnable {
 
