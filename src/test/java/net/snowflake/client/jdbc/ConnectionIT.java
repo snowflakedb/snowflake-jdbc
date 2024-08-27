@@ -34,11 +34,14 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
@@ -798,6 +801,36 @@ public class ConnectionIT extends BaseJDBCTest {
     assertTrue(rs1.isClosed());
     assertTrue(rs2.isClosed());
     assertTrue(rs3.isClosed());
+  }
+
+  @Test
+  public void testReadDateAfterSplittingResultSet() throws Exception {
+    Connection conn = getConnection();
+    try (Statement statement = conn.createStatement()) {
+      statement.execute("create or replace table table_with_date (int_c int, date_c date)");
+      statement.execute("insert into table_with_date values (1, '2015-10-25')");
+
+      try (ResultSet rs = statement.executeQuery("select * from table_with_date")) {
+        final SnowflakeResultSet resultSet = rs.unwrap(SnowflakeResultSet.class);
+        final List<SnowflakeResultSetSerializable> serializables =
+            resultSet.getResultSetSerializables(1 << 20);
+        final List<Date> dates =
+            serializables.stream()
+                .map(
+                    s -> {
+                      try {
+                        ResultSet srs = s.getResultSet();
+                        srs.next();
+                        return srs.getDate(2);
+                      } catch (Exception e) {
+                        throw new RuntimeException(e);
+                      }
+                    })
+                .collect(Collectors.toList());
+        assertEquals(1, dates.size());
+        assertEquals("2015-10-25", dates.get(0).toString());
+      }
+    }
   }
 
   @Test

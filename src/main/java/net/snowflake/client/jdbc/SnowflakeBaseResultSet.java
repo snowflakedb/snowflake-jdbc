@@ -64,6 +64,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   protected Map<String, Object> parameters = new HashMap<>();
   private int fetchSize = 0;
   protected SFBaseSession session = null;
+  private SnowflakeResultSetSerializableV1 serializable = null;
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   SnowflakeBaseResultSet(Statement statement) throws SQLException {
@@ -95,6 +96,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     this.resultSetType = resultSetSerializable.getResultSetType();
     this.resultSetConcurrency = resultSetSerializable.getResultSetConcurrency();
     this.resultSetHoldability = resultSetSerializable.getResultSetHoldability();
+    this.serializable = resultSetSerializable;
   }
 
   /**
@@ -131,12 +133,22 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
 
   public abstract Date getDate(int columnIndex, TimeZone tz) throws SQLException;
 
+  public boolean getGetDateUseNullTimezone() {
+    if (this.session != null) {
+      return this.session.getGetDateUseNullTimezone();
+    }
+
+    if (this.serializable != null) {
+      return this.serializable.getGetDateUseNullTimezone();
+    }
+
+    return false;
+  }
+
   @Override
   public Date getDate(int columnIndex) throws SQLException {
     raiseSQLExceptionIfResultSetIsClosed();
-    return getDate(
-        columnIndex,
-        this.session.getGetDateUseNullTimezone() ? (TimeZone) null : TimeZone.getDefault());
+    return getDate(columnIndex, getGetDateUseNullTimezone() ? null : TimeZone.getDefault());
   }
 
   @Override
