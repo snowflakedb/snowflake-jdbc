@@ -504,6 +504,30 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     return new ArrowResultBatch(context);
   }
 
+  private boolean sortFirstResultChunkEnabled() {
+    return enableSortFirstResultChunk;
+  }
+
+  /**
+   * Empty arrow result chunk implementation. Used when rowset from server is null or empty or in
+   * testing
+   */
+  private static class EmptyArrowResultChunk extends ArrowResultChunk {
+    EmptyArrowResultChunk() {
+      super("", 0, 0, 0, null, null);
+    }
+
+    @Override
+    public final long computeNeededChunkMemory() {
+      return 0;
+    }
+
+    @Override
+    public final void freeData() {
+      // do nothing
+    }
+  }
+
   public class ArrowResultBatch implements ArrowBatch {
     private DataConversionContext context;
 
@@ -528,30 +552,6 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     @Override
     public long getRowCount() {
       return rowCount;
-    }
-  }
-
-  private boolean sortFirstResultChunkEnabled() {
-    return enableSortFirstResultChunk;
-  }
-
-  /**
-   * Empty arrow result chunk implementation. Used when rowset from server is null or empty or in
-   * testing
-   */
-  private static class EmptyArrowResultChunk extends ArrowResultChunk {
-    EmptyArrowResultChunk() {
-      super("", 0, 0, 0, null, null);
-    }
-
-    @Override
-    public final long computeNeededChunkMemory() {
-      return 0;
-    }
-
-    @Override
-    public final void freeData() {
-      // do nothing
     }
   }
 }

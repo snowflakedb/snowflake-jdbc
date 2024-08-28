@@ -279,7 +279,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
             SqlState.INTERNAL_ERROR,
             "Expect chunk but got null for chunk index " + nextChunkIndex);
       }
-      logger.debug("Chunk fetched successfully.");
+      logger.debug("Chunk number " + nextChunkIndex + " fetched successfully.");
       return nextChunk;
     } catch (InterruptedException ex) {
       throw new SnowflakeSQLLoggedException(
