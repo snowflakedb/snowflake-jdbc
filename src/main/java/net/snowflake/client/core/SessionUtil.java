@@ -240,7 +240,7 @@ public class SessionUtil {
     // authenticator is null, then jdbc will decide authenticator depends on
     // if privateKey is specified or not. If yes, authenticator type will be
     // SNOWFLAKE_JWT, otherwise it will use SNOWFLAKE.
-    return (loginInput.getPrivateKey() != null || loginInput.getPrivateKeyFile() != null)
+    return loginInput.isPrivateKeyProvided()
         ? ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT
         : ClientAuthnDTO.AuthenticatorType.SNOWFLAKE;
   }
@@ -422,7 +422,8 @@ public class SessionUtil {
             new SessionUtilKeyPair(
                 loginInput.getPrivateKey(),
                 loginInput.getPrivateKeyFile(),
-                loginInput.getPrivateKeyFilePwd(),
+                loginInput.getPrivateKeyBase64(),
+                loginInput.getPrivateKeyPwd(),
                 loginInput.getAccountName(),
                 loginInput.getUserName());
 
@@ -677,7 +678,8 @@ public class SessionUtil {
                     new SessionUtilKeyPair(
                         loginInput.getPrivateKey(),
                         loginInput.getPrivateKeyFile(),
-                        loginInput.getPrivateKeyFilePwd(),
+                        loginInput.getPrivateKeyBase64(),
+                        loginInput.getPrivateKeyPwd(),
                         loginInput.getAccountName(),
                         loginInput.getUserName());
 
@@ -1725,7 +1727,8 @@ public class SessionUtil {
    *
    * @param privateKey private key
    * @param privateKeyFile path to private key file
-   * @param privateKeyFilePwd password for private key file
+   * @param privateKeyBase64 base64 encoded content of the private key file
+   * @param privateKeyPwd password for private key file or base64 encoded private key
    * @param accountName account name
    * @param userName user name
    * @return JWT token
@@ -1734,14 +1737,39 @@ public class SessionUtil {
   public static String generateJWTToken(
       PrivateKey privateKey,
       String privateKeyFile,
-      String privateKeyFilePwd,
+      String privateKeyBase64,
+      String privateKeyPwd,
       String accountName,
       String userName)
       throws SFException {
     SessionUtilKeyPair s =
         new SessionUtilKeyPair(
-            privateKey, privateKeyFile, privateKeyFilePwd, accountName, userName);
+            privateKey, privateKeyFile, privateKeyBase64, privateKeyPwd, accountName, userName);
     return s.issueJwtToken();
+  }
+
+  /**
+   * Helper function to generate a JWT token. Use {@link #generateJWTToken(PrivateKey, String,
+   * String, String, String, String)}
+   *
+   * @param privateKey private key
+   * @param privateKeyFile path to private key file
+   * @param privateKeyFilePwd password for private key file
+   * @param accountName account name
+   * @param userName user name
+   * @return JWT token
+   * @throws SFException if Snowflake error occurs
+   */
+  @Deprecated
+  public static String generateJWTToken(
+      PrivateKey privateKey,
+      String privateKeyFile,
+      String privateKeyFilePwd,
+      String accountName,
+      String userName)
+      throws SFException {
+    return generateJWTToken(
+        privateKey, privateKeyFile, null, privateKeyFilePwd, accountName, userName);
   }
 
   /**
