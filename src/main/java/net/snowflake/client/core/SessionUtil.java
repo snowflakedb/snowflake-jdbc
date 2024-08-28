@@ -368,6 +368,7 @@ public class SessionUtil {
     String newClientForUpgrade;
     int healthCheckInterval = DEFAULT_HEALTH_CHECK_INTERVAL;
     int httpClientSocketTimeout = loginInput.getSocketTimeoutInMillis();
+    int httpClientConnectionTimeout = loginInput.getConnectionTimeoutInMillis();
     final ClientAuthnDTO.AuthenticatorType authenticatorType = getAuthenticator(loginInput);
     Map<String, Object> commonParams;
 
@@ -865,13 +866,13 @@ public class SessionUtil {
 
         final RequestConfig requestConfig =
             RequestConfig.copy(HttpUtil.getRequestConfigWithoutCookies())
-                .setConnectTimeout((int) loginInput.getConnectionTimeout().toMillis())
+                .setConnectTimeout(httpClientConnectionTimeout)
                 .setSocketTimeout(httpClientSocketTimeout)
                 .build();
 
         HttpUtil.setRequestConfig(requestConfig);
 
-        logger.debug("Adjusted connection timeout to: {}", loginInput.getConnectionTimeout());
+        logger.debug("Adjusted connection timeout to: {}", httpClientConnectionTimeout);
 
         logger.debug("Adjusted socket timeout to: {}", httpClientSocketTimeout);
       }
@@ -907,6 +908,7 @@ public class SessionUtil {
             databaseMajorVersion,
             databaseMinorVersion,
             httpClientSocketTimeout,
+            httpClientConnectionTimeout,
             sessionDatabase,
             sessionSchema,
             sessionRole,
