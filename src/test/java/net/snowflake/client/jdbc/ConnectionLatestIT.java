@@ -1559,4 +1559,17 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       }
     }
   }
+
+  /** Added in > 3.14.5 and modified in > 3.18.0 */
+  @Test
+  public void shouldGetOverridenConnectionAndSocketTimeouts() throws Exception {
+    Properties paramProperties = new Properties();
+    paramProperties.put("HTTP_CLIENT_CONNECTION_TIMEOUT", 100);
+    paramProperties.put("HTTP_CLIENT_SOCKET_TIMEOUT", 200);
+
+    try (Connection connection = getConnection(paramProperties)) {
+      assertEquals(Duration.ofMillis(100), HttpUtil.getConnectionTimeout());
+      assertEquals(Duration.ofMillis(200), HttpUtil.getSocketTimeout());
+    }
+  }
 }

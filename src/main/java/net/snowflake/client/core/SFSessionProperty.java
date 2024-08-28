@@ -96,7 +96,11 @@ public enum SFSessionProperty {
   // Used as a fix for issue SNOW-354859. Remove with snowflake-jdbc version 4.x with BCR changes.
   JDBC_GET_DATE_USE_NULL_TIMEZONE("JDBC_GET_DATE_USE_NULL_TIMEZONE", false, Boolean.class),
 
-  BROWSER_RESPONSE_TIMEOUT("BROWSER_RESPONSE_TIMEOUT", false, Integer.class);
+  BROWSER_RESPONSE_TIMEOUT("BROWSER_RESPONSE_TIMEOUT", false, Integer.class),
+
+  HTTP_CLIENT_CONNECTION_TIMEOUT("HTTP_CLIENT_CONNECTION_TIMEOUT", false, Integer.class),
+
+  HTTP_CLIENT_SOCKET_TIMEOUT("HTTP_CLIENT_SOCKET_TIMEOUT", false, Integer.class);
 
   // property key in string
   private String propertyKey;
