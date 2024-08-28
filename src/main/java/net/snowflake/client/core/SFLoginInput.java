@@ -227,8 +227,8 @@ public class SFLoginInput {
     return this;
   }
 
-  Duration getConnectionTimeout() {
-    return connectionTimeout;
+  int getConnectionTimeoutInMillis() {
+    return (int) connectionTimeout.toMillis();
   }
 
   SFLoginInput setConnectionTimeout(Duration connectionTimeout) {

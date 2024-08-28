@@ -112,7 +112,7 @@ public class SFSession extends SFBaseSession {
 
   private int authTimeout = 0;
   private boolean enableCombineDescribe = false;
-  private final Duration httpClientConnectionTimeout = HttpUtil.getConnectionTimeout();
+  private Duration httpClientConnectionTimeout = HttpUtil.getConnectionTimeout();
   private Duration httpClientSocketTimeout = HttpUtil.getSocketTimeout();
   // whether we try to simulate a socket timeout (a default value of 0 means
   // no simulation). The value is in milliseconds
@@ -561,7 +561,7 @@ public class SFSession extends SFBaseSession {
             + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
             + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
             + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
-            + " query timeout: {}, tracing: {}, private key file: {}, private key base64 is {}, private key file pwd is {},"
+            + " query timeout: {}, connection timeout: {}, socket timeout: {}, tracing: {}, private key file: {}, private key pwd is {},"
             + " enable_diagnostics: {}, diagnostics_allowlist_path: {},"
             + " session parameters: client store temporary credential: {}, gzip disabled: {}, browser response timeout: {}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
@@ -588,6 +588,8 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.RETRY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.NETWORK_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_SOCKET_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.TRACING),
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
         SFLoggerUtil.isVariableProvided(
@@ -637,8 +639,18 @@ public class SFSession extends SFBaseSession {
         .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
-        .setConnectionTimeout(httpClientConnectionTimeout)
-        .setSocketTimeout(httpClientSocketTimeout)
+        .setConnectionTimeout(
+            connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT) != null
+                ? Duration.ofMillis(
+                    (int)
+                        connectionPropertiesMap.get(
+                            SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT))
+                : httpClientConnectionTimeout)
+        .setSocketTimeout(
+            connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_SOCKET_TIMEOUT) != null
+                ? Duration.ofMillis(
+                    (int) connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_SOCKET_TIMEOUT))
+                : httpClientSocketTimeout)
         .setAppId((String) connectionPropertiesMap.get(SFSessionProperty.APP_ID))
         .setAppVersion((String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
         .setSessionParameters(sessionParametersMap)
@@ -677,6 +689,8 @@ public class SFSession extends SFBaseSession {
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
+    HttpUtil.setConnectionTimeout(loginInput.getConnectionTimeoutInMillis());
+    HttpUtil.setSocketTimeout(loginInput.getSocketTimeoutInMillis());
 
     runDiagnosticsIfEnabled();
 
@@ -693,6 +707,7 @@ public class SFSession extends SFBaseSession {
     setDatabaseMajorVersion(loginOutput.getDatabaseMajorVersion());
     setDatabaseMinorVersion(loginOutput.getDatabaseMinorVersion());
     httpClientSocketTimeout = loginOutput.getHttpClientSocketTimeout();
+    httpClientConnectionTimeout = loginOutput.getHttpClientConnectionTimeout();
     masterTokenValidityInSeconds = loginOutput.getMasterTokenValidityInSeconds();
     setDatabase(loginOutput.getSessionDatabase());
     setSchema(loginOutput.getSessionSchema());
