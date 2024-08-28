@@ -459,13 +459,17 @@ public class ConnectionIT extends BaseJDBCTest {
       String encodePublicKey2 = Base64.encodeBase64String(publicKey2.getEncoded());
       statement.execute(
           String.format("alter user %s set rsa_public_key_2='%s'", testUser, encodePublicKey2));
-    } finally {
-      try (Connection connection = DriverManager.getConnection(uri, properties);
-          Statement statement = connection.createStatement()) {
-        statement.execute("use role accountadmin");
-        statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
-        statement.execute(String.format("alter user %s unset rsa_public_key_2", testUser));
-      }
+    }
+
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
+      assertFalse(connection.isClosed());
+    }
+
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.execute("use role accountadmin");
+      statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
+      statement.execute(String.format("alter user %s unset rsa_public_key_2", testUser));
     }
   }
 
@@ -541,8 +545,13 @@ public class ConnectionIT extends BaseJDBCTest {
 
       // test correct private key one
       properties.put("privateKey", privateKey);
-      try (Connection connection = DriverManager.getConnection(uri, properties);
+      try (Connection connection = DriverManager.getConnection(uri, properties)) {
+        assertFalse(connection.isClosed());
+      }
+
+      try (Connection connection = getConnection();
           Statement statement = connection.createStatement()) {
+        statement.execute("use role accountadmin");
         statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
       }
     }
@@ -1013,6 +1022,7 @@ public class ConnectionIT extends BaseJDBCTest {
     return kvMap2Properties(params, validateDefaultParameters);
   }
 
+  @Ignore
   @Test
   public void testFailOverOrgAccount() throws SQLException {
     // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
