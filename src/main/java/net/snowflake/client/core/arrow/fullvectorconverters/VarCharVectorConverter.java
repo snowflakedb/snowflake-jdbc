@@ -10,24 +10,30 @@ import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.util.Text;
 
 public class VarCharVectorConverter extends SimpleArrowFullVectorConverter<VarCharVector> {
-    public VarCharVectorConverter(RootAllocator allocator, ValueVector vector, DataConversionContext context, SFBaseSession session, int idx) {
-        super(allocator, vector, context, session, idx);
-    }
+  public VarCharVectorConverter(
+      RootAllocator allocator,
+      ValueVector vector,
+      DataConversionContext context,
+      SFBaseSession session,
+      int idx) {
+    super(allocator, vector, context, session, idx);
+  }
 
-    @Override
-    protected boolean matchingType() {
-        return (vector instanceof VarCharVector);
-    }
+  @Override
+  protected boolean matchingType() {
+    return (vector instanceof VarCharVector);
+  }
 
-    @Override
-    protected VarCharVector initVector() {
-        VarCharVector resultVector = new VarCharVector(vector.getName(), allocator);
-        resultVector.allocateNew(vector.getValueCount());
-        return resultVector;
-    }
+  @Override
+  protected VarCharVector initVector() {
+    VarCharVector resultVector = new VarCharVector(vector.getName(), allocator);
+    resultVector.allocateNew(vector.getValueCount());
+    return resultVector;
+  }
 
-    @Override
-    protected void convertValue(ArrowVectorConverter from, VarCharVector to, int idx) throws SFException {
-        to.set(idx, new Text(from.toString(idx)));
-    }
+  @Override
+  protected void convertValue(ArrowVectorConverter from, VarCharVector to, int idx)
+      throws SFException {
+    to.set(idx, new Text(from.toString(idx)));
+  }
 }

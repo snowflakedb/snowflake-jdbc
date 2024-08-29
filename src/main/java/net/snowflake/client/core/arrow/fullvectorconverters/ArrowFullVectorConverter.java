@@ -115,15 +115,18 @@ public interface ArrowFullVectorConverter {
           case DECIMAL:
             return new DecimalVectorConverter(allocator, vector, context, session, idx).convert();
           case STRUCT:
-            return new StructVectorConverter(allocator, vector, context, session, idx, null).convert();
+            return new StructVectorConverter(allocator, vector, context, session, idx, null)
+                .convert();
           case LIST:
-            return new ListVectorConverter(allocator, vector, context, session, idx, null).convert();
+            return new ListVectorConverter(allocator, vector, context, session, idx, null)
+                .convert();
           case VARCHAR:
             return new VarCharVectorConverter(allocator, vector, context, session, idx).convert();
           case MAP:
             return new MapVectorConverter(allocator, vector, context, session, idx, null).convert();
           case FIXED_SIZE_LIST:
-            return new FixedSizeListVectorConverter(allocator, vector, context, session, idx, null).convert();
+            return new FixedSizeListVectorConverter(allocator, vector, context, session, idx, null)
+                .convert();
         }
       }
     } catch (SFException ex) {

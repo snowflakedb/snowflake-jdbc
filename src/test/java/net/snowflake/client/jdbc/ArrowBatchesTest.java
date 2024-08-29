@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import net.snowflake.client.core.SFArrowResultSet;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.DecimalVector;
@@ -37,7 +36,8 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set jdbc_query_result_format = 'arrow'");
       statement.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
-      statement.execute("alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
+      statement.execute(
+          "alter session set FORCE_ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
     }
   }
 
@@ -64,7 +64,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         statement.executeQuery(
             "select seq1(), seq2(), seq4(), seq8() from TABLE (generator(rowcount => 2))");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-    //assertEquals(batches.getRowCount(), 300000);
+    // assertEquals(batches.getRowCount(), 300000);
     int totalRows = 0;
     ArrayList<VectorSchemaRoot> allRoots = new ArrayList<>();
     while (batches.hasNext()) {
@@ -262,7 +262,9 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testVarCharBatch() throws Exception {
     Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select 'Gallia est ' union select 'omnis divisa ' union select 'in partes tres';");
+    ResultSet rs =
+        statement.executeQuery(
+            "select 'Gallia est ' union select 'omnis divisa ' union select 'in partes tres';");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
     int totalRows = 0;
@@ -284,11 +286,14 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
 
     rs.close();
 
-    List<Text> expected = new ArrayList<Text>() {{
-      add(new Text("Gallia est "));
-      add(new Text("omnis divisa "));
-      add(new Text("in partes tres"));
-    }};
+    List<Text> expected =
+        new ArrayList<Text>() {
+          {
+            add(new Text("Gallia est "));
+            add(new Text("omnis divisa "));
+            add(new Text("in partes tres"));
+          }
+        };
 
     assertTrue(values.containsAll(expected));
 
@@ -318,8 +323,10 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   public void testStructBatch() throws Exception {
     Statement statement = connection.createStatement();
     ;
-    ResultSet rs = statement.executeQuery("select {'a': 3.1, 'b': 3.2}::object(a decimal(18, 3), b decimal(18, 3))" +
-            " union select {'a': 2.2, 'b': 2.3}::object(a decimal(18, 3), b decimal(18, 3))");
+    ResultSet rs =
+        statement.executeQuery(
+            "select {'a': 3.1, 'b': 3.2}::object(a decimal(18, 3), b decimal(18, 3))"
+                + " union select {'a': 2.2, 'b': 2.3}::object(a decimal(18, 3), b decimal(18, 3))");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
     int totalRows = 0;
@@ -342,10 +349,13 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     }
     rs.close();
 
-    List<Pair<BigDecimal, BigDecimal>> expected = new ArrayList<Pair<BigDecimal, BigDecimal>>() {{
-      add(new Pair<>(new BigDecimal("3.100"), new BigDecimal("3.200")));
-      add(new Pair<>(new BigDecimal("2.200"), new BigDecimal("2.300")));
-    }};
+    List<Pair<BigDecimal, BigDecimal>> expected =
+        new ArrayList<Pair<BigDecimal, BigDecimal>>() {
+          {
+            add(new Pair<>(new BigDecimal("3.100"), new BigDecimal("3.200")));
+            add(new Pair<>(new BigDecimal("2.200"), new BigDecimal("2.300")));
+          }
+        };
 
     assertTrue(values.containsAll(expected));
 
@@ -355,7 +365,9 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testListBatch() throws Exception {
     Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select array_construct(1.2, 2.3)::array(decimal(18, 3)) union all select array_construct(2.1, 1.0)::array(decimal(18, 3))");
+    ResultSet rs =
+        statement.executeQuery(
+            "select array_construct(1.2, 2.3)::array(decimal(18, 3)) union all select array_construct(2.1, 1.0)::array(decimal(18, 3))");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
     int totalRows = 0;
@@ -376,16 +388,25 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     }
     rs.close();
 
-    List<List<BigDecimal>> expected = new ArrayList<List<BigDecimal>>() {{
-      add(new ArrayList<BigDecimal>() {{
-        add(new BigDecimal("1.200"));
-        add(new BigDecimal("2.300"));
-      }});
-      add(new ArrayList<BigDecimal>() {{
-        add(new BigDecimal("2.100"));
-        add(new BigDecimal("1.000"));
-      }});
-    }};
+    List<List<BigDecimal>> expected =
+        new ArrayList<List<BigDecimal>>() {
+          {
+            add(
+                new ArrayList<BigDecimal>() {
+                  {
+                    add(new BigDecimal("1.200"));
+                    add(new BigDecimal("2.300"));
+                  }
+                });
+            add(
+                new ArrayList<BigDecimal>() {
+                  {
+                    add(new BigDecimal("2.100"));
+                    add(new BigDecimal("1.000"));
+                  }
+                });
+          }
+        };
 
     assertTrue(expected.containsAll(values));
 
@@ -396,8 +417,10 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   public void testMapBatch() throws Exception {
     Statement statement = connection.createStatement();
     ;
-    ResultSet rs = statement.executeQuery("select {'a': 3.1, 'b': 4.3}::map(varchar, decimal(18,3)) union" +
-            " select {'c': 2.2, 'd': 1.5}::map(varchar, decimal(18,3))");
+    ResultSet rs =
+        statement.executeQuery(
+            "select {'a': 3.1, 'b': 4.3}::map(varchar, decimal(18,3)) union"
+                + " select {'c': 2.2, 'd': 1.5}::map(varchar, decimal(18,3))");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
     int totalRows = 0;
@@ -410,8 +433,10 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         totalRows += root.getRowCount();
         assertTrue(root.getVector(0) instanceof MapVector);
         MapVector vector = (MapVector) root.getVector(0);
-        VarCharVector keyVector = (VarCharVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(0);
-        DecimalVector valueVector = (DecimalVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(1);
+        VarCharVector keyVector =
+            (VarCharVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(0);
+        DecimalVector valueVector =
+            (DecimalVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(1);
         for (int i = 0; i < root.getRowCount(); i++) {
           int startIndex = vector.getElementStartIndex(i);
           int endIndex = vector.getElementEndIndex(i);
@@ -427,18 +452,21 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     rs.close();
 
     // All expected values are present
-    List<Map<Text, BigDecimal>> expected = Stream.of(
-            new HashMap<Text, BigDecimal>() {
-              {put(new Text("a"), new BigDecimal("3.100"));
-                put(new Text("b"), new BigDecimal("4.300"));
-              }
-            },
-            new HashMap<Text, BigDecimal>(){
-              {
-                put(new Text("c"), new BigDecimal("2.200"));
-                put(new Text("d"), new BigDecimal("1.500"));
-              }
-            }).collect(Collectors.toList());
+    List<Map<Text, BigDecimal>> expected =
+        Stream.of(
+                new HashMap<Text, BigDecimal>() {
+                  {
+                    put(new Text("a"), new BigDecimal("3.100"));
+                    put(new Text("b"), new BigDecimal("4.300"));
+                  }
+                },
+                new HashMap<Text, BigDecimal>() {
+                  {
+                    put(new Text("c"), new BigDecimal("2.200"));
+                    put(new Text("d"), new BigDecimal("1.500"));
+                  }
+                })
+            .collect(Collectors.toList());
 
     assertTrue(values.containsAll(expected));
 
@@ -448,7 +476,9 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testFixedSizeListBatch() throws Exception {
     Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select [1, 2]::vector(int, 2) union all select [3, 4]::vector(int, 2)");
+    ResultSet rs =
+        statement.executeQuery(
+            "select [1, 2]::vector(int, 2) union all select [3, 4]::vector(int, 2)");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
     int totalRows = 0;
@@ -469,20 +499,28 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     }
     rs.close();
 
-    List<List<Integer>> expected = new ArrayList<List<Integer>>() {{
-      add(new ArrayList<Integer>() {{
-        add(1);
-        add(2);
-      }});
-      add(new ArrayList<Integer>() {{
-        add(3);
-        add(4);
-      }});
-    }};
+    List<List<Integer>> expected =
+        new ArrayList<List<Integer>>() {
+          {
+            add(
+                new ArrayList<Integer>() {
+                  {
+                    add(1);
+                    add(2);
+                  }
+                });
+            add(
+                new ArrayList<Integer>() {
+                  {
+                    add(3);
+                    add(4);
+                  }
+                });
+          }
+        };
 
     assertTrue(expected.containsAll(values));
 
     assertEquals(2, totalRows);
   }
-
 }
