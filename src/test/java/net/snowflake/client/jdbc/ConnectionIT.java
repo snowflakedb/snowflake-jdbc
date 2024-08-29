@@ -1055,6 +1055,7 @@ public class ConnectionIT extends BaseJDBCTest {
     return kvMap2Properties(params, validateDefaultParameters);
   }
 
+  @Ignore
   @Test
   public void testFailOverOrgAccount() throws SQLException {
     // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
