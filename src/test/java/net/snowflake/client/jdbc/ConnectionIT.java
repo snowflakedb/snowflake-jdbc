@@ -1022,6 +1022,7 @@ public class ConnectionIT extends BaseJDBCTest {
     return kvMap2Properties(params, validateDefaultParameters);
   }
 
+  // TODO: This is a temporary Ignore to unblock merging PRs until ORG account is unlocked.
   @Ignore
   @Test
   public void testFailOverOrgAccount() throws SQLException {

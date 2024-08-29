@@ -394,6 +394,21 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     this.properties.put("JDBC_GET_DATE_USE_NULL_TIMEZONE", getDateUseNullTimezone);
   }
 
+  public void setEnableClientRequestMfaToken(boolean enableClientRequestMfaToken) {
+    this.setAuthenticator(AUTHENTICATOR_USERNAME_PASSWORD_MFA);
+    this.properties.put(
+        SFSessionProperty.ENABLE_CLIENT_REQUEST_MFA_TOKEN.getPropertyKey(),
+        enableClientRequestMfaToken);
+  }
+
+  public void setEnableClientStoreTemporaryCredential(
+      boolean enableClientStoreTemporaryCredential) {
+    this.setAuthenticator(AUTHENTICATOR_EXTERNAL_BROWSER);
+    this.properties.put(
+        SFSessionProperty.ENABLE_CLIENT_STORE_TEMPORARY_CREDENTIAL.getPropertyKey(),
+        enableClientStoreTemporaryCredential);
+  }
+
   public void setBrowserResponseTimeout(int seconds) {
     this.setAuthenticator(AUTHENTICATOR_EXTERNAL_BROWSER);
     this.properties.put("BROWSER_RESPONSE_TIMEOUT", Integer.toString(seconds));
