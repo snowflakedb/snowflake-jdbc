@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.RootAllocator;
@@ -12,6 +13,7 @@ import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.FixedSizeListVector;
 import org.apache.arrow.vector.types.pojo.Field;
 
+@SnowflakeJdbcInternalApi
 public class FixedSizeListVectorConverter implements ArrowFullVectorConverter {
   protected RootAllocator allocator;
   protected ValueVector vector;

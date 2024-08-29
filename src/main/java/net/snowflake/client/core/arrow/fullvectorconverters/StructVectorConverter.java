@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.RootAllocator;
@@ -16,6 +17,7 @@ import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.TransferPair;
 
+@SnowflakeJdbcInternalApi
 public class StructVectorConverter implements ArrowFullVectorConverter {
   protected RootAllocator allocator;
   protected ValueVector vector;
@@ -55,7 +57,7 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
 
     List<Field> convertedFields =
         convertedVectors.stream()
-            .map(convertedVector -> convertedVector.getField())
+            .map(ValueVector::getField)
             .collect(Collectors.toList());
     StructVector converted = StructVector.empty(vector.getName(), allocator);
     converted.allocateNew();
