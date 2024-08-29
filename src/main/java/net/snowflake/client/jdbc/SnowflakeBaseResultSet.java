@@ -63,8 +63,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   protected SnowflakeResultSetMetaDataV1 resultSetMetaData = null;
   protected Map<String, Object> parameters = new HashMap<>();
   private int fetchSize = 0;
-  protected SFBaseSession session = null;
-  private SnowflakeResultSetSerializableV1 serializable = null;
+  protected final SFBaseSession session;
+  private final SnowflakeResultSetSerializableV1 serializable;
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
   SnowflakeBaseResultSet(Statement statement) throws SQLException {
@@ -72,14 +72,19 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     this.resultSetType = statement.getResultSetType();
     this.resultSetConcurrency = statement.getResultSetConcurrency();
     this.resultSetHoldability = statement.getResultSetHoldability();
+    this.session = maybeGetSession(statement);
+    this.serializable = null;
+  }
+
+  private static SFBaseSession maybeGetSession(Statement statement) {
     try {
-      this.session = statement.unwrap(SnowflakeStatementV1.class).connection.getSFBaseSession();
+      return statement.unwrap(SnowflakeStatementV1.class).connection.getSFBaseSession();
     } catch (SQLException e) {
       // This exception shouldn't be hit. Statement class should be able to be unwrapped.
       logger.error(
           "Unable to unwrap SnowflakeStatementV1 class to retrieve session. Session is null.",
           false);
-      this.session = null;
+      return null;
     }
   }
 
@@ -96,6 +101,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     this.resultSetType = resultSetSerializable.getResultSetType();
     this.resultSetConcurrency = resultSetSerializable.getResultSetConcurrency();
     this.resultSetHoldability = resultSetSerializable.getResultSetHoldability();
+    this.session = null;
     this.serializable = resultSetSerializable;
   }
 
@@ -109,6 +115,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     this.resultSetConcurrency = 0;
     this.resultSetHoldability = 0;
     this.statement = new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
+    this.session = null;
+    this.serializable = null;
   }
 
   @Override

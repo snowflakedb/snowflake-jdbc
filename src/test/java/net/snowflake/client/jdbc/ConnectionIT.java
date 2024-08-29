@@ -33,6 +33,7 @@ import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -41,7 +42,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
 import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
@@ -812,21 +812,15 @@ public class ConnectionIT extends BaseJDBCTest {
 
       try (ResultSet rs = statement.executeQuery("select * from table_with_date")) {
         final SnowflakeResultSet resultSet = rs.unwrap(SnowflakeResultSet.class);
+        final long arbitrarySizeInBytes = 1024;
         final List<SnowflakeResultSetSerializable> serializables =
-            resultSet.getResultSetSerializables(1 << 20);
-        final List<Date> dates =
-            serializables.stream()
-                .map(
-                    s -> {
-                      try {
-                        ResultSet srs = s.getResultSet();
-                        srs.next();
-                        return srs.getDate(2);
-                      } catch (Exception e) {
-                        throw new RuntimeException(e);
-                      }
-                    })
-                .collect(Collectors.toList());
+            resultSet.getResultSetSerializables(arbitrarySizeInBytes);
+        final ArrayList<Date> dates = new ArrayList<>();
+        for (SnowflakeResultSetSerializable s : serializables) {
+          ResultSet srs = s.getResultSet();
+          srs.next();
+          dates.add(srs.getDate(2));
+        }
         assertEquals(1, dates.size());
         assertEquals("2015-10-25", dates.get(0).toString());
       }
