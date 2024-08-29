@@ -20,12 +20,17 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Properties;
+import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -325,6 +330,28 @@ public class SnowflakeMFACacheTest {
       testUnavailableLSSWindowsHelper();
     } finally {
       CredentialManager.getInstance().resetSecureStorageManager();
+    }
+  }
+
+  // Run this test manually to test disabling the client request MFA token. Use an MFA
+  // authentication enabled user. This is valid for versions after 3.18.0.
+  @Test
+  @Ignore
+  public void testEnableClientRequestMfaToken() throws SQLException {
+    Map<String, String> params = AbstractDriverIT.getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("user"));
+    ds.setPassword(params.get("password"));
+    ds.setEnableClientRequestMfaToken(false);
+
+    for (int i = 0; i < 3; i++) {
+      try (Connection con = ds.getConnection();
+          ResultSet rs = con.createStatement().executeQuery("SELECT 1")) {
+        assertTrue(rs.next());
+      }
     }
   }
 }

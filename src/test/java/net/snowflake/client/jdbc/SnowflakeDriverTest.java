@@ -427,7 +427,7 @@ public class SnowflakeDriverTest {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
     Properties info = new Properties();
     String jdbcConnectString =
-        "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com/?private_key_file=C:\\temp\\rsa_key.p8&private_key_file_pwd=test_password&user=test_user";
+        "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com/?private_key_file=C:\\temp\\rsa_key.p8&private_key_pwd=test_password&user=test_user";
     try {
       snowflakeDriver.connect(jdbcConnectString, info);
       fail();

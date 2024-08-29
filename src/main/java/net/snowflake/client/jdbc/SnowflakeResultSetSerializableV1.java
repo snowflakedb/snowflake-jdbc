@@ -155,6 +155,10 @@ public class SnowflakeResultSetSerializableV1
   int resultSetType;
   int resultSetConcurrency;
   int resultSetHoldability;
+  boolean treatNTZAsUTC;
+  boolean formatDateWithTimezone;
+  boolean useSessionTimezone;
+  boolean getDateUseNullTimezone;
 
   // Below are some metadata fields parsed from the result JSON node
   String queryId;
@@ -173,9 +177,6 @@ public class SnowflakeResultSetSerializableV1
   long sendResultTime;
   List<MetaDataOfBinds> metaDataOfBinds = new ArrayList<>();
   QueryResultFormat queryResultFormat;
-  boolean treatNTZAsUTC;
-  boolean formatDateWithTimezone;
-  boolean useSessionTimezone;
   int sessionClientMemoryLimit;
 
   // Below fields are transient, they are generated from parameters
@@ -235,6 +236,7 @@ public class SnowflakeResultSetSerializableV1
     this.treatNTZAsUTC = toCopy.treatNTZAsUTC;
     this.formatDateWithTimezone = toCopy.formatDateWithTimezone;
     this.useSessionTimezone = toCopy.useSessionTimezone;
+    this.getDateUseNullTimezone = toCopy.getDateUseNullTimezone;
 
     // Below are some metadata fields parsed from the result JSON node
     this.queryId = toCopy.queryId;
@@ -438,6 +440,7 @@ public class SnowflakeResultSetSerializableV1
     this.treatNTZAsUTC = sfSession.getTreatNTZAsUTC();
     this.formatDateWithTimezone = sfSession.getFormatDateWithTimezone();
     this.useSessionTimezone = sfSession.getUseSessionTimezone();
+    this.getDateUseNullTimezone = sfSession.getGetDateUseNullTimezone();
 
     // setup transient fields from parameter
     this.setupFieldsFromParameters();
@@ -699,6 +702,10 @@ public class SnowflakeResultSetSerializableV1
 
   public boolean getUseSessionTimezone() {
     return useSessionTimezone;
+  }
+
+  public boolean getGetDateUseNullTimezone() {
+    return getDateUseNullTimezone;
   }
 
   public Optional<SFBaseSession> getSession() {
