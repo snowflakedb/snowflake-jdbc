@@ -19,11 +19,11 @@
     <apache.commons.text.version>1.10.0</apache.commons.text.version>
     <apache.httpclient.version>4.5.14</apache.httpclient.version>
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
-    <arrow.version>10.0.1</arrow.version>
+    <arrow.version>17.0.0</arrow.version>
     <asm.version>9.3</asm.version>
     <avro.version>1.8.1</avro.version>
     <awaitility.version>4.2.0</awaitility.version>
-    <awssdk.version>1.12.501</awssdk.version>
+    <awssdk.version>1.12.655</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
     <bouncycastle.version>1.74</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.4</bouncycastle.bcfips.version>
@@ -32,7 +32,7 @@
     <classworlds.version>1.1</classworlds.version>
     <checkerframework.version>3.33.0</checkerframework.version>
     <commons.cli.version>1.2</commons.cli.version>
-    <commons.codec.version>1.15</commons.codec.version>
+    <commons.codec.version>1.17.0</commons.codec.version>
     <commons.dbcp.version>1.4</commons.dbcp.version>
     <commons.io.version>2.11.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
@@ -44,7 +44,7 @@
     <google.cloud.storage.version>2.22.6</google.cloud.storage.version>
     <google.code.gson.version>2.10.1</google.code.gson.version>
     <google.errorprone.version>2.18.0</google.errorprone.version>
-    <google.flatbuffers.version>1.12.0</google.flatbuffers.version>
+    <google.flatbuffers.version>24.3.25</google.flatbuffers.version>
     <google.gax.version>2.31.0</google.gax.version>
     <google.guava.version>32.1.1-jre</google.guava.version>
     <google.http.client.version>1.43.3</google.http.client.version>
@@ -53,7 +53,7 @@
     <grpc.version>1.60.0</grpc.version>
     <hamcrest.version>2.2</hamcrest.version>
     <hikaricp.version>2.4.3</hikaricp.version>
-    <jackson.version>2.15.3</jackson.version>
+    <jackson.version>2.17.2</jackson.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <javax.servlet.version>3.1.0</javax.servlet.version>
     <jna.version>5.13.0</jna.version>
@@ -73,7 +73,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <relocationBase>net/snowflake/client/jdbc/internal</relocationBase>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
-    <slf4j.version>2.0.6</slf4j.version>
+    <slf4j.version>2.0.13</slf4j.version>
     <snowflake.common.version>5.1.4</snowflake.common.version>
     <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
     <threeten.version>1.6.9</threeten.version>
@@ -98,7 +98,7 @@
     <version.plugin.jar>3.3.0</version.plugin.jar>
     <version.plugin.javadoc>3.5.0</version.plugin.javadoc>
     <version.plugin.projectinforeports>3.4.2</version.plugin.projectinforeports>
-    <version.plugin.shade>3.4.1</version.plugin.shade>
+    <version.plugin.shade>3.6.0</version.plugin.shade>
     <version.plugin.sortpom>3.0.1</version.plugin.sortpom>
     <version.plugin.source>3.2.1</version.plugin.source>
     <version.plugin.surefire>3.0.0</version.plugin.surefire>
@@ -402,7 +402,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.arrow</groupId>
-        <artifactId>arrow-memory-netty</artifactId>
+        <artifactId>arrow-memory-netty-buffer-patch</artifactId>
         <version>${arrow.version}</version>
         <scope>runtime</scope>
       </dependency>
@@ -680,7 +680,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-netty</artifactId>
+      <artifactId>arrow-memory-netty-buffer-patch</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
