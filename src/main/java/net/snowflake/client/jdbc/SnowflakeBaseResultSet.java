@@ -63,7 +63,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   protected SnowflakeResultSetMetaDataV1 resultSetMetaData = null;
   protected Map<String, Object> parameters = new HashMap<>();
   private int fetchSize = 0;
-  protected final SFBaseSession session;
+  protected SFBaseSession session;
   private final SnowflakeResultSetSerializableV1 serializable;
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
 
