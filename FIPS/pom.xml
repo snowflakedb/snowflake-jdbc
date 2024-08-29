@@ -10,7 +10,7 @@
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>3.18.1-SNAPSHOT</version>
+  <version>3.19.0</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
