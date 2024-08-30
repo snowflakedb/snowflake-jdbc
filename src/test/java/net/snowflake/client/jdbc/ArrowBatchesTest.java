@@ -79,7 +79,6 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testTinyIntBatch() throws Exception {
     Statement statement = connection.createStatement();
-    ;
     ResultSet rs = statement.executeQuery("select 1 union select 2 union select 3;");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
@@ -112,7 +111,6 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testSmallIntBatch() throws Exception {
     Statement statement = connection.createStatement();
-    ;
     ResultSet rs = statement.executeQuery("select 129 union select 130 union select 131;");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
@@ -145,7 +143,6 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testIntBatch() throws Exception {
     Statement statement = connection.createStatement();
-    ;
     ResultSet rs = statement.executeQuery("select 100000 union select 100001 union select 100002;");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
@@ -178,7 +175,6 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testBigIntBatch() throws Exception {
     Statement statement = connection.createStatement();
-    ;
     ResultSet rs =
         statement.executeQuery(
             "select 10000000000 union select 10000000001 union select 10000000002;");
@@ -213,7 +209,6 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testDecimalBatch() throws Exception {
     Statement statement = connection.createStatement();
-    ;
     ResultSet rs = statement.executeQuery("select 1.1 union select 1.2 union select 1.3;");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
