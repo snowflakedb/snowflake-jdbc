@@ -232,7 +232,15 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey(), location);
     if (!Strings.isNullOrEmpty(password)) {
-      this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey(), password);
+      this.properties.put(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey(), password);
+    }
+  }
+
+  public void setPrivateKeyBase64(String privateKeyBase64, String password) {
+    this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY_BASE64.getPropertyKey(), privateKeyBase64);
+    if (!Strings.isNullOrEmpty(password)) {
+      this.properties.put(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey(), password);
     }
   }
 
@@ -384,6 +392,21 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
 
   public void setGetDateUseNullTimezone(Boolean getDateUseNullTimezone) {
     this.properties.put("JDBC_GET_DATE_USE_NULL_TIMEZONE", getDateUseNullTimezone);
+  }
+
+  public void setEnableClientRequestMfaToken(boolean enableClientRequestMfaToken) {
+    this.setAuthenticator(AUTHENTICATOR_USERNAME_PASSWORD_MFA);
+    this.properties.put(
+        SFSessionProperty.ENABLE_CLIENT_REQUEST_MFA_TOKEN.getPropertyKey(),
+        enableClientRequestMfaToken);
+  }
+
+  public void setEnableClientStoreTemporaryCredential(
+      boolean enableClientStoreTemporaryCredential) {
+    this.setAuthenticator(AUTHENTICATOR_EXTERNAL_BROWSER);
+    this.properties.put(
+        SFSessionProperty.ENABLE_CLIENT_STORE_TEMPORARY_CREDENTIAL.getPropertyKey(),
+        enableClientStoreTemporaryCredential);
   }
 
   public void setBrowserResponseTimeout(int seconds) {
