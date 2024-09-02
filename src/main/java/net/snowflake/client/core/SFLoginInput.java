@@ -51,6 +51,8 @@ public class SFLoginInput {
 
   private boolean disableConsoleLogin = true;
   private boolean disableSamlURLCheck = false;
+  private boolean enableClientStoreTemporaryCredential;
+  private boolean enableClientRequestMfaToken;
 
   private Duration browserResponseTimeout;
 
@@ -463,5 +465,24 @@ public class SFLoginInput {
           e, ErrorCode.INTERNAL_ERROR, "Invalid serverUrl for retrieving host name");
     }
     return url.getHost();
+  }
+
+  boolean isEnableClientStoreTemporaryCredential() {
+    return enableClientStoreTemporaryCredential;
+  }
+
+  SFLoginInput setEnableClientStoreTemporaryCredential(
+      boolean enableClientStoreTemporaryCredential) {
+    this.enableClientStoreTemporaryCredential = enableClientStoreTemporaryCredential;
+    return this;
+  }
+
+  boolean isEnableClientRequestMfaToken() {
+    return enableClientRequestMfaToken;
+  }
+
+  SFLoginInput setEnableClientRequestMfaToken(boolean enableClientRequestMfaToken) {
+    this.enableClientRequestMfaToken = enableClientRequestMfaToken;
+    return this;
   }
 }
