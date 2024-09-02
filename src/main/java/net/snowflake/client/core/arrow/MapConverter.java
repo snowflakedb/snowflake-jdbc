@@ -2,7 +2,6 @@ package net.snowflake.client.core.arrow;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.tostringhelpers.ArrowObjectStringRepresentationBuilder;
@@ -41,19 +40,21 @@ public class MapConverter extends AbstractArrowVectorConverter {
     final ArrowVectorConverter keyConverter;
     final ArrowVectorConverter valueConverter;
 
-    SnowflakeType valueLogicalType = ArrowVectorConverter.getSnowflakeTypeFromFieldMetadata(values.getField());
+    SnowflakeType valueLogicalType =
+        ArrowVectorConverter.getSnowflakeTypeFromFieldMetadata(values.getField());
 
-      try {
-          keyConverter = ArrowVectorConverter.initConverter(keys, context, columnIndex);
-          valueConverter = ArrowVectorConverter.initConverter(values, context, columnIndex);
-      } catch (SnowflakeSQLException e) {
-          return vector.getObject(index).toString();
-      }
+    try {
+      keyConverter = ArrowVectorConverter.initConverter(keys, context, columnIndex);
+      valueConverter = ArrowVectorConverter.initConverter(values, context, columnIndex);
+    } catch (SnowflakeSQLException e) {
+      return vector.getObject(index).toString();
+    }
 
-      for (int i = vector.getElementStartIndex(index); i < vector.getElementEndIndex(index); i++) {
-        builder.appendKeyValue(keyConverter.toString(i), valueConverter.toString(i), valueLogicalType);
-      }
+    for (int i = vector.getElementStartIndex(index); i < vector.getElementEndIndex(index); i++) {
+      builder.appendKeyValue(
+          keyConverter.toString(i), valueConverter.toString(i), valueLogicalType);
+    }
 
-      return builder.toString();
+    return builder.toString();
   }
 }

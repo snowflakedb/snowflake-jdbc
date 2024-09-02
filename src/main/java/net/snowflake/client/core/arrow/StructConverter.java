@@ -27,15 +27,17 @@ public class StructConverter extends AbstractArrowVectorConverter {
   @Override
   public String toString(int index) throws SFException {
     ArrowObjectStringRepresentationBuilder builder = new ArrowObjectStringRepresentationBuilder();
-    for (String childName: structVector.getChildFieldNames()) {
+    for (String childName : structVector.getChildFieldNames()) {
       FieldVector fieldVector = structVector.getChild(childName);
-      SnowflakeType logicalType = ArrowVectorConverter.getSnowflakeTypeFromFieldMetadata(fieldVector.getField());
-        try {
-            ArrowVectorConverter converter = ArrowVectorConverter.initConverter(fieldVector, context, columnIndex);
-            builder.appendKeyValue(childName, converter.toString(index), logicalType);
-        } catch (SnowflakeSQLException e) {
-          return structVector.getObject(index).toString();
-        }
+      SnowflakeType logicalType =
+          ArrowVectorConverter.getSnowflakeTypeFromFieldMetadata(fieldVector.getField());
+      try {
+        ArrowVectorConverter converter =
+            ArrowVectorConverter.initConverter(fieldVector, context, columnIndex);
+        builder.appendKeyValue(childName, converter.toString(index), logicalType);
+      } catch (SnowflakeSQLException e) {
+        return structVector.getObject(index).toString();
+      }
     }
     return builder.toString();
   }
