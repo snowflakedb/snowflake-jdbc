@@ -384,8 +384,9 @@ public interface ArrowVectorConverter {
         type.toString());
   }
 
-  static ArrowVectorConverter initConverter(FieldVector vector, DataConversionContext context, int columnIndex) throws SnowflakeSQLException {
+  static ArrowVectorConverter initConverter(
+      FieldVector vector, DataConversionContext context, int columnIndex)
+      throws SnowflakeSQLException {
     return initConverter(vector, context, context.getSession(), columnIndex);
   }
-
 }
