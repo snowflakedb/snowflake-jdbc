@@ -2,8 +2,10 @@ package net.snowflake.client.core.arrow.tostringhelpers;
 
 import java.util.HashSet;
 import java.util.Set;
+import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeType;
 
+@SnowflakeJdbcInternalApi
 public abstract class ArrowStringRepresentationBuilderBase {
   private final StringBuilder stringBuilder;
   private boolean isFirstValue = true;
