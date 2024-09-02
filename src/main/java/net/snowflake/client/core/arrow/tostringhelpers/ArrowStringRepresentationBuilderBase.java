@@ -13,7 +13,6 @@ public abstract class ArrowStringRepresentationBuilderBase {
 
   static {
     quotableTypes = new HashSet<>();
-    quotableTypes.add(SnowflakeType.INTEGER);
     quotableTypes.add(SnowflakeType.ANY);
     quotableTypes.add(SnowflakeType.CHAR);
     quotableTypes.add(SnowflakeType.TEXT);
