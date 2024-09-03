@@ -105,10 +105,10 @@ public interface ArrowFullVectorConverter {
             return new TimeNanoVectorConverter(allocator, vector).convert();
           case TIMESTAMPNANOTZ:
             return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, false)
-                    .convert();
+                .convert();
           case TIMESTAMPNANO:
             return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, true)
-                    .convert();
+                .convert();
         }
       }
     } catch (SFException ex) {
