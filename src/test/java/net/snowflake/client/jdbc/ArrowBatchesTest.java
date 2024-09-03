@@ -49,10 +49,9 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   }
 
   private static void assertNoMemoryLeaks(ResultSet rs) throws SQLException {
-    assertEquals(
+    assertEquals(0,
         ((SFArrowResultSet) rs.unwrap(SnowflakeResultSetV1.class).sfBaseResultSet)
-            .getAllocatedMemory(),
-        0);
+            .getAllocatedMemory());
   }
 
   @Test
@@ -546,13 +545,14 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     assertTrue(root.getVector(0) instanceof StructVector);
     ArrowVectorConverter converter = batch.getTimestampConverter(root.getVector(0), 1);
     Timestamp tsFromBatch = converter.toTimestamp(0, null);
+    root.close();
+    assertNoMemoryLeaks(rs);
 
     rs = statement.executeQuery(query);
     rs.next();
     Timestamp tsFromRow = rs.getTimestamp(1);
 
     assertTrue(tsFromBatch.equals(tsFromRow));
-    root.close();
   }
 
   @Test

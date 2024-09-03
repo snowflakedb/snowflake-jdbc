@@ -84,7 +84,7 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
       epoch.set(i, vector.get(i) / scaleFactor);
       fractions.set(i, (int) ((vector.get(i) % scaleFactor) * fractionScaleFactor));
     }
-    return SFPair.of(vector, fractions);
+    return SFPair.of(epoch, fractions);
   }
 
   private IntVector makeTimeZoneOffsets(
@@ -120,6 +120,7 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
     result
         .getValidityBuffer()
         .setBytes(0L, vector.getValidityBuffer(), 0L, vector.getValidityBuffer().capacity());
+    vector.close();
     return result;
   }
 
