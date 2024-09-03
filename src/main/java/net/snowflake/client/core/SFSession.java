@@ -86,6 +86,7 @@ public class SFSession extends SFBaseSession {
   private String idToken;
   private String mfaToken;
   private String privateKeyFileLocation;
+  private String privateKeyBase64;
   private String privateKeyPassword;
   private PrivateKey privateKey;
 
@@ -111,7 +112,7 @@ public class SFSession extends SFBaseSession {
 
   private int authTimeout = 0;
   private boolean enableCombineDescribe = false;
-  private final Duration httpClientConnectionTimeout = HttpUtil.getConnectionTimeout();
+  private Duration httpClientConnectionTimeout = HttpUtil.getConnectionTimeout();
   private Duration httpClientSocketTimeout = HttpUtil.getSocketTimeout();
   // whether we try to simulate a socket timeout (a default value of 0 means
   // no simulation). The value is in milliseconds
@@ -140,6 +141,9 @@ public class SFSession extends SFBaseSession {
    * <p>Default: 300
    */
   private int retryTimeout = 300;
+
+  private boolean enableClientStoreTemporaryCredential = true;
+  private boolean enableClientRequestMfaToken = true;
 
   /**
    * Max timeout for external browser authentication in seconds
@@ -452,7 +456,14 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case PRIVATE_KEY_BASE64:
+          if (propertyValue != null) {
+            privateKeyBase64 = (String) propertyValue;
+          }
+          break;
+
         case PRIVATE_KEY_FILE_PWD:
+        case PRIVATE_KEY_PWD:
           if (propertyValue != null) {
             privateKeyPassword = (String) propertyValue;
           }
@@ -514,6 +525,18 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ENABLE_CLIENT_STORE_TEMPORARY_CREDENTIAL:
+          if (propertyValue != null) {
+            enableClientStoreTemporaryCredential = getBooleanValue(propertyValue);
+          }
+          break;
+
+        case ENABLE_CLIENT_REQUEST_MFA_TOKEN:
+          if (propertyValue != null) {
+            enableClientRequestMfaToken = getBooleanValue(propertyValue);
+          }
+          break;
+
         default:
           break;
       }
@@ -553,7 +576,7 @@ public class SFSession extends SFBaseSession {
             + " warehouse: {}, validate default parameters: {}, authenticator: {}, ocsp mode: {},"
             + " passcode in password: {}, passcode is {}, private key is {}, disable socks proxy: {},"
             + " application: {}, app id: {}, app version: {}, login timeout: {}, retry timeout: {}, network timeout: {},"
-            + " query timeout: {}, tracing: {}, private key file: {}, private key file pwd is {},"
+            + " query timeout: {}, connection timeout: {}, socket timeout: {}, tracing: {}, private key file: {}, private key pwd is {},"
             + " enable_diagnostics: {}, diagnostics_allowlist_path: {},"
             + " session parameters: client store temporary credential: {}, gzip disabled: {}, browser response timeout: {}",
         connectionPropertiesMap.get(SFSessionProperty.SERVER_URL),
@@ -580,10 +603,17 @@ public class SFSession extends SFBaseSession {
         connectionPropertiesMap.get(SFSessionProperty.RETRY_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.NETWORK_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT),
+        connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_SOCKET_TIMEOUT),
         connectionPropertiesMap.get(SFSessionProperty.TRACING),
         connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE),
         SFLoggerUtil.isVariableProvided(
-            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)),
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64)),
+        SFLoggerUtil.isVariableProvided(
+            (String)
+                connectionPropertiesMap.getOrDefault(
+                    SFSessionProperty.PRIVATE_KEY_PWD,
+                    connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))),
         connectionPropertiesMap.get(SFSessionProperty.ENABLE_DIAGNOSTICS),
         connectionPropertiesMap.get(SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE),
         sessionParametersMap.get(CLIENT_STORE_TEMPORARY_CREDENTIAL),
@@ -624,15 +654,30 @@ public class SFSession extends SFBaseSession {
         .setToken((String) connectionPropertiesMap.get(SFSessionProperty.TOKEN))
         .setPasscodeInPassword(passcodeInPassword)
         .setPasscode((String) connectionPropertiesMap.get(SFSessionProperty.PASSCODE))
-        .setConnectionTimeout(httpClientConnectionTimeout)
-        .setSocketTimeout(httpClientSocketTimeout)
+        .setConnectionTimeout(
+            connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT) != null
+                ? Duration.ofMillis(
+                    (int)
+                        connectionPropertiesMap.get(
+                            SFSessionProperty.HTTP_CLIENT_CONNECTION_TIMEOUT))
+                : httpClientConnectionTimeout)
+        .setSocketTimeout(
+            connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_SOCKET_TIMEOUT) != null
+                ? Duration.ofMillis(
+                    (int) connectionPropertiesMap.get(SFSessionProperty.HTTP_CLIENT_SOCKET_TIMEOUT))
+                : httpClientSocketTimeout)
         .setAppId((String) connectionPropertiesMap.get(SFSessionProperty.APP_ID))
         .setAppVersion((String) connectionPropertiesMap.get(SFSessionProperty.APP_VERSION))
         .setSessionParameters(sessionParametersMap)
         .setPrivateKey((PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY))
         .setPrivateKeyFile((String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE))
-        .setPrivateKeyFilePwd(
-            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD))
+        .setPrivateKeyBase64(
+            (String) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_BASE64))
+        .setPrivateKeyPwd(
+            (String)
+                connectionPropertiesMap.getOrDefault(
+                    SFSessionProperty.PRIVATE_KEY_PWD,
+                    connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY_FILE_PWD)))
         .setApplication((String) connectionPropertiesMap.get(SFSessionProperty.APPLICATION))
         .setServiceName(getServiceName())
         .setOCSPMode(getOCSPMode())
@@ -647,6 +692,8 @@ public class SFSession extends SFBaseSession {
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
                 : false)
+        .setEnableClientStoreTemporaryCredential(enableClientStoreTemporaryCredential)
+        .setEnableClientRequestMfaToken(enableClientRequestMfaToken)
         .setBrowserResponseTimeout(browserResponseTimeout);
 
     logger.info(
@@ -659,6 +706,8 @@ public class SFSession extends SFBaseSession {
 
     // propagate OCSP mode to SFTrustManager. Note OCSP setting is global on JVM.
     HttpUtil.initHttpClient(httpClientSettingsKey, null);
+    HttpUtil.setConnectionTimeout(loginInput.getConnectionTimeoutInMillis());
+    HttpUtil.setSocketTimeout(loginInput.getSocketTimeoutInMillis());
 
     runDiagnosticsIfEnabled();
 
@@ -675,6 +724,7 @@ public class SFSession extends SFBaseSession {
     setDatabaseMajorVersion(loginOutput.getDatabaseMajorVersion());
     setDatabaseMinorVersion(loginOutput.getDatabaseMinorVersion());
     httpClientSocketTimeout = loginOutput.getHttpClientSocketTimeout();
+    httpClientConnectionTimeout = loginOutput.getHttpClientConnectionTimeout();
     masterTokenValidityInSeconds = loginOutput.getMasterTokenValidityInSeconds();
     setDatabase(loginOutput.getSessionDatabase());
     setSchema(loginOutput.getSessionSchema());
@@ -750,7 +800,10 @@ public class SFSession extends SFBaseSession {
     Map<SFSessionProperty, Object> connectionPropertiesMap = getConnectionPropertiesMap();
     String authenticator = (String) connectionPropertiesMap.get(SFSessionProperty.AUTHENTICATOR);
     PrivateKey privateKey = (PrivateKey) connectionPropertiesMap.get(SFSessionProperty.PRIVATE_KEY);
-    return (authenticator == null && privateKey == null && privateKeyFileLocation == null)
+    return (authenticator == null
+            && privateKey == null
+            && privateKeyFileLocation == null
+            && privateKeyBase64 == null)
         || ClientAuthnDTO.AuthenticatorType.SNOWFLAKE.name().equalsIgnoreCase(authenticator);
   }
 
