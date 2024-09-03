@@ -535,4 +535,46 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     assertEquals(2, totalRows);
     assertTrue(values.containsAll(expected));
   }
+
+  private void testTimestampBase(String query) throws Exception, SFException {
+    Statement statement = connection.createStatement();
+    ResultSet rs = statement.executeQuery(query);
+    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+    ArrowBatch batch = batches.next();
+    VectorSchemaRoot root = batch.fetch().get(0);
+    assertTrue(root.getVector(0) instanceof StructVector);
+    ArrowVectorConverter converter = batch.getTimestampConverter(root.getVector(0), 1);
+    Timestamp tsFromBatch = converter.toTimestamp(0, null);
+
+    rs = statement.executeQuery(query);
+    rs.next();
+    Timestamp tsFromRow = rs.getTimestamp(1);
+
+    assertTrue(tsFromBatch.equals(tsFromRow));
+    root.close();
+  }
+
+  @Test
+  public void testTimestampTZBatch() throws Exception, SFException {
+    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_TZ");
+  }
+
+  @Test
+  public void testTimestampLTZUseSessionTimezoneBatch() throws Exception, SFException {
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
+    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_LTZ");
+    statement.execute("alter session unset JDBC_USE_SESSION_TIMEZONE");
+  }
+
+  @Test
+  public void testTimestampLTZBatch() throws Exception, SFException {
+    testTimestampBase("select '2020-04-05 12:22:12+0700'::TIMESTAMP_LTZ");
+  }
+
+  @Test
+  public void testTimestampNTZBatch() throws Exception, SFException {
+    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_NTZ");
+  }
 }

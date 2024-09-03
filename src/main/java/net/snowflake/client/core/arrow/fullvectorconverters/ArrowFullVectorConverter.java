@@ -103,6 +103,12 @@ public interface ArrowFullVectorConverter {
             return new TimeMicroVectorConverter(allocator, vector).convert();
           case TIMENANO:
             return new TimeNanoVectorConverter(allocator, vector).convert();
+          case TIMESTAMPNANOTZ:
+            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, false)
+                    .convert();
+          case TIMESTAMPNANO:
+            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, true)
+                    .convert();
         }
       }
     } catch (SFException ex) {
