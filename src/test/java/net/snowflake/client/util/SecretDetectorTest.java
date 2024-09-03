@@ -202,9 +202,18 @@ public class SecretDetectorTest {
     testParametersMasked.put("passcodeInPassword", "test");
     testParametersMasked.put("passcode", "test");
     testParametersMasked.put("id_token", "test");
-    testParametersMasked.put("private_key_file_pwd", "test");
+    testParametersMasked.put("private_key_pwd", "test");
     testParametersMasked.put("proxyPassword", "test");
     testParametersMasked.put("proxyUser", "test");
+    testParametersMasked.put("privatekey", "test");
+    testParametersMasked.put("private_key_base64", "test");
+    testParametersMasked.put("privateKeyBase64", "test");
+    testParametersMasked.put("id_token_password", "test");
+    testParametersMasked.put("masterToken", "test");
+    testParametersMasked.put("mfaToken", "test");
+    testParametersMasked.put("password", "test");
+    testParametersMasked.put("sessionToken", "test");
+    testParametersMasked.put("token", "test");
 
     Map<String, String> testParametersUnmasked = new HashMap<>();
     testParametersUnmasked.put("oktausername", "test");

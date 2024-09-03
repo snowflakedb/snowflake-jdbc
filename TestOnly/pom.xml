@@ -12,9 +12,9 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <arrow.version>10.0.1</arrow.version>
+    <arrow.version>17.0.0</arrow.version>
     <awaitility.version>4.2.0</awaitility.version>
-    <jacksondatabind.version>2.13.4.2</jacksondatabind.version>
+    <jacksondatabind.version>2.17.2</jacksondatabind.version>
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <jna.version>5.13.0</jna.version>
@@ -27,12 +27,12 @@
     <dependency> <!-- netty is not a direct dependency. It is used by arrow-vector -->
       <groupId>io.netty</groupId>
       <artifactId>netty-common</artifactId>
-      <version>4.1.77.Final</version>
+      <version>4.1.111.Final</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-buffer</artifactId>
-      <version>4.1.77.Final</version>
+      <version>4.1.111.Final</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
@@ -165,7 +165,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory-netty</artifactId>
+      <artifactId>arrow-memory-netty-buffer-patch</artifactId>
       <version>${arrow.version}</version>
       <exclusions>
         <exclusion> <!-- Exclude earlier version to avoid whitesource vulnerability. -->
@@ -285,13 +285,13 @@
             </configuration>
           </execution>
           <execution>
-            <id>install-arrow-memory-netty</id>
+            <id>install-arrow-memory-netty-buffer-patch</id>
             <phase>validate</phase>
             <goals>
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.basedir}/../dependencies/arrow-memory-netty-${arrow.version}.jar</file>
+              <file>${project.basedir}/../dependencies/arrow-memory-netty-buffer-patch-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
               <artifactId>arrow-memory-netty</artifactId>
               <version>${arrow.version}</version>
