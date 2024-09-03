@@ -962,10 +962,10 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
       StorageObjectMetadata meta,
       MatDesc matDesc,
       byte[] ivData,
-      byte[] encKeK,
+      byte[] encryptedKey,
       long contentLength) {
     meta.addUserMetadata(getMatdescKey(), matDesc.toString());
-    meta.addUserMetadata(AMZ_KEY, Base64.getEncoder().encodeToString(encKeK));
+    meta.addUserMetadata(AMZ_KEY, Base64.getEncoder().encodeToString(encryptedKey));
     meta.addUserMetadata(AMZ_IV, Base64.getEncoder().encodeToString(ivData));
     meta.setContentLength(contentLength);
   }

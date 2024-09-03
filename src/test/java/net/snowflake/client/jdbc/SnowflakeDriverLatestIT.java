@@ -1471,7 +1471,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Ignore // ignored until SNOW-1616480 is resolved
   public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();

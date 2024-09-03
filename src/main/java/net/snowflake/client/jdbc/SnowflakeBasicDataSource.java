@@ -23,7 +23,11 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   private static final long serialversionUID = 1L;
   private static final String AUTHENTICATOR_SNOWFLAKE_JWT = "SNOWFLAKE_JWT";
   private static final String AUTHENTICATOR_OAUTH = "OAUTH";
+
+  private static final String AUTHENTICATOR_EXTERNAL_BROWSER = "EXTERNALBROWSER";
+
   private static final String AUTHENTICATOR_USERNAME_PASSWORD_MFA = "USERNAME_PASSWORD_MFA";
+
   private String url;
 
   private String serverName;
@@ -94,7 +98,8 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     }
 
     // The driver needs password for OAUTH as part of SNOW-533673 feature request.
-    if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)) {
+    if (!AUTHENTICATOR_SNOWFLAKE_JWT.equalsIgnoreCase(authenticator)
+        && !AUTHENTICATOR_EXTERNAL_BROWSER.equalsIgnoreCase(authenticator)) {
       properties.put(SFSessionProperty.PASSWORD.getPropertyKey(), password);
     }
 
@@ -227,7 +232,15 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
     this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
     this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey(), location);
     if (!Strings.isNullOrEmpty(password)) {
-      this.properties.put(SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey(), password);
+      this.properties.put(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey(), password);
+    }
+  }
+
+  public void setPrivateKeyBase64(String privateKeyBase64, String password) {
+    this.setAuthenticator(AUTHENTICATOR_SNOWFLAKE_JWT);
+    this.properties.put(SFSessionProperty.PRIVATE_KEY_BASE64.getPropertyKey(), privateKeyBase64);
+    if (!Strings.isNullOrEmpty(password)) {
+      this.properties.put(SFSessionProperty.PRIVATE_KEY_PWD.getPropertyKey(), password);
     }
   }
 
@@ -370,5 +383,34 @@ public class SnowflakeBasicDataSource implements DataSource, Serializable {
   public void setDiagnosticsAllowlistFile(String diagnosticsAllowlistFile) {
     this.properties.put(
         SFSessionProperty.DIAGNOSTICS_ALLOWLIST_FILE.getPropertyKey(), diagnosticsAllowlistFile);
+  }
+
+  public void setJDBCDefaultFormatDateWithTimezone(Boolean jdbcDefaultFormatDateWithTimezone) {
+    this.properties.put(
+        "JDBC_DEFAULT_FORMAT_DATE_WITH_TIMEZONE", jdbcDefaultFormatDateWithTimezone);
+  }
+
+  public void setGetDateUseNullTimezone(Boolean getDateUseNullTimezone) {
+    this.properties.put("JDBC_GET_DATE_USE_NULL_TIMEZONE", getDateUseNullTimezone);
+  }
+
+  public void setEnableClientRequestMfaToken(boolean enableClientRequestMfaToken) {
+    this.setAuthenticator(AUTHENTICATOR_USERNAME_PASSWORD_MFA);
+    this.properties.put(
+        SFSessionProperty.ENABLE_CLIENT_REQUEST_MFA_TOKEN.getPropertyKey(),
+        enableClientRequestMfaToken);
+  }
+
+  public void setEnableClientStoreTemporaryCredential(
+      boolean enableClientStoreTemporaryCredential) {
+    this.setAuthenticator(AUTHENTICATOR_EXTERNAL_BROWSER);
+    this.properties.put(
+        SFSessionProperty.ENABLE_CLIENT_STORE_TEMPORARY_CREDENTIAL.getPropertyKey(),
+        enableClientStoreTemporaryCredential);
+  }
+
+  public void setBrowserResponseTimeout(int seconds) {
+    this.setAuthenticator(AUTHENTICATOR_EXTERNAL_BROWSER);
+    this.properties.put("BROWSER_RESPONSE_TIMEOUT", Integer.toString(seconds));
   }
 }

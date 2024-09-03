@@ -9,10 +9,12 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Time;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -142,19 +144,20 @@ public class LoaderIT extends LoaderBase {
         errorMessage = listener.getErrors().get(0).getException().toString();
       }
       assertThat(String.format("Error: %s", errorMessage), listener.getErrorCount(), equalTo(0));
-      ResultSet rs =
-          testConnection
-              .createStatement()
-              .executeQuery(String.format("SELECT c1, c2 FROM %s LIMIT 1", tableName));
-      rs.next();
-      Time rsTm = rs.getTime(1);
-      Date rsDt = rs.getDate(2);
-      assertThat("Time column didn't match", rsTm, equalTo(tm));
+      try (Statement statement = testConnection.createStatement()) {
+        try (ResultSet rs =
+            statement.executeQuery(String.format("SELECT c1, c2 FROM %s LIMIT 1", tableName))) {
+          assertTrue(rs.next());
+          Time rsTm = rs.getTime(1);
+          Date rsDt = rs.getDate(2);
+          assertThat("Time column didn't match", rsTm, equalTo(tm));
 
-      Calendar cal = cutOffTimeFromDate(dt);
-      long dtEpoch = cal.getTimeInMillis();
-      long rsDtEpoch = rsDt.getTime();
-      assertThat("Date column didn't match", rsDtEpoch, equalTo(dtEpoch));
+          Calendar cal = cutOffTimeFromDate(dt);
+          long dtEpoch = cal.getTimeInMillis();
+          long rsDtEpoch = rsDt.getTime();
+          assertThat("Date column didn't match", rsDtEpoch, equalTo(dtEpoch));
+        }
+      }
     } finally {
       testConnection.createStatement().execute(String.format("DROP TABLE IF EXISTS %s", tableName));
     }
