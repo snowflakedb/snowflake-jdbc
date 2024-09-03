@@ -10,11 +10,13 @@ import java.io.InputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
 import net.snowflake.client.core.arrow.fullvectorconverters.ArrowFullVectorConverter;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -499,9 +501,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     }
   }
 
-  public ArrowBatch getArrowBatch(DataConversionContext context) {
+  public ArrowBatch getArrowBatch(DataConversionContext context, TimeZone timeZoneToUse) {
     batchesMode = true;
-    return new ArrowResultBatch(context);
+    return new ArrowResultBatch(context, timeZoneToUse);
   }
 
   private boolean sortFirstResultChunkEnabled() {
@@ -530,9 +532,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
 
   public class ArrowResultBatch implements ArrowBatch {
     private DataConversionContext context;
+    private TimeZone timeZoneToUse;
 
-    ArrowResultBatch(DataConversionContext context) {
+    ArrowResultBatch(DataConversionContext context, TimeZone timeZoneToUse) {
       this.context = context;
+      this.timeZoneToUse = timeZoneToUse;
     }
 
     public List<VectorSchemaRoot> fetch() throws SnowflakeSQLException {
@@ -542,11 +546,17 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
         for (int i = 0; i < record.size(); i++) {
           ValueVector vector = record.get(i);
           convertedVectors.add(
-              ArrowFullVectorConverter.convert(rootAllocator, vector, context, session, i, null));
+              ArrowFullVectorConverter.convert(
+                  rootAllocator, vector, context, session, timeZoneToUse, i, null));
         }
         result.add(new VectorSchemaRoot(convertedVectors));
       }
       return result;
+    }
+
+    @Override
+    public ArrowVectorConverter getTimestampConverter(FieldVector vector, int colIdx) {
+      return new ThreeFieldStructToTimestampTZConverter(vector, colIdx, context);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package net.snowflake.client.core.arrow.fullvectorconverters;
 
 import java.util.Map;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -34,55 +35,27 @@ public interface ArrowFullVectorConverter {
             break;
           }
         case TIME:
-          return Types.MinorType.TIMEMILLI;
-        case TIMESTAMP_LTZ:
           {
             String scaleStr = vector.getField().getMetadata().get("scale");
             int sfScale = Integer.parseInt(scaleStr);
-            switch (sfScale) {
-              case 0:
-                return Types.MinorType.TIMESTAMPSECTZ;
-              case 3:
-                return Types.MinorType.TIMESTAMPMILLITZ;
-              case 6:
-                return Types.MinorType.TIMESTAMPMICROTZ;
-              case 9:
-                return Types.MinorType.TIMESTAMPNANOTZ;
+            if (sfScale == 0) {
+              return Types.MinorType.TIMESEC;
             }
-            break;
-          }
-        case TIMESTAMP_TZ:
-          {
-            String scaleStr = vector.getField().getMetadata().get("scale");
-            int sfScale = Integer.parseInt(scaleStr);
-            switch (sfScale) {
-              case 0:
-                return Types.MinorType.TIMESTAMPSECTZ;
-              case 3:
-                return Types.MinorType.TIMESTAMPMILLITZ;
-              case 6:
-                return Types.MinorType.TIMESTAMPMICROTZ;
-              case 9:
-                return Types.MinorType.TIMESTAMPNANOTZ;
+            if (sfScale <= 3) {
+              return Types.MinorType.TIMEMILLI;
             }
-            break;
+            if (sfScale <= 6) {
+              return Types.MinorType.TIMEMICRO;
+            }
+            if (sfScale <= 9) {
+              return Types.MinorType.TIMENANO;
+            }
           }
         case TIMESTAMP_NTZ:
-          {
-            String scaleStr = vector.getField().getMetadata().get("scale");
-            int sfScale = Integer.parseInt(scaleStr);
-            switch (sfScale) {
-              case 0:
-                return Types.MinorType.TIMESTAMPSEC;
-              case 3:
-                return Types.MinorType.TIMESTAMPMILLI;
-              case 6:
-                return Types.MinorType.TIMESTAMPMICRO;
-              case 9:
-                return Types.MinorType.TIMESTAMPNANO;
-            }
-            break;
-          }
+          return Types.MinorType.TIMESTAMPNANO;
+        case TIMESTAMP_LTZ:
+        case TIMESTAMP_TZ:
+          return Types.MinorType.TIMESTAMPNANOTZ;
       }
     }
     return type;
@@ -93,6 +66,7 @@ public interface ArrowFullVectorConverter {
       ValueVector vector,
       DataConversionContext context,
       SFBaseSession session,
+      TimeZone timeZoneToUse,
       int idx,
       Object targetType)
       throws SnowflakeSQLException {
@@ -112,6 +86,29 @@ public interface ArrowFullVectorConverter {
             return new BigIntVectorConverter(allocator, vector, context, session, idx).convert();
           case DECIMAL:
             return new DecimalVectorConverter(allocator, vector, context, session, idx).convert();
+          case FLOAT8:
+            return new FloatVectorConverter(allocator, vector, context, session, idx).convert();
+          case BIT:
+            return new BitVectorConverter(allocator, vector, context, session, idx).convert();
+          case VARBINARY:
+            return new BinaryVectorConverter(allocator, vector, context, session, idx).convert();
+          case TIMESTAMPNANOTZ:
+            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, false)
+                .convert();
+          case TIMESTAMPNANO:
+            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, true)
+                .convert();
+          case DATEDAY:
+            return new DateVectorConverter(allocator, vector, context, session, idx, timeZoneToUse)
+                .convert();
+          case TIMESEC:
+            return new TimeSecVectorConverter(allocator, vector).convert();
+          case TIMEMILLI:
+            return new TimeMilliVectorConverter(allocator, vector).convert();
+          case TIMEMICRO:
+            return new TimeMicroVectorConverter(allocator, vector).convert();
+          case TIMENANO:
+            return new TimeNanoVectorConverter(allocator, vector).convert();
         }
       }
     } catch (SFException ex) {
