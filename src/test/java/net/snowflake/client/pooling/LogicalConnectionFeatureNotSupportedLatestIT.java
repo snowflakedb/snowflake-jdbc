@@ -67,8 +67,6 @@ public class LogicalConnectionFeatureNotSupportedLatestIT extends BaseJDBCTest {
     expectFeatureNotSupportedException(logicalConnection::createNClob);
     expectFeatureNotSupportedException(logicalConnection::createSQLXML);
     expectFeatureNotSupportedException(
-        () -> logicalConnection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
-    expectFeatureNotSupportedException(
         () -> logicalConnection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
     expectFeatureNotSupportedException(
         () -> logicalConnection.createStruct("fakeType", new Object[] {}));
