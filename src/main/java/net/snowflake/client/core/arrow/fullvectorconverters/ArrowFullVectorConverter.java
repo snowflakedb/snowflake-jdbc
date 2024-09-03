@@ -92,12 +92,6 @@ public interface ArrowFullVectorConverter {
             return new BitVectorConverter(allocator, vector, context, session, idx).convert();
           case VARBINARY:
             return new BinaryVectorConverter(allocator, vector, context, session, idx).convert();
-          case TIMESTAMPNANOTZ:
-            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, false)
-                .convert();
-          case TIMESTAMPNANO:
-            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, true)
-                .convert();
           case DATEDAY:
             return new DateVectorConverter(allocator, vector, context, session, idx, timeZoneToUse)
                 .convert();
