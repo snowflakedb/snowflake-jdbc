@@ -39,8 +39,10 @@ public class DateVectorConverter extends SimpleArrowFullVectorConverter<DateDayV
 
   @Override
   protected void additionalConverterInit(ArrowVectorConverter converter) {
-    converter.setSessionTimeZone(timeZone);
-    converter.setUseSessionTimezone(true);
+    if (timeZone != null) {
+      converter.setSessionTimeZone(timeZone);
+      converter.setUseSessionTimezone(true);
+    }
   }
 
   @Override
