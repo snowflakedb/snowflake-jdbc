@@ -22,6 +22,8 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.jdbc.SnowflakeBasicDataSource;
@@ -241,6 +243,27 @@ public class SessionUtilExternalBrowserTest {
     when(loginInput.getUserName()).thenReturn("testuser");
     when(loginInput.getDisableConsoleLogin()).thenReturn(true);
     return loginInput;
+  }
+
+  // Run this test manually to test disabling storing temporary credetials with external browser
+  // auth. This is valid for versions after 3.18.0.
+  @Test
+  @Ignore
+  public void testEnableClientStoreTemporaryCredential() throws Exception {
+    Map<String, String> params = AbstractDriverIT.getConnectionParameters();
+    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+    ds.setServerName(params.get("host"));
+    ds.setAccount(params.get("account"));
+    ds.setPortNumber(Integer.parseInt(params.get("port")));
+    ds.setUser(params.get("user"));
+    ds.setEnableClientStoreTemporaryCredential(false);
+
+    for (int i = 0; i < 3; i++) {
+      try (Connection con = ds.getConnection();
+          ResultSet rs = con.createStatement().executeQuery("SELECT 1")) {
+        assertTrue(rs.next());
+      }
+    }
   }
 
   // Run this test manually to confirm external browser timeout is working. When test runs it will

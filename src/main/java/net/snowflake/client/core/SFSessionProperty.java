@@ -106,6 +106,10 @@ public enum SFSessionProperty {
 
   BROWSER_RESPONSE_TIMEOUT("BROWSER_RESPONSE_TIMEOUT", false, Integer.class),
 
+  ENABLE_CLIENT_STORE_TEMPORARY_CREDENTIAL("clientStoreTemporaryCredential", false, Boolean.class),
+
+  ENABLE_CLIENT_REQUEST_MFA_TOKEN("clientRequestMfaToken", false, Boolean.class),
+
   HTTP_CLIENT_CONNECTION_TIMEOUT("HTTP_CLIENT_CONNECTION_TIMEOUT", false, Integer.class),
 
   HTTP_CLIENT_SOCKET_TIMEOUT("HTTP_CLIENT_SOCKET_TIMEOUT", false, Integer.class);

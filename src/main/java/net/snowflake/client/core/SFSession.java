@@ -142,6 +142,9 @@ public class SFSession extends SFBaseSession {
    */
   private int retryTimeout = 300;
 
+  private boolean enableClientStoreTemporaryCredential = true;
+  private boolean enableClientRequestMfaToken = true;
+
   /**
    * Max timeout for external browser authentication in seconds
    *
@@ -522,6 +525,18 @@ public class SFSession extends SFBaseSession {
           }
           break;
 
+        case ENABLE_CLIENT_STORE_TEMPORARY_CREDENTIAL:
+          if (propertyValue != null) {
+            enableClientStoreTemporaryCredential = getBooleanValue(propertyValue);
+          }
+          break;
+
+        case ENABLE_CLIENT_REQUEST_MFA_TOKEN:
+          if (propertyValue != null) {
+            enableClientRequestMfaToken = getBooleanValue(propertyValue);
+          }
+          break;
+
         default:
           break;
       }
@@ -677,6 +692,8 @@ public class SFSession extends SFBaseSession {
                 ? getBooleanValue(
                     connectionPropertiesMap.get(SFSessionProperty.DISABLE_SAML_URL_CHECK))
                 : false)
+        .setEnableClientStoreTemporaryCredential(enableClientStoreTemporaryCredential)
+        .setEnableClientRequestMfaToken(enableClientRequestMfaToken)
         .setBrowserResponseTimeout(browserResponseTimeout);
 
     logger.info(

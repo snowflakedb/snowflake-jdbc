@@ -33,8 +33,11 @@ import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -740,7 +743,7 @@ public class ConnectionIT extends BaseJDBCTest {
   public void testHolderbility() throws Throwable {
     try (Connection connection = getConnection()) {
       try {
-        connection.setHoldability(0);
+        connection.setHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT);
       } catch (SQLFeatureNotSupportedException ex) {
         // nop
       }
@@ -798,6 +801,30 @@ public class ConnectionIT extends BaseJDBCTest {
     assertTrue(rs1.isClosed());
     assertTrue(rs2.isClosed());
     assertTrue(rs3.isClosed());
+  }
+
+  @Test
+  public void testReadDateAfterSplittingResultSet() throws Exception {
+    Connection conn = getConnection();
+    try (Statement statement = conn.createStatement()) {
+      statement.execute("create or replace table table_with_date (int_c int, date_c date)");
+      statement.execute("insert into table_with_date values (1, '2015-10-25')");
+
+      try (ResultSet rs = statement.executeQuery("select * from table_with_date")) {
+        final SnowflakeResultSet resultSet = rs.unwrap(SnowflakeResultSet.class);
+        final long arbitrarySizeInBytes = 1024;
+        final List<SnowflakeResultSetSerializable> serializables =
+            resultSet.getResultSetSerializables(arbitrarySizeInBytes);
+        final ArrayList<Date> dates = new ArrayList<>();
+        for (SnowflakeResultSetSerializable s : serializables) {
+          ResultSet srs = s.getResultSet();
+          srs.next();
+          dates.add(srs.getDate(2));
+        }
+        assertEquals(1, dates.size());
+        assertEquals("2015-10-25", dates.get(0).toString());
+      }
+    }
   }
 
   @Test
@@ -1022,6 +1049,7 @@ public class ConnectionIT extends BaseJDBCTest {
     return kvMap2Properties(params, validateDefaultParameters);
   }
 
+  // TODO: This is a temporary Ignore to unblock merging PRs until ORG account is unlocked.
   @Ignore
   @Test
   public void testFailOverOrgAccount() throws SQLException {

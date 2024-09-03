@@ -37,6 +37,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -1586,6 +1587,22 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           }
         }
       }
+    }
+  }
+
+  @Test
+  public void testSetHoldability() throws Throwable {
+    try (Connection connection = getConnection()) {
+      try {
+        connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
+      } catch (SQLFeatureNotSupportedException ex) {
+        fail("should not fail");
+      }
+      // return an empty type map. setTypeMap is not supported.
+      assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, connection.getHoldability());
+      connection.close();
+      expectConnectionAlreadyClosedException(
+          () -> connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
     }
   }
 
