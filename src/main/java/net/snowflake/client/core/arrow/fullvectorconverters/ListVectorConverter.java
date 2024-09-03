@@ -63,6 +63,7 @@ public class ListVectorConverter implements ArrowFullVectorConverter {
     convertedListVector.setLastSet(listVector.getLastSet());
     convertedDataVector.makeTransferPair(convertedListVector.getDataVector()).transfer();
 
+    vector.close();
     return convertedListVector;
   }
 }

@@ -57,6 +57,7 @@ public class FixedSizeListVectorConverter implements ArrowFullVectorConverter {
         .setBytes(0L, validityBuffer, 0L, validityBuffer.capacity());
     convertedDataVector.makeTransferPair(convertedListVector.getDataVector()).transfer();
 
+    vector.close();
     return convertedListVector;
   }
 }

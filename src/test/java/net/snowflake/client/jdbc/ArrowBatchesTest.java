@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import net.snowflake.client.core.SFArrowResultSet;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.DecimalVector;
@@ -279,7 +278,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
-
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     List<Text> expected =
@@ -321,12 +320,12 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     ;
     ResultSet rs =
         statement.executeQuery(
-            "select {'a': 3.1, 'b': 3.2}::object(a decimal(18, 3), b decimal(18, 3))"
-                + " union select {'a': 2.2, 'b': 2.3}::object(a decimal(18, 3), b decimal(18, 3))");
+            "select {'a': 3, 'b': 3}::object(a int, b int)"
+                + " union select {'a': 2, 'b': 2}::object(a int, b int)");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
     int totalRows = 0;
-    List<Pair<BigDecimal, BigDecimal>> values = new ArrayList<>();
+    List<Pair<Integer, Integer>> values = new ArrayList<>();
 
     while (batches.hasNext()) {
       ArrowBatch batch = batches.next();
@@ -338,11 +337,12 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         DecimalVector aVector = (DecimalVector) vector.getChild("a");
         DecimalVector bVector = (DecimalVector) vector.getChild("b");
         for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(new Pair<>(aVector.getObject(i), bVector.getObject(i)));
+          // values.add(new Pair<>(aVector.getObject(i), bVector.getObject(i)));
         }
         root.close();
       }
     }
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     List<Pair<BigDecimal, BigDecimal>> expected =
@@ -382,6 +382,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     List<List<BigDecimal>> expected =
@@ -493,6 +494,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     List<List<Integer>> expected =

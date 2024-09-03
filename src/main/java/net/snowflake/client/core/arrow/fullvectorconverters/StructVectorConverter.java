@@ -56,9 +56,7 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
     }
 
     List<Field> convertedFields =
-        convertedVectors.stream()
-            .map(ValueVector::getField)
-            .collect(Collectors.toList());
+        convertedVectors.stream().map(ValueVector::getField).collect(Collectors.toList());
     StructVector converted = StructVector.empty(vector.getName(), allocator);
     converted.allocateNew();
     converted.initializeChildrenFromFields(convertedFields);
@@ -70,6 +68,8 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
     ArrowBuf validityBuffer = structVector.getValidityBuffer();
     converted.getValidityBuffer().setBytes(0L, validityBuffer, 0L, validityBuffer.capacity());
     converted.setValueCount(vector.getValueCount());
+
+    vector.close();
     return converted;
   }
 }
