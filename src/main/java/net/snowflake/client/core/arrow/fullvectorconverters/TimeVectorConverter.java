@@ -39,6 +39,7 @@ public abstract class TimeVectorConverter<T extends BaseFixedWidthVector>
       convertValue(converted, i, srcVector.getValueAsLong(i) * scalingFactor);
     }
     converted.setValueCount(size);
+    vector.close();
     return converted;
   }
 }

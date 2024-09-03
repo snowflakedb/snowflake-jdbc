@@ -54,6 +54,7 @@ public abstract class SimpleArrowFullVectorConverter<T extends FieldVector>
       convertValue(converter, converted, i);
     }
     converted.setValueCount(size);
+    vector.close();
     return converted;
   }
 }
