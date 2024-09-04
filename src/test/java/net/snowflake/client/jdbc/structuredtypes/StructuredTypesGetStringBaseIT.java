@@ -38,15 +38,6 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
               + "TIMESTAMP_TZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
               + "TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM',"
               + "TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
-      //            stmt.execute(
-      //                    "alter session set "
-      //                            + "TIMESTAMP_TYPE_MAPPING='TIMESTAMP_LTZ',"
-      //                            + "TIMESTAMP_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM',"
-      //                            + "TIMESTAMP_TZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3
-      // TZHTZM',"
-      //                            + "TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3
-      // TZHTZM',"
-      //                            + "TIMESTAMP_NTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3'");
       stmt.execute(
           "alter session set jdbc_query_result_format = '"
               + queryResultFormat.sessionParameterTypeValue
@@ -71,7 +62,6 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
       throws SQLException {
     String result = resultSet.getString(1);
     assertEqualsIgnoringWhitespace(expected, result);
-    //        assertEquals(expected, result);
   }
 
   protected void assertEqualsIgnoringWhitespace(String expected, String actual) {

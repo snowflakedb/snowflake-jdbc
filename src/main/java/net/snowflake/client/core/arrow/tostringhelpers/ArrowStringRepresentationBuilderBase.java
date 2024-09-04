@@ -8,6 +8,7 @@ import net.snowflake.client.jdbc.SnowflakeType;
 @SnowflakeJdbcInternalApi
 public abstract class ArrowStringRepresentationBuilderBase {
   private final StringBuilder stringBuilder;
+  private final String suffix;
   private boolean isFirstValue = true;
   private static final Set<SnowflakeType> quotableTypes;
 
@@ -25,8 +26,9 @@ public abstract class ArrowStringRepresentationBuilderBase {
     quotableTypes.add(SnowflakeType.TIMESTAMP_TZ);
   }
 
-  public ArrowStringRepresentationBuilderBase() {
-    stringBuilder = new StringBuilder();
+  public ArrowStringRepresentationBuilderBase(String prefix, String suffix) {
+    stringBuilder = new StringBuilder(prefix);
+    this.suffix = suffix;
   }
 
   public ArrowStringRepresentationBuilderBase append(String string) {
@@ -50,12 +52,20 @@ public abstract class ArrowStringRepresentationBuilderBase {
     this.isFirstValue = false;
   }
 
+  protected ArrowStringRepresentationBuilderBase appendQuotedIfNeeded(
+      String value, SnowflakeType type) {
+    if (shouldQuoteValue(type)) {
+      return this.appendQuoted(value);
+    }
+    return this.append(value);
+  }
+
   protected boolean shouldQuoteValue(SnowflakeType snowflakeType) {
     return quotableTypes.contains(snowflakeType);
   }
 
   @Override
   public String toString() {
-    return stringBuilder.toString();
+    return stringBuilder.toString() + suffix;
   }
 }

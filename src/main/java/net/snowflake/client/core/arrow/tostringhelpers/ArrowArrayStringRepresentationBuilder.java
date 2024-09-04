@@ -6,22 +6,21 @@ import net.snowflake.client.jdbc.SnowflakeType;
 @SnowflakeJdbcInternalApi
 public class ArrowArrayStringRepresentationBuilder extends ArrowStringRepresentationBuilderBase {
 
-  public ArrowArrayStringRepresentationBuilder() {
-    super();
-    this.append('[');
+  private final SnowflakeType valueType;
+
+  public ArrowArrayStringRepresentationBuilder(SnowflakeType valueType) {
+    super("[", "]");
+    this.valueType = valueType;
+    shouldQuoteValue(valueType);
   }
 
-  public ArrowStringRepresentationBuilderBase appendValue(String value, SnowflakeType valueType) {
-    super.addCommaIfNeeded();
-    if (shouldQuoteValue(valueType)) {
-      return this.appendQuoted(value);
-    }
-    return this.append(value);
+  public ArrowStringRepresentationBuilderBase appendValue(String value) {
+    addCommaIfNeeded();
+    return appendQuotedIfNeeded(value, valueType);
   }
 
   @Override
   public String toString() {
-    this.append(']');
     return super.toString();
   }
 }

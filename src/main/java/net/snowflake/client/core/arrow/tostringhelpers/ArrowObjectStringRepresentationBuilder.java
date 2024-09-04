@@ -7,24 +7,18 @@ import net.snowflake.client.jdbc.SnowflakeType;
 public class ArrowObjectStringRepresentationBuilder extends ArrowStringRepresentationBuilderBase {
 
   public ArrowObjectStringRepresentationBuilder() {
-    super();
-    this.append('{');
+    super("{", "}");
   }
 
   public ArrowStringRepresentationBuilderBase appendKeyValue(
       String key, String value, SnowflakeType valueType) {
     addCommaIfNeeded();
-    this.appendQuoted(key).append(": ");
-    if (shouldQuoteValue(valueType)) {
-      return this.appendQuoted(value);
-    }
-
-    return this.append(value);
+    appendQuoted(key).append(": ");
+    return appendQuotedIfNeeded(value, valueType);
   }
 
   @Override
   public String toString() {
-    this.append('}');
     return super.toString();
   }
 }
