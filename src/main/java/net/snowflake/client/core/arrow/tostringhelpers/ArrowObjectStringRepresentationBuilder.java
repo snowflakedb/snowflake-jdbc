@@ -16,9 +16,4 @@ public class ArrowObjectStringRepresentationBuilder extends ArrowStringRepresent
     appendQuoted(key).append(": ");
     return appendQuotedIfNeeded(value, valueType);
   }
-
-  @Override
-  public String toString() {
-    return super.toString();
-  }
 }

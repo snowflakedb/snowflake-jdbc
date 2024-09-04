@@ -18,9 +18,4 @@ public class ArrowArrayStringRepresentationBuilder extends ArrowStringRepresenta
     addCommaIfNeeded();
     return appendQuotedIfNeeded(value, valueType);
   }
-
-  @Override
-  public String toString() {
-    return super.toString();
-  }
 }
