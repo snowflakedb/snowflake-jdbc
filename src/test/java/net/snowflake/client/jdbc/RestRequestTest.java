@@ -16,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
@@ -490,6 +491,29 @@ public class RestRequestTest {
         TelemetryService.disable();
       }
     }
+  }
+
+  @Test
+  public void testConnectionClosedRetriesSuccessful() throws IOException, SnowflakeSQLException {
+    CloseableHttpClient client = mock(CloseableHttpClient.class);
+    when(client.execute(any(HttpUriRequest.class)))
+        .then(
+            new Answer<CloseableHttpResponse>() {
+              int callCount = 0;
+
+              @Override
+              public CloseableHttpResponse answer(InvocationOnMock invocationOnMock)
+                  throws Throwable {
+                callCount += 1;
+                if (callCount >= 1) {
+                  return successResponse();
+                } else {
+                  throw new SocketException("Connection reset");
+                }
+              }
+            });
+
+    execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1);
   }
 
   @Test(expected = SnowflakeSQLException.class)
