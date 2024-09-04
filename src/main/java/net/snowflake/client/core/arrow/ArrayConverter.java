@@ -24,11 +24,13 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
 
   @Override
   public String toString(int index) throws SFException {
-    ArrowArrayStringRepresentationBuilder builder = new ArrowArrayStringRepresentationBuilder();
-
     FieldVector vectorUnpacked = vector.getChildrenFromFields().get(0);
     SnowflakeType logicalType =
         ArrowVectorConverter.getSnowflakeTypeFromFieldMetadata(vectorUnpacked.getField());
+
+    ArrowArrayStringRepresentationBuilder builder =
+        new ArrowArrayStringRepresentationBuilder(logicalType);
+
     final ArrowVectorConverter converter;
 
     try {
@@ -38,7 +40,7 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
     }
 
     for (int i = vector.getElementStartIndex(index); i < vector.getElementEndIndex(index); i++) {
-      builder.appendValue(converter.toString(i), logicalType);
+      builder.appendValue(converter.toString(i));
     }
 
     return builder.toString();
