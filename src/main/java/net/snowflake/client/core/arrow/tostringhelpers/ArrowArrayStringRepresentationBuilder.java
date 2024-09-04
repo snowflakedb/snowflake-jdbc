@@ -11,7 +11,6 @@ public class ArrowArrayStringRepresentationBuilder extends ArrowStringRepresenta
   public ArrowArrayStringRepresentationBuilder(SnowflakeType valueType) {
     super("[", "]");
     this.valueType = valueType;
-    shouldQuoteValue(valueType);
   }
 
   public ArrowStringRepresentationBuilderBase appendValue(String value) {
