@@ -2,14 +2,13 @@ package net.snowflake.client.core.arrow.tostringhelpers;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.StringJoiner;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeType;
 
 @SnowflakeJdbcInternalApi
 public abstract class ArrowStringRepresentationBuilderBase {
-  private final StringBuilder stringBuilder;
-  private final String suffix;
-  private boolean isFirstValue = true;
+  private final StringJoiner joiner;
   private static final Set<SnowflakeType> quotableTypes;
 
   static {
@@ -26,46 +25,29 @@ public abstract class ArrowStringRepresentationBuilderBase {
     quotableTypes.add(SnowflakeType.TIMESTAMP_TZ);
   }
 
-  public ArrowStringRepresentationBuilderBase(String prefix, String suffix) {
-    stringBuilder = new StringBuilder(prefix);
-    this.suffix = suffix;
+  public ArrowStringRepresentationBuilderBase(String delimiter, String prefix, String suffix) {
+    joiner = new StringJoiner(delimiter, prefix, suffix);
   }
 
-  public ArrowStringRepresentationBuilderBase append(String string) {
-    stringBuilder.append(string);
+  protected ArrowStringRepresentationBuilderBase add(String string) {
+    joiner.add(string);
     return this;
   }
 
-  public ArrowStringRepresentationBuilderBase append(char character) {
-    stringBuilder.append(character);
-    return this;
+  private boolean shouldQuoteValue(SnowflakeType type) {
+    return quotableTypes.contains(type);
   }
 
-  protected ArrowStringRepresentationBuilderBase appendQuoted(String value) {
-    return this.append('"').append(value).append('"');
-  }
-
-  protected void addCommaIfNeeded() {
-    if (!isFirstValue) {
-      this.append(",");
-    }
-    this.isFirstValue = false;
-  }
-
-  protected ArrowStringRepresentationBuilderBase appendQuotedIfNeeded(
-      String value, SnowflakeType type) {
+  protected String quoteIfNeeded(String string, SnowflakeType type) {
     if (shouldQuoteValue(type)) {
-      return this.appendQuoted(value);
+      return '"' + string + '"';
     }
-    return this.append(value);
-  }
 
-  protected boolean shouldQuoteValue(SnowflakeType snowflakeType) {
-    return quotableTypes.contains(snowflakeType);
+    return string;
   }
 
   @Override
   public String toString() {
-    return stringBuilder.toString() + suffix;
+    return joiner.toString();
   }
 }

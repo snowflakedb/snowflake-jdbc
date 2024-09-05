@@ -9,12 +9,11 @@ public class ArrowArrayStringRepresentationBuilder extends ArrowStringRepresenta
   private final SnowflakeType valueType;
 
   public ArrowArrayStringRepresentationBuilder(SnowflakeType valueType) {
-    super("[", "]");
+    super(",", "[", "]");
     this.valueType = valueType;
   }
 
   public ArrowStringRepresentationBuilderBase appendValue(String value) {
-    addCommaIfNeeded();
-    return appendQuotedIfNeeded(value, valueType);
+    return add(quoteIfNeeded(value, valueType));
   }
 }
