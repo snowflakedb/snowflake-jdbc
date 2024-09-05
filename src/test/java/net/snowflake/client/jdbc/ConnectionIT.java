@@ -1039,8 +1039,6 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
     return kvMap2Properties(params, validateDefaultParameters);
   }
 
-  // TODO: This is a temporary Ignore to unblock merging PRs until ORG account is unlocked.
-  @Ignore
   @Test
   public void testFailOverOrgAccount() throws SQLException {
     // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
