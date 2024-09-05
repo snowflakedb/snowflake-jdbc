@@ -3,7 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.arrow.ArrowVectorConverterHelper.initConverter;
+import static net.snowflake.client.core.arrow.ArrowVectorConverterUtil.initConverter;
 
 import java.io.IOException;
 import java.io.InputStream;

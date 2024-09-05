@@ -17,8 +17,8 @@ import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.types.Types;
 
 @SnowflakeJdbcInternalApi
-public final class ArrowVectorConverterHelper {
-  private ArrowVectorConverterHelper() {}
+public final class ArrowVectorConverterUtil {
+  private ArrowVectorConverterUtil() {}
 
   /**
    * Given an arrow vector (a single column in a single record batch), return an arrow vector
