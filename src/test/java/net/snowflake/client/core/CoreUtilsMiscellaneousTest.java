@@ -162,6 +162,8 @@ public class CoreUtilsMiscellaneousTest {
             false);
     HttpUtil.setProxyForAzure(testKey, op);
     Proxy proxy = op.getProxy();
+    assertEquals("testuser", op.getProxyUsername());
+    assertEquals("pw", op.getProxyPassword());
     assertEquals(Proxy.Type.HTTP, proxy.type());
     assertEquals(new InetSocketAddress("snowflakecomputing.com", 443), proxy.address());
   }
