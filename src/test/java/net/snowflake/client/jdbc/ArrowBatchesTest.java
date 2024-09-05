@@ -35,12 +35,14 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.util.Text;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
-  @Before
-  public void setUp() throws Exception {
+  @BeforeClass
+  public static void setUp() throws Exception {
     try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set jdbc_query_result_format = 'arrow'");
       statement.execute("alter session set ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT = true");
@@ -49,8 +51,8 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @After
-  public void tearDown() throws Exception {
+  @AfterClass
+  public static void tearDown() throws Exception {
     try (Statement statement = connection.createStatement()) {
       statement.execute("alter session unset jdbc_query_result_format");
       statement.execute("alter session unset ENABLE_STRUCTURED_TYPES_NATIVE_ARROW_FORMAT");
