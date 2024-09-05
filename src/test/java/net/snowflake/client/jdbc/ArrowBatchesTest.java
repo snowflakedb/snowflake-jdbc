@@ -4,18 +4,23 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.core.SFArrowResultSet;
+import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.DecimalVector;
+import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.SmallIntVector;
 import org.apache.arrow.vector.TinyIntVector;
@@ -25,6 +30,9 @@ import org.apache.arrow.vector.complex.FixedSizeListVector;
 import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.complex.StructVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.util.Text;
 import org.junit.After;
 import org.junit.Before;
@@ -320,12 +328,12 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
     ;
     ResultSet rs =
         statement.executeQuery(
-            "select {'a': 3, 'b': 3}::object(a int, b int)"
-                + " union select {'a': 2, 'b': 2}::object(a int, b int)");
+            "select {'a': 3.1, 'b': 3.2}::object(a decimal(18, 3), b decimal(18, 3))"
+                + " union select {'a': 2.2, 'b': 2.3}::object(a decimal(18, 3), b decimal(18, 3))");
     ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
     int totalRows = 0;
-    List<Pair<Integer, Integer>> values = new ArrayList<>();
+    List<Pair<BigDecimal, BigDecimal>> values = new ArrayList<>();
 
     while (batches.hasNext()) {
       ArrowBatch batch = batches.next();
@@ -337,7 +345,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         DecimalVector aVector = (DecimalVector) vector.getChild("a");
         DecimalVector bVector = (DecimalVector) vector.getChild("b");
         for (int i = 0; i < root.getRowCount(); i++) {
-          // values.add(new Pair<>(aVector.getObject(i), bVector.getObject(i)));
+           values.add(new Pair<>(aVector.getObject(i), bVector.getObject(i)));
         }
         root.close();
       }
