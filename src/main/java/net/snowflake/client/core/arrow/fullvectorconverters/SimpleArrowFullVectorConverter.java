@@ -52,7 +52,9 @@ public abstract class SimpleArrowFullVectorConverter<T extends FieldVector>
         ArrowVectorConverterUtil.initConverter(vector, context, session, idx);
     additionalConverterInit(converter);
     for (int i = 0; i < size; i++) {
-      convertValue(converter, converted, i);
+      if (!vector.isNull(i)) {
+        convertValue(converter, converted, i);
+      }
     }
     converted.setValueCount(size);
     vector.close();
