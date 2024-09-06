@@ -5,6 +5,7 @@ import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.ArrowVectorConverterUtil;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
@@ -48,7 +49,7 @@ public abstract class SimpleArrowFullVectorConverter<T extends FieldVector>
     int size = vector.getValueCount();
     T converted = initVector();
     ArrowVectorConverter converter =
-        ArrowVectorConverter.initConverter(vector, context, session, idx);
+        ArrowVectorConverterUtil.initConverter(vector, context, session, idx);
     additionalConverterInit(converter);
     for (int i = 0; i < size; i++) {
       convertValue(converter, converted, i);
