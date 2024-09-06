@@ -4,19 +4,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.category.TestCategoryArrow;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.category.TestCategoryArrow;
 import net.snowflake.client.core.SFArrowResultSet;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.DecimalVector;
@@ -348,7 +346,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         DecimalVector aVector = (DecimalVector) vector.getChild("a");
         DecimalVector bVector = (DecimalVector) vector.getChild("b");
         for (int i = 0; i < root.getRowCount(); i++) {
-           values.add(new Pair<>(aVector.getObject(i), bVector.getObject(i)));
+          values.add(new Pair<>(aVector.getObject(i), bVector.getObject(i)));
         }
         root.close();
       }
