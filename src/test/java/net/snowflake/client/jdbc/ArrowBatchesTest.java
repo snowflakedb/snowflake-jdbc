@@ -12,15 +12,14 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.category.TestCategoryArrow;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.core.SFArrowResultSet;
-import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.DecimalVector;
-import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.SmallIntVector;
 import org.apache.arrow.vector.TinyIntVector;
@@ -30,17 +29,19 @@ import org.apache.arrow.vector.complex.FixedSizeListVector;
 import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.complex.StructVector;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.types.pojo.Field;
-import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.util.Text;
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryArrow.class)
 public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
+
+  /** Necessary to conditional ignore tests */
+  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+
   @BeforeClass
   public static void setUp() throws Exception {
     try (Statement statement = connection.createStatement()) {
