@@ -7,14 +7,14 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.category.TestCategoryArrow;
 import net.snowflake.client.core.SFArrowResultSet;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.DateDayVector;
@@ -28,21 +28,27 @@ import org.apache.arrow.vector.TimeSecVector;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.complex.StructVector;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryArrow.class)
 public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
-  @Before
-  public void setUp() throws Exception {
+
+  /** Necessary to conditional ignore tests */
+  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+
+  @BeforeClass
+  public static void setUp() throws Exception {
     try (Statement statement = connection.createStatement()) {
       statement.execute("alter session set jdbc_query_result_format = 'arrow'");
     }
   }
 
-  @After
-  public void tearDown() throws Exception {
+  @AfterClass
+  public static void tearDown() throws Exception {
     try (Statement statement = connection.createStatement()) {
       statement.execute("alter session unset jdbc_query_result_format");
     }
@@ -110,6 +116,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     // All expected values are present
@@ -142,6 +149,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     // All expected values are present
@@ -174,6 +182,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     // All expected values are present
@@ -208,6 +217,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     // All expected values are present
@@ -240,7 +250,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
-
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     // All expected values are present
@@ -279,6 +289,8 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
+    assertNoMemoryLeaks(rs);
+    rs.close();
 
     assertEquals(4, trueCount);
     assertEquals(3, falseCount);
@@ -315,6 +327,8 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
+    assertNoMemoryLeaks(rs);
+    rs.close();
 
     List<ArrayList<Byte>> expected =
         new ArrayList<ArrayList<Byte>>() {
@@ -366,7 +380,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
-
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     List<LocalDate> expected =
@@ -404,7 +418,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
-
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     List<LocalTime> expected =
@@ -442,7 +456,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
-
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     List<LocalTime> expected =
@@ -481,7 +495,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
-
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     List<LocalTime> expected =
@@ -520,7 +534,7 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
         root.close();
       }
     }
-
+    assertNoMemoryLeaks(rs);
     rs.close();
 
     List<LocalTime> expected =
