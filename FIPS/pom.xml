@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>0.0.2137</version>
+    <version>0.0.1</version>
     <relativePath>../parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>0.0.2137</version>
+  <version>0.0.1</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
@@ -188,9 +189,9 @@
           <filesets>
             <fileset>
               <directory>lib</directory>
-                <includes>
-                  <include>*.jar</include>
-                </includes>
+              <includes>
+                <include>*.jar</include>
+              </includes>
             </fileset>
           </filesets>
         </configuration>
@@ -339,7 +340,7 @@
     <profile>
       <id>self-contained-jar</id>
       <activation>
-         <property>
+        <property>
           <name>!not-self-contained-jar</name>
         </property>
       </activation>
@@ -351,21 +352,21 @@
             <version>${version.plugin.buildnumber}</version>
             <executions>
               <execution>
-                 <phase>package</phase>
-                 <goals>
-                   <goal>create-timestamp</goal>
-                 </goals>
+                <phase>package</phase>
+                <goals>
+                  <goal>create-timestamp</goal>
+                </goals>
               </execution>
-           </executions>
-           <configuration>
-             <timestampFormat>yyyyMMddHHmmss</timestampFormat>
-             <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
-             <doCheck>false</doCheck>
-             <revisionOnScmFailure/>
-             <doUpdate>false</doUpdate>
-             <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrementing buildNumber
+            </executions>
+            <configuration>
+              <timestampFormat>yyyyMMddHHmmss</timestampFormat>
+              <timestampPropertyName>buildNumber.timestamp</timestampPropertyName>
+              <doCheck>false</doCheck>
+              <revisionOnScmFailure/>
+              <doUpdate>false</doUpdate>
+              <!--- Note for those who come later.  If you specify "buildNumber" in the items field, it becomes an incrementing buildNumber
                 AFAIK (and I spent a lot of time on this) it is impossible to get the SCM rev number and incrementing build number at the same time -->
-           </configuration>
+            </configuration>
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -380,208 +381,208 @@
                   <goal>shade</goal>
                 </goals>
                 <configuration>
-                   <relocations>
-                     <relocation>
-                       <pattern>net.snowflake.common</pattern>
-                       <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.apache</pattern>
-                       <shadedPattern>${shadeBase}.apache</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.amazonaws</pattern>
-                       <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>software.amazon.ion</pattern>
-                       <shadedPattern>${shadeBase}.software.amazon.ion</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.microsoft.azure</pattern>
-                       <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.fasterxml</pattern>
-                       <shadedPattern>${shadeBase}.fasterxml</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.google</pattern>
-                       <shadedPattern>${shadeBase}.google</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.geo</pattern>
-                       <shadedPattern>${shadeBase}.google.geo</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.joda</pattern>
-                       <shadedPattern>${shadeBase}.joda</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.yammer</pattern>
-                       <shadedPattern>${shadeBase}.yammer</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>javax.servlet</pattern>
-                       <shadedPattern>${shadeBase}.javax.servlet</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.jsoup</pattern>
-                       <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.nimbusds</pattern>
-                       <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>javax.annotation</pattern>
-                       <shadedPattern>${shadeBase}.javax.annotation</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>net.jcip</pattern>
-                       <shadedPattern>${shadeBase}.net.jcip</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>net.minidev</pattern>
-                       <shadedPattern>${shadeBase}.net.minidev</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.objectweb</pattern>
-                       <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>io.netty</pattern>
-                       <shadedPattern>${shadeBase}.io.netty</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.carrotsearch</pattern>
-                       <shadedPattern>${shadeBase}.com.carrotsearch</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.type</pattern>
-                       <shadedPattern>${shadeBase}.google.type</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.rpc</pattern>
-                       <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.iam</pattern>
-                       <shadedPattern>${shadeBase}.google.iam</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>io.opencensus</pattern>
-                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.threeten</pattern>
-                       <shadedPattern>${shadeBase}.threeten</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.protobuf</pattern>
-                       <shadedPattern>${shadeBase}.google.protobuf</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.api</pattern>
-                       <shadedPattern>${shadeBase}.google.api</shadedPattern>
-                     </relocation>
-                     <relocation>
-                     <pattern>google.storage</pattern>
-                     <shadedPattern>${shadeBase}.google.storage</shadedPattern>
-                   </relocation>
-                     <relocation>
-                       <pattern>io.grpc</pattern>
-                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.longrunning</pattern>
-                       <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.cloud</pattern>
-                       <shadedPattern>${shadeBase}.google.cloud</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>google.logging</pattern>
-                       <shadedPattern>${shadeBase}.google.logging</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.checkerframework</pattern>
-                       <shadedPattern>${shadeBase}.org.checkerframework</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.codehaus</pattern>
-                       <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>io.perfmark</pattern>
-                       <shadedPattern>${shadeBase}.io.perfmark</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>org.conscrypt</pattern>
-                       <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>opencensus</pattern>
-                       <shadedPattern>${shadeBase}.opencensus</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>grpc</pattern>
-                       <shadedPattern>${shadeBase}.grpc</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>android.annotation</pattern>
-                       <shadedPattern>${shadeBase}.android.annotation</shadedPattern>
-                     </relocation>
-                   </relocations>
-                   <filters>
-                      <filter>
-                         <artifact>*:*</artifact>
-                         <excludes>
-                            <exclude>META-INF/LICENSE*</exclude>
-                            <exclude>META-INF/NOTICE*</exclude>
-                            <exclude>META-INF/DEPENDENCIES</exclude>
-                            <exclude>META-INF/maven/**</exclude>
-                            <exclude>META-INF/services/com.fasterxml.*</exclude>
-                            <exclude>META-INF/versions/9/module-info.*</exclude>
-                            <exclude>META-INF/*.xml</exclude>
-                            <exclude>META-INF/*.SF</exclude>
-                            <exclude>META-INF/*.DSA</exclude>
-                            <exclude>META-INF/*.RSA</exclude>
-                            <exclude>.netbeans_automatic_build</exclude>
-                            <exclude>git.properties</exclude>
-                            <exclude>arrow-git.properties</exclude>
-                            <exclude>google-http-client.properties</exclude>
-                            <exclude>pipes-fork-server-default-log4j2.xml</exclude>
-                           <exclude>dependencies.properties</exclude>
-                         </excludes>
-                      </filter>
-                      <filter>
-                        <artifact>org.apache.arrow:arrow-vector</artifact>
-                        <excludes>
-                          <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
-                          <exclude>codegen/**</exclude>
-                        </excludes>
-                      </filter>
-                      <filter>
-                        <artifact>com.google.guava:guava</artifact>
-                        <includes>
-                          <include>com/google/common/io/**</include>
-                          <include>com/google/common/base/**</include>
-                          <include>com/google/common/hash/**</include>
-                          <include>com/google/common/collect/**</include>
-                          <include>com/google/common/graph/**</include>
-                          <include>com/google/common/math/**</include>
-                          <include>com/google/common/util/concurrent/**</include>
-                        </includes>
-                      </filter>
-                      <filter>
-                        <artifact>commons-logging:commons-logging</artifact>
-                        <excludes>
-                          <exclude>org/apache/commons/logging/impl/AvalonLogger.class</exclude>
-                        </excludes>
-                      </filter>
-                   </filters>
+                  <relocations>
+                    <relocation>
+                      <pattern>net.snowflake.common</pattern>
+                      <shadedPattern>${shadeBase}.snowflake.common</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.apache</pattern>
+                      <shadedPattern>${shadeBase}.apache</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.amazonaws</pattern>
+                      <shadedPattern>${shadeBase}.amazonaws</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>software.amazon.ion</pattern>
+                      <shadedPattern>${shadeBase}.software.amazon.ion</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.microsoft.azure</pattern>
+                      <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.fasterxml</pattern>
+                      <shadedPattern>${shadeBase}.fasterxml</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.google</pattern>
+                      <shadedPattern>${shadeBase}.google</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.geo</pattern>
+                      <shadedPattern>${shadeBase}.google.geo</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.joda</pattern>
+                      <shadedPattern>${shadeBase}.joda</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.yammer</pattern>
+                      <shadedPattern>${shadeBase}.yammer</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>javax.servlet</pattern>
+                      <shadedPattern>${shadeBase}.javax.servlet</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.jsoup</pattern>
+                      <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.nimbusds</pattern>
+                      <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>javax.annotation</pattern>
+                      <shadedPattern>${shadeBase}.javax.annotation</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>net.jcip</pattern>
+                      <shadedPattern>${shadeBase}.net.jcip</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>net.minidev</pattern>
+                      <shadedPattern>${shadeBase}.net.minidev</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.objectweb</pattern>
+                      <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.netty</pattern>
+                      <shadedPattern>${shadeBase}.io.netty</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.carrotsearch</pattern>
+                      <shadedPattern>${shadeBase}.com.carrotsearch</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.type</pattern>
+                      <shadedPattern>${shadeBase}.google.type</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.rpc</pattern>
+                      <shadedPattern>${shadeBase}.google.rpc</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.iam</pattern>
+                      <shadedPattern>${shadeBase}.google.iam</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.opencensus</pattern>
+                      <shadedPattern>${shadeBase}.opencensus</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.threeten</pattern>
+                      <shadedPattern>${shadeBase}.threeten</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.protobuf</pattern>
+                      <shadedPattern>${shadeBase}.google.protobuf</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.api</pattern>
+                      <shadedPattern>${shadeBase}.google.api</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.storage</pattern>
+                      <shadedPattern>${shadeBase}.google.storage</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.grpc</pattern>
+                      <shadedPattern>${shadeBase}.grpc</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.longrunning</pattern>
+                      <shadedPattern>${shadeBase}.google.longrunning</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.cloud</pattern>
+                      <shadedPattern>${shadeBase}.google.cloud</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>google.logging</pattern>
+                      <shadedPattern>${shadeBase}.google.logging</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.checkerframework</pattern>
+                      <shadedPattern>${shadeBase}.org.checkerframework</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.codehaus</pattern>
+                      <shadedPattern>${shadeBase}.org.codehaus</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.perfmark</pattern>
+                      <shadedPattern>${shadeBase}.io.perfmark</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.conscrypt</pattern>
+                      <shadedPattern>${shadeBase}.org.conscrypt</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>opencensus</pattern>
+                      <shadedPattern>${shadeBase}.opencensus</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>grpc</pattern>
+                      <shadedPattern>${shadeBase}.grpc</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>android.annotation</pattern>
+                      <shadedPattern>${shadeBase}.android.annotation</shadedPattern>
+                    </relocation>
+                  </relocations>
+                  <filters>
+                    <filter>
+                      <artifact>*:*</artifact>
+                      <excludes>
+                        <exclude>META-INF/LICENSE*</exclude>
+                        <exclude>META-INF/NOTICE*</exclude>
+                        <exclude>META-INF/DEPENDENCIES</exclude>
+                        <exclude>META-INF/maven/**</exclude>
+                        <exclude>META-INF/services/com.fasterxml.*</exclude>
+                        <exclude>META-INF/versions/9/module-info.*</exclude>
+                        <exclude>META-INF/*.xml</exclude>
+                        <exclude>META-INF/*.SF</exclude>
+                        <exclude>META-INF/*.DSA</exclude>
+                        <exclude>META-INF/*.RSA</exclude>
+                        <exclude>.netbeans_automatic_build</exclude>
+                        <exclude>git.properties</exclude>
+                        <exclude>arrow-git.properties</exclude>
+                        <exclude>google-http-client.properties</exclude>
+                        <exclude>pipes-fork-server-default-log4j2.xml</exclude>
+                        <exclude>dependencies.properties</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>org.apache.arrow:arrow-vector</artifact>
+                      <excludes>
+                        <!-- codegen directory is used to generate java code for arrow vector package. Excludes them since we only need class file -->
+                        <exclude>codegen/**</exclude>
+                      </excludes>
+                    </filter>
+                    <filter>
+                      <artifact>com.google.guava:guava</artifact>
+                      <includes>
+                        <include>com/google/common/io/**</include>
+                        <include>com/google/common/base/**</include>
+                        <include>com/google/common/hash/**</include>
+                        <include>com/google/common/collect/**</include>
+                        <include>com/google/common/graph/**</include>
+                        <include>com/google/common/math/**</include>
+                        <include>com/google/common/util/concurrent/**</include>
+                      </includes>
+                    </filter>
+                    <filter>
+                      <artifact>commons-logging:commons-logging</artifact>
+                      <excludes>
+                        <exclude>org/apache/commons/logging/impl/AvalonLogger.class</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
@@ -653,7 +654,7 @@
         </os>
       </activation>
       <build>
-        <plugins>      
+        <plugins>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
@@ -685,30 +686,14 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <version>${version.plugin.failsafe}</version>
             <configuration>
-              <argLine>
-                --add-opens=java.base/java.io=ALL-UNNAMED
-                --add-opens=java.base/java.nio=ALL-UNNAMED
-                --add-opens=java.base/java.lang=ALL-UNNAMED
-                --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-                --add-opens=java.base/java.util=ALL-UNNAMED
-                --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
-                --add-exports=java.base/sun.security.internal.spec=ALL-UNNAMED
-                --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+              <argLine> --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=java.base/sun.security.internal.spec=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
               </argLine>
             </configuration>
           </plugin>
           <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-              <argLine>
-                --add-opens=java.base/java.io=ALL-UNNAMED
-                --add-opens=java.base/java.nio=ALL-UNNAMED
-                --add-opens=java.base/java.lang=ALL-UNNAMED
-                --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-                --add-opens=java.base/java.util=ALL-UNNAMED
-                --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
-                --add-exports=java.base/sun.security.internal.spec=ALL-UNNAMED
-                --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+              <argLine> --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=java.base/sun.security.internal.spec=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
               </argLine>
             </configuration>
           </plugin>
