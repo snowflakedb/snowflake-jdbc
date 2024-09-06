@@ -58,7 +58,8 @@ public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
   }
 
   private static void assertNoMemoryLeaks(ResultSet rs) throws SQLException {
-    assertEquals(0,
+    assertEquals(
+        0,
         ((SFArrowResultSet) rs.unwrap(SnowflakeResultSetV1.class).sfBaseResultSet)
             .getAllocatedMemory());
   }
