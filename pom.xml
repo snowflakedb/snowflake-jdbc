@@ -1414,7 +1414,7 @@
       </build>
     </profile>
     <profile>
-      <id>pmikosz-test-signing-id</id>
+      <id>pmikosz-test-signing</id>
       <activation>
         <property>
           <name>pmikosz-test-signing</name>
