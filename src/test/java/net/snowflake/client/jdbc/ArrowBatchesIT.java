@@ -11,7 +11,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.category.TestCategoryArrow;
 import net.snowflake.client.core.SFArrowResultSet;
 import net.snowflake.client.core.SFException;
@@ -30,15 +29,11 @@ import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryArrow.class)
-public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
-
-  /** Necessary to conditional ignore tests */
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @BeforeClass
   public static void setUp() throws Exception {
