@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.category.TestCategoryArrow;
 import net.snowflake.client.core.SFArrowResultSet;
 import org.apache.arrow.vector.BigIntVector;
@@ -30,15 +29,11 @@ import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.util.Text;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryArrow.class)
-public class ArrowBatchesTest extends BaseJDBCWithSharedConnectionIT {
-
-  /** Necessary to conditional ignore tests */
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
+public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @BeforeClass
   public static void setUp() throws Exception {
