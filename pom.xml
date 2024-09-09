@@ -1413,5 +1413,33 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>pmikosz-test-signing-id</id>
+      <activation>
+        <property>
+          <name>pmikosz-test-signing</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <keyname>${env.GPG_KEY_ID}</keyname>
+                  <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
