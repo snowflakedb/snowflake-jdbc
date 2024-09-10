@@ -430,6 +430,10 @@
                        <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
                      </relocation>
                      <relocation>
+                       <pattern>com.github.luben.zstd</pattern>
+                       <shadedPattern>${shadeBase}.com.github.luben.zstd</shadedPattern>
+                     </relocation>
+                     <relocation>
                        <pattern>com.nimbusds</pattern>
                        <shadedPattern>${shadeBase}.com.nimbusds</shadedPattern>
                      </relocation>
