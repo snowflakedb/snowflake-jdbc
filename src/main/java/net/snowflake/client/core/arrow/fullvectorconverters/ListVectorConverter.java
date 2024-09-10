@@ -2,7 +2,6 @@ package net.snowflake.client.core.arrow.fullvectorconverters;
 
 import java.util.ArrayList;
 import java.util.TimeZone;
-
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;

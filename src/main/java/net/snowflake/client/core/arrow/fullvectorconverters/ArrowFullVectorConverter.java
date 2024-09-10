@@ -112,17 +112,22 @@ public interface ArrowFullVectorConverter {
             return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, true)
                 .convert();
           case STRUCT:
-            return new StructVectorConverter(allocator, vector, context, session, timeZoneToUse, idx, null)
+            return new StructVectorConverter(
+                    allocator, vector, context, session, timeZoneToUse, idx, null)
                 .convert();
           case LIST:
-            return new ListVectorConverter(allocator, vector, context, session, timeZoneToUse, idx, null)
+            return new ListVectorConverter(
+                    allocator, vector, context, session, timeZoneToUse, idx, null)
                 .convert();
           case VARCHAR:
             return new VarCharVectorConverter(allocator, vector, context, session, idx).convert();
           case MAP:
-            return new MapVectorConverter(allocator, vector, context, session, timeZoneToUse, idx, null).convert();
+            return new MapVectorConverter(
+                    allocator, vector, context, session, timeZoneToUse, idx, null)
+                .convert();
           case FIXED_SIZE_LIST:
-            return new FixedSizeListVectorConverter(allocator, vector, context, session, timeZoneToUse, idx, null)
+            return new FixedSizeListVectorConverter(
+                    allocator, vector, context, session, timeZoneToUse, idx, null)
                 .convert();
         }
       }
