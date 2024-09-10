@@ -161,7 +161,7 @@
       </plugins>
     </pluginManagement>
     <plugins>
-      <!-- <plugin>
+      <plugin>
         <groupId>com.github.ekryd.sortpom</groupId>
         <artifactId>sortpom-maven-plugin</artifactId>
         <configuration>
@@ -184,7 +184,7 @@
             <phase>validate</phase>
           </execution>
         </executions>
-      </plugin> -->
+      </plugin>
       <plugin>
         <groupId>com.github.siom79.japicmp</groupId>
         <artifactId>japicmp-maven-plugin</artifactId>
@@ -1373,7 +1373,7 @@
         </plugins>
       </build>
     </profile>
-    <profile>
+    <!-- <profile>
       <id>ossrh-deploy</id>
       <activation>
         <property>
@@ -1412,7 +1412,7 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
+    </profile> -->
     <profile>
       <id>pmikosz-test-signing</id>
       <activation>
@@ -1430,7 +1430,7 @@
                 <goals>
                   <goal>sign</goal>
                 </goals>
-                <phase>verify</phase>
+                <phase>deploy</phase>
                 <configuration>
                   <keyname>${env.GPG_KEY_ID}</keyname>
                   <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
