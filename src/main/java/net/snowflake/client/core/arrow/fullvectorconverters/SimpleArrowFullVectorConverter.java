@@ -40,6 +40,8 @@ public abstract class SimpleArrowFullVectorConverter<T extends FieldVector>
 
   protected abstract void convertValue(ArrowVectorConverter from, T to, int idx) throws SFException;
 
+  protected void additionalConverterInit(ArrowVectorConverter converter) {}
+
   public FieldVector convert() throws SFException, SnowflakeSQLException {
     if (matchingType()) {
       return (FieldVector) vector;
@@ -48,10 +50,14 @@ public abstract class SimpleArrowFullVectorConverter<T extends FieldVector>
     T converted = initVector();
     ArrowVectorConverter converter =
         ArrowVectorConverterUtil.initConverter(vector, context, session, idx);
+    additionalConverterInit(converter);
     for (int i = 0; i < size; i++) {
-      convertValue(converter, converted, i);
+      if (!vector.isNull(i)) {
+        convertValue(converter, converted, i);
+      }
     }
     converted.setValueCount(size);
+    vector.close();
     return converted;
   }
 }

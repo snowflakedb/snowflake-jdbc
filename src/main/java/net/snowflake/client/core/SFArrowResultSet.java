@@ -814,10 +814,13 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     public ArrowBatch next() throws SQLException {
       if (!firstFetched) {
         firstFetched = true;
-        return currentChunkIterator.getChunk().getArrowBatch(SFArrowResultSet.this);
+        return currentChunkIterator
+            .getChunk()
+            .getArrowBatch(SFArrowResultSet.this, useSessionTimezone ? sessionTimeZone : null);
       } else {
         nextChunkIndex++;
-        return fetchNextChunk().getArrowBatch(SFArrowResultSet.this);
+        return fetchNextChunk()
+            .getArrowBatch(SFArrowResultSet.this, useSessionTimezone ? sessionTimeZone : null);
       }
     }
   }
