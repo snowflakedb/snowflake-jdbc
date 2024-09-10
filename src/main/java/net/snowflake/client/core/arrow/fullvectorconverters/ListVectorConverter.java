@@ -1,6 +1,8 @@
 package net.snowflake.client.core.arrow.fullvectorconverters;
 
 import java.util.ArrayList;
+import java.util.TimeZone;
+
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -20,6 +22,7 @@ public class ListVectorConverter implements ArrowFullVectorConverter {
   protected DataConversionContext context;
   protected SFBaseSession session;
   protected int idx;
+  private TimeZone timeZoneToUse;
   protected Object valueTargetType;
 
   ListVectorConverter(
@@ -27,6 +30,7 @@ public class ListVectorConverter implements ArrowFullVectorConverter {
       ValueVector vector,
       DataConversionContext context,
       SFBaseSession session,
+      TimeZone timeZoneToUse,
       int idx,
       Object valueTargetType) {
     this.allocator = allocator;
@@ -34,6 +38,7 @@ public class ListVectorConverter implements ArrowFullVectorConverter {
     this.context = context;
     this.session = session;
     this.idx = idx;
+    this.timeZoneToUse = timeZoneToUse;
     this.valueTargetType = valueTargetType;
   }
 
@@ -51,7 +56,7 @@ public class ListVectorConverter implements ArrowFullVectorConverter {
     FieldVector dataVector = listVector.getDataVector();
     FieldVector convertedDataVector =
         ArrowFullVectorConverter.convert(
-            allocator, dataVector, context, session, 0, valueTargetType);
+            allocator, dataVector, context, session, timeZoneToUse, 0, valueTargetType);
     ListVector convertedListVector = initVector(vector.getName(), dataVector.getField());
     convertedListVector.allocateNew();
     convertedListVector.setValueCount(listVector.getValueCount());

@@ -3,6 +3,7 @@ package net.snowflake.client.core.arrow.fullvectorconverters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
@@ -23,6 +24,7 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
   protected ValueVector vector;
   protected DataConversionContext context;
   protected SFBaseSession session;
+  private TimeZone timeZoneToUse;
   protected int idx;
   protected Map<String, Object> targetTypes;
 
@@ -31,6 +33,7 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
       ValueVector vector,
       DataConversionContext context,
       SFBaseSession session,
+      TimeZone timeZoneToUse,
       int idx,
       Map<String, Object> targetTypes) {
     this.allocator = allocator;
@@ -38,6 +41,7 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
     this.context = context;
     this.session = session;
     this.idx = idx;
+    this.timeZoneToUse = timeZoneToUse;
     this.targetTypes = targetTypes;
   }
 
@@ -52,7 +56,7 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
       }
       convertedVectors.add(
           ArrowFullVectorConverter.convert(
-              allocator, childVector, context, session, idx, targetType));
+              allocator, childVector, context, session, timeZoneToUse, idx, targetType));
     }
 
     List<Field> convertedFields =

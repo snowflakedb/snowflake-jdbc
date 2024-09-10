@@ -1,6 +1,8 @@
 package net.snowflake.client.core.arrow.fullvectorconverters;
 
 import java.util.ArrayList;
+import java.util.TimeZone;
+
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -19,6 +21,7 @@ public class FixedSizeListVectorConverter implements ArrowFullVectorConverter {
   protected ValueVector vector;
   protected DataConversionContext context;
   protected SFBaseSession session;
+  private TimeZone timeZoneToUse;
   protected int idx;
   protected Object valueTargetType;
 
@@ -27,12 +30,14 @@ public class FixedSizeListVectorConverter implements ArrowFullVectorConverter {
       ValueVector vector,
       DataConversionContext context,
       SFBaseSession session,
+      TimeZone timeZoneToUse,
       int idx,
       Object valueTargetType) {
     this.allocator = allocator;
     this.vector = vector;
     this.context = context;
     this.session = session;
+    this.timeZoneToUse = timeZoneToUse;
     this.idx = idx;
     this.valueTargetType = valueTargetType;
   }
@@ -43,7 +48,7 @@ public class FixedSizeListVectorConverter implements ArrowFullVectorConverter {
     FieldVector dataVector = listVector.getDataVector();
     FieldVector convertedDataVector =
         ArrowFullVectorConverter.convert(
-            allocator, dataVector, context, session, 0, valueTargetType);
+            allocator, dataVector, context, session, timeZoneToUse, 0, valueTargetType);
     FixedSizeListVector convertedListVector =
         FixedSizeListVector.empty(listVector.getName(), listVector.getListSize(), allocator);
     ArrayList<Field> fields = new ArrayList<>();
