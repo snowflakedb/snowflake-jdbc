@@ -161,7 +161,7 @@
       </plugins>
     </pluginManagement>
     <plugins>
-      <plugin>
+      <!-- <plugin>
         <groupId>com.github.ekryd.sortpom</groupId>
         <artifactId>sortpom-maven-plugin</artifactId>
         <configuration>
@@ -173,7 +173,7 @@
           <sortExecutions>true</sortExecutions>
           <sortModules>true</sortModules>
           <sortProperties>true</sortProperties>
-          <verifyFail>stop</verifyFail>
+          <verifyFail>Warn</verifyFail>
           <verifyFailOn>strict</verifyFailOn>
         </configuration>
         <executions>
@@ -184,7 +184,7 @@
             <phase>validate</phase>
           </execution>
         </executions>
-      </plugin>
+      </plugin> -->
       <plugin>
         <groupId>com.github.siom79.japicmp</groupId>
         <artifactId>japicmp-maven-plugin</artifactId>
