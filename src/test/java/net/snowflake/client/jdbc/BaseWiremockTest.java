@@ -49,11 +49,6 @@ public abstract class BaseWiremockTest {
   public static void setUpClass() {
     assumeFalse(RunningNotOnJava8.isRunningOnJava8());
     assumeFalse(RunningNotOnJava21.isRunningOnJava21());
-    assumeFalse(
-        RunningNotOnGithubActionsMac
-            .isRunningOnGithubActionsMac()); // disabled until issue with access to localhost
-    // (https://github.com/snowflakedb/snowflake-jdbc/pull/1807#discussion_r1686229430) is fixed on
-    // github actions mac image. Ticket to enable when fixed: SNOW-1555950
     originalTrustStorePath = systemGetProperty(TRUST_STORE_PROPERTY);
     startWiremockStandAlone();
   }
@@ -102,6 +97,7 @@ public abstract class BaseWiremockTest {
                             "--ca-keystore",
                             getResourceURL("wiremock" + File.separator + "ca-cert.jks"))
                         .inheritIO()
+                        .redirectErrorStream(true)
                         .start();
                 waitForWiremock();
                 return true;
