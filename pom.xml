@@ -1430,7 +1430,7 @@
                 <goals>
                   <goal>sign</goal>
                 </goals>
-                <phase>deploy</phase>
+                <phase>verify</phase>
                 <configuration>
                   <keyname>${env.GPG_KEY_ID}</keyname>
                   <passphrase>${env.GPG_KEY_PASSPHRASE}</passphrase>
