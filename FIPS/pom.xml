@@ -753,7 +753,7 @@
       </activation>
       <build>
         <plugins>
-          <plugin>
+          <!-- <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <version>${version.plugin.gpg}</version>
@@ -775,7 +775,7 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>
+          </plugin> -->
           <!-- skip default deploy plugin if we use gpg plugin to deploy -->
           <plugin>
             <artifactId>maven-deploy-plugin</artifactId>
