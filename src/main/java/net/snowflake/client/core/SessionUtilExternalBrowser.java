@@ -317,9 +317,9 @@ public class SessionUtilExternalBrowser {
       } catch (SFException e) {
         this.handlers.output(authUrl);
         this.handlers.output(
-          "We were unable to open a browser window for you, " 
-          + "please open the url above manually then paste the "
-          + "URL you are redirected to into the terminal.");
+            "We were unable to open a browser window for you, "
+                + "please open the url above manually then paste the "
+                + "URL you are redirected to into the terminal.");
         String redirectUrl = this.handlers.input();
         try {
           URI inputParameter = new URI(redirectUrl);
