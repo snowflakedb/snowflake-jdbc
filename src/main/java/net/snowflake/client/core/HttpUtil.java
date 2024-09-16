@@ -9,9 +9,10 @@ import static org.apache.http.client.config.CookieSpecs.DEFAULT;
 import static org.apache.http.client.config.CookieSpecs.IGNORE_COOKIES;
 
 import com.amazonaws.ClientConfiguration;
+import com.azure.core.http.ProxyOptions;
+import com.azure.core.util.HttpClientOptions;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-import com.microsoft.azure.storage.OperationContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -183,63 +184,85 @@ public class HttpUtil {
    * from the StageInfo
    *
    * @param proxyProperties proxy properties
-   * @param opContext the configuration needed by Azure to set the proxy
+   * @param httpClientOptions the configuration needed by Azure to set the proxy
    * @throws SnowflakeSQLException
    */
   public static void setSessionlessProxyForAzure(
-      Properties proxyProperties, OperationContext opContext) throws SnowflakeSQLException {
-    if (proxyProperties != null
-        && proxyProperties.size() > 0
-        && proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
-      Boolean useProxy =
-          Boolean.valueOf(
-              proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
-      if (useProxy) {
-        String proxyHost =
-            proxyProperties.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
-        int proxyPort;
-        try {
-          proxyPort =
-              Integer.parseInt(
-                  proxyProperties.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey()));
-        } catch (NumberFormatException | NullPointerException e) {
-          throw new SnowflakeSQLException(
-              ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
-        }
-        Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-        logger.debug("Setting sessionless Azure proxy. Host: {}, port: {}", proxyHost, proxyPort);
-        opContext.setProxy(azProxy);
-      } else {
-        logger.debug("Omitting sessionless Azure proxy setup as proxy is disabled");
-      }
-    } else {
+      Properties proxyProperties, HttpClientOptions httpClientOptions) throws SnowflakeSQLException {
+    if (proxyProperties == null
+        || proxyProperties.isEmpty()
+        || proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) == null) {
       logger.debug("Omitting sessionless Azure proxy setup");
+      return;
     }
+
+    boolean useProxy =
+            Boolean.parseBoolean(proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
+    if (!useProxy) {
+      logger.debug("Omitting sessionless Azure proxy setup as proxy is disabled");
+    }
+
+    // TODO: extract common logic
+    String proxyHost =
+            proxyProperties.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
+    int proxyPort;
+    try {
+      proxyPort =
+          Integer.parseInt(
+              proxyProperties.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey()));
+    } catch (NumberFormatException | NullPointerException e) {
+      throw new SnowflakeSQLException(
+          ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+    }
+
+    String proxyUser = proxyProperties.getProperty(SFSessionProperty.PROXY_USER.getPropertyKey());
+    String proxyPassword = proxyProperties.getProperty(SFSessionProperty.PROXY_PASSWORD.getPropertyKey());
+
+    boolean setProxyUser =
+            !Strings.isNullOrEmpty(proxyUser);
+//       Isn't blank password allowed? Also, the userid I guess. Source: RFC 2617
+//              && !Strings.isNullOrEmpty(proxyPassword);
+
+    ProxyOptions proxyOptions = new ProxyOptions(ProxyOptions.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+    if (setProxyUser) {
+      proxyOptions.setCredentials(proxyUser, proxyPassword);
+    }
+
+    logger.info(
+            "Setting Azure proxy {} user. Host: {}, port: {}",
+            setProxyUser ? "with" : "without",
+            proxyHost,
+            proxyPort);
+
+    httpClientOptions.setProxyOptions(proxyOptions);
   }
 
   /**
    * A static function to set Azure proxy params when there is a valid session
    *
    * @param key key to HttpClient map containing OCSP and proxy info
-   * @param opContext the configuration needed by Azure to set the proxy
+   * @param httpClientOptions the configuration needed by Azure to set the proxy
    */
-  public static void setProxyForAzure(HttpClientSettingsKey key, OperationContext opContext) {
+  public static void setProxyForAzure(HttpClientSettingsKey key, HttpClientOptions httpClientOptions) {
     if (key != null && key.usesProxy()) {
-      Proxy azProxy =
-          new Proxy(Proxy.Type.HTTP, new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
-      opContext.setProxy(azProxy);
+      ProxyOptions proxyOptions =
+              new ProxyOptions(ProxyOptions.Type.HTTP, new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
       boolean setProxyUser =
-          !Strings.isNullOrEmpty(key.getProxyUser())
-              && !Strings.isNullOrEmpty(key.getProxyPassword());
-      logger.debug(
+          !Strings.isNullOrEmpty(key.getProxyUser());
+//       Isn't blank password allowed? Also, the userid I guess. Source: RFC 2617
+//              && !Strings.isNullOrEmpty(key.getProxyPassword());
+      logger.info(
           "Setting Azure proxy {} user. Host: {}, port: {}",
           setProxyUser ? "with" : "without",
           key.getProxyHost(),
           key.getProxyPort());
       if (setProxyUser) {
-        opContext.setProxyUsername(key.getProxyUser());
-        opContext.setProxyPassword(key.getProxyPassword());
+        proxyOptions.setCredentials(key.getProxyUser(), key.getProxyPassword());
+        logger.info("Azure proxy user: {}, azure proxy password: {}", key.getProxyUser(), key.getProxyPassword());
       }
+
+      httpClientOptions.setProxyOptions(proxyOptions);
+
     } else {
       logger.debug("Omitting Azure proxy setup");
     }
@@ -881,6 +904,23 @@ public class HttpUtil {
         stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
 
     return theString;
+  }
+
+  // TODO: do we need this?
+  public static void configureHttpClientTimeouts(HttpClientOptions httpClientOptions) {
+    // Set the connection timeout for a request to be sent.
+    httpClientOptions.setConnectTimeout(Duration.ofMillis(DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS));
+    // Set the duration of time before an idle connection.
+    httpClientOptions.setConnectionIdleTimeout(Duration.ofSeconds(DEFAULT_IDLE_CONNECTION_TIMEOUT));
+////     Set the maximum connection pool size used by the underlying HTTP client.
+//    httpClientOptions.setMaximumConnectionPoolSize(SystemUtil.convertSystemPropertyToIntValue(
+//            JDBC_MAX_CONNECTIONS_PROPERTY, DEFAULT_MAX_CONNECTIONS));
+////    Sets the read timeout duration used when reading the server response.
+//    httpClientOptions.setReadTimeout(Duration readTimeout);
+////    Sets the response timeout duration used when waiting for a server to reply.
+//    httpClientOptions.setResponseTimeout(Duration responseTimeout);
+////    Sets the writing timeout for a request to be sent.
+//    httpClientOptions.setWriteTimeout(Duration writeTimeout);
   }
 
   // This is a workaround for JDK-7036144.

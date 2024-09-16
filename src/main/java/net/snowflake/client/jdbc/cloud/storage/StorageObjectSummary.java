@@ -4,28 +4,25 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.BlobItemProperties;
+import com.azure.storage.blob.models.BlobStorageException;
 import com.google.cloud.storage.Blob;
-import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.blob.BlobProperties;
-import com.microsoft.azure.storage.blob.CloudBlob;
-import com.microsoft.azure.storage.blob.CloudBlobContainer;
-import com.microsoft.azure.storage.blob.ListBlobItem;
-import java.net.URISyntaxException;
-import java.util.Base64;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
 /**
- * Storage platform agnostic class that encapsulates remote storage object properties
+ * Storage platform-agnostic class that encapsulates remote storage object properties
  *
  * @author lgiakoumakis
  */
 public class StorageObjectSummary {
   private static final SFLogger logger = SFLoggerFactory.getLogger(StorageObjectSummary.class);
-  private String location; // location translates to "bucket" for S3
-  private String key;
-  private String md5;
-  private long size;
+  private final String location; // location translates to "bucket" for S3
+  private final String key;
+  private final String md5;
+  private final long size;
 
   /**
    * Constructs a StorageObjectSummary object from the S3 equivalent S3ObjectSummary
@@ -64,14 +61,14 @@ public class StorageObjectSummary {
    * Constructs a StorageObjectSummary object from Azure BLOB properties Using factory methods to
    * create these objects since Azure can throw, while retrieving the BLOB properties
    *
-   * @param listBlobItem an Azure ListBlobItem object
+   * @param blobItem        Azure ListBlobItem object
+   * @param location
    * @return the ObjectSummary object created
    */
-  public static StorageObjectSummary createFromAzureListBlobItem(ListBlobItem listBlobItem)
+  public static StorageObjectSummary createFromAzureListBlobItem(BlobItem blobItem, String location)
       throws StorageProviderException {
-    String location, key, md5;
+    String key, md5;
     long size;
-    CloudBlobContainer container;
 
     // Retrieve the BLOB properties that we need for the Summary
     // Azure Storage stores metadata inside each BLOB, therefore the listBlobItem
@@ -79,16 +76,13 @@ public class StorageObjectSummary {
     // During the process the Storage Client could fail, hence we need to wrap the
     // get calls in try/catch and handle possible exceptions
     try {
-      container = listBlobItem.getContainer();
-      location = container.getName();
-      CloudBlob cloudBlob = (CloudBlob) listBlobItem;
-      key = cloudBlob.getName();
-      BlobProperties blobProperties = cloudBlob.getProperties();
+      key = blobItem.getName();
+      BlobItemProperties blobProperties = blobItem.getProperties();
       // the content md5 property is not always the actual md5 of the file. But for here, it's only
       // used for skipping file on PUT command, hence is ok.
-      md5 = convertBase64ToHex(blobProperties.getContentMD5());
-      size = blobProperties.getLength();
-    } catch (URISyntaxException | StorageException ex) {
+      md5 = convertBase64ToHex(blobProperties.getContentMd5());
+      size = blobProperties.getContentLength();
+    } catch (BlobStorageException ex) {
       // This should only happen if somehow we got here with and invalid URI (it should never
       // happen)
       // ...or there is a Storage service error. Unlike S3, Azure fetches metadata from the BLOB
@@ -117,10 +111,8 @@ public class StorageObjectSummary {
     return new StorageObjectSummary(bucketName, path, hexMD5, size);
   }
 
-  private static String convertBase64ToHex(String base64String) {
+  private static String convertBase64ToHex(byte[] bytes) {
     try {
-      byte[] bytes = Base64.getDecoder().decode(base64String);
-
       final StringBuilder builder = new StringBuilder();
       for (byte b : bytes) {
         builder.append(String.format("%02x", b));

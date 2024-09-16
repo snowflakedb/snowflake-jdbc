@@ -361,19 +361,19 @@ public class RestRequest {
         break;
       } else {
         if (response != null) {
-          logger.debug(
+          logger.info(
               "{}HTTP response not ok: status code: {}, request: {}",
               requestIdStr,
               response.getStatusLine().getStatusCode(),
               requestInfoScrubbed);
         } else if (savedEx != null) {
-          logger.debug(
+          logger.info(
               "{}Null response for cause: {}, request: {}",
               requestIdStr,
               getRootCause(savedEx).getMessage(),
               requestInfoScrubbed);
         } else {
-          logger.debug("{}Null response for request: {}", requestIdStr, requestInfoScrubbed);
+          logger.info("{}Null response for request: {}", requestIdStr, requestInfoScrubbed);
         }
 
         // get the elapsed time for the last request
@@ -490,14 +490,14 @@ public class RestRequest {
         // sleep for backoff - elapsed amount of time
         if (backoffInMilli > elapsedMilliForLastCall) {
           try {
-            logger.debug(
+            logger.info(
                 "{}Retry request {}: sleeping for {} ms",
                 requestIdStr,
                 requestInfoScrubbed,
                 backoffInMilli);
             Thread.sleep(backoffInMilli);
           } catch (InterruptedException ex1) {
-            logger.debug("{}Backoff sleep before retrying login got interrupted", requestIdStr);
+            logger.info("{}Backoff sleep before retrying login got interrupted", requestIdStr);
           }
           elapsedMilliForTransientIssues += backoffInMilli;
           backoffInMilli =
