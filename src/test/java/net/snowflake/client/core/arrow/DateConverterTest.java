@@ -153,6 +153,19 @@ public class DateConverterTest extends BaseConverterTest {
     vector.clear();
   }
 
+  private String hex(int i) {
+    return String.format("0x%08X", i);
+  }
+
+  private String hexBytes(DateDayVector vector, int i) {
+    StringBuilder result = new StringBuilder("0x");
+    for (int off = 0; off < 4; off++) {
+      int index = off + i * 4;
+      result.append(String.format("%02X", vector.getDataBuffer().getByte(index)));
+    }
+    return result.toString();
+  }
+
   @Test
   public void testRandomDates() throws SFException {
     int dateBound = 50000;
@@ -190,6 +203,11 @@ public class DateConverterTest extends BaseConverterTest {
         assertThat(obj, is(nullValue()));
       } else {
         Date oldObj = ArrowResultUtil.getDate(intVal);
+        System.out.println(
+                "Original = " + hex(rawDates[i]) + " " +
+                        "from vector = " + hex(vector.get(i)) + " " +
+                        "raw bytes = " + hexBytes(vector, i));
+
         assertThat(intVal, is(rawDates[i]));
         assertThat(obj.getTime(), is(oldObj.getTime()));
       }
