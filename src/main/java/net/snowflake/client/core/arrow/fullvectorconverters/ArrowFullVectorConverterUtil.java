@@ -85,13 +85,6 @@ public class ArrowFullVectorConverterUtil {
             }
             break;
           }
-        default:
-          throw new SnowflakeSQLLoggedException(
-              session,
-              ErrorCode.INTERNAL_ERROR.getMessageCode(),
-              SqlState.INTERNAL_ERROR,
-              "Unexpected Arrow Field for ",
-              st.name());
       }
     }
     return type;
