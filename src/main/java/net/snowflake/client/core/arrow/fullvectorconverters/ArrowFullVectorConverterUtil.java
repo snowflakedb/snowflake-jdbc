@@ -1,13 +1,26 @@
 package net.snowflake.client.core.arrow.fullvectorconverters;
 
-import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
-import net.snowflake.client.jdbc.SnowflakeSQLException;
-import org.apache.arrow.vector.FieldVector;
+import static net.snowflake.client.core.arrow.ArrowVectorConverterUtil.getScale;
 
-@SnowflakeJdbcInternalApi
-public interface ArrowFullVectorConverter {
-  static Types.MinorType deduceType(ValueVector vector) {
+import java.util.Map;
+import net.snowflake.client.core.DataConversionContext;
+import net.snowflake.client.core.SFBaseSession;
+import net.snowflake.client.core.SFException;
+import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeType;
+import net.snowflake.common.core.SqlState;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.types.Types;
+
+public class ArrowFullVectorConverterUtil {
+  private ArrowFullVectorConverterUtil() {}
+
+  public static Types.MinorType deduceType(ValueVector vector, SFBaseSession session)
+      throws SnowflakeSQLLoggedException {
     Types.MinorType type = Types.getMinorTypeForArrowType(vector.getField().getType());
     // each column's metadata
     Map<String, String> customMeta = vector.getField().getMetadata();
@@ -19,21 +32,17 @@ public interface ArrowFullVectorConverter {
       switch (st) {
         case FIXED:
           {
-            String scaleStr = vector.getField().getMetadata().get("scale");
-            int sfScale = Integer.parseInt(scaleStr);
+            int sfScale = getScale(vector, session);
             if (sfScale != 0) {
               return Types.MinorType.DECIMAL;
             }
             break;
           }
-        case VECTOR:
-          return Types.MinorType.FIXED_SIZE_LIST;
         case TIME:
           return Types.MinorType.TIMEMILLI;
         case TIMESTAMP_LTZ:
           {
-            String scaleStr = vector.getField().getMetadata().get("scale");
-            int sfScale = Integer.parseInt(scaleStr);
+            int sfScale = getScale(vector, session);
             switch (sfScale) {
               case 0:
                 return Types.MinorType.TIMESTAMPSECTZ;
@@ -48,8 +57,7 @@ public interface ArrowFullVectorConverter {
           }
         case TIMESTAMP_TZ:
           {
-            String scaleStr = vector.getField().getMetadata().get("scale");
-            int sfScale = Integer.parseInt(scaleStr);
+            int sfScale = getScale(vector, session);
             switch (sfScale) {
               case 0:
                 return Types.MinorType.TIMESTAMPSECTZ;
@@ -64,8 +72,7 @@ public interface ArrowFullVectorConverter {
           }
         case TIMESTAMP_NTZ:
           {
-            String scaleStr = vector.getField().getMetadata().get("scale");
-            int sfScale = Integer.parseInt(scaleStr);
+            int sfScale = getScale(vector, session);
             switch (sfScale) {
               case 0:
                 return Types.MinorType.TIMESTAMPSEC;
@@ -78,12 +85,19 @@ public interface ArrowFullVectorConverter {
             }
             break;
           }
+        default:
+          throw new SnowflakeSQLLoggedException(
+              session,
+              ErrorCode.INTERNAL_ERROR.getMessageCode(),
+              SqlState.INTERNAL_ERROR,
+              "Unexpected Arrow Field for ",
+              st.name());
       }
     }
     return type;
   }
 
-  static FieldVector convert(
+  public static FieldVector convert(
       RootAllocator allocator,
       ValueVector vector,
       DataConversionContext context,
@@ -93,7 +107,7 @@ public interface ArrowFullVectorConverter {
       throws SnowflakeSQLException {
     try {
       if (targetType == null) {
-        targetType = deduceType(vector);
+        targetType = deduceType(vector, session);
       }
       if (targetType instanceof Types.MinorType) {
         switch ((Types.MinorType) targetType) {
@@ -107,19 +121,12 @@ public interface ArrowFullVectorConverter {
             return new BigIntVectorConverter(allocator, vector, context, session, idx).convert();
           case DECIMAL:
             return new DecimalVectorConverter(allocator, vector, context, session, idx).convert();
-          case STRUCT:
-            return new StructVectorConverter(allocator, vector, context, session, idx, null)
-                .convert();
-          case LIST:
-            return new ListVectorConverter(allocator, vector, context, session, idx, null)
-                .convert();
-          case VARCHAR:
-            return new VarCharVectorConverter(allocator, vector, context, session, idx).convert();
-          case MAP:
-            return new MapVectorConverter(allocator, vector, context, session, idx, null).convert();
-          case FIXED_SIZE_LIST:
-            return new FixedSizeListVectorConverter(allocator, vector, context, session, idx, null)
-                .convert();
+          default:
+            throw new SnowflakeSQLLoggedException(
+                session,
+                ErrorCode.INTERNAL_ERROR.getMessageCode(),
+                SqlState.INTERNAL_ERROR,
+                "Unsupported target type");
         }
       }
     } catch (SFException ex) {
@@ -128,6 +135,4 @@ public interface ArrowFullVectorConverter {
     }
     return null;
   }
-
-  FieldVector convert() throws SFException, SnowflakeSQLException;
 }
