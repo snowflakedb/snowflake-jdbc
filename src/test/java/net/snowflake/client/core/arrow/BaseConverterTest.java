@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.core.arrow;
 
+import java.nio.ByteOrder;
 import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFSession;
@@ -10,6 +11,8 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
 import org.junit.After;
+import org.junit.Assume;
+import org.junit.Before;
 
 public class BaseConverterTest implements DataConversionContext {
   private SnowflakeDateTimeFormat dateTimeFormat =
@@ -30,6 +33,11 @@ public class BaseConverterTest implements DataConversionContext {
   @After
   public void clearTimeZone() {
     System.clearProperty("user.timezone");
+  }
+
+  @Before
+  public void assumeLittleEndian() {
+    Assume.assumeTrue("Arrow doesn't support cross endianness", ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN));
   }
 
   @Override
