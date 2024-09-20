@@ -262,34 +262,34 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testBitBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select true union all select false union all select true union all select false"
-                + " union all select true union all select false union all select true");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int trueCount = 0;
     int falseCount = 0;
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        assertTrue(root.getVector(0) instanceof BitVector);
-        BitVector vector = (BitVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          if (vector.getObject(i)) {
-            trueCount++;
-          } else {
-            falseCount++;
+    try (Statement statement = connection.createStatement();
+        ResultSet rs =
+          statement.executeQuery(
+            "select true union all select false union all select true union all select false"
+                + " union all select true union all select false union all select true")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          assertTrue(root.getVector(0) instanceof BitVector);
+          BitVector vector = (BitVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            if (vector.getObject(i)) {
+              trueCount++;
+            } else {
+              falseCount++;
+            }
           }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     assertEquals(4, trueCount);
     assertEquals(3, falseCount);
@@ -297,37 +297,38 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testBinaryBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery("select TO_BINARY('546AB0') union select TO_BINARY('018E3271')");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<ArrayList<Byte>> values = new ArrayList<>();
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        assertTrue(root.getVector(0) instanceof VarBinaryVector);
-        VarBinaryVector vector = (VarBinaryVector) root.getVector(0);
-        totalRows += root.getRowCount();
-        for (int i = 0; i < root.getRowCount(); i++) {
-          byte[] bytes = vector.getObject(i);
-          ArrayList<Byte> byteArrayList =
-              new ArrayList<Byte>() {
-                {
-                  for (byte aByte : bytes) {
-                    add(aByte);
-                  }
-                }
-              };
-          values.add(byteArrayList);
+
+    try(Statement statement = connection.createStatement();
+        ResultSet rs =
+          statement.executeQuery("select TO_BINARY('546AB0') union select TO_BINARY('018E3271')")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          assertTrue(root.getVector(0) instanceof VarBinaryVector);
+          VarBinaryVector vector = (VarBinaryVector) root.getVector(0);
+          totalRows += root.getRowCount();
+          for (int i = 0; i < root.getRowCount(); i++) {
+            byte[] bytes = vector.getObject(i);
+            ArrayList<Byte> byteArrayList =
+                    new ArrayList<Byte>() {
+                      {
+                        for (byte aByte : bytes) {
+                          add(aByte);
+                        }
+                      }
+                    };
+            values.add(byteArrayList);
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<ArrayList<Byte>> expected =
         new ArrayList<ArrayList<Byte>>() {
@@ -358,29 +359,29 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testDateBatch() throws Exception, SFException {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery("select '1119-02-01'::DATE union select '2021-09-11'::DATE");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<LocalDate> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof DateDayVector);
-        DateDayVector vector = (DateDayVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(LocalDate.ofEpochDay(vector.get(i)));
+    try (Statement statement = connection.createStatement();
+        ResultSet rs =
+          statement.executeQuery("select '1119-02-01'::DATE union select '2021-09-11'::DATE")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof DateDayVector);
+          DateDayVector vector = (DateDayVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(LocalDate.ofEpochDay(vector.get(i)));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<LocalDate> expected =
         new ArrayList<LocalDate>() {
@@ -396,29 +397,29 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testTimeSecBatch() throws Exception, SFException {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery("select '11:32:54'::TIME(0) union select '8:11:25'::TIME(0)");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<LocalTime> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof TimeSecVector);
-        TimeSecVector vector = (TimeSecVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(LocalTime.ofSecondOfDay(vector.get(i)));
+    try (Statement statement = connection.createStatement();
+        ResultSet rs =
+          statement.executeQuery("select '11:32:54'::TIME(0) union select '8:11:25'::TIME(0)")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof TimeSecVector);
+          TimeSecVector vector = (TimeSecVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(LocalTime.ofSecondOfDay(vector.get(i)));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<LocalTime> expected =
         new ArrayList<LocalTime>() {
@@ -434,29 +435,29 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testTimeMilliBatch() throws Exception, SFException {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery("select '11:32:54.13'::TIME(2) union select '8:11:25.91'::TIME(2)");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<LocalTime> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof TimeMilliVector);
-        TimeMilliVector vector = (TimeMilliVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(vector.getObject(i).toLocalTime());
+    try (Statement statement = connection.createStatement();
+         ResultSet rs =
+           statement.executeQuery("select '11:32:54.13'::TIME(2) union select '8:11:25.91'::TIME(2)")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof TimeMilliVector);
+          TimeMilliVector vector = (TimeMilliVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(vector.getObject(i).toLocalTime());
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<LocalTime> expected =
         new ArrayList<LocalTime>() {
@@ -472,30 +473,29 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testTimeMicroBatch() throws Exception, SFException {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select '11:32:54.139901'::TIME(6) union select '8:11:25.911765'::TIME(6)");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<LocalTime> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof TimeMicroVector);
-        TimeMicroVector vector = (TimeMicroVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(LocalTime.ofNanoOfDay(vector.get(i) * 1000));
+    try (Statement statement = connection.createStatement();
+         ResultSet rs =
+          statement.executeQuery("select '11:32:54.139901'::TIME(6) union select '8:11:25.911765'::TIME(6)")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof TimeMicroVector);
+          TimeMicroVector vector = (TimeMicroVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(LocalTime.ofNanoOfDay(vector.get(i) * 1000));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<LocalTime> expected =
         new ArrayList<LocalTime>() {
@@ -511,30 +511,29 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testTimeNanoBatch() throws Exception, SFException {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select '11:32:54.1399013'::TIME(7) union select '8:11:25.9117654'::TIME(7)");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<LocalTime> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof TimeNanoVector);
-        TimeNanoVector vector = (TimeNanoVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(LocalTime.ofNanoOfDay(vector.get(i)));
+    try (Statement statement = connection.createStatement();
+         ResultSet rs =
+            statement.executeQuery("select '11:32:54.1399013'::TIME(7) union select '8:11:25.9117654'::TIME(7)")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof TimeNanoVector);
+          TimeNanoVector vector = (TimeNanoVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(LocalTime.ofNanoOfDay(vector.get(i)));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<LocalTime> expected =
         new ArrayList<LocalTime>() {
