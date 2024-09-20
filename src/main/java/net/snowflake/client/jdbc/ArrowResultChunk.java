@@ -17,7 +17,7 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
-import net.snowflake.client.core.arrow.fullvectorconverters.ArrowFullVectorConverter;
+import net.snowflake.client.core.arrow.fullvectorconverters.ArrowFullVectorConverterUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -546,8 +546,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
         for (int i = 0; i < record.size(); i++) {
           ValueVector vector = record.get(i);
           convertedVectors.add(
-              ArrowFullVectorConverter.convert(
-                  rootAllocator, vector, context, session, timeZoneToUse, i, null));
+              ArrowFullVectorConverterUtil.convert(rootAllocator, vector, context, session, i, null));
         }
         result.add(new VectorSchemaRoot(convertedVectors));
       }

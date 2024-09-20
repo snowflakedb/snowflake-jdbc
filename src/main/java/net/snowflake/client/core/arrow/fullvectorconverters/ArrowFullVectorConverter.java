@@ -1,17 +1,9 @@
 package net.snowflake.client.core.arrow.fullvectorconverters;
 
-import java.util.Map;
-import java.util.TimeZone;
-import net.snowflake.client.core.DataConversionContext;
-import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
-import net.snowflake.client.jdbc.SnowflakeType;
-import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
-import org.apache.arrow.vector.ValueVector;
-import org.apache.arrow.vector.types.Types;
 
 @SnowflakeJdbcInternalApi
 public interface ArrowFullVectorConverter {
