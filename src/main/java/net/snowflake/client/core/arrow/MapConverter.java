@@ -41,11 +41,11 @@ public class MapConverter extends AbstractArrowVectorConverter {
     final ArrowVectorConverter valueConverter;
 
     SnowflakeType valueLogicalType =
-        ArrowVectorConverter.getSnowflakeTypeFromFieldMetadata(values.getField());
+        ArrowVectorConverterUtil.getSnowflakeTypeFromFieldMetadata(values.getField());
 
     try {
-      keyConverter = ArrowVectorConverter.initConverter(keys, context, columnIndex);
-      valueConverter = ArrowVectorConverter.initConverter(values, context, columnIndex);
+      keyConverter = ArrowVectorConverterUtil.initConverter(keys, context, columnIndex);
+      valueConverter = ArrowVectorConverterUtil.initConverter(values, context, columnIndex);
     } catch (SnowflakeSQLException e) {
       return vector.getObject(index).toString();
     }

@@ -30,10 +30,10 @@ public class StructConverter extends AbstractArrowVectorConverter {
     for (String childName : structVector.getChildFieldNames()) {
       FieldVector fieldVector = structVector.getChild(childName);
       SnowflakeType logicalType =
-          ArrowVectorConverter.getSnowflakeTypeFromFieldMetadata(fieldVector.getField());
+          ArrowVectorConverterUtil.getSnowflakeTypeFromFieldMetadata(fieldVector.getField());
       try {
         ArrowVectorConverter converter =
-            ArrowVectorConverter.initConverter(fieldVector, context, columnIndex);
+            ArrowVectorConverterUtil.initConverter(fieldVector, context, columnIndex);
         builder.appendKeyValue(childName, converter.toString(index), logicalType);
       } catch (SnowflakeSQLException e) {
         return structVector.getObject(index).toString();

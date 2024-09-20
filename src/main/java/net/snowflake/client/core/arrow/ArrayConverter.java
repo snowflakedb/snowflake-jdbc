@@ -26,7 +26,7 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
   public String toString(int index) throws SFException {
     FieldVector vectorUnpacked = vector.getChildrenFromFields().get(0);
     SnowflakeType logicalType =
-        ArrowVectorConverter.getSnowflakeTypeFromFieldMetadata(vectorUnpacked.getField());
+        ArrowVectorConverterUtil.getSnowflakeTypeFromFieldMetadata(vectorUnpacked.getField());
 
     ArrowArrayStringRepresentationBuilder builder =
         new ArrowArrayStringRepresentationBuilder(logicalType);
@@ -34,7 +34,7 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
     final ArrowVectorConverter converter;
 
     try {
-      converter = ArrowVectorConverter.initConverter(vectorUnpacked, context, columnIndex);
+      converter = ArrowVectorConverterUtil.initConverter(vectorUnpacked, context, columnIndex);
     } catch (SnowflakeSQLException e) {
       return vector.getObject(index).toString();
     }

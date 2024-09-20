@@ -9,16 +9,27 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import net.snowflake.common.core.SqlState;
+import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.FixedSizeListVector;
 import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.types.Types;
+import org.apache.arrow.vector.types.pojo.Field;
 
 @SnowflakeJdbcInternalApi
 public final class ArrowVectorConverterUtil {
   private ArrowVectorConverterUtil() {}
+
+  public static SnowflakeType getSnowflakeTypeFromFieldMetadata(Field field) {
+    Map<String, String> customMeta = field.getMetadata();
+    if (customMeta != null && customMeta.containsKey("logicalType")) {
+      return SnowflakeType.valueOf(customMeta.get("logicalType"));
+    }
+
+    return null;
+  }
 
   /**
    * Given an arrow vector (a single column in a single record batch), return an arrow vector
@@ -51,12 +62,11 @@ public final class ArrowVectorConverterUtil {
     Types.MinorType type = Types.getMinorTypeForArrowType(vector.getField().getType());
 
     // each column's metadata
-    Map<String, String> customMeta = vector.getField().getMetadata();
+    SnowflakeType st = getSnowflakeTypeFromFieldMetadata(vector.getField());
     if (type == Types.MinorType.DECIMAL) {
       // Note: Decimal vector is different from others
       return new DecimalToScaledFixedConverter(vector, idx, context);
-    } else if (!customMeta.isEmpty()) {
-      SnowflakeType st = SnowflakeType.valueOf(customMeta.get("logicalType"));
+    } else if (st != null) {
       switch (st) {
         case ANY:
         case CHAR:
@@ -216,4 +226,11 @@ public final class ArrowVectorConverterUtil {
         "Unexpected Arrow Field for ",
         type.toString());
   }
+
+  public static ArrowVectorConverter initConverter(
+          FieldVector vector, DataConversionContext context, int columnIndex)
+          throws SnowflakeSQLException {
+    return initConverter(vector, context, context.getSession(), columnIndex);
+  }
+
 }
