@@ -228,9 +228,8 @@ public final class ArrowVectorConverterUtil {
   }
 
   public static ArrowVectorConverter initConverter(
-          FieldVector vector, DataConversionContext context, int columnIndex)
-          throws SnowflakeSQLException {
+      FieldVector vector, DataConversionContext context, int columnIndex)
+      throws SnowflakeSQLException {
     return initConverter(vector, context, context.getSession(), columnIndex);
   }
-
 }
