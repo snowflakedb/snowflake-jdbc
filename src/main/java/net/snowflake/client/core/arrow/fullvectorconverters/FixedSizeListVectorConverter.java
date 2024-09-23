@@ -42,7 +42,7 @@ public class FixedSizeListVectorConverter implements ArrowFullVectorConverter {
     FixedSizeListVector listVector = (FixedSizeListVector) vector;
     FieldVector dataVector = listVector.getDataVector();
     FieldVector convertedDataVector =
-        ArrowFullVectorConverter.convert(
+        ArrowFullVectorConverterUtil.convert(
             allocator, dataVector, context, session, 0, valueTargetType);
     FixedSizeListVector convertedListVector =
         FixedSizeListVector.empty(listVector.getName(), listVector.getListSize(), allocator);

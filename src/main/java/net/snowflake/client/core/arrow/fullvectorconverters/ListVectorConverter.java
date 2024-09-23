@@ -50,7 +50,7 @@ public class ListVectorConverter implements ArrowFullVectorConverter {
     ListVector listVector = (ListVector) vector;
     FieldVector dataVector = listVector.getDataVector();
     FieldVector convertedDataVector =
-        ArrowFullVectorConverter.convert(
+        ArrowFullVectorConverterUtil.convert(
             allocator, dataVector, context, session, 0, valueTargetType);
     ListVector convertedListVector = initVector(vector.getName(), dataVector.getField());
     convertedListVector.allocateNew();

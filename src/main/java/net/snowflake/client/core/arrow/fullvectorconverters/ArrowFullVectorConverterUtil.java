@@ -38,6 +38,8 @@ public class ArrowFullVectorConverterUtil {
             }
             break;
           }
+        case VECTOR:
+          return Types.MinorType.FIXED_SIZE_LIST;
         case TIME:
           return Types.MinorType.TIMEMILLI;
         case TIMESTAMP_LTZ:
@@ -114,6 +116,19 @@ public class ArrowFullVectorConverterUtil {
             return new BigIntVectorConverter(allocator, vector, context, session, idx).convert();
           case DECIMAL:
             return new DecimalVectorConverter(allocator, vector, context, session, idx).convert();
+          case STRUCT:
+            return new StructVectorConverter(allocator, vector, context, session, idx, null)
+                    .convert();
+          case LIST:
+            return new ListVectorConverter(allocator, vector, context, session, idx, null)
+                    .convert();
+          case VARCHAR:
+            return new VarCharVectorConverter(allocator, vector, context, session, idx).convert();
+          case MAP:
+            return new MapVectorConverter(allocator, vector, context, session, idx, null).convert();
+          case FIXED_SIZE_LIST:
+            return new FixedSizeListVectorConverter(allocator, vector, context, session, idx, null)
+                    .convert();
           default:
             throw new SnowflakeSQLLoggedException(
                 session,

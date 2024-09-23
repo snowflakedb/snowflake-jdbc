@@ -51,7 +51,7 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
         targetType = targetTypes.get(childVector.getName());
       }
       convertedVectors.add(
-          ArrowFullVectorConverter.convert(
+          ArrowFullVectorConverterUtil.convert(
               allocator, childVector, context, session, idx, targetType));
     }
 
