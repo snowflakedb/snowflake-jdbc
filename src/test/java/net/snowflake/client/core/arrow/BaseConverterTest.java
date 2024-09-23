@@ -37,7 +37,9 @@ public class BaseConverterTest implements DataConversionContext {
 
   @Before
   public void assumeLittleEndian() {
-    Assume.assumeTrue("Arrow doesn't support cross endianness", ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN));
+    Assume.assumeTrue(
+        "Arrow doesn't support cross endianness",
+        ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN));
   }
 
   @Override
