@@ -87,6 +87,8 @@ timestamps {
     }.collectEntries { jobDefinition ->
       return [(jobDefinition.runName): { build job: jobDefinition.jobToRun, parameters: jobDefinition.params }]
     }
+
+    jobDefinitions.put('JDBC-AIX-Unit', { build job: 'JDBC-AIX-UnitTests', parameters: { BRANCH: scmInfo.GIT_BRANCH } } )
     stage('Test') {
       parallel (jobDefinitions)
     }
