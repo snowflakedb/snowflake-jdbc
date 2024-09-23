@@ -73,28 +73,29 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testMultipleBatches() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select seq1(), seq2(), seq4(), seq8() from TABLE (generator(rowcount => 300000))");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-    assertEquals(batches.getRowCount(), 300000);
     int totalRows = 0;
     ArrayList<VectorSchemaRoot> allRoots = new ArrayList<>();
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        allRoots.add(root);
-        assertTrue(root.getVector(0) instanceof TinyIntVector);
-        assertTrue(root.getVector(1) instanceof SmallIntVector);
-        assertTrue(root.getVector(2) instanceof IntVector);
-        assertTrue(root.getVector(3) instanceof BigIntVector);
+    // Result set is not in the try-with-resources statement, as we want to check access to memory after its closure
+    // and then check the memory allocation.
+    ResultSet rs;
+    try (Statement statement = connection.createStatement()) {
+      rs = statement.executeQuery(
+                      "select seq1(), seq2(), seq4(), seq8() from TABLE (generator(rowcount => 300000))");
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+      assertEquals(batches.getRowCount(), 300000);
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          allRoots.add(root);
+          assertTrue(root.getVector(0) instanceof TinyIntVector);
+          assertTrue(root.getVector(1) instanceof SmallIntVector);
+          assertTrue(root.getVector(2) instanceof IntVector);
+          assertTrue(root.getVector(3) instanceof BigIntVector);
+        }
       }
     }
-
-    rs.close();
 
     // The memory should not be freed when closing the result set.
     for (VectorSchemaRoot root : allRoots) {
@@ -107,28 +108,28 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testTinyIntBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select 1 union select 2 union select 3;");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<Byte> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof TinyIntVector);
-        TinyIntVector vector = (TinyIntVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(vector.get(i));
+    try (Statement statement = connection.createStatement();
+    ResultSet rs = statement.executeQuery("select 1 union select 2 union select 3;")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof TinyIntVector);
+          TinyIntVector vector = (TinyIntVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(vector.get(i));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     // All expected values are present
     for (byte i = 1; i < 4; i++) {
@@ -140,28 +141,27 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testSmallIntBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select 129 union select 130 union select 131;");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<Short> values = new ArrayList<>();
+    try(Statement statement = connection.createStatement();
+    ResultSet rs = statement.executeQuery("select 129 union select 130 union select 131;")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof SmallIntVector);
-        SmallIntVector vector = (SmallIntVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(vector.get(i));
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof SmallIntVector);
+          SmallIntVector vector = (SmallIntVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(vector.get(i));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     // All expected values are present
     for (short i = 129; i < 132; i++) {
@@ -173,28 +173,28 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testIntBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select 100000 union select 100001 union select 100002;");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<Integer> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof IntVector);
-        IntVector vector = (IntVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(vector.get(i));
+    try (Statement statement = connection.createStatement();
+    ResultSet rs = statement.executeQuery("select 100000 union select 100001 union select 100002;")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof IntVector);
+          IntVector vector = (IntVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(vector.get(i));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     // All expected values are present
     for (int i = 100000; i < 100003; i++) {
@@ -206,30 +206,30 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testBigIntBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select 10000000000 union select 10000000001 union select 10000000002;");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<Long> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof BigIntVector);
-        BigIntVector vector = (BigIntVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(vector.get(i));
+    try (Statement statement = connection.createStatement();
+    ResultSet rs =
+        statement.executeQuery(
+            "select 10000000000 union select 10000000001 union select 10000000002;")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof BigIntVector);
+          BigIntVector vector = (BigIntVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(vector.get(i));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     // All expected values are present
     for (long i = 10000000000L; i < 10000000003L; i++) {
@@ -241,28 +241,28 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testDecimalBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select 1.1 union select 1.2 union select 1.3;");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<BigDecimal> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof DecimalVector);
-        DecimalVector vector = (DecimalVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(vector.getObject(i));
+    try (Statement statement = connection.createStatement();
+    ResultSet rs = statement.executeQuery("select 1.1 union select 1.2 union select 1.3;")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof DecimalVector);
+          DecimalVector vector = (DecimalVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(vector.getObject(i));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     // All expected values are present
     for (int i = 1; i < 4; i++) {
@@ -561,30 +561,30 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testVarCharBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select 'Gallia est ' union select 'omnis divisa ' union select 'in partes tres';");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<Text> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof VarCharVector);
-        VarCharVector vector = (VarCharVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(vector.getObject(i));
+    try (Statement statement = connection.createStatement();
+    ResultSet rs =
+        statement.executeQuery(
+            "select 'Gallia est ' union select 'omnis divisa ' union select 'in partes tres';")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof VarCharVector);
+          VarCharVector vector = (VarCharVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(vector.getObject(i));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<Text> expected =
         new ArrayList<Text>() {
@@ -621,34 +621,33 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testStructBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ;
-    ResultSet rs =
-        statement.executeQuery(
-            "select {'a': 3.1, 'b': 3.2}::object(a decimal(18, 3), b decimal(18, 3))"
-                + " union select {'a': 2.2, 'b': 2.3}::object(a decimal(18, 3), b decimal(18, 3))");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<Pair<BigDecimal, BigDecimal>> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof StructVector);
-        StructVector vector = (StructVector) root.getVector(0);
-        DecimalVector aVector = (DecimalVector) vector.getChild("a");
-        DecimalVector bVector = (DecimalVector) vector.getChild("b");
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add(new Pair<>(aVector.getObject(i), bVector.getObject(i)));
+    try (Statement statement = connection.createStatement();
+    ResultSet rs =
+        statement.executeQuery(
+            "select {'a': 3.1, 'b': 3.2}::object(a decimal(18, 3), b decimal(18, 3))"
+                + " union select {'a': 2.2, 'b': 2.3}::object(a decimal(18, 3), b decimal(18, 3))")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof StructVector);
+          StructVector vector = (StructVector) root.getVector(0);
+          DecimalVector aVector = (DecimalVector) vector.getChild("a");
+          DecimalVector bVector = (DecimalVector) vector.getChild("b");
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add(new Pair<>(aVector.getObject(i), bVector.getObject(i)));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<Pair<BigDecimal, BigDecimal>> expected =
         new ArrayList<Pair<BigDecimal, BigDecimal>>() {
@@ -665,30 +664,30 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testListBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select array_construct(1.2, 2.3)::array(decimal(18, 3)) union all select array_construct(2.1, 1.0)::array(decimal(18, 3))");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<List<BigDecimal>> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof ListVector);
-        ListVector vector = (ListVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add((List<BigDecimal>) vector.getObject(i));
+    try (Statement statement = connection.createStatement();
+    ResultSet rs =
+        statement.executeQuery(
+            "select array_construct(1.2, 2.3)::array(decimal(18, 3)) union all select array_construct(2.1, 1.0)::array(decimal(18, 3))")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof ListVector);
+          ListVector vector = (ListVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add((List<BigDecimal>) vector.getObject(i));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<List<BigDecimal>> expected =
         new ArrayList<List<BigDecimal>>() {
@@ -717,41 +716,40 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testMapBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ;
-    ResultSet rs =
-        statement.executeQuery(
-            "select {'a': 3.1, 'b': 4.3}::map(varchar, decimal(18,3)) union"
-                + " select {'c': 2.2, 'd': 1.5}::map(varchar, decimal(18,3))");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<Map<Text, BigDecimal>> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof MapVector);
-        MapVector vector = (MapVector) root.getVector(0);
-        VarCharVector keyVector =
-            (VarCharVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(0);
-        DecimalVector valueVector =
-            (DecimalVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(1);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          int startIndex = vector.getElementStartIndex(i);
-          int endIndex = vector.getElementEndIndex(i);
-          Map<Text, BigDecimal> map = new HashMap<>();
-          for (int j = startIndex; j < endIndex; j++) {
-            map.put(keyVector.getObject(j), valueVector.getObject(j));
+    try(Statement statement = connection.createStatement();
+    ResultSet rs =
+        statement.executeQuery(
+            "select {'a': 3.1, 'b': 4.3}::map(varchar, decimal(18,3)) union"
+                + " select {'c': 2.2, 'd': 1.5}::map(varchar, decimal(18,3))")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof MapVector);
+          MapVector vector = (MapVector) root.getVector(0);
+          VarCharVector keyVector =
+                  (VarCharVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(0);
+          DecimalVector valueVector =
+                  (DecimalVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(1);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            int startIndex = vector.getElementStartIndex(i);
+            int endIndex = vector.getElementEndIndex(i);
+            Map<Text, BigDecimal> map = new HashMap<>();
+            for (int j = startIndex; j < endIndex; j++) {
+              map.put(keyVector.getObject(j), valueVector.getObject(j));
+            }
+            values.add(map);
           }
-          values.add(map);
+          root.close();
         }
-        root.close();
       }
     }
-    rs.close();
 
     // All expected values are present
     List<Map<Text, BigDecimal>> expected =
@@ -777,30 +775,30 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testFixedSizeListBatch() throws Exception {
-    Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select [1, 2]::vector(int, 2) union all select [3, 4]::vector(int, 2)");
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
-
     int totalRows = 0;
     List<List<Integer>> values = new ArrayList<>();
 
-    while (batches.hasNext()) {
-      ArrowBatch batch = batches.next();
-      List<VectorSchemaRoot> roots = batch.fetch();
-      for (VectorSchemaRoot root : roots) {
-        totalRows += root.getRowCount();
-        assertTrue(root.getVector(0) instanceof FixedSizeListVector);
-        FixedSizeListVector vector = (FixedSizeListVector) root.getVector(0);
-        for (int i = 0; i < root.getRowCount(); i++) {
-          values.add((List<Integer>) vector.getObject(i));
+    try (Statement statement = connection.createStatement();
+    ResultSet rs =
+        statement.executeQuery(
+            "select [1, 2]::vector(int, 2) union all select [3, 4]::vector(int, 2)")) {
+      ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+      while (batches.hasNext()) {
+        ArrowBatch batch = batches.next();
+        List<VectorSchemaRoot> roots = batch.fetch();
+        for (VectorSchemaRoot root : roots) {
+          totalRows += root.getRowCount();
+          assertTrue(root.getVector(0) instanceof FixedSizeListVector);
+          FixedSizeListVector vector = (FixedSizeListVector) root.getVector(0);
+          for (int i = 0; i < root.getRowCount(); i++) {
+            values.add((List<Integer>) vector.getObject(i));
+          }
+          root.close();
         }
-        root.close();
       }
+      assertNoMemoryLeaks(rs);
     }
-    assertNoMemoryLeaks(rs);
-    rs.close();
 
     List<List<Integer>> expected =
         new ArrayList<List<Integer>>() {
