@@ -4,7 +4,6 @@ import static net.snowflake.client.core.arrow.ArrowVectorConverterUtil.getScale;
 
 import java.util.Map;
 import java.util.TimeZone;
-
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -21,7 +20,8 @@ import org.apache.arrow.vector.types.Types;
 public class ArrowFullVectorConverterUtil {
   private ArrowFullVectorConverterUtil() {}
 
-  static Types.MinorType deduceType(ValueVector vector, SFBaseSession session) throws SnowflakeSQLLoggedException {
+  static Types.MinorType deduceType(ValueVector vector, SFBaseSession session)
+      throws SnowflakeSQLLoggedException {
     Types.MinorType type = Types.getMinorTypeForArrowType(vector.getField().getType());
     // each column's metadata
     Map<String, String> customMeta = vector.getField().getMetadata();
@@ -40,22 +40,22 @@ public class ArrowFullVectorConverterUtil {
             break;
           }
         case TIME:
-        {
-          String scaleStr = vector.getField().getMetadata().get("scale");
-          int sfScale = Integer.parseInt(scaleStr);
-          if (sfScale == 0) {
-            return Types.MinorType.TIMESEC;
+          {
+            String scaleStr = vector.getField().getMetadata().get("scale");
+            int sfScale = Integer.parseInt(scaleStr);
+            if (sfScale == 0) {
+              return Types.MinorType.TIMESEC;
+            }
+            if (sfScale <= 3) {
+              return Types.MinorType.TIMEMILLI;
+            }
+            if (sfScale <= 6) {
+              return Types.MinorType.TIMEMICRO;
+            }
+            if (sfScale <= 9) {
+              return Types.MinorType.TIMENANO;
+            }
           }
-          if (sfScale <= 3) {
-            return Types.MinorType.TIMEMILLI;
-          }
-          if (sfScale <= 6) {
-            return Types.MinorType.TIMEMICRO;
-          }
-          if (sfScale <= 9) {
-            return Types.MinorType.TIMENANO;
-          }
-        }
         case TIMESTAMP_NTZ:
           return Types.MinorType.TIMESTAMPNANO;
         case TIMESTAMP_LTZ:
@@ -99,7 +99,7 @@ public class ArrowFullVectorConverterUtil {
             return new BinaryVectorConverter(allocator, vector, context, session, idx).convert();
           case DATEDAY:
             return new DateVectorConverter(allocator, vector, context, session, idx, timeZoneToUse)
-                    .convert();
+                .convert();
           case TIMESEC:
             return new TimeSecVectorConverter(allocator, vector).convert();
           case TIMEMILLI:
@@ -108,6 +108,12 @@ public class ArrowFullVectorConverterUtil {
             return new TimeMicroVectorConverter(allocator, vector).convert();
           case TIMENANO:
             return new TimeNanoVectorConverter(allocator, vector).convert();
+          case TIMESTAMPNANOTZ:
+            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, false)
+                .convert();
+          case TIMESTAMPNANO:
+            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, true)
+                .convert();
           default:
             throw new SnowflakeSQLLoggedException(
                 session,

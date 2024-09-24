@@ -30,6 +30,10 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
 
   private static final String FIELD_NAME_TIME_ZONE_INDEX = "timezone"; // time zone index
   private static final String FIELD_NAME_FRACTION = "fraction"; // fraction in nanoseconds
+  private static final int UTC_OFFSET = 1440;
+  private static final long NANOS_PER_MILLI = 1000000L;
+  private static final int MILLIS_PER_SECOND = 1000;
+  private static final int SECONDS_PER_MINUTE = 60;
 
   public TimestampVectorConverter(
       RootAllocator allocator,
@@ -57,7 +61,7 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
     vector.allocateNew(length);
     vector.setValueCount(length);
     for (int i = 0; i < length; i++) {
-      vector.set(i, 1440);
+      vector.set(i, UTC_OFFSET);
     }
     return vector;
   }
@@ -91,12 +95,14 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
       BigIntVector seconds, IntVector fractions, TimeZone timeZone) {
     IntVector offsets = new IntVector(FIELD_NAME_TIME_ZONE_INDEX, allocator);
     offsets.allocateNew(vector.getValueCount());
+    offsets.setValueCount(vector.getValueCount());
     for (int i = 0; i < vector.getValueCount(); i++) {
       offsets.set(
           i,
-          1440
-              + timeZone.getOffset(seconds.get(i) * 1000 + fractions.get(i) / 1000000)
-                  / (1000 * 60));
+          UTC_OFFSET
+              + timeZone.getOffset(
+                      seconds.get(i) * MILLIS_PER_SECOND + fractions.get(i) / NANOS_PER_MILLI)
+                  / (MILLIS_PER_SECOND * SECONDS_PER_MINUTE));
     }
     return offsets;
   }
@@ -153,7 +159,9 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
       if (isNTZ && context.getHonorClientTZForTimestampNTZ()) {
         timeZoneIndices = makeTimeZoneOffsets(seconds, fractions, TimeZone.getDefault());
         for (int i = 0; i < vector.getValueCount(); i++) {
-          seconds.set(i, seconds.get(i) - (timeZoneIndices.get(i) - 1440) * 60L);
+          seconds.set(
+              i,
+              seconds.get(i) - (long) (timeZoneIndices.get(i) - UTC_OFFSET) * SECONDS_PER_MINUTE);
         }
       } else if (isNTZ || timeZoneToUse == null) {
         timeZoneIndices = makeVectorOfUTCOffsets(vector.getValueCount());

@@ -267,9 +267,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
     try (Statement statement = connection.createStatement();
         ResultSet rs =
-          statement.executeQuery(
-            "select true union all select false union all select true union all select false"
-                + " union all select true union all select false union all select true")) {
+            statement.executeQuery(
+                "select true union all select false union all select true union all select false"
+                    + " union all select true union all select false union all select true")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -300,9 +300,10 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     int totalRows = 0;
     List<ArrayList<Byte>> values = new ArrayList<>();
 
-    try(Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement();
         ResultSet rs =
-          statement.executeQuery("select TO_BINARY('546AB0') union select TO_BINARY('018E3271')")) {
+            statement.executeQuery(
+                "select TO_BINARY('546AB0') union select TO_BINARY('018E3271')")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -315,13 +316,13 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
           for (int i = 0; i < root.getRowCount(); i++) {
             byte[] bytes = vector.getObject(i);
             ArrayList<Byte> byteArrayList =
-                    new ArrayList<Byte>() {
-                      {
-                        for (byte aByte : bytes) {
-                          add(aByte);
-                        }
-                      }
-                    };
+                new ArrayList<Byte>() {
+                  {
+                    for (byte aByte : bytes) {
+                      add(aByte);
+                    }
+                  }
+                };
             values.add(byteArrayList);
           }
           root.close();
@@ -364,7 +365,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
     try (Statement statement = connection.createStatement();
         ResultSet rs =
-          statement.executeQuery("select '1119-02-01'::DATE union select '2021-09-11'::DATE")) {
+            statement.executeQuery("select '1119-02-01'::DATE union select '2021-09-11'::DATE")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -402,7 +403,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
     try (Statement statement = connection.createStatement();
         ResultSet rs =
-          statement.executeQuery("select '11:32:54'::TIME(0) union select '8:11:25'::TIME(0)")) {
+            statement.executeQuery("select '11:32:54'::TIME(0) union select '8:11:25'::TIME(0)")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -439,8 +440,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<LocalTime> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-         ResultSet rs =
-           statement.executeQuery("select '11:32:54.13'::TIME(2) union select '8:11:25.91'::TIME(2)")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select '11:32:54.13'::TIME(2) union select '8:11:25.91'::TIME(2)")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -477,8 +479,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<LocalTime> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-         ResultSet rs =
-          statement.executeQuery("select '11:32:54.139901'::TIME(6) union select '8:11:25.911765'::TIME(6)")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select '11:32:54.139901'::TIME(6) union select '8:11:25.911765'::TIME(6)")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -515,8 +518,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<LocalTime> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-         ResultSet rs =
-            statement.executeQuery("select '11:32:54.1399013'::TIME(7) union select '8:11:25.9117654'::TIME(7)")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select '11:32:54.1399013'::TIME(7) union select '8:11:25.9117654'::TIME(7)")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -569,7 +573,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testTimestampTZBatch() throws Exception, SFException {
-    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_TZ");
+    testTimestampBase("select '2020-04-05 12:22:12+0700'::TIMESTAMP_TZ");
   }
 
   @Test
@@ -582,11 +586,19 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
   public void testTimestampLTZBatch() throws Exception, SFException {
-    testTimestampBase("select '2020-04-05 12:22:12+0700'::TIMESTAMP_LTZ");
+    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_LTZ");
   }
 
   @Test
   public void testTimestampNTZBatch() throws Exception, SFException {
     testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_NTZ");
+  }
+
+  @Test
+  public void testTimestampNTZDontHonorClientTimezone() throws Exception, SFException {
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ=false");
+    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_LTZ");
+    statement.execute("alter session unset CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ");
   }
 }
