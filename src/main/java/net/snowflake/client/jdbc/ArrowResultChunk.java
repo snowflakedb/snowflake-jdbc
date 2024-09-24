@@ -10,11 +10,14 @@ import java.io.InputStream;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
+import net.snowflake.client.core.arrow.fullvectorconverters.ArrowFullVectorConverterUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -55,6 +58,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   private IntVector firstResultChunkSortedIndices;
   private VectorSchemaRoot root;
   private SFBaseSession session;
+  private boolean batchesMode = false;
 
   public ArrowResultChunk(
       String url,
@@ -126,6 +130,9 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
 
   @Override
   public void freeData() {
+    if (batchesMode) {
+      return;
+    }
     batchOfVectors.forEach(list -> list.forEach(ValueVector::close));
     this.batchOfVectors.clear();
     if (firstResultChunkSortedIndices != null) {
@@ -494,6 +501,11 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     }
   }
 
+  public ArrowBatch getArrowBatch(DataConversionContext context, TimeZone timeZoneToUse) {
+    batchesMode = true;
+    return new ArrowResultBatch(context, timeZoneToUse);
+  }
+
   private boolean sortFirstResultChunkEnabled() {
     return enableSortFirstResultChunk;
   }
@@ -515,6 +527,40 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     @Override
     public final void freeData() {
       // do nothing
+    }
+  }
+
+  public class ArrowResultBatch implements ArrowBatch {
+    private DataConversionContext context;
+    private TimeZone timeZoneToUse;
+
+    ArrowResultBatch(DataConversionContext context, TimeZone timeZoneToUse) {
+      this.context = context;
+      this.timeZoneToUse = timeZoneToUse;
+    }
+
+    public List<VectorSchemaRoot> fetch() throws SnowflakeSQLException {
+      List<VectorSchemaRoot> result = new ArrayList<>();
+      for (List<ValueVector> record : batchOfVectors) {
+        List<FieldVector> convertedVectors = new ArrayList<>();
+        for (int i = 0; i < record.size(); i++) {
+          ValueVector vector = record.get(i);
+          convertedVectors.add(
+              ArrowFullVectorConverterUtil.convert(rootAllocator, vector, context, session, timeZoneToUse, i, null));
+        }
+        result.add(new VectorSchemaRoot(convertedVectors));
+      }
+      return result;
+    }
+
+    @Override
+    public ArrowVectorConverter getTimestampConverter(FieldVector vector, int colIdx) {
+      return new ThreeFieldStructToTimestampTZConverter(vector, colIdx, context);
+    }
+
+    @Override
+    public long getRowCount() {
+      return rowCount;
     }
   }
 }

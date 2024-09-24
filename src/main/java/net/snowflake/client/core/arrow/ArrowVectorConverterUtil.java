@@ -20,6 +20,20 @@ import org.apache.arrow.vector.types.Types;
 public final class ArrowVectorConverterUtil {
   private ArrowVectorConverterUtil() {}
 
+  public static int getScale(ValueVector vector, SFBaseSession session)
+      throws SnowflakeSQLLoggedException {
+    try {
+      String scaleStr = vector.getField().getMetadata().get("scale");
+      return Integer.parseInt(scaleStr);
+    } catch (NullPointerException | NumberFormatException e) {
+      throw new SnowflakeSQLLoggedException(
+          session,
+          ErrorCode.INTERNAL_ERROR.getMessageCode(),
+          SqlState.INTERNAL_ERROR,
+          "Invalid scale metadata");
+    }
+  }
+
   /**
    * Given an arrow vector (a single column in a single record batch), return an arrow vector
    * converter. Note, converter is built on top of arrow vector, so that arrow data can be converted
@@ -102,8 +116,7 @@ public final class ArrowVectorConverterUtil {
           return new DateConverter(vector, idx, context, getFormatDateWithTimeZone);
 
         case FIXED:
-          String scaleStr = vector.getField().getMetadata().get("scale");
-          int sfScale = Integer.parseInt(scaleStr);
+          int sfScale = getScale(vector, session);
           switch (type) {
             case TINYINT:
               if (sfScale == 0) {
