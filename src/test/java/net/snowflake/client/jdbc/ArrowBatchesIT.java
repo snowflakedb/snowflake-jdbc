@@ -29,8 +29,8 @@ import org.apache.arrow.vector.TimeMilliVector;
 import org.apache.arrow.vector.TimeNanoVector;
 import org.apache.arrow.vector.TimeSecVector;
 import org.apache.arrow.vector.TinyIntVector;
-import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VarBinaryVector;
+import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.complex.FixedSizeListVector;
 import org.apache.arrow.vector.complex.ListVector;
@@ -75,12 +75,14 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
   public void testMultipleBatches() throws Exception {
     int totalRows = 0;
     ArrayList<VectorSchemaRoot> allRoots = new ArrayList<>();
-    // Result set is not in the try-with-resources statement, as we want to check access to memory after its closure
+    // Result set is not in the try-with-resources statement, as we want to check access to memory
+    // after its closure
     // and then check the memory allocation.
     ResultSet rs;
     try (Statement statement = connection.createStatement()) {
-      rs = statement.executeQuery(
-                      "select seq1(), seq2(), seq4(), seq8() from TABLE (generator(rowcount => 300000))");
+      rs =
+          statement.executeQuery(
+              "select seq1(), seq2(), seq4(), seq8() from TABLE (generator(rowcount => 300000))");
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
       assertEquals(batches.getRowCount(), 300000);
       while (batches.hasNext()) {
@@ -112,7 +114,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<Byte> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select 1 union select 2 union select 3;")) {
+        ResultSet rs = statement.executeQuery("select 1 union select 2 union select 3;")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -143,8 +145,8 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
   public void testSmallIntBatch() throws Exception {
     int totalRows = 0;
     List<Short> values = new ArrayList<>();
-    try(Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select 129 union select 130 union select 131;")) {
+    try (Statement statement = connection.createStatement();
+        ResultSet rs = statement.executeQuery("select 129 union select 130 union select 131;")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -177,7 +179,8 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<Integer> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select 100000 union select 100001 union select 100002;")) {
+        ResultSet rs =
+            statement.executeQuery("select 100000 union select 100001 union select 100002;")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -210,9 +213,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<Long> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select 10000000000 union select 10000000001 union select 10000000002;")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select 10000000000 union select 10000000001 union select 10000000002;")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -245,7 +248,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<BigDecimal> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery("select 1.1 union select 1.2 union select 1.3;")) {
+        ResultSet rs = statement.executeQuery("select 1.1 union select 1.2 union select 1.3;")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -279,9 +282,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
     try (Statement statement = connection.createStatement();
         ResultSet rs =
-          statement.executeQuery(
-            "select true union all select false union all select true union all select false"
-                + " union all select true union all select false union all select true")) {
+            statement.executeQuery(
+                "select true union all select false union all select true union all select false"
+                    + " union all select true union all select false union all select true")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -312,9 +315,10 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     int totalRows = 0;
     List<ArrayList<Byte>> values = new ArrayList<>();
 
-    try(Statement statement = connection.createStatement();
+    try (Statement statement = connection.createStatement();
         ResultSet rs =
-          statement.executeQuery("select TO_BINARY('546AB0') union select TO_BINARY('018E3271')")) {
+            statement.executeQuery(
+                "select TO_BINARY('546AB0') union select TO_BINARY('018E3271')")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -327,13 +331,13 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
           for (int i = 0; i < root.getRowCount(); i++) {
             byte[] bytes = vector.getObject(i);
             ArrayList<Byte> byteArrayList =
-                    new ArrayList<Byte>() {
-                      {
-                        for (byte aByte : bytes) {
-                          add(aByte);
-                        }
-                      }
-                    };
+                new ArrayList<Byte>() {
+                  {
+                    for (byte aByte : bytes) {
+                      add(aByte);
+                    }
+                  }
+                };
             values.add(byteArrayList);
           }
           root.close();
@@ -376,7 +380,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
     try (Statement statement = connection.createStatement();
         ResultSet rs =
-          statement.executeQuery("select '1119-02-01'::DATE union select '2021-09-11'::DATE")) {
+            statement.executeQuery("select '1119-02-01'::DATE union select '2021-09-11'::DATE")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -414,7 +418,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
     try (Statement statement = connection.createStatement();
         ResultSet rs =
-          statement.executeQuery("select '11:32:54'::TIME(0) union select '8:11:25'::TIME(0)")) {
+            statement.executeQuery("select '11:32:54'::TIME(0) union select '8:11:25'::TIME(0)")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -451,8 +455,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<LocalTime> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-         ResultSet rs =
-           statement.executeQuery("select '11:32:54.13'::TIME(2) union select '8:11:25.91'::TIME(2)")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select '11:32:54.13'::TIME(2) union select '8:11:25.91'::TIME(2)")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -489,8 +494,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<LocalTime> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-         ResultSet rs =
-          statement.executeQuery("select '11:32:54.139901'::TIME(6) union select '8:11:25.911765'::TIME(6)")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select '11:32:54.139901'::TIME(6) union select '8:11:25.911765'::TIME(6)")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -527,8 +533,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<LocalTime> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-         ResultSet rs =
-            statement.executeQuery("select '11:32:54.1399013'::TIME(7) union select '8:11:25.9117654'::TIME(7)")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select '11:32:54.1399013'::TIME(7) union select '8:11:25.9117654'::TIME(7)")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -565,9 +572,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<Text> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select 'Gallia est ' union select 'omnis divisa ' union select 'in partes tres';")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select 'Gallia est ' union select 'omnis divisa ' union select 'in partes tres';")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -625,10 +632,10 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<Pair<BigDecimal, BigDecimal>> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select {'a': 3.1, 'b': 3.2}::object(a decimal(18, 3), b decimal(18, 3))"
-                + " union select {'a': 2.2, 'b': 2.3}::object(a decimal(18, 3), b decimal(18, 3))")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select {'a': 3.1, 'b': 3.2}::object(a decimal(18, 3), b decimal(18, 3))"
+                    + " union select {'a': 2.2, 'b': 2.3}::object(a decimal(18, 3), b decimal(18, 3))")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -668,9 +675,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<List<BigDecimal>> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select array_construct(1.2, 2.3)::array(decimal(18, 3)) union all select array_construct(2.1, 1.0)::array(decimal(18, 3))")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select array_construct(1.2, 2.3)::array(decimal(18, 3)) union all select array_construct(2.1, 1.0)::array(decimal(18, 3))")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -719,11 +726,11 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     int totalRows = 0;
     List<Map<Text, BigDecimal>> values = new ArrayList<>();
 
-    try(Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select {'a': 3.1, 'b': 4.3}::map(varchar, decimal(18,3)) union"
-                + " select {'c': 2.2, 'd': 1.5}::map(varchar, decimal(18,3))")) {
+    try (Statement statement = connection.createStatement();
+        ResultSet rs =
+            statement.executeQuery(
+                "select {'a': 3.1, 'b': 4.3}::map(varchar, decimal(18,3)) union"
+                    + " select {'c': 2.2, 'd': 1.5}::map(varchar, decimal(18,3))")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {
@@ -734,9 +741,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
           assertTrue(root.getVector(0) instanceof MapVector);
           MapVector vector = (MapVector) root.getVector(0);
           VarCharVector keyVector =
-                  (VarCharVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(0);
+              (VarCharVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(0);
           DecimalVector valueVector =
-                  (DecimalVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(1);
+              (DecimalVector) vector.getChildrenFromFields().get(0).getChildrenFromFields().get(1);
           for (int i = 0; i < root.getRowCount(); i++) {
             int startIndex = vector.getElementStartIndex(i);
             int endIndex = vector.getElementEndIndex(i);
@@ -779,9 +786,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     List<List<Integer>> values = new ArrayList<>();
 
     try (Statement statement = connection.createStatement();
-    ResultSet rs =
-        statement.executeQuery(
-            "select [1, 2]::vector(int, 2) union all select [3, 4]::vector(int, 2)")) {
+        ResultSet rs =
+            statement.executeQuery(
+                "select [1, 2]::vector(int, 2) union all select [3, 4]::vector(int, 2)")) {
       ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
       while (batches.hasNext()) {

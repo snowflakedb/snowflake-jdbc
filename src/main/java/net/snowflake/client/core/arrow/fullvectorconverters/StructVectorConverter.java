@@ -3,6 +3,7 @@ package net.snowflake.client.core.arrow.fullvectorconverters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
@@ -25,51 +26,57 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
   protected SFBaseSession session;
   protected int idx;
   protected Map<String, Object> targetTypes;
+  private TimeZone timeZoneToUse;
 
   StructVectorConverter(
       RootAllocator allocator,
       ValueVector vector,
       DataConversionContext context,
       SFBaseSession session,
+      TimeZone timeZoneToUse,
       int idx,
       Map<String, Object> targetTypes) {
     this.allocator = allocator;
     this.vector = vector;
     this.context = context;
     this.session = session;
+    this.timeZoneToUse = timeZoneToUse;
     this.idx = idx;
     this.targetTypes = targetTypes;
   }
 
   public FieldVector convert() throws SFException, SnowflakeSQLException {
-    StructVector structVector = (StructVector) vector;
-    List<FieldVector> childVectors = structVector.getChildrenFromFields();
-    List<FieldVector> convertedVectors = new ArrayList<>();
-    for (FieldVector childVector : childVectors) {
-      Object targetType = null;
-      if (targetTypes != null) {
-        targetType = targetTypes.get(childVector.getName());
+    try {
+      StructVector structVector = (StructVector) vector;
+      List<FieldVector> childVectors = structVector.getChildrenFromFields();
+      List<FieldVector> convertedVectors = new ArrayList<>();
+      for (FieldVector childVector : childVectors) {
+        Object targetType = null;
+        if (targetTypes != null) {
+          targetType = targetTypes.get(childVector.getName());
+        }
+        convertedVectors.add(
+            ArrowFullVectorConverterUtil.convert(
+                allocator, childVector, context, session, timeZoneToUse, idx, targetType));
       }
-      convertedVectors.add(
-          ArrowFullVectorConverterUtil.convert(
-              allocator, childVector, context, session, idx, targetType));
-    }
 
-    List<Field> convertedFields =
-        convertedVectors.stream().map(ValueVector::getField).collect(Collectors.toList());
-    StructVector converted = StructVector.empty(vector.getName(), allocator);
-    converted.allocateNew();
-    converted.initializeChildrenFromFields(convertedFields);
-    for (FieldVector convertedVector : convertedVectors) {
-      TransferPair transferPair =
-          convertedVector.makeTransferPair(converted.getChild(convertedVector.getName()));
-      transferPair.transfer();
-    }
-    ArrowBuf validityBuffer = structVector.getValidityBuffer();
-    converted.getValidityBuffer().setBytes(0L, validityBuffer, 0L, validityBuffer.capacity());
-    converted.setValueCount(vector.getValueCount());
+      List<Field> convertedFields =
+          convertedVectors.stream().map(ValueVector::getField).collect(Collectors.toList());
+      StructVector converted = StructVector.empty(vector.getName(), allocator);
+      converted.allocateNew();
+      converted.initializeChildrenFromFields(convertedFields);
+      for (FieldVector convertedVector : convertedVectors) {
+        TransferPair transferPair =
+            convertedVector.makeTransferPair(converted.getChild(convertedVector.getName()));
+        transferPair.transfer();
+      }
+      ArrowBuf validityBuffer = structVector.getValidityBuffer();
+      converted.getValidityBuffer().setBytes(0L, validityBuffer, 0L, validityBuffer.capacity());
+      converted.setValueCount(vector.getValueCount());
 
-    vector.close();
-    return converted;
+      return converted;
+    } finally {
+      vector.close();
+    }
   }
 }

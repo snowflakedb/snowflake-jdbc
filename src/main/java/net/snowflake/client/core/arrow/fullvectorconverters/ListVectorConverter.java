@@ -1,6 +1,7 @@
 package net.snowflake.client.core.arrow.fullvectorconverters;
 
 import java.util.ArrayList;
+import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
@@ -21,18 +22,21 @@ public class ListVectorConverter implements ArrowFullVectorConverter {
   protected SFBaseSession session;
   protected int idx;
   protected Object valueTargetType;
+  private TimeZone timeZoneToUse;
 
   ListVectorConverter(
       RootAllocator allocator,
       ValueVector vector,
       DataConversionContext context,
       SFBaseSession session,
+      TimeZone timeZoneToUse,
       int idx,
       Object valueTargetType) {
     this.allocator = allocator;
     this.vector = vector;
     this.context = context;
     this.session = session;
+    this.timeZoneToUse = timeZoneToUse;
     this.idx = idx;
     this.valueTargetType = valueTargetType;
   }
@@ -47,23 +51,26 @@ public class ListVectorConverter implements ArrowFullVectorConverter {
 
   @Override
   public FieldVector convert() throws SFException, SnowflakeSQLException {
-    ListVector listVector = (ListVector) vector;
-    FieldVector dataVector = listVector.getDataVector();
-    FieldVector convertedDataVector =
-        ArrowFullVectorConverterUtil.convert(
-            allocator, dataVector, context, session, 0, valueTargetType);
-    ListVector convertedListVector = initVector(vector.getName(), dataVector.getField());
-    convertedListVector.allocateNew();
-    convertedListVector.setValueCount(listVector.getValueCount());
-    convertedListVector.getOffsetBuffer().setBytes(0, listVector.getOffsetBuffer());
-    ArrowBuf validityBuffer = listVector.getValidityBuffer();
-    convertedListVector
-        .getValidityBuffer()
-        .setBytes(0L, validityBuffer, 0L, validityBuffer.capacity());
-    convertedListVector.setLastSet(listVector.getLastSet());
-    convertedDataVector.makeTransferPair(convertedListVector.getDataVector()).transfer();
-
-    vector.close();
-    return convertedListVector;
+    try {
+      ListVector listVector = (ListVector) vector;
+      FieldVector dataVector = listVector.getDataVector();
+      FieldVector convertedDataVector =
+          ArrowFullVectorConverterUtil.convert(
+              allocator, dataVector, context, session, timeZoneToUse, 0, valueTargetType);
+      // TODO: change to convertedDataVector and make all necessary changes to make it work
+      ListVector convertedListVector = initVector(vector.getName(), dataVector.getField());
+      convertedListVector.allocateNew();
+      convertedListVector.setValueCount(listVector.getValueCount());
+      convertedListVector.getOffsetBuffer().setBytes(0, listVector.getOffsetBuffer());
+      ArrowBuf validityBuffer = listVector.getValidityBuffer();
+      convertedListVector
+          .getValidityBuffer()
+          .setBytes(0L, validityBuffer, 0L, validityBuffer.capacity());
+      convertedListVector.setLastSet(listVector.getLastSet());
+      convertedDataVector.makeTransferPair(convertedListVector.getDataVector()).transfer();
+      return convertedListVector;
+    } finally {
+      vector.close();
+    }
   }
 }

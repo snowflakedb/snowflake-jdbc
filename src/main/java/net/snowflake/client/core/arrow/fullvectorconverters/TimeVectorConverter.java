@@ -29,17 +29,20 @@ public abstract class TimeVectorConverter<T extends BaseFixedWidthVector>
 
   @Override
   public FieldVector convert() throws SFException, SnowflakeSQLException {
-    int size = vector.getValueCount();
-    T converted = initVector();
-    converted.allocateNew(size);
-    BaseIntVector srcVector = (BaseIntVector) vector;
-    int scale = Integer.parseInt(vector.getField().getMetadata().get("scale"));
-    long scalingFactor = ArrowResultUtil.powerOfTen(targetScale() - scale);
-    for (int i = 0; i < size; i++) {
-      convertValue(converted, i, srcVector.getValueAsLong(i) * scalingFactor);
+    try {
+      int size = vector.getValueCount();
+      T converted = initVector();
+      converted.allocateNew(size);
+      BaseIntVector srcVector = (BaseIntVector) vector;
+      int scale = Integer.parseInt(vector.getField().getMetadata().get("scale"));
+      long scalingFactor = ArrowResultUtil.powerOfTen(targetScale() - scale);
+      for (int i = 0; i < size; i++) {
+        convertValue(converted, i, srcVector.getValueAsLong(i) * scalingFactor);
+      }
+      converted.setValueCount(size);
+      return converted;
+    } finally {
+      vector.close();
     }
-    converted.setValueCount(size);
-    vector.close();
-    return converted;
   }
 }
