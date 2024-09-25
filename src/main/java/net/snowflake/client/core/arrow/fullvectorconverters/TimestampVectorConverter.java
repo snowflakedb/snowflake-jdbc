@@ -23,6 +23,9 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
   private ValueVector vector;
   private DataConversionContext context;
   private TimeZone timeZoneToUse;
+
+  // This parameter is used to distinguish between NTZ and LTZ (TZ is distinct in having the offset
+  // vector)
   private boolean isNTZ;
 
   /** Field names of the struct vectors used by timestamp */
@@ -126,49 +129,56 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
     result
         .getValidityBuffer()
         .setBytes(0L, vector.getValidityBuffer(), 0L, vector.getValidityBuffer().capacity());
-    vector.close();
     return result;
   }
 
   @Override
   public FieldVector convert() throws SFException, SnowflakeSQLException {
-    BigIntVector seconds;
-    IntVector fractions;
-    IntVector timeZoneIndices = null;
-    if (vector instanceof BigIntVector) {
-      SFPair<BigIntVector, IntVector> normalized = normalizeTimeSinceEpoch((BigIntVector) vector);
-      seconds = normalized.left;
-      fractions = normalized.right;
-    } else {
-      StructVector structVector = (StructVector) vector;
-      if (structVector.getChildrenFromFields().size() == 3) {
-        return structVector;
-      }
-      if (structVector.getChild(FIELD_NAME_FRACTION) == null) {
-        SFPair<BigIntVector, IntVector> normalized =
-            normalizeTimeSinceEpoch(structVector.getChild(FIELD_NAME_EPOCH, BigIntVector.class));
+    boolean returnedOriginal = false;
+    try {
+      BigIntVector seconds;
+      IntVector fractions;
+      IntVector timeZoneIndices = null;
+      if (vector instanceof BigIntVector) {
+        SFPair<BigIntVector, IntVector> normalized = normalizeTimeSinceEpoch((BigIntVector) vector);
         seconds = normalized.left;
         fractions = normalized.right;
       } else {
-        seconds = structVector.getChild(FIELD_NAME_EPOCH, BigIntVector.class);
-        fractions = structVector.getChild(FIELD_NAME_FRACTION, IntVector.class);
-      }
-      timeZoneIndices = structVector.getChild(FIELD_NAME_TIME_ZONE_INDEX, IntVector.class);
-    }
-    if (timeZoneIndices == null) {
-      if (isNTZ && context.getHonorClientTZForTimestampNTZ()) {
-        timeZoneIndices = makeTimeZoneOffsets(seconds, fractions, TimeZone.getDefault());
-        for (int i = 0; i < vector.getValueCount(); i++) {
-          seconds.set(
-              i,
-              seconds.get(i) - (long) (timeZoneIndices.get(i) - UTC_OFFSET) * SECONDS_PER_MINUTE);
+        StructVector structVector = (StructVector) vector;
+        if (structVector.getChildrenFromFields().size() == 3) {
+          returnedOriginal = true;
+          return structVector;
         }
-      } else if (isNTZ || timeZoneToUse == null) {
-        timeZoneIndices = makeVectorOfUTCOffsets(vector.getValueCount());
-      } else {
-        timeZoneIndices = makeTimeZoneOffsets(seconds, fractions, timeZoneToUse);
+        if (structVector.getChild(FIELD_NAME_FRACTION) == null) {
+          SFPair<BigIntVector, IntVector> normalized =
+              normalizeTimeSinceEpoch(structVector.getChild(FIELD_NAME_EPOCH, BigIntVector.class));
+          seconds = normalized.left;
+          fractions = normalized.right;
+        } else {
+          seconds = structVector.getChild(FIELD_NAME_EPOCH, BigIntVector.class);
+          fractions = structVector.getChild(FIELD_NAME_FRACTION, IntVector.class);
+        }
+        timeZoneIndices = structVector.getChild(FIELD_NAME_TIME_ZONE_INDEX, IntVector.class);
+      }
+      if (timeZoneIndices == null) {
+        if (isNTZ && context.getHonorClientTZForTimestampNTZ()) {
+          timeZoneIndices = makeTimeZoneOffsets(seconds, fractions, TimeZone.getDefault());
+          for (int i = 0; i < vector.getValueCount(); i++) {
+            seconds.set(
+                i,
+                seconds.get(i) - (long) (timeZoneIndices.get(i) - UTC_OFFSET) * SECONDS_PER_MINUTE);
+          }
+        } else if (isNTZ || timeZoneToUse == null) {
+          timeZoneIndices = makeVectorOfUTCOffsets(vector.getValueCount());
+        } else {
+          timeZoneIndices = makeTimeZoneOffsets(seconds, fractions, timeZoneToUse);
+        }
+      }
+      return pack(seconds, fractions, timeZoneIndices);
+    } finally {
+      if (!returnedOriginal) {
+        vector.close();
       }
     }
-    return pack(seconds, fractions, timeZoneIndices);
   }
 }

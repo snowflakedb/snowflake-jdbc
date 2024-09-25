@@ -552,22 +552,26 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   private void testTimestampBase(String query) throws Exception, SFException {
-    Statement statement = connection.createStatement();
-    ResultSet rs = statement.executeQuery(query);
-    ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+    Timestamp tsFromBatch;
+    Timestamp tsFromRow;
 
-    ArrowBatch batch = batches.next();
-    VectorSchemaRoot root = batch.fetch().get(0);
-    assertTrue(root.getVector(0) instanceof StructVector);
-    ArrowVectorConverter converter = batch.getTimestampConverter(root.getVector(0), 1);
-    Timestamp tsFromBatch = converter.toTimestamp(0, null);
-    root.close();
-    assertNoMemoryLeaks(rs);
+    try (Statement statement = connection.createStatement()) {
+      try (ResultSet rs = statement.executeQuery(query)) {
+        ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
 
-    rs = statement.executeQuery(query);
-    rs.next();
-    Timestamp tsFromRow = rs.getTimestamp(1);
-
+        ArrowBatch batch = batches.next();
+        VectorSchemaRoot root = batch.fetch().get(0);
+        assertTrue(root.getVector(0) instanceof StructVector);
+        ArrowVectorConverter converter = batch.getTimestampConverter(root.getVector(0), 1);
+        tsFromBatch = converter.toTimestamp(0, null);
+        root.close();
+        assertNoMemoryLeaks(rs);
+      }
+      try (ResultSet rs = statement.executeQuery(query)) {
+        rs.next();
+        tsFromRow = rs.getTimestamp(1);
+      }
+    }
     assertTrue(tsFromBatch.equals(tsFromRow));
   }
 
