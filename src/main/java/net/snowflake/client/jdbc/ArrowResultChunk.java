@@ -546,7 +546,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
         for (int i = 0; i < record.size(); i++) {
           ValueVector vector = record.get(i);
           convertedVectors.add(
-              ArrowFullVectorConverterUtil.convert(rootAllocator, vector, context, session, timeZoneToUse, i, null));
+              ArrowFullVectorConverterUtil.convert(
+                  rootAllocator, vector, context, session, timeZoneToUse, i, null));
         }
         result.add(new VectorSchemaRoot(convertedVectors));
       }
