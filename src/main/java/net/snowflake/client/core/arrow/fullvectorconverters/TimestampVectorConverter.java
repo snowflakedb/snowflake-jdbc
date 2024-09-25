@@ -74,10 +74,12 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
     int scale = Integer.parseInt(vector.getField().getMetadata().get("scale"));
     if (scale == 0) {
       IntVector fractions = makeVectorOfZeroes(length);
+      BigIntVector epoch = new BigIntVector(FIELD_NAME_EPOCH, allocator);
       fractions
           .getValidityBuffer()
-          .setBytes(0L, vector.getValidityBuffer(), 0L, fractions.getValidityBuffer().capacity());
-      return SFPair.of(vector, fractions);
+          .setBytes(0L, vector.getValidityBuffer(), 0L, vector.getValidityBuffer().capacity());
+      vector.makeTransferPair(epoch).transfer();
+      return SFPair.of(epoch, fractions);
     }
     long scaleFactor = ArrowResultUtil.powerOfTen(scale);
     long fractionScaleFactor = ArrowResultUtil.powerOfTen(9 - scale);
@@ -97,9 +99,9 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
   private IntVector makeTimeZoneOffsets(
       BigIntVector seconds, IntVector fractions, TimeZone timeZone) {
     IntVector offsets = new IntVector(FIELD_NAME_TIME_ZONE_INDEX, allocator);
-    offsets.allocateNew(vector.getValueCount());
-    offsets.setValueCount(vector.getValueCount());
-    for (int i = 0; i < vector.getValueCount(); i++) {
+    offsets.allocateNew(seconds.getValueCount());
+    offsets.setValueCount(seconds.getValueCount());
+    for (int i = 0; i < seconds.getValueCount(); i++) {
       offsets.set(
           i,
           UTC_OFFSET
@@ -125,10 +127,10 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
     seconds.makeTransferPair(result.getChild(FIELD_NAME_EPOCH)).transfer();
     fractions.makeTransferPair(result.getChild(FIELD_NAME_FRACTION)).transfer();
     offsets.makeTransferPair(result.getChild(FIELD_NAME_TIME_ZONE_INDEX)).transfer();
-    result.setValueCount(vector.getValueCount());
+    result.setValueCount(seconds.getValueCount());
     result
         .getValidityBuffer()
-        .setBytes(0L, vector.getValidityBuffer(), 0L, vector.getValidityBuffer().capacity());
+        .setBytes(0L, seconds.getValidityBuffer(), 0L, seconds.getValidityBuffer().capacity());
     return result;
   }
 
@@ -163,13 +165,13 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
       if (timeZoneIndices == null) {
         if (isNTZ && context.getHonorClientTZForTimestampNTZ()) {
           timeZoneIndices = makeTimeZoneOffsets(seconds, fractions, TimeZone.getDefault());
-          for (int i = 0; i < vector.getValueCount(); i++) {
+          for (int i = 0; i < seconds.getValueCount(); i++) {
             seconds.set(
                 i,
                 seconds.get(i) - (long) (timeZoneIndices.get(i) - UTC_OFFSET) * SECONDS_PER_MINUTE);
           }
         } else if (isNTZ || timeZoneToUse == null) {
-          timeZoneIndices = makeVectorOfUTCOffsets(vector.getValueCount());
+          timeZoneIndices = makeVectorOfUTCOffsets(seconds.getValueCount());
         } else {
           timeZoneIndices = makeTimeZoneOffsets(seconds, fractions, timeZoneToUse);
         }

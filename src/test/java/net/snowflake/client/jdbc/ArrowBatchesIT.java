@@ -551,7 +551,7 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     assertTrue(values.containsAll(expected));
   }
 
-  private void testTimestampBase(String query) throws Exception, SFException {
+  private void testTimestampCase(String query) throws Exception, SFException {
     Timestamp tsFromBatch;
     Timestamp tsFromRow;
 
@@ -573,6 +573,12 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
       }
     }
     assertTrue(tsFromBatch.equals(tsFromRow));
+  }
+
+  private void testTimestampBase(String query) throws Exception, SFException {
+    testTimestampCase(query);
+    testTimestampCase(query + "(0)");
+    testTimestampCase(query + "(1)");
   }
 
   @Test
