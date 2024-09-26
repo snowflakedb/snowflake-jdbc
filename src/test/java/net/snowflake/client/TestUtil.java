@@ -144,4 +144,14 @@ public class TestUtil {
       assertEquals(ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
     }
   }
+
+  /**
+   * Compares two string values both values are cleaned of whitespaces
+   *
+   * @param expected expected value
+   * @param actual actual value
+   */
+  public static void assertEqualsIgnoringWhitespace(String expected, String actual) {
+    assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
+  }
 }

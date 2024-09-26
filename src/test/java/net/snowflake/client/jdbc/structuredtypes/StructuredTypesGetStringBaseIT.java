@@ -1,12 +1,12 @@
 package net.snowflake.client.jdbc.structuredtypes;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.ThrowingConsumer;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ResultSetFormatType;
@@ -50,32 +50,10 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
     return conn;
   }
 
-  protected void assertGetStringAndGetBytesAreCompatible(ResultSet resultSet, String expected)
-      throws SQLException {
-    String result = resultSet.getString(1);
-    assertEqualsIgnoringWhitespace(expected, result);
-    String resultFromBytes = new String(resultSet.getBytes(1));
-    assertEqualsIgnoringWhitespace(expected, resultFromBytes);
-  }
-
   protected void assertGetStringIsCompatible(ResultSet resultSet, String expected)
       throws SQLException {
     String result = resultSet.getString(1);
-    assertEqualsIgnoringWhitespace(expected, result);
-  }
-
-  protected void assertEqualsIgnoringWhitespace(String expected, String actual) {
-    assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
-  }
-
-  protected void withFirstRow(String sqlText, ThrowingConsumer<ResultSet, SQLException> consumer)
-      throws SQLException {
-    try (Connection connection = init();
-        Statement statement = connection.createStatement();
-        ResultSet rs = statement.executeQuery(sqlText)) {
-      assertTrue(rs.next());
-      consumer.accept(rs);
-    }
+    TestUtil.assertEqualsIgnoringWhitespace(expected, result);
   }
 
   protected void withFirstRow(
