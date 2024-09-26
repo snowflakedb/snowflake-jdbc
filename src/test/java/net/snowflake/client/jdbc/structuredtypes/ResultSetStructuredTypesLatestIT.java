@@ -161,9 +161,8 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                 .atZone(ZoneId.of("Europe/Warsaw"))
                 .toInstant(),
             object.getTimestampLtz().toInstant());
-        //        assertEquals(
-        //            Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)),
-        // object.getTimestampNtz());
+        assertEquals(
+            Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
         assertEquals(
             LocalDateTime.of(2021, 12, 24, 2, 45, 45)
                 .atZone(ZoneId.of("Europe/Warsaw"))
