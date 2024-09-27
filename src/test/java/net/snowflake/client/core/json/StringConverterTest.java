@@ -59,10 +59,10 @@ public class StringConverterTest {
 
   @Test
   public void testConvertingBoolean() throws SFException {
-    assertEquals("TRUE", stringConverter.getString(true, Types.BOOLEAN, Types.BOOLEAN, 0));
-    assertEquals("TRUE", stringConverter.getString("true", Types.BOOLEAN, Types.BOOLEAN, 0));
-    assertEquals("FALSE", stringConverter.getString(false, Types.BOOLEAN, Types.BOOLEAN, 0));
-    assertEquals("FALSE", stringConverter.getString("false", Types.BOOLEAN, Types.BOOLEAN, 0));
+    assertEquals("true", stringConverter.getString(true, Types.BOOLEAN, Types.BOOLEAN, 0));
+    assertEquals("true", stringConverter.getString("true", Types.BOOLEAN, Types.BOOLEAN, 0));
+    assertEquals("false", stringConverter.getString(false, Types.BOOLEAN, Types.BOOLEAN, 0));
+    assertEquals("false", stringConverter.getString("false", Types.BOOLEAN, Types.BOOLEAN, 0));
   }
 
   @Test
