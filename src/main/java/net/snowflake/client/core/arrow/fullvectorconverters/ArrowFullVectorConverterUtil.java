@@ -7,11 +7,9 @@ import java.util.TimeZone;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.ValueVector;
@@ -76,7 +74,7 @@ public class ArrowFullVectorConverterUtil {
       TimeZone timeZoneToUse,
       int idx,
       Object targetType)
-          throws SnowflakeSQLException, SFArrowException {
+      throws SnowflakeSQLException, SFArrowException {
     try {
       if (targetType == null) {
         targetType = deduceType(vector, session);
@@ -129,15 +127,18 @@ public class ArrowFullVectorConverterUtil {
                     allocator, vector, context, session, timeZoneToUse, idx, null)
                 .convert();
           default:
-            throw new SFArrowException(ArrowErrorCode.CONVERT_FAILED, "Unexpected arrow type " + targetType + " at index " + idx);
+            throw new SFArrowException(
+                ArrowErrorCode.CONVERT_FAILED,
+                "Unexpected arrow type " + targetType + " at index " + idx);
         }
       }
     } catch (SFException ex) {
       throw new SnowflakeSQLException(
           ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     } catch (SFArrowException e) {
-        throw new SFArrowException(ArrowErrorCode.CONVERT_FAILED, "Converting vector at index " + idx + " failed", e);
+      throw new SFArrowException(
+          ArrowErrorCode.CONVERT_FAILED, "Converting vector at index " + idx + " failed", e);
     }
-      return null;
+    return null;
   }
 }

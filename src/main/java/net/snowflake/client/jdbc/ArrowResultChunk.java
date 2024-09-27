@@ -503,7 +503,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     }
   }
 
-  public ArrowBatch getArrowBatch(DataConversionContext context, TimeZone timeZoneToUse, long batchIndex) {
+  public ArrowBatch getArrowBatch(
+      DataConversionContext context, TimeZone timeZoneToUse, long batchIndex) {
     batchesMode = true;
     return new ArrowResultBatch(context, timeZoneToUse, batchIndex);
   }
@@ -551,14 +552,15 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
           for (int i = 0; i < record.size(); i++) {
             ValueVector vector = record.get(i);
             convertedVectors.add(
-                    ArrowFullVectorConverterUtil.convert(
-                            rootAllocator, vector, context, session, timeZoneToUse, i, null));
+                ArrowFullVectorConverterUtil.convert(
+                    rootAllocator, vector, context, session, timeZoneToUse, i, null));
           }
           result.add(new VectorSchemaRoot(convertedVectors));
         }
         return result;
       } catch (SFArrowException e) {
-        throw new SFArrowException(ArrowErrorCode.CHUNK_FETCH_FAILED, "Failed to fetch batch number " + batchIndex, e);
+        throw new SFArrowException(
+            ArrowErrorCode.CHUNK_FETCH_FAILED, "Failed to fetch batch number " + batchIndex, e);
       }
     }
 

@@ -816,11 +816,13 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         firstFetched = true;
         return currentChunkIterator
             .getChunk()
-            .getArrowBatch(SFArrowResultSet.this, useSessionTimezone ? sessionTimeZone : null, nextChunkIndex);
+            .getArrowBatch(
+                SFArrowResultSet.this, useSessionTimezone ? sessionTimeZone : null, nextChunkIndex);
       } else {
         nextChunkIndex++;
         return fetchNextChunk()
-            .getArrowBatch(SFArrowResultSet.this, useSessionTimezone ? sessionTimeZone : null, nextChunkIndex);
+            .getArrowBatch(
+                SFArrowResultSet.this, useSessionTimezone ? sessionTimeZone : null, nextChunkIndex);
       }
     }
   }

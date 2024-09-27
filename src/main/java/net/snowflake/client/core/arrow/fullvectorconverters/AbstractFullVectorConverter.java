@@ -5,17 +5,19 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.arrow.vector.FieldVector;
 
 public abstract class AbstractFullVectorConverter implements ArrowFullVectorConverter {
-    private boolean converted;
+  private boolean converted;
 
-    public abstract FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException;
+  public abstract FieldVector convertVector()
+      throws SFException, SnowflakeSQLException, SFArrowException;
 
-    @Override
-    public FieldVector convert() throws SFException, SnowflakeSQLException, SFArrowException {
-        if (converted) {
-            throw new SFArrowException(ArrowErrorCode.VECTOR_ALREADY_CONVERTED, "Convert has already been called");
-        } else {
-            converted = true;
-            return convertVector();
-        }
+  @Override
+  public FieldVector convert() throws SFException, SnowflakeSQLException, SFArrowException {
+    if (converted) {
+      throw new SFArrowException(
+          ArrowErrorCode.VECTOR_ALREADY_CONVERTED, "Convert has already been called");
+    } else {
+      converted = true;
+      return convertVector();
     }
+  }
 }
