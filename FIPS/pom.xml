@@ -21,7 +21,7 @@
       <id>Central</id>
       <name>Internal Central Repo2</name>
       <layout>default</layout>
-      <url>https://nexus.int.snowflakecomputing.com/repository/maven-central/</url>
+      <url>https://artifactory.ci1.us-west-2.aws-dev.app.snowflake.com/artifactory/development-maven-virtual/</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
