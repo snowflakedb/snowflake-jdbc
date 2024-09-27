@@ -15,7 +15,7 @@ import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.types.pojo.Field;
 
 @SnowflakeJdbcInternalApi
-public class ListVectorConverter implements ArrowFullVectorConverter {
+public class ListVectorConverter extends AbstractFullVectorConverter {
   protected RootAllocator allocator;
   protected ValueVector vector;
   protected DataConversionContext context;
@@ -50,7 +50,7 @@ public class ListVectorConverter implements ArrowFullVectorConverter {
   }
 
   @Override
-  public FieldVector convert() throws SFException, SnowflakeSQLException {
+  public FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException {
     try {
       ListVector listVector = (ListVector) vector;
       FieldVector dataVector = listVector.getDataVector();

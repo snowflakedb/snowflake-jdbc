@@ -19,7 +19,7 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.TransferPair;
 
 @SnowflakeJdbcInternalApi
-public class StructVectorConverter implements ArrowFullVectorConverter {
+public class StructVectorConverter extends AbstractFullVectorConverter {
   protected RootAllocator allocator;
   protected ValueVector vector;
   protected DataConversionContext context;
@@ -45,7 +45,7 @@ public class StructVectorConverter implements ArrowFullVectorConverter {
     this.targetTypes = targetTypes;
   }
 
-  public FieldVector convert() throws SFException, SnowflakeSQLException {
+  public FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException {
     try {
       StructVector structVector = (StructVector) vector;
       List<FieldVector> childVectors = structVector.getChildrenFromFields();

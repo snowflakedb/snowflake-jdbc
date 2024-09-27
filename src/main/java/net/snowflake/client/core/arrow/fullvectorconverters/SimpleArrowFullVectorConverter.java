@@ -13,7 +13,7 @@ import org.apache.arrow.vector.ValueVector;
 
 @SnowflakeJdbcInternalApi
 public abstract class SimpleArrowFullVectorConverter<T extends FieldVector>
-    implements ArrowFullVectorConverter {
+    extends AbstractFullVectorConverter {
 
   protected RootAllocator allocator;
   protected ValueVector vector;
@@ -42,7 +42,7 @@ public abstract class SimpleArrowFullVectorConverter<T extends FieldVector>
 
   protected void additionalConverterInit(ArrowVectorConverter converter) {}
 
-  public FieldVector convert() throws SFException, SnowflakeSQLException {
+  public FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException {
     if (matchingType()) {
       return (FieldVector) vector;
     }

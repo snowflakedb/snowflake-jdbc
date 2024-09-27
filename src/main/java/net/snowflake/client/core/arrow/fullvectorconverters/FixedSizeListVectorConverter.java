@@ -15,7 +15,7 @@ import org.apache.arrow.vector.complex.FixedSizeListVector;
 import org.apache.arrow.vector.types.pojo.Field;
 
 @SnowflakeJdbcInternalApi
-public class FixedSizeListVectorConverter implements ArrowFullVectorConverter {
+public class FixedSizeListVectorConverter extends AbstractFullVectorConverter {
   protected RootAllocator allocator;
   protected ValueVector vector;
   protected DataConversionContext context;
@@ -42,7 +42,7 @@ public class FixedSizeListVectorConverter implements ArrowFullVectorConverter {
   }
 
   @Override
-  public FieldVector convert() throws SFException, SnowflakeSQLException {
+  public FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException {
     try {
       FixedSizeListVector listVector = (FixedSizeListVector) vector;
       FieldVector dataVector = listVector.getDataVector();
