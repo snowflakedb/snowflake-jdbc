@@ -7,5 +7,5 @@ import org.apache.arrow.vector.FieldVector;
 
 @SnowflakeJdbcInternalApi
 public interface ArrowFullVectorConverter {
-  FieldVector convert() throws SFException, SnowflakeSQLException;
+  FieldVector convert() throws SFException, SnowflakeSQLException, SFArrowException;
 }
