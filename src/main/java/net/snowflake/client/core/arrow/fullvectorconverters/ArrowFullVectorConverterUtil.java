@@ -74,7 +74,7 @@ public class ArrowFullVectorConverterUtil {
       TimeZone timeZoneToUse,
       int idx,
       Object targetType)
-      throws SnowflakeSQLException, SFArrowException {
+      throws SFArrowException {
     try {
       if (targetType == null) {
         targetType = deduceType(vector, session);
@@ -132,7 +132,7 @@ public class ArrowFullVectorConverterUtil {
                 "Unexpected arrow type " + targetType + " at index " + idx);
         }
       }
-    } catch (SFException | SFArrowException e) {
+    } catch (SnowflakeSQLException | SFException | SFArrowException e) {
       throw new SFArrowException(
           ArrowErrorCode.CONVERT_FAILED, "Converting vector at index " + idx + " failed", e);
     }

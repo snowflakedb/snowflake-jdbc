@@ -544,7 +544,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
       this.batchIndex = batchIndex;
     }
 
-    public List<VectorSchemaRoot> fetch() throws SnowflakeSQLException, SFArrowException {
+    public List<VectorSchemaRoot> fetch() throws SFArrowException {
       try {
         List<VectorSchemaRoot> result = new ArrayList<>();
         for (List<ValueVector> record : batchOfVectors) {
