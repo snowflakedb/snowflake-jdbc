@@ -1501,12 +1501,12 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
         ResultSet rs = statement.executeQuery("select * from " + table)) {
       assertTrue(rs.next());
       assertTrue(rs.getBoolean(1));
-      assertEquals("TRUE", rs.getString(1));
+      assertEquals("true", rs.getString(1));
       assertTrue(rs.next());
       assertFalse(rs.getBoolean(1));
       assertTrue(rs.next());
       assertFalse(rs.getBoolean(1));
-      assertEquals("FALSE", rs.getString(1));
+      assertEquals("false", rs.getString(1));
       assertFalse(rs.next());
       statement.execute("drop table if exists " + table);
     }

@@ -73,7 +73,7 @@ public class BitToBooleanConverterTest extends BaseConverterTest {
       } else {
         assertThat(boolVal, is(expectedValues.get(i)));
         assertThat(objectVal, is(expectedValues.get(i)));
-        assertThat(stringVal, is(expectedValues.get(i).toString().toUpperCase()));
+        assertThat(stringVal, is(expectedValues.get(i).toString()));
         if (boolVal) {
           assertThat((byte) 0x1, is(converter.toBytes(i)[0]));
         } else {

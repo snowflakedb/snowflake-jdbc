@@ -11,6 +11,43 @@ import java.sql.Timestamp;
 import net.snowflake.client.jdbc.SnowflakeColumn;
 
 public class AllTypesClass implements SQLData {
+  public static String ALL_TYPES_QUERY =
+      "select {"
+          + "'string': 'a', "
+          + "'b': 1, "
+          + "'s': 2, "
+          + "'i': 3, "
+          + "'l': 4, "
+          + "'f': 1.1, "
+          + "'d': 2.2, "
+          + "'bd': 3.3, "
+          + "'bool': true, "
+          + "'timestamp_ltz': '2021-12-22 09:43:44'::TIMESTAMP_LTZ, "
+          + "'timestamp_ntz': '2021-12-23 09:44:44'::TIMESTAMP_NTZ, "
+          + "'timestamp_tz': '2021-12-24 09:45:45 +0800'::TIMESTAMP_TZ, "
+          + "'date': '2023-12-24'::DATE, "
+          + "'time': '12:34:56'::TIME, "
+          + "'binary': TO_BINARY('616263', 'HEX'), "
+          + "'simpleClass': {'string': 'b', 'intValue': 2}"
+          + "}::OBJECT("
+          + "string VARCHAR, "
+          + "b TINYINT, "
+          + "s SMALLINT, "
+          + "i INTEGER, "
+          + "l BIGINT, "
+          + "f FLOAT, "
+          + "d DOUBLE, "
+          + "bd DOUBLE, "
+          + "bool BOOLEAN, "
+          + "timestamp_ltz TIMESTAMP_LTZ, "
+          + "timestamp_ntz TIMESTAMP_NTZ, "
+          + "timestamp_tz TIMESTAMP_TZ, "
+          + "date DATE, "
+          + "time TIME, "
+          + "binary BINARY, "
+          + "simpleClass OBJECT(string VARCHAR, intValue INTEGER)"
+          + ")";
+
   private String string;
   private Byte b;
   private Short s;
