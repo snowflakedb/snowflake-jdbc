@@ -6,6 +6,12 @@ import java.util.StringJoiner;
 import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeType;
 
+/**
+ * StringBuilder like class to aggregate the string representation of snowflake
+ * Native ARROW structured types as JSON one-liners.
+ * Provides some additional snowflake-specific logic in order to determine whether the value should be
+ * quoted or case should be changed.
+ */
 @SnowflakeJdbcInternalApi
 public abstract class ArrowStringRepresentationBuilderBase {
   private final StringJoiner joiner;
@@ -39,6 +45,13 @@ public abstract class ArrowStringRepresentationBuilderBase {
   }
 
   protected String quoteIfNeeded(String string, SnowflakeType type) {
+    // Turn Boolean string representations lowercase to make the output JSON-compatible
+    // this should be changed on the converter level, but it would be a breaking change thus
+    // for now only structured types will be valid JSONs while in NATIVE ARROW mode
+    if (type == SnowflakeType.BOOLEAN) {
+      string = string.toLowerCase();
+    }
+
     if (shouldQuoteValue(type)) {
       return '"' + string + '"';
     }

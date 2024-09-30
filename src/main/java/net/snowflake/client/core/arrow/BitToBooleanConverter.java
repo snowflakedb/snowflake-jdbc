@@ -58,7 +58,7 @@ public class BitToBooleanConverter extends AbstractArrowVectorConverter {
 
   @Override
   public String toString(int index) {
-    return isNull(index) ? null : toBoolean(index) ? "true" : "false";
+    return isNull(index) ? null : toBoolean(index) ? "TRUE" : "FALSE";
   }
 
   @Override
