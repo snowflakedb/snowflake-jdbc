@@ -7,10 +7,9 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.client.jdbc.SnowflakeType;
 
 /**
- * StringBuilder like class to aggregate the string representation of snowflake
- * Native ARROW structured types as JSON one-liners.
- * Provides some additional snowflake-specific logic in order to determine whether the value should be
- * quoted or case should be changed.
+ * StringBuilder like class to aggregate the string representation of snowflake Native ARROW
+ * structured types as JSON one-liners. Provides some additional snowflake-specific logic in order
+ * to determine whether the value should be quoted or case should be changed.
  */
 @SnowflakeJdbcInternalApi
 public abstract class ArrowStringRepresentationBuilderBase {
