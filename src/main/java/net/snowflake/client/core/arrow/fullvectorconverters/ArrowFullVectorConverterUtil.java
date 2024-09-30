@@ -132,10 +132,7 @@ public class ArrowFullVectorConverterUtil {
                 "Unexpected arrow type " + targetType + " at index " + idx);
         }
       }
-    } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
-    } catch (SFArrowException e) {
+    } catch (SFException | SFArrowException e) {
       throw new SFArrowException(
           ArrowErrorCode.CONVERT_FAILED, "Converting vector at index " + idx + " failed", e);
     }
