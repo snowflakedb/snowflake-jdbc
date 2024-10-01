@@ -85,6 +85,9 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
         "select [{'a':'a'}, {'b':'b'}]::array(map(string, string))",
         "[{\"a\":\"a\"}, {\"b\":\"b\"}]");
     samples.put(
+        "select [{'a':true}, {'b':false}]::array(map(string, boolean))",
+        "[{\"a\":true}, {\"b\":false}]");
+    samples.put(
         "select [{'string':'a'}, {'string':'b'}]::array(object(string varchar))",
         "[{\"string\":\"a\"}, {\"string\":\"b\"}]");
     samples.put("select {'string':'a'}::object(string varchar)", "{\"string\":\"a\"}");
