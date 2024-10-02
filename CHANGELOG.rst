@@ -1,6 +1,6 @@
-**JDBC Driver 3.19.2**
+**JDBC Driver 3.19.1**
 
-- \N/A
+- \||Please Refer to Release Notes at https://docs.snowflake.com/en/release-notes/clients-drivers/jdbc
 
 **JDBC Driver 3.19.0**
 
