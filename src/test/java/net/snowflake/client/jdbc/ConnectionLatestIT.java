@@ -70,13 +70,12 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Connection integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -86,7 +85,7 @@ import org.junit.rules.TemporaryFolder;
  */
 @Category(TestCategoryConnection.class)
 public class ConnectionLatestIT extends BaseJDBCTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
   private static final SFLogger logger = SFLoggerFactory.getLogger(ConnectionLatestIT.class);
 
   private boolean defaultState;
@@ -195,7 +194,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      File destFolder = tmpFolder.newFolder();
+      File destFolder = new File(tmpFolder, "dest");
+      destFolder.mkdirs();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
       statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
       SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
@@ -232,7 +232,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
       String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-      File destFolder = tmpFolder.newFolder();
+      File destFolder = new File(tmpFolder, "dest");
+      destFolder.mkdirs();
       String destFolderCanonicalPath = destFolder.getCanonicalPath();
       SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
       try {
@@ -736,7 +737,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
       connectAndExecuteSelect1(ds);
 
-      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+      serializedFile.createNewFile();
       // serialize datasource object into a file
       try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
           ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
@@ -781,7 +783,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
       connectAndExecuteSelect1(ds);
 
-      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+      serializedFile.createNewFile();
       // serialize datasource object into a file
       try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
           ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
@@ -1031,7 +1034,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
     connectAndExecuteSelect1(ds);
 
-    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+    File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+    serializedFile.createNewFile();
     // serialize datasource object into a file
     try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
         ObjectOutputStream out = new ObjectOutputStream(outputFile)) {

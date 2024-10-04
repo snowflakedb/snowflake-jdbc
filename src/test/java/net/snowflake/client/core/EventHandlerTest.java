@@ -14,18 +14,17 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 public class EventHandlerTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir File tmpFolder;
 
   @BeforeEach
   public void setUp() throws IOException {
-    tmpFolder.newFolder("snowflake_dumps");
-    System.setProperty("snowflake.dump_path", tmpFolder.getRoot().getCanonicalPath());
+    new File(tmpFolder, "snowflake_dumps").mkdirs();
+    System.setProperty("snowflake.dump_path", tmpFolder.getCanonicalPath());
   }
 
   @Test

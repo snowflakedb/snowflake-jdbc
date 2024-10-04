@@ -8,9 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.stream.Stream;
-import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.annotations.DontRunOnWindows;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -20,7 +18,6 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 public class SFPermissionsTest {
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   static class PermissionProvider implements ArgumentsProvider {
 

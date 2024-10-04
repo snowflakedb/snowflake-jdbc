@@ -119,6 +119,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     File ocspCacheFile = new File(tmpFolder, "ocsp-cache");
+    ocspCacheFile.createNewFile();
     HttpClient client =
         HttpUtil.buildHttpClient(
             new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
@@ -135,6 +136,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
     File ocspCacheFile = new File(tmpFolder, "ocsp-cache");
+    ocspCacheFile.createNewFile();
     HttpClient client =
         HttpUtil.buildHttpClient(
             new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED),
@@ -154,6 +156,7 @@ public class SFTrustManagerIT extends BaseJDBCTest {
     System.setProperty(
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     File ocspCacheFile = new File(tmpFolder, "ocsp-cache");
+    ocspCacheFile.createNewFile();
     HttpClient client =
         HttpUtil.buildHttpClient(
             new HttpClientSettingsKey(OCSPMode.FAIL_OPEN),

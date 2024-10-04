@@ -28,10 +28,9 @@ import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Statement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -51,7 +50,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     return conn;
   }
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testExecuteCreateAndDrop() throws SQLException {
@@ -84,7 +83,8 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   @DontRunOnGithubActions
   public void testCopyAndUpload() throws Exception {
-    File tempFolder = tmpFolder.newFolder("test_downloads_folder");
+    File tempFolder = new File(tmpFolder, "test_downloads_folder");
+    tempFolder.mkdirs();
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
       String fileName = "test_copy.csv";

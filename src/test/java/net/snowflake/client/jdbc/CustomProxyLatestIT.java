@@ -24,11 +24,10 @@ import net.snowflake.client.core.HttpProtocol;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 // To run these tests, you must:
 // 1.) Start up a proxy connection. The simplest ways are via Squid or BurpSuite. Confluence doc on
@@ -39,7 +38,7 @@ import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryOthers.class)
 public class CustomProxyLatestIT {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   /**
    * Before running this test, change the user and password to appropriate values. Set up 2
@@ -725,7 +724,8 @@ public class CustomProxyLatestIT {
 
         String TEST_DATA_FILE = "orders_100.csv";
         String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
         assertTrue(

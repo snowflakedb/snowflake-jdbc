@@ -22,18 +22,17 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeAzureClient;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeAzureClient handle exception function */
 @Category(TestCategoryOthers.class)
 public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverIT {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
   private Connection connection;
   private SFStatement sfStatement;
   private SFSession sfSession;
@@ -210,7 +209,8 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
     assertThrows(
         SnowflakeSQLException.class,
         () -> {
-          File destFolder = tmpFolder.newFolder();
+          File destFolder = new File(tmpFolder, "dest");
+          destFolder.mkdirs();
           String destFolderCanonicalPath = destFolder.getCanonicalPath();
           String getCommand =
               "get @testPutGet_stage/"

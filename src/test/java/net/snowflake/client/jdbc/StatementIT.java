@@ -30,11 +30,10 @@ import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
 import org.awaitility.Awaitility;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Statement tests */
 @Category(TestCategoryStatement.class)
@@ -49,7 +48,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
     return conn;
   }
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testFetchDirection() throws SQLException {
@@ -361,7 +360,8 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
               "put file://"
                   + getFullPathFileInResource(TEST_DATA_FILE)
                   + " @%test_batch auto_compress=false");
-          File tempFolder = tmpFolder.newFolder("test_downloads_folder");
+          File tempFolder = new File(tmpFolder, "test_downloads_folder");
+          tempFolder.mkdirs();
           statement.addBatch("get @%test_batch file://" + tempFolder.getCanonicalPath());
 
           rowCounts = statement.executeBatch();

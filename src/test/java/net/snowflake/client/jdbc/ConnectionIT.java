@@ -51,11 +51,10 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Connection integration tests */
 @Category(TestCategoryConnection.class)
@@ -70,7 +69,7 @@ public class ConnectionIT extends BaseJDBCTest {
 
   String errorMessage = null;
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testSimpleConnection() throws SQLException {
@@ -372,7 +371,8 @@ public class ConnectionIT extends BaseJDBCTest {
         ResultSet resultSet = statement.executeQuery("select 1")) {
       resultSet.next();
       assertThat("select 1", resultSet.getInt(1), equalTo(1));
-      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      File serializedFile = new File(tmpFolder, "serializedStuff.ser");
+      serializedFile.createNewFile();
       // serialize datasource object into a file
       try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
           ObjectOutputStream out = new ObjectOutputStream(outputFile)) {

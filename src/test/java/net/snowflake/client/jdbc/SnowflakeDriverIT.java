@@ -56,13 +56,12 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 /** General integration tests */
 @Category(TestCategoryOthers.class)
@@ -73,10 +72,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   private static String ORDERS_JDBC = "ORDERS_JDBC";
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
   private ObjectMapper mapper = new ObjectMapper();
 
-  @Rule public TemporaryFolder tmpFolder2 = new TemporaryFolder();
+  @TempDir public File tmpFolder2;
 
   public String testStageName =
       String.format("test_stage_%s", UUID.randomUUID().toString()).replaceAll("-", "_");
@@ -748,7 +747,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // replace file name with wildcard character
         sourceFilePath = sourceFilePath.replace("orders_100.csv", "orders_10*.csv");
 
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
         statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
@@ -813,18 +813,21 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection("gcpaccount");
         Statement statement = connection.createStatement()) {
       try {
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-        File largeTempFile = tmpFolder.newFile("largeFile.csv");
+        File largeTempFile = new File(tmpFolder, "largeFile.csv");
+        largeTempFile.createNewFile();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile))) {
           bw.write("Creating large test file for GCP PUT/GET test");
           bw.write(System.lineSeparator());
           bw.write("Creating large test file for GCP PUT/GET test");
           bw.write(System.lineSeparator());
         }
-        File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+        File largeTempFile2 = new File(tmpFolder, "largeFile2.csv");
+        largeTempFile2.createNewFile();
 
         String sourceFilePath = largeTempFile.getCanonicalPath();
 
@@ -888,12 +891,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testPutOverwrite() throws Throwable {
     // create 2 files: an original, and one that will overwrite the original
-    File file1 = tmpFolder.newFile("testfile.csv");
+    File file1 = new File(tmpFolder, "testfile.csv");
+    file1.createNewFile();
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(file1))) {
       bw.write("Writing original file content. This should get overwritten.");
     }
 
-    File file2 = tmpFolder2.newFile("testfile.csv");
+    File file2 = new File(tmpFolder2, "testfile.csv");
+    file2.createNewFile();
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(file2))) {
       bw.write("This is all new! This should be the result of the overwriting.");
     }
@@ -901,7 +906,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     String sourceFilePathOriginal = file1.getCanonicalPath();
     String sourceFilePathOverwrite = file2.getCanonicalPath();
 
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
@@ -2640,7 +2646,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         try {
           String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
 
-          File destFolder = tmpFolder.newFolder();
+          File destFolder = new File(tmpFolder, "dest");
+          destFolder.mkdirs();
           String destFolderCanonicalPath = destFolder.getCanonicalPath();
           String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
@@ -2695,7 +2702,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         try {
           String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
 
-          File destFolder = tmpFolder.newFolder();
+          File destFolder = new File(tmpFolder, "dest");
+          destFolder.mkdirs();
           String destFolderCanonicalPath = destFolder.getCanonicalPath();
           String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 

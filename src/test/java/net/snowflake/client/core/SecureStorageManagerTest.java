@@ -16,10 +16,8 @@ import com.sun.jna.ptr.PointerByReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.annotations.RunOnLinux;
 import net.snowflake.client.annotations.RunOnWindowsOrMac;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
 
 class MockAdvapi32Lib implements SecureStorageWindowsManager.Advapi32Lib {
@@ -213,8 +211,6 @@ class MockMacKeychainManager {
 }
 
 public class SecureStorageManagerTest {
-  // This is required to use ConditionalIgnore annotation
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
   private static final String host = "fakeHost";
   private static final String user = "fakeUser";

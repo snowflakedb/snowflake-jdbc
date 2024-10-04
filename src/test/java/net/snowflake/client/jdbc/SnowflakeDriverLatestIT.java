@@ -58,11 +58,10 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * General JDBC tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
@@ -72,8 +71,8 @@ import org.junit.rules.TemporaryFolder;
  */
 @Category(TestCategoryOthers.class)
 public class SnowflakeDriverLatestIT extends BaseJDBCTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
-  @Rule public TemporaryFolder tmpFolder2 = new TemporaryFolder();
+  @TempDir private File tmpFolder;
+  @TempDir private File tmpFolder2;
 
   public String testStageName =
       String.format("test_stage_%s", UUID.randomUUID().toString()).replaceAll("-", "_");
@@ -204,7 +203,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @Disabled
   public void testGCPFileTransferMetadataWithOneFile() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
     try (Connection connection = getConnection("gcpaccount");
@@ -286,7 +286,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @DontRunOnGithubActions
   public void testAzureS3FileTransferMetadataWithOneFile() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
@@ -392,7 +393,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
 
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
         String getCommand = "get @" + testStageName + " file://" + destFolderCanonicalPath;
@@ -491,19 +493,22 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   public void testPutOverwriteFalseNoDigest() throws Throwable {
 
     // create 2 files: an original, and one that will overwrite the original
-    File file1 = tmpFolder.newFile("testfile.csv");
+    File file1 = new File(tmpFolder, "testfile.csv");
+    file1.createNewFile();
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(file1))) {
       bw.write("Writing original file content. This should get overwritten.");
     }
 
-    File file2 = tmpFolder2.newFile("testfile.csv");
+    File file2 = new File(tmpFolder2, "testfile.csv");
+    file2.createNewFile();
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(file2))) {
       bw.write("This is all new! This should be the result of the overwriting.");
     }
     String sourceFilePathOriginal = file1.getCanonicalPath();
     String sourceFilePathOverwrite = file2.getCanonicalPath();
 
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
@@ -568,7 +573,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   public void testPutDisable() throws Throwable {
 
     // create a file
-    File file = tmpFolder.newFile("testfile99.csv");
+    File file = new File(tmpFolder, "testfile99.csv");
+    file.createNewFile();
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
       bw.write("This content won't be uploaded as PUT is disabled.");
     }
@@ -602,7 +608,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   public void testGetDisable() throws Throwable {
 
     // create a folder
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
     Properties paramProperties = new Properties();
@@ -1041,7 +1048,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   private void putAndGetFile(Statement statement) throws Throwable {
     String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE_2);
 
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
@@ -1095,18 +1103,21 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection("gcpaccount", paramProperties);
         Statement statement = connection.createStatement()) {
       try {
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-        File largeTempFile = tmpFolder.newFile("largeFile.csv");
+        File largeTempFile = new File(tmpFolder, "largeFile.csv");
+        largeTempFile.createNewFile();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile))) {
           bw.write("Creating large test file for GCP PUT/GET test");
           bw.write(System.lineSeparator());
           bw.write("Creating large test file for GCP PUT/GET test");
           bw.write(System.lineSeparator());
         }
-        File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+        File largeTempFile2 = new File(tmpFolder, "largeFile2.csv");
+        largeTempFile2.createNewFile();
 
         String sourceFilePath = largeTempFile.getCanonicalPath();
 
@@ -1171,18 +1182,21 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection("azureaccount", paramProperties);
         Statement statement = connection.createStatement()) {
       try {
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
 
-        File largeTempFile = tmpFolder.newFile("largeFile.csv");
+        File largeTempFile = new File(tmpFolder, "largeFile.csv");
+        largeTempFile.createNewFile();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(largeTempFile))) {
           bw.write("Creating large test file for Azure PUT/GET test");
           bw.write(System.lineSeparator());
           bw.write("Creating large test file for Azure PUT/GET test");
           bw.write(System.lineSeparator());
         }
-        File largeTempFile2 = tmpFolder.newFile("largeFile2.csv");
+        File largeTempFile2 = new File(tmpFolder, "largeFile2.csv");
+        largeTempFile2.createNewFile();
 
         String sourceFilePath = largeTempFile.getCanonicalPath();
 
@@ -1261,7 +1275,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @DontRunOnGithubActions
   public void testPutS3RegionalUrl() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
 
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");
@@ -1482,7 +1497,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @Disabled // ignored until SNOW-1616480 is resolved
   public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     // set parameter for presignedUrl upload instead of downscoped token
     Properties paramProperties = new Properties();
@@ -1548,7 +1564,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   private void uploadWithGCSDownscopedCredentialWithoutConnection() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -1741,7 +1758,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @Test
   @DontRunOnGithubActions
   public void testS3PutInGS() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
     Properties paramProperties = new Properties();
     try (Connection connection = getConnection("s3testaccount", paramProperties);

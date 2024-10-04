@@ -8,13 +8,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.rules.TemporaryFolder;
 
 /** File uploader test prep reused by IT/connection tests and sessionless tests */
 abstract class FileUploaderPrepIT extends BaseJDBCTest {
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
   private ObjectMapper mapper = new ObjectMapper();
 
   private final String exampleS3JsonStringWithStageEndpoint =

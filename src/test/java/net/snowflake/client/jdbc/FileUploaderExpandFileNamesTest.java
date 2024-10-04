@@ -24,22 +24,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import net.snowflake.client.core.OCSPMode;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames */
 public class FileUploaderExpandFileNamesTest {
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
-  @Rule public TemporaryFolder secondFolder = new TemporaryFolder();
+  @TempDir private File folder;
   private String localFSFileSep = systemGetProperty("file.separator");
 
   @Test
   public void testProcessFileNames() throws Exception {
-    folder.newFile("TestFileA");
-    folder.newFile("TestFileB");
+    new File(folder, "TestFileA").createNewFile();
+    new File(folder, "TestFileB").createNewFile();
 
-    String folderName = folder.getRoot().getCanonicalPath();
+    String folderName = folder.getCanonicalPath();
     System.setProperty("user.dir", folderName);
     System.setProperty("user.home", folderName);
 
@@ -150,8 +148,8 @@ public class FileUploaderExpandFileNamesTest {
    */
   @Test
   public void testFileListingDoesNotFailOnMissingFilesOfAnotherPattern() throws Exception {
-    folder.newFolder("TestFiles");
-    String folderName = folder.getRoot().getCanonicalPath();
+    new File(folder, "TestFiles").mkdirs();
+    String folderName = folder.getCanonicalPath();
 
     int filePatterns = 10;
     int filesPerPattern = 100;
@@ -211,8 +209,8 @@ public class FileUploaderExpandFileNamesTest {
 
   @Test
   public void testFileListingDoesNotFailOnNotExistingDirectory() throws Exception {
-    folder.newFolder("TestFiles");
-    String folderName = folder.getRoot().getCanonicalPath();
+    new File(folder, "TestFiles").mkdirs();
+    String folderName = folder.getCanonicalPath();
     String[] locations = {
       folderName + localFSFileSep + "foo*",
     };

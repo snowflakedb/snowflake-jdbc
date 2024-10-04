@@ -14,21 +14,22 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 public class EventTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
   private File homeDirectory;
   private File dmpDirectory;
 
   @BeforeEach
   public void setUp() throws IOException {
-    homeDirectory = tmpFolder.newFolder("homedir");
-    dmpDirectory = tmpFolder.newFolder("homedir", "snowflake_dumps");
+    homeDirectory = new File(tmpFolder, "homedir");
+    homeDirectory.mkdirs();
+    dmpDirectory = new File(homeDirectory, "snowflake_dumps");
+    dmpDirectory.mkdirs();
   }
 
   @AfterEach

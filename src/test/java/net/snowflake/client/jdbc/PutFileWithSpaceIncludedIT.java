@@ -17,15 +17,14 @@ import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 @Category(TestCategoryOthers.class)
 public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   /** Test PUT command to send a data file, which file name contains a space. */
   @Test
@@ -43,7 +42,8 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
     assertNotNull(AWS_SECRET_KEY);
     assertNotNull(AWS_KEY_ID);
 
-    File dataFolder = tmpFolder.newFolder();
+    File dataFolder = new File(tmpFolder, "data");
+    dataFolder.mkdirs();
     String tarFile = getFullPathFileInResource("snow-13400.tar");
     FileInputStream fis = new FileInputStream(tarFile);
     TarArchiveInputStream tis = new TarArchiveInputStream(fis);

@@ -22,11 +22,10 @@ import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Stream API tests for the latest JDBC driver. This doesn't work for the oldest supported driver.
@@ -37,7 +36,7 @@ import org.junit.rules.TemporaryFolder;
 @Category(TestCategoryOthers.class)
 public class StreamLatestIT extends BaseJDBCTest {
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   /**
    * Test Upload Stream with atypical stage names
@@ -201,7 +200,8 @@ public class StreamLatestIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
       try {
         // Create a temporary file with special characters in the name and write to it
-        File specialCharFile = tmpFolder.newFile("(special char@).txt");
+        File specialCharFile = new File(tmpFolder, "(special char@).txt");
+        specialCharFile.createNewFile();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(specialCharFile))) {
           bw.write("Creating test file for downloadStream test");
         }

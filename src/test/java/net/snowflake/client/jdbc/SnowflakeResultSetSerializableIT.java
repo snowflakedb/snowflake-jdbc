@@ -22,16 +22,15 @@ import java.util.Properties;
 import javax.annotation.Nullable;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 /** SnowflakeResultSetSerializable tests */
 @Category(TestCategoryResultSet.class)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   private static boolean developPrint = false;
 
@@ -120,7 +119,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       SnowflakeResultSetSerializable entry = resultSetChunks.get(i);
 
       // Write object to file
-      String tmpFileName = tmpFolder.getRoot().getPath() + "_result_" + i + "." + fileNameAppendix;
+      String tmpFileName = tmpFolder.getPath() + "_result_" + i + "." + fileNameAppendix;
       try (FileOutputStream fo = new FileOutputStream(tmpFileName);
           ObjectOutputStream so = new ObjectOutputStream(fo)) {
         so.writeObject(entry);

@@ -26,7 +26,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.annotations.DontRunOnThinJar;
 import net.snowflake.client.category.TestCategoryArrow;
 import net.snowflake.client.jdbc.ArrowResultChunk;
@@ -63,17 +62,12 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.io.TempDir;
 
 @Category(TestCategoryArrow.class)
 public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
-
-  /** Necessary to conditional ignore tests */
-  @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
-
   private Random random = new Random();
 
   /**
@@ -83,7 +77,7 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
   protected BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
 
   /** temporary folder to store result files */
-  @Rule public TemporaryFolder resultFolder = new TemporaryFolder();
+  @TempDir private File tempDir;
 
   /** Test the case that all results are returned in first chunk */
   @Test
@@ -380,7 +374,8 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
 
   File createArrowFile(String fileName, Schema schema, Object[][] data, int rowsPerRecordBatch)
       throws IOException {
-    File file = resultFolder.newFile(fileName);
+    File file = new File(tempDir, fileName);
+    file.createNewFile();
     VectorSchemaRoot root = VectorSchemaRoot.create(schema, allocator);
 
     try (ArrowWriter writer =
