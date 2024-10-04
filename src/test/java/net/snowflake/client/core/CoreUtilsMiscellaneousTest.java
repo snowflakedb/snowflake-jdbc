@@ -16,13 +16,12 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.HashMap;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class CoreUtilsMiscellaneousTest {
 
@@ -41,7 +40,7 @@ public class CoreUtilsMiscellaneousTest {
 
   /** Test that Constants.getOS function is working as expected */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testgetOS() {
     Constants.clearOSForTesting();
     String originalOS = systemGetProperty("os.name");

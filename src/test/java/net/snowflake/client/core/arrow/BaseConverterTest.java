@@ -10,9 +10,9 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.After;
 import org.junit.Assume;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 public class BaseConverterTest implements DataConversionContext {
   private SnowflakeDateTimeFormat dateTimeFormat =
@@ -30,12 +30,12 @@ public class BaseConverterTest implements DataConversionContext {
   private boolean honorClientTZForTimestampNTZ;
   protected final int invalidConversionErrorCode = ErrorCode.INVALID_VALUE_CONVERT.getMessageCode();
 
-  @After
+  @AfterEach
   public void clearTimeZone() {
     System.clearProperty("user.timezone");
   }
 
-  @Before
+  @BeforeEach
   public void assumeLittleEndian() {
     Assume.assumeTrue(
         "Arrow doesn't support cross endianness",

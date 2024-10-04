@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Before;
 import org.junit.Rule;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.rules.TemporaryFolder;
 
 /** File uploader test prep reused by IT/connection tests and sessionless tests */
@@ -248,7 +248,7 @@ abstract class FileUploaderPrepIT extends BaseJDBCTest {
   protected JsonNode exampleGCSJsonNode;
   protected List<JsonNode> exampleNodes;
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     exampleS3JsonNode = mapper.readTree(exampleS3JsonString);
     exampleS3StageEndpointJsonNode = mapper.readTree(exampleS3JsonStringWithStageEndpoint);

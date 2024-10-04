@@ -16,8 +16,8 @@ import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryCore.class)

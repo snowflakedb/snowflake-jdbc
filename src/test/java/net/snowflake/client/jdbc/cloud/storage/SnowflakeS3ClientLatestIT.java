@@ -13,8 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -22,14 +21,14 @@ import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testS3Client256Encryption() throws SQLException {
     try (Connection connection = getConnection("s3testaccount")) {
       SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -70,7 +69,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @Ignore
+  @Disabled
   public void testS3ConnectionWithProxyEnvVariablesSet() throws SQLException {
     String testStageName = "s3TestStage";
 
@@ -100,7 +99,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testIsClientException400Or404() throws SQLException {
     AmazonServiceException servEx = new AmazonServiceException("S3 operation failed");
     servEx.setServiceName("Amazon S3");
@@ -135,7 +134,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetMaxRetries() throws SQLException {
     Properties props = new Properties();
     props.put("putGetMaxRetries", 1);

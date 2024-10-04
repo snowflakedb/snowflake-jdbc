@@ -19,14 +19,14 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.junit.After;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryOthers.class)
 public class ProxyLatestIT extends BaseWiremockTest {
 
-  @After
+  @AfterEach
   public void tearDown() {
     super.tearDown();
     unsetJvmProperties();

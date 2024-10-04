@@ -1,12 +1,9 @@
 package net.snowflake.client.jdbc;
 
-import static junit.framework.TestCase.assertEquals;
 import static net.snowflake.client.AbstractDriverIT.getConnectionParameters;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeNoException;
-import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,11 +25,13 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 
-public abstract class BaseWiremockTest {
+abstract class BaseWiremockTest {
 
   protected static final SFLogger logger = SFLoggerFactory.getLogger(BaseWiremockTest.class);
   protected static final String WIREMOCK_HOME_DIR = ".wiremock";
@@ -45,11 +44,11 @@ public abstract class BaseWiremockTest {
   private static String originalTrustStorePath;
   protected static Process wiremockStandalone;
 
-  @BeforeClass
+  @BeforeAll
   public static void setUpClass() {
-    assumeFalse(RunningNotOnJava8.isRunningOnJava8());
-    assumeFalse(RunningNotOnJava21.isRunningOnJava21());
-    assumeFalse(
+    Assumptions.assumeFalse(RunningNotOnJava8.isRunningOnJava8());
+    Assumptions.assumeFalse(RunningNotOnJava21.isRunningOnJava21());
+    Assumptions.assumeFalse(
         RunningNotOnGithubActionsMac
             .isRunningOnGithubActionsMac()); // disabled until issue with access to localhost
     // (https://github.com/snowflakedb/snowflake-jdbc/pull/1807#discussion_r1686229430) is fixed on
@@ -58,14 +57,14 @@ public abstract class BaseWiremockTest {
     startWiremockStandAlone();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     restoreTrustStorePathProperty();
     resetWiremock();
     HttpUtil.httpClient.clear();
   }
 
-  @AfterClass
+  @AfterAll
   public static void tearDownClass() {
     stopWiremockStandAlone();
   }
@@ -117,7 +116,7 @@ public abstract class BaseWiremockTest {
     postRequest = new HttpPost("http://" + WIREMOCK_HOST + ":" + getAdminPort() + "/__admin/reset");
     try (CloseableHttpClient client = HttpClients.createDefault();
         CloseableHttpResponse response = client.execute(postRequest)) {
-      assertEquals(200, response.getStatusLine().getStatusCode());
+      Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -225,7 +224,7 @@ public abstract class BaseWiremockTest {
     HttpPost request = createWiremockPostRequest(mappingImport, "/__admin/mappings/import");
     try (CloseableHttpClient httpClient = HttpClients.createDefault();
         CloseableHttpResponse response = httpClient.execute(request)) {
-      assumeTrue(response.getStatusLine().getStatusCode() == 200);
+      Assumptions.assumeTrue(response.getStatusLine().getStatusCode() == 200);
     } catch (Exception e) {
       logger.error("Importing mapping failed", e);
       assumeNoException(e);
@@ -236,7 +235,7 @@ public abstract class BaseWiremockTest {
     HttpPost postRequest = createWiremockPostRequest(mapping, "/__admin/mappings");
     try (CloseableHttpClient client = HttpClients.createDefault();
         CloseableHttpResponse response = client.execute(postRequest)) {
-      assertEquals(201, response.getStatusLine().getStatusCode());
+      Assertions.assertEquals(201, response.getStatusLine().getStatusCode());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

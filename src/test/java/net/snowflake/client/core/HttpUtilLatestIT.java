@@ -14,8 +14,9 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 @Category(TestCategoryCore.class)
 public class HttpUtilLatestIT {
@@ -30,7 +31,8 @@ public class HttpUtilLatestIT {
   }
 
   /** Added in > 3.14.5 */
-  @Test(timeout = 1000L)
+  @Test()
+  @Timeout(1)
   public void shouldOverrideConnectionAndSocketTimeouts() {
     // it's hard to test connection timeout so there is only a test for socket timeout
     HttpUtil.setConnectionTimeout(100);

@@ -20,7 +20,7 @@ import java.util.Map;
 import net.snowflake.client.jdbc.MockConnectionTest;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SessionUtilTest {
 

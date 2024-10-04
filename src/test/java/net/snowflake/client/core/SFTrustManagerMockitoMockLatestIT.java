@@ -16,10 +16,10 @@ import javax.net.ssl.TrustManagerFactory;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 
@@ -33,7 +33,7 @@ public class SFTrustManagerMockitoMockLatestIT {
    * location of the OCSP cache directory.
    */
   @Test
-  @Ignore("static initialization block of SFTrustManager class doesn't run sometimes")
+  @Disabled("static initialization block of SFTrustManager class doesn't run sometimes")
   public void testUnitOCSPWithCustomCacheDirectory() throws IOException {
     try (MockedStatic<TrustManagerFactory> mockedTrustManagerFactory =
             mockStatic(TrustManagerFactory.class);

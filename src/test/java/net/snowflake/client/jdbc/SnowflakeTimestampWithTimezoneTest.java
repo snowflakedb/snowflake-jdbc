@@ -10,81 +10,74 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.TimeZone;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /**
  * Tests SnowflakeTimestampWithTimezone to ensure the output is not impacted by Day Light Saving
  * Time. Not this test case is not thread safe, because TimeZone.setDefault is called.
  */
-@RunWith(Parameterized.class)
 public class SnowflakeTimestampWithTimezoneTest extends BaseJDBCTest {
   private static TimeZone orgTimeZone;
 
-  private final String timeZone;
-  private final String inputTimestamp;
-  private final String outputTimestamp;
+  static class Params implements ArgumentsProvider {
+    public Stream<Arguments> provideArguments(ExtensionContext context) {
+      String[] timeZoneList = {"PST", "America/New_York", "UTC", "Asia/Singapore"};
 
-  public SnowflakeTimestampWithTimezoneTest(
-      String timeZone, String inputTimestamp, String outputTimestamp) {
-    this.timeZone = timeZone;
-    this.inputTimestamp = inputTimestamp;
-    this.outputTimestamp = outputTimestamp;
-  }
+      String[] dateTimeList = {
+        "2018-03-11 01:10:34.0123456",
+        "2018-03-11 02:10:34.0123456",
+        "2018-03-11 03:10:34.0123456",
+        "2018-11-04 01:10:34.123",
+        "2018-11-04 02:10:34.123",
+        "2018-11-04 03:10:34.123",
+        "2020-03-11 01:10:34.456",
+        "2020-03-11 02:10:34.456",
+        "2020-03-11 03:10:34.456",
+        "2020-11-01 01:10:34.123",
+        "2020-11-01 02:10:34.123",
+        "2020-11-01 03:10:34.123"
+      };
 
-  @Parameterized.Parameters(name = "tz={0}, input={1}, output={2}")
-  public static Collection convert() {
-    String[] timeZoneList = {"PST", "America/New_York", "UTC", "Asia/Singapore"};
-
-    String[] dateTimeList = {
-      "2018-03-11 01:10:34.0123456",
-      "2018-03-11 02:10:34.0123456",
-      "2018-03-11 03:10:34.0123456",
-      "2018-11-04 01:10:34.123",
-      "2018-11-04 02:10:34.123",
-      "2018-11-04 03:10:34.123",
-      "2020-03-11 01:10:34.456",
-      "2020-03-11 02:10:34.456",
-      "2020-03-11 03:10:34.456",
-      "2020-11-01 01:10:34.123",
-      "2020-11-01 02:10:34.123",
-      "2020-11-01 03:10:34.123"
-    };
-
-    List<Object> testCases = new ArrayList<>();
-    for (String timeZone : timeZoneList) {
-      for (String dateTime : dateTimeList) {
-        testCases.add(new Object[] {timeZone, dateTime, dateTime});
+      List<Arguments> testCases = new ArrayList<>();
+      for (String timeZone : timeZoneList) {
+        for (String dateTime : dateTimeList) {
+          testCases.add(Arguments.of(timeZone, dateTime, dateTime));
+        }
       }
+      return testCases.stream();
     }
-    return testCases;
   }
 
   /** Records the original TimeZone */
-  @BeforeClass
+  @BeforeAll
   public static void keepOriginalTimeZone() {
     orgTimeZone = TimeZone.getDefault();
   }
 
-  @AfterClass
+  @AfterAll
   public static void restoreTimeZone() {
     TimeZone.setDefault(orgTimeZone);
   }
 
-  @Test
-  public void testTimestampNTZ() throws Throwable {
+  @ParameterizedTest(name = "{index}: {1} {0}")
+  @ArgumentsSource(Params.class)
+  public void testTimestampNTZ(String timeZone, String inputTimestamp, String outputTimestamp) {
     TimeZone.setDefault(TimeZone.getTimeZone(timeZone));
-    LocalDateTime dt = parseTimestampNTZ(this.inputTimestamp);
+    LocalDateTime dt = parseTimestampNTZ(inputTimestamp);
     SnowflakeTimestampWithTimezone stn =
         new SnowflakeTimestampWithTimezone(
             dt.toEpochSecond(ZoneOffset.UTC) * 1000, dt.getNano(), TimeZone.getTimeZone("UTC"));
-    assertEquals(this.outputTimestamp, stn.toString());
+    assertEquals(outputTimestamp, stn.toString());
   }
 
   @Test

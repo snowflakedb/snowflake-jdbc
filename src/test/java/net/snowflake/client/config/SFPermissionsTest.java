@@ -7,73 +7,64 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.stream.Stream;
 import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnWin;
-import org.junit.After;
-import org.junit.Before;
+import net.snowflake.client.annotations.DontRunOnWindows;
 import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class SFPermissionsTest {
   @Rule public ConditionalIgnoreRule rule = new ConditionalIgnoreRule();
 
-  @Parameterized.Parameters(name = "permission={0}")
-  public static Set<Map.Entry<String, Boolean>> data() {
-    Map<String, Boolean> testConfigFilePermissions =
-        new HashMap<String, Boolean>() {
-          {
-            put("rwx------", false);
-            put("rw-------", false);
-            put("r-x------", false);
-            put("r--------", false);
-            put("rwxrwx---", true);
-            put("rwxrw----", true);
-            put("rwxr-x---", false);
-            put("rwxr-----", false);
-            put("rwx-wx---", true);
-            put("rwx-w----", true);
-            put("rwx--x---", false);
-            put("rwx---rwx", true);
-            put("rwx---rw-", true);
-            put("rwx---r-x", false);
-            put("rwx---r--", false);
-            put("rwx----wx", true);
-            put("rwx----w-", true);
-            put("rwx-----x", false);
-          }
-        };
-    return testConfigFilePermissions.entrySet();
+  static class PermissionProvider implements ArgumentsProvider {
+
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      return Stream.of(
+          Arguments.of("rwx------", false),
+          Arguments.of("rw-------", false),
+          Arguments.of("r-x------", false),
+          Arguments.of("r--------", false),
+          Arguments.of("rwxrwx---", true),
+          Arguments.of("rwxrw----", true),
+          Arguments.of("rwxr-x---", false),
+          Arguments.of("rwxr-----", false),
+          Arguments.of("rwx-wx---", true),
+          Arguments.of("rwx-w----", true),
+          Arguments.of("rwx--x---", false),
+          Arguments.of("rwx---rwx", true),
+          Arguments.of("rwx---rw-", true),
+          Arguments.of("rwx---r-x", false),
+          Arguments.of("rwx---r--", false),
+          Arguments.of("rwx----wx", true),
+          Arguments.of("rwx----w-", true),
+          Arguments.of("rwx-----x", false));
+    }
   }
 
   Path configFilePath = Paths.get("config.json");
   String configJson = "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"logs\"}}";
-  String permission;
-  Boolean isSucceed;
 
-  public SFPermissionsTest(Map.Entry<String, Boolean> permission) {
-    this.permission = permission.getKey();
-    this.isSucceed = permission.getValue();
-  }
-
-  @Before
+  @BeforeEach
   public void createConfigFile() throws IOException {
     Files.write(configFilePath, configJson.getBytes());
   }
 
-  @After
+  @AfterEach
   public void cleanupConfigFile() throws IOException {
     Files.deleteIfExists(configFilePath);
   }
 
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnWin.class)
-  public void testLogDirectoryPermissions() throws IOException {
+  @ParameterizedTest
+  @ArgumentsSource(PermissionProvider.class)
+  @DontRunOnWindows
+  public void testLogDirectoryPermissions(String permission, boolean isSucceed) throws IOException {
     // TODO: SNOW-1503722 Change to check for thrown exceptions
     // Don't run on Windows
     Files.setPosixFilePermissions(configFilePath, PosixFilePermissions.fromString(permission));

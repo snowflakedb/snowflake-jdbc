@@ -12,10 +12,10 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import net.snowflake.client.category.TestCategoryCore;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryCore.class)
 public class JDK14JCLWrapperLatestIT {
@@ -66,7 +66,7 @@ public class JDK14JCLWrapperLatestIT {
 
   private TestJDK14LogHandler handler = new TestJDK14LogHandler(new SFFormatter());
 
-  @Before
+  @BeforeEach
   public void setUp() {
     logLevelToRestore = logger.getLevel();
     // Set debug level to lowest so that all possible messages can be sent.
@@ -75,7 +75,7 @@ public class JDK14JCLWrapperLatestIT {
     logger.setUseParentHandlers(false);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     logger.setUseParentHandlers(true);
     logger.setLevel(logLevelToRestore);

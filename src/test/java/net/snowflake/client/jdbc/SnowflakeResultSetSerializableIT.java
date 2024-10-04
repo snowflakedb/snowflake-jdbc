@@ -20,13 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import javax.annotation.Nullable;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 /** SnowflakeResultSetSerializable tests */
@@ -290,7 +289,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBasicTableWithEmptyResult() throws Throwable {
     // Use complex WHERE clause in order to test both ARROW and JSON.
     // It looks GS only generates JSON format result.
@@ -300,7 +299,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBasicTableWithOnlyFirstChunk() throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
     testBasicTableHarness(1, 1, "", true, false);
@@ -313,7 +312,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBasicTableWithOneFileChunk() throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
     testBasicTableHarness(300, 1, "", true, false);
@@ -326,7 +325,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBasicTableWithSomeFileChunks() throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
     testBasicTableHarness(90000, 1, "", true, false);
@@ -420,7 +419,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testTimestamp() throws Throwable {
     String[] dateFormats = {"YYYY-MM-DD", "DD-MON-YYYY", "MM/DD/YYYY"};
     String[] timeFormats = {"HH24:MI:SS.FFTZH:TZM", "HH24:MI:SS.FF", "HH24:MI:SS"};
@@ -446,7 +445,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBasicTableWithSerializeObjectsAfterReadResultSet() throws Throwable {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
@@ -529,7 +528,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSplitResultSetSerializable() throws Throwable {
     List<String> fileNameList = null;
     String originalResultCSVString = null;
@@ -595,7 +594,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testCloseUnconsumedResultSet() throws Throwable {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -625,7 +624,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testNegativeWithChunkFileNotExist() throws Throwable {
     // This test takes about (download worker retry times * networkTimeout) long to finish
     Properties properties = new Properties();
@@ -679,7 +678,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testNegativeWithClosedResultSet() throws Throwable {
     try (Connection connection = init()) {
       Statement statement = connection.createStatement();
@@ -731,8 +730,8 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @Ignore
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled
+  @DontRunOnGithubActions
   public void testCustomProxyWithFiles() throws Throwable {
     boolean generateFiles = false;
     boolean correctProxy = false;
@@ -801,7 +800,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testRetrieveMetadata() throws Throwable {
     List<String> fileNameList;
     int rowCount = 90000;

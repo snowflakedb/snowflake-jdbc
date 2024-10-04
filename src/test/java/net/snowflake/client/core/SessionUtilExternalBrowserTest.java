@@ -32,8 +32,8 @@ import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -248,7 +248,7 @@ public class SessionUtilExternalBrowserTest {
   // Run this test manually to test disabling storing temporary credetials with external browser
   // auth. This is valid for versions after 3.18.0.
   @Test
-  @Ignore
+  @Disabled
   public void testEnableClientStoreTemporaryCredential() throws Exception {
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
@@ -270,7 +270,7 @@ public class SessionUtilExternalBrowserTest {
   // open a browser window for authentication, close the window, and you should get the expected
   // error message within the set timeout. Valid for driver versions after 3.18.0.
   @Test
-  @Ignore
+  @Disabled
   public void testExternalBrowserTimeout() throws Exception {
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();

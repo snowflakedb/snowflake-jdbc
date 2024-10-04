@@ -38,7 +38,7 @@ import net.snowflake.client.core.SessionUtilExternalBrowser;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;

@@ -14,10 +14,10 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 public class EventTest {
@@ -25,13 +25,13 @@ public class EventTest {
   private File homeDirectory;
   private File dmpDirectory;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
     homeDirectory = tmpFolder.newFolder("homedir");
     dmpDirectory = tmpFolder.newFolder("homedir", "snowflake_dumps");
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     dmpDirectory.delete();
   }

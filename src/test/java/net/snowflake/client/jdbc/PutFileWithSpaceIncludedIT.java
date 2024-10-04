@@ -17,10 +17,10 @@ import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryOthers.class)
@@ -29,7 +29,7 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
 
   /** Test PUT command to send a data file, which file name contains a space. */
   @Test
-  @Ignore
+  @Disabled
   public void putFileWithSpaceIncluded() throws Exception {
     String AWS_SECRET_KEY = TestUtil.systemGetEnv("AWS_SECRET_ACCESS_KEY");
     String AWS_KEY_ID = TestUtil.systemGetEnv("AWS_ACCESS_KEY_ID");

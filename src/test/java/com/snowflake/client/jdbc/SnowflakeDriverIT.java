@@ -5,7 +5,7 @@ import static org.junit.Assert.assertTrue;
 import java.sql.Connection;
 import java.sql.SQLException;
 import net.snowflake.client.AbstractDriverIT;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SnowflakeDriverIT extends AbstractDriverIT {
 

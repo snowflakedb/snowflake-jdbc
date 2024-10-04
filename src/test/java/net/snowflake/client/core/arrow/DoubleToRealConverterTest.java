@@ -25,7 +25,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DoubleToRealConverterTest extends BaseConverterTest {
   /** allocator for arrow */

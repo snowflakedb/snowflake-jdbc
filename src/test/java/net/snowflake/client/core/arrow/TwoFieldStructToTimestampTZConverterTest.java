@@ -24,6 +24,7 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.providers.TimezoneProvider;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -33,27 +34,18 @@ import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
+  public static void setTimezone(String tz) {
+    System.setProperty("user.timezone", tz);
   }
 
-  public TwoFieldStructToTimestampTZConverterTest(String tz) {
-    System.setProperty("user.timezone", tz);
+  @AfterAll
+  public static void clearTimezone() {
+    System.clearProperty("user.timezone");
   }
 
   /** allocator for arrow */
@@ -63,8 +55,10 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
 
   private int oldScale = 9;
 
-  @Test
-  public void testTimestampTZ() throws SFException {
+  @ParameterizedTest
+  @ArgumentsSource(TimezoneProvider.class)
+  public void testTimestampTZ(String tz) throws SFException {
+    setTimezone(tz);
     // test old and new dates
     long[] testEpochesInt64 = {1546391837, 1546391837, 0, 123, -12345, -12345678};
 

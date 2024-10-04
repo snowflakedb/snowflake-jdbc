@@ -25,7 +25,7 @@ import java.util.stream.IntStream;
 import net.snowflake.client.core.OCSPMode;
 import org.junit.Assert;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames */

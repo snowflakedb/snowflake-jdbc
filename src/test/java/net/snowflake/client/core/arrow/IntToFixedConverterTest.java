@@ -29,7 +29,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class IntToFixedConverterTest extends BaseConverterTest {
   /** allocator for arrow */

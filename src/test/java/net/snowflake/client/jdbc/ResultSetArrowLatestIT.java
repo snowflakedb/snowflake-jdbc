@@ -12,7 +12,5 @@ import org.junit.experimental.categories.Category;
  */
 @Category(TestCategoryArrow.class)
 public class ResultSetArrowLatestIT extends ResultSetLatestIT {
-  public ResultSetArrowLatestIT() {
-    super("arrow");
-  }
+  public ResultSetArrowLatestIT() {}
 }

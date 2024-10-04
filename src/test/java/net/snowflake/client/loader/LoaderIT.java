@@ -23,9 +23,9 @@ import java.util.Date;
 import java.util.Random;
 import java.util.TimeZone;
 import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /** Loader IT */
 @Category(TestCategoryLoader.class)
@@ -93,7 +93,7 @@ public class LoaderIT extends LoaderBase {
    *
    * @throws Exception raises an exception if any error occurs.
    */
-  @Ignore("Performance test")
+  @Disabled("Performance test")
   @Test
   public void testLoaderLargeInsert() throws Exception {
     new TestDataConfigBuilder(testConnection, putConnection)

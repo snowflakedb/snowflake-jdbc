@@ -10,6 +10,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -49,19 +50,18 @@ import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.RunningOnTestaccount;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.DontRunOnTestaccount;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 /** General integration tests */
@@ -81,7 +81,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   public String testStageName =
       String.format("test_stage_%s", UUID.randomUUID().toString()).replaceAll("-", "_");
 
-  @BeforeClass
+  @BeforeAll
   public static void setUp() throws Throwable {
     try (Connection connection = getConnection()) {
       try (Statement statement = connection.createStatement()) {
@@ -114,7 +114,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
-  @AfterClass
+  @AfterAll
   public static void tearDown() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -145,7 +145,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   /** Test connection to database using Snowflake Oauth instead of username/pw * */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testOauthConnection() throws SQLException {
     Map<String, String> params = getConnectionParameters();
     String role = null;
@@ -182,7 +182,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
-  @Ignore
+  @Disabled
   @Test
   public void testConnections() throws Throwable {
     ExecutorService executorService = Executors.newFixedThreadPool(MAX_CONCURRENT_QUERIES_PER_USER);
@@ -543,7 +543,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testCancelQueryBySystemFunction() throws Throwable {
     try (Connection connection = getConnection();
         Statement getSessionIdStmt = connection.createStatement()) {
@@ -734,7 +734,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutWithWildcardGCP() throws Throwable {
     Properties _connectionProperties = new Properties();
     _connectionProperties.put("inject_wait_in_put", 5);
@@ -808,7 +808,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetLargeFileGCP() throws Throwable {
     try (Connection connection = getConnection("gcpaccount");
         Statement statement = connection.createStatement()) {
@@ -885,7 +885,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutOverwrite() throws Throwable {
     // create 2 files: an original, and one that will overwrite the original
     File file1 = tmpFolder.newFile("testfile.csv");
@@ -955,7 +955,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPut() throws Throwable {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
@@ -1051,7 +1051,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSQLError42S02() throws SQLException {
 
     try (Connection connection = getConnection();
@@ -1067,7 +1067,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testExplainPlan() throws Throwable {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement();
@@ -2182,7 +2182,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     }
   }
 
-  @Ignore("takes 7 min. enable this for long running tests")
+  @Disabled("takes 7 min. enable this for long running tests")
   @Test
   public void testSnow16332() throws Throwable {
     // use v1 query request API and inject 200ms socket timeout for first
@@ -2416,7 +2416,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTestaccount.class)
+  @DontRunOnTestaccount
   public void testClientInfo() throws Throwable {
     System.setProperty(
         "snowflake.client.info",
@@ -2466,7 +2466,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSnow26503() throws Throwable {
     ResultSetMetaData resultSetMetaData;
     String queryId = null;
@@ -2630,7 +2630,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGet() throws Throwable {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
@@ -2685,7 +2685,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetToUnencryptedStage() throws Throwable {
 
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
@@ -2738,15 +2738,19 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
   }
 
   /** Prepare statement will fail if the connection is already closed. */
-  @Test(expected = SQLException.class)
-  public void testNotClosedSession() throws Throwable {
-    Connection connection = getConnection();
-    connection.close();
-    connection.prepareStatement("select 1");
+  @Test
+  public void testNotClosedSession() {
+    assertThrows(
+        SQLException.class,
+        () -> {
+          Connection connection = getConnection();
+          connection.close();
+          connection.prepareStatement("select 1");
+        });
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testToTimestampNullBind() throws Throwable {
     try (Connection connection = getConnection();
         PreparedStatement preparedStatement =

@@ -6,46 +6,52 @@ package net.snowflake.client.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
-import org.junit.After;
-import org.junit.Before;
+import net.snowflake.client.providers.ProvidersUtil;
+import net.snowflake.client.providers.ScaleProvider;
+import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SnowflakeArgumentsProvider;
+import net.snowflake.client.providers.TimezoneProvider;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.provider.Arguments;
 
 abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest {
-  static List<Object[]> testData() {
-    String[] timeZones = new String[] {"UTC", "America/New_York", "MEZ"};
-    String[] queryFormats = new String[] {"json", "arrow"};
-    List<Object[]> ret = new ArrayList<>();
-    for (String queryFormat : queryFormats) {
-      for (String timeZone : timeZones) {
-        ret.add(new Object[] {queryFormat, timeZone});
-      }
+  protected static class DataProvider extends SnowflakeArgumentsProvider {
+    @Override
+    protected List<Arguments> rawArguments(ExtensionContext context) {
+      return ProvidersUtil.cartesianProduct(
+          context, new SimpleFormatProvider(), new TimezoneProvider(3));
     }
-    return ret;
   }
 
-  protected final String queryResultFormat;
-  protected final String tz;
-  private TimeZone origTz;
-
-  ResultSetArrowForce0MultiTimeZone(String queryResultFormat, String timeZone) {
-    this.queryResultFormat = queryResultFormat;
-    this.tz = timeZone;
+  protected static class DataWithScaleProvider extends SnowflakeArgumentsProvider {
+    @Override
+    protected List<Arguments> rawArguments(ExtensionContext context) {
+      return ProvidersUtil.cartesianProduct(context, new DataProvider(), new ScaleProvider());
+    }
   }
 
-  @Before
-  public void setUp() {
+  private static TimeZone origTz;
+
+  @BeforeAll
+  public static void setUp() {
     origTz = TimeZone.getDefault();
-    TimeZone.setDefault(TimeZone.getTimeZone(this.tz));
   }
 
-  @After
-  public void tearDown() {
+  @AfterAll
+  public static void tearDown() {
     TimeZone.setDefault(origTz);
   }
 
-  Connection init(String table, String column, String values) throws SQLException {
+  protected static void setTimezone(String tz) {
+    TimeZone.setDefault(TimeZone.getTimeZone(tz));
+  }
+
+  Connection init(String table, String column, String values, String queryResultFormat)
+      throws SQLException {
     Connection con = BaseJDBCTest.getConnection();
 
     try (Statement statement = con.createStatement()) {

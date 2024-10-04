@@ -18,8 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 public class SFClientConfigParserTest {
@@ -30,7 +30,7 @@ public class SFClientConfigParserTest {
 
   private Path configFilePath;
 
-  @After
+  @AfterEach
   public void cleanup() throws IOException {
     if (configFilePath != null) {
       Files.deleteIfExists(configFilePath);

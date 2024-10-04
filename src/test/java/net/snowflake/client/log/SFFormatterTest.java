@@ -15,8 +15,8 @@ import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SFFormatterTest {
   // Change these numbers if necessary
@@ -28,7 +28,7 @@ public class SFFormatterTest {
   /** Log record generator */
   private LRGenerator recordGenerator;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     recordGenerator = new LRGenerator(SFFormatter.CLASS_NAME_PREFIX + "TestClass", "TestMethod");
     recordGenerator.setFormatter(new SFFormatter());

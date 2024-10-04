@@ -4,6 +4,7 @@
 
 package net.snowflake.client.core.arrow;
 
+import static net.snowflake.client.providers.ProvidersUtil.cartesianProduct;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -14,8 +15,10 @@ import static org.junit.Assert.assertTrue;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -23,33 +26,32 @@ import java.util.TimeZone;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.providers.SnowflakeArgumentsProvider;
+import net.snowflake.client.providers.TimezoneProvider;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class BigIntToTimestampNTZConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
+  static class FlagProvider extends SnowflakeArgumentsProvider {
+    @Override
+    protected List<Arguments> rawArguments(ExtensionContext context) {
+      return Arrays.asList(Arguments.of(true), Arguments.of(false));
+    }
   }
 
-  public BigIntToTimestampNTZConverterTest(String tz) {
-    System.setProperty("user.timezone", tz);
+  static class DataProvider extends SnowflakeArgumentsProvider {
+    @Override
+    protected List<Arguments> rawArguments(ExtensionContext context) {
+      return cartesianProduct(context, new TimezoneProvider(), new FlagProvider());
+    }
   }
 
   /** allocator for arrow */
@@ -59,25 +61,18 @@ public class BigIntToTimestampNTZConverterTest extends BaseConverterTest {
 
   private int oldScale = 9;
 
-  @Test
-  public void testHonorClientTZForTimestampNTZDisabled() throws SFException {
-    this.setHonorClientTZForTimestampNTZ(false);
-    testTimestampNTZ();
-  }
-
-  @Test
-  public void testHonorClientTZForTimestampNTZEnabled() throws SFException {
-    this.setHonorClientTZForTimestampNTZ(true);
-    testTimestampNTZ();
-  }
-
-  @Test
-  public void testWithNullTimezone() throws SFException {
+  @ParameterizedTest
+  @ArgumentsSource(TimezoneProvider.class)
+  public void testWithNullTimezone(String tz) throws SFException {
+    System.setProperty("user.timezone", tz);
     testTimestampNTZ(null);
   }
 
-  @Test
-  public void testTimestampNTZ() throws SFException {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testTimestampNTZ(String tz, boolean flag) throws SFException {
+    this.setHonorClientTZForTimestampNTZ(flag);
+    System.setProperty("user.timezone", tz);
     testTimestampNTZ(TimeZone.getDefault());
   }
 

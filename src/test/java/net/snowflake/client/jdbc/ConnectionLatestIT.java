@@ -49,10 +49,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningNotOnAWS;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.RunOnAWS;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
@@ -71,12 +70,12 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
@@ -92,7 +91,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   private boolean defaultState;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     TelemetryService service = TelemetryService.getInstance();
     service.updateContextForIT(getConnectionParameters());
@@ -101,7 +100,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     TelemetryService.enable();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws InterruptedException {
     TelemetryService service = TelemetryService.getInstance();
     // wait 5 seconds while the service is flushing
@@ -191,7 +190,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void putGetStatementsHaveQueryID() throws Throwable {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -228,7 +227,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   /** Added in > 3.14.4 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void putGetStatementsHaveQueryIDEvenWhenFail() throws Throwable {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -717,7 +716,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testKeyPairFileDataSourceSerialization() throws Exception {
     // test with key/pair authentication where key is in file
     // set up DataSource object and ensure connection works
@@ -762,7 +761,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   /** Works in > 3.18.0 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testKeyPairBase64DataSourceSerialization() throws Exception {
     // test with key/pair authentication where key is passed as a Base64 string value
     // set up DataSource object and ensure connection works
@@ -805,7 +804,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * executions
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrivateKeyInConnectionString() throws SQLException, IOException {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -908,7 +907,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   // This will only work with JDBC driver versions higher than 3.15.1
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrivateKeyInConnectionStringWithBouncyCastle() throws SQLException, IOException {
     System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
     testPrivateKeyInConnectionString();
@@ -921,7 +920,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * executions
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrivateKeyBase64InConnectionString() throws SQLException, IOException {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -1009,7 +1008,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   /** Works in > 3.18.0 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrivateKeyBase64InConnectionStringWithBouncyCastle()
       throws SQLException, IOException {
     System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
@@ -1017,7 +1016,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBasicDataSourceSerialization() throws Exception {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
@@ -1243,7 +1242,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * likely not having the test account we used here.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAuthenticatorEndpointWithDashInAccountName() throws Exception {
     Map<String, String> params = getConnectionParameters();
     String serverUrl =
@@ -1302,7 +1301,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * the error code is ErrorCode.S3_OPERATION_ERROR so only runs on AWS.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnAWS.class)
+  @RunOnAWS
   public void testDownloadStreamWithFileNotFoundException() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -1434,8 +1433,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
    * @throws IOException
    */
   @Test
-  @Ignore
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @Disabled
+  @DontRunOnGithubActions
   public void testPbes2Support() throws SQLException, IOException {
     System.clearProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM);
     boolean pbes2Supported = isPbes2KeySupported();
@@ -1463,7 +1462,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   // Test for regenerating okta one-time token for versions > 3.15.1
   @Test
-  @Ignore
+  @Disabled
   public void testDataSourceOktaGenerates429StatusCode() throws Exception {
     // test with username/password authentication
     // set up DataSource object and ensure connection works

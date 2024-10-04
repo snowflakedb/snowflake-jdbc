@@ -27,7 +27,7 @@ import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class VarCharConverterTest extends BaseConverterTest {
   /** allocator for arrow */

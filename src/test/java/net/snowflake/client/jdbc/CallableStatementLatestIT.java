@@ -11,14 +11,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryStatement.class)
 public class CallableStatementLatestIT extends CallableStatementIT {
 
   public CallableStatementLatestIT(String format) {
-    super(format);
+    super();
   }
 
   /**

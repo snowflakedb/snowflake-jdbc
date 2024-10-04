@@ -28,12 +28,11 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Set;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryStatement.class)
 public class PreparedStatement2IT extends PreparedStatement0IT {
@@ -46,7 +45,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageBatchDates() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -254,7 +253,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * @throws InterruptedException Will be thrown if the sleep is interrupted
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrepareTimeout() throws SQLException, InterruptedException {
     try (Connection adminCon = getSnowflakeAdminConnection();
         Statement adminStatement = adminCon.createStatement()) {
@@ -304,7 +303,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
   /** Test for coalesce with bind and null arguments in a prepared statement */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSnow35923() throws Exception {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -326,7 +325,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * object IDs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBindObjectLiteral() throws Exception {
     long t1Id = 0;
     long t2Id = 0;
@@ -510,7 +509,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * timestamp format: YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBindTimestampTZViaStringBatch() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -698,7 +697,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAddBatchNumericNullFloatMixed() throws Exception {
     try (Connection connection = init()) {
       for (int threshold = 0; threshold < 2; ++threshold) {

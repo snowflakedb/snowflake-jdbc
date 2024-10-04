@@ -5,6 +5,7 @@ package net.snowflake.client;
 
 import net.snowflake.client.core.Constants;
 
+@Deprecated
 public class RunningNotOnGithubActionsMac implements ConditionalIgnoreRule.IgnoreCondition {
   public boolean isSatisfied() {
     return isRunningOnGithubActionsMac();

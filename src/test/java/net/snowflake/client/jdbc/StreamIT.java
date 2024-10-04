@@ -14,12 +14,11 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /** Stream interface tests. Snowflake JDBC specific API */
 @Category(TestCategoryOthers.class)
@@ -69,7 +68,7 @@ public class StreamIT extends BaseJDBCTest {
    * @throws Throwable if any error occurs.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDownloadStream() throws Throwable {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     List<String> supportedAccounts = Arrays.asList("s3testaccount", "azureaccount");

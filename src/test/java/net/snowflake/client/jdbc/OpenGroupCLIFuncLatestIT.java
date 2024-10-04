@@ -8,8 +8,8 @@ import static net.snowflake.client.jdbc.OpenGroupCLIFuncIT.testFunction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /**
  * Open Group CLI function integration tests for the latest JDBC driver. This doesn't work for the

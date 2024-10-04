@@ -26,6 +26,7 @@ import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 
+@Deprecated
 public class ConditionalIgnoreRule implements MethodRule {
 
   public interface IgnoreCondition {

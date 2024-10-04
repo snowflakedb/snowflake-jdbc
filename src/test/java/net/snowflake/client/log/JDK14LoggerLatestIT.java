@@ -9,11 +9,11 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import net.snowflake.client.category.TestCategoryCore;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 
 /** A class for testing {@link JDK14Logger} */
 @Category(TestCategoryCore.class)
@@ -53,7 +53,7 @@ public class JDK14LoggerLatestIT extends AbstractLoggerIT {
   /** Level at which last message was logged using JDK14Logger. */
   private Level lastLogMessageLevel = null;
 
-  @BeforeClass
+  @BeforeAll
   public static void oneTimeSetUp() {
     logLevelToRestore = internalLogger.getLevel();
     useParentHandlersToRestore = internalLogger.getUseParentHandlers();
@@ -61,19 +61,19 @@ public class JDK14LoggerLatestIT extends AbstractLoggerIT {
     internalLogger.setUseParentHandlers(false);
   }
 
-  @AfterClass
+  @AfterAll
   public static void oneTimeTearDown() {
     internalLogger.setLevel(logLevelToRestore);
     internalLogger.setUseParentHandlers(useParentHandlersToRestore);
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     super.setUp();
     internalLogger.addHandler(this.handler);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     internalLogger.removeHandler(this.handler);
   }

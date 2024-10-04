@@ -25,22 +25,22 @@ import net.snowflake.client.RunningNotOnLinuxMac;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SFConnectionConfigParserTest {
 
   private Path tempPath = null;
   private TomlMapper tomlMapper = new TomlMapper();
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
     tempPath = Files.createTempDirectory(".snowflake");
   }
 
-  @After
+  @AfterEach
   public void close() throws IOException {
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_HOME_KEY);
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);

@@ -30,15 +30,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
@@ -252,7 +251,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * This tests the ability to have quotes inside a database or schema within getSchemas() function.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetSchemas() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -281,7 +280,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetTables() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -298,7 +297,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetColumns() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -315,7 +314,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeys() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -345,7 +344,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * getPrimaryKeys and getImportedKeys functions by setting enablePatternSearch = false.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeysWithPatternSearchDisabled()
       throws SQLException {
     Properties properties = new Properties();
@@ -374,7 +373,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetProcedures() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -392,7 +391,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetTablePrivileges() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -579,7 +578,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSessionDatabaseParameter() throws Throwable {
     String altdb = "ALTERNATEDB";
     String altschema1 = "ALTERNATESCHEMA1";
@@ -746,7 +745,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * returns 1 row per return value and 1 row per input parameter.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetFunctionColumns() throws Exception {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -1662,7 +1661,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * This tests that an empty resultset will be returned for getProcedures when using a reader account.
    */
   @Test
-  @Ignore
+  @Disabled
   public void testGetProceduresWithReaderAccount() throws SQLException {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metadata = connection.getMetaData();
@@ -1673,7 +1672,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetProcedureColumns() throws Exception {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {

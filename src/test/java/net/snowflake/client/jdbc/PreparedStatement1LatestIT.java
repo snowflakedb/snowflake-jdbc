@@ -17,12 +17,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * PreparedStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -108,7 +107,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException arises if any exception occurs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testInsertStageArrayBindWithTime() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -155,7 +154,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSetObjectForTimestampTypes() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -211,7 +210,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException arises if any exception occurs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testExecuteEmptyBatch() throws SQLException {
     try (Connection connection = init()) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
@@ -325,7 +324,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException
    */
   @Test
-  @Ignore
+  @Disabled
   public void testCallStatement() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {

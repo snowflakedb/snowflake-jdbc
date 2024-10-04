@@ -21,8 +21,8 @@ import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestCategoryConnection;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryConnection.class)
 public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {

@@ -12,8 +12,9 @@ import java.util.UUID;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnection;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 @Category(TestCategoryOthers.class)
 public class CloudStorageClientLatestIT extends BaseJDBCTest {
@@ -21,7 +22,8 @@ public class CloudStorageClientLatestIT extends BaseJDBCTest {
   /**
    * Test for SNOW-565154 - it was waiting for ~5 minutes so the test is waiting much shorter time
    */
-  @Test(timeout = 30000L)
+  @Test
+  @Timeout(30)
   public void testDownloadStreamShouldFailFastOnNotExistingFile() throws Throwable {
     String stageName =
         "testDownloadStream_stage_" + UUID.randomUUID().toString().replaceAll("-", "_");

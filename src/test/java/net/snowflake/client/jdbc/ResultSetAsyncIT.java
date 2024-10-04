@@ -30,8 +30,8 @@ import java.util.Map;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.common.core.SqlState;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
 @Category(TestCategoryResultSet.class)

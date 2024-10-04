@@ -12,15 +12,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Before;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Result set test base class. */
 @Category(TestCategoryResultSet.class)
 public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
-  private final String queryResultFormat;
-
-  public Connection init(Properties paramProperties) throws SQLException {
+  public Connection init(Properties paramProperties, String queryResultFormat) throws SQLException {
     Connection conn =
         BaseJDBCTest.getConnection(DONT_INJECT_SOCKET_TIMEOUT, paramProperties, false, false);
     try (Statement stmt = conn.createStatement()) {
@@ -29,11 +27,9 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
     return conn;
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws SQLException {
     try (Statement statement = connection.createStatement()) {
-
-      statement.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
       // TEST_RS
       statement.execute("create or replace table test_rs (colA string)");
       statement.execute("insert into test_rs values('rowOne')");
@@ -64,8 +60,8 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  ResultSet numberCrossTesting() throws SQLException {
-    Statement statement = connection.createStatement();
+  ResultSet numberCrossTesting(String queryResultFormat) throws SQLException {
+    Statement statement = createStatement(queryResultFormat);
     statement.execute(
         "create or replace table test_types(c1 number, c2 integer, c3 float, c4 boolean,"
             + "c5 char, c6 varchar, c7 date, c8 datetime, c9 time, c10 timestamp_ltz, "
@@ -79,9 +75,5 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
             + "'1994-12-27 05:05:05', '05:05:05', '1994-12-27 05:05:05', '1994-12-27 05:05:05', '48454C4C4F')");
     statement.execute("insert into test_types (c5, c6) values('h', 'hello')");
     return statement.executeQuery("select * from test_types");
-  }
-
-  ResultSet0IT(String queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
   }
 }

@@ -19,14 +19,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
@@ -101,7 +100,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDownloadToStreamBlobNotFoundGCS() throws SQLException {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Properties paramProperties = new Properties();
@@ -127,7 +126,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testDownloadToStreamGCSPresignedUrl() throws SQLException, IOException {
     final String DEST_PREFIX = "testUploadStream";
 
@@ -162,7 +161,7 @@ public class StreamLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDownloadToStreamGCS() throws SQLException, IOException {
     final String DEST_PREFIX = TEST_UUID + "/testUploadStream";
     Properties paramProperties = new Properties();

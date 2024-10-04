@@ -24,13 +24,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /** This test assumes that GS has been set up */
 @Category(TestCategoryOthers.class)
@@ -43,7 +43,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * <p>change the master token validity to 10 seconds change the session token validity to 5
    * seconds change the SESSION_RECORD_ACCESS_INTERVAL_SECS to 1 second
    */
-  @BeforeClass
+  @BeforeAll
   public static void setUpClass() throws Exception {
     if (!RunningOnGithubAction.isRunningOnGithubAction()) {
       try (Connection connection = getSnowflakeAdminConnection();
@@ -61,7 +61,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * Reset master_token_validity, session_token_validity, SESSION_RECORD_ACCESS_INTERVAL_SECS to
    * default.
    */
-  @AfterClass
+  @AfterAll
   public static void tearDownClass() throws Exception {
     if (!RunningOnGithubAction.isRunningOnGithubAction()) {
       try (Connection connection = getSnowflakeAdminConnection();
@@ -115,7 +115,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * master token validity and issue a query to make sure the query succeeds.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSuccess() throws Exception {
     int concurrency = 10;
     ExecutorService executorService = Executors.newFixedThreadPool(10);
@@ -146,7 +146,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * master token validity and issue a query to make sure the query fails.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testFailure() throws Exception {
     ExecutorService executorService = Executors.newFixedThreadPool(1);
     try {

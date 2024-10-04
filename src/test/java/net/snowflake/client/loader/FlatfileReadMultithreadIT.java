@@ -17,10 +17,10 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryLoader.class)
 public class FlatfileReadMultithreadIT {
@@ -30,7 +30,7 @@ public class FlatfileReadMultithreadIT {
   private static String TARGET_SCHEMA;
   private static String TARGET_DB;
 
-  @BeforeClass
+  @BeforeAll
   public static void setUpClass() throws Throwable {
     try (Connection testConnection = AbstractDriverIT.getConnection();
         // NOTE: the stage object must be created right after the connection
@@ -43,7 +43,7 @@ public class FlatfileReadMultithreadIT {
     }
   }
 
-  @AfterClass
+  @AfterAll
   public static void tearDownClass() throws Throwable {
     try (Connection testConnection = AbstractDriverIT.getConnection();
         Statement statement = testConnection.createStatement()) {

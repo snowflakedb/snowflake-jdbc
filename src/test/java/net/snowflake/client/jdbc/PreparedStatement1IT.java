@@ -25,12 +25,11 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Map;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryStatement.class)
 public class PreparedStatement1IT extends PreparedStatement0IT {
@@ -139,7 +138,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testInsertBatch() throws SQLException {
     int[] countResult;
     try (Connection connection = init()) {
@@ -165,7 +164,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testInsertBatchStage() throws SQLException {
     int[] countResult;
     try (Connection connection = init()) {
@@ -189,7 +188,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testInsertBatchStageMultipleTimes() throws SQLException {
     // using the same statement to run a query multiple times shouldn't result in duplicates
     int[] countResult;
@@ -224,7 +223,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageBatchNull() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -270,7 +269,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageString() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -306,7 +305,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testIncorrectTypes() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -339,7 +338,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageBatchTimestamps() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -425,7 +424,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageBatchTimes() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -764,7 +763,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
    * @throws SQLException arises if any exception occurs
    */
   @Test
-  @Ignore
+  @Disabled
   public void manualTestForPreparedStatementLogging() throws SQLException {
     Map<String, String> params = getConnectionParameters();
     Properties props = new Properties();

@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.minidev.json.JSONObject;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SqlFeatureNotSupportedTelemetryTest {
 

@@ -10,8 +10,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Collections;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryResultSet.class)
 public class ResultSetFeatureNotSupportedIT extends BaseJDBCWithSharedConnectionIT {

@@ -42,19 +42,19 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import net.snowflake.client.ConditionalIgnoreRule.ConditionalIgnore;
-import net.snowflake.client.RunningNotOnTestaccount;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.RunOnTestaccount;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 /** Connection integration tests */
@@ -86,7 +86,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void test300ConnectionsWithSingleClientInstance() throws SQLException {
     // concurrent testing
     int size = 300;
@@ -216,7 +216,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testConnectionGetAndSetDBAndSchema() throws SQLException {
     final String SECOND_DATABASE = "SECOND_DATABASE";
     final String SECOND_SCHEMA = "SECOND_SCHEMA";
@@ -354,7 +354,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testDataSourceOktaSerialization() throws Exception {
     // test with username/password authentication
     // set up DataSource object and ensure connection works
@@ -395,7 +395,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testConnectUsingKeyPair() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -510,7 +510,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDifferentKeyLength() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -850,7 +850,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningNotOnTestaccount.class)
+  @RunOnTestaccount
   public void testOKTAConnection() throws Throwable {
     Map<String, String> params = getConnectionParameters();
     Properties properties = new Properties();
@@ -867,7 +867,7 @@ public class ConnectionIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnore(condition = RunningNotOnTestaccount.class)
+  @RunOnTestaccount
   public void testOKTAConnectionWithOktauserParam() throws Throwable {
     Map<String, String> params = getConnectionParameters();
     Properties properties = new Properties();
@@ -971,7 +971,7 @@ public class ConnectionIT extends BaseJDBCTest {
    *
    * @throws SQLException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testOrgAccountUrl() throws SQLException {
     Properties props = new Properties();
@@ -997,7 +997,7 @@ public class ConnectionIT extends BaseJDBCTest {
    * @throws SQLException
    * @throws NoSuchAlgorithmException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testOrgAccountUrlWithKeyPair() throws SQLException, NoSuchAlgorithmException {
 

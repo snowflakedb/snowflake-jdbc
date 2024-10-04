@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.category.TestCategoryDiagnostic;
 import net.snowflake.client.core.SFSessionProperty;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryDiagnostic.class)
 public class DiagnosticContextLatestIT {
@@ -34,7 +34,7 @@ public class DiagnosticContextLatestIT {
   private static String oldJvmHttpsProxyHost;
   private static String oldJvmHttpsProxyPort;
 
-  @BeforeClass
+  @BeforeAll
   public static void init() {
     oldJvmNonProxyHosts = System.getProperty(HTTP_NON_PROXY_HOSTS);
     oldJvmHttpProxyHost = System.getProperty(HTTP_PROXY_HOST);
@@ -43,7 +43,7 @@ public class DiagnosticContextLatestIT {
     oldJvmHttpsProxyPort = System.getProperty(HTTPS_PROXY_PORT);
   }
 
-  @Before
+  @BeforeEach
   public void clearJvmProperties() {
     System.clearProperty(HTTP_NON_PROXY_HOSTS);
     System.clearProperty(HTTP_PROXY_HOST);
@@ -329,7 +329,7 @@ public class DiagnosticContextLatestIT {
     assertEquals(noProxy, diagnosticContext.getProxy(host4));
   }
 
-  @After
+  @AfterEach
   public void restoreJvmArguments() {
     System.clearProperty(HTTP_NON_PROXY_HOSTS);
     System.clearProperty(HTTP_PROXY_HOST);

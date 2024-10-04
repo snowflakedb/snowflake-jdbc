@@ -7,9 +7,9 @@ import static org.junit.Assert.assertEquals;
 
 import net.snowflake.client.category.TestCategoryCore;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** A base class for testing implementations of {@link SFLogger} */
 @Category(TestCategoryCore.class)
@@ -17,7 +17,7 @@ public abstract class AbstractLoggerIT {
   public static final String fakeCreds =
       "credentials=(aws_key_id='abc123' aws_secret_key='rtyuiop')";
 
-  @Before
+  @BeforeEach
   void setUp() {
     setLogLevel(LogLevel.TRACE);
   }

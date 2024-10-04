@@ -9,6 +9,7 @@ import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
 import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -39,10 +40,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.RunningOnTestaccount;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.annotations.DontRunOnTestaccount;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
@@ -58,10 +58,10 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
@@ -105,7 +105,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnTestaccount.class)
+  @DontRunOnTestaccount
   public void testClientInfoConnectionProperty() throws Throwable {
     String clientInfoJSONStr = null;
     JsonNode clientInfoJSON = null;
@@ -163,7 +163,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutThreshold() throws SQLException {
     try (Connection connection = getConnection()) {
       // assert that threshold equals default 200 from server side
@@ -202,7 +202,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   /** Test API for Spark connector for FileTransferMetadata */
   @Test
-  @Ignore
+  @Disabled
   public void testGCPFileTransferMetadataWithOneFile() throws Throwable {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
@@ -284,7 +284,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   /** Test API for Kafka connector for FileTransferMetadata */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAzureS3FileTransferMetadataWithOneFile() throws Throwable {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
@@ -376,7 +376,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   /** Negative test for FileTransferMetadata. It is only supported for PUT. */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGCPFileTransferMetadataNegativeOnlySupportPut() throws Throwable {
     int expectExceptionCount = 1;
     int actualExceptionCount = -1;
@@ -487,7 +487,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutOverwriteFalseNoDigest() throws Throwable {
 
     // create 2 files: an original, and one that will overwrite the original
@@ -564,7 +564,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutDisable() throws Throwable {
 
     // create a file
@@ -598,7 +598,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetDisable() throws Throwable {
 
     // create a folder
@@ -798,7 +798,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGeoOutputTypes() throws Throwable {
 
     Properties paramProperties = new Properties();
@@ -862,7 +862,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGeoMetadata() throws Throwable {
     Properties paramProperties = new Properties();
 
@@ -913,7 +913,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGeometryOutputTypes() throws Throwable {
     Properties paramProperties = new Properties();
 
@@ -967,7 +967,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGeometryMetadata() throws Throwable {
 
     Properties paramProperties = new Properties();
@@ -1015,7 +1015,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetGcsDownscopedCredential() throws Throwable {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -1027,7 +1027,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   /** Added in > 3.15.0 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetGcsDownscopedCredentialWithDisabledDefaultCredentials() throws Throwable {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -1088,7 +1088,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetLargeFileGCSDownscopedCredential() throws Throwable {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -1165,7 +1165,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutGetLargeFileAzure() throws Throwable {
     Properties paramProperties = new Properties();
     try (Connection connection = getConnection("azureaccount", paramProperties);
@@ -1259,7 +1259,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPutS3RegionalUrl() throws Throwable {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
@@ -1370,7 +1370,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * and Azure
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAzureS3UploadStreamingIngestFileMetadata() throws Throwable {
     String clientName = "clientName";
     String clientKey = "clientKey";
@@ -1433,45 +1433,54 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  public void testNoSpaceLeftOnDeviceException() throws SQLException {
-    List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
-    for (String accountName : supportedAccounts) {
-      try (Connection connection = getConnection(accountName)) {
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        try (Statement statement = connection.createStatement()) {
-          try {
-            SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
-            statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-            statement.execute(
-                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");
-            String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
-            SnowflakeFileTransferAgent sfAgent =
-                new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
-            StageInfo info = sfAgent.getStageInfo();
-            SnowflakeStorageClient client =
-                StorageClientFactory.getFactory().createClient(info, 1, null, /* session= */ null);
+  @Test
+  public void testNoSpaceLeftOnDeviceException() {
+    assertThrows(
+        SnowflakeSQLException.class,
+        () -> {
+          List<String> supportedAccounts =
+              Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
+          for (String accountName : supportedAccounts) {
+            try (Connection connection = getConnection(accountName)) {
+              SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+              try (Statement statement = connection.createStatement()) {
+                try {
+                  SFStatement sfStatement =
+                      statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+                  statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+                  statement.execute(
+                      "PUT file://"
+                          + getFullPathFileInResource(TEST_DATA_FILE)
+                          + " @testPutGet_stage");
+                  String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
+                  SnowflakeFileTransferAgent sfAgent =
+                      new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+                  StageInfo info = sfAgent.getStageInfo();
+                  SnowflakeStorageClient client =
+                      StorageClientFactory.getFactory()
+                          .createClient(info, 1, null, /* session= */ null);
 
-            client.handleStorageException(
-                new StorageException(
-                    client.getMaxRetries(),
-                    Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
-                    new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
-                client.getMaxRetries(),
-                "download",
-                null,
-                command,
-                null);
-          } finally {
-            statement.execute("DROP STAGE if exists testPutGet_stage");
+                  client.handleStorageException(
+                      new StorageException(
+                          client.getMaxRetries(),
+                          Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                          new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+                      client.getMaxRetries(),
+                      "download",
+                      null,
+                      command,
+                      null);
+                } finally {
+                  statement.execute("DROP STAGE if exists testPutGet_stage");
+                }
+              }
+            }
           }
-        }
-      }
-    }
+        });
   }
 
   @Test
-  @Ignore // ignored until SNOW-1616480 is resolved
+  @Disabled // ignored until SNOW-1616480 is resolved
   public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();
@@ -1519,14 +1528,14 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testUploadWithGCSDownscopedCredentialWithoutConnection() throws Throwable {
     uploadWithGCSDownscopedCredentialWithoutConnection();
   }
 
   /** Added in > 3.15.0 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void
       testUploadWithGCSDownscopedCredentialAndDisabledGcsDefaultCredentialsWithoutConnection()
           throws Throwable {
@@ -1599,7 +1608,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testHTAPOptimizations() throws SQLException {
     try {
       // Set the HTAP test parameter to true
@@ -1671,7 +1680,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testHTAPStatementParameterCaching() throws SQLException {
     // Set the HTAP test parameter to true
     try (Connection con = getSnowflakeAdminConnection()) {
@@ -1730,7 +1739,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testS3PutInGS() throws Throwable {
     File destFolder = tmpFolder.newFolder();
     String destFolderCanonicalPath = destFolder.getCanonicalPath();

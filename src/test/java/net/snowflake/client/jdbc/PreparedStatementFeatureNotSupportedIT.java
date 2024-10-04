@@ -7,8 +7,8 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryStatement.class)
 public class PreparedStatementFeatureNotSupportedIT extends BaseJDBCTest {

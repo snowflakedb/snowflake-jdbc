@@ -11,7 +11,7 @@ import java.util.Base64;
 import java.util.Properties;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializable;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SFTrustManagerTest {
   /** Test building OCSP retry URL */
