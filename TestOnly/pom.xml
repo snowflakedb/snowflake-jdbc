@@ -18,6 +18,8 @@
     <jacoco.version>0.8.4</jacoco.version>
     <jacoco.skip.instrument>true</jacoco.skip.instrument>
     <jna.version>5.13.0</jna.version>
+    <junit.version>5.11.1</junit.version>
+    <junit4.version>4.13.2</junit4.version>
     <mockito.version>3.5.6</mockito.version>
     <shadeBase>net.snowflake.client.jdbc.internal</shadeBase>
     <testCategory>net.snowflake.client.category.AllTestCategory</testCategory>
@@ -41,10 +43,27 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
-      <type>jar</type>
+      <version>${junit4.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
