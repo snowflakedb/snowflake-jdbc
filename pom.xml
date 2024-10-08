@@ -1110,7 +1110,7 @@
           <!--
             Downloading
               1. japicmp
-              2. maven-dependency-lugin analyst
+              2. maven-dependency-plugin analyst
             in jenkins node would cause http connection failure. Temporarily disable them.
           -->
           <plugin>
