@@ -16,18 +16,6 @@
   <name>snowflake-jdbc-fips</name>
   <url>http://maven.apache.org</url>
 
-  <repositories>
-    <repository>
-      <id>Central</id>
-      <name>Internal Central Repo2</name>
-      <layout>default</layout>
-      <url>https://artifactory.ci1.us-west-2.aws-dev.app.snowflake.com/artifactory/development-maven-virtual/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-
   <prerequisites>
     <maven>3.3.9</maven>
   </prerequisites>
