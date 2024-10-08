@@ -5,12 +5,12 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.19.1-SNAPSHOT</version>
+    <version>3.19.1</version>
     <relativePath>../parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>3.19.1-SNAPSHOT</version>
+  <version>3.19.1</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
@@ -21,7 +21,7 @@
       <id>Central</id>
       <name>Internal Central Repo2</name>
       <layout>default</layout>
-      <url>https://nexus.int.snowflakecomputing.com/repository/maven-central/</url>
+      <url>https://artifactory.ci1.us-west-2.aws-dev.app.snowflake.com/artifactory/development-maven-virtual/</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
@@ -428,10 +428,6 @@
                      <relocation>
                        <pattern>org.jsoup</pattern>
                        <shadedPattern>${shadeBase}.org.jsoup</shadedPattern>
-                     </relocation>
-                     <relocation>
-                       <pattern>com.github.luben.zstd</pattern>
-                       <shadedPattern>${shadeBase}.com.github.luben.zstd</shadedPattern>
                      </relocation>
                      <relocation>
                        <pattern>com.nimbusds</pattern>
