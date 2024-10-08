@@ -251,7 +251,7 @@ public class ResultUtil {
    * @return boolean in string
    */
   public static String getBooleanAsString(boolean bool) {
-    return bool ? "true" : "false";
+    return bool ? "TRUE" : "FALSE";
   }
 
   /**
