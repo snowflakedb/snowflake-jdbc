@@ -10,8 +10,8 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 
 public class BaseConverterTest implements DataConversionContext {
@@ -38,7 +38,8 @@ public class BaseConverterTest implements DataConversionContext {
   @BeforeEach
   public void assumeLittleEndian() {
     Assumptions.assumeTrue(
-        ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN), "Arrow doesn't support cross endianness");
+        ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN),
+        "Arrow doesn't support cross endianness");
   }
 
   @Override
