@@ -36,7 +36,7 @@ import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import net.snowflake.client.providers.FormatProvider;
-import org.junit.Assume;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -120,7 +120,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   @ArgumentsSource(FormatProvider.class)
   @DontRunOnGithubActions
   public void testWriteNullObject(ResultSetFormatType queryResultFormat) throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
+    Assumptions.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     try (Connection connection = init(queryResultFormat);
         Statement statement = connection.createStatement();
         SnowflakePreparedStatementV1 stmtement2 =

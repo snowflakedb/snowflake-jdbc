@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 public class EventHandlerTest {
-  @TempDir File tmpFolder;
+  @TempDir private File tmpFolder;
 
   @BeforeEach
   public void setUp() throws IOException {

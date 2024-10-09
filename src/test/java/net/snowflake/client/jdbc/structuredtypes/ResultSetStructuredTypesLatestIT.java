@@ -39,7 +39,7 @@ import net.snowflake.client.jdbc.structuredtypes.sqldata.NullableFieldsSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.StringClass;
 import net.snowflake.client.providers.FormatProvider;
-import org.junit.Assume;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -184,7 +184,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testReturnStructAsStringIfTypeWasNotIndicated(ResultSetFormatType format)
       throws SQLException {
-    Assume.assumeTrue(format != ResultSetFormatType.NATIVE_ARROW);
+    Assumptions.assumeTrue(format != ResultSetFormatType.NATIVE_ARROW);
     try (Connection connection = init(format);
         Statement statement = connection.createStatement()) {
       statement.execute(
@@ -233,7 +233,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @DontRunOnGithubActions
   public void testThrowingGettingObjectIfTypeWasNotIndicatedAndFormatNativeArrow(
       ResultSetFormatType format) throws SQLException {
-    Assume.assumeTrue(format == ResultSetFormatType.NATIVE_ARROW);
+    Assumptions.assumeTrue(format == ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "select {'string':'a'}::OBJECT(string VARCHAR)",
         (resultSet) -> {
@@ -344,7 +344,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @ArgumentsSource(FormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsArrayOfNullableString(ResultSetFormatType format) throws SQLException {
-    Assume.assumeTrue(format == ResultSetFormatType.NATIVE_ARROW);
+    Assumptions.assumeTrue(format == ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "SELECT ARRAY_CONSTRUCT('one', 'two', null)::ARRAY(VARCHAR)",
         (resultSet) -> {
@@ -439,7 +439,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @ArgumentsSource(FormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMapByGetObject(ResultSetFormatType format) throws SQLException {
-    Assume.assumeTrue(format != ResultSetFormatType.NATIVE_ARROW);
+    Assumptions.assumeTrue(format != ResultSetFormatType.NATIVE_ARROW);
     withFirstRow(
         "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
         (resultSet) -> {

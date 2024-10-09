@@ -4,6 +4,7 @@ import static net.snowflake.client.AbstractDriverIT.getConnectionParameters;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assume.assumeNoException;
+//import static org.junit.jupiter.api.Assumptions.assumeNoException;
 
 import java.io.File;
 import java.io.IOException;
@@ -227,7 +228,7 @@ abstract class BaseWiremockTest {
       Assumptions.assumeTrue(response.getStatusLine().getStatusCode() == 200);
     } catch (Exception e) {
       logger.error("Importing mapping failed", e);
-      assumeNoException(e);
+      Assumptions.abort("Importing mapping failed");
     }
   }
 

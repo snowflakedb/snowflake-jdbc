@@ -21,7 +21,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Modifier;
+
 import org.junit.Assume;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
@@ -120,7 +122,7 @@ public class ConditionalIgnoreRule implements MethodRule {
 
     @Override
     public void evaluate() {
-      Assume.assumeTrue("Ignored by " + condition.getClass().getSimpleName(), false);
+      Assumptions.abort("Ignored by " + condition.getClass().getSimpleName());
     }
   }
 }
