@@ -1579,9 +1579,10 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
   private void uploadStream() throws SnowflakeSQLException {
     try {
       FileMetadata fileMetadata = fileMetadataMap.get(SRC_FILE_NAME_FOR_STREAM);
+      logger.info("Start uploading stream {}", SRC_FILE_NAME_FOR_STREAM);
 
       if (fileMetadata.resultStatus == ResultStatus.SKIPPED) {
-        logger.debug(
+        logger.info(
             "Skipping {}, status: {}, details: {}",
             SRC_FILE_NAME_FOR_STREAM,
             fileMetadata.resultStatus,
@@ -2083,7 +2084,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
           remoteLocation.path + (!remoteLocation.path.endsWith("/") ? "/" : "") + destFileName;
     }
 
-    logger.debug(
+    logger.info(
         "Upload object. Location: {}, key: {}, srcFile: {}, encryption: {}",
         remoteLocation.location,
         destFileName,

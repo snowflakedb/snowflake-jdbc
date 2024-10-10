@@ -5,10 +5,11 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.kms.model.UnsupportedOperationException;
-import com.microsoft.azure.storage.blob.CloudBlob;
-import com.microsoft.azure.storage.blob.ListBlobItem;
+import com.azure.storage.blob.models.BlobItem;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 
@@ -21,15 +22,17 @@ import net.snowflake.client.log.SFLoggerFactory;
 public class AzureObjectSummariesIterator implements Iterator<StorageObjectSummary> {
   private static final SFLogger logger =
       SFLoggerFactory.getLogger(AzureObjectSummariesIterator.class);
-  Iterator<ListBlobItem> itemIterator;
+  private final String storageLocation;
+  Iterator<BlobItem> itemIterator;
 
   /*
    * Constructs a summaries iterator object from an iterable derived by a
    * lostBlobs method
    * @param azCloudBlobIterable an iterable set of ListBlobItems
    */
-  public AzureObjectSummariesIterator(Iterable<ListBlobItem> azCloudBlobIterable) {
+  public AzureObjectSummariesIterator(Iterable<BlobItem> azCloudBlobIterable, String azStorageLocation) {
     itemIterator = azCloudBlobIterable.iterator();
+    storageLocation = azStorageLocation;
   }
 
   public boolean hasNext() {
@@ -46,16 +49,15 @@ public class AzureObjectSummariesIterator implements Iterator<StorageObjectSumma
   }
 
   public StorageObjectSummary next() {
-    ListBlobItem listBlobItem = itemIterator.next();
+    BlobItem blobItem = itemIterator.next();
+//    if (!(blobItem.getProperties().getBlobType() instanceof BlobClient)) {
+//      // The only other possible type would a CloudDirectory
+//      // This should never happen since we are listing items as a flat list
+//      logger.debug("Unexpected listBlobItem instance type: {}", blobItem.getClass());
+//      throw new IllegalArgumentException("Unexpected listBlobItem instance type");
+//    }
 
-    if (!(listBlobItem instanceof CloudBlob)) {
-      // The only other possible type would a CloudDirectory
-      // This should never happen since we are listing items as a flat list
-      logger.debug("Unexpected listBlobItem instance type: {}", listBlobItem.getClass());
-      throw new IllegalArgumentException("Unexpected listBlobItem instance type");
-    }
-
-    return StorageObjectSummary.createFromAzureListBlobItem(listBlobItem);
+    return StorageObjectSummary.createFromAzureListBlobItem(blobItem, storageLocation);
   }
 
   public void remove() {
