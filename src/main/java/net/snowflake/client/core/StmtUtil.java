@@ -382,8 +382,8 @@ public class StmtUtil {
             HttpUtil.executeRequest(
                 httpRequest,
                 stmtInput.networkTimeoutInMillis / 1000,
-                stmtInput.socketTimeout,
                 0,
+                stmtInput.socketTimeout,
                 stmtInput.maxRetries,
                 stmtInput.injectSocketTimeout,
                 stmtInput.canceling,
@@ -625,8 +625,8 @@ public class StmtUtil {
       return HttpUtil.executeRequest(
           httpRequest,
           stmtInput.networkTimeoutInMillis / 1000,
-          stmtInput.socketTimeout,
           0,
+          stmtInput.socketTimeout,
           stmtInput.maxRetries,
           0,
           stmtInput.canceling,
