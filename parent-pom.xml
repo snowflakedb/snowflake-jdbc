@@ -102,7 +102,7 @@
     <version.plugin.shade>3.6.0</version.plugin.shade>
     <version.plugin.sortpom>3.0.1</version.plugin.sortpom>
     <version.plugin.source>3.2.1</version.plugin.source>
-    <version.plugin.surefire>3.0.0</version.plugin.surefire>
+    <version.plugin.surefire>3.5.1</version.plugin.surefire>
     <version.plugin.wiremock>3.8.0</version.plugin.wiremock>
   </properties>
 
