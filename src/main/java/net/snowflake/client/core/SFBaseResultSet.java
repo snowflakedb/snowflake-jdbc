@@ -236,7 +236,7 @@ public abstract class SFBaseResultSet {
   @SnowflakeJdbcInternalApi
   public SQLInput createSqlInputForColumn(
       Object input,
-      Class<?> parentObjectClass,
+      boolean isJsonMapping,
       int columnIndex,
       SFBaseSession session,
       List<FieldMetadata> fields) {
@@ -263,7 +263,11 @@ public abstract class SFBaseResultSet {
   protected SQLInput createJsonSqlInputForColumn(
       Object input, SFBaseSession session, List<FieldMetadata> fields) {
     JsonNode inputNode;
+
     if (input instanceof JsonNode) {
+      if (((JsonNode) input).isNull()) {
+        return null;
+      }
       inputNode = (JsonNode) input;
     } else {
       inputNode = OBJECT_MAPPER.convertValue(input, JsonNode.class);
@@ -288,99 +292,126 @@ public abstract class SFBaseResultSet {
       int columnType = ColumnTypeHelper.getColumnType(columnSubType, session);
       int scale = fieldMetadata.getScale();
 
-      ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(obj);
-      Iterator<JsonNode> nodeElements = arrayNode.elements();
+      JsonNode data = OBJECT_MAPPER.readTree(obj);
 
-      switch (columnType) {
-        case Types.INTEGER:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().integerConverter(columnType))
-                  .toArray(Integer[]::new));
-        case Types.SMALLINT:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().smallIntConverter(columnType))
-                  .toArray(Short[]::new));
-        case Types.TINYINT:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().tinyIntConverter(columnType))
-                  .toArray(Byte[]::new));
-        case Types.BIGINT:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().bigIntConverter(columnType))
-                  .toArray(Long[]::new));
-        case Types.DECIMAL:
-        case Types.NUMERIC:
-          return new SfSqlArray(
-              columnSubType,
-              convertToFixedArray(
-                  getStream(nodeElements, getConverters().bigDecimalConverter(columnType))));
-        case Types.CHAR:
-        case Types.VARCHAR:
-        case Types.LONGNVARCHAR:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(
-                      nodeElements,
-                      getConverters().varcharConverter(columnType, columnSubType, scale))
-                  .toArray(String[]::new));
-        case Types.BINARY:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().bytesConverter(columnType, scale))
-                  .toArray(Byte[][]::new));
-        case Types.FLOAT:
-        case Types.REAL:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().floatConverter(columnType))
-                  .toArray(Float[]::new));
-        case Types.DOUBLE:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().doubleConverter(columnType))
-                  .toArray(Double[]::new));
-        case Types.DATE:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().dateStringConverter(session))
-                  .toArray(Date[]::new));
-        case Types.TIME:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().timeFromStringConverter(session))
-                  .toArray(Time[]::new));
-        case Types.TIMESTAMP:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(
-                      nodeElements,
-                      getConverters()
-                          .timestampFromStringConverter(
-                              columnSubType, columnType, scale, session, null, sessionTimeZone))
-                  .toArray(Timestamp[]::new));
-        case Types.BOOLEAN:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().booleanConverter(columnType))
-                  .toArray(Boolean[]::new));
-        case Types.STRUCT:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().structConverter(OBJECT_MAPPER))
-                  .toArray(Map[]::new));
-        case Types.ARRAY:
-          return new SfSqlArray(
-              columnSubType,
-              getStream(nodeElements, getConverters().arrayConverter(OBJECT_MAPPER))
-                  .toArray(Map[][]::new));
-        default:
-          throw new SFException(
-              ErrorCode.FEATURE_UNSUPPORTED,
-              "Can't construct array for data type: " + columnSubType);
+      if (data.isNull()) {
+        return null;
+      }
+
+      if (data.isArray()) {
+        ArrayNode arrayNode = (ArrayNode) OBJECT_MAPPER.readTree(obj);
+        Iterator<JsonNode> nodeElements = arrayNode.elements();
+
+        switch (columnType) {
+          case Types.INTEGER:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().integerConverter(columnType))
+                    .toArray(Integer[]::new));
+          case Types.SMALLINT:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().smallIntConverter(columnType))
+                    .toArray(Short[]::new));
+          case Types.TINYINT:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().tinyIntConverter(columnType))
+                    .toArray(Byte[]::new));
+          case Types.BIGINT:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().bigIntConverter(columnType))
+                    .toArray(Long[]::new));
+          case Types.DECIMAL:
+          case Types.NUMERIC:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                convertToFixedArray(
+                    getStream(nodeElements, getConverters().bigDecimalConverter(columnType))));
+          case Types.CHAR:
+          case Types.VARCHAR:
+          case Types.LONGNVARCHAR:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(
+                        nodeElements,
+                        getConverters().varcharConverter(columnType, columnSubType, scale))
+                    .toArray(String[]::new));
+          case Types.BINARY:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().bytesConverter(columnType, scale))
+                    .toArray(Byte[][]::new));
+          case Types.FLOAT:
+          case Types.REAL:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().floatConverter(columnType))
+                    .toArray(Float[]::new));
+          case Types.DOUBLE:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().doubleConverter(columnType))
+                    .toArray(Double[]::new));
+          case Types.DATE:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().dateStringConverter(session))
+                    .toArray(Date[]::new));
+          case Types.TIME:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().timeFromStringConverter(session))
+                    .toArray(Time[]::new));
+          case Types.TIMESTAMP:
+          case Types.TIMESTAMP_WITH_TIMEZONE:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(
+                        nodeElements,
+                        getConverters()
+                            .timestampFromStringConverter(
+                                columnSubType, columnType, scale, session, null, sessionTimeZone))
+                    .toArray(Timestamp[]::new));
+          case Types.BOOLEAN:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().booleanConverter(columnType))
+                    .toArray(Boolean[]::new));
+          case Types.STRUCT:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().structConverter(OBJECT_MAPPER))
+                    .toArray(Map[]::new));
+          case Types.ARRAY:
+            return new SfSqlArray(
+                data,
+                columnSubType,
+                getStream(nodeElements, getConverters().arrayConverter(OBJECT_MAPPER))
+                    .toArray(Map[][]::new));
+          default:
+            throw new SFException(
+                ErrorCode.FEATURE_UNSUPPORTED,
+                "Can't construct array for data type: " + columnSubType);
+        }
+      } else {
+        throw new SFException(
+            ErrorCode.INVALID_VALUE_CONVERT, "Can't construct array from delivered data");
       }
     } catch (JsonProcessingException e) {
       throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);

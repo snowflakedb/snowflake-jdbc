@@ -58,11 +58,16 @@ public class FieldSchemaCreator {
 
   public static BindingParameterMetadata buildBindingSchemaForType(int baseType)
       throws SQLException {
-    return buildBindingSchemaForType(baseType, true);
+    return buildBindingSchemaForType(baseType, true, null);
   }
 
   public static BindingParameterMetadata buildBindingSchemaForType(int baseType, boolean addName)
       throws SQLException {
+    return buildBindingSchemaForType(baseType, addName, null);
+  }
+
+  public static BindingParameterMetadata buildBindingSchemaForType(
+      int baseType, boolean addName, String typeName) throws SQLException {
     String name = addName ? SnowflakeType.javaTypeToSFType(baseType, null).name() : null;
     switch (baseType) {
       case Types.VARCHAR:
@@ -85,9 +90,13 @@ public class FieldSchemaCreator {
       case Types.DATE:
         return FieldSchemaCreator.buildSchemaTypeAndNameOnly(name, "date", Optional.empty());
       case Types.TIMESTAMP:
+        return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
+            name, Optional.ofNullable(typeName).orElse("timestamp"), 0, 0, Optional.empty());
       case Types.TIME:
         return FieldSchemaCreator.buildSchemaWithScaleAndPrecision(
-            name, "timestamp", 9, 0, Optional.empty());
+            name, "time", 9, 0, Optional.empty());
+      case Types.BINARY:
+        return FieldSchemaCreator.buildSchemaForBytesType(name, Optional.empty());
       default:
         logger.error("Could not create schema for type : " + baseType);
         throw new SQLException("Could not create schema for type : " + baseType);

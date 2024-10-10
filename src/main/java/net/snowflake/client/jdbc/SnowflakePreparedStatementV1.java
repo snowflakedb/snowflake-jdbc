@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.core.ExecTimeTelemetryData;
@@ -388,20 +389,13 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
     logger.trace("setTimestamp(parameterIndex: {}, Timestamp x)", parameterIndex);
-
     setTimestampWithType(parameterIndex, x, Types.TIMESTAMP);
   }
 
   private void setTimestampWithType(int parameterIndex, Timestamp x, int snowflakeType)
       throws SQLException {
     // convert the timestamp from being in local time zone to be in UTC timezone
-    String value =
-        x == null
-            ? null
-            : String.valueOf(
-                BigDecimal.valueOf((x.getTime() - ResultUtil.msDiffJulianToGregorian(x)) / 1000)
-                    .scaleByPowerOfTen(9)
-                    .add(BigDecimal.valueOf(x.getNanos())));
+    String value = prepareStringOfTimestamp(x);
     String bindingTypeName;
     switch (snowflakeType) {
       case SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ:
@@ -417,6 +411,15 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
 
     ParameterBindingDTO binding = new ParameterBindingDTO(bindingTypeName, value);
     parameterBindings.put(String.valueOf(parameterIndex), binding);
+  }
+
+  public static String prepareStringOfTimestamp(Timestamp x) {
+    return x == null
+        ? null
+        : String.valueOf(
+            BigDecimal.valueOf((x.getTime() - ResultUtil.msDiffJulianToGregorian(x)) / 1000)
+                .scaleByPowerOfTen(9)
+                .add(BigDecimal.valueOf(x.getNanos())));
   }
 
   @Override
@@ -621,30 +624,81 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
   }
 
   @Override
-  public void setArray(int parameterIndex, Array array) throws SQLException {
+  public void setArray(int parameterIndex, Array array, SnowflakeType snowflakeType)
+      throws SQLException {
     if (array instanceof SfSqlArray) {
       SfSqlArray sfArray = (SfSqlArray) array;
-      ParameterBindingDTO binding =
-          new ParameterBindingDTO(
-              "json",
-              SnowflakeUtil.javaTypeToSFTypeString(Types.ARRAY, connection.getSFBaseSession()),
-              sfArray.getJsonString(),
-              sfArray.getSchema());
-      parameterBindings.put(String.valueOf(parameterIndex), binding);
+      int javaType = sfArray.getBaseType();
+      if (sfArray.getElements() != null
+          && SQLData.class.isAssignableFrom(sfArray.getElements().getClass().getComponentType())) {
+        SQLData[] objects = (SQLData[]) sfArray.getElements();
+        SQLData sqlData = Optional.ofNullable(objects[0]).orElse(null);
+        JsonSqlOutput stream = new JsonSqlOutput(sqlData, connection.getSFBaseSession());
+        sqlData.writeSQL(stream);
+        BindingParameterMetadata valueTypeSchema = stream.getSchema();
+
+        ParameterBindingDTO binding;
+        try {
+          binding =
+              new ParameterBindingDTO(
+                  "json",
+                  SnowflakeUtil.javaTypeToSFTypeString(Types.ARRAY, connection.getSFBaseSession()),
+                  SnowflakeUtil.convertArrayToJson(
+                      objects, Types.STRUCT, SnowflakeType.OBJECT, connection),
+                  sfArray.getSchema(Arrays.asList(valueTypeSchema)));
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
+        }
+        parameterBindings.put(String.valueOf(parameterIndex), binding);
+      } else {
+
+        String value = null;
+        try {
+          value =
+              SnowflakeUtil.convertArrayToJson(
+                  sfArray.getElements(), javaType, snowflakeType, connection);
+        } catch (JsonProcessingException e) {
+          throw new SQLException(e);
+        }
+        BindingParameterMetadata valueTypeSchema =
+            FieldSchemaCreator.buildBindingSchemaForType(javaType, false, snowflakeType.name());
+
+        ParameterBindingDTO binding =
+            new ParameterBindingDTO(
+                "json",
+                SnowflakeUtil.javaTypeToSFTypeString(Types.ARRAY, connection.getSFBaseSession()),
+                value,
+                sfArray.getSchema(Arrays.asList(valueTypeSchema)));
+        parameterBindings.put(String.valueOf(parameterIndex), binding);
+      }
     } else {
-      SfSqlArray sfArray = new SfSqlArray(Types.INTEGER, array);
-      ParameterBindingDTO binding =
-          new ParameterBindingDTO(
-              "json",
-              SnowflakeUtil.javaTypeToSFTypeString(Types.ARRAY, connection.getSFBaseSession()),
-              sfArray.getJsonString(),
-              sfArray.getSchema());
-      parameterBindings.put(String.valueOf(parameterIndex), binding);
+      throw new RuntimeException();
     }
   }
 
   @Override
+  public void setArray(int parameterIndex, Array array) throws SQLException {
+    SfSqlArray sfArray = (SfSqlArray) array;
+    int javaType = sfArray.getBaseType();
+    SnowflakeType snowflakeType =
+        SnowflakeType.javaTypeToSFType(javaType, connection.getSFBaseSession());
+    setArray(parameterIndex, array, snowflakeType);
+  }
+
+  @Override
   public <T> void setMap(int parameterIndex, Map<String, T> map, int type) throws SQLException {
+    SnowflakeType.javaTypeToSFType(0, connection.getSFBaseSession());
+    setMap(
+        parameterIndex,
+        map,
+        type,
+        SnowflakeType.javaTypeToSFType(0, connection.getSFBaseSession()));
+  }
+
+  @Override
+  public <T> void setMap(
+      int parameterIndex, Map<String, T> map, int type, SnowflakeType snowflakeType)
+      throws SQLException {
     BindingParameterMetadata valueTypeSchema;
     if (Types.STRUCT == type) {
       SQLData sqlData = (SQLData) map.values().stream().findFirst().orElse(null);
@@ -652,7 +706,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
       sqlData.writeSQL(stream);
       valueTypeSchema = stream.getSchema();
     } else {
-      valueTypeSchema = FieldSchemaCreator.buildBindingSchemaForType(type, false);
+      valueTypeSchema =
+          FieldSchemaCreator.buildBindingSchemaForType(type, false, snowflakeType.name());
     }
 
     BindingParameterMetadata schema =
@@ -660,7 +715,8 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
             .withType("map")
             .withFields(
                 Arrays.asList(
-                    FieldSchemaCreator.buildBindingSchemaForType(Types.VARCHAR, false),
+                    FieldSchemaCreator.buildBindingSchemaForType(
+                        Types.VARCHAR, false, snowflakeType.name()),
                     valueTypeSchema))
             .build();
     ParameterBindingDTO binding = null;
@@ -669,7 +725,7 @@ class SnowflakePreparedStatementV1 extends SnowflakeStatementV1
           new ParameterBindingDTO(
               "json",
               SnowflakeUtil.javaTypeToSFTypeString(Types.STRUCT, connection.getSFBaseSession()),
-              SnowflakeUtil.mapJson(map),
+              SnowflakeUtil.convertMapToJson(map, type, snowflakeType, connection),
               schema);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);

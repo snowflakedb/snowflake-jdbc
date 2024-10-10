@@ -45,6 +45,7 @@ import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.SfSqlArray;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -1475,9 +1476,10 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       } else {
         if (SQLData.class.isAssignableFrom(type)) {
           SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+          boolean isJsonMapping = ((SfSqlArray) array).getInput() != null;
           SQLInput sqlInput =
               sfBaseResultSet.createSqlInputForColumn(
-                  value, objects.getClass(), columnIndex, session, fieldMetadata.getFields());
+                  value, isJsonMapping, columnIndex, session, fieldMetadata.getFields());
           instance.readSQL(sqlInput, null);
           arr[counter++] = (T) instance;
         } else if (String.class.isAssignableFrom(type)) {
@@ -1623,17 +1625,24 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         mapSFExceptionToSQLException(() -> prepareMapWithValues(object, type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
-      if (SQLData.class.isAssignableFrom(type)) {
+      if (entry.getValue() == null) {
+        resultMap.put(entry.getKey(), null);
+      } else if (SQLData.class.isAssignableFrom(type)) {
         SQLData instance = (SQLData) SQLDataCreationHelper.create(type);
+        boolean isJsonMapping = JsonNode.class.isAssignableFrom(entry.getValue().getClass());
         SQLInput sqlInput =
             sfBaseResultSet.createSqlInputForColumn(
                 entry.getValue(),
-                object.getClass(),
+                isJsonMapping,
                 columnIndex,
                 session,
                 valueFieldMetadata.getFields());
-        instance.readSQL(sqlInput, null);
-        resultMap.put(entry.getKey(), (T) instance);
+        if (sqlInput != null) {
+          instance.readSQL(sqlInput, null);
+          resultMap.put(entry.getKey(), (T) instance);
+        } else {
+          resultMap.put(entry.getKey(), null);
+        }
       } else if (String.class.isAssignableFrom(type)) {
         resultMap.put(
             entry.getKey(),
@@ -1748,6 +1757,17 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
                     (T)
                         sfBaseResultSet.convertToTimestamp(
                             entry.getValue(), columnType, columnSubType, tz, scale)));
+
+      } else if (byte[].class.isAssignableFrom(type)) {
+        resultMap.put(
+            entry.getKey(),
+            mapSFExceptionToSQLException(
+                () ->
+                    (T)
+                        sfBaseResultSet
+                            .getConverters()
+                            .getBytesConverter()
+                            .getBytes(entry.getValue(), columnType, columnSubType, scale)));
 
       } else {
         logger.debug(
