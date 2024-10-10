@@ -19,8 +19,8 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {

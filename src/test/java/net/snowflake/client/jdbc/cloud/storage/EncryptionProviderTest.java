@@ -16,8 +16,8 @@ import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class EncryptionProviderTest {
@@ -41,7 +41,7 @@ public class EncryptionProviderTest {
 
   byte[] plainText = "the quick brown fox jumps over the lazy dog".getBytes(StandardCharsets.UTF_8);
 
-  @Before
+  @BeforeEach
   public void setUp() {
     encMat.setQueryStageMasterKey(queryStageMasterKey);
     encMat.setSmkId(123);

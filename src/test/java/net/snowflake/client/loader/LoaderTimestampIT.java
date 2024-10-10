@@ -15,8 +15,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
 import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryLoader.class)
 public class LoaderTimestampIT extends LoaderBase {

@@ -30,8 +30,8 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
 import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -336,7 +336,7 @@ public class SnowflakeMFACacheTest {
   // Run this test manually to test disabling the client request MFA token. Use an MFA
   // authentication enabled user. This is valid for versions after 3.18.0.
   @Test
-  @Ignore
+  @Disabled
   public void testEnableClientRequestMfaToken() throws SQLException {
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();

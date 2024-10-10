@@ -5,7 +5,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SnowflakeS3ClientTest {
 

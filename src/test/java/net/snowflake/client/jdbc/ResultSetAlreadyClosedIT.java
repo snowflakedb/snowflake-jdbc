@@ -13,8 +13,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryResultSet.class)
 public class ResultSetAlreadyClosedIT extends BaseJDBCWithSharedConnectionIT {

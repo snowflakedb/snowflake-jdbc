@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import net.snowflake.client.core.SFSession;
 import org.apache.commons.text.StringEscapeUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** This is the unit tests for ResultJsonParserV2 */
 public class ResultJsonParserV2Test {

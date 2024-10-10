@@ -14,8 +14,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /**
  * Loader API tests for the latest JDBC driver. This doesn't work for the oldest supported driver.

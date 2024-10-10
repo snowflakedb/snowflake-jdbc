@@ -12,12 +12,11 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.logging.Logger;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.QueryStatus;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for using heartbeat with asynchronous querying. This is a "Latest" class because old
@@ -69,20 +68,20 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAsynchronousQuerySuccess() throws Exception {
     testSuccess();
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAsynchronousQueryFailure() throws Exception {
     testFailure();
   }
 
   /** Test that isValid() function returns false when session is expired */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testIsValidWithInvalidSession() throws Exception {
     try (Connection connection = getConnection()) {
       // assert that connection starts out valid

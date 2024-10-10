@@ -13,8 +13,8 @@ import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /** Test OpenGroup CLI */
 @Category(TestCategoryOthers.class)

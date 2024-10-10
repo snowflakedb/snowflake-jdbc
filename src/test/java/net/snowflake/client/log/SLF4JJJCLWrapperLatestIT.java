@@ -13,10 +13,10 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
 import net.snowflake.client.category.TestCategoryCore;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryCore.class)
 public class SLF4JJJCLWrapperLatestIT {
@@ -55,7 +55,7 @@ public class SLF4JJJCLWrapperLatestIT {
   Logger logger = (Logger) wrapper.getLogger();
   private final Appender<ILoggingEvent> testAppender = new TestAppender();
 
-  @Before
+  @BeforeEach
   public void setUp() {
     levelToRestore = logger.getLevel();
     if (!testAppender.isStarted()) {
@@ -66,7 +66,7 @@ public class SLF4JJJCLWrapperLatestIT {
     logger.addAppender(testAppender);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     logger.setLevel(levelToRestore);
     logger.detachAppender(testAppender);

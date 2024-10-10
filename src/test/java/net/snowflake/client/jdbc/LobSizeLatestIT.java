@@ -17,24 +17,25 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.UUIDUtils;
 import org.apache.commons.text.RandomStringGenerator;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 @Category(TestCategoryStatement.class)
 public class LobSizeLatestIT extends BaseJDBCTest {
 
@@ -48,15 +49,16 @@ public class LobSizeLatestIT extends BaseJDBCTest {
   private static int smallLobSize = 16;
   private static int originLobSize = 16 * 1024 * 1024;
 
-  @BeforeClass
+  @BeforeAll
   public static void setUp() throws SQLException {
-    System.setProperty(
-        // the max json string should be ~1.33 for Arrow response so let's use 1.5 to be sure
-        ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, Integer.toString((int) (maxLobSize * 1.5)));
     try (Connection con = BaseJDBCTest.getConnection()) {
       // get max LOB size from session
       maxLobSize = con.getMetaData().getMaxCharLiteralLength();
       logger.log(Level.INFO, "Using max lob size: " + maxLobSize);
+      System.setProperty(
+          // the max json string should be ~1.33 for Arrow response so let's use 1.5 to be sure
+          ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM,
+          Integer.toString((int) (maxLobSize * 1.5)));
       LobSizeStringValues.put(smallLobSize, generateRandomString(smallLobSize));
       LobSizeStringValues.put(originLobSize, generateRandomString(originLobSize));
       LobSizeStringValues.put(mediumLobSize, generateRandomString(mediumLobSize));
@@ -65,31 +67,20 @@ public class LobSizeLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Parameterized.Parameters(name = "lobSize={0}, resultFormat={1}")
-  public static Collection<Object[]> data() {
-    int[] lobSizes =
-        new int[] {smallLobSize, originLobSize, mediumLobSize, largeLobSize, maxLobSize};
-    String[] resultFormats = new String[] {"Arrow", "JSON"};
-    List<Object[]> ret = new ArrayList<>();
-    for (int i = 0; i < lobSizes.length; i++) {
-      for (int j = 0; j < resultFormats.length; j++) {
-        ret.add(new Object[] {lobSizes[i], resultFormats[j]});
+  static class DataProvider implements ArgumentsProvider {
+
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      int[] lobSizes =
+          new int[] {smallLobSize, originLobSize, mediumLobSize, largeLobSize, maxLobSize};
+      String[] resultFormats = new String[] {"Arrow", "JSON"};
+      List<Arguments> ret = new ArrayList<>();
+      for (int size : lobSizes) {
+        for (String format : resultFormats) {
+          ret.add(Arguments.of(size, format));
+        }
       }
-    }
-    return ret;
-  }
-
-  private final int lobSize;
-
-  private final String resultFormat;
-
-  public LobSizeLatestIT(int lobSize, String resultFormat) throws SQLException {
-    this.lobSize = lobSize;
-    this.resultFormat = resultFormat;
-
-    try (Connection con = BaseJDBCTest.getConnection();
-        Statement stmt = con.createStatement()) {
-      createTable(lobSize, stmt);
+      return ret.stream();
     }
   }
 
@@ -134,7 +125,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
     }
   }
 
-  @AfterClass
+  @AfterAll
   public static void tearDown() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
@@ -142,10 +133,13 @@ public class LobSizeLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  public void testStandardInsertAndSelectWithMaxLobSizeEnabled() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testStandardInsertAndSelectWithMaxLobSizeEnabled(int lobSize, String resultFormat)
+      throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
+      createTable(lobSize, stmt);
       setResultFormat(stmt, resultFormat);
 
       String varCharValue = LobSizeStringValues.get(lobSize);
@@ -161,10 +155,13 @@ public class LobSizeLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  public void testPreparedInsertWithMaxLobSizeEnabled() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testPreparedInsertWithMaxLobSizeEnabled(int lobSize, String resultFormat)
+      throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
+      createTable(lobSize, stmt);
       setResultFormat(stmt, resultFormat);
 
       String maxVarCharValue = LobSizeStringValues.get(lobSize);
@@ -180,8 +177,9 @@ public class LobSizeLatestIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  public void testPutAndGet() throws IOException, SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testPutAndGet(int lobSize, String resultFormat) throws IOException, SQLException {
     File tempFile = File.createTempFile("LobSizeTest", ".csv");
     // Delete file when JVM shuts down
     tempFile.deleteOnExit();
@@ -201,6 +199,7 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {
+      createTable(lobSize, stmt);
       setResultFormat(stmt, resultFormat);
       if (lobSize > originLobSize) { // for increased LOB size (16MB < lobSize < 128MB)
         stmt.execute("alter session set ALLOW_LARGE_LOBS_IN_EXTERNAL_SCAN = true");

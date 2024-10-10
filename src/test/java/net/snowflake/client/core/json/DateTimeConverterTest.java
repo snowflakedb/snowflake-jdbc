@@ -15,7 +15,7 @@ import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DateTimeConverterTest {
   private final TimeZone honoluluTimeZone =

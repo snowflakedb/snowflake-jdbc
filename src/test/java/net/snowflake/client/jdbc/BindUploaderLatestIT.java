@@ -25,12 +25,12 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Bind Uploader tests for the latest JDBC driver. This doesn't work for the oldest supported
@@ -45,17 +45,17 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
   SFSession session;
   TimeZone prevTimeZone; // store last time zone and restore after tests
 
-  @BeforeClass
+  @BeforeAll
   public static void classSetUp() throws Exception {
     BindUploaderIT.classSetUp();
   }
 
-  @AfterClass
+  @AfterAll
   public static void classTearDown() throws Exception {
     BindUploaderIT.classTearDown();
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     conn = getConnection();
     session = conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -64,7 +64,7 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws SQLException {
     conn.close();
     bindUploader.close();

@@ -20,32 +20,24 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.providers.TimezoneProvider;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class BigIntToTimeConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
+  public void setTimezone(String tz) {
+    System.setProperty("user.timezone", tz);
   }
 
-  public BigIntToTimeConverterTest(String tz) {
-    System.setProperty("user.timezone", tz);
+  @AfterAll
+  public static void clearTimezone() {
+    System.clearProperty("user.timezone");
   }
 
   /** allocator for arrow */
@@ -55,8 +47,10 @@ public class BigIntToTimeConverterTest extends BaseConverterTest {
 
   private int scale = 9;
 
-  @Test
-  public void testTime() throws SFException {
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(TimezoneProvider.class)
+  public void testTime(String tz) throws SFException {
+    setTimezone(tz);
     // test old and new dates
     long[] testTimesInt64 = {12345678000000L};
 

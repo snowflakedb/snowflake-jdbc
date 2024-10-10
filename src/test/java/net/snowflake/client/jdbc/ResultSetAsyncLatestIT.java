@@ -12,8 +12,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
 @Category(TestCategoryResultSet.class)

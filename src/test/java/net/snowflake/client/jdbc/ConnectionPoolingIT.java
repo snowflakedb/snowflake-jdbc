@@ -19,10 +19,10 @@ import net.snowflake.client.category.TestCategoryConnection;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Connection pool interface test */
 @Category(TestCategoryConnection.class)
@@ -48,7 +48,7 @@ public class ConnectionPoolingIT {
     ssl = params.get("ssl");
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws SQLException {
     try (Connection connection = BaseJDBCTest.getConnection();
         Statement statement = connection.createStatement()) {
@@ -57,7 +57,7 @@ public class ConnectionPoolingIT {
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws SQLException {
     try (Connection connection = BaseJDBCTest.getConnection();
         Statement statement = connection.createStatement(); ) {

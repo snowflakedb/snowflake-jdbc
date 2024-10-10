@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.ObjectMapperFactory;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryCore.class)
 public class SnowflakeUtilTest extends BaseJDBCTest {

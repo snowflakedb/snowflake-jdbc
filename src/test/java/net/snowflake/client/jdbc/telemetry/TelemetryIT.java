@@ -18,25 +18,24 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SessionUtil;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryCore.class)
 public class TelemetryIT extends AbstractDriverIT {
   private Connection connection = null;
   private static final ObjectMapper mapper = new ObjectMapper();
 
-  @Before
+  @BeforeEach
   public void init() throws SQLException, IOException {
     this.connection = getConnection();
   }
@@ -47,23 +46,23 @@ public class TelemetryIT extends AbstractDriverIT {
     testTelemetryInternal(telemetry);
   }
 
-  @Ignore
+  @Disabled
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSessionlessTelemetry() throws Exception, SFException {
     testTelemetryInternal(createSessionlessTelemetry());
   }
 
-  @Ignore
+  @Disabled
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testJWTSessionlessTelemetry() throws Exception, SFException {
     testTelemetryInternal(createJWTSessionlessTelemetry());
   }
 
-  @Ignore
+  @Disabled
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testOAuthSessionlessTelemetry() throws Exception, SFException {
     testTelemetryInternal(createOAuthSessionlessTelemetry());
   }
@@ -143,13 +142,13 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDisableJWTSessionlessTelemetry() throws Exception, SFException {
     testDisableTelemetryInternal(createJWTSessionlessTelemetry());
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDisableOAuthSessionlessTelemetry() throws Exception, SFException {
     testDisableTelemetryInternal(createOAuthSessionlessTelemetry());
   }
@@ -181,7 +180,7 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testClosedJWTSessionlessTelemetry() throws Exception, SFException {
     TelemetryClient telemetry = createJWTSessionlessTelemetry();
     telemetry.close();
@@ -193,7 +192,7 @@ public class TelemetryIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testClosedOAuthSessionlessTelemetry() throws Exception, SFException {
     TelemetryClient telemetry = createOAuthSessionlessTelemetry();
     telemetry.close();

@@ -8,7 +8,7 @@ import java.sql.Types;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import org.apache.arrow.vector.Float8Vector;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BytesConverterTest {
   private final Converters converters =

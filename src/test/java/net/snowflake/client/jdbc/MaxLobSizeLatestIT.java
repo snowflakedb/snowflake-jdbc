@@ -9,11 +9,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
@@ -23,7 +22,7 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testIncreasedMaxLobSize() throws SQLException {
     try (Connection con = BaseJDBCTest.getConnection();
         Statement stmt = con.createStatement()) {

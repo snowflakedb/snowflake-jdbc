@@ -18,21 +18,38 @@ import java.sql.Time;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Integration tests for binding variable */
-@RunWith(Theories.class)
 @Category(TestCategoryOthers.class)
 public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
-  @DataPoints public static short[] shortValues = {0, 1, -1, Short.MIN_VALUE, Short.MAX_VALUE};
+  static TimeZone timeZone;
 
-  @Theory
+  @BeforeAll
+  public static void setTimeZone() {
+    timeZone = TimeZone.getDefault();
+    TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+  }
+
+  @AfterAll
+  public static void resetTimeZone() {
+    TimeZone.setDefault(timeZone);
+  }
+
+  @ParameterizedTest
+  @ValueSource(shorts = {0, 1, -1, Short.MIN_VALUE, Short.MAX_VALUE})
   public void testBindShort(short shortValue) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
@@ -58,7 +75,8 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ValueSource(shorts = {0, 1, -1, Short.MIN_VALUE, Short.MAX_VALUE})
   public void testBindShortViaSetObject(short shortValue) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
@@ -84,9 +102,8 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @DataPoints public static int[] intValues = {0, 1, -1, Integer.MAX_VALUE, Integer.MIN_VALUE};
-
-  @Theory
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, -1, Integer.MIN_VALUE, Integer.MAX_VALUE})
   public void testBindInt(int intValue) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
@@ -113,9 +130,8 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @DataPoints public static byte[] byteValues = {0, 1, -1, Byte.MAX_VALUE, Byte.MIN_VALUE};
-
-  @Theory
+  @ParameterizedTest
+  @ValueSource(bytes = {0, 1, -1, Byte.MAX_VALUE, Byte.MIN_VALUE})
   public void testBindByte(byte byteValue) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
@@ -184,18 +200,21 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @DataPoints
-  public static Time[] timeValues = {
-    Time.valueOf("00:00:00"),
-    Time.valueOf("12:34:56"),
-    Time.valueOf("12:00:00"),
-    Time.valueOf("11:59:59"),
-    Time.valueOf("15:30:00"),
-    Time.valueOf("13:01:01"),
-    Time.valueOf("12:00:00"),
-  };
+  static class TimeProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      return Stream.of(
+          Arguments.of(Time.valueOf("00:00:00")),
+          Arguments.of(Time.valueOf("12:34:56")),
+          Arguments.of(Time.valueOf("12:00:00")),
+          Arguments.of(Time.valueOf("11:59:59")),
+          Arguments.of(Time.valueOf("15:30:00")),
+          Arguments.of(Time.valueOf("13:01:01")));
+    }
+  }
 
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(TimeProvider.class)
   public void testBindTime(Time timeVal) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
@@ -225,7 +244,8 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
    * Bind time with calendar is not supported now. Everything is in UTC, need to revisit in the
    * future
    */
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(TimeProvider.class)
   public void testBindTimeWithCalendar(Time timeVal) throws SQLException {
     Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     Calendar laCal = Calendar.getInstance(TimeZone.getTimeZone("PST"));
@@ -256,7 +276,8 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(TimeProvider.class)
   public void testBindTimeViaSetObject(Time timeVal) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
@@ -282,7 +303,8 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(TimeProvider.class)
   public void testBindTimeViaSetObjectCast(Time timeVal) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
@@ -319,7 +341,22 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
     Date.valueOf("1000-01-01")
   };
 
-  @Theory
+  static class DateProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      return Stream.of(
+          Arguments.of(Date.valueOf("2000-01-01")),
+          Arguments.of(Date.valueOf("3000-01-01")),
+          Arguments.of(Date.valueOf("1970-01-01")),
+          Arguments.of(Date.valueOf("1969-01-01")),
+          Arguments.of(Date.valueOf("1500-01-01")),
+          Arguments.of(Date.valueOf("1400-01-01")),
+          Arguments.of(Date.valueOf("1000-01-01")));
+    }
+  }
+
+  @ParameterizedTest
+  @ArgumentsSource(DateProvider.class)
   public void testBindDate(Date dateValue) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {
@@ -346,7 +383,8 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ArgumentsSource(DateProvider.class)
   public void testBindDateWithCalendar(Date dateValue) throws SQLException {
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
@@ -375,7 +413,8 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Theory
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, -1, Integer.MIN_VALUE, Integer.MAX_VALUE})
   public void testBindObjectWithScaleZero(int intValue) throws SQLException {
     try (Statement statement = connection.createStatement()) {
       try {

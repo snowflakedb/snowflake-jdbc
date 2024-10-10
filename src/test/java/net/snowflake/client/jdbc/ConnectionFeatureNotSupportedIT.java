@@ -9,8 +9,8 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.HashMap;
 import net.snowflake.client.category.TestCategoryConnection;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryConnection.class)
 public class ConnectionFeatureNotSupportedIT extends BaseJDBCTest {

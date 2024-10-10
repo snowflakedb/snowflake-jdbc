@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SnowflakeTypeTest {
 

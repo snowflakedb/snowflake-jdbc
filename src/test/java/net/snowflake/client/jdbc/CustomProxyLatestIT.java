@@ -24,11 +24,10 @@ import net.snowflake.client.core.HttpProtocol;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 // To run these tests, you must:
 // 1.) Start up a proxy connection. The simplest ways are via Squid or BurpSuite. Confluence doc on
@@ -39,7 +38,7 @@ import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryOthers.class)
 public class CustomProxyLatestIT {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   /**
    * Before running this test, change the user and password to appropriate values. Set up 2
@@ -51,7 +50,7 @@ public class CustomProxyLatestIT {
    * @throws SQLException
    */
   @Test
-  @Ignore
+  @Disabled
   public void test2ProxiesWithSameJVM() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
@@ -107,7 +106,7 @@ public class CustomProxyLatestIT {
    * @throws SQLException
    */
   @Test
-  @Ignore
+  @Disabled
   public void testTLSIssue() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
@@ -149,7 +148,7 @@ public class CustomProxyLatestIT {
    * http instead of https proxy parameters for non-TLS proxy
    */
   @Test
-  @Ignore
+  @Disabled
   public void testJVMParamsWithNonProxyHostsHonored() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
@@ -172,7 +171,7 @@ public class CustomProxyLatestIT {
 
   /** Test TLS issue against S3 client to ensure proxy works with PUT/GET statements */
   @Test
-  @Ignore
+  @Disabled
   public void testTLSIssueWithConnectionStringAgainstS3()
       throws ClassNotFoundException, SQLException {
 
@@ -193,7 +192,7 @@ public class CustomProxyLatestIT {
    * @throws SQLException
    */
   @Test
-  @Ignore
+  @Disabled
   public void testNonProxyHostAltering() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
@@ -243,7 +242,7 @@ public class CustomProxyLatestIT {
    * @throws SQLException
    */
   @Test
-  @Ignore
+  @Disabled
   public void testSizeOfHttpClientNoProxies() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
@@ -279,7 +278,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testCorrectProxySettingFromConnectionString()
       throws ClassNotFoundException, SQLException {
     String connectionUrl =
@@ -299,7 +298,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testWrongProxyPortSettingFromConnectionString()
       throws ClassNotFoundException, SQLException {
 
@@ -313,7 +312,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testWrongProxyPasswordSettingFromConnectionString()
       throws ClassNotFoundException, SQLException {
 
@@ -334,7 +333,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testInvalidProxyPortFromConnectionString()
       throws ClassNotFoundException, SQLException {
 
@@ -355,7 +354,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testNonProxyHostsFromConnectionString() throws ClassNotFoundException, SQLException {
 
     String connectionUrl =
@@ -368,7 +367,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testWrongNonProxyHostsFromConnectionString()
       throws ClassNotFoundException, SQLException {
 
@@ -383,7 +382,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testUnsetJvmPropertiesForInvalidSettings() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
@@ -454,7 +453,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testProxyConnectionWithAzure() throws ClassNotFoundException, SQLException {
     String connectionUrl =
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL";
@@ -463,7 +462,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testProxyConnectionWithAzureWithConnectionString()
       throws ClassNotFoundException, SQLException {
     String connectionUrl =
@@ -476,7 +475,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testProxyConnectionWithoutProxyPortOrHost()
       throws ClassNotFoundException, SQLException {
     // proxyPort is empty
@@ -553,7 +552,7 @@ public class CustomProxyLatestIT {
    * @throws SQLException
    */
   @Test
-  @Ignore
+  @Disabled
   public void testProxyConnectionWithJVMParameters() throws SQLException, ClassNotFoundException {
     String connectionUrl =
         "jdbc:snowflake://aztestaccount.east-us-2.azure.snowflakecomputing.com/?tracing=ALL";
@@ -571,7 +570,7 @@ public class CustomProxyLatestIT {
   }
 
   @Test
-  @Ignore
+  @Disabled
   public void testProxyConnectionWithAzureWithWrongConnectionString()
       throws ClassNotFoundException {
     String connectionUrl =
@@ -598,7 +597,7 @@ public class CustomProxyLatestIT {
    * is specified. Set up a http proxy and change the settings below.
    */
   @Test
-  @Ignore
+  @Disabled
   public void testSetJVMProxyHttp() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
@@ -624,7 +623,7 @@ public class CustomProxyLatestIT {
    * below.
    */
   @Test
-  @Ignore
+  @Disabled
   public void testSetJVMProxyHttps() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
@@ -649,7 +648,7 @@ public class CustomProxyLatestIT {
    * https proxy and change the settings below.
    */
   @Test
-  @Ignore
+  @Disabled
   public void testSetJVMProxyDefaultHttps() throws SQLException {
     Properties props = new Properties();
     props.put("user", "USER");
@@ -725,7 +724,8 @@ public class CustomProxyLatestIT {
 
         String TEST_DATA_FILE = "orders_100.csv";
         String sourceFilePath = getFullPathFileInResource(TEST_DATA_FILE);
-        File destFolder = tmpFolder.newFolder();
+        File destFolder = new File(tmpFolder, "dest");
+        destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
         assertTrue(

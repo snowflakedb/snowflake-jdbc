@@ -12,8 +12,8 @@ import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class StringConverterTest {
   private final TimeZone honoluluTimeZone =
@@ -24,7 +24,7 @@ public class StringConverterTest {
 
   private StringConverter stringConverter;
 
-  @Before
+  @BeforeEach
   public void init() {
     SnowflakeDateTimeFormat timestampNTZFormatter =
         SnowflakeDateTimeFormat.fromSqlFormat("YYYY-MM-DD HH24:MI:SS.FF3");

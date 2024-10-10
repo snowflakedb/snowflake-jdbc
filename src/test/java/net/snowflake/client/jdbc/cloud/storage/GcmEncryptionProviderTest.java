@@ -25,8 +25,8 @@ import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class GcmEncryptionProviderTest {
@@ -58,7 +58,7 @@ public class GcmEncryptionProviderTest {
   byte[] dataAad = "data aad".getBytes(StandardCharsets.UTF_8);
   byte[] keyAad = "key aad".getBytes(StandardCharsets.UTF_8);
 
-  @Before
+  @BeforeEach
   public void setUp() {
     encMat.setQueryStageMasterKey(queryStageMasterKey);
     encMat.setSmkId(123);

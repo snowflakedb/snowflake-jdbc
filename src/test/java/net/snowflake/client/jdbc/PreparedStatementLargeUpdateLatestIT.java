@@ -11,12 +11,11 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ExecTimeTelemetryData;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 @Category(TestCategoryStatement.class)
@@ -28,7 +27,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testLargeUpdate() throws Throwable {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -64,7 +63,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testExecuteLargeBatchOverIntMax() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {

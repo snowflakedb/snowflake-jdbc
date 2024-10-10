@@ -10,7 +10,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import net.snowflake.client.jdbc.ErrorCode;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SFSessionPropertyTest {
   @Test

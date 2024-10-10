@@ -32,8 +32,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
@@ -48,8 +47,8 @@ import net.snowflake.client.jdbc.cloud.storage.StorageProviderException;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 @Category(TestCategoryOthers.class)
@@ -65,7 +64,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetS3StageDataWithS3Session() throws SQLException {
     try (Connection con = getConnection("s3testaccount")) {
       SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -94,7 +93,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetS3StageDataWithAzureSession() throws SQLException {
     try (Connection con = getConnection("azureaccount")) {
       SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -117,7 +116,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetObjectMetadataWithGCS() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -151,7 +150,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetObjectMetadataFileNotFoundWithGCS() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -190,7 +189,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetObjectMetadataStorageExceptionWithGCS() throws Exception {
     Properties paramProperties = new Properties();
     paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", true);
@@ -704,7 +703,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetS3StorageObjectMetadata() throws Throwable {
     try (Connection connection = getConnection("s3testaccount");
         Statement statement = connection.createStatement()) {

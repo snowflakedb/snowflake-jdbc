@@ -8,7 +8,7 @@ import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ExecTimeTelemetryDataTest {
 

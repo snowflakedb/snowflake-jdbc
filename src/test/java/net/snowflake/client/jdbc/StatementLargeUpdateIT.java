@@ -5,8 +5,8 @@ import static org.junit.Assert.assertEquals;
 import java.sql.Connection;
 import java.sql.Statement;
 import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /** Large update test. No JSON/ARROW specific test case is required. */
 @Category(TestCategoryStatement.class)

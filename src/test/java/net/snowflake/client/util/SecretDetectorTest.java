@@ -12,7 +12,7 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SecretDetectorTest {
   @Test

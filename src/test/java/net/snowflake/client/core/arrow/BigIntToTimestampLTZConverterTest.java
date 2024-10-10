@@ -23,34 +23,17 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import net.snowflake.client.providers.TimezoneProvider;
 import net.snowflake.common.core.SFTimestamp;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class BigIntToTimestampLTZConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
-  }
-
-  public BigIntToTimestampLTZConverterTest(String tz) {
-    System.setProperty("user.timezone", tz);
-  }
 
   /** allocator for arrow */
   private BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
@@ -59,8 +42,10 @@ public class BigIntToTimestampLTZConverterTest extends BaseConverterTest {
 
   private int oldScale = 9;
 
-  @Test
-  public void testTimestampLTZ() throws SFException {
+  @ParameterizedTest
+  @ArgumentsSource(TimezoneProvider.class)
+  public void testTimestampLTZ(String timezone) throws SFException {
+    System.setProperty("user.timezone", timezone);
     // test old and new dates
     long[] testTimestampsInt64 = {
       1546391837,

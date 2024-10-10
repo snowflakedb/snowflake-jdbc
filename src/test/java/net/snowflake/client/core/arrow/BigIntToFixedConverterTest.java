@@ -27,7 +27,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BigIntToFixedConverterTest extends BaseConverterTest {
   /** allocator for arrow */

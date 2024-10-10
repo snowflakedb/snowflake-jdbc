@@ -13,8 +13,8 @@ import java.util.Map;
 import javax.sql.PooledConnection;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.jdbc.BaseJDBCTest;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryConnection.class)
 public class LogicalConnectionFeatureNotSupportedLatestIT extends BaseJDBCTest {

@@ -5,7 +5,7 @@ import java.util.Map;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SessionUtil;
 import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SessionUtilTest {
   @Test

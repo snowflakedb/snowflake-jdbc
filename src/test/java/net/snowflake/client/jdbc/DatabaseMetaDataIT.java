@@ -28,12 +28,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
 @Category(TestCategoryOthers.class)
@@ -215,7 +214,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTables() throws Throwable {
     Set<String> tables = null;
     try (Connection connection = getConnection();
@@ -584,7 +583,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTablePrivileges() throws Exception {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {

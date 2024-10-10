@@ -24,12 +24,12 @@ import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryOthers.class)
 public class BindUploaderIT extends BaseJDBCTest {
@@ -86,21 +86,21 @@ public class BindUploaderIT extends BaseJDBCTest {
           + STAGE_DIR
           + "' ORDER BY $1 ASC";
 
-  @BeforeClass
+  @BeforeAll
   public static void classSetUp() throws Exception {
     Connection connection = getConnection();
     connection.createStatement().execute(createTableSQL);
     connection.close();
   }
 
-  @AfterClass
+  @AfterAll
   public static void classTearDown() throws Exception {
     Connection connection = getConnection();
     connection.createStatement().execute(deleteTableSQL);
     connection.close();
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     conn = getConnection();
     session = conn.unwrap(SnowflakeConnectionV1.class).getSfSession();
@@ -109,7 +109,7 @@ public class BindUploaderIT extends BaseJDBCTest {
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws SQLException {
     conn.close();
     bindUploader.close();

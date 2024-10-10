@@ -10,46 +10,52 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collection;
-import java.util.List;
+import java.util.stream.Stream;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class ObjectMapperTest {
   private static final int jacksonDefaultMaxStringLength = 20_000_000;
+  static String originalLogger;
 
-  @Parameterized.Parameters(name = "lobSizeInMB={0}, maxJsonStringLength={1}")
-  public static Collection<Object[]> data() {
-    int[] lobSizeInMB = new int[] {16, 16, 32, 64, 128};
-    // maxJsonStringLength to be set for the corresponding LOB size
-    int[] maxJsonStringLengths =
-        new int[] {jacksonDefaultMaxStringLength, 23_000_000, 45_000_000, 90_000_000, 180_000_000};
-    List<Object[]> ret = new ArrayList<>();
-    for (int i = 0; i < lobSizeInMB.length; i++) {
-      ret.add(new Object[] {lobSizeInMB[i], maxJsonStringLengths[i]});
+  static class DataProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      return Stream.of(
+          Arguments.of(16 * 1024 * 1024, jacksonDefaultMaxStringLength),
+          Arguments.of(16 * 1024 * 1024, 23_000_000),
+          Arguments.of(32 * 1024 * 1024, 45_000_000),
+          Arguments.of(64 * 1024 * 1024, 90_000_000),
+          Arguments.of(128 * 1024 * 1024, 180_000_000));
     }
-    return ret;
   }
 
-  private final int lobSizeInBytes;
-  private final int maxJsonStringLength;
+  @BeforeAll
+  public static void setProperty() {
+    originalLogger = System.getProperty("net.snowflake.jdbc.loggerImpl");
+    System.setProperty("net.snowflake.jdbc.loggerImpl", "net.snowflake.client.log.JDK14Logger");
+  }
 
-  @After
-  public void clearProperty() {
+  @AfterAll
+  public static void clearProperty() {
+    if (originalLogger != null) {
+      System.setProperty("net.snowflake.jdbc.loggerImpl", originalLogger);
+    } else {
+      System.clearProperty("net.snowflake.jdbc.loggerImpl");
+    }
     System.clearProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
   }
 
-  public ObjectMapperTest(int lobSizeInMB, int maxJsonStringLength) {
-    // convert LOB size from MB to bytes
-    this.lobSizeInBytes = lobSizeInMB * 1024 * 1024;
-    this.maxJsonStringLength = maxJsonStringLength;
+  private static void setJacksonDefaultMaxStringLength(int maxJsonStringLength) {
     System.setProperty(
         ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, Integer.toString(maxJsonStringLength));
   }
@@ -64,8 +70,10 @@ public class ObjectMapperTest {
     Assert.assertEquals(ObjectMapperFactory.DEFAULT_MAX_JSON_STRING_LEN, stringLengthInMapper);
   }
 
-  @Test
-  public void testObjectMapperWithLargeJsonString() {
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testObjectMapperWithLargeJsonString(int lobSizeInBytes, int maxJsonStringLength) {
+    setJacksonDefaultMaxStringLength(maxJsonStringLength);
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     try {
       JsonNode jsonNode = mapper.readTree(generateBase64EncodedJsonString(lobSizeInBytes));

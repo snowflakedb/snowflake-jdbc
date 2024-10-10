@@ -11,8 +11,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryStatement.class)
 public class StatementNoOpLatestIT {

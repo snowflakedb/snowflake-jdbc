@@ -17,11 +17,10 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /**
  * Binding Data integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -67,7 +66,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testTimestampBindingWithNTZType() throws SQLException {
     TimeZone.setDefault(tokyoTz);
     try (Connection connection = getConnection();
@@ -124,7 +123,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testTimestampBindingWithLTZType() throws SQLException {
     TimeZone.setDefault(tokyoTz);
     try (Connection connection = getConnection();
@@ -188,7 +187,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testTimestampBindingWithLTZTypeForDayLightSavingTimeZone() throws SQLException {
     Calendar australia = Calendar.getInstance(australiaTz);
     TimeZone.setDefault(australiaTz);

@@ -11,8 +11,8 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.List;
 import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryLoader.class)
 public class LoaderMultipleBatchIT extends LoaderBase {

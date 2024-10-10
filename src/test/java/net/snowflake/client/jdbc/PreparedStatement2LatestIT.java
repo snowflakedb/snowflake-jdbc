@@ -16,12 +16,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryStatement;
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 /**
  * PreparedStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -173,7 +172,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testTableFuncBindInput() throws SQLException {
     try (Connection connection = init()) {
       try (PreparedStatement prepStatement = connection.prepareStatement(tableFuncSQL)) {

@@ -10,16 +10,16 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /** This test could be run only on environment where file connection.toml is configured */
-@Ignore
+@Disabled
 public class FileConnectionConfigurationLatestIT {
 
-  @After
+  @AfterEach
   public void cleanUp() {
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);
   }

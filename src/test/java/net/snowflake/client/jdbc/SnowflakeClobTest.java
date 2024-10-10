@@ -13,7 +13,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SnowflakeClobTest extends BaseJDBCTest {
 

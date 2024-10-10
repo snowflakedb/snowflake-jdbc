@@ -3,7 +3,7 @@ package net.snowflake.client.core.bind;
 import static org.junit.Assert.assertEquals;
 
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BindExceptionTest {
 

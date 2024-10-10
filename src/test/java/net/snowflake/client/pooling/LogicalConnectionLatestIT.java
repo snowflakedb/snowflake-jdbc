@@ -31,8 +31,8 @@ import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeDriver;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 
 @Category(TestCategoryConnection.class)
 public class LogicalConnectionLatestIT extends BaseJDBCTest {

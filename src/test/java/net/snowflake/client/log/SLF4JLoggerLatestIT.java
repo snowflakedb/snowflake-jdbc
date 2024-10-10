@@ -12,11 +12,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import net.snowflake.client.category.TestCategoryCore;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.LoggerFactory;
 
 /** A class for testing {@link SLF4JLogger} */
@@ -65,7 +65,7 @@ public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
   /** Level at which last message was logged using SLF4JLogger. */
   private Level lastLogMessageLevel = null;
 
-  @BeforeClass
+  @BeforeAll
   public static void oneTimeSetUp() {
     logLevelToRestore = internalLogger.getLevel();
     additivityToRestore = internalLogger.isAdditive();
@@ -85,7 +85,7 @@ public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
     internalLogger.setAdditive(false);
   }
 
-  @AfterClass
+  @AfterAll
   public static void oneTimeTearDown() {
     // Restore original configuration
     internalLogger.setLevel(logLevelToRestore);
@@ -96,7 +96,7 @@ public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
     appendersToRestore.forEach(internalLogger::addAppender);
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     super.setUp();
 
@@ -107,7 +107,7 @@ public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
     internalLogger.addAppender(testAppender);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     internalLogger.detachAppender(testAppender);
   }

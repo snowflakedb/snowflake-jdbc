@@ -22,17 +22,15 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Statement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -52,7 +50,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     return conn;
   }
 
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
 
   @Test
   public void testExecuteCreateAndDrop() throws SQLException {
@@ -83,9 +81,10 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testCopyAndUpload() throws Exception {
-    File tempFolder = tmpFolder.newFolder("test_downloads_folder");
+    File tempFolder = new File(tmpFolder, "test_downloads_folder");
+    tempFolder.mkdirs();
     List<String> accounts = Arrays.asList(null, "s3testaccount", "azureaccount", "gcpaccount");
     for (int i = 0; i < accounts.size(); i++) {
       String fileName = "test_copy.csv";
@@ -198,7 +197,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPreparedStatementLogging() throws SQLException {
     try (Connection con = getConnection();
         Statement stmt = con.createStatement()) {

@@ -8,7 +8,5 @@ import org.junit.experimental.categories.Category;
 
 @Category(TestCategoryArrow.class)
 public class ResultSetArrowIT extends ResultSetIT {
-  public ResultSetArrowIT() {
-    super("arrow");
-  }
+  public ResultSetArrowIT() {}
 }

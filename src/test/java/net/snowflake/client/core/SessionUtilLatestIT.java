@@ -33,9 +33,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
@@ -50,7 +50,7 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
    * @throws SFException
    * @throws SnowflakeSQLException
    */
-  @Ignore
+  @Disabled
   @Test
   public void testJwtAuthTimeoutRetry() throws SFException, SnowflakeSQLException {
     final SFLoginInput loginInput = initMockLoginInput();

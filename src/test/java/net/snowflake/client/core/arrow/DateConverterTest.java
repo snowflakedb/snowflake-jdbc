@@ -18,33 +18,20 @@ import java.util.TimeZone;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.json.DateTimeConverter;
+import net.snowflake.client.providers.TimezoneProvider;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class DateConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
-  }
 
-  public DateConverterTest(String tz) {
+  private static void setTimeZone(String tz) {
     System.setProperty("user.timezone", tz);
   }
 
@@ -78,26 +65,28 @@ public class DateConverterTest extends BaseConverterTest {
           put("America/New_York", Arrays.asList("2016-04-20", -4));
           put("Pacific/Honolulu", Arrays.asList("2016-04-20", -10));
           put("Asia/Singapore", Arrays.asList("2016-04-19", 8));
-          put("MEZ", Arrays.asList("2016-04-20", 0));
-          put("MESZ", Arrays.asList("2016-04-20", 0));
+          put("CET", Arrays.asList("2016-04-19", 2)); // because of daylight savings
+          put("GMT+0200", Arrays.asList("2016-04-19", 2));
         }
       };
 
   public static final int MILLIS_IN_ONE_HOUR = 3600000;
   private TimeZone defaultTimeZone;
 
-  @Before
+  @BeforeEach
   public void getDefaultTimeZone() {
     this.defaultTimeZone = TimeZone.getDefault();
   }
 
-  @After
+  @AfterEach
   public void restoreDefaultTimeZone() {
     TimeZone.setDefault(defaultTimeZone);
   }
 
-  @Test
-  public void testDate() throws SFException {
+  @ParameterizedTest
+  @ArgumentsSource(TimezoneProvider.class)
+  public void testDate(String tz) throws SFException {
+    setTimeZone(tz);
     Map<String, String> customFieldMeta = new HashMap<>();
     customFieldMeta.put("logicalType", "DATE");
     Set<Integer> nullValIndex = new HashSet<>();
@@ -153,8 +142,10 @@ public class DateConverterTest extends BaseConverterTest {
     vector.clear();
   }
 
-  @Test
-  public void testRandomDates() throws SFException {
+  @ParameterizedTest
+  @ArgumentsSource(TimezoneProvider.class)
+  public void testRandomDates(String tz) throws SFException {
+    setTimeZone(tz);
     int dateBound = 50000;
     int rowCount = 50000;
     Map<String, String> customFieldMeta = new HashMap<>();
@@ -196,8 +187,10 @@ public class DateConverterTest extends BaseConverterTest {
     }
   }
 
-  @Test
-  public void testTimezoneDates() throws SFException {
+  @ParameterizedTest
+  @ArgumentsSource(TimezoneProvider.class)
+  public void testTimezoneDates(String tz) throws SFException {
+    setTimeZone(tz);
     int testDay = 16911;
     Map<String, String> customFieldMeta = new HashMap<>();
     customFieldMeta.put("logicalType", "DATE");
@@ -211,7 +204,6 @@ public class DateConverterTest extends BaseConverterTest {
 
     // Test JDBC_FORMAT_DATE_WITH_TIMEZONE=TRUE with different session timezones
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    String tz = System.getProperty("user.timezone");
     ArrowVectorConverter converter = new DateConverter(vector, 0, this, true);
     converter.setUseSessionTimezone(true);
     converter.setSessionTimeZone(TimeZone.getTimeZone(tz));
