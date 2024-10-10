@@ -227,9 +227,19 @@ public class HttpUtil {
     if (key != null && key.usesProxy()) {
       Proxy azProxy =
           new Proxy(Proxy.Type.HTTP, new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
-      logger.debug(
-          "Setting Azure proxy. Host: {}, port: {}", key.getProxyHost(), key.getProxyPort());
       opContext.setProxy(azProxy);
+      boolean setProxyUser =
+          !Strings.isNullOrEmpty(key.getProxyUser())
+              && !Strings.isNullOrEmpty(key.getProxyPassword());
+      logger.debug(
+          "Setting Azure proxy {} user. Host: {}, port: {}",
+          setProxyUser ? "with" : "without",
+          key.getProxyHost(),
+          key.getProxyPort());
+      if (setProxyUser) {
+        opContext.setProxyUsername(key.getProxyUser());
+        opContext.setProxyPassword(key.getProxyPassword());
+      }
     } else {
       logger.debug("Omitting Azure proxy setup");
     }

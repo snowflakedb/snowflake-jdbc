@@ -24,7 +24,7 @@
     <avro.version>1.8.1</avro.version>
     <awaitility.version>4.2.0</awaitility.version>
     <awssdk.version>1.12.655</awssdk.version>
-    <azure.storage.version>5.0.0</azure.storage.version>
+    <azure.storage.version>8.6.6</azure.storage.version>
     <bouncycastle.version>1.74</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.4</bouncycastle.bcfips.version>
     <bouncycastle.bcpkixfips.version>1.0.5</bouncycastle.bcpkixfips.version>
