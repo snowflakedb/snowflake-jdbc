@@ -227,7 +227,7 @@ public class SFSession extends SFBaseSession {
             HttpUtil.executeGeneralRequest(
                 get,
                 loginTimeout,
-                authTimeout,
+                0, // no authentication timeout for the request
                 (int) httpClientSocketTimeout.toMillis(),
                 maxHttpRetries,
                 getHttpClientKey());
