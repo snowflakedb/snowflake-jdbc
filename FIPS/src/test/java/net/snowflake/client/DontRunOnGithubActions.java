@@ -1,4 +1,4 @@
-package net.snowflake.client.annotations;
+package net.snowflake.client;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
