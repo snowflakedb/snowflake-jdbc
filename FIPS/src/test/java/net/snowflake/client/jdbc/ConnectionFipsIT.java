@@ -3,8 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.*;
-
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -29,9 +27,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.fips.FipsStatus;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 
 //@Category(TestCategoryFips.class)
@@ -106,7 +104,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   private static int JCE_PROVIDER_SUN_JCE_PROVIDER_POSITION;
   private static int JCE_PROVIDER_SUN_RSA_SIGN_PROVIDER_POSITION;
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() throws Exception {
     System.setProperty("javax.net.debug", "ssl");
     // get keystore types for BouncyCastle libraries
@@ -166,7 +164,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
     // connectToGoogle();
   }
 
-  @AfterClass
+  @AfterAll
   public static void teardown() throws Exception {
     // Remove BouncyCastle FIPS Provider
     Security.removeProvider(JCE_PROVIDER_BOUNCY_CASTLE_FIPS);
@@ -227,7 +225,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
+  @DontRunOnGithubActions
   public void connectWithFipsKeyPair() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -256,7 +254,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
+  @DontRunOnGithubActions
   public void testConnectUsingKeyPair() throws Exception {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
@@ -295,7 +293,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
    * Currently ignored execution on GCP due to exception thrown "SSlException Could not generate XDH keypair"
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGCP.class)
+  @DontRunOnGCP
   public void connectWithFipsAndQuery() throws SQLException {
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();
@@ -329,7 +327,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
 
   /** Added in > 3.15.1 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
+  @DontRunOnGithubActions
   public void connectWithFipsKeyPairWithBouncyCastle() throws Exception {
     System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
     connectWithFipsKeyPair();
@@ -337,7 +335,7 @@ public class ConnectionFipsIT extends AbstractDriverIT {
 
   /** Added in > 3.15.1 */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubActions.class)
+  @DontRunOnGithubActions
   public void testConnectUsingKeyPairWithBouncyCastle() throws Exception {
     System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
     testConnectUsingKeyPair();
