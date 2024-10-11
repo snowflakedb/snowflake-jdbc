@@ -11,13 +11,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 
 /** Result set test base class. */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   public Connection init(Properties paramProperties, String queryResultFormat) throws SQLException {

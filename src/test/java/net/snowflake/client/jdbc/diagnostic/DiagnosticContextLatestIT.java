@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSessionProperty;
 import org.junit.jupiter.api.AfterEach;
@@ -20,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryDiagnostic.class)
+// @Category(TestCategoryDiagnostic.class)
 @Tag(TestTags.DIAGNOSTIC)
 public class DiagnosticContextLatestIT {
 

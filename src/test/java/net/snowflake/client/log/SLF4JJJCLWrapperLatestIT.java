@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class SLF4JJJCLWrapperLatestIT {
 

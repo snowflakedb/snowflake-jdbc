@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Standalone test cases for the out of band telemetry service */
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class TelemetryServiceIT extends BaseJDBCTest {
   private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;

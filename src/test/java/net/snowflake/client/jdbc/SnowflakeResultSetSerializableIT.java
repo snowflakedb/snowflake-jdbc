@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** SnowflakeResultSetSerializable tests */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;

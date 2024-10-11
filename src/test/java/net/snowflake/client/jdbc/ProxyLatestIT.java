@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
 import java.util.Properties;
-
 import net.snowflake.client.category.TestTags;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -24,7 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class ProxyLatestIT extends BaseWiremockTest {
 

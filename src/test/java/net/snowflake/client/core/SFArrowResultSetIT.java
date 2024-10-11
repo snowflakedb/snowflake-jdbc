@@ -66,7 +66,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-//@Category(TestCategoryArrow.class)
+// @Category(TestCategoryArrow.class)
 @Tag(TestTags.ARROW)
 public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
   private Random random = new Random();

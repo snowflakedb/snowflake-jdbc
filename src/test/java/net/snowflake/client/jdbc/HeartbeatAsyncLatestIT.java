@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
  * Test class for using heartbeat with asynchronous querying. This is a "Latest" class because old
  * driver versions do not contain the asynchronous querying API.
  */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   private static Logger logger = Logger.getLogger(HeartbeatAsyncLatestIT.class.getName());

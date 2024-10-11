@@ -6,7 +6,7 @@ package net.snowflake.client.jdbc;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 
-//@Category(TestCategoryArrow.class)
+// @Category(TestCategoryArrow.class)
 @Tag(TestTags.ARROW)
 public class ResultSetArrowIT extends ResultSetIT {
   public ResultSetArrowIT() {}

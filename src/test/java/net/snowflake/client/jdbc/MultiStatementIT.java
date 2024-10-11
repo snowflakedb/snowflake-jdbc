@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Multi Statement tests */
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";

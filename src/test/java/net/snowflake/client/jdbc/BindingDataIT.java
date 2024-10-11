@@ -19,7 +19,6 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.stream.Stream;
-
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,7 +32,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /** Integration tests for binding variable */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
   static TimeZone timeZone;

@@ -10,12 +10,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class StatementNoOpLatestIT {
   @Test

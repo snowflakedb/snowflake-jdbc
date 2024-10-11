@@ -56,7 +56,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** Connection integration tests */
-//@Category(TestCategoryConnection.class)
+// @Category(TestCategoryConnection.class)
 @Tag(TestTags.CONNECTION)
 public class ConnectionIT extends BaseJDBCTest {
   // create a local constant for this code for testing purposes (already defined in GS)

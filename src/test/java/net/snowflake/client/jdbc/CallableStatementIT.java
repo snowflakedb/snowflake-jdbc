@@ -21,7 +21,6 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.HashMap;
-
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import org.junit.jupiter.api.AfterEach;
@@ -30,7 +29,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class CallableStatementIT extends BaseJDBCTest {
 

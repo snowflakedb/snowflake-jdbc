@@ -69,7 +69,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
  * if the tests still is not applicable. If it is applicable, move tests to ResultSetIT so that both
  * the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class ResultSetLatestIT extends ResultSet0IT {
   private static void setQueryResultFormat(Statement stmt, String queryResultFormat)

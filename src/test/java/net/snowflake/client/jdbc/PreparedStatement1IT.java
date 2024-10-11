@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class PreparedStatement1IT extends PreparedStatement0IT {
   public PreparedStatement1IT() {

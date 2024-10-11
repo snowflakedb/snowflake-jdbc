@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -41,7 +40,7 @@ import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class SessionUtilLatestIT extends BaseJDBCTest {
 

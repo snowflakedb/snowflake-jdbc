@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
 

@@ -31,7 +31,6 @@ import java.util.TimeZone;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
@@ -61,7 +60,7 @@ import org.junit.jupiter.api.Test;
  * and ResultSet. These tests will query Snowflake normally, retrieve the JSON result, and replay it
  * back using a custom implementation of these objects that simply echoes a given JSON response.
  */
-//@Category(TestCategoryConnection.class)
+// @Category(TestCategoryConnection.class)
 @Tag(TestTags.CONNECTION)
 public class MockConnectionTest extends BaseJDBCTest {
 

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryLoader.class)
+// @Category(TestCategoryLoader.class)
 @Tag(TestTags.LOADER)
 public class FlatfileReadMultithreadIT {
   private final int NUM_RECORDS = 100000;

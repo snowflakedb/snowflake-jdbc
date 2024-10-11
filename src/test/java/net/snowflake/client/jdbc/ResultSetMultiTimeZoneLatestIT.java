@@ -31,7 +31,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 /**
  * ResultSet multi timezone tests for the latest JDBC driver. This cannot run for the old driver.
  */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 @Tag(TestTags.RESULT_SET)
 public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnectionIT {
 

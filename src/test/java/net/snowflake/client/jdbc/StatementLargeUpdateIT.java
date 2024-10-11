@@ -4,13 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.sql.Connection;
 import java.sql.Statement;
-
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Large update test. No JSON/ARROW specific test case is required. */
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class StatementLargeUpdateIT extends BaseJDBCTest {
   @Test

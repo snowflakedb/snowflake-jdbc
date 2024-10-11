@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Tag;
 import org.slf4j.LoggerFactory;
 
 /** A class for testing {@link SLF4JLogger} */
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
   /** {@link SLF4JLogger} instance that will be tested in this class */

@@ -50,7 +50,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class FileUploaderLatestIT extends FileUploaderPrepIT {
   private static final String OBJ_META_STAGE = "testObjMeta";

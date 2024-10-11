@@ -37,7 +37,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Completely compare json and arrow resultSet behaviors */
-//@Category(TestCategoryArrow.class)
+// @Category(TestCategoryArrow.class)
 @Tag(TestTags.ARROW)
 public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 

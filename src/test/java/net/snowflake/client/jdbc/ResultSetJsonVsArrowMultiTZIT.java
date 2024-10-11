@@ -11,7 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.ProvidersUtil;
 import net.snowflake.client.providers.ScaleProvider;
@@ -29,7 +28,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Completely compare json and arrow resultSet behaviors */
-//@Category(TestCategoryArrow.class)
+// @Category(TestCategoryArrow.class)
 @Tag(TestTags.ARROW)
 public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionIT {
   static String originalTz;

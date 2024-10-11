@@ -8,7 +8,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -17,7 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 
 /** A class for testing {@link JDK14Logger} */
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class JDK14LoggerLatestIT extends AbstractLoggerIT {
   /** {@link JDK14Logger} instance that will be tested in this class */

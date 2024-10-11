@@ -13,15 +13,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import net.snowflake.client.category.TestTags;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class SnowflakeUtilTest extends BaseJDBCTest {
 

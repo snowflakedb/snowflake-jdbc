@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
  * to examine if the tests still are not applicable. If it is applicable, move tests to
  * BindingDataIT so that both the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
 public class BindingDataLatestIT extends AbstractDriverIT {
   TimeZone origTz = TimeZone.getDefault();

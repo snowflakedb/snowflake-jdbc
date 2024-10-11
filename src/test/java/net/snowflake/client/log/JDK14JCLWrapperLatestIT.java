@@ -11,14 +11,13 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 @Tag(TestTags.CORE)
 public class JDK14JCLWrapperLatestIT {
   JDK14JCLWrapper wrapper = new JDK14JCLWrapper(JDK14JCLWrapperLatestIT.class.getName());
