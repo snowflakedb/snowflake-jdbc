@@ -7,10 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import net.snowflake.client.category.TestTags;
 
 /** A base class for testing implementations of {@link SFLogger} */
-// @Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public abstract class AbstractLoggerIT {
   public static final String fakeCreds =
       "credentials=(aws_key_id='abc123' aws_secret_key='rtyuiop')";

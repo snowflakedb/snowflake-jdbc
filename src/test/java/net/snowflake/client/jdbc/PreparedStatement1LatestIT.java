@@ -18,7 +18,9 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -27,7 +29,8 @@ import org.junit.jupiter.api.Test;
  * if the tests still are not applicable. If it is applicable, move tests to PreparedStatement1IT so
  * that both the latest and oldest supported driver run the tests.
  */
-// @Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   public PreparedStatement1LatestIT() {
     super("json");

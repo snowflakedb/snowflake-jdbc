@@ -45,6 +45,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SessionUtil;
@@ -56,6 +57,7 @@ import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -67,7 +69,8 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
  * if the tests still is not applicable. If it is applicable, move tests to ResultSetIT so that both
  * the latest and oldest supported driver run the tests.
  */
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetLatestIT extends ResultSet0IT {
   private static void setQueryResultFormat(Statement stmt, String queryResultFormat)
       throws SQLException {

@@ -26,16 +26,19 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Completely compare json and arrow resultSet behaviors */
-// @Category(TestCategoryArrow.class)
+//@Category(TestCategoryArrow.class)
+@Tag(TestTags.ARROW)
 public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
 
   public Connection init(String queryResultFormat) throws SQLException {

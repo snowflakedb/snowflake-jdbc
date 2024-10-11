@@ -20,8 +20,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -31,7 +33,8 @@ import org.junit.jupiter.api.io.TempDir;
  * is not applicable. If it is applicable, move tests to StreamIT so that both the latest and oldest
  * supported driver run the tests.
  */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class StreamLatestIT extends BaseJDBCTest {
 
   @TempDir private File tmpFolder;

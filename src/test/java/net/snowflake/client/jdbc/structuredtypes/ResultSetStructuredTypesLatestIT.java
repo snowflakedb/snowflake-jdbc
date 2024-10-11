@@ -27,6 +27,7 @@ import java.util.Map;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.ThrowingConsumer;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ResultSetFormatType;
@@ -41,10 +42,12 @@ import net.snowflake.client.providers.FormatProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @BeforeEach
   public void setup() {

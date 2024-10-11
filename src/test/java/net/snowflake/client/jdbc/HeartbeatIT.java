@@ -25,13 +25,16 @@ import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** This test assumes that GS has been set up */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class HeartbeatIT extends AbstractDriverIT {
   private static Logger logger = Logger.getLogger(HeartbeatIT.class.getName());
 

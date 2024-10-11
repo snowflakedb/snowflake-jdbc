@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -33,12 +35,14 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
 
-// @Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class SessionUtilLatestIT extends BaseJDBCTest {
 
   /**

@@ -53,17 +53,20 @@ import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnTestaccount;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** General integration tests */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class SnowflakeDriverIT extends BaseJDBCTest {
   private static final int MAX_CONCURRENT_QUERIES_PER_USER = 50;
   private static final String getCurrenTransactionStmt = "SELECT CURRENT_TRANSACTION()";

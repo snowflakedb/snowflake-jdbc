@@ -16,13 +16,16 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   private Connection connection;
   private Statement statement;

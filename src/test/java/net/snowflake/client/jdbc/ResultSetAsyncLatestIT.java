@@ -11,10 +11,14 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetAsyncLatestIT extends BaseJDBCTest {
   @Test
   public void testAsyncResultSet() throws SQLException {

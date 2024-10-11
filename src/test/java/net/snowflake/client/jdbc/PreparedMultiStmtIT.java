@@ -11,9 +11,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   protected static String queryResultFormat = "json";

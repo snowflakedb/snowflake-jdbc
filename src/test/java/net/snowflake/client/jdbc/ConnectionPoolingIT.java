@@ -15,15 +15,19 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
+
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Connection pool interface test */
-// @Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionPoolingIT {
   private BasicDataSource bds = null;
   private ComboPooledDataSource cpds = null;

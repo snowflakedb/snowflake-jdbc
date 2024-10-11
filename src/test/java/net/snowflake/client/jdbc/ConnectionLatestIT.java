@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnAWS;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -72,6 +73,7 @@ import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -81,7 +83,8 @@ import org.junit.jupiter.api.io.TempDir;
  * if the tests still is not applicable. If it is applicable, move tests to ConnectionIT so that
  * both the latest and oldest supported driver run the tests.
  */
-// @Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
   private static final SFLogger logger = SFLoggerFactory.getLogger(ConnectionLatestIT.class);

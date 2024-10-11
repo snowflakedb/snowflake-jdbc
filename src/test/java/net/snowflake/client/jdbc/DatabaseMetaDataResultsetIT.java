@@ -18,9 +18,13 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   private static final int columnCount = 9;
   private static final int INT_DATA = 1;

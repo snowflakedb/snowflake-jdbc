@@ -7,18 +7,21 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.ResultSetFormatType;
 import net.snowflake.client.providers.FormatProvider;
 import net.snowflake.client.providers.ProvidersUtil;
 import net.snowflake.client.providers.SnowflakeArgumentsProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class StructuredTypesGetStringArrowJsonCompatibilityIT
     extends StructuredTypesGetStringBaseIT {
   private static Map<ResultSetFormatType, Connection> connections = new HashMap<>();

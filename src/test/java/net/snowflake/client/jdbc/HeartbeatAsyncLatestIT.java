@@ -13,14 +13,17 @@ import java.time.Duration;
 import java.util.Properties;
 import java.util.logging.Logger;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.QueryStatus;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
  * Test class for using heartbeat with asynchronous querying. This is a "Latest" class because old
  * driver versions do not contain the asynchronous querying API.
  */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   private static Logger logger = Logger.getLogger(HeartbeatAsyncLatestIT.class.getName());
 

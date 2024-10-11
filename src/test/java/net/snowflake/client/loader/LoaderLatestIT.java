@@ -13,6 +13,9 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -21,7 +24,8 @@ import org.junit.jupiter.api.Test;
  * is not applicable. If it is applicable, move tests to LoaderIT so that both the latest and oldest
  * supported driver run the tests.
  */
-// @Category(TestCategoryLoader.class)
+//@Category(TestCategoryLoader.class)
+@Tag(TestTags.LOADER)
 public class LoaderLatestIT extends LoaderBase {
   @Test
   public void testLoaderUpsert() throws Exception {

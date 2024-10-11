@@ -15,18 +15,21 @@ import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeGCSClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeGcsClient handle exception function, only work with latest driver */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT {
   @TempDir private File tmpFolder;
   private Connection connection;

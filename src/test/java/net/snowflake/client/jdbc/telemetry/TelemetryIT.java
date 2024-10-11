@@ -19,15 +19,18 @@ import java.sql.Statement;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SessionUtil;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class TelemetryIT extends AbstractDriverIT {
   private Connection connection = null;
   private static final ObjectMapper mapper = new ObjectMapper();

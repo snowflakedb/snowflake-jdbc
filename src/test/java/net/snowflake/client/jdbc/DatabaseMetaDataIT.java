@@ -29,11 +29,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataIT extends BaseJDBCTest {
   private static final Pattern VERSION_PATTERN =
       Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");

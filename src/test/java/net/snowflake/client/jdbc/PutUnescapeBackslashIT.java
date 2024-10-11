@@ -18,11 +18,14 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class PutUnescapeBackslashIT extends AbstractDriverIT {
   @BeforeAll
   public static void setUpClass() throws Exception {}

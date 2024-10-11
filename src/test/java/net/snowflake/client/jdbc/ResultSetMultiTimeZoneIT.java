@@ -26,10 +26,12 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -37,7 +39,8 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Test ResultSet */
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   static TimeZone ogTz;
 

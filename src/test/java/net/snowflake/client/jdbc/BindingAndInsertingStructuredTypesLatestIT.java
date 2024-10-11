@@ -31,6 +31,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
@@ -38,10 +39,12 @@ import net.snowflake.client.providers.FormatProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   public Connection init(ResultSetFormatType queryResultFormat) throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);

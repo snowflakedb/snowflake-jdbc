@@ -29,9 +29,12 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Set;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement2IT extends PreparedStatement0IT {
   public PreparedStatement2IT() {
     super("json");

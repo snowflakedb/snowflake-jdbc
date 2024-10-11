@@ -14,6 +14,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.BooleanProvider;
 import net.snowflake.client.providers.ProvidersUtil;
 import net.snowflake.client.providers.SimpleFormatProvider;
@@ -21,6 +22,7 @@ import net.snowflake.client.providers.SnowflakeArgumentsProvider;
 import net.snowflake.client.providers.TimezoneProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -29,7 +31,8 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 /**
  * ResultSet multi timezone tests for the latest JDBC driver. This cannot run for the old driver.
  */
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnectionIT {
 
   private static String originalTz;

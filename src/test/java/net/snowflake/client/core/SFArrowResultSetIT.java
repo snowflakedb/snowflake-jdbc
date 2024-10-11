@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import net.snowflake.client.annotations.DontRunOnThinJar;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.BaseJDBCWithSharedConnectionIT;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -61,10 +62,12 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// @Category(TestCategoryArrow.class)
+//@Category(TestCategoryArrow.class)
+@Tag(TestTags.ARROW)
 public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
   private Random random = new Random();
 

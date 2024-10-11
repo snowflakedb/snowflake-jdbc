@@ -14,9 +14,13 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
+
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryLoader.class)
+//@Category(TestCategoryLoader.class)
+@Tag(TestTags.LOADER)
 public class LoaderTimestampIT extends LoaderBase {
   @Test
   public void testLoadTimestamp() throws Exception {

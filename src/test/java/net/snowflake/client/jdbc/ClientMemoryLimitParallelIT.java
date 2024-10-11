@@ -8,9 +8,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+
+import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +21,9 @@ import org.slf4j.LoggerFactory;
 /**
  * @author azhan attempts to test the CLIENT_MEMORY_LIMIT working in multi-threading
  */
-// @Category(TestCategoryOthers.class)
-class ClientMemoryLimitParallelIT {
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
+public class ClientMemoryLimitParallelIT {
   private static Logger LOGGER =
       LoggerFactory.getLogger(ClientMemoryLimitParallelIT.class.getName());
 

@@ -18,6 +18,8 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -26,7 +28,8 @@ import org.junit.jupiter.api.Test;
  * to examine if the tests still are not applicable. If it is applicable, move tests to
  * BindingDataIT so that both the latest and oldest supported driver run the tests.
  */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class BindingDataLatestIT extends AbstractDriverIT {
   TimeZone origTz = TimeZone.getDefault();
   TimeZone tokyoTz = TimeZone.getTimeZone("Asia/Tokyo");

@@ -18,8 +18,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -28,7 +30,8 @@ import org.junit.jupiter.api.Test;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
   @BeforeEach

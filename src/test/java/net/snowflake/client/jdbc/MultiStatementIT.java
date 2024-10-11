@@ -15,13 +15,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Multi Statement tests */
-// @Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 

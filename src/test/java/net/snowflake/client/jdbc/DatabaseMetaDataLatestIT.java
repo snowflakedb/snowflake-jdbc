@@ -31,10 +31,12 @@ import java.util.Properties;
 import java.util.Set;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -43,7 +45,8 @@ import org.junit.jupiter.api.Test;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   private static final String TEST_PROC =
       "create or replace procedure testproc(param1 float, param2 string)\n"

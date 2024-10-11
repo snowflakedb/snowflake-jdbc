@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
@@ -45,10 +46,12 @@ import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
 import net.snowflake.client.jdbc.cloud.storage.StorageProviderException;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class FileUploaderLatestIT extends FileUploaderPrepIT {
   private static final String OBJ_META_STAGE = "testObjMeta";
   private ObjectMapper mapper = new ObjectMapper();

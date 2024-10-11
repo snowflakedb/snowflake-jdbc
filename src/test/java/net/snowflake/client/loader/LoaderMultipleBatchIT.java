@@ -10,9 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.List;
+
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryLoader.class)
+//@Category(TestCategoryLoader.class)
+@Tag(TestTags.LOADER)
 public class LoaderMultipleBatchIT extends LoaderBase {
   @Test
   public void testLoaderMultipleBatch() throws Exception {

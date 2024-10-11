@@ -20,12 +20,14 @@ import java.util.Properties;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SFTrustManager;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -35,7 +37,8 @@ import org.junit.jupiter.api.Test;
  *
  * <p>hang_webserver.py 12345
  */
-// @Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
   private final String testUser = "fakeuser";
   private final String testPassword = "testpassword";

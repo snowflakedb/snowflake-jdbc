@@ -15,11 +15,14 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Stream interface tests. Snowflake JDBC specific API */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class StreamIT extends BaseJDBCTest {
   /**
    * Test Upload Stream

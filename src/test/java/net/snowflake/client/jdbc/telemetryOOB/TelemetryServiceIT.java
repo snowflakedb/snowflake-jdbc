@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.annotations.RunOnTestaccount;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
@@ -25,10 +26,12 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Standalone test cases for the out of band telemetry service */
-// @Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class TelemetryServiceIT extends BaseJDBCTest {
   private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
   private boolean defaultState;

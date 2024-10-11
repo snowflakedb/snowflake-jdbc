@@ -46,15 +46,18 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnTestaccount;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** Connection integration tests */
-// @Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
+@Tag(TestTags.CONNECTION)
 public class ConnectionIT extends BaseJDBCTest {
   // create a local constant for this code for testing purposes (already defined in GS)
   public static final int INVALID_CONNECTION_INFO_CODE = 390100;

@@ -13,14 +13,17 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.category.TestTags;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
 

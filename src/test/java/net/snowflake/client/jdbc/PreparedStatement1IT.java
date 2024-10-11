@@ -26,10 +26,13 @@ import java.sql.Types;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement1IT extends PreparedStatement0IT {
   public PreparedStatement1IT() {
     super("json");

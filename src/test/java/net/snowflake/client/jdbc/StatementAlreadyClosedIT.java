@@ -9,9 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class StatementAlreadyClosedIT extends BaseJDBCTest {
   @Test
   public void testStatementAlreadyClosed() throws Throwable {

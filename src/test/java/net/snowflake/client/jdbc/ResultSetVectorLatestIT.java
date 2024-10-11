@@ -12,7 +12,10 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleFormatProvider;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -23,7 +26,8 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
  * If it is applicable, move tests to ResultSetVectorIT so that both the latest and oldest supported
  * driver run the tests.
  */
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   @ParameterizedTest

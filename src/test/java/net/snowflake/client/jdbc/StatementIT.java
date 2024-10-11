@@ -25,16 +25,19 @@ import java.time.Duration;
 import java.util.List;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** Statement tests */
-// @Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 

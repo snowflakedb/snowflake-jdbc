@@ -18,18 +18,21 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeAzureClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeAzureClient handle exception function */
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverIT {
   @TempDir private File tmpFolder;
   private Connection connection;

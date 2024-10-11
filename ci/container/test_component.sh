@@ -88,7 +88,7 @@ for c in "${CATEGORY[@]}"; do
             $MVNW_EXE -DjenkinsIT \
                 -Djava.io.tmpdir=$WORKSPACE \
                 -Djacoco.skip.instrument=false \
-                -DtestCategory=net.snowflake.client.category.$c \
+                -Dgroups=$c \
                 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
                 verify \
                 --batch-mode --show-version
@@ -109,7 +109,7 @@ for c in "${CATEGORY[@]}"; do
         $MVNW_EXE -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
-            -DtestCategory=net.snowflake.client.category.$c \
+            -Dgroups=$c \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
             -Dnot-self-contained-jar $ADDITIONAL_MAVEN_PROFILE \
             verify \

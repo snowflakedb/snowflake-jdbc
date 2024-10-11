@@ -16,13 +16,16 @@ import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFStatement;
+import net.snowflake.client.category.TestTags;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
 
   private SFStatement sfStatement;

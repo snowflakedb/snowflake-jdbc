@@ -30,10 +30,12 @@ import org.bouncycastle.crypto.fips.FipsStatus;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 
 //@Category(TestCategoryFips.class)
+@Tag("fips")
 public class ConnectionFipsIT extends AbstractDriverIT {
   private static final String JCE_PROVIDER_BOUNCY_CASTLE_FIPS = "BCFIPS";
   private static final String JCE_PROVIDER_SUN_JCE = "SunJCE";

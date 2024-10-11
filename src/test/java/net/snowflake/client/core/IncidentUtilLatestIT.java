@@ -13,12 +13,16 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.zip.GZIPInputStream;
+
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// @Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
+@Tag(TestTags.CORE)
 public class IncidentUtilLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
   private static final String FILE_NAME = "sf_incident_123456.dmp.gz";

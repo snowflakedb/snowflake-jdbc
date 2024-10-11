@@ -9,9 +9,13 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Collections;
-import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryResultSet.class)
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import net.snowflake.client.category.TestTags;
+
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetFeatureNotSupportedIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testQueryResultSetNotSupportedException() throws Throwable {

@@ -28,11 +28,14 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.TestUtil;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.common.core.SqlState;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test

@@ -20,13 +20,16 @@ import java.util.List;
 import java.util.Properties;
 import javax.annotation.Nullable;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** SnowflakeResultSetSerializable tests */
-// @Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
+@Tag(TestTags.RESULT_SET)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
 

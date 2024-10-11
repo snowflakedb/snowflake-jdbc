@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
@@ -27,9 +29,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class BindUploaderIT extends BaseJDBCTest {
   BindUploader bindUploader;
   Connection conn;
