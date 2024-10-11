@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -18,9 +20,8 @@ import java.util.Map;
 import java.util.Properties;
 import javax.net.ssl.HttpsURLConnection;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGCP;
-import net.snowflake.client.RunningOnGithubActions;
+import net.snowflake.client.DontRunOnGCP;
+import net.snowflake.client.DontRunOnGithubActions;
 import net.snowflake.client.category.TestCategoryFips;
 import net.snowflake.client.core.SecurityUtil;
 import org.apache.commons.codec.binary.Base64;
