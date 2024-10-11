@@ -4,9 +4,10 @@
 
 package net.snowflake.client.jdbc.cloud.storage;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.microsoft.azure.storage.StorageExtendedErrorInformation;
 import java.util.LinkedHashMap;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SnowflakeAzureClientTest {
@@ -23,7 +24,7 @@ public class SnowflakeAzureClientTest {
     info.setErrorCode("403");
     info.setErrorMessage("Server refuses to authorize the request");
     String formatedStr = SnowflakeAzureClient.FormatStorageExtendedErrorInformation(info);
-    Assertions.assertEquals(expectedStr0, formatedStr);
+    assertEquals(expectedStr0, formatedStr);
 
     LinkedHashMap<String, String[]> map = new LinkedHashMap<>();
     map.put("key1", new String[] {"hello", "world"});
@@ -31,12 +32,12 @@ public class SnowflakeAzureClientTest {
     map.put("key3", new String[] {"fake", "message"});
     info.setAdditionalDetails(map);
     formatedStr = SnowflakeAzureClient.FormatStorageExtendedErrorInformation(info);
-    Assertions.assertEquals(expectedStr1, formatedStr);
+    assertEquals(expectedStr1, formatedStr);
   }
 
   @Test
   public void testFormatStorageExtendedErrorEmptyInformation() {
     String formatedStr = SnowflakeAzureClient.FormatStorageExtendedErrorInformation(null);
-    Assertions.assertEquals("", formatedStr);
+    assertEquals("", formatedStr);
   }
 }

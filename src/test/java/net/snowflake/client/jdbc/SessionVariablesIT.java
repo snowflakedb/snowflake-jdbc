@@ -3,6 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // @Category(TestCategoryOthers.class)
@@ -31,9 +33,9 @@ public final class SessionVariablesIT extends AbstractDriverIT {
         variablesInSession.put(resultSet.getString("name"), resultSet.getString("value"));
       }
 
-      Assertions.assertEquals("some example 1", variablesInSession.get("VAR1"));
-      Assertions.assertEquals("2", variablesInSession.get("VAR2"));
-      Assertions.assertNull(variablesInSession.get("VAR3"));
+      assertEquals("some example 1", variablesInSession.get("VAR1"));
+      assertEquals("2", variablesInSession.get("VAR2"));
+      assertNull(variablesInSession.get("VAR3"));
     }
   }
 }

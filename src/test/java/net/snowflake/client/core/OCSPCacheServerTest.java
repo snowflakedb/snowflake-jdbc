@@ -1,7 +1,8 @@
 package net.snowflake.client.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -76,7 +77,7 @@ public class OCSPCacheServerTest {
     SFTrustManager.OCSPCacheServer ocspCacheServer = new SFTrustManager.OCSPCacheServer();
     ocspCacheServer.resetOCSPResponseCacheServer(host);
 
-    Assertions.assertEquals(expectedFetchUrl, ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER);
-    Assertions.assertEquals(expectedRetryUrl, ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL);
+    assertEquals(expectedFetchUrl, ocspCacheServer.SF_OCSP_RESPONSE_CACHE_SERVER);
+    assertEquals(expectedRetryUrl, ocspCacheServer.SF_OCSP_RESPONSE_RETRY_URL);
   }
 }

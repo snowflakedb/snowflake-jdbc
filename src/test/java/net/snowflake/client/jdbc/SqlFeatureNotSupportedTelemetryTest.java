@@ -1,8 +1,9 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.minidev.json.JSONObject;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SqlFeatureNotSupportedTelemetryTest {
@@ -28,19 +29,19 @@ public class SqlFeatureNotSupportedTelemetryTest {
   @Test
   public void testCreateIBValue() {
     ObjectNode ibValue = SnowflakeSQLLoggedException.createIBValue(queryId, SQLState, vendorCode);
-    Assertions.assertEquals(comparison, ibValue.toString());
+    assertEquals(comparison, ibValue.toString());
   }
 
   /** Test that creating out-of-band JSONObject contains all attributes it needs */
   @Test
   public void testCreateOOBValue() {
     JSONObject oobValue = SnowflakeSQLLoggedException.createOOBValue(queryId, SQLState, vendorCode);
-    Assertions.assertEquals("client_sql_exception", oobValue.get("type").toString());
-    Assertions.assertEquals("JDBC", oobValue.get("DriverType").toString());
-    Assertions.assertEquals(driverVersion, oobValue.get("DriverVersion").toString());
-    Assertions.assertEquals(queryId, oobValue.get("QueryID").toString());
-    Assertions.assertEquals(SQLState, oobValue.get("SQLState").toString());
-    Assertions.assertEquals(vendorCode, oobValue.get("ErrorNumber"));
+    assertEquals("client_sql_exception", oobValue.get("type").toString());
+    assertEquals("JDBC", oobValue.get("DriverType").toString());
+    assertEquals(driverVersion, oobValue.get("DriverVersion").toString());
+    assertEquals(queryId, oobValue.get("QueryID").toString());
+    assertEquals(SQLState, oobValue.get("SQLState").toString());
+    assertEquals(vendorCode, oobValue.get("ErrorNumber"));
   }
 
   @Test
@@ -69,7 +70,7 @@ public class SqlFeatureNotSupportedTelemetryTest {
         "net.snowflake.client.jdbc.SnowflakeSQLException\n"
             + "\tat net.snowflake.client.jdbc.SnowflakeUtil.checkErrorAndThrowExceptionSub(SnowflakeUtil.java:124)\n";
 
-    Assertions.assertEquals(
+    assertEquals(
         maskedSnowflakeSQLStacktrace,
         SnowflakeSQLLoggedException.maskStacktrace(snowflakeSQLStacktrace));
 
@@ -83,11 +84,11 @@ public class SqlFeatureNotSupportedTelemetryTest {
         "net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException\n"
             + "\tat net.snowflake.client.jdbc.SnowflakeStatementV1.execute(SnowflakeStatementV1.java:344)\n";
 
-    Assertions.assertEquals(
+    assertEquals(
         maskedFeatureNotSupportedStacktrace,
         SnowflakeSQLLoggedException.maskStacktrace(featureNotSupportedStacktrace));
 
-    Assertions.assertEquals(
+    assertEquals(
         maskedMultipleLineReasonMessage,
         SnowflakeSQLLoggedException.maskStacktrace(multipleLineReasonMessage));
   }

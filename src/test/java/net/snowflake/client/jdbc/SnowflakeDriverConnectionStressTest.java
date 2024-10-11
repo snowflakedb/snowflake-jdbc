@@ -4,6 +4,8 @@
 
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,7 +19,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.snowflake.client.AbstractDriverIT;
-import org.junit.jupiter.api.Assertions;
 
 public class SnowflakeDriverConnectionStressTest {
   private static final String QUERY = "select current_user()";
@@ -89,7 +90,7 @@ public class SnowflakeDriverConnectionStressTest {
         try (ResultSet resultSet = statement.executeQuery(QUERY)) {
           while (resultSet.next()) {
             final String user = resultSet.getString(1);
-            Assertions.assertNotNull(user);
+            assertNotNull(user);
           }
         }
       }

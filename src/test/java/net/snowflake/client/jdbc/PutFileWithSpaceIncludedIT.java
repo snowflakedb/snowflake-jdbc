@@ -3,6 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,7 +16,6 @@ import net.snowflake.client.TestUtil;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -31,12 +33,12 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
     String SF_AWS_USER_BUCKET = TestUtil.systemGetEnv("SF_AWS_USER_BUCKET");
     if (SF_AWS_USER_BUCKET == null) {
       String userName = TestUtil.systemGetEnv("USERNAME");
-      Assertions.assertNotNull(userName);
+      assertNotNull(userName);
       SF_AWS_USER_BUCKET = "sfc-dev1-regression/" + userName + "/snow-13400";
     }
 
-    Assertions.assertNotNull(AWS_SECRET_KEY);
-    Assertions.assertNotNull(AWS_KEY_ID);
+    assertNotNull(AWS_SECRET_KEY);
+    assertNotNull(AWS_KEY_ID);
 
     File dataFolder = new File(tmpFolder, "data");
     dataFolder.mkdirs();
@@ -73,7 +75,7 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
           while (resultSet.next()) {
             cnt++;
           }
-          Assertions.assertEquals(cnt, 1);
+          assertEquals(cnt, 1);
         }
         statement.execute("create or replace table snow13400(a string)");
         statement.execute("copy into snow13400 from @snow13400");
@@ -84,8 +86,8 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
             output = resultSet.getString(1);
             cnt++;
           }
-          Assertions.assertEquals(cnt, 1);
-          Assertions.assertEquals(output, "hello");
+          assertEquals(cnt, 1);
+          assertEquals(output, "hello");
         }
       } finally {
         statement.execute("rm @snow13400");

@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,7 +36,6 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.core.SFException;
-import org.junit.jupiter.api.Assertions;
 
 public class BaseJDBCTest extends AbstractDriverIT {
   // Test UUID unique per session
@@ -53,45 +56,43 @@ public class BaseJDBCTest extends AbstractDriverIT {
   protected void expectConnectionAlreadyClosedException(MethodRaisesSQLException f) {
     try {
       f.run();
-      Assertions.fail("must raise exception");
+      fail("must raise exception");
     } catch (SQLException ex) {
-      Assertions.assertEquals(
-          (int) ErrorCode.CONNECTION_CLOSED.getMessageCode(), ex.getErrorCode());
+      assertEquals((int) ErrorCode.CONNECTION_CLOSED.getMessageCode(), ex.getErrorCode());
     }
   }
 
   protected void expectStatementAlreadyClosedException(MethodRaisesSQLException f) {
     try {
       f.run();
-      Assertions.fail("must raise exception");
+      fail("must raise exception");
     } catch (SQLException ex) {
-      Assertions.assertEquals((int) ErrorCode.STATEMENT_CLOSED.getMessageCode(), ex.getErrorCode());
+      assertEquals((int) ErrorCode.STATEMENT_CLOSED.getMessageCode(), ex.getErrorCode());
     }
   }
 
   protected void expectResultSetAlreadyClosedException(MethodRaisesSQLException f) {
     try {
       f.run();
-      Assertions.fail("must raise exception");
+      fail("must raise exception");
     } catch (SQLException ex) {
-      Assertions.assertEquals(
-          (int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
+      assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
     }
   }
 
   protected void expectFeatureNotSupportedException(MethodRaisesSQLException f) {
     try {
       f.run();
-      Assertions.fail("must raise exception");
+      fail("must raise exception");
     } catch (SQLException ex) {
-      Assertions.assertTrue(ex instanceof SQLFeatureNotSupportedException);
+      assertTrue(ex instanceof SQLFeatureNotSupportedException);
     }
   }
 
   protected void expectSQLClientInfoException(MethodRaisesSQLClientInfoException f) {
     try {
       f.run();
-      Assertions.fail("must raise exception");
+      fail("must raise exception");
     } catch (SQLClientInfoException ex) {
       // noup
     }

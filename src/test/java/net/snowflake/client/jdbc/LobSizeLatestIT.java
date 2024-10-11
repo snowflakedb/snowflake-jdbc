@@ -3,6 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,7 +27,6 @@ import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.UUIDUtils;
 import org.apache.commons.text.RandomStringGenerator;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -143,10 +145,10 @@ public class LobSizeLatestIT extends BaseJDBCTest {
       insertQuery(varCharValue, uuidValue, stmt);
 
       try (ResultSet rs = stmt.executeQuery(selectQuery + "'" + uuidValue + "'")) {
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals("abc", rs.getString(1));
-        Assertions.assertEquals(varCharValue, rs.getString(2));
-        Assertions.assertEquals(uuidValue, rs.getString(3));
+        assertTrue(rs.next());
+        assertEquals("abc", rs.getString(1));
+        assertEquals(varCharValue, rs.getString(2));
+        assertEquals(uuidValue, rs.getString(3));
       }
     }
   }
@@ -165,10 +167,10 @@ public class LobSizeLatestIT extends BaseJDBCTest {
       preparedInsertQuery(maxVarCharValue, uuidValue, con);
 
       try (ResultSet rs = stmt.executeQuery(selectQuery + "'" + uuidValue + "'")) {
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals("abc", rs.getString(1));
-        Assertions.assertEquals(maxVarCharValue, rs.getString(2));
-        Assertions.assertEquals(uuidValue, rs.getString(3));
+        assertTrue(rs.next());
+        assertEquals("abc", rs.getString(1));
+        assertEquals(maxVarCharValue, rs.getString(2));
+        assertEquals(uuidValue, rs.getString(3));
       }
     }
   }
@@ -206,17 +208,17 @@ public class LobSizeLatestIT extends BaseJDBCTest {
       stmt.execute(sqlPut);
 
       try (ResultSet rsPut = stmt.getResultSet()) {
-        Assertions.assertTrue(rsPut.next());
-        Assertions.assertEquals(fileName, rsPut.getString(1));
-        Assertions.assertEquals(fileName + ".gz", rsPut.getString(2));
-        Assertions.assertEquals("GZIP", rsPut.getString(6));
-        Assertions.assertEquals("UPLOADED", rsPut.getString(7));
+        assertTrue(rsPut.next());
+        assertEquals(fileName, rsPut.getString(1));
+        assertEquals(fileName + ".gz", rsPut.getString(2));
+        assertEquals("GZIP", rsPut.getString(6));
+        assertEquals("UPLOADED", rsPut.getString(7));
       }
 
       try (ResultSet rsFiles = stmt.executeQuery("ls @%" + tableName)) {
         // ResultSet should return a row with the zipped file name
-        Assertions.assertTrue(rsFiles.next());
-        Assertions.assertEquals(fileName + ".gz", rsFiles.getString(1));
+        assertTrue(rsFiles.next());
+        assertEquals(fileName + ".gz", rsFiles.getString(1));
       }
 
       String copyInto =
@@ -229,10 +231,10 @@ public class LobSizeLatestIT extends BaseJDBCTest {
 
       // Check that results are copied into table correctly
       try (ResultSet rsCopy = stmt.executeQuery(selectQuery + "'" + uuidValue + "'")) {
-        Assertions.assertTrue(rsCopy.next());
-        Assertions.assertEquals("abc", rsCopy.getString(1));
-        Assertions.assertEquals(varCharValue, rsCopy.getString(2));
-        Assertions.assertEquals(uuidValue, rsCopy.getString(3));
+        assertTrue(rsCopy.next());
+        assertEquals("abc", rsCopy.getString(1));
+        assertEquals(varCharValue, rsCopy.getString(2));
+        assertEquals(uuidValue, rsCopy.getString(3));
       }
 
       // Test Get
@@ -245,9 +247,9 @@ public class LobSizeLatestIT extends BaseJDBCTest {
       stmt.execute(getSql);
 
       try (ResultSet rsGet = stmt.getResultSet()) {
-        Assertions.assertTrue(rsGet.next());
-        Assertions.assertEquals(fileName + ".gz", rsGet.getString(1));
-        Assertions.assertEquals("DOWNLOADED", rsGet.getString(3));
+        assertTrue(rsGet.next());
+        assertEquals(fileName + ".gz", rsGet.getString(1));
+        assertEquals("DOWNLOADED", rsGet.getString(3));
       }
     }
   }

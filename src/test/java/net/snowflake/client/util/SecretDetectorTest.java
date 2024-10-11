@@ -1,6 +1,7 @@
 package net.snowflake.client.util;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -11,7 +12,6 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SecretDetectorTest {
@@ -193,7 +193,7 @@ public class SecretDetectorTest {
 
     String result = SecretDetector.maskSecrets(messageText);
 
-    Assertions.assertEquals(filteredMessageText, result);
+    assertEquals(filteredMessageText, result);
   }
 
   @Test
@@ -223,12 +223,10 @@ public class SecretDetectorTest {
     testParametersUnmasked.put("private_key_file", "test");
 
     for (Map.Entry<String, String> entry : testParametersMasked.entrySet()) {
-      Assertions.assertEquals(
-          "****", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
+      assertEquals("****", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
     }
     for (Map.Entry<String, String> entry : testParametersUnmasked.entrySet()) {
-      Assertions.assertEquals(
-          "test", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
+      assertEquals("test", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
     }
   }
 

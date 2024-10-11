@@ -7,6 +7,10 @@ import static net.snowflake.client.config.SFClientConfigParser.getConfigFilePath
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemSetEnv;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemUnsetEnv;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mockStatic;
 
 import java.io.IOException;
@@ -15,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -42,9 +45,9 @@ public class SFClientConfigParserTest {
     Files.write(configFilePath, CONFIG_JSON.getBytes());
     SFClientConfig actualConfig =
         SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
-    Assertions.assertEquals("info", actualConfig.getCommonProps().getLogLevel());
-    Assertions.assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
-    Assertions.assertEquals("config.json", actualConfig.getConfigFilePath());
+    assertEquals("info", actualConfig.getCommonProps().getLogLevel());
+    assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
+    assertEquals("config.json", actualConfig.getConfigFilePath());
   }
 
   @Test
@@ -53,8 +56,8 @@ public class SFClientConfigParserTest {
     Files.write(configFilePath, CONFIG_JSON_WITH_UNKNOWN_PROPS.getBytes());
     SFClientConfig actualConfig =
         SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
-    Assertions.assertEquals("info", actualConfig.getCommonProps().getLogLevel());
-    Assertions.assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
+    assertEquals("info", actualConfig.getCommonProps().getLogLevel());
+    assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
   }
 
   @Test
@@ -63,7 +66,7 @@ public class SFClientConfigParserTest {
     SFClientConfig config = null;
     try {
       SFClientConfigParser.loadSFClientConfig(configFilePath);
-      Assertions.fail("testLoadSFClientConfigInValidPath"); // this will not be reached!
+      fail("testLoadSFClientConfigInValidPath"); // this will not be reached!
     } catch (IOException e) {
       // do nothing
     }
@@ -77,7 +80,7 @@ public class SFClientConfigParserTest {
       Files.write(configFilePath, invalidJson.getBytes());
       SFClientConfigParser.loadSFClientConfig(configFilePath.toString());
 
-      Assertions.fail("testLoadSFClientConfigInValidJson");
+      fail("testLoadSFClientConfigInValidJson");
     } catch (IOException e) {
       // DO Nothing
     }
@@ -89,8 +92,8 @@ public class SFClientConfigParserTest {
     Files.write(configFilePath, CONFIG_JSON.getBytes());
     systemSetEnv(SF_CLIENT_CONFIG_ENV_NAME, "config.json");
     SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
-    Assertions.assertEquals("info", actualConfig.getCommonProps().getLogLevel());
-    Assertions.assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
+    assertEquals("info", actualConfig.getCommonProps().getLogLevel());
+    assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
   }
 
   @Test
@@ -100,8 +103,8 @@ public class SFClientConfigParserTest {
     configFilePath = Paths.get(configLocation);
     Files.write(configFilePath, CONFIG_JSON.getBytes());
     SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
-    Assertions.assertEquals("info", actualConfig.getCommonProps().getLogLevel());
-    Assertions.assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
+    assertEquals("info", actualConfig.getCommonProps().getLogLevel());
+    assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
   }
 
   @Test
@@ -114,21 +117,21 @@ public class SFClientConfigParserTest {
       configFilePath = Paths.get(systemGetProperty("user.home"), SF_CLIENT_CONFIG_FILE_NAME);
       Files.write(configFilePath, CONFIG_JSON.getBytes());
       SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
-      Assertions.assertEquals("info", actualConfig.getCommonProps().getLogLevel());
-      Assertions.assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
+      assertEquals("info", actualConfig.getCommonProps().getLogLevel());
+      assertEquals("/jdbc.log", actualConfig.getCommonProps().getLogPath());
     }
   }
 
   @Test
   public void testLoadSFClientNoConditionsMatch() throws IOException {
     SFClientConfig actualConfig = SFClientConfigParser.loadSFClientConfig(null);
-    Assertions.assertNull(actualConfig);
+    assertNull(actualConfig);
   }
 
   @Test
   public void testGetConfigFileNameFromJDBCJarLocation() {
     String jdbcDirectoryPath = getConfigFilePathFromJDBCJarLocation();
-    Assertions.assertTrue(jdbcDirectoryPath != null && !jdbcDirectoryPath.isEmpty());
+    assertTrue(jdbcDirectoryPath != null && !jdbcDirectoryPath.isEmpty());
   }
 
   @Test
@@ -139,10 +142,10 @@ public class SFClientConfigParserTest {
     String mockCloudPrefix = "cloud://";
 
     for (String testcase : testCases) {
-      Assertions.assertEquals(resultWindowsPath, convertToWindowsPath(testcase + mockWindowsPath));
+      assertEquals(resultWindowsPath, convertToWindowsPath(testcase + mockWindowsPath));
     }
 
-    Assertions.assertEquals(
+    assertEquals(
         mockCloudPrefix + resultWindowsPath,
         convertToWindowsPath(mockCloudPrefix + mockWindowsPath));
   }

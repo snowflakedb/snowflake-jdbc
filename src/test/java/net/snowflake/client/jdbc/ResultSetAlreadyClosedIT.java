@@ -3,13 +3,15 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.math.BigDecimal;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Calendar;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // @Category(TestCategoryResultSet.class)
@@ -56,8 +58,8 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCWithSharedConnectionIT {
   private void checkAlreadyClosed(ResultSet resultSet) throws SQLException {
     resultSet.close();
     resultSet.close(); // second close won't raise exception
-    Assertions.assertTrue(resultSet.isClosed());
-    Assertions.assertFalse(resultSet.next()); // next after close should return false.
+    assertTrue(resultSet.isClosed());
+    assertFalse(resultSet.next()); // next after close should return false.
 
     expectResultSetAlreadyClosedException(resultSet::wasNull);
     expectResultSetAlreadyClosedException(() -> resultSet.getString(1));
@@ -153,8 +155,8 @@ public class ResultSetAlreadyClosedIT extends BaseJDBCWithSharedConnectionIT {
       throws SQLException {
     resultSet.close();
     resultSet.close(); // second close won't raise exception
-    Assertions.assertTrue(resultSet.isClosed());
-    Assertions.assertFalse(resultSet.next()); // next after close should return false.
+    assertTrue(resultSet.isClosed());
+    assertFalse(resultSet.next()); // next after close should return false.
 
     expectResultSetAlreadyClosedException(resultSet::beforeFirst);
     expectResultSetAlreadyClosedException(resultSet::afterLast);

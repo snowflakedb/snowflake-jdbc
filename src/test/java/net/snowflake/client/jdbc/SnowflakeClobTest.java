@@ -3,13 +3,16 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SnowflakeClobTest extends BaseJDBCTest {
@@ -21,8 +24,8 @@ public class SnowflakeClobTest extends BaseJDBCTest {
     Reader reader = clob.getCharacterStream(1, clob.length());
     int charRead;
     charRead = reader.read(chars, 0, chars.length);
-    Assertions.assertEquals(charRead, 11);
-    Assertions.assertEquals("hello world", clob.toString());
+    assertEquals(charRead, 11);
+    assertEquals("hello world", clob.toString());
   }
 
   @Test
@@ -34,25 +37,25 @@ public class SnowflakeClobTest extends BaseJDBCTest {
     int charRead;
     Reader in = new InputStreamReader(input, StandardCharsets.UTF_8);
     charRead = in.read(chars, 0, chars.length);
-    Assertions.assertEquals(charRead, 11);
+    assertEquals(charRead, 11);
   }
 
   @Test
   public void testFreeBuffer() throws SQLException, IOException {
     SnowflakeClob clob = new SnowflakeClob("hello world");
     clob.setCharacterStream(1).close();
-    Assertions.assertEquals(11, clob.length());
+    assertEquals(11, clob.length());
     clob.free();
-    Assertions.assertEquals(0, clob.length());
+    assertEquals(0, clob.length());
   }
 
   @Test
   public void testGetSubString() throws SQLException {
     SnowflakeClob clob = new SnowflakeClob();
     clob.setString(1, "hello world", 0, 11);
-    Assertions.assertEquals("world", clob.getSubString(6, 5));
-    Assertions.assertEquals(0, clob.position("hello", 1));
-    Assertions.assertEquals(0, clob.position(new SnowflakeClob("hello world"), 1));
+    assertEquals("world", clob.getSubString(6, 5));
+    assertEquals(0, clob.position("hello", 1));
+    assertEquals(0, clob.position(new SnowflakeClob("hello world"), 1));
   }
 
   @Test
@@ -61,37 +64,37 @@ public class SnowflakeClobTest extends BaseJDBCTest {
 
     try {
       clob.setString(0, "this should throw an exception");
-      Assertions.fail();
+      fail();
     } catch (Exception ex) {
-      Assertions.assertTrue(ex instanceof SQLException);
+      assertTrue(ex instanceof SQLException);
     }
 
     try {
       clob.setString(0, "this should throw an exception", 0, 5);
-      Assertions.fail();
+      fail();
     } catch (Exception ex) {
-      Assertions.assertTrue(ex instanceof SQLException);
+      assertTrue(ex instanceof SQLException);
     }
 
     try {
       clob.getSubString(0, 1);
-      Assertions.fail();
+      fail();
     } catch (Exception ex) {
-      Assertions.assertTrue(ex instanceof SQLException);
+      assertTrue(ex instanceof SQLException);
     }
 
     try {
       clob.position("this should throw an exception", 0);
-      Assertions.fail();
+      fail();
     } catch (Exception ex) {
-      Assertions.assertTrue(ex instanceof SQLException);
+      assertTrue(ex instanceof SQLException);
     }
 
     try {
       clob.position(new SnowflakeClob("this should throw an exception"), 0);
-      Assertions.fail();
+      fail();
     } catch (Exception ex) {
-      Assertions.assertTrue(ex instanceof SQLException);
+      assertTrue(ex instanceof SQLException);
     }
   }
 }

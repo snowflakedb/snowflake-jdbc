@@ -4,6 +4,9 @@
 
 package net.snowflake.client.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -12,7 +15,6 @@ import java.util.Base64;
 import java.util.stream.Stream;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -65,7 +67,7 @@ public class ObjectMapperTest {
     // default maxJsonStringLength value will be used
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     int stringLengthInMapper = mapper.getFactory().streamReadConstraints().getMaxStringLength();
-    Assertions.assertEquals(ObjectMapperFactory.DEFAULT_MAX_JSON_STRING_LEN, stringLengthInMapper);
+    assertEquals(ObjectMapperFactory.DEFAULT_MAX_JSON_STRING_LEN, stringLengthInMapper);
   }
 
   @ParameterizedTest
@@ -75,11 +77,11 @@ public class ObjectMapperTest {
     ObjectMapper mapper = ObjectMapperFactory.getObjectMapper();
     try {
       JsonNode jsonNode = mapper.readTree(generateBase64EncodedJsonString(lobSizeInBytes));
-      Assertions.assertNotNull(jsonNode);
+      assertNotNull(jsonNode);
     } catch (Exception e) {
       // exception is expected when jackson's default maxStringLength value is used while retrieving
       // 16M string data
-      Assertions.assertEquals(jacksonDefaultMaxStringLength, maxJsonStringLength);
+      assertEquals(jacksonDefaultMaxStringLength, maxJsonStringLength);
     }
   }
 

@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -17,7 +19,6 @@ import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -183,7 +184,7 @@ public class ConnectionPoolingIT {
         try (Statement st = con.createStatement();
             ResultSet resultSet = st.executeQuery("SELECT * FROM test_pooling")) {
           while (resultSet.next()) {
-            Assertions.assertEquals("test_str", resultSet.getString(1));
+            assertEquals("test_str", resultSet.getString(1));
           }
         }
       } catch (Exception e) {

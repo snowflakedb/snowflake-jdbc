@@ -5,6 +5,8 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.net.URL;
@@ -21,7 +23,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -86,8 +87,8 @@ public class CallableStatementIT extends BaseJDBCTest {
         assertThat(callableStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
         callableStatement.setFloat(1, 7.0f);
         try (ResultSet rs = callableStatement.executeQuery()) {
-          Assertions.assertTrue(rs.next());
-          Assertions.assertEquals(49.0f, rs.getFloat(1), 1.0f);
+          assertTrue(rs.next());
+          assertEquals(49.0f, rs.getFloat(1), 1.0f);
         }
       }
       // test CallableStatement with 2 binding parameters
@@ -95,8 +96,8 @@ public class CallableStatementIT extends BaseJDBCTest {
         callableStatement.setDouble(1, 32);
         callableStatement.setDouble(2, 15);
         try (ResultSet rs = callableStatement.executeQuery()) {
-          Assertions.assertTrue(rs.next());
-          Assertions.assertEquals(47, rs.getDouble(1), .5);
+          assertTrue(rs.next());
+          assertEquals(47, rs.getDouble(1), .5);
         }
       }
     }

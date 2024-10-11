@@ -3,6 +3,7 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.AbstractDriverIT.getConnectionParameters;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 // import static org.junit.jupiter.api.Assumptions.assumeNoException;
 
 import java.io.File;
@@ -27,7 +28,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -116,7 +116,7 @@ abstract class BaseWiremockTest {
     postRequest = new HttpPost("http://" + WIREMOCK_HOST + ":" + getAdminPort() + "/__admin/reset");
     try (CloseableHttpClient client = HttpClients.createDefault();
         CloseableHttpResponse response = client.execute(postRequest)) {
-      Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
+      assertEquals(200, response.getStatusLine().getStatusCode());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -235,7 +235,7 @@ abstract class BaseWiremockTest {
     HttpPost postRequest = createWiremockPostRequest(mapping, "/__admin/mappings");
     try (CloseableHttpClient client = HttpClients.createDefault();
         CloseableHttpResponse response = client.execute(postRequest)) {
-      Assertions.assertEquals(201, response.getStatusLine().getStatusCode());
+      assertEquals(201, response.getStatusLine().getStatusCode());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

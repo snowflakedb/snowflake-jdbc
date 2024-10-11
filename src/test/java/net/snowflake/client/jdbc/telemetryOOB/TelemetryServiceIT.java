@@ -2,7 +2,10 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -20,7 +23,6 @@ import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -232,7 +234,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     int fakeVendorCode = 27;
     try {
       generateDummyException(fakeVendorCode, null);
-      Assertions.fail();
+      fail();
     } catch (SnowflakeSQLLoggedException e) {
       // The error response has the same code as the fakeErrorCode
       assertThat("Communication error", e.getErrorCode(), equalTo(fakeVendorCode));
@@ -265,7 +267,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     // with null session, OOB telemetry will be thrown
     try {
       generateSQLFeatureNotSupportedException();
-      Assertions.fail("SqlFeatureNotSupportedException failed to throw.");
+      fail("SqlFeatureNotSupportedException failed to throw.");
     } catch (SQLFeatureNotSupportedException e) {
       // since it returns normal response,
       // the telemetry does not create new event
@@ -322,7 +324,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       Statement statement = con.createStatement();
       statement.execute("select 1");
       // Make sure OOB telemetry is enabled
-      Assertions.assertTrue(TelemetryService.getInstance().isEnabled());
+      assertTrue(TelemetryService.getInstance().isEnabled());
     }
   }
 
@@ -339,7 +341,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       Statement statement = con.createStatement();
       statement.execute("select 1");
       // Make sure OOB telemetry is disabled
-      Assertions.assertFalse(TelemetryService.getInstance().isEnabled());
+      assertFalse(TelemetryService.getInstance().isEnabled());
     }
   }
 
@@ -357,7 +359,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       Statement statement = con.createStatement();
       statement.execute("select 1");
       // Make sure OOB telemetry is enabled
-      Assertions.assertTrue(TelemetryService.getInstance().isEnabled());
+      assertTrue(TelemetryService.getInstance().isEnabled());
     }
   }
 
@@ -375,7 +377,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       try {
         generateDummyException(
             fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
-        Assertions.fail();
+        fail();
       } catch (SnowflakeSQLLoggedException e) {
         // The error response has the same code as the fakeErrorCode
         assertThat("Communication error", e.getErrorCode(), equalTo(fakeErrorCode));

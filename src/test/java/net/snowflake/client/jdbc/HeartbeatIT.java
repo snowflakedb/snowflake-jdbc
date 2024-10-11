@@ -5,6 +5,9 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -24,7 +27,6 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -96,10 +98,10 @@ public class HeartbeatIT extends AbstractDriverIT {
         resultSetMetaData = resultSet.getMetaData();
 
         // assert column count
-        Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+        assertEquals(1, resultSetMetaData.getColumnCount());
 
         // assert we get 1 row
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
 
         logger.fine("Query " + queryIdx + " passed ");
       }
@@ -159,7 +161,7 @@ public class HeartbeatIT extends AbstractDriverIT {
               });
       executorService.shutdown();
       future.get();
-      Assertions.fail("should fail and raise an exception");
+      fail("should fail and raise an exception");
     } catch (ExecutionException ex) {
       Throwable rootCause = ex.getCause();
       MatcherAssert.assertThat(

@@ -5,6 +5,11 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -23,7 +28,6 @@ import java.util.stream.Stream;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -136,18 +140,18 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
               + "stage_file_format = (field_delimiter='|' "
               + "error_on_column_count_mismatch=false)");
       // put files
-      Assertions.assertTrue(
+      assertTrue(
           statement.execute(
               "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"),
           "Failed to put a file");
-      Assertions.assertTrue(
+      assertTrue(
           statement.execute(
               "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"),
           "Failed to put a file");
 
       int numRows = statement.executeUpdate("copy into orders_jdbc");
 
-      Assertions.assertEquals(73, numRows, "Unexpected number of rows copied: " + numRows);
+      assertEquals(73, numRows, "Unexpected number of rows copied: " + numRows);
     }
   }
 
@@ -184,13 +188,13 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
           prepStatement.execute();
 
           ResultSet resultSet = statement.executeQuery("select * from datetime");
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(date, resultSet.getDate(1));
-          Assertions.assertEquals(date, resultSet.getDate("COLA"));
-          Assertions.assertEquals(ts, resultSet.getTimestamp(2));
-          Assertions.assertEquals(ts, resultSet.getTimestamp("COLB"));
-          Assertions.assertEquals(tm, resultSet.getTime(3));
-          Assertions.assertEquals(tm, resultSet.getTime("COLC"));
+          assertTrue(resultSet.next());
+          assertEquals(date, resultSet.getDate(1));
+          assertEquals(date, resultSet.getDate("COLA"));
+          assertEquals(ts, resultSet.getTimestamp(2));
+          assertEquals(ts, resultSet.getTimestamp("COLB"));
+          assertEquals(tm, resultSet.getTime(3));
+          assertEquals(tm, resultSet.getTime("COLC"));
         }
         statement.execute(
             "create or replace table datetime(colA timestamp_ltz, colB timestamp_ntz, colC timestamp_tz)");
@@ -204,14 +208,14 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
           prepStatement.setTimestamp(1, dateTime);
           prepStatement.execute();
           try (ResultSet resultSet = statement.executeQuery("select * from datetime")) {
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             formatter.setTimeZone(TimeZone.getDefault());
             String d = formatter.format(resultSet.getDate("COLA"));
-            Assertions.assertEquals("2019-01-02 01:17:17", d);
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertEquals(date, resultSet.getDate(1));
-            Assertions.assertEquals(date, resultSet.getDate("COLA"));
+            assertEquals("2019-01-02 01:17:17", d);
+            assertTrue(resultSet.next());
+            assertEquals(date, resultSet.getDate(1));
+            assertEquals(date, resultSet.getDate("COLA"));
           }
         }
       } finally {
@@ -258,18 +262,18 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
         final long M = 86400 * 1000;
         try (ResultSet resultSet = statement.executeQuery("select * from timeTest")) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertNotEquals(tm1, resultSet.getTime(1));
-          Assertions.assertEquals(new Time((ms1 % M + M) % M), resultSet.getTime(1));
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertNotEquals(tm2, resultSet.getTime(1));
-          Assertions.assertEquals(new Time((ms2 % M + M) % M), resultSet.getTime(1));
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertNotEquals(tm3, resultSet.getTime(1));
-          Assertions.assertEquals(new Time((ms3 % M + M) % M), resultSet.getTime(1));
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertNotEquals(tm4, resultSet.getTime(1));
-          Assertions.assertEquals(new Time((ms4 % M + M) % M), resultSet.getTime(1));
+          assertTrue(resultSet.next());
+          assertNotEquals(tm1, resultSet.getTime(1));
+          assertEquals(new Time((ms1 % M + M) % M), resultSet.getTime(1));
+          assertTrue(resultSet.next());
+          assertNotEquals(tm2, resultSet.getTime(1));
+          assertEquals(new Time((ms2 % M + M) % M), resultSet.getTime(1));
+          assertTrue(resultSet.next());
+          assertNotEquals(tm3, resultSet.getTime(1));
+          assertEquals(new Time((ms3 % M + M) % M), resultSet.getTime(1));
+          assertTrue(resultSet.next());
+          assertNotEquals(tm4, resultSet.getTime(1));
+          assertEquals(new Time((ms4 % M + M) % M), resultSet.getTime(1));
         }
       } finally {
         statement.execute("drop table if exists timeTest");
@@ -285,8 +289,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     final String insertTime = "insert into datetime values (?, ?, ?)";
     try (Connection connection = init(queryResultFormat)) {
 
-      Assertions.assertFalse(
-          connection.createStatement().execute("alter session set TIMEZONE='UTC'"));
+      assertFalse(connection.createStatement().execute("alter session set TIMEZONE='UTC'"));
 
       try (Statement statement = connection.createStatement()) {
         try {
@@ -306,13 +309,13 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
             try (ResultSet resultSet =
                 statement.executeQuery("select ts::date = d from datetime")) {
-              Assertions.assertTrue(resultSet.next());
-              Assertions.assertTrue(resultSet.getBoolean(1));
+              assertTrue(resultSet.next());
+              assertTrue(resultSet.getBoolean(1));
             }
             try (ResultSet resultSet =
                 statement.executeQuery("select ts::time = tm from datetime")) {
-              Assertions.assertTrue(resultSet.next());
-              Assertions.assertTrue(resultSet.getBoolean(1));
+              assertTrue(resultSet.next());
+              assertTrue(resultSet.getBoolean(1));
             }
           }
         } finally {
@@ -344,7 +347,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
         try (ResultSet resultSet =
             statement.executeQuery("select cola, colb from testBindTimestampTz")) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertThat("integer", resultSet.getInt(1), equalTo(123));
           assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
         }
@@ -369,24 +372,24 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
                 + "('1500-01-01'), ('1600-02-03')");
 
         try (ResultSet resultSet = statement.executeQuery("select * from testOldDate order by d")) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("0001-01-01", resultSet.getString(1));
-          Assertions.assertEquals(Date.valueOf("0001-01-01"), resultSet.getDate(1));
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("1000-01-01", resultSet.getString(1));
-          Assertions.assertEquals(Date.valueOf("1000-01-01"), resultSet.getDate(1));
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("1300-01-01", resultSet.getString(1));
-          Assertions.assertEquals(Date.valueOf("1300-01-01"), resultSet.getDate(1));
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("1400-02-02", resultSet.getString(1));
-          Assertions.assertEquals(Date.valueOf("1400-02-02"), resultSet.getDate(1));
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("1500-01-01", resultSet.getString(1));
-          Assertions.assertEquals(Date.valueOf("1500-01-01"), resultSet.getDate(1));
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("1600-02-03", resultSet.getString(1));
-          Assertions.assertEquals(Date.valueOf("1600-02-03"), resultSet.getDate(1));
+          assertTrue(resultSet.next());
+          assertEquals("0001-01-01", resultSet.getString(1));
+          assertEquals(Date.valueOf("0001-01-01"), resultSet.getDate(1));
+          assertTrue(resultSet.next());
+          assertEquals("1000-01-01", resultSet.getString(1));
+          assertEquals(Date.valueOf("1000-01-01"), resultSet.getDate(1));
+          assertTrue(resultSet.next());
+          assertEquals("1300-01-01", resultSet.getString(1));
+          assertEquals(Date.valueOf("1300-01-01"), resultSet.getDate(1));
+          assertTrue(resultSet.next());
+          assertEquals("1400-02-02", resultSet.getString(1));
+          assertEquals(Date.valueOf("1400-02-02"), resultSet.getDate(1));
+          assertTrue(resultSet.next());
+          assertEquals("1500-01-01", resultSet.getString(1));
+          assertEquals(Date.valueOf("1500-01-01"), resultSet.getDate(1));
+          assertTrue(resultSet.next());
+          assertEquals("1600-02-03", resultSet.getString(1));
+          assertEquals(Date.valueOf("1600-02-03"), resultSet.getDate(1));
         }
       } finally {
         statement.execute("drop table if exists testOldDate");
@@ -404,11 +407,11 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
       String expectedDate2 = "1920-11-11";
       try (ResultSet rs = statement.executeQuery("SELECT '" + expectedDate1 + "'::DATE as D1")) {
         rs.next();
-        Assertions.assertEquals(expectedDate1, rs.getString(1));
+        assertEquals(expectedDate1, rs.getString(1));
       }
       try (ResultSet rs = statement.executeQuery("SELECT '" + expectedDate2 + "'::DATE as D1")) {
         rs.next();
-        Assertions.assertEquals(expectedDate2, rs.getString(1));
+        assertEquals(expectedDate2, rs.getString(1));
       }
     }
   }
@@ -438,48 +441,43 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
           preparedStatement.execute();
           try (ResultSet resultSet = statement.executeQuery("select * from testDateTime")) {
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
 
             // ResultSet.getDate()
-            Assertions.assertEquals(date, resultSet.getDate("COLDATE"));
+            assertEquals(date, resultSet.getDate("COLDATE"));
             try {
               resultSet.getDate("COLTIME");
-              Assertions.fail();
+              fail();
             } catch (SnowflakeSQLException e) {
-              Assertions.assertEquals(
+              assertEquals(
                   (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-              Assertions.assertEquals(
-                  ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
+              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
             }
 
             // ResultSet.getTimestamp()
-            Assertions.assertEquals(
-                new Timestamp(date.getTime()), resultSet.getTimestamp("COLDATE"));
-            Assertions.assertEquals(ts, resultSet.getTimestamp("COLTS"));
-            Assertions.assertEquals(
-                new Timestamp(time.getTime()), resultSet.getTimestamp("COLTIME"));
+            assertEquals(new Timestamp(date.getTime()), resultSet.getTimestamp("COLDATE"));
+            assertEquals(ts, resultSet.getTimestamp("COLTS"));
+            assertEquals(new Timestamp(time.getTime()), resultSet.getTimestamp("COLTIME"));
             try {
               resultSet.getTimestamp("COLSTRING");
-              Assertions.fail();
+              fail();
             } catch (SnowflakeSQLException e) {
-              Assertions.assertEquals(
+              assertEquals(
                   (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-              Assertions.assertEquals(
-                  ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
+              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
             }
 
             // ResultSet.getTime()
             try {
               resultSet.getTime("COLDATE");
-              Assertions.fail();
+              fail();
             } catch (SnowflakeSQLException e) {
-              Assertions.assertEquals(
+              assertEquals(
                   (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-              Assertions.assertEquals(
-                  ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
+              assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
             }
-            Assertions.assertEquals(time, resultSet.getTime("COLTIME"));
-            Assertions.assertEquals(new Time(ts.getTime()), resultSet.getTime("COLTS"));
+            assertEquals(time, resultSet.getTime("COLTIME"));
+            assertEquals(new Time(ts.getTime()), resultSet.getTime("COLTS"));
           }
         }
       } finally {
@@ -502,12 +500,12 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
         try (ResultSet resultSet = statement.executeQuery("select * from testOldTs")) {
 
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
 
           assertThat(resultSet.getTimestamp(1).toString(), equalTo("1582-06-22 17:00:00.0"));
           assertThat(resultSet.getString(1), equalTo("Fri, 22 Jun 1582 17:00:00 Z"));
 
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertThat(resultSet.getTimestamp(1).toString(), equalTo("1000-01-01 17:00:00.0"));
           assertThat(resultSet.getString(1), equalTo("Mon, 01 Jan 1000 17:00:00 Z"));
         }
@@ -537,7 +535,7 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
 
         ResultSet resultSet = statement.executeQuery("select * from testPrepOldTs");
 
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         assertThat(resultSet.getTimestamp(1).toString(), equalTo("0001-01-01 08:00:00.0"));
         assertThat(resultSet.getDate(2).toString(), equalTo("0001-01-01"));
       } finally {

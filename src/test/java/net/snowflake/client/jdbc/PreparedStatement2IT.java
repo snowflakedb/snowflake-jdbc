@@ -7,6 +7,12 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.Sets;
 import java.math.BigDecimal;
@@ -23,7 +29,6 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Set;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // @Category(TestCategoryStatement.class)
@@ -64,7 +69,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           }
           countResult = prepStatement.executeBatch();
           for (int res : countResult) {
-            Assertions.assertEquals(1, res);
+            assertEquals(1, res);
           }
 
           Date[] nonStageResult = new Date[dates.length];
@@ -72,7 +77,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
               statement.executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC")) {
 
             for (int i = 0; i < nonStageResult.length; i++) {
-              Assertions.assertTrue(rsNonStage.next());
+              assertTrue(rsNonStage.next());
               nonStageResult[i] = rsNonStage.getDate(2);
             }
           }
@@ -89,19 +94,19 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           }
           countResult = prepStatement.executeBatch();
           for (int res : countResult) {
-            Assertions.assertEquals(1, res);
+            assertEquals(1, res);
           }
 
           Date[] stageResult = new Date[dates.length];
           try (ResultSet rsStage =
               statement.executeQuery("SELECT * FROM test_prepst_date ORDER BY id ASC")) {
             for (int i = 0; i < stageResult.length; i++) {
-              Assertions.assertTrue(rsStage.next());
+              assertTrue(rsStage.next());
               stageResult[i] = rsStage.getDate(2);
             }
 
             for (int i = 0; i < dates.length; i++) {
-              Assertions.assertEquals(
+              assertEquals(
                   nonStageResult[i],
                   stageResult[i],
                   "Stage binding date should match non-stage binding date");
@@ -130,22 +135,22 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         prepStatement.addBatch();
         prepStatement.executeBatch();
         try (ResultSet resultSet = statement.executeQuery("select * from testBindNull")) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           Date date = resultSet.getDate(1);
-          Assertions.assertNull(date);
-          Assertions.assertTrue(resultSet.wasNull());
+          assertNull(date);
+          assertTrue(resultSet.wasNull());
 
           Time time = resultSet.getTime(2);
-          Assertions.assertNull(time);
-          Assertions.assertTrue(resultSet.wasNull());
+          assertNull(time);
+          assertTrue(resultSet.wasNull());
 
           Timestamp timestamp = resultSet.getTimestamp(3);
-          Assertions.assertNull(timestamp);
-          Assertions.assertTrue(resultSet.wasNull());
+          assertNull(timestamp);
+          assertTrue(resultSet.wasNull());
 
           BigDecimal bg = resultSet.getBigDecimal(4);
-          Assertions.assertNull(bg);
-          Assertions.assertTrue(resultSet.wasNull());
+          assertNull(bg);
+          assertTrue(resultSet.wasNull());
         }
         statement.execute("TRUNCATE table testbindnull");
         prepStatement.setDate(1, null, Calendar.getInstance());
@@ -157,18 +162,18 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         prepStatement.executeBatch();
 
         try (ResultSet resultSet = statement.executeQuery("select * from testBindNull")) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           Date date = resultSet.getDate(1);
-          Assertions.assertNull(date);
-          Assertions.assertTrue(resultSet.wasNull());
+          assertNull(date);
+          assertTrue(resultSet.wasNull());
 
           Time time = resultSet.getTime(2);
-          Assertions.assertNull(time);
-          Assertions.assertTrue(resultSet.wasNull());
+          assertNull(time);
+          assertTrue(resultSet.wasNull());
 
           Timestamp timestamp = resultSet.getTimestamp(3);
-          Assertions.assertNull(timestamp);
-          Assertions.assertTrue(resultSet.wasNull());
+          assertNull(timestamp);
+          assertTrue(resultSet.wasNull());
         }
       }
     }
@@ -217,7 +222,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       for (String testCase : testCases) {
         try (PreparedStatement prepStatement = connection.prepareStatement(testCase)) {
           try (ResultSet resultSet = prepStatement.executeQuery()) {
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             assertThat(resultSet.getString(1), is("Statement executed successfully."));
           }
         }
@@ -230,7 +235,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
     try (Connection connection = init()) {
       try (PreparedStatement prepStatement = connection.prepareStatement("show databases")) {
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
         }
       }
     }
@@ -259,7 +264,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
               connection.prepareStatement("select c1 from t order by c1 limit 1")) {
             Thread.sleep(5000);
             try (ResultSet resultSet = prepStatement.executeQuery()) {
-              Assertions.assertTrue(resultSet.next());
+              assertTrue(resultSet.next());
               assertThat(resultSet.getInt(1), is(1));
             }
           }
@@ -287,8 +292,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           rowcount++;
           valuesReturned.add(rs.getString(1));
         }
-        Assertions.assertEquals(2, rowcount, "Should get back 2 rows");
-        Assertions.assertEquals(valuesReturned, Sets.newHashSet("a", "b"), "");
+        assertEquals(2, rowcount, "Should get back 2 rows");
+        assertEquals(valuesReturned, Sets.newHashSet("a", "b"), "");
       }
     }
   }
@@ -340,7 +345,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         if (result.next()) {
           t1Id = Long.valueOf(result.getString(1));
         }
-        Assertions.assertTrue(t1Id != 0);
+        assertTrue(t1Id != 0);
       }
 
       // Mix of object literal binds and value binds
@@ -360,9 +365,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         try (ResultSet result = pStmt.executeQuery()) {
           // Verify 3 rows have been inserted
           for (int i = 0; i < 3; i++) {
-            Assertions.assertTrue(result.next());
+            assertTrue(result.next());
           }
-          Assertions.assertFalse(result.next());
+          assertFalse(result.next());
         }
       }
       // Alter Table
@@ -382,9 +387,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         try (ResultSet result = pStmt.executeQuery()) {
           // Verify two columns have been created
           for (int i = 0; i < 2; i++) {
-            Assertions.assertTrue(result.next());
+            assertTrue(result.next());
           }
-          Assertions.assertFalse(result.next());
+          assertFalse(result.next());
         }
       }
 
@@ -402,7 +407,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         if (result.next()) {
           t2Id = Long.valueOf(result.getString(1));
         }
-        Assertions.assertTrue(t2Id != 0);
+        assertTrue(t2Id != 0);
       }
 
       // Mix object binds with value binds
@@ -423,9 +428,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         pStmt.setLong(1, t2Id);
         try (ResultSet result = pStmt.executeQuery()) {
           for (int i = 0; i < 3; i++) {
-            Assertions.assertTrue(result.next());
+            assertTrue(result.next());
           }
-          Assertions.assertFalse(result.next());
+          assertFalse(result.next());
         }
       }
 
@@ -441,9 +446,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         pStmt.setInt(3, 1);
         try (ResultSet result = pStmt.executeQuery()) {
           for (int i = 0; i < 2; i++) {
-            Assertions.assertTrue(result.next());
+            assertTrue(result.next());
           }
-          Assertions.assertFalse(result.next());
+          assertFalse(result.next());
         }
       }
 
@@ -466,7 +471,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       // Verify that the tables have been dropped
       stmt.execute("show tables like 'bindobjecttable%'");
       try (ResultSet result = stmt.getResultSet()) {
-        Assertions.assertFalse(result.next());
+        assertFalse(result.next());
       }
     }
   }
@@ -487,7 +492,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           assertThat(count, is(1));
         }
         try (ResultSet resultSet = statement.executeQuery("select * from testbindtstz")) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertThat(resultSet.getString(1), is("2017-11-30 18:17:05.123456789 +0800"));
         }
       } finally {
@@ -525,11 +530,11 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
           try (ResultSet resultSet =
               statement.executeQuery("select * from testbindtstz order by 1 desc")) {
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             assertThat(resultSet.getString(1), is("Thu, 30 Nov 2017 18:17:05 +0800"));
             assertThat(resultSet.getString(2), is("Thu, 30 Nov 2017 18:17:05 Z"));
 
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             assertThat(resultSet.getString(1), is("Wed, 03 May 2017 16:44:42 -0700"));
             assertThat(resultSet.getString(2), is("Wed, 03 May 2017 16:44:42 Z"));
           }
@@ -607,7 +612,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    */
   private void checkResultSetEqual(ResultSet rs1, ResultSet rs2) throws SQLException {
     int columns = rs1.getMetaData().getColumnCount();
-    Assertions.assertEquals(
+    assertEquals(
         columns,
         rs2.getMetaData().getColumnCount(),
         "Resultsets do not match in the number of columns returned");
@@ -617,13 +622,13 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         final Object res1 = rs1.getObject(columnIndex);
         final Object res2 = rs2.getObject(columnIndex);
 
-        Assertions.assertEquals(
+        assertEquals(
             res1,
             res2,
             String.format("%s and %s are not equal values at column %d", res1, res2, columnIndex));
       }
 
-      Assertions.assertEquals(
+      assertEquals(
           rs1.isLast(), rs2.isLast(), "Number of records returned by the results does not match");
     }
   }
@@ -673,13 +678,13 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   @Test
   public void testSnow44393() throws Exception {
     try (Connection con = init()) {
-      Assertions.assertFalse(
+      assertFalse(
           con.createStatement()
               .execute("alter session set timestamp_ntz_output_format='YYYY-MM-DD HH24:MI:SS'"));
       try (PreparedStatement stmt = con.prepareStatement("select to_timestamp_ntz(?, 3)")) {
         stmt.setBigDecimal(1, new BigDecimal("1261440000000"));
         try (ResultSet resultSet = stmt.executeQuery()) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
 
           String res = resultSet.getString(1);
           assertThat(res, is("2009-12-22 00:00:00"));
@@ -711,9 +716,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           stmt.executeBatch();
 
           // evaluate query ids
-          Assertions.assertTrue(stmt.isWrapperFor(SnowflakePreparedStatement.class));
+          assertTrue(stmt.isWrapperFor(SnowflakePreparedStatement.class));
           String qid1 = stmt.unwrap(SnowflakePreparedStatement.class).getQueryID();
-          Assertions.assertNotNull(qid1);
+          assertNotNull(qid1);
         }
 
         // Null CHAR followed by FLOAT. CHAR type is ignored.
@@ -754,7 +759,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           stmt.setObject(2, "test1");
           try {
             stmt.addBatch();
-            Assertions.fail("Must fail");
+            fail("Must fail");
           } catch (SnowflakeSQLException ex) {
             assertThat(
                 "Error code is wrong",
@@ -806,7 +811,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   private void assertException(RunnableWithSQLException runnable, int expectedCode) {
     try {
       runnable.run();
-      Assertions.fail();
+      fail();
     } catch (SQLException e) {
       assertThat(e.getErrorCode(), is(expectedCode));
     }
@@ -824,10 +829,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
       try {
         connection.prepareStatement(
             "select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
-        Assertions.fail("updateable cursor is not supported.");
+        fail("updateable cursor is not supported.");
       } catch (SQLException ex) {
-        Assertions.assertEquals(
-            (int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       }
       connection.prepareStatement(
           "select 1",
@@ -840,10 +844,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
             ResultSet.TYPE_FORWARD_ONLY,
             ResultSet.CONCUR_READ_ONLY,
             ResultSet.HOLD_CURSORS_OVER_COMMIT);
-        Assertions.fail("hold cursor over commit is not supported.");
+        fail("hold cursor over commit is not supported.");
       } catch (SQLException ex) {
-        Assertions.assertEquals(
-            (int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       }
     }
   }

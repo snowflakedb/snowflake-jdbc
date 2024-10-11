@@ -9,6 +9,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.SocketTimeoutException;
 import java.security.cert.CertificateExpiredException;
@@ -22,7 +24,6 @@ import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SFTrustManager;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -101,12 +102,12 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_INJECT_VALIDITY_ERROR, Boolean.TRUE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailOpenProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
       assertThat(ex.getMessage(), httpStatus403Or513());
-      Assertions.assertNull(ex.getCause());
+      assertNull(ex.getCause());
     }
   }
 
@@ -119,7 +120,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_INJECT_VALIDITY_ERROR, Boolean.TRUE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailClosedProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
@@ -139,12 +140,12 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailOpenProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
       assertThat(ex.getMessage(), httpStatus403Or513());
-      Assertions.assertNull(ex.getCause());
+      assertNull(ex.getCause());
     }
   }
 
@@ -159,7 +160,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailClosedProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
@@ -176,12 +177,12 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_INJECT_VALIDITY_ERROR, Boolean.TRUE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPInsecureProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
       assertThat(ex.getMessage(), httpStatus403Or513());
-      Assertions.assertNull(ex.getCause());
+      assertNull(ex.getCause());
     }
   }
 
@@ -191,12 +192,12 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_INVALID_SIGNING_CERT, Boolean.TRUE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailOpenProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
       assertThat(ex.getMessage(), httpStatus403Or513());
-      Assertions.assertNull(ex.getCause());
+      assertNull(ex.getCause());
     }
   }
 
@@ -209,7 +210,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_INVALID_SIGNING_CERT, Boolean.TRUE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailClosedProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
@@ -227,12 +228,12 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_INJECT_UNKNOWN_STATUS, Boolean.TRUE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailOpenProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
       assertThat(ex.getMessage(), httpStatus403Or513());
-      Assertions.assertNull(ex.getCause());
+      assertNull(ex.getCause());
     }
   }
 
@@ -242,7 +243,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     System.setProperty(SFTrustManager.SF_OCSP_TEST_INJECT_UNKNOWN_STATUS, Boolean.TRUE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailClosedProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
@@ -286,12 +287,12 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailOpenProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
       assertThat(ex.getMessage(), httpStatus403Or513());
-      Assertions.assertNull(ex.getCause());
+      assertNull(ex.getCause());
     }
   }
 
@@ -308,11 +309,11 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.TRUE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailOpenProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      Assertions.assertNull(ex.getCause());
+      assertNull(ex.getCause());
     }
   }
 
@@ -325,12 +326,12 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailOpenProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
       assertThat(ex.getMessage(), httpStatus403Or513());
-      Assertions.assertNull(ex.getCause());
+      assertNull(ex.getCause());
     }
   }
 
@@ -344,7 +345,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailClosedProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
@@ -361,12 +362,12 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailOpenProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
       assertThat(ex.getMessage(), httpStatus403Or513());
-      Assertions.assertNull(ex.getCause());
+      assertNull(ex.getCause());
     }
   }
 
@@ -383,7 +384,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_ENABLED, Boolean.FALSE.toString());
     try {
       DriverManager.getConnection(genTestConnectString(), OCSPFailClosedProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
@@ -399,7 +400,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     try {
       DriverManager.getConnection(
           "jdbc:snowflake://expired.badssl.com/", OCSPFailClosedProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(getCause(ex), instanceOf(CertificateExpiredException.class));
@@ -412,7 +413,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     try {
       DriverManager.getConnection(
           "jdbc:snowflake://wrong.host.badssl.com/", OCSPFailClosedProperties());
-      Assertions.fail("should fail");
+      fail("should fail");
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
 

@@ -6,6 +6,13 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.sql.BatchUpdateException;
@@ -22,7 +29,6 @@ import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -45,11 +51,11 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testFetchDirection() throws SQLException {
     try (Statement statement = connection.createStatement()) {
-      Assertions.assertEquals(ResultSet.FETCH_FORWARD, statement.getFetchDirection());
+      assertEquals(ResultSet.FETCH_FORWARD, statement.getFetchDirection());
       try {
         statement.setFetchDirection(ResultSet.FETCH_REVERSE);
       } catch (SQLFeatureNotSupportedException e) {
-        Assertions.assertTrue(true);
+        assertTrue(true);
       }
     }
   }
@@ -58,10 +64,10 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testFetchSize() throws SQLException {
     try (Statement statement = connection.createStatement()) {
-      Assertions.assertEquals(50, statement.getFetchSize());
+      assertEquals(50, statement.getFetchSize());
       statement.setFetchSize(1);
       ResultSet rs = statement.executeQuery("select * from JDBC_STATEMENT");
-      Assertions.assertEquals(1, getSizeOfResultSet(rs));
+      assertEquals(1, getSizeOfResultSet(rs));
     }
   }
 
@@ -69,7 +75,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   public void testMaxRows() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
-      Assertions.assertEquals(0, statement.getMaxRows());
+      assertEquals(0, statement.getMaxRows());
 
       //    statement.setMaxRows(1);
       //    assertEquals(1, statement.getMaxRows());
@@ -91,15 +97,15 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testQueryTimeOut() throws SQLException {
     try (Statement statement = connection.createStatement()) {
-      Assertions.assertEquals(0, statement.getQueryTimeout());
+      assertEquals(0, statement.getQueryTimeout());
       statement.setQueryTimeout(5);
-      Assertions.assertEquals(5, statement.getQueryTimeout());
+      assertEquals(5, statement.getQueryTimeout());
       try {
         statement.executeQuery("select count(*) from table(generator(timeLimit => 100))");
       } catch (SQLException e) {
-        Assertions.assertTrue(true);
-        Assertions.assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
-        Assertions.assertEquals("SQL execution canceled", e.getMessage());
+        assertTrue(true);
+        assertEquals(SqlState.QUERY_CANCELED, e.getSQLState());
+        assertEquals("SQL execution canceled", e.getMessage());
       }
     }
   }
@@ -107,10 +113,10 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testStatementClose() throws SQLException {
     try (Statement statement = connection.createStatement(); ) {
-      Assertions.assertEquals(connection, statement.getConnection());
-      Assertions.assertTrue(!statement.isClosed());
+      assertEquals(connection, statement.getConnection());
+      assertTrue(!statement.isClosed());
       statement.close();
-      Assertions.assertTrue(statement.isClosed());
+      assertTrue(statement.isClosed());
     }
   }
 
@@ -120,21 +126,21 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
 
       String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
       boolean success = statement.execute(sqlSelect);
-      Assertions.assertTrue(success);
+      assertTrue(success);
       String queryID1 = statement.unwrap(SnowflakeStatement.class).getQueryID();
-      Assertions.assertNotNull(queryID1);
+      assertNotNull(queryID1);
 
       try (ResultSet rs = statement.getResultSet()) {
-        Assertions.assertEquals(3, getSizeOfResultSet(rs));
-        Assertions.assertEquals(-1, statement.getUpdateCount());
-        Assertions.assertEquals(-1L, statement.getLargeUpdateCount());
+        assertEquals(3, getSizeOfResultSet(rs));
+        assertEquals(-1, statement.getUpdateCount());
+        assertEquals(-1L, statement.getLargeUpdateCount());
         String queryID2 = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-        Assertions.assertEquals(queryID2, queryID1);
+        assertEquals(queryID2, queryID1);
       }
       try (ResultSet rs = statement.executeQuery(sqlSelect)) {
-        Assertions.assertEquals(3, getSizeOfResultSet(rs));
+        assertEquals(3, getSizeOfResultSet(rs));
         String queryID4 = rs.unwrap(SnowflakeResultSet.class).getQueryID();
-        Assertions.assertNotEquals(queryID4, queryID1);
+        assertNotEquals(queryID4, queryID1);
       }
     }
   }
@@ -149,23 +155,23 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
         int updateCount;
         boolean success;
         updateCount = statement.executeUpdate(insertSQL);
-        Assertions.assertEquals(2, updateCount);
+        assertEquals(2, updateCount);
 
         success = statement.execute(insertSQL);
-        Assertions.assertFalse(success);
-        Assertions.assertEquals(2, statement.getUpdateCount());
-        Assertions.assertEquals(2L, statement.getLargeUpdateCount());
-        Assertions.assertNull(statement.getResultSet());
+        assertFalse(success);
+        assertEquals(2, statement.getUpdateCount());
+        assertEquals(2L, statement.getLargeUpdateCount());
+        assertNull(statement.getResultSet());
 
         try (ResultSet rs = statement.executeQuery("select count(*) from test_insert")) {
-          Assertions.assertTrue(rs.next());
-          Assertions.assertEquals(4, rs.getInt(1));
+          assertTrue(rs.next());
+          assertEquals(4, rs.getInt(1));
         }
 
-        Assertions.assertTrue(statement.execute("select 1"));
+        assertTrue(statement.execute("select 1"));
         try (ResultSet rs0 = statement.getResultSet()) {
-          Assertions.assertTrue(rs0.next());
-          Assertions.assertEquals(rs0.getInt(1), 1);
+          assertTrue(rs0.next());
+          assertEquals(rs0.getInt(1), 1);
         }
       } finally {
         statement.execute("drop table if exists test_insert");
@@ -187,22 +193,22 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
         boolean success;
         updateCount =
             statement.executeUpdate("update test_update set COLB = 'newStr' where COLA = 1");
-        Assertions.assertEquals(1, updateCount);
+        assertEquals(1, updateCount);
 
         success = statement.execute("update test_update set COLB = 'newStr' where COLA = 2");
-        Assertions.assertFalse(success);
-        Assertions.assertEquals(1, statement.getUpdateCount());
-        Assertions.assertEquals(1L, statement.getLargeUpdateCount());
-        Assertions.assertNull(statement.getResultSet());
+        assertFalse(success);
+        assertEquals(1, statement.getUpdateCount());
+        assertEquals(1L, statement.getLargeUpdateCount());
+        assertNull(statement.getResultSet());
 
         updateCount = statement.executeUpdate("delete from test_update where colA = 1");
-        Assertions.assertEquals(1, updateCount);
+        assertEquals(1, updateCount);
 
         success = statement.execute("delete from test_update where colA = 2");
-        Assertions.assertFalse(success);
-        Assertions.assertEquals(1, statement.getUpdateCount());
-        Assertions.assertEquals(1L, statement.getLargeUpdateCount());
-        Assertions.assertNull(statement.getResultSet());
+        assertFalse(success);
+        assertEquals(1, statement.getUpdateCount());
+        assertEquals(1L, statement.getLargeUpdateCount());
+        assertNull(statement.getResultSet());
       } finally {
         statement.execute("drop table if exists test_update");
       }
@@ -228,7 +234,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
 
         int updateCount = statement.executeUpdate(mergeSQL);
 
-        Assertions.assertEquals(1, updateCount);
+        assertEquals(1, updateCount);
       } finally {
         statement.execute("drop table if exists target");
         statement.execute("drop table if exists source");
@@ -248,13 +254,13 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("insert into t values(1)", Statement.NO_GENERATED_KEYS);
       try {
         statement.execute("insert into t values(2)", Statement.RETURN_GENERATED_KEYS);
-        Assertions.fail("no autogenerate key is supported");
+        fail("no autogenerate key is supported");
       } catch (SQLFeatureNotSupportedException ex) {
         // nop
       }
       // empty result
       try (ResultSet rset = statement.getGeneratedKeys()) {
-        Assertions.assertFalse(rset.next());
+        assertFalse(rset.next());
       }
     }
   }
@@ -270,21 +276,21 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
               + "select s1, s2, s3 from source";
 
       try {
-        Assertions.assertFalse(
+        assertFalse(
             statement.execute("create or replace table foo (f1 integer, f2 integer, f3 integer)"));
-        Assertions.assertFalse(
+        assertFalse(
             statement.execute("create or replace table foo1 (f1 integer, f2 integer, f3 integer)"));
-        Assertions.assertFalse(
+        assertFalse(
             statement.execute("create or replace table bar (b1 integer, b2 integer, b3 integer)"));
-        Assertions.assertFalse(
+        assertFalse(
             statement.execute(
                 "create or replace table source(s1 integer, s2 integer, s3 integer)"));
-        Assertions.assertFalse(statement.execute("insert into source values(1, 2, 3)"));
-        Assertions.assertFalse(statement.execute("insert into source values(11, 22, 33)"));
-        Assertions.assertFalse(statement.execute("insert into source values(111, 222, 333)"));
+        assertFalse(statement.execute("insert into source values(1, 2, 3)"));
+        assertFalse(statement.execute("insert into source values(11, 22, 33)"));
+        assertFalse(statement.execute("insert into source values(111, 222, 333)"));
 
         int updateCount = statement.executeUpdate(multiInsertionSQL);
-        Assertions.assertEquals(9, updateCount);
+        assertEquals(9, updateCount);
       } finally {
         statement.execute("drop table if exists foo");
         statement.execute("drop table if exists foo1");
@@ -315,15 +321,14 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
         assertThat(rowCounts[2], is(1));
 
         List<String> batchQueryIDs = statement.unwrap(SnowflakeStatement.class).getBatchQueryIDs();
-        Assertions.assertEquals(3, batchQueryIDs.size());
-        Assertions.assertEquals(
-            statement.unwrap(SnowflakeStatement.class).getQueryID(), batchQueryIDs.get(2));
+        assertEquals(3, batchQueryIDs.size());
+        assertEquals(statement.unwrap(SnowflakeStatement.class).getQueryID(), batchQueryIDs.get(2));
 
         try (ResultSet resultSet =
             statement.executeQuery("select * from test_batch order by b asc")) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt("B"), is(2));
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt("B"), is(7));
           statement.clearBatch();
 
@@ -335,7 +340,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
             statement.addBatch("select * from test_batch_not_exist");
             statement.addBatch("insert into test_batch values('str4', 4)");
             statement.executeBatch();
-            Assertions.fail();
+            fail();
           } catch (BatchUpdateException e) {
             rowCounts = e.getUpdateCounts();
             assertThat(e.getErrorCode(), is(ERROR_CODE_DOMAIN_OBJECT_DOES_NOT_EXIST));
@@ -473,7 +478,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       for (String testCommand : testCommands) {
         try {
           statement.executeUpdate(testCommand);
-          Assertions.fail("TestCommand: " + testCommand + " is expected to be failed to execute");
+          fail("TestCommand: " + testCommand + " is expected to be failed to execute");
         } catch (SQLException e) {
           assertThat(
               testCommand,
@@ -493,20 +498,20 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute(sqlSelect);
 
       try (ResultSet rs = statement.getResultSet()) {
-        Assertions.assertEquals(3, getSizeOfResultSet(rs));
-        Assertions.assertEquals(-1, statement.getUpdateCount());
-        Assertions.assertEquals(-1L, statement.getLargeUpdateCount());
+        assertEquals(3, getSizeOfResultSet(rs));
+        assertEquals(-1, statement.getUpdateCount());
+        assertEquals(-1L, statement.getLargeUpdateCount());
       }
 
       try (ResultSet rs = statement.executeQuery(sqlSelect)) {
-        Assertions.assertEquals(3, getSizeOfResultSet(rs));
+        assertEquals(3, getSizeOfResultSet(rs));
       }
 
       telemetryClient =
           ((SnowflakeStatementV1) statement).connection.getSfSession().getTelemetryClient();
 
       // there should be logs ready to be sent
-      Assertions.assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
+      assertTrue(((TelemetryClient) telemetryClient).bufferSize() > 0);
     }
 
     Telemetry finalTelemetryClient = telemetryClient;
@@ -525,9 +530,9 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
 
       try {
         statement.execute(multiStmtQuery);
-        Assertions.fail("Using a multi-statement query without the parameter set should fail");
+        fail("Using a multi-statement query without the parameter set should fail");
       } catch (SnowflakeSQLException ex) {
-        Assertions.assertEquals(SqlState.FEATURE_NOT_SUPPORTED, ex.getSQLState());
+        assertEquals(SqlState.FEATURE_NOT_SUPPORTED, ex.getSQLState());
       }
     }
   }
@@ -544,15 +549,15 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
               + "  return 'done';\n"
               + "$$");
 
-      Assertions.assertTrue(statement.execute("call SP()"));
+      assertTrue(statement.execute("call SP()"));
       try (ResultSet rs = statement.getResultSet()) {
-        Assertions.assertNotNull(rs);
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals("done", rs.getString(1));
-        Assertions.assertFalse(rs.next());
-        Assertions.assertFalse(statement.getMoreResults());
-        Assertions.assertEquals(-1, statement.getUpdateCount());
-        Assertions.assertEquals(-1L, statement.getLargeUpdateCount());
+        assertNotNull(rs);
+        assertTrue(rs.next());
+        assertEquals("done", rs.getString(1));
+        assertFalse(rs.next());
+        assertFalse(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
+        assertEquals(-1L, statement.getLargeUpdateCount());
       }
     }
   }
@@ -563,10 +568,9 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
       try {
         connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
-        Assertions.fail("updateable cursor is not supported.");
+        fail("updateable cursor is not supported.");
       } catch (SQLException ex) {
-        Assertions.assertEquals(
-            (int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       }
       connection.createStatement(
           ResultSet.TYPE_FORWARD_ONLY,
@@ -577,10 +581,9 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
             ResultSet.TYPE_FORWARD_ONLY,
             ResultSet.CONCUR_READ_ONLY,
             ResultSet.HOLD_CURSORS_OVER_COMMIT);
-        Assertions.fail("hold cursor over commit is not supported.");
+        fail("hold cursor over commit is not supported.");
       } catch (SQLException ex) {
-        Assertions.assertEquals(
-            (int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+        assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       }
     }
   }
@@ -591,13 +594,13 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
       if (statement.isWrapperFor(SnowflakeStatementV1.class)) {
         statement.execute("select 1");
         SnowflakeStatement sfstatement = statement.unwrap(SnowflakeStatement.class);
-        Assertions.assertNotNull(sfstatement.getQueryID());
+        assertNotNull(sfstatement.getQueryID());
       } else {
-        Assertions.fail("should be able to unwrap");
+        fail("should be able to unwrap");
       }
       try {
         statement.unwrap(SnowflakeConnectionV1.class);
-        Assertions.fail("should fail to cast");
+        fail("should fail to cast");
       } catch (SQLException ex) {
         // nop
       }
@@ -607,7 +610,7 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testQueryIdIsNullOnFreshStatement() throws SQLException {
     try (Statement stmt = connection.createStatement()) {
-      Assertions.assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+      assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
     }
   }
 }

@@ -9,6 +9,8 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,7 +22,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Random;
 import java.util.TimeZone;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +48,7 @@ public class LoaderIT extends LoaderBase {
     }
     try {
       loader.finish();
-      Assertions.fail("Should raise and error");
+      fail("Should raise and error");
     } catch (Loader.DataError ex) {
       assertThat("Loader.DataError is raised", true);
     }
@@ -61,7 +62,7 @@ public class LoaderIT extends LoaderBase {
     loaderBefore.start();
     try {
       loaderBefore.finish();
-      Assertions.fail("SQL Error should be raised.");
+      fail("SQL Error should be raised.");
     } catch (Loader.ConnectionError e) {
       assertThat(e.getCause(), instanceOf(SQLException.class));
     }
@@ -73,7 +74,7 @@ public class LoaderIT extends LoaderBase {
     loaderAfter.start();
     try {
       loaderAfter.finish();
-      Assertions.fail("SQL Error should be raised.");
+      fail("SQL Error should be raised.");
     } catch (Loader.ConnectionError e) {
       assertThat(e.getCause(), instanceOf(SQLException.class));
     }
@@ -144,7 +145,7 @@ public class LoaderIT extends LoaderBase {
       try (Statement statement = testConnection.createStatement()) {
         try (ResultSet rs =
             statement.executeQuery(String.format("SELECT c1, c2 FROM %s LIMIT 1", tableName))) {
-          Assertions.assertTrue(rs.next());
+          assertTrue(rs.next());
           Time rsTm = rs.getTime(1);
           Date rsDt = rs.getDate(2);
           assertThat("Time column didn't match", rsTm, equalTo(tm));
@@ -479,7 +480,7 @@ public class LoaderIT extends LoaderBase {
     }
     try {
       loader.finish();
-      Assertions.fail("should raise an exception");
+      fail("should raise an exception");
     } catch (Loader.DataError ex) {
       assertThat(ex.toString(), containsString("INVALID_INTEGER"));
     }

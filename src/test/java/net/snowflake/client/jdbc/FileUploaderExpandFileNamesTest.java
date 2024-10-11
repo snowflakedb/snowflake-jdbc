@@ -4,6 +4,9 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +23,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import net.snowflake.client.core.OCSPMode;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -48,11 +50,11 @@ public class FileUploaderExpandFileNamesTest {
 
     Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations, null);
 
-    Assertions.assertTrue(files.contains(folderName + File.separator + "TestFileA"));
-    Assertions.assertTrue(files.contains(folderName + File.separator + "TestFileB"));
-    Assertions.assertTrue(files.contains(folderName + File.separator + "TestFileC"));
-    Assertions.assertTrue(files.contains(folderName + File.separator + "TestFileD"));
-    Assertions.assertTrue(files.contains(folderName + File.separator + "TestFileE~"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileA"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileB"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileC"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileD"));
+    assertTrue(files.contains(folderName + File.separator + "TestFileE~"));
   }
 
   @Test
@@ -64,8 +66,8 @@ public class FileUploaderExpandFileNamesTest {
     try {
       SnowflakeFileTransferAgent.expandFileNames(locations, null);
     } catch (SnowflakeSQLException err) {
-      Assertions.assertEquals(200007, err.getErrorCode());
-      Assertions.assertEquals("22000", err.getSQLState());
+      assertEquals(200007, err.getErrorCode());
+      assertEquals("22000", err.getSQLState());
     }
     SnowflakeFileTransferAgent.setInjectedFileTransferException(null);
   }
@@ -123,15 +125,15 @@ public class FileUploaderExpandFileNamesTest {
     SnowflakeFileTransferConfig config = builder.build();
 
     // Assert setting fields are in config
-    Assertions.assertEquals(metadata, config.getSnowflakeFileTransferMetadata());
-    Assertions.assertEquals(input, config.getUploadStream());
-    Assertions.assertEquals(OCSPMode.FAIL_CLOSED, config.getOcspMode());
-    Assertions.assertFalse(config.getRequireCompress());
-    Assertions.assertEquals(12345, config.getNetworkTimeoutInMilli());
-    Assertions.assertEquals(props, config.getProxyProperties());
-    Assertions.assertEquals("dummy_prefix", config.getPrefix());
-    Assertions.assertEquals("dummy_dest_file_name", config.getDestFileName());
-    Assertions.assertEquals(expectedThrowCount, throwCount);
+    assertEquals(metadata, config.getSnowflakeFileTransferMetadata());
+    assertEquals(input, config.getUploadStream());
+    assertEquals(OCSPMode.FAIL_CLOSED, config.getOcspMode());
+    assertFalse(config.getRequireCompress());
+    assertEquals(12345, config.getNetworkTimeoutInMilli());
+    assertEquals(props, config.getProxyProperties());
+    assertEquals("dummy_prefix", config.getPrefix());
+    assertEquals("dummy_dest_file_name", config.getDestFileName());
+    assertEquals(expectedThrowCount, throwCount);
   }
 
   /**
@@ -162,7 +164,7 @@ public class FileUploaderExpandFileNamesTest {
                             + id % filePatterns
                             + "-"
                             + UUID.randomUUID());
-                Assertions.assertTrue(file.createNewFile());
+                assertTrue(file.createNewFile());
               } catch (IOException e) {
                 throw new RuntimeException(e);
               }
@@ -196,11 +198,11 @@ public class FileUploaderExpandFileNamesTest {
       futures.add(future);
     }
     executorService.shutdown();
-    Assertions.assertTrue(executorService.awaitTermination(60, TimeUnit.SECONDS));
-    Assertions.assertEquals(filePatterns, futures.size());
+    assertTrue(executorService.awaitTermination(60, TimeUnit.SECONDS));
+    assertEquals(filePatterns, futures.size());
     for (Future<Set<String>> future : futures) {
-      Assertions.assertTrue(future.isDone());
-      Assertions.assertEquals(filesPerPattern, future.get().size());
+      assertTrue(future.isDone());
+      assertEquals(filesPerPattern, future.get().size());
     }
   }
 
@@ -215,6 +217,6 @@ public class FileUploaderExpandFileNamesTest {
 
     Set<String> files = SnowflakeFileTransferAgent.expandFileNames(locations, null);
 
-    Assertions.assertTrue(files.isEmpty());
+    assertTrue(files.isEmpty());
   }
 }

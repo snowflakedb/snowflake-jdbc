@@ -1,6 +1,9 @@
 package net.snowflake.client.jdbc;
 
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -11,7 +14,6 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.core.QueryStatus;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -54,11 +56,11 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
           .atMost(Duration.ofSeconds(60))
           .until(() -> !QueryStatus.isStillRunning(rs.getStatus()));
       // Query should succeed eventually. Assert this is the case.
-      Assertions.assertEquals(QueryStatus.SUCCESS, qs);
+      assertEquals(QueryStatus.SUCCESS, qs);
 
       // assert we get 1 row
-      Assertions.assertTrue(resultSet.next());
-      Assertions.assertFalse(resultSet.next());
+      assertTrue(resultSet.next());
+      assertFalse(resultSet.next());
       logger.fine("Query " + queryIdx + " passed ");
     }
   }
@@ -81,10 +83,10 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   public void testIsValidWithInvalidSession() throws Exception {
     try (Connection connection = getConnection()) {
       // assert that connection starts out valid
-      Assertions.assertTrue(connection.isValid(5));
+      assertTrue(connection.isValid(5));
       Thread.sleep(61000); // sleep 61 seconds to await session expiration time
       // assert that connection is no longer valid after session has expired
-      Assertions.assertFalse(connection.isValid(5));
+      assertFalse(connection.isValid(5));
     }
   }
 }

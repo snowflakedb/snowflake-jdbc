@@ -1,6 +1,7 @@
 package net.snowflake.client.core;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.Test;
 
 public class SFLoginInputTest {
@@ -9,13 +10,13 @@ public class SFLoginInputTest {
   public void testGetHostFromServerUrlWithoutProtocolShouldNotThrow() throws SFException {
     SFLoginInput sfLoginInput = new SFLoginInput();
     sfLoginInput.setServerUrl("host.com:443");
-    Assertions.assertEquals("host.com", sfLoginInput.getHostFromServerUrl());
+    assertEquals("host.com", sfLoginInput.getHostFromServerUrl());
   }
 
   @Test
   public void testGetHostFromServerUrlWithProtocolShouldNotThrow() throws SFException {
     SFLoginInput sfLoginInput = new SFLoginInput();
     sfLoginInput.setServerUrl("https://host.com");
-    Assertions.assertEquals("host.com", sfLoginInput.getHostFromServerUrl());
+    assertEquals("host.com", sfLoginInput.getHostFromServerUrl());
   }
 }

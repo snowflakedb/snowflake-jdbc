@@ -4,6 +4,8 @@
 
 package net.snowflake.client.core.arrow;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +17,6 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.providers.TimezoneProvider;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -105,7 +106,7 @@ public class ArrowResultUtilTest {
     setTimeZone(timezone);
     int scale = 9;
     Timestamp ts = ArrowResultUtil.toJavaTimestamp(cas, scale);
-    Assertions.assertEquals(millisecs, ts.getTime());
-    Assertions.assertEquals(nanos, ts.getNanos());
+    assertEquals(millisecs, ts.getTime());
+    assertEquals(nanos, ts.getNanos());
   }
 }

@@ -3,7 +3,8 @@
  */
 package net.snowflake.client.log;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 
 public class SFLoggerFactoryTest {
@@ -11,6 +12,6 @@ public class SFLoggerFactoryTest {
   @Test
   public void testGetLoggerByNameDefault() {
     SFLogger sflogger = SFLoggerFactory.getLogger("SnowflakeConnectionV1");
-    Assertions.assertTrue(sflogger instanceof JDK14Logger);
+    assertTrue(sflogger instanceof JDK14Logger);
   }
 }

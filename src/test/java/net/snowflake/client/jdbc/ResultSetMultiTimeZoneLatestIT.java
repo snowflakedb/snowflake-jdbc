@@ -1,5 +1,8 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,7 +20,6 @@ import net.snowflake.client.providers.SimpleFormatProvider;
 import net.snowflake.client.providers.SnowflakeArgumentsProvider;
 import net.snowflake.client.providers.TimezoneProvider;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -106,12 +108,10 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
               + timeStringValue
               + "')");
       try (ResultSet rs = statement.executeQuery("select * from SRC_DATE_TIME")) {
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(
-            timestampStringValue.substring(0, length - 6), rs.getTimestamp(1).toString());
-        Assertions.assertEquals(
-            timestampStringValue.substring(0, length - 4), rs.getTimestamp(2).toString());
-        Assertions.assertEquals(timestampStringValue, rs.getTimestamp(3).toString());
+        assertTrue(rs.next());
+        assertEquals(timestampStringValue.substring(0, length - 6), rs.getTimestamp(1).toString());
+        assertEquals(timestampStringValue.substring(0, length - 4), rs.getTimestamp(2).toString());
+        assertEquals(timestampStringValue, rs.getTimestamp(3).toString());
       }
     }
   }
@@ -133,9 +133,9 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
       statement.execute(
           "alter session set TIMESTAMP_TYPE_MAPPING='TIMESTAMP_NTZ'," + "TIMEZONE='Europe/London'");
       try (ResultSet rs = statement.executeQuery("select TIMESTAMP '2011-09-04 00:00:00'")) {
-        Assertions.assertTrue(rs.next());
+        assertTrue(rs.next());
         Timestamp expected = Timestamp.valueOf("2011-09-04 00:00:00");
-        Assertions.assertEquals(expected, rs.getTimestamp(1));
+        assertEquals(expected, rs.getTimestamp(1));
       }
     }
   }
@@ -161,7 +161,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
           statement.executeQuery(
               "SELECT DATE '1970-01-02 00:00:00' as datefield, "
                   + "TIMESTAMP '1970-01-02 00:00:00' as timestampfield")) {
-        Assertions.assertTrue(rs.next());
+        assertTrue(rs.next());
 
         // Set a timezone for results to be returned in and set a format for date and timestamp
         // objects
@@ -172,40 +172,40 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
         // Date object and calendar object should return the same timezone offset with calendar
         Date dateWithZone = rs.getDate(1, cal);
         Timestamp timestampWithZone = rs.getTimestamp(2, cal);
-        Assertions.assertEquals(sdf.format(dateWithZone), sdf.format(timestampWithZone));
+        assertEquals(sdf.format(dateWithZone), sdf.format(timestampWithZone));
 
         // When fetching Date object with getTimestamp versus Timestamp object with getTimestamp,
         // results should match
-        Assertions.assertEquals(rs.getTimestamp(1, cal), rs.getTimestamp(2, cal));
+        assertEquals(rs.getTimestamp(1, cal), rs.getTimestamp(2, cal));
 
         // When fetching Timestamp object with getDate versus Date object with getDate, results
         // should
         // match
-        Assertions.assertEquals(rs.getDate(1, cal), rs.getDate(2, cal));
+        assertEquals(rs.getDate(1, cal), rs.getDate(2, cal));
 
         // getDate() without Calendar offset called on Date type should return the same date with no
         // timezone offset
-        Assertions.assertEquals("1970-01-02 00:00:00", sdf.format(rs.getDate(1)));
+        assertEquals("1970-01-02 00:00:00", sdf.format(rs.getDate(1)));
         // getDate() without Calendar offset called on Timestamp type returns date with timezone
         // offset
-        Assertions.assertEquals("1970-01-02 08:00:00", sdf.format(rs.getDate(2)));
+        assertEquals("1970-01-02 08:00:00", sdf.format(rs.getDate(2)));
 
         // getTimestamp() without Calendar offset called on Timestamp type should return the
         // timezone
         // offset
-        Assertions.assertEquals("1970-01-02 08:00:00", sdf.format(rs.getTimestamp(2)));
+        assertEquals("1970-01-02 08:00:00", sdf.format(rs.getTimestamp(2)));
         // getTimestamp() without Calendar offset called on Date type should not return the timezone
         // offset
-        Assertions.assertEquals("1970-01-02 00:00:00", sdf.format(rs.getTimestamp(1)));
+        assertEquals("1970-01-02 00:00:00", sdf.format(rs.getTimestamp(1)));
       }
       // test that session parameter functions as expected. When false, getDate() has same behavior
       // with or without Calendar input
       statement.execute("alter session set JDBC_FORMAT_DATE_WITH_TIMEZONE=false");
       try (ResultSet rs =
           statement.executeQuery("SELECT DATE '1945-05-10 00:00:00' as datefield")) {
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(rs.getDate(1, cal), rs.getDate(1));
-        Assertions.assertEquals("1945-05-10 00:00:00", sdf.format(rs.getDate(1, cal)));
+        assertTrue(rs.next());
+        assertEquals(rs.getDate(1, cal), rs.getDate(1));
+        assertEquals("1945-05-10 00:00:00", sdf.format(rs.getDate(1, cal)));
       }
     }
   }
@@ -271,73 +271,73 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
         // (with
         // exceptions for getTimestamp() on date and time objects).
         try (ResultSet rs = statement.executeQuery("select * from datetimetypes")) {
-          Assertions.assertTrue(rs.next());
+          assertTrue(rs.next());
           // Assert date has no offset. When flag is false, timestamp_ltz and timestamp_ntz will
           // show
           // offset.
-          Assertions.assertEquals(expectedDate, rs.getDate("COLA").toString());
+          assertEquals(expectedDate, rs.getDate("COLA").toString());
           // always true since timezone_ntz doesn't add time offset
-          Assertions.assertEquals(expectedDate, rs.getDate("COLB").toString());
-          Assertions.assertEquals(expectedDate, rs.getDate("COLC").toString());
+          assertEquals(expectedDate, rs.getDate("COLB").toString());
+          assertEquals(expectedDate, rs.getDate("COLC").toString());
           // cannot getDate() for Time column (ColD)
           // always true since Date objects don't have timezone offsets
-          Assertions.assertEquals(expectedDate, rs.getDate("COLE").toString());
+          assertEquals(expectedDate, rs.getDate("COLE").toString());
 
           // Assert timestamp has no offset. When flag is false, timestamp_ltz and timestamp_ntz
           // will
           // show
           // offset.
-          Assertions.assertEquals(expectedTimestamp, rs.getTimestamp("COLA").toString());
+          assertEquals(expectedTimestamp, rs.getTimestamp("COLA").toString());
           // always true since timezone_ntz doesn't add time offset
-          Assertions.assertEquals(expectedTimestamp, rs.getTimestamp("COLB").toString());
-          Assertions.assertEquals(expectedTimestamp, rs.getTimestamp("COLC").toString());
+          assertEquals(expectedTimestamp, rs.getTimestamp("COLB").toString());
+          assertEquals(expectedTimestamp, rs.getTimestamp("COLC").toString());
           // Getting timestamp from Time column will default to epoch start date so date portion is
           // different than input date of the timestamp
-          Assertions.assertEquals("1970-01-01 17:17:17.0", rs.getTimestamp("COLD").toString());
+          assertEquals("1970-01-01 17:17:17.0", rs.getTimestamp("COLD").toString());
           // Getting timestamp from Date column will default to wallclock time of 0 so time portion
           // is
           // different than input time of the timestamp
-          Assertions.assertEquals("2019-01-01 00:00:00.0", rs.getTimestamp("COLE").toString());
+          assertEquals("2019-01-01 00:00:00.0", rs.getTimestamp("COLE").toString());
 
           // Assert time has no offset. When flag is false, timestamp_ltz and timestamp_ntz will
           // show
           // offset.
-          Assertions.assertEquals(expectedTime, rs.getTime("COLA").toString());
-          Assertions.assertEquals(expectedTime, rs.getTime("COLB").toString());
-          Assertions.assertEquals(expectedTime, rs.getTime("COLC").toString());
-          Assertions.assertEquals(expectedTime, rs.getTime("COLD").toString());
+          assertEquals(expectedTime, rs.getTime("COLA").toString());
+          assertEquals(expectedTime, rs.getTime("COLB").toString());
+          assertEquals(expectedTime, rs.getTime("COLC").toString());
+          assertEquals(expectedTime, rs.getTime("COLD").toString());
           // Cannot getTime() for Date column (colE)
 
-          Assertions.assertTrue(rs.next());
+          assertTrue(rs.next());
           // Assert date has no offset. Offset will never be seen regardless of flag because
           // 01:01:33
           // is
           // too early for any timezone to round it to the next day.
-          Assertions.assertEquals(expectedDate2, rs.getDate("COLA").toString());
-          Assertions.assertEquals(expectedDate2, rs.getDate("COLB").toString());
-          Assertions.assertEquals(expectedDate2, rs.getDate("COLC").toString());
+          assertEquals(expectedDate2, rs.getDate("COLA").toString());
+          assertEquals(expectedDate2, rs.getDate("COLB").toString());
+          assertEquals(expectedDate2, rs.getDate("COLC").toString());
           // cannot getDate() for Time column (ColD)
-          Assertions.assertEquals(expectedDate2, rs.getDate("COLE").toString());
+          assertEquals(expectedDate2, rs.getDate("COLE").toString());
 
           // Assert timestamp has no offset. When flag is false, timestamp_ltz and timestamp_ntz
           // will
           // show
           // offset.
-          Assertions.assertEquals(expectedTimestamp2, rs.getTimestamp("COLA").toString());
-          Assertions.assertEquals(expectedTimestamp2, rs.getTimestamp("COLB").toString());
-          Assertions.assertEquals(expectedTimestamp2, rs.getTimestamp("COLC").toString());
+          assertEquals(expectedTimestamp2, rs.getTimestamp("COLA").toString());
+          assertEquals(expectedTimestamp2, rs.getTimestamp("COLB").toString());
+          assertEquals(expectedTimestamp2, rs.getTimestamp("COLC").toString());
           // Getting timestamp from Time column will default to epoch start date
-          Assertions.assertEquals("1970-01-01 01:01:33.0", rs.getTimestamp("COLD").toString());
+          assertEquals("1970-01-01 01:01:33.0", rs.getTimestamp("COLD").toString());
           // Getting timestamp from Date column will default to wallclock time of 0
-          Assertions.assertEquals("1943-12-31 00:00:00.0", rs.getTimestamp("COLE").toString());
+          assertEquals("1943-12-31 00:00:00.0", rs.getTimestamp("COLE").toString());
 
           // Assert time has no offset. When flag is false, timestamp_ltz and timestamp_ntz will
           // show
           // offset.
-          Assertions.assertEquals(expectedTime2, rs.getTime("COLA").toString());
-          Assertions.assertEquals(expectedTime2, rs.getTime("COLB").toString());
-          Assertions.assertEquals(expectedTime2, rs.getTime("COLC").toString());
-          Assertions.assertEquals(expectedTime2, rs.getTime("COLD").toString());
+          assertEquals(expectedTime2, rs.getTime("COLA").toString());
+          assertEquals(expectedTime2, rs.getTime("COLB").toString());
+          assertEquals(expectedTime2, rs.getTime("COLC").toString());
+          assertEquals(expectedTime2, rs.getTime("COLD").toString());
           // Cannot getTime() for Date column (colE)
         }
         // Test special case for timestamp_tz (offset added)
@@ -353,19 +353,19 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
           prepSt.execute();
 
           try (ResultSet rs = statement.executeQuery("select * from tabletz")) {
-            Assertions.assertTrue(rs.next());
+            assertTrue(rs.next());
             // Assert timestamp is displayed with no offset when flag is true. Timestamp should look
             // identical to inserted value
-            Assertions.assertEquals(expectedTimestamp, rs.getTimestamp("COLA").toString());
+            assertEquals(expectedTimestamp, rs.getTimestamp("COLA").toString());
             // Time value looks identical to the time portion of inserted timestamp_tz value
-            Assertions.assertEquals(expectedTime, rs.getTime("COLA").toString());
+            assertEquals(expectedTime, rs.getTime("COLA").toString());
             // Date value looks identical to the date portion of inserted timestamp_tz value
-            Assertions.assertEquals(expectedDate, rs.getDate("COLA").toString());
-            Assertions.assertTrue(rs.next());
+            assertEquals(expectedDate, rs.getDate("COLA").toString());
+            assertTrue(rs.next());
             // Test that the same results occur for 2nd timestamp_tz value
-            Assertions.assertEquals(expectedTimestamp2, rs.getTimestamp("COLA").toString());
-            Assertions.assertEquals(expectedTime2, rs.getTime("COLA").toString());
-            Assertions.assertEquals(expectedDate2, rs.getDate("COLA").toString());
+            assertEquals(expectedTimestamp2, rs.getTimestamp("COLA").toString());
+            assertEquals(expectedTime2, rs.getTime("COLA").toString());
+            assertEquals(expectedDate2, rs.getDate("COLA").toString());
           }
         }
       } finally {

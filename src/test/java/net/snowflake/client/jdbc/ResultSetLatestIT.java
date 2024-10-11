@@ -6,6 +6,12 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.TestUtil.expectSnowflakeLoggedFeatureNotSupportedException;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.lang.reflect.Field;
@@ -50,7 +56,6 @@ import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -101,9 +106,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
           // Result closure should catch InterruptedException and throw a SQLException after its
           // caught
         }
-        Assertions.fail("Exception should have been thrown");
+        fail("Exception should have been thrown");
       } catch (SQLException ex) {
-        Assertions.assertEquals((int) ErrorCode.INTERRUPTED.getMessageCode(), ex.getErrorCode());
+        assertEquals((int) ErrorCode.INTERRUPTED.getMessageCode(), ex.getErrorCode());
         // Assert all memory was released
         assertThat(
             "closing statement didn't release memory allocated for result",
@@ -145,7 +150,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       // hanging
       for (int i = 0; i < stmtCount; i++) {
         rsList.get(i).next();
-        Assertions.assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", rsList.get(i).getString(1)));
+        assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", rsList.get(i).getString(1)));
         rsList.get(i).close();
       }
       // set memory limit back to default invalid value so it does not get used
@@ -183,7 +188,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
           for (int j = 0; j < rowCount / 2; j++) {
             resultSet.next();
           }
-          Assertions.assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", resultSet.getString(1)));
+          assertTrue(Pattern.matches("[a-zA-Z0-9]{100}", resultSet.getString(1)));
         }
       }
       // reset retry to MAX_NUM_OF_RETRY, which is 10
@@ -223,48 +228,46 @@ public class ResultSetLatestIT extends ResultSet0IT {
     // No result set has been downloaded from server so no chunk downloader metrics have been
     // collected
     // Logs should contain 1 item: the data about the getColumns() parameters
-    Assertions.assertEquals(logs.size(), 1);
+    assertEquals(logs.size(), 1);
     // Assert the log is of type client_metadata_api_metrics
-    Assertions.assertEquals(
+    assertEquals(
         logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
         TelemetryField.METADATA_METRICS.toString());
     // Assert function name and params match and that query id exists
-    Assertions.assertEquals(
-        logs.get(0).getMessage().get("function_name").textValue(), "getColumns");
+    assertEquals(logs.get(0).getMessage().get("function_name").textValue(), "getColumns");
     TestUtil.assertValidQueryId(logs.get(0).getMessage().get("query_id").textValue());
     JsonNode parameterValues = logs.get(0).getMessage().get("function_parameters");
-    Assertions.assertEquals(parameterValues.get("catalog").textValue(), "fakecatalog");
-    Assertions.assertEquals(parameterValues.get("schema").textValue(), "fakeschema");
-    Assertions.assertNull(parameterValues.get("general_name_pattern").textValue());
-    Assertions.assertNull(parameterValues.get("specific_name_pattern").textValue());
+    assertEquals(parameterValues.get("catalog").textValue(), "fakecatalog");
+    assertEquals(parameterValues.get("schema").textValue(), "fakeschema");
+    assertNull(parameterValues.get("general_name_pattern").textValue());
+    assertNull(parameterValues.get("specific_name_pattern").textValue());
 
     // send data to clear log for next test
     telemetry.sendBatchAsync().get();
-    Assertions.assertEquals(0, ((TelemetryClient) telemetry).logBuffer().size());
+    assertEquals(0, ((TelemetryClient) telemetry).logBuffer().size());
 
     String catalog = connection.getCatalog();
     String schema = connection.getSchema();
     metadata.getColumns(catalog, schema, null, null);
     logs = ((TelemetryClient) telemetry).logBuffer();
-    Assertions.assertEquals(logs.size(), 2);
+    assertEquals(logs.size(), 2);
     // first item in log buffer is metrics on time to consume first result set chunk
-    Assertions.assertEquals(
+    assertEquals(
         logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
         TelemetryField.TIME_CONSUME_FIRST_RESULT.toString());
     // second item in log buffer is metrics on getProcedureColumns() parameters
     // Assert the log is of type client_metadata_api_metrics
-    Assertions.assertEquals(
+    assertEquals(
         logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(),
         TelemetryField.METADATA_METRICS.toString());
     // Assert function name and params match and that query id exists
-    Assertions.assertEquals(
-        logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
+    assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
     TestUtil.assertValidQueryId(logs.get(1).getMessage().get("query_id").textValue());
     parameterValues = logs.get(1).getMessage().get("function_parameters");
-    Assertions.assertEquals(parameterValues.get("catalog").textValue(), catalog);
-    Assertions.assertEquals(parameterValues.get("schema").textValue(), schema);
-    Assertions.assertNull(parameterValues.get("general_name_pattern").textValue());
-    Assertions.assertNull(parameterValues.get("specific_name_pattern").textValue());
+    assertEquals(parameterValues.get("catalog").textValue(), catalog);
+    assertEquals(parameterValues.get("schema").textValue(), schema);
+    assertNull(parameterValues.get("general_name_pattern").textValue());
+    assertNull(parameterValues.get("specific_name_pattern").textValue());
   }
 
   /**
@@ -281,7 +284,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       statement.execute("insert into JDBC_NULL_CHARSTREAM values(NULL)");
       try (ResultSet rs = statement.executeQuery("select * from JDBC_NULL_CHARSTREAM")) {
         rs.next();
-        Assertions.assertNull(rs.getCharacterStream(1));
+        assertNull(rs.getCharacterStream(1));
       }
     }
   }
@@ -304,7 +307,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       while (resultSet.next()) {
         ++cnt;
       }
-      Assertions.assertTrue(cnt >= 0);
+      assertTrue(cnt >= 0);
       Telemetry telemetry =
           connection.unwrap(SnowflakeConnectionV1.class).getSfSession().getTelemetryClient();
       LinkedList<TelemetryData> logs = ((TelemetryClient) telemetry).logBuffer();
@@ -354,36 +357,36 @@ public class ResultSetLatestIT extends ResultSet0IT {
         statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
         ResultSet resultSet = statement.executeQuery("select * from test_rsmd");
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-        Assertions.assertEquals(
+        assertEquals(
             params.get("database").toUpperCase(),
             resultSetMetaData.getCatalogName(1).toUpperCase());
-        Assertions.assertEquals(
+        assertEquals(
             params.get("schema").toUpperCase(), resultSetMetaData.getSchemaName(1).toUpperCase());
-        Assertions.assertEquals("TEST_RSMD", resultSetMetaData.getTableName(1));
-        Assertions.assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
-        Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
-        Assertions.assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
-        Assertions.assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
-        Assertions.assertEquals("COLA", resultSetMetaData.getColumnName(1));
-        Assertions.assertEquals(3, resultSetMetaData.getColumnType(1));
-        Assertions.assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
-        Assertions.assertEquals(20, resultSetMetaData.getPrecision(1));
-        Assertions.assertEquals(5, resultSetMetaData.getScale(1));
-        Assertions.assertFalse(resultSetMetaData.isAutoIncrement(1));
-        Assertions.assertFalse(resultSetMetaData.isCaseSensitive(1));
-        Assertions.assertFalse(resultSetMetaData.isCurrency(1));
-        Assertions.assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-        Assertions.assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
-        Assertions.assertTrue(resultSetMetaData.isReadOnly(1));
-        Assertions.assertTrue(resultSetMetaData.isSearchable(1));
-        Assertions.assertTrue(resultSetMetaData.isSigned(1));
+        assertEquals("TEST_RSMD", resultSetMetaData.getTableName(1));
+        assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
+        assertEquals(2, resultSetMetaData.getColumnCount());
+        assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
+        assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
+        assertEquals("COLA", resultSetMetaData.getColumnName(1));
+        assertEquals(3, resultSetMetaData.getColumnType(1));
+        assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
+        assertEquals(20, resultSetMetaData.getPrecision(1));
+        assertEquals(5, resultSetMetaData.getScale(1));
+        assertFalse(resultSetMetaData.isAutoIncrement(1));
+        assertFalse(resultSetMetaData.isCaseSensitive(1));
+        assertFalse(resultSetMetaData.isCurrency(1));
+        assertFalse(resultSetMetaData.isDefinitelyWritable(1));
+        assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
+        assertTrue(resultSetMetaData.isReadOnly(1));
+        assertTrue(resultSetMetaData.isSearchable(1));
+        assertTrue(resultSetMetaData.isSigned(1));
         SnowflakeResultSetMetaData secretMetaData =
             resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
         List<String> colNames = secretMetaData.getColumnNames();
-        Assertions.assertEquals("COLA", colNames.get(0));
-        Assertions.assertEquals("COLB", colNames.get(1));
-        Assertions.assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
-        Assertions.assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
+        assertEquals("COLA", colNames.get(0));
+        assertEquals("COLB", colNames.get(1));
+        assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
+        assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
         TestUtil.assertValidQueryId(secretMetaData.getQueryID());
       } finally {
         statement.execute("drop table if exists test_rsmd");
@@ -402,102 +405,102 @@ public class ResultSetLatestIT extends ResultSet0IT {
     try (Statement statement = createStatement(queryResultFormat);
         // the only function that returns ResultSetV1.emptyResultSet()
         ResultSet rs = statement.getGeneratedKeys()) {
-      Assertions.assertFalse(rs.next());
-      Assertions.assertFalse(rs.isClosed());
-      Assertions.assertEquals(0, rs.getInt(1));
-      Assertions.assertEquals(0, rs.getInt("col1"));
-      Assertions.assertEquals(0L, rs.getLong(2));
-      Assertions.assertEquals(0L, rs.getLong("col2"));
-      Assertions.assertEquals(0, rs.getShort(3));
-      Assertions.assertEquals(0, rs.getShort("col3"));
-      Assertions.assertEquals("", rs.getString(4));
-      Assertions.assertEquals("", rs.getString("col4"));
-      Assertions.assertEquals(0, rs.getDouble(5), 0);
-      Assertions.assertEquals(0, rs.getDouble("col5"), 0);
-      Assertions.assertEquals(0, rs.getFloat(6), 0);
-      Assertions.assertEquals(0, rs.getFloat("col6"), 0);
-      Assertions.assertEquals(false, rs.getBoolean(7));
-      Assertions.assertEquals(false, rs.getBoolean("col7"));
-      Assertions.assertEquals((byte) 0, rs.getByte(8));
-      Assertions.assertEquals((byte) 0, rs.getByte("col8"));
-      Assertions.assertEquals(null, rs.getBinaryStream(9));
-      Assertions.assertEquals(null, rs.getBinaryStream("col9"));
-      Assertions.assertEquals(null, rs.getDate(10));
-      Assertions.assertEquals(null, rs.getDate(10, new FakeCalendar()));
-      Assertions.assertEquals(null, rs.getDate("col10"));
-      Assertions.assertEquals(null, rs.getDate("col10", new FakeCalendar()));
-      Assertions.assertEquals(null, rs.getTime(11));
-      Assertions.assertEquals(null, rs.getTime(11, new FakeCalendar()));
-      Assertions.assertEquals(null, rs.getTime("col11"));
-      Assertions.assertEquals(null, rs.getTime("col11", new FakeCalendar()));
-      Assertions.assertEquals(null, rs.getTimestamp(12));
-      Assertions.assertEquals(null, rs.getTimestamp(12, new FakeCalendar()));
-      Assertions.assertEquals(null, rs.getTimestamp("col12"));
-      Assertions.assertEquals(null, rs.getTimestamp("col12", new FakeCalendar()));
-      Assertions.assertEquals(null, rs.getDate(13));
-      Assertions.assertEquals(null, rs.getDate("col13"));
-      Assertions.assertEquals(null, rs.getAsciiStream(14));
-      Assertions.assertEquals(null, rs.getAsciiStream("col14"));
-      Assertions.assertArrayEquals(new byte[0], rs.getBytes(15));
-      Assertions.assertArrayEquals(new byte[0], rs.getBytes("col15"));
-      Assertions.assertNull(rs.getBigDecimal(16));
-      Assertions.assertNull(rs.getBigDecimal(16, 38));
-      Assertions.assertNull(rs.getBigDecimal("col16"));
-      Assertions.assertNull(rs.getBigDecimal("col16", 38));
-      Assertions.assertNull(rs.getRef(17));
-      Assertions.assertNull(rs.getRef("col17"));
-      Assertions.assertNull(rs.getArray(18));
-      Assertions.assertNull(rs.getArray("col18"));
-      Assertions.assertNull(rs.getBlob(19));
-      Assertions.assertNull(rs.getBlob("col19"));
-      Assertions.assertNull(rs.getClob(20));
-      Assertions.assertNull(rs.getClob("col20"));
-      Assertions.assertEquals(0, rs.findColumn("col1"));
-      Assertions.assertNull(rs.getUnicodeStream(21));
-      Assertions.assertNull(rs.getUnicodeStream("col21"));
-      Assertions.assertNull(rs.getURL(22));
-      Assertions.assertNull(rs.getURL("col22"));
-      Assertions.assertNull(rs.getObject(23));
-      Assertions.assertNull(rs.getObject("col24"));
-      Assertions.assertNull(rs.getObject(23, SnowflakeResultSetV1.class));
-      Assertions.assertNull(rs.getObject("col23", SnowflakeResultSetV1.class));
-      Assertions.assertNull(rs.getNString(25));
-      Assertions.assertNull(rs.getNString("col25"));
-      Assertions.assertNull(rs.getNClob(26));
-      Assertions.assertNull(rs.getNClob("col26"));
-      Assertions.assertNull(rs.getNCharacterStream(27));
-      Assertions.assertNull(rs.getNCharacterStream("col27"));
-      Assertions.assertNull(rs.getCharacterStream(28));
-      Assertions.assertNull(rs.getCharacterStream("col28"));
-      Assertions.assertNull(rs.getSQLXML(29));
-      Assertions.assertNull(rs.getSQLXML("col29"));
-      Assertions.assertNull(rs.getStatement());
-      Assertions.assertNull(rs.getWarnings());
-      Assertions.assertNull(rs.getCursorName());
-      Assertions.assertNull(rs.getMetaData());
-      Assertions.assertNull(rs.getRowId(1));
-      Assertions.assertNull(rs.getRowId("col1"));
-      Assertions.assertEquals(0, rs.getRow());
-      Assertions.assertEquals(0, rs.getFetchDirection());
-      Assertions.assertEquals(0, rs.getFetchSize());
-      Assertions.assertEquals(0, rs.getType());
-      Assertions.assertEquals(0, rs.getConcurrency());
-      Assertions.assertEquals(0, rs.getHoldability());
-      Assertions.assertNull(rs.unwrap(SnowflakeResultSetV1.class));
-      Assertions.assertFalse(rs.isWrapperFor(SnowflakeResultSetV1.class));
-      Assertions.assertFalse(rs.wasNull());
-      Assertions.assertFalse(rs.isFirst());
-      Assertions.assertFalse(rs.isBeforeFirst());
-      Assertions.assertFalse(rs.isLast());
-      Assertions.assertFalse(rs.isAfterLast());
-      Assertions.assertFalse(rs.first());
-      Assertions.assertFalse(rs.last());
-      Assertions.assertFalse(rs.previous());
-      Assertions.assertFalse(rs.rowUpdated());
-      Assertions.assertFalse(rs.rowInserted());
-      Assertions.assertFalse(rs.rowDeleted());
-      Assertions.assertFalse(rs.absolute(1));
-      Assertions.assertFalse(rs.relative(1));
+      assertFalse(rs.next());
+      assertFalse(rs.isClosed());
+      assertEquals(0, rs.getInt(1));
+      assertEquals(0, rs.getInt("col1"));
+      assertEquals(0L, rs.getLong(2));
+      assertEquals(0L, rs.getLong("col2"));
+      assertEquals(0, rs.getShort(3));
+      assertEquals(0, rs.getShort("col3"));
+      assertEquals("", rs.getString(4));
+      assertEquals("", rs.getString("col4"));
+      assertEquals(0, rs.getDouble(5), 0);
+      assertEquals(0, rs.getDouble("col5"), 0);
+      assertEquals(0, rs.getFloat(6), 0);
+      assertEquals(0, rs.getFloat("col6"), 0);
+      assertEquals(false, rs.getBoolean(7));
+      assertEquals(false, rs.getBoolean("col7"));
+      assertEquals((byte) 0, rs.getByte(8));
+      assertEquals((byte) 0, rs.getByte("col8"));
+      assertEquals(null, rs.getBinaryStream(9));
+      assertEquals(null, rs.getBinaryStream("col9"));
+      assertEquals(null, rs.getDate(10));
+      assertEquals(null, rs.getDate(10, new FakeCalendar()));
+      assertEquals(null, rs.getDate("col10"));
+      assertEquals(null, rs.getDate("col10", new FakeCalendar()));
+      assertEquals(null, rs.getTime(11));
+      assertEquals(null, rs.getTime(11, new FakeCalendar()));
+      assertEquals(null, rs.getTime("col11"));
+      assertEquals(null, rs.getTime("col11", new FakeCalendar()));
+      assertEquals(null, rs.getTimestamp(12));
+      assertEquals(null, rs.getTimestamp(12, new FakeCalendar()));
+      assertEquals(null, rs.getTimestamp("col12"));
+      assertEquals(null, rs.getTimestamp("col12", new FakeCalendar()));
+      assertEquals(null, rs.getDate(13));
+      assertEquals(null, rs.getDate("col13"));
+      assertEquals(null, rs.getAsciiStream(14));
+      assertEquals(null, rs.getAsciiStream("col14"));
+      assertArrayEquals(new byte[0], rs.getBytes(15));
+      assertArrayEquals(new byte[0], rs.getBytes("col15"));
+      assertNull(rs.getBigDecimal(16));
+      assertNull(rs.getBigDecimal(16, 38));
+      assertNull(rs.getBigDecimal("col16"));
+      assertNull(rs.getBigDecimal("col16", 38));
+      assertNull(rs.getRef(17));
+      assertNull(rs.getRef("col17"));
+      assertNull(rs.getArray(18));
+      assertNull(rs.getArray("col18"));
+      assertNull(rs.getBlob(19));
+      assertNull(rs.getBlob("col19"));
+      assertNull(rs.getClob(20));
+      assertNull(rs.getClob("col20"));
+      assertEquals(0, rs.findColumn("col1"));
+      assertNull(rs.getUnicodeStream(21));
+      assertNull(rs.getUnicodeStream("col21"));
+      assertNull(rs.getURL(22));
+      assertNull(rs.getURL("col22"));
+      assertNull(rs.getObject(23));
+      assertNull(rs.getObject("col24"));
+      assertNull(rs.getObject(23, SnowflakeResultSetV1.class));
+      assertNull(rs.getObject("col23", SnowflakeResultSetV1.class));
+      assertNull(rs.getNString(25));
+      assertNull(rs.getNString("col25"));
+      assertNull(rs.getNClob(26));
+      assertNull(rs.getNClob("col26"));
+      assertNull(rs.getNCharacterStream(27));
+      assertNull(rs.getNCharacterStream("col27"));
+      assertNull(rs.getCharacterStream(28));
+      assertNull(rs.getCharacterStream("col28"));
+      assertNull(rs.getSQLXML(29));
+      assertNull(rs.getSQLXML("col29"));
+      assertNull(rs.getStatement());
+      assertNull(rs.getWarnings());
+      assertNull(rs.getCursorName());
+      assertNull(rs.getMetaData());
+      assertNull(rs.getRowId(1));
+      assertNull(rs.getRowId("col1"));
+      assertEquals(0, rs.getRow());
+      assertEquals(0, rs.getFetchDirection());
+      assertEquals(0, rs.getFetchSize());
+      assertEquals(0, rs.getType());
+      assertEquals(0, rs.getConcurrency());
+      assertEquals(0, rs.getHoldability());
+      assertNull(rs.unwrap(SnowflakeResultSetV1.class));
+      assertFalse(rs.isWrapperFor(SnowflakeResultSetV1.class));
+      assertFalse(rs.wasNull());
+      assertFalse(rs.isFirst());
+      assertFalse(rs.isBeforeFirst());
+      assertFalse(rs.isLast());
+      assertFalse(rs.isAfterLast());
+      assertFalse(rs.first());
+      assertFalse(rs.last());
+      assertFalse(rs.previous());
+      assertFalse(rs.rowUpdated());
+      assertFalse(rs.rowInserted());
+      assertFalse(rs.rowDeleted());
+      assertFalse(rs.absolute(1));
+      assertFalse(rs.relative(1));
     }
   }
 
@@ -510,31 +513,31 @@ public class ResultSetLatestIT extends ResultSet0IT {
   @ArgumentsSource(SimpleFormatProvider.class)
   public void testBytesCrossTypeTests(String queryResultFormat) throws Exception {
     try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
-      Assertions.assertTrue(resultSet.next());
+      assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
-        Assertions.assertArrayEquals(null, resultSet.getBytes(i));
+        assertArrayEquals(null, resultSet.getBytes(i));
       }
-      Assertions.assertTrue(resultSet.next());
-      Assertions.assertArrayEquals(intToByteArray(2), resultSet.getBytes(1));
-      Assertions.assertArrayEquals(intToByteArray(5), resultSet.getBytes(2));
-      Assertions.assertArrayEquals(floatToByteArray(3.5f), resultSet.getBytes(3));
-      Assertions.assertArrayEquals(new byte[] {1}, resultSet.getBytes(4));
-      Assertions.assertArrayEquals(new byte[] {(byte) '1'}, resultSet.getBytes(5));
-      Assertions.assertArrayEquals("1".getBytes(), resultSet.getBytes(6));
+      assertTrue(resultSet.next());
+      assertArrayEquals(intToByteArray(2), resultSet.getBytes(1));
+      assertArrayEquals(intToByteArray(5), resultSet.getBytes(2));
+      assertArrayEquals(floatToByteArray(3.5f), resultSet.getBytes(3));
+      assertArrayEquals(new byte[] {1}, resultSet.getBytes(4));
+      assertArrayEquals(new byte[] {(byte) '1'}, resultSet.getBytes(5));
+      assertArrayEquals("1".getBytes(), resultSet.getBytes(6));
 
       for (int i = 7; i < 12; i++) {
         try {
           resultSet.getBytes(i);
-          Assertions.fail("Failing on " + i);
+          fail("Failing on " + i);
         } catch (SQLException ex) {
-          Assertions.assertEquals(200038, ex.getErrorCode());
+          assertEquals(200038, ex.getErrorCode());
         }
       }
 
       byte[] decoded = SFBinary.fromHex("48454C4C4F").getBytes();
 
-      Assertions.assertArrayEquals(decoded, resultSet.getBytes(12));
+      assertArrayEquals(decoded, resultSet.getBytes(12));
     }
   }
 
@@ -552,7 +555,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
               + "\\t' from table(generator(rowcount=>10000))";
 
       try (ResultSet resultSet = statement.executeQuery(query)) {
-        Assertions.assertTrue(resultSet.next()); // should finish successfully
+        assertTrue(resultSet.next()); // should finish successfully
       }
 
       try {
@@ -564,8 +567,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
             // get
             // result from the first chunk downloader
             while (resultSet.next()) {}
-            Assertions.fail(
-                "Should not reach here. Last next() command is supposed to throw an exception");
+            fail("Should not reach here. Last next() command is supposed to throw an exception");
           } catch (SnowflakeSQLException ex) {
             // pass, do nothing
           }
@@ -590,9 +592,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
       };
       for (int i = 0; i < extremeNumbers.length; i++) {
         try (ResultSet resultSet = statement.executeQuery("select " + extremeNumbers[i])) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(Types.BIGINT, resultSet.getMetaData().getColumnType(1));
-          Assertions.assertEquals(new BigDecimal(extremeNumbers[i]), resultSet.getObject(1));
+          assertTrue(resultSet.next());
+          assertEquals(Types.BIGINT, resultSet.getMetaData().getColumnType(1));
+          assertEquals(new BigDecimal(extremeNumbers[i]), resultSet.getObject(1));
         }
       }
     }
@@ -627,13 +629,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
         preparedStatement.executeBatch();
 
         try (ResultSet resultSet = statement.executeQuery("select * from test_get")) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(null, resultSet.getBigDecimal(1, 5));
-          Assertions.assertEquals(null, resultSet.getBigDecimal("COLA", 5));
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(
-              bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal(1, 5));
-          Assertions.assertEquals(
+          assertTrue(resultSet.next());
+          assertEquals(null, resultSet.getBigDecimal(1, 5));
+          assertEquals(null, resultSet.getBigDecimal("COLA", 5));
+          assertTrue(resultSet.next());
+          assertEquals(bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal(1, 5));
+          assertEquals(
               bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal("COLA", 5));
         }
       }
@@ -651,10 +652,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
         try (ResultSet resultSet = statement.executeQuery("select * from ts_test")) {
           resultSetMetaData = resultSet.getMetaData();
           // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
-          Assertions.assertEquals(resultSetMetaData.getColumnType(1), 2014);
+          assertEquals(resultSetMetaData.getColumnType(1), 2014);
           // Assert that TIMESTAMP_TZ column returns Timestamp class name
-          Assertions.assertEquals(
-              resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
+          assertEquals(resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
         }
       }
       SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
@@ -667,7 +667,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
         resultSetMetaData = resultSet.getMetaData();
         // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP when
         // enableReturnTimestampWithTimeZone is false.
-        Assertions.assertEquals(resultSetMetaData.getColumnType(1), Types.TIMESTAMP);
+        assertEquals(resultSetMetaData.getColumnType(1), Types.TIMESTAMP);
       }
     }
   }
@@ -696,13 +696,13 @@ public class ResultSetLatestIT extends ResultSet0IT {
         preparedStatement.execute();
       }
       try (ResultSet resultSet = statement.executeQuery("select * from test_get_clob")) {
-        Assertions.assertTrue(resultSet.next());
-        Assertions.assertEquals("hello world", resultSet.getClob(1).toString());
-        Assertions.assertEquals("hello world", resultSet.getClob("COLA").toString());
-        Assertions.assertNull(resultSet.getClob(2));
-        Assertions.assertNull(resultSet.getClob("COLNULL"));
-        Assertions.assertEquals("", resultSet.getClob(3).toString());
-        Assertions.assertEquals("", resultSet.getClob("COLEMPTY").toString());
+        assertTrue(resultSet.next());
+        assertEquals("hello world", resultSet.getClob(1).toString());
+        assertEquals("hello world", resultSet.getClob("COLA").toString());
+        assertNull(resultSet.getClob(2));
+        assertNull(resultSet.getClob("COLNULL"));
+        assertEquals("", resultSet.getClob(3).toString());
+        assertEquals("", resultSet.getClob("COLEMPTY").toString());
       }
     }
   }
@@ -726,9 +726,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
       }
 
       try (ResultSet resultSet = statement.executeQuery("select * from test_set_clob")) {
-        Assertions.assertTrue(resultSet.next());
-        Assertions.assertNull(resultSet.getClob(1));
-        Assertions.assertNull(resultSet.getClob("COLNULL"));
+        assertTrue(resultSet.next());
+        assertNull(resultSet.getClob(1));
+        assertNull(resultSet.getClob("COLNULL"));
       }
     }
   }
@@ -790,10 +790,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
         try (CallableStatement cs = connection.prepareCall("CALL SP_ZSDLEADTIME_ARCHIVE_DAILY()")) {
           cs.execute();
           ResultSetMetaData resultSetMetaData = cs.getMetaData();
-          Assertions.assertEquals(
-              "SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
-          Assertions.assertEquals("VARCHAR", resultSetMetaData.getColumnTypeName(1));
-          Assertions.assertEquals(0, resultSetMetaData.getScale(1));
+          assertEquals("SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
+          assertEquals("VARCHAR", resultSetMetaData.getColumnTypeName(1));
+          assertEquals(0, resultSetMetaData.getScale(1));
         }
       } finally {
         statement.execute("drop procedure if exists SP_ZSDLEADTIME_ARCHIVE_DAILY()");
@@ -863,7 +862,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       try {
         rs.unwrap(SnowflakeUtil.class);
       } catch (SQLException ex) {
-        Assertions.assertEquals(
+        assertEquals(
             ex.getMessage(),
             "net.snowflake.client.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.jdbc.SnowflakeUtil");
       }
@@ -883,9 +882,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
           preparedStatement.executeQuery();
         }
         try (ResultSet resultSet = statement.executeQuery("select * from testObj")) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(22.2, resultSet.getObject(1));
-          Assertions.assertEquals(true, resultSet.getObject(2));
+          assertTrue(resultSet.next());
+          assertEquals(22.2, resultSet.getObject(1));
+          assertEquals(true, resultSet.getObject(2));
         }
       } finally {
         statement.execute("drop table if exists testObj");
@@ -923,24 +922,24 @@ public class ResultSetLatestIT extends ResultSet0IT {
       try (ResultSet rs = statement.executeQuery("select * from case_sensitive")) {
         ResultSetMetaData metaData = rs.getMetaData();
 
-        Assertions.assertFalse(metaData.isCaseSensitive(1)); // BOOLEAN
-        Assertions.assertFalse(metaData.isCaseSensitive(2)); // DATE
-        Assertions.assertFalse(metaData.isCaseSensitive(3)); // TIME
-        Assertions.assertFalse(metaData.isCaseSensitive(4)); // TIMESTAMP
-        Assertions.assertFalse(metaData.isCaseSensitive(5)); // TIMESTAMP_LTZ
-        Assertions.assertFalse(metaData.isCaseSensitive(6)); // TIMESTAMP_NTZ
-        Assertions.assertFalse(metaData.isCaseSensitive(7)); // NUMBER
-        Assertions.assertFalse(metaData.isCaseSensitive(8)); // FLOAT
-        Assertions.assertFalse(metaData.isCaseSensitive(9)); // DOUBLE
-        Assertions.assertFalse(metaData.isCaseSensitive(10)); // BINARY
+        assertFalse(metaData.isCaseSensitive(1)); // BOOLEAN
+        assertFalse(metaData.isCaseSensitive(2)); // DATE
+        assertFalse(metaData.isCaseSensitive(3)); // TIME
+        assertFalse(metaData.isCaseSensitive(4)); // TIMESTAMP
+        assertFalse(metaData.isCaseSensitive(5)); // TIMESTAMP_LTZ
+        assertFalse(metaData.isCaseSensitive(6)); // TIMESTAMP_NTZ
+        assertFalse(metaData.isCaseSensitive(7)); // NUMBER
+        assertFalse(metaData.isCaseSensitive(8)); // FLOAT
+        assertFalse(metaData.isCaseSensitive(9)); // DOUBLE
+        assertFalse(metaData.isCaseSensitive(10)); // BINARY
 
-        Assertions.assertTrue(metaData.isCaseSensitive(11)); // GEOGRAPHY
-        Assertions.assertTrue(metaData.isCaseSensitive(12)); // VARIANT
-        Assertions.assertTrue(metaData.isCaseSensitive(13)); // OBJECT
-        Assertions.assertTrue(metaData.isCaseSensitive(14)); // ARRAY
-        Assertions.assertTrue(metaData.isCaseSensitive(15)); // TEXT
-        Assertions.assertTrue(metaData.isCaseSensitive(16)); // VARCHAR
-        Assertions.assertTrue(metaData.isCaseSensitive(17)); // CHAR
+        assertTrue(metaData.isCaseSensitive(11)); // GEOGRAPHY
+        assertTrue(metaData.isCaseSensitive(12)); // VARIANT
+        assertTrue(metaData.isCaseSensitive(13)); // OBJECT
+        assertTrue(metaData.isCaseSensitive(14)); // ARRAY
+        assertTrue(metaData.isCaseSensitive(15)); // TEXT
+        assertTrue(metaData.isCaseSensitive(16)); // VARCHAR
+        assertTrue(metaData.isCaseSensitive(17)); // CHAR
       }
     }
   }
@@ -959,12 +958,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
       statement.execute("insert into auto_inc(name) values('test1')");
 
       try (ResultSet resultSet = statement.executeQuery("select * from auto_inc")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
 
         ResultSetMetaData metaData = resultSet.getMetaData();
-        Assertions.assertTrue(metaData.isAutoIncrement(1));
-        Assertions.assertFalse(metaData.isAutoIncrement(2));
-        Assertions.assertTrue(metaData.isAutoIncrement(3));
+        assertTrue(metaData.isAutoIncrement(1));
+        assertFalse(metaData.isAutoIncrement(2));
+        assertTrue(metaData.isAutoIncrement(3));
       }
     }
   }
@@ -978,11 +977,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
         statement.execute("create or replace table testGranularTime(t time)");
         statement.execute("insert into testGranularTime values ('10:10:10')");
         try (ResultSet resultSet = statement.executeQuery("select * from testGranularTime")) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(Time.valueOf("10:10:10"), resultSet.getTime(1));
-          Assertions.assertEquals(10, resultSet.getTime(1).getHours());
-          Assertions.assertEquals(10, resultSet.getTime(1).getMinutes());
-          Assertions.assertEquals(10, resultSet.getTime(1).getSeconds());
+          assertTrue(resultSet.next());
+          assertEquals(Time.valueOf("10:10:10"), resultSet.getTime(1));
+          assertEquals(10, resultSet.getTime(1).getHours());
+          assertEquals(10, resultSet.getTime(1).getMinutes());
+          assertEquals(10, resultSet.getTime(1).getSeconds());
         }
       } finally {
         statement.execute("drop table if exists testGranularTime");
@@ -1002,11 +1001,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
         statement.execute("create or replace table testGranularTime(t time)");
         statement.execute("insert into testGranularTime values ('10:10:10')");
         try (ResultSet resultSet = statement.executeQuery("select * from testGranularTime")) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(Time.valueOf("02:10:10"), resultSet.getTime(1));
-          Assertions.assertEquals(02, resultSet.getTime(1).getHours());
-          Assertions.assertEquals(10, resultSet.getTime(1).getMinutes());
-          Assertions.assertEquals(10, resultSet.getTime(1).getSeconds());
+          assertTrue(resultSet.next());
+          assertEquals(Time.valueOf("02:10:10"), resultSet.getTime(1));
+          assertEquals(02, resultSet.getTime(1).getHours());
+          assertEquals(10, resultSet.getTime(1).getMinutes());
+          assertEquals(10, resultSet.getTime(1).getSeconds());
         }
       } finally {
         TimeZone.setDefault(origTz);
@@ -1033,33 +1032,33 @@ public class ResultSetLatestIT extends ResultSet0IT {
       statement.execute("create or replace table " + tableName + " (c1 string(" + colLength + "))");
       statement.execute(
           "insert into " + tableName + " select randstr(" + colLength + ", random())");
-      Assertions.assertNull(System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM));
+      assertNull(System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM));
       try (ResultSet rs = statement.executeQuery("select * from " + tableName)) {
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(colLength, rs.getString(1).length());
-        Assertions.assertFalse(rs.next());
+        assertTrue(rs.next());
+        assertEquals(colLength, rs.getString(1).length());
+        assertFalse(rs.next());
       }
     } catch (Exception e) {
-      Assertions.fail("executeQuery should not fail");
+      fail("executeQuery should not fail");
     }
   }
 
   private static void assertAllColumnsAreLongButBigIntIsBigDecimal(ResultSet rs)
       throws SQLException {
     while (rs.next()) {
-      Assertions.assertEquals(Long.class, rs.getObject(1).getClass());
-      Assertions.assertEquals(BigDecimal.class, rs.getObject(2).getClass());
-      Assertions.assertEquals(Long.class, rs.getObject(3).getClass());
-      Assertions.assertEquals(Long.class, rs.getObject(4).getClass());
+      assertEquals(Long.class, rs.getObject(1).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(2).getClass());
+      assertEquals(Long.class, rs.getObject(3).getClass());
+      assertEquals(Long.class, rs.getObject(4).getClass());
     }
   }
 
   private static void assertAllColumnsAreBigDecimal(ResultSet rs) throws SQLException {
     while (rs.next()) {
-      Assertions.assertEquals(BigDecimal.class, rs.getObject(1).getClass());
-      Assertions.assertEquals(BigDecimal.class, rs.getObject(2).getClass());
-      Assertions.assertEquals(BigDecimal.class, rs.getObject(3).getClass());
-      Assertions.assertEquals(BigDecimal.class, rs.getObject(4).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(1).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(2).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(3).getClass());
+      assertEquals(BigDecimal.class, rs.getObject(4).getClass());
     }
   }
 
@@ -1203,8 +1202,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
       Statement statement, Object expected, String columnName, Class<?> type) throws SQLException {
     try (ResultSet resultSetString =
         statement.executeQuery(String.format("select %s from test_all_types", columnName))) {
-      Assertions.assertTrue(resultSetString.next());
-      Assertions.assertEquals(expected, resultSetString.getObject(1, type));
+      assertTrue(resultSetString.next());
+      assertEquals(expected, resultSetString.getObject(1, type));
     }
   }
 
@@ -1212,8 +1211,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
       Statement statement, Object expected, String columnName, Class type) throws SQLException {
     try (ResultSet resultSetString =
         statement.executeQuery(String.format("select %s from test_all_types", columnName))) {
-      Assertions.assertTrue(resultSetString.next());
-      Assertions.assertEquals(expected.toString(), resultSetString.getObject(1, type).toString());
+      assertTrue(resultSetString.next());
+      assertEquals(expected.toString(), resultSetString.getObject(1, type).toString());
     }
   }
 }

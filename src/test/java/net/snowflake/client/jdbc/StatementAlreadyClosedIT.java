@@ -3,10 +3,12 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // @Category(TestCategoryStatement.class)
@@ -15,9 +17,9 @@ public class StatementAlreadyClosedIT extends BaseJDBCTest {
   public void testStatementAlreadyClosed() throws Throwable {
     try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
-      Assertions.assertFalse(statement.isClosed());
+      assertFalse(statement.isClosed());
       statement.close();
-      Assertions.assertTrue(statement.isClosed());
+      assertTrue(statement.isClosed());
 
       expectStatementAlreadyClosedException(
           () -> statement.execute("select 1", Statement.NO_GENERATED_KEYS));

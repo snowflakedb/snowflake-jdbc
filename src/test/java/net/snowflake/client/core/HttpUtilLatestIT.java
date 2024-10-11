@@ -3,6 +3,9 @@
  */
 package net.snowflake.client.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
@@ -10,7 +13,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -22,8 +24,8 @@ public class HttpUtilLatestIT {
   /** Added in > 3.14.5 */
   @Test
   public void shouldGetDefaultConnectionAndSocketTimeouts() {
-    Assertions.assertEquals(Duration.ofMillis(60_000), HttpUtil.getConnectionTimeout());
-    Assertions.assertEquals(Duration.ofMillis(300_000), HttpUtil.getSocketTimeout());
+    assertEquals(Duration.ofMillis(60_000), HttpUtil.getConnectionTimeout());
+    assertEquals(Duration.ofMillis(300_000), HttpUtil.getSocketTimeout());
   }
 
   /** Added in > 3.14.5 */
@@ -38,7 +40,7 @@ public class HttpUtilLatestIT {
         HttpUtil.getHttpClient(new HttpClientSettingsKey(OCSPMode.INSECURE));
     try {
       httpClient.execute(new HttpGet(HANG_WEBSERVER_ADDRESS));
-      Assertions.fail("Request should fail with exception");
+      fail("Request should fail with exception");
     } catch (IOException e) {
       MatcherAssert.assertThat(e, CoreMatchers.instanceOf(SocketTimeoutException.class));
     } finally {

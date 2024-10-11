@@ -3,13 +3,15 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.TestUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Test OpenGroup CLI */
@@ -140,8 +142,8 @@ public class OpenGroupCLIFuncIT extends BaseJDBCTest {
   static void testFunction(Connection connection, String sql, String expected) throws SQLException {
     try (Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery(sql)) {
-      Assertions.assertTrue(resultSet.next());
-      Assertions.assertEquals(expected, resultSet.getString(1));
+      assertTrue(resultSet.next());
+      assertEquals(expected, resultSet.getString(1));
     }
   }
 }

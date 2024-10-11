@@ -2,10 +2,10 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Properties;
 import net.snowflake.client.core.SFSessionProperty;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class ConnectStringParseTest {
@@ -66,6 +66,6 @@ public class ConnectStringParseTest {
     String jdbcConnectString =
         "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com/?private_key_file=C:\\temp\\rsa_key.p8&private_key_file_pwd=test_password&user=test_user";
     SnowflakeConnectString cstring = SnowflakeConnectString.parse(jdbcConnectString, info);
-    Assertions.assertEquals("://:-1", cstring.toString());
+    assertEquals("://:-1", cstring.toString());
   }
 }

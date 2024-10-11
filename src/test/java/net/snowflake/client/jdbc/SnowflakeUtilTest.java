@@ -4,6 +4,10 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,7 +17,6 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import net.snowflake.client.core.ObjectMapperFactory;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // @Category(TestCategoryCore.class)
@@ -37,8 +40,8 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     SnowflakeColumnMetadata columnMetadata =
         SnowflakeUtil.extractColumnMetadata(rootNode, false, null);
     // then
-    Assertions.assertNotNull(columnMetadata);
-    Assertions.assertEquals(
+    assertNotNull(columnMetadata);
+    assertEquals(
         OBJECT_MAPPER.writeValueAsString(expectedColumnMetadata),
         OBJECT_MAPPER.writeValueAsString(columnMetadata));
   }
@@ -60,21 +63,21 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     SnowflakeColumnMetadata columnMetadata =
         SnowflakeUtil.extractColumnMetadata(rootNode, false, null);
     // then
-    Assertions.assertNotNull(columnMetadata);
-    Assertions.assertEquals("OBJECT", columnMetadata.getTypeName());
+    assertNotNull(columnMetadata);
+    assertEquals("OBJECT", columnMetadata.getTypeName());
 
     FieldMetadata firstField = columnMetadata.getFields().get(0);
-    Assertions.assertEquals("name1", firstField.getName());
-    Assertions.assertEquals(SnowflakeType.TEXT, firstField.getBase());
-    Assertions.assertEquals(256, firstField.getByteLength());
-    Assertions.assertFalse(firstField.isNullable());
+    assertEquals("name1", firstField.getName());
+    assertEquals(SnowflakeType.TEXT, firstField.getBase());
+    assertEquals(256, firstField.getByteLength());
+    assertFalse(firstField.isNullable());
 
     FieldMetadata secondField = columnMetadata.getFields().get(1);
-    Assertions.assertEquals("name2", secondField.getName());
-    Assertions.assertEquals(SnowflakeType.REAL, secondField.getBase());
-    Assertions.assertEquals(128, secondField.getByteLength());
-    Assertions.assertEquals(5, secondField.getPrecision());
-    Assertions.assertTrue(secondField.isNullable());
+    assertEquals("name2", secondField.getName());
+    assertEquals(SnowflakeType.REAL, secondField.getBase());
+    assertEquals(128, secondField.getByteLength());
+    assertEquals(5, secondField.getPrecision());
+    assertTrue(secondField.isNullable());
   }
 
   private static SnowflakeColumnMetadata createExpectedMetadata(

@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import java.sql.Connection;
@@ -17,7 +21,6 @@ import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -50,7 +53,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               info.getIsClientSideEncrypted(),
               sfSession,
               info.getUseS3RegionalUrl());
-      Assertions.assertEquals(256, client.getEncryptionKeySize());
+      assertEquals(256, client.getEncryptionKeySize());
     }
   }
 
@@ -73,7 +76,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
       try (ResultSet resultSet = statement.executeQuery("select 1")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
       }
       try {
         statement.execute("create or replace stage " + testStageName);
@@ -86,7 +89,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
                         + " @"
                         + testStageName)) {
           while (resultSet.next()) {
-            Assertions.assertEquals("UPLOADED", resultSet.getString("status"));
+            assertEquals("UPLOADED", resultSet.getString("status"));
           }
         }
       } finally {
@@ -126,7 +129,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
               info.getIsClientSideEncrypted(),
               sfSession,
               info.getUseS3RegionalUrl());
-      Assertions.assertTrue(client.isClientException400Or404(servEx));
+      assertTrue(client.isClientException400Or404(servEx));
     }
   }
 
@@ -163,7 +166,7 @@ public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
         spy.handleStorageException(
             new InterruptedException(), 0, "download", sfSession, command, null);
       } catch (Exception e) {
-        Assertions.fail("Should not have exception here");
+        fail("Should not have exception here");
       }
       Mockito.verify(spy, Mockito.never()).renew(Mockito.anyMap());
       spy.handleStorageException(

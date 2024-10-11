@@ -3,6 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Stream interface tests. Snowflake JDBC specific API */
@@ -48,8 +50,7 @@ public class StreamIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          Assertions.assertEquals(
-              "hello", ret, "Unexpected string value: " + ret + " expect: hello");
+          assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);
@@ -79,8 +80,8 @@ public class StreamIT extends BaseJDBCTest {
                       + getFullPathFileInResource(TEST_DATA_FILE)
                       + " @~/"
                       + DEST_PREFIX)) {
-            Assertions.assertTrue(rset.next());
-            Assertions.assertEquals("UPLOADED", rset.getString(7));
+            assertTrue(rset.next());
+            assertEquals("UPLOADED", rset.getString(7));
 
             InputStream out =
                 connection
@@ -90,11 +91,11 @@ public class StreamIT extends BaseJDBCTest {
             IOUtils.copy(out, writer, "UTF-8");
             String output = writer.toString();
             // the first 2 characters
-            Assertions.assertEquals("1|", output.substring(0, 2));
+            assertEquals("1|", output.substring(0, 2));
 
             // the number of lines
             String[] lines = output.split("\n");
-            Assertions.assertEquals(28, lines.length);
+            assertEquals(28, lines.length);
           }
         } finally {
           statement.execute("rm @~/" + DEST_PREFIX);
@@ -128,8 +129,7 @@ public class StreamIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          Assertions.assertEquals(
-              "hello", ret, "Unexpected string value: " + ret + " expect: hello");
+          assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
 
       } finally {

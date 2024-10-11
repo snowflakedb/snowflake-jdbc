@@ -4,6 +4,10 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
@@ -17,7 +21,6 @@ import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class CoreUtilsMiscellaneousTest {
@@ -31,7 +34,7 @@ public class CoreUtilsMiscellaneousTest {
     try {
       AssertUtil.assertTrue(1 == 0, "Numbers do not match");
     } catch (SFException e) {
-      Assertions.assertEquals("JDBC driver internal error: Numbers do not match.", e.getMessage());
+      assertEquals("JDBC driver internal error: Numbers do not match.", e.getMessage());
     }
   }
 
@@ -42,16 +45,16 @@ public class CoreUtilsMiscellaneousTest {
     Constants.clearOSForTesting();
     String originalOS = systemGetProperty("os.name");
     System.setProperty("os.name", "Windows");
-    Assertions.assertEquals(Constants.OS.WINDOWS, Constants.getOS());
+    assertEquals(Constants.OS.WINDOWS, Constants.getOS());
     Constants.clearOSForTesting();
     System.setProperty("os.name", "Linux");
-    Assertions.assertEquals(Constants.OS.LINUX, Constants.getOS());
+    assertEquals(Constants.OS.LINUX, Constants.getOS());
     Constants.clearOSForTesting();
     System.setProperty("os.name", "Macintosh");
-    Assertions.assertEquals(Constants.OS.MAC, Constants.getOS());
+    assertEquals(Constants.OS.MAC, Constants.getOS());
     Constants.clearOSForTesting();
     System.setProperty("os.name", "Sunos");
-    Assertions.assertEquals(Constants.OS.SOLARIS, Constants.getOS());
+    assertEquals(Constants.OS.SOLARIS, Constants.getOS());
     // Set back to initial value at end of test
     Constants.clearOSForTesting();
     System.setProperty("os.name", originalOS);
@@ -85,11 +88,11 @@ public class CoreUtilsMiscellaneousTest {
     // Create an HTTPClientKey with all default settings
     HttpClientSettingsKey testKey3 = new HttpClientSettingsKey(OCSPMode.FAIL_CLOSED, "jdbc", false);
     // Assert the first 2 test keys are equal
-    Assertions.assertTrue(testKey1.equals(testKey2));
+    assertTrue(testKey1.equals(testKey2));
     // Assert that testKey2 has its non proxy hosts updated by the equals function
-    Assertions.assertEquals("*.foo.com", testKey2.getNonProxyHosts());
+    assertEquals("*.foo.com", testKey2.getNonProxyHosts());
     // Assert that the test key with the default options is different from the others
-    Assertions.assertFalse(testKey1.equals(testKey3));
+    assertFalse(testKey1.equals(testKey3));
   }
 
   @Test
@@ -107,12 +110,12 @@ public class CoreUtilsMiscellaneousTest {
             false);
     ClientConfiguration clientConfig = new ClientConfiguration();
     S3HttpUtil.setProxyForS3(testKey, clientConfig);
-    Assertions.assertEquals(Protocol.HTTPS, clientConfig.getProxyProtocol());
-    Assertions.assertEquals("snowflakecomputing.com", clientConfig.getProxyHost());
-    Assertions.assertEquals(443, clientConfig.getProxyPort());
-    Assertions.assertEquals("*.foo.com", clientConfig.getNonProxyHosts());
-    Assertions.assertEquals("pw", clientConfig.getProxyPassword());
-    Assertions.assertEquals("testuser", clientConfig.getProxyUsername());
+    assertEquals(Protocol.HTTPS, clientConfig.getProxyProtocol());
+    assertEquals("snowflakecomputing.com", clientConfig.getProxyHost());
+    assertEquals(443, clientConfig.getProxyPort());
+    assertEquals("*.foo.com", clientConfig.getNonProxyHosts());
+    assertEquals("pw", clientConfig.getProxyPassword());
+    assertEquals("testuser", clientConfig.getProxyUsername());
   }
 
   @Test
@@ -127,19 +130,18 @@ public class CoreUtilsMiscellaneousTest {
     props.put("proxyProtocol", "http");
     ClientConfiguration clientConfig = new ClientConfiguration();
     S3HttpUtil.setSessionlessProxyForS3(props, clientConfig);
-    Assertions.assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
-    Assertions.assertEquals("localhost", clientConfig.getProxyHost());
-    Assertions.assertEquals(8084, clientConfig.getProxyPort());
-    Assertions.assertEquals("baz.com | foo.com", clientConfig.getNonProxyHosts());
-    Assertions.assertEquals("pw", clientConfig.getProxyPassword());
-    Assertions.assertEquals("testuser", clientConfig.getProxyUsername());
+    assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
+    assertEquals("localhost", clientConfig.getProxyHost());
+    assertEquals(8084, clientConfig.getProxyPort());
+    assertEquals("baz.com | foo.com", clientConfig.getNonProxyHosts());
+    assertEquals("pw", clientConfig.getProxyPassword());
+    assertEquals("testuser", clientConfig.getProxyUsername());
     // Test that exception is thrown when port number is invalid
     props.put("proxyPort", "invalidnumber");
     try {
       S3HttpUtil.setSessionlessProxyForS3(props, clientConfig);
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals(
-          (int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
+      assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
     }
   }
 
@@ -159,8 +161,8 @@ public class CoreUtilsMiscellaneousTest {
             false);
     HttpUtil.setProxyForAzure(testKey, op);
     Proxy proxy = op.getProxy();
-    Assertions.assertEquals(Proxy.Type.HTTP, proxy.type());
-    Assertions.assertEquals(new InetSocketAddress("snowflakecomputing.com", 443), proxy.address());
+    assertEquals(Proxy.Type.HTTP, proxy.type());
+    assertEquals(new InetSocketAddress("snowflakecomputing.com", 443), proxy.address());
   }
 
   @Test
@@ -172,15 +174,14 @@ public class CoreUtilsMiscellaneousTest {
     OperationContext op = new OperationContext();
     HttpUtil.setSessionlessProxyForAzure(props, op);
     Proxy proxy = op.getProxy();
-    Assertions.assertEquals(Proxy.Type.HTTP, proxy.type());
-    Assertions.assertEquals(new InetSocketAddress("localhost", 8084), proxy.address());
+    assertEquals(Proxy.Type.HTTP, proxy.type());
+    assertEquals(new InetSocketAddress("localhost", 8084), proxy.address());
     // Test that exception is thrown when port number is invalid
     props.put("proxyPort", "invalidnumber");
     try {
       HttpUtil.setSessionlessProxyForAzure(props, op);
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals(
-          (int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
+      assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
     }
   }
 
@@ -203,16 +204,16 @@ public class CoreUtilsMiscellaneousTest {
             false);
     // Assert there is 1 entry in the hashmap now
     HttpUtil.getHttpClient(key1);
-    Assertions.assertEquals(1, HttpUtil.httpClient.size());
+    assertEquals(1, HttpUtil.httpClient.size());
     HttpClientSettingsKey key2 =
         new HttpClientSettingsKey(
             null, "localhost", 8080, "snowflake.com", "testuser", "pw", "https", "jdbc", false);
     HttpUtil.getHttpClient(key2);
     // Assert there is still 1 entry because key is re-used when only proxy difference is
     // nonProxyHosts
-    Assertions.assertEquals(1, HttpUtil.httpClient.size());
+    assertEquals(1, HttpUtil.httpClient.size());
     // Assert previous key has updated non-proxy hosts
-    Assertions.assertEquals("snowflake.com", key1.getNonProxyHosts());
+    assertEquals("snowflake.com", key1.getNonProxyHosts());
     HttpClientSettingsKey key3 =
         new HttpClientSettingsKey(
             null,
@@ -226,7 +227,7 @@ public class CoreUtilsMiscellaneousTest {
             false);
     // Assert proxy with different host generates new entry in httpClient map
     HttpUtil.getHttpClient(key3);
-    Assertions.assertEquals(2, HttpUtil.httpClient.size());
+    assertEquals(2, HttpUtil.httpClient.size());
   }
 
   @Test
@@ -246,7 +247,7 @@ public class CoreUtilsMiscellaneousTest {
             false);
     // Assert there is 1 entry in the hashmap now
     HttpUtil.getHttpClient(key1);
-    Assertions.assertEquals(1, HttpUtil.httpClient.size());
+    assertEquals(1, HttpUtil.httpClient.size());
     HttpClientSettingsKey key2 =
         new HttpClientSettingsKey(
             null,
@@ -260,7 +261,7 @@ public class CoreUtilsMiscellaneousTest {
             true);
     HttpUtil.getHttpClient(key2);
     // Assert there are 2 entries because gzip has changed
-    Assertions.assertEquals(2, HttpUtil.httpClient.size());
+    assertEquals(2, HttpUtil.httpClient.size());
     HttpClientSettingsKey key3 =
         new HttpClientSettingsKey(
             null,
@@ -274,7 +275,7 @@ public class CoreUtilsMiscellaneousTest {
             true);
     HttpUtil.getHttpClient(key3);
     // Assert there are 3 entries because userAgentSuffix has changed
-    Assertions.assertEquals(3, HttpUtil.httpClient.size());
+    assertEquals(3, HttpUtil.httpClient.size());
   }
 
   @Test
@@ -286,14 +287,14 @@ public class CoreUtilsMiscellaneousTest {
     // Test for null proxy properties
     HttpClientSettingsKey settingsKey =
         SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
-    Assertions.assertTrue(expectedNoProxy.equals(settingsKey));
+    assertTrue(expectedNoProxy.equals(settingsKey));
 
     // Set useProxy to false so proxy properties will not be set
     props.put("useProxy", "false");
     props.put("proxyHost", "localhost");
     props.put("proxyPort", "8084");
     settingsKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
-    Assertions.assertTrue(expectedNoProxy.equals(settingsKey));
+    assertTrue(expectedNoProxy.equals(settingsKey));
 
     // Test without gzip_disabled
     props.put("useProxy", "true");
@@ -316,7 +317,7 @@ public class CoreUtilsMiscellaneousTest {
             "http",
             "jdbc",
             Boolean.valueOf(false));
-    Assertions.assertTrue(expectedWithProxy.equals(settingsKey));
+    assertTrue(expectedWithProxy.equals(settingsKey));
 
     // Test with gzip_disabled
     props.put("gzipDisabled", "true");
@@ -332,15 +333,14 @@ public class CoreUtilsMiscellaneousTest {
             "http",
             "jdbc",
             Boolean.valueOf(true));
-    Assertions.assertTrue(expectedWithProxy.equals(settingsKey));
+    assertTrue(expectedWithProxy.equals(settingsKey));
 
     // Test that exception is thrown when port number is invalid
     props.put("proxyPort", "invalidnumber");
     try {
       settingsKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals(
-          (int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
+      assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
     }
   }
 
@@ -350,11 +350,11 @@ public class CoreUtilsMiscellaneousTest {
         new HttpClientSettingsKey(OCSPMode.FAIL_OPEN, null, 443, null, null, null, "", "", false);
     ClientConfiguration clientConfig = new ClientConfiguration();
     S3HttpUtil.setProxyForS3(testKey, clientConfig);
-    Assertions.assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
-    Assertions.assertEquals("", clientConfig.getProxyHost());
-    Assertions.assertEquals(443, clientConfig.getProxyPort());
-    Assertions.assertEquals("", clientConfig.getNonProxyHosts());
-    Assertions.assertNull(clientConfig.getProxyUsername());
-    Assertions.assertNull(clientConfig.getProxyPassword());
+    assertEquals(Protocol.HTTP, clientConfig.getProxyProtocol());
+    assertEquals("", clientConfig.getProxyHost());
+    assertEquals(443, clientConfig.getProxyPort());
+    assertEquals("", clientConfig.getNonProxyHosts());
+    assertNull(clientConfig.getProxyUsername());
+    assertNull(clientConfig.getProxyPassword());
   }
 }

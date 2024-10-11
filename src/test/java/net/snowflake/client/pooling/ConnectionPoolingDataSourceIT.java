@@ -8,6 +8,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -19,7 +20,6 @@ import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import net.snowflake.client.AbstractDriverIT;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // @Category(TestCategoryConnection.class)
@@ -48,7 +48,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
       try {
         // should fire connection error events
         connection.setCatalog("nonexistent_database");
-        Assertions.fail();
+        fail();
       } catch (SQLException e) {
         assertThat(e.getErrorCode(), is(2043));
       }

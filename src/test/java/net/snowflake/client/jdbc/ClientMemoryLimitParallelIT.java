@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.AbstractDriverIT.getConnection;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -8,7 +9,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -94,7 +94,7 @@ class ClientMemoryLimitParallelIT {
               }
             } catch (SQLException e) {
               // do not expect exception in test
-              Assertions.assertEquals(null, e);
+              assertEquals(null, e);
             }
           }
         };
@@ -146,7 +146,7 @@ class ClientMemoryLimitParallelIT {
           LOGGER.info(Thread.currentThread().getName() + ": processedRows: " + rowIdx);
         }
       }
-      Assertions.assertEquals(rowIdx, rowCount);
+      assertEquals(rowIdx, rowCount);
     }
   }
 }

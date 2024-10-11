@@ -1,5 +1,7 @@
 package net.snowflake.client.jdbc.structuredtypes;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,7 +10,6 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.ThrowingConsumer;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ResultSetFormatType;
-import org.junit.jupiter.api.Assertions;
 
 abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
   public StructuredTypesGetStringBaseIT() {}
@@ -55,7 +56,7 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
       throws SQLException {
     try (Statement statement = connection.createStatement();
         ResultSet rs = statement.executeQuery(sqlText); ) {
-      Assertions.assertTrue(rs.next());
+      assertTrue(rs.next());
       consumer.accept(rs);
     }
   }

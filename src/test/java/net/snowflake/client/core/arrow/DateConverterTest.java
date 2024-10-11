@@ -3,6 +3,8 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Date;
 import java.util.Arrays;
@@ -23,7 +25,6 @@ import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -115,9 +116,9 @@ public class DateConverterTest extends BaseConverterTest {
       String strVal = converter.toString(j);
       Object obj = converter.toObject(j);
       if (strVal != null) {
-        Assertions.assertFalse(converter.isNull(j));
+        assertFalse(converter.isNull(j));
       } else {
-        Assertions.assertTrue(converter.isNull(j));
+        assertTrue(converter.isNull(j));
       }
       Object oldObj =
           ArrowResultUtil.getDate(intVal, TimeZone.getTimeZone("UTC"), TimeZone.getDefault());
@@ -216,8 +217,8 @@ public class DateConverterTest extends BaseConverterTest {
         ArrowResultUtil.getDate(testDay, TimeZone.getTimeZone("UTC"), TimeZone.getTimeZone(tz));
 
     List<Object> testValues = this.timezoneDatesData.get(tz);
-    Assertions.assertTrue(testValues.get(0) instanceof String);
-    Assertions.assertTrue(testValues.get(1) instanceof Integer);
+    assertTrue(testValues.get(0) instanceof String);
+    assertTrue(testValues.get(1) instanceof Integer);
     assertThat(obj.toString(), is("2016-04-20"));
     assertThat(jsonDate.toString(), is(obj.toString()));
     assertThat(utcObj.toString(), is(testValues.get(0)));

@@ -1,5 +1,8 @@
 package net.snowflake.client.core.json;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -12,7 +15,6 @@ import java.util.TimeZone;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class DateTimeConverterTest {
@@ -28,24 +30,21 @@ public class DateTimeConverterTest {
 
   @Test
   public void testGetVariousTypesWhenNullObjectGiven() throws SFException {
-    Assertions.assertNull(
-        dateTimeConverter.getTimestamp(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
-    Assertions.assertNull(
-        dateTimeConverter.getTime(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
-    Assertions.assertNull(
-        dateTimeConverter.getDate(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
+    assertNull(dateTimeConverter.getTimestamp(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
+    assertNull(dateTimeConverter.getTime(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
+    assertNull(dateTimeConverter.getDate(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
   }
 
   @Test
   public void testGetTimestampWithDefaultTimeZone() throws SFException {
-    Assertions.assertEquals(
+    assertEquals(
         Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3)),
         dateTimeConverter.getTimestamp("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
-    Assertions.assertEquals(
+    assertEquals(
         Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789000)),
         dateTimeConverter.getTimestamp(
             "1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
-    Assertions.assertEquals(
+    assertEquals(
         Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789123)),
         dateTimeConverter.getTimestamp(
             "1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
@@ -53,17 +52,17 @@ public class DateTimeConverterTest {
 
   @Test
   public void testGetTimestampWithSpecificTimeZone() throws SFException {
-    Assertions.assertEquals(
+    assertEquals(
         Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3)).toString(),
         dateTimeConverterWithTreatNTZAsUTC
             .getTimestamp("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
             .toString());
-    Assertions.assertEquals(
+    assertEquals(
         Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789000)).toString(),
         dateTimeConverterWithTreatNTZAsUTC
             .getTimestamp("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
             .toString());
-    Assertions.assertEquals(
+    assertEquals(
         Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789123)).toString(),
         dateTimeConverterWithTreatNTZAsUTC
             .getTimestamp("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
@@ -73,17 +72,17 @@ public class DateTimeConverterTest {
   // TODO replace equality when SNOW-991418 is fixed
   @Test
   public void testGetTimeWithDefaultTimeZone() throws SFException {
-    Assertions.assertEquals(
+    assertEquals(
         Time.valueOf(LocalTime.of(8, 2, 3)).toString(),
         dateTimeConverter
             .getTime("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
             .toString());
-    Assertions.assertEquals(
+    assertEquals(
         Time.valueOf(LocalTime.of(8, 2, 3)).toString(),
         dateTimeConverter
             .getTime("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
             .toString());
-    Assertions.assertEquals(
+    assertEquals(
         Time.valueOf(LocalTime.of(8, 2, 3)).toString(),
         dateTimeConverter
             .getTime("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
@@ -96,22 +95,22 @@ public class DateTimeConverterTest {
     Time actual =
         dateTimeConverterWithUseSessionTimeZone.getTime(
             "1691568123", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, null, 0);
-    Assertions.assertEquals(expected.toString(), actual.toString());
+    assertEquals(expected.toString(), actual.toString());
   }
 
   @Test
   public void testGetDateWithDefaultTimeZone() throws SFException {
-    Assertions.assertEquals(
+    assertEquals(
         Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
         dateTimeConverter
             .getDate("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
             .toString());
-    Assertions.assertEquals(
+    assertEquals(
         Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
         dateTimeConverter
             .getDate("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
             .toString());
-    Assertions.assertEquals(
+    assertEquals(
         Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
         dateTimeConverter
             .getDate("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
@@ -120,17 +119,17 @@ public class DateTimeConverterTest {
 
   @Test
   public void testGetDateWithSpecificTimeZone() throws SFException {
-    Assertions.assertEquals(
+    assertEquals(
         Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
         dateTimeConverter
             .getDate("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
             .toString());
-    Assertions.assertEquals(
+    assertEquals(
         Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
         dateTimeConverter
             .getDate("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
             .toString());
-    Assertions.assertEquals(
+    assertEquals(
         Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
         dateTimeConverter
             .getDate("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
@@ -143,6 +142,6 @@ public class DateTimeConverterTest {
     Date actual =
         dateTimeConverterWithUseSessionTimeZone.getDate(
             "1691568123", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, null, 0);
-    Assertions.assertEquals(expected.toString(), actual.toString());
+    assertEquals(expected.toString(), actual.toString());
   }
 }

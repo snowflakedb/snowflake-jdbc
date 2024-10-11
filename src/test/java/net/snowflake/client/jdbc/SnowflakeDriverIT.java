@@ -5,7 +5,14 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,7 +57,6 @@ import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -90,18 +96,18 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             "create or replace table clustered_jdbc " + "(c1 number, c2 number) cluster by (c1)");
 
         // put files
-        Assertions.assertTrue(
+        assertTrue(
             statement.execute(
                 "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"),
             "Failed to put a file");
-        Assertions.assertTrue(
+        assertTrue(
             statement.execute(
                 "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"),
             "Failed to put a file");
 
         int numRows = statement.executeUpdate("copy into orders_jdbc");
 
-        Assertions.assertEquals(73, numRows, "Unexpected number of rows copied: " + numRows);
+        assertEquals(73, numRows, "Unexpected number of rows copied: " + numRows);
       }
     }
   }
@@ -160,7 +166,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
               "select system$it('create_oauth_access_token', 'JDBC_OAUTH_INTEGRATION', '"
                   + role
                   + "')")) {
-        Assertions.assertTrue(rs.next());
+        assertTrue(rs.next());
         token = rs.getString(1);
       }
     }
@@ -197,15 +203,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                   ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
                   // assert column count
-                  Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+                  assertEquals(1, resultSetMetaData.getColumnCount());
 
                   // assert we get 1 row
                   for (int i = 0; i < 1; i++) {
-                    Assertions.assertTrue(resultSet.next());
+                    assertTrue(resultSet.next());
 
                     // assert each column is not null except the last one
                     for (int j = 1; j < 2; j++) {
-                      Assertions.assertEquals(0, resultSet.getInt(j));
+                      assertEquals(0, resultSet.getInt(j));
                     }
                   }
 
@@ -229,7 +235,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection(paramProperties);
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery("show columns in clustered_jdbc")) {
-      Assertions.assertEquals(2, countRows(resultSet), "number of columns");
+      assertEquals(2, countRows(resultSet), "number of columns");
     }
   }
 
@@ -250,8 +256,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           ResultSet resultSet = statement.executeQuery("SELECT * FROM orders_jdbc")) {
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
         int numColumns = resultSetMetaData.getColumnCount();
-        Assertions.assertEquals(9, numColumns);
-        Assertions.assertEquals(73, countRows(resultSet), "number of columns");
+        assertEquals(9, numColumns);
+        assertEquals(73, countRows(resultSet), "number of columns");
       }
     }
   }
@@ -290,43 +296,42 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       try {
         // 1. test commit
         connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        Assertions.assertEquals(
-            Connection.TRANSACTION_READ_COMMITTED, connection.getTransactionIsolation());
+        assertEquals(Connection.TRANSACTION_READ_COMMITTED, connection.getTransactionIsolation());
         connection.setAutoCommit(false); // disable autocommit
-        Assertions.assertFalse(connection.getAutoCommit());
+        assertFalse(connection.getAutoCommit());
 
-        Assertions.assertEquals(0, getCurrentTransaction(connection));
+        assertEquals(0, getCurrentTransaction(connection));
 
         // create a table, this should not start a transaction
         statement.executeUpdate("CREATE OR REPLACE TABLE AUTOCOMMIT_API_TEST (i int)");
-        Assertions.assertEquals(0, getCurrentTransaction(connection));
+        assertEquals(0, getCurrentTransaction(connection));
 
         // insert into it this should start a transaction.
         statement.executeUpdate("INSERT INTO AUTOCOMMIT_API_TEST VALUES (1)");
-        Assertions.assertNotEquals(0, getCurrentTransaction(connection));
+        assertNotEquals(0, getCurrentTransaction(connection));
 
         // commit it using the api
         connection.commit();
-        Assertions.assertFalse(connection.getAutoCommit());
-        Assertions.assertEquals(0, getCurrentTransaction(connection));
+        assertFalse(connection.getAutoCommit());
+        assertEquals(0, getCurrentTransaction(connection));
         try (ResultSet resultSet =
             statement.executeQuery("SELECT COUNT(*) FROM AUTOCOMMIT_API_TEST WHERE i = 1")) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(1, resultSet.getInt(1));
+          assertTrue(resultSet.next());
+          assertEquals(1, resultSet.getInt(1));
         }
         // 2. test rollback ==
         // delete from the table, should start a transaction.
         statement.executeUpdate("DELETE FROM AUTOCOMMIT_API_TEST");
-        Assertions.assertNotEquals(0, getCurrentTransaction(connection));
+        assertNotEquals(0, getCurrentTransaction(connection));
 
         // roll it back using the api
         connection.rollback();
-        Assertions.assertFalse(connection.getAutoCommit());
-        Assertions.assertEquals(0, getCurrentTransaction(connection));
+        assertFalse(connection.getAutoCommit());
+        assertEquals(0, getCurrentTransaction(connection));
         try (ResultSet resultSet =
             statement.executeQuery("SELECT COUNT(*) FROM AUTOCOMMIT_API_TEST WHERE i = 1")) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(1, resultSet.getInt(1));
+          assertTrue(resultSet.next());
+          assertEquals(1, resultSet.getInt(1));
         }
       } finally {
         statement.execute("DROP TABLE AUTOCOMMIT_API_TEST");
@@ -345,20 +350,20 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
     // assert column count
-    Assertions.assertEquals(numCols, resultSetMetaData.getColumnCount());
+    assertEquals(numCols, resultSetMetaData.getColumnCount());
 
     // primary key for testConstraintsP1 should contain two rows
     for (int i = 0; i < numRows; i++) {
-      Assertions.assertTrue(resultSet.next(), "get constraint result row count");
+      assertTrue(resultSet.next(), "get constraint result row count");
 
       if (pkTableName != null) {
-        Assertions.assertTrue(
+        assertTrue(
             pkTableName.equalsIgnoreCase(resultSet.getString(3)),
             "get constraint result primary table name");
       }
 
       if (fkTableName != null) {
-        Assertions.assertTrue(
+        assertTrue(
             fkTableName.equalsIgnoreCase(resultSet.getString(7)),
             "get constraint result foreign table name");
       }
@@ -389,7 +394,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
             // Verify the column type is Boolean
-            Assertions.assertEquals(Types.BOOLEAN, resultSetMetaData.getColumnType(1));
+            assertEquals(Types.BOOLEAN, resultSetMetaData.getColumnType(1));
 
             // II. Test DatabaseMetadata interface
             try (ResultSet columnMetaDataResultSet =
@@ -401,10 +406,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                     )) {
               resultSetMetaData = columnMetaDataResultSet.getMetaData();
               // assert column count
-              Assertions.assertEquals(24, resultSetMetaData.getColumnCount());
+              assertEquals(24, resultSetMetaData.getColumnCount());
 
-              Assertions.assertTrue(columnMetaDataResultSet.next());
-              Assertions.assertEquals(Types.BOOLEAN, columnMetaDataResultSet.getInt(5));
+              assertTrue(columnMetaDataResultSet.next());
+              assertEquals(Types.BOOLEAN, columnMetaDataResultSet.getInt(5));
             }
           }
         }
@@ -458,7 +463,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // primary key for testConstraintsP2 contains 1 row
         assertConstraintResults(resultSet1, 1, 6, "testConstraintsP2", null);
         resultSet1.close();
-        Assertions.assertFalse(resultSet1.next());
+        assertFalse(resultSet1.next());
 
         // Show imported keys
         try (ResultSet resultSet = metadata.getImportedKeys(null, null, "TESTCONSTRAINTSF1")) {
@@ -469,7 +474,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         assertConstraintResults(manualResultSet, 3, 14, null, "testConstraintsF2");
         manualResultSet.close();
-        Assertions.assertFalse(manualResultSet.next());
+        assertFalse(manualResultSet.next());
 
         // show exported keys
         try (ResultSet resultSet = metadata.getExportedKeys(null, null, "TESTCONSTRAINTSP1")) {
@@ -480,7 +485,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         assertConstraintResults(manualResultSet, 1, 14, "testConstraintsP2", null);
         manualResultSet.close();
-        Assertions.assertFalse(manualResultSet.next());
+        assertFalse(manualResultSet.next());
 
         // show cross references
         try (ResultSet resultSet =
@@ -505,11 +510,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             metadata.getCrossReference(
                 null, null, "TESTCONSTRAINTSP2", null, null, "TESTCONSTRAINTSF1");
 
-        Assertions.assertFalse(
+        assertFalse(
             manualResultSet.next(),
             "cross reference from testConstraintsP2 to " + "testConstraintsF2 should be empty");
         manualResultSet.close();
-        Assertions.assertFalse(manualResultSet.next());
+        assertFalse(manualResultSet.next());
       } finally {
         statement.execute("DROP TABLE TESTCONSTRAINTSF1");
         statement.execute("DROP TABLE TESTCONSTRAINTSF2");
@@ -529,8 +534,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         // assert column count
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-        Assertions.assertEquals(9, resultSetMetaData.getColumnCount());
-        Assertions.assertEquals(maxRows, countRows(resultSet));
+        assertEquals(9, resultSetMetaData.getColumnCount());
+        assertEquals(maxRows, countRows(resultSet));
       }
     }
   }
@@ -542,7 +547,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         Statement getSessionIdStmt = connection.createStatement()) {
       getSessionIdStmt.setMaxRows(30);
       try (ResultSet resultSet = getSessionIdStmt.executeQuery("SELECT current_session()")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         final long sessionId = resultSet.getLong(1);
         Timer timer = new Timer();
         timer.schedule(
@@ -569,10 +574,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         try (ResultSet resultSet =
             statement.executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120))")) {}
       }
-      Assertions.fail("should raise an exception");
+      fail("should raise an exception");
     } catch (SQLException ex) {
       // assert the sqlstate is what we expect (QUERY CANCELLED)
-      Assertions.assertEquals(SqlState.QUERY_CANCELED, ex.getSQLState(), "sqlstate mismatch");
+      assertEquals(SqlState.QUERY_CANCELED, ex.getSQLState(), "sqlstate mismatch");
     }
   }
 
@@ -588,33 +593,33 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
       // the following will issue
       try (ResultSet databaseSet = metaData.getCatalogs()) {
-        Assertions.assertTrue(databaseSet.next(), "databases shouldn't be empty");
+        assertTrue(databaseSet.next(), "databases shouldn't be empty");
 
         // "show schemas in [databaseName]"
         ResultSet schemaSet = metaData.getSchemas(connection.getCatalog(), connection.getSchema());
-        Assertions.assertTrue(schemaSet.next(), "schemas shouldn't be empty");
-        Assertions.assertTrue(
+        assertTrue(schemaSet.next(), "schemas shouldn't be empty");
+        assertTrue(
             connection.getCatalog().equalsIgnoreCase(schemaSet.getString(2)),
             "database should be " + connection.getCatalog());
-        Assertions.assertTrue(
+        assertTrue(
             connection.getSchema().equalsIgnoreCase(schemaSet.getString(1)),
             "schema should be " + connection.getSchema());
         // snow tables in a schema
         try (ResultSet tableSet =
             metaData.getTables(
                 connection.getCatalog(), connection.getSchema(), ORDERS_JDBC, null)) { // types
-          Assertions.assertTrue(
+          assertTrue(
               tableSet.next(),
               String.format(
                   "table %s should exists in db: %s, schema: %s",
                   ORDERS_JDBC, connection.getCatalog(), connection.getSchema()));
-          Assertions.assertTrue(
+          assertTrue(
               connection.getCatalog().equalsIgnoreCase(schemaSet.getString(2)),
               "database should be " + connection.getCatalog());
-          Assertions.assertTrue(
+          assertTrue(
               connection.getSchema().equalsIgnoreCase(schemaSet.getString(1)),
               "schema should be " + connection.getSchema());
-          Assertions.assertTrue(
+          assertTrue(
               ORDERS_JDBC.equalsIgnoreCase(tableSet.getString(3)), "table should be orders_jdbc");
         }
       }
@@ -628,15 +633,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         ResultSetMetaData resultSetMetaData = tableMetaDataResultSet.getMetaData();
 
-        Assertions.assertEquals(10, resultSetMetaData.getColumnCount());
+        assertEquals(10, resultSetMetaData.getColumnCount());
 
         // assert we get 1 rows
         cnt = 0;
         while (tableMetaDataResultSet.next()) {
-          Assertions.assertTrue(ORDERS_JDBC.equalsIgnoreCase(tableMetaDataResultSet.getString(3)));
+          assertTrue(ORDERS_JDBC.equalsIgnoreCase(tableMetaDataResultSet.getString(3)));
           ++cnt;
         }
-        Assertions.assertEquals(1, cnt, "number of tables");
+        assertEquals(1, cnt, "number of tables");
       }
       // test pattern
       try (ResultSet tableMetaDataResultSet =
@@ -649,7 +654,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         ResultSetMetaData resultSetMetaData = tableMetaDataResultSet.getMetaData();
 
         // assert column count
-        Assertions.assertEquals(10, resultSetMetaData.getColumnCount());
+        assertEquals(10, resultSetMetaData.getColumnCount());
 
         // assert we get orders_jdbc
         boolean found = false;
@@ -660,7 +665,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             break;
           }
         }
-        Assertions.assertTrue(found, "orders_jdbc not found");
+        assertTrue(found, "orders_jdbc not found");
       }
 
       // get column metadata
@@ -669,38 +674,37 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         ResultSetMetaData resultSetMetaData = columnMetaDataResultSet.getMetaData();
 
         // assert column count
-        Assertions.assertEquals(24, resultSetMetaData.getColumnCount());
+        assertEquals(24, resultSetMetaData.getColumnCount());
 
         // assert we get 9 rows
         cnt = 0;
         while (columnMetaDataResultSet.next()) {
           // SNOW-16881: assert database name
-          Assertions.assertTrue(
+          assertTrue(
               connection.getCatalog().equalsIgnoreCase(columnMetaDataResultSet.getString(1)));
 
           // assert the table name and column name, data type and type name
-          Assertions.assertTrue(ORDERS_JDBC.equalsIgnoreCase(columnMetaDataResultSet.getString(3)));
+          assertTrue(ORDERS_JDBC.equalsIgnoreCase(columnMetaDataResultSet.getString(3)));
 
-          Assertions.assertTrue(columnMetaDataResultSet.getString(4).startsWith("C"));
+          assertTrue(columnMetaDataResultSet.getString(4).startsWith("C"));
 
-          Assertions.assertEquals(Types.VARCHAR, columnMetaDataResultSet.getInt(5));
+          assertEquals(Types.VARCHAR, columnMetaDataResultSet.getInt(5));
 
-          Assertions.assertTrue("VARCHAR".equalsIgnoreCase(columnMetaDataResultSet.getString(6)));
+          assertTrue("VARCHAR".equalsIgnoreCase(columnMetaDataResultSet.getString(6)));
 
           if (cnt == 0) {
             // assert comment
-            Assertions.assertEquals("JDBC", columnMetaDataResultSet.getString(12));
+            assertEquals("JDBC", columnMetaDataResultSet.getString(12));
 
             // assert nullable
-            Assertions.assertEquals(
-                DatabaseMetaData.columnNoNulls, columnMetaDataResultSet.getInt(11));
+            assertEquals(DatabaseMetaData.columnNoNulls, columnMetaDataResultSet.getInt(11));
 
             // assert is_nullable
-            Assertions.assertEquals("NO", columnMetaDataResultSet.getString(18));
+            assertEquals("NO", columnMetaDataResultSet.getString(18));
           }
           ++cnt;
         }
-        Assertions.assertEquals(9, cnt);
+        assertEquals(9, cnt);
       }
 
       // create a table with mix cases
@@ -713,15 +717,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           cnt = 0;
           while (columnMetaDataResultSet.next()) {
             // assert the table name and column name, data type and type name
-            Assertions.assertTrue(
-                "testDBMetadata".equalsIgnoreCase(columnMetaDataResultSet.getString(3)));
+            assertTrue("testDBMetadata".equalsIgnoreCase(columnMetaDataResultSet.getString(3)));
 
-            Assertions.assertEquals(Types.TIMESTAMP, columnMetaDataResultSet.getInt(5));
+            assertEquals(Types.TIMESTAMP, columnMetaDataResultSet.getInt(5));
 
-            Assertions.assertTrue(columnMetaDataResultSet.getString(4).equalsIgnoreCase("a"));
+            assertTrue(columnMetaDataResultSet.getString(4).equalsIgnoreCase("a"));
             cnt++;
           }
-          Assertions.assertEquals(1, cnt);
+          assertEquals(1, cnt);
         }
       }
       connection.createStatement().execute("DROP TABLE IF EXISTS \"testDBMetadata\"");
@@ -749,13 +752,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
         statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
         statement.execute("CREATE OR REPLACE STAGE wildcard_stage");
-        Assertions.assertTrue(
+        assertTrue(
             statement.execute("PUT file://" + sourceFilePath + " @wildcard_stage"),
             "Failed to put a file");
 
         findFile(statement, "ls @wildcard_stage/");
 
-        Assertions.assertTrue(
+        assertTrue(
             statement.execute(
                 "GET @wildcard_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
             "Failed to get files");
@@ -765,7 +768,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         for (int i = 0; i < fileNames.length; i++) {
           // Make sure that the downloaded file exists, it should be gzip compressed
           downloaded = new File(destFolderCanonicalPathWithSeparator + fileNames[i] + ".gz");
-          Assertions.assertTrue(downloaded.exists());
+          assertTrue(downloaded.exists());
 
           Process p =
               Runtime.getRuntime()
@@ -776,8 +779,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           File original = new File(individualFilePath);
           File unzipped = new File(destFolderCanonicalPathWithSeparator + fileNames[i]);
-          Assertions.assertEquals(original.length(), unzipped.length());
-          Assertions.assertTrue(FileUtils.contentEquals(original, unzipped));
+          assertEquals(original.length(), unzipped.length());
+          assertTrue(FileUtils.contentEquals(original, unzipped));
         }
       } finally {
         statement.execute("DROP STAGE IF EXISTS wildcard_stage");
@@ -838,7 +841,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE largefile_stage");
-        Assertions.assertTrue(
+        assertTrue(
             statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"),
             "Failed to put a file");
 
@@ -854,14 +857,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
 
         // get file from new stage
-        Assertions.assertTrue(
+        assertTrue(
             statement.execute(
                 "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
             "Failed to get files");
 
         // Make sure that the downloaded file exists; it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-        Assertions.assertTrue(downloaded.exists());
+        assertTrue(downloaded.exists());
 
         // unzip the file
         Process p =
@@ -873,8 +876,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // back into a stage,
         // downloaded, and unzipped
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
-        Assertions.assertEquals(largeTempFile.length(), unzipped.length());
-        Assertions.assertTrue(FileUtils.contentEquals(largeTempFile, unzipped));
+        assertEquals(largeTempFile.length(), unzipped.length());
+        assertTrue(FileUtils.contentEquals(largeTempFile, unzipped));
       } finally {
         statement.execute("DROP STAGE IF EXISTS largefile_stage");
         statement.execute("DROP STAGE IF EXISTS extra_stage");
@@ -916,14 +919,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE testing_stage");
-          Assertions.assertTrue(
+          assertTrue(
               statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"),
               "Failed to put a file");
           // check that file exists in stage after PUT
           findFile(statement, "ls @testing_stage/");
 
           // put another file in same stage with same filename with overwrite = true
-          Assertions.assertTrue(
+          assertTrue(
               statement.execute(
                   "PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=true"),
               "Failed to put a file");
@@ -932,14 +935,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           findFile(statement, "ls @testing_stage/");
 
           // get file from new stage
-          Assertions.assertTrue(
+          assertTrue(
               statement.execute(
                   "GET @testing_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
               "Failed to get files");
 
           // Make sure that the downloaded file exists; it should be gzip compressed
           File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
-          Assertions.assertTrue(downloaded.exists());
+          assertTrue(downloaded.exists());
 
           // unzip the file
           Process p =
@@ -948,7 +951,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           p.waitFor();
 
           File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
-          Assertions.assertTrue(FileUtils.contentEqualsIgnoreEOL(file2, unzipped, null));
+          assertTrue(FileUtils.contentEqualsIgnoreEOL(file2, unzipped, null));
         } finally {
           statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
         }
@@ -972,7 +975,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           statement.execute("CREATE OR REPLACE TABLE testLoadToLocalFS(a number)");
 
           // put files
-          Assertions.assertTrue(
+          assertTrue(
               statement.execute(
                   "PUT file://"
                       + getFullPathFileInResource(TEST_DATA_FILE)
@@ -984,10 +987,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
             // assert column count
-            Assertions.assertTrue(resultSetMetaData.getColumnCount() > 0);
+            assertTrue(resultSetMetaData.getColumnCount() > 0);
 
-            Assertions.assertTrue(resultSet.next()); // one row
-            Assertions.assertFalse(resultSet.next());
+            assertTrue(resultSet.next()); // one row
+            assertFalse(resultSet.next());
           }
           findFile(
               statement, "ls @%testLoadToLocalFS/ pattern='.*orders/" + TEST_DATA_FILE + ".g.*'");
@@ -1000,17 +1003,17 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
             // assert column count
-            Assertions.assertTrue(resultSetMetaData.getColumnCount() >= 1);
+            assertTrue(resultSetMetaData.getColumnCount() >= 1);
 
             // assert we get 1 row for the file we copied
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertNotNull(resultSet.getString(1));
-            Assertions.assertFalse(resultSet.next());
+            assertTrue(resultSet.next());
+            assertNotNull(resultSet.getString(1));
+            assertFalse(resultSet.next());
             try {
               resultSet.getString(1); // no more row
-              Assertions.fail("must fail");
+              fail("must fail");
             } catch (SQLException ex) {
-              Assertions.assertEquals(
+              assertEquals(
                   (int) ErrorCode.COLUMN_DOES_NOT_EXIST.getMessageCode(), ex.getErrorCode());
             }
 
@@ -1021,7 +1024,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
               statement.executeQuery("ls @%testLoadToLocalFS/ pattern='.*orders/orders.*'")) {
 
             // assert we get 0 row
-            Assertions.assertFalse(resultSet.next());
+            assertFalse(resultSet.next());
           }
         } finally {
           statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
@@ -1044,10 +1047,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         }
         // give enough time for s3 eventual consistency for US region
         Thread.sleep(1000);
-        Assertions.assertTrue(fileFound, "Could not find a file");
+        assertTrue(fileFound, "Could not find a file");
 
         // assert the first column not null
-        Assertions.assertNotNull(resultSet.getString(1), "Null result");
+        assertNotNull(resultSet.getString(1), "Null result");
       }
     }
   }
@@ -1060,10 +1063,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
       // execute a bad query
       try (ResultSet resultSet = statement.executeQuery("SELECT * FROM nonexistence")) {
-        Assertions.fail("SQL exception not raised");
+        fail("SQL exception not raised");
       } catch (SQLException ex1) {
         // assert the sqlstate "42S02" which means BASE_TABLE_OR_VIEW_NOT_FOUND
-        Assertions.assertEquals("42S02", ex1.getSQLState(), "sqlstate mismatch");
+        assertEquals("42S02", ex1.getSQLState(), "sqlstate mismatch");
       }
     }
   }
@@ -1079,9 +1082,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             statement.executeQuery("EXPLAIN PLAN FOR SELECT c1 FROM orders_jdbc")) {
 
       ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-      Assertions.assertTrue(
-          resultSetMetaData.getColumnCount() >= 4, "must return more than 4 columns");
-      Assertions.assertTrue(countRows(resultSet) > 3, "must return more than 3 rows");
+      assertTrue(resultSetMetaData.getColumnCount() >= 4, "must return more than 4 columns");
+      assertTrue(countRows(resultSet) > 3, "must return more than 3 rows");
     }
   }
 
@@ -1093,8 +1095,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             statement.executeQuery(
                 "select to_timestamp('2013-05-08T15:39:20.123-07:00') from orders_jdbc")) {
 
-      Assertions.assertTrue(resultSet.next());
-      Assertions.assertEquals("Wed, 08 May 2013 15:39:20 -0700", resultSet.getString(1));
+      assertTrue(resultSet.next());
+      assertEquals("Wed, 08 May 2013 15:39:20 -0700", resultSet.getString(1));
     }
   }
 
@@ -1103,8 +1105,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement();
         ResultSet resultSet = statement.executeQuery("select to_date('0001-01-01')")) {
-      Assertions.assertTrue(resultSet.next());
-      Assertions.assertEquals("0001-01-01", resultSet.getString(1));
+      assertTrue(resultSet.next());
+      assertEquals("0001-01-01", resultSet.getString(1));
     }
   }
 
@@ -1115,8 +1117,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         Statement statement = connection.createStatement();
         ResultSet resultSet =
             statement.executeQuery("select to_time('15:39:20.123') from orders_jdbc")) {
-      Assertions.assertTrue(resultSet.next());
-      Assertions.assertEquals("15:39:20", resultSet.getString(1));
+      assertTrue(resultSet.next());
+      assertEquals("15:39:20", resultSet.getString(1));
     }
   }
 
@@ -1134,14 +1136,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         resultSetMetaData = resultSet.getMetaData();
 
         // assert column count
-        Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+        assertEquals(1, resultSetMetaData.getColumnCount());
 
         // assert the values for the first 5 rows
         for (int i = 0; i < 5; i++) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
 
           // assert each column is 'F'
-          Assertions.assertEquals("F", resultSet.getString(1));
+          assertEquals("F", resultSet.getString(1));
         }
       }
       // turn off sorting mode
@@ -1153,14 +1155,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         resultSetMetaData = resultSet.getMetaData();
 
         // assert column count
-        Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+        assertEquals(1, resultSetMetaData.getColumnCount());
 
         // assert the values for the first 4 rows
         for (int i = 0; i < 4; i++) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
 
           // assert each column is 'P'
-          Assertions.assertEquals("P", resultSet.getString(1));
+          assertEquals("P", resultSet.getString(1));
         }
       }
     }
@@ -1178,7 +1180,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         int numRows =
             statement.executeUpdate("INSERT INTO testUpdateCount values (1, 'a'), (2, 'b')");
 
-        Assertions.assertEquals(2, numRows, "Unexpected number of rows inserted: " + numRows);
+        assertEquals(2, numRows, "Unexpected number of rows inserted: " + numRows);
       } finally {
         statement.execute("DROP TABLE if exists testUpdateCount");
       }
@@ -1205,7 +1207,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                 "insert into testSnow4245 values(NULL,NULL,NULL),"
                     + "('2013-06-04 01:00:04','2013-06-04 01:00:04','2013-06-04 01:00:04'),"
                     + "('2013-06-05 23:00:05','2013-06-05 23:00:05','2013-06-05 23:00:05')");
-        Assertions.assertEquals(3, numRows, "Unexpected number of rows inserted: " + numRows);
+        assertEquals(3, numRows, "Unexpected number of rows inserted: " + numRows);
 
         // query the data
         try (ResultSet resultSet =
@@ -1221,11 +1223,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
             if (i == 0) {
               for (int j = 1; j < 4; j++) {
-                Assertions.assertNull(resultSet.getString(j), resultSet.getString(j));
+                assertNull(resultSet.getString(j), resultSet.getString(j));
               }
             } else {
               for (int j = 1; j < 4; j++) {
-                Assertions.assertNotNull(resultSet.getString(j), resultSet.getString(j));
+                assertNotNull(resultSet.getString(j), resultSet.getString(j));
               }
             }
             i = i + 1;
@@ -1254,7 +1256,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         int numRows =
             statement.executeUpdate(
                 String.format("INSERT INTO %s(str) values('%s')", tableName, data));
-        Assertions.assertEquals(1, numRows, "Unexpected number of rows inserted: " + numRows);
+        assertEquals(1, numRows, "Unexpected number of rows inserted: " + numRows);
 
         try (ResultSet rset =
             statement.executeQuery(String.format("SELECT str FROM %s", tableName))) {
@@ -1262,7 +1264,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          Assertions.assertEquals(data, ret, "Unexpected string value: " + ret);
+          assertEquals(data, ret, "Unexpected string value: " + ret);
         }
       } finally {
         statement.execute(String.format("DROP TABLE if exists %s", tableName));
@@ -1314,15 +1316,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
+          assertEquals(2, resultSetMetaData.getColumnCount());
+          assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
 
-          Assertions.assertEquals(1, resultSet.getInt(1), "integer");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string");
+          assertEquals(1, resultSet.getInt(1), "integer");
+          assertEquals("hello", resultSet.getString(2), "string");
         }
         // bind float
         preparedStatement.setDouble(1, 1.2);
@@ -1330,13 +1332,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.DOUBLE, resultSetMetaData.getColumnType(1));
+          assertEquals(2, resultSetMetaData.getColumnCount());
+          assertEquals(Types.DOUBLE, resultSetMetaData.getColumnType(1));
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(1.2, resultSet.getDouble(1), 0, "double");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string");
+          assertTrue(resultSet.next());
+          assertEquals(1.2, resultSet.getDouble(1), 0, "double");
+          assertEquals("hello", resultSet.getString(2), "string");
         }
         // bind string
         preparedStatement.setString(1, "hello");
@@ -1344,13 +1346,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
+          assertEquals(2, resultSetMetaData.getColumnCount());
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("hello", resultSet.getString(1), "string1");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string2");
+          assertTrue(resultSet.next());
+          assertEquals("hello", resultSet.getString(1), "string1");
+          assertEquals("hello", resultSet.getString(2), "string2");
         }
         // bind date
         sqlDate = java.sql.Date.valueOf("2014-08-26");
@@ -1359,13 +1361,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.DATE, resultSetMetaData.getColumnType(1));
+          assertEquals(2, resultSetMetaData.getColumnCount());
+          assertEquals(Types.DATE, resultSetMetaData.getColumnType(1));
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("2014-08-26", resultSet.getString(1), "string");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string");
+          assertTrue(resultSet.next());
+          assertEquals("2014-08-26", resultSet.getString(1), "string");
+          assertEquals("hello", resultSet.getString(2), "string");
         }
         // bind timestamp
         ts = buildTimestamp(2014, 7, 26, 3, 52, 0, 0);
@@ -1375,14 +1377,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.TIMESTAMP, resultSetMetaData.getColumnType(1));
+          assertEquals(2, resultSetMetaData.getColumnCount());
+          assertEquals(Types.TIMESTAMP, resultSetMetaData.getColumnType(1));
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(
+          assertTrue(resultSet.next());
+          assertEquals(
               "Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(1), "Incorrect timestamp");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string");
+          assertEquals("hello", resultSet.getString(2), "string");
         }
         // bind time
         tm = new Time(12345678); // 03:25:45.678
@@ -1391,13 +1393,13 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.TIME, resultSetMetaData.getColumnType(1));
+          assertEquals(2, resultSetMetaData.getColumnCount());
+          assertEquals(Types.TIME, resultSetMetaData.getColumnType(1));
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("03:25:45", resultSet.getString(1), "Incorrect time");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string");
+          assertTrue(resultSet.next());
+          assertEquals("03:25:45", resultSet.getString(1), "Incorrect time");
+          assertEquals("hello", resultSet.getString(2), "string");
         }
       }
       // bind in where clause
@@ -1409,14 +1411,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertEquals(9, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
+          assertEquals(9, resultSetMetaData.getColumnCount());
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("100", resultSet.getString(1), "c1");
-          Assertions.assertEquals("147004", resultSet.getString(2), "c2");
+          assertTrue(resultSet.next());
+          assertEquals("100", resultSet.getString(1), "c1");
+          assertEquals("147004", resultSet.getString(2), "c2");
         }
       }
 
@@ -1440,21 +1442,20 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           int rowCount = preparedStatement.executeUpdate();
 
           // update count should be 1
-          Assertions.assertEquals(1, rowCount, "update count");
+          assertEquals(1, rowCount, "update count");
 
           // test the inserted rows
           try (ResultSet resultSet = regularStatement.executeQuery("select * from testBind")) {
 
             // assert we get 1 rows
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertEquals(1, resultSet.getInt(1), "int");
-            Assertions.assertEquals("hello", resultSet.getString(2), "string");
-            Assertions.assertEquals(1.2, resultSet.getDouble(3), 0, "double");
-            Assertions.assertEquals("2014-08-26", resultSet.getString(4), "date");
-            Assertions.assertEquals(
-                "Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(5), "timestamp");
-            Assertions.assertEquals("03:25:45", resultSet.getString(6), "time");
-            Assertions.assertNull(resultSet.getString(7), "date");
+            assertTrue(resultSet.next());
+            assertEquals(1, resultSet.getInt(1), "int");
+            assertEquals("hello", resultSet.getString(2), "string");
+            assertEquals(1.2, resultSet.getDouble(3), 0, "double");
+            assertEquals("2014-08-26", resultSet.getString(4), "date");
+            assertEquals("Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(5), "timestamp");
+            assertEquals("03:25:45", resultSet.getString(6), "time");
+            assertNull(resultSet.getString(7), "date");
           }
         }
         // bind in update statement
@@ -1468,15 +1469,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         // test the updated rows
         try (ResultSet resultSet = regularStatement.executeQuery("select * from testBind")) {
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(1, resultSet.getInt(1), "int");
-          Assertions.assertEquals("world", resultSet.getString(2), "string");
-          Assertions.assertEquals(1.2, resultSet.getDouble(3), 0, "double");
-          Assertions.assertEquals("2014-08-26", resultSet.getString(4), "date");
-          Assertions.assertEquals(
-              "Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(5), "timestamp");
-          Assertions.assertEquals("03:25:45", resultSet.getString(6), "time");
-          Assertions.assertNull(resultSet.getString(7), "date");
+          assertTrue(resultSet.next());
+          assertEquals(1, resultSet.getInt(1), "int");
+          assertEquals("world", resultSet.getString(2), "string");
+          assertEquals(1.2, resultSet.getDouble(3), 0, "double");
+          assertEquals("2014-08-26", resultSet.getString(4), "date");
+          assertEquals("Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(5), "timestamp");
+          assertEquals("03:25:45", resultSet.getString(6), "time");
+          assertNull(resultSet.getString(7), "date");
         }
         // array bind for insert
         try (PreparedStatement preparedStatement =
@@ -1504,39 +1504,37 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           // GS optimizes this into one insert execution, but we expand the
           // return count into an array
-          Assertions.assertEquals(2, updateCounts.length, "Number of update counts");
+          assertEquals(2, updateCounts.length, "Number of update counts");
 
           // update count should be 1 for each
-          Assertions.assertEquals(1, updateCounts[0], "update count");
-          Assertions.assertEquals(1, updateCounts[1], "update count");
+          assertEquals(1, updateCounts[0], "update count");
+          assertEquals(1, updateCounts[1], "update count");
         }
         // test the inserted rows
         try (ResultSet resultSet =
             regularStatement.executeQuery("select * from testBind where a = 2")) {
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(2, resultSet.getInt(1), "int");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string");
-          Assertions.assertEquals(1.2, resultSet.getDouble(3), 0, "double");
-          Assertions.assertEquals("2014-08-26", resultSet.getString(4), "date");
-          Assertions.assertEquals(
-              "Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(5), "timestamp");
-          Assertions.assertEquals("03:25:45", resultSet.getString(6), "time");
+          assertTrue(resultSet.next());
+          assertEquals(2, resultSet.getInt(1), "int");
+          assertEquals("hello", resultSet.getString(2), "string");
+          assertEquals(1.2, resultSet.getDouble(3), 0, "double");
+          assertEquals("2014-08-26", resultSet.getString(4), "date");
+          assertEquals("Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(5), "timestamp");
+          assertEquals("03:25:45", resultSet.getString(6), "time");
         }
 
         try (ResultSet resultSet =
             regularStatement.executeQuery("select * from testBind where a = 3")) {
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(3, resultSet.getInt(1), "int");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string");
-          Assertions.assertEquals(1.2, resultSet.getDouble(3), 0, "double");
-          Assertions.assertEquals("2014-08-26", resultSet.getString(4), "date");
-          Assertions.assertEquals(
-              "Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(5), "timestamp");
-          Assertions.assertEquals("03:25:45", resultSet.getString(6), "time");
+          assertTrue(resultSet.next());
+          assertEquals(3, resultSet.getInt(1), "int");
+          assertEquals("hello", resultSet.getString(2), "string");
+          assertEquals(1.2, resultSet.getDouble(3), 0, "double");
+          assertEquals("2014-08-26", resultSet.getString(4), "date");
+          assertEquals("Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(5), "timestamp");
+          assertEquals("03:25:45", resultSet.getString(6), "time");
         }
 
         // describe mode
@@ -1544,21 +1542,21 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             connection.prepareStatement("select * from testBind WHERE to_number(a) = ?")) {
 
           resultSetMetaData = preparedStatement.getMetaData();
-          Assertions.assertEquals(7, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
-          Assertions.assertEquals(Types.DOUBLE, resultSetMetaData.getColumnType(3));
-          Assertions.assertEquals(Types.DATE, resultSetMetaData.getColumnType(4));
-          Assertions.assertEquals(Types.TIMESTAMP, resultSetMetaData.getColumnType(5));
-          Assertions.assertEquals(Types.TIME, resultSetMetaData.getColumnType(6));
-          Assertions.assertEquals(Types.DATE, resultSetMetaData.getColumnType(7));
+          assertEquals(7, resultSetMetaData.getColumnCount());
+          assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
+          assertEquals(Types.DOUBLE, resultSetMetaData.getColumnType(3));
+          assertEquals(Types.DATE, resultSetMetaData.getColumnType(4));
+          assertEquals(Types.TIMESTAMP, resultSetMetaData.getColumnType(5));
+          assertEquals(Types.TIME, resultSetMetaData.getColumnType(6));
+          assertEquals(Types.DATE, resultSetMetaData.getColumnType(7));
         }
 
         try (PreparedStatement preparedStatement = connection.prepareStatement("select ?, ?")) {
           resultSetMetaData = preparedStatement.getMetaData();
-          Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
+          assertEquals(2, resultSetMetaData.getColumnCount());
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
         }
 
         try (PreparedStatement preparedStatement = connection.prepareStatement("select ?, ?")) {
@@ -1568,9 +1566,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           ResultSet result = preparedStatement.executeQuery();
 
           resultSetMetaData = result.getMetaData();
-          Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
+          assertEquals(2, resultSetMetaData.getColumnCount());
+          assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
         }
 
         // test null binding
@@ -1581,23 +1579,23 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             resultSetMetaData = resultSet.getMetaData();
 
             // assert column count
-            Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
-            Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
+            assertEquals(1, resultSetMetaData.getColumnCount());
+            assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(1));
 
             // assert we get 1 rows
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertNull(resultSet.getObject(1));
+            assertTrue(resultSet.next());
+            assertNull(resultSet.getObject(1));
           }
           preparedStatement.setNull(1, Types.INTEGER);
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
             resultSetMetaData = resultSet.getMetaData();
 
             // assert column count
-            Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+            assertEquals(1, resultSetMetaData.getColumnCount());
 
             // assert we get 1 rows
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertNull(resultSet.getObject(1));
+            assertTrue(resultSet.next());
+            assertNull(resultSet.getObject(1));
           }
         }
       }
@@ -1627,10 +1625,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           updateCounts = preparedStatement.executeBatch();
 
           // GS optimizes this into one insert execution
-          Assertions.assertEquals(16, updateCounts.length, "Number of update counts");
+          assertEquals(16, updateCounts.length, "Number of update counts");
 
           for (int idx = 0; idx < 16; idx++) {
-            Assertions.assertEquals(1, updateCounts[idx], "update count");
+            assertEquals(1, updateCounts[idx], "update count");
           }
         }
       }
@@ -1650,17 +1648,17 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             connection.prepareStatement("SELECT * from table(?)")) {
           resultSetMetaData = preparedStatement.getMetaData();
           // we do not have any metadata, without a specified table
-          Assertions.assertEquals(0, resultSetMetaData.getColumnCount());
+          assertEquals(0, resultSetMetaData.getColumnCount());
 
           preparedStatement.setString(1, ORDERS_JDBC);
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
             resultSetMetaData = resultSet.getMetaData();
-            Assertions.assertEquals(9, resultSetMetaData.getColumnCount());
+            assertEquals(9, resultSetMetaData.getColumnCount());
             // assert we have 73 rows
             for (int i = 0; i < 73; i++) {
-              Assertions.assertTrue(resultSet.next());
+              assertTrue(resultSet.next());
             }
-            Assertions.assertFalse(resultSet.next());
+            assertFalse(resultSet.next());
           }
         }
 
@@ -1671,9 +1669,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
             resultSetMetaData = resultSet.getMetaData();
 
-            Assertions.assertEquals(9, resultSetMetaData.getColumnCount());
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertFalse(resultSet.next());
+            assertEquals(9, resultSetMetaData.getColumnCount());
+            assertTrue(resultSet.next());
+            assertFalse(resultSet.next());
           }
         }
 
@@ -1684,12 +1682,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
             resultSetMetaData = resultSet.getMetaData();
 
-            Assertions.assertEquals(9, resultSetMetaData.getColumnCount());
+            assertEquals(9, resultSetMetaData.getColumnCount());
             // assert we have 73 rows
             for (int i = 0; i < 73; i++) {
-              Assertions.assertTrue(resultSet.next());
+              assertTrue(resultSet.next());
             }
-            Assertions.assertFalse(resultSet.next());
+            assertFalse(resultSet.next());
           }
         }
 
@@ -1703,12 +1701,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
             resultSetMetaData = resultSet.getMetaData();
 
-            Assertions.assertEquals(11, resultSetMetaData.getColumnCount());
+            assertEquals(11, resultSetMetaData.getColumnCount());
             // assert we have 73 rows
             for (int i = 0; i < 73; i++) {
-              Assertions.assertTrue(resultSet.next());
+              assertTrue(resultSet.next());
             }
-            Assertions.assertFalse(resultSet.next());
+            assertFalse(resultSet.next());
           }
         }
 
@@ -1720,12 +1718,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
             resultSetMetaData = resultSet.getMetaData();
 
-            Assertions.assertEquals(11, resultSetMetaData.getColumnCount());
+            assertEquals(11, resultSetMetaData.getColumnCount());
             // assert we have 73 rows
             for (int i = 0; i < 73; i++) {
-              Assertions.assertTrue(resultSet.next());
+              assertTrue(resultSet.next());
             }
-            Assertions.assertFalse(resultSet.next());
+            assertFalse(resultSet.next());
           }
         }
 
@@ -1737,12 +1735,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
             resultSetMetaData = resultSet.getMetaData();
 
-            Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
+            assertEquals(2, resultSetMetaData.getColumnCount());
             // assert we have 73 rows
             for (int i = 0; i < 73; i++) {
-              Assertions.assertTrue(resultSet.next());
+              assertTrue(resultSet.next());
             }
-            Assertions.assertFalse(resultSet.next());
+            assertFalse(resultSet.next());
           }
         }
       } finally {
@@ -1771,10 +1769,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
             // assert column count
-            Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+            assertEquals(1, resultSetMetaData.getColumnCount());
 
             // assert we get 1 rows
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
           }
         }
       } finally {
@@ -1805,16 +1803,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           int updateCount = preparedStatement.executeUpdate();
 
           // update count should be 1
-          Assertions.assertEquals(1, updateCount, "update count");
+          assertEquals(1, updateCount, "update count");
 
           // test the inserted rows
           try (ResultSet resultSet =
               regularStatement.executeQuery("select * from testBindTimestampNTZ")) {
 
             // assert we get 1 rows
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertEquals(
-                "Tue, 26 Aug 2014 03:52:00 Z", resultSet.getString(1), "timestamp");
+            assertTrue(resultSet.next());
+            assertEquals("Tue, 26 Aug 2014 03:52:00 Z", resultSet.getString(1), "timestamp");
 
             regularStatement.executeUpdate("truncate table testBindTimestampNTZ");
 
@@ -1824,14 +1821,14 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             updateCount = preparedStatement.executeUpdate();
 
             // update count should be 1
-            Assertions.assertEquals(1, updateCount, "update count");
+            assertEquals(1, updateCount, "update count");
           }
           // test the inserted rows
           try (ResultSet resultSet =
               regularStatement.executeQuery("select * from testBindTimestampNTZ")) {
 
             // assert we get 1 rows
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
           }
         }
       } finally {
@@ -1860,11 +1857,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           int[] updateCounts = preparedStatement.executeBatch();
 
           // GS optimizes this into one insert execution
-          Assertions.assertEquals(2, updateCounts.length, "Number of update counts");
+          assertEquals(2, updateCounts.length, "Number of update counts");
 
           // update count should be 1
-          Assertions.assertEquals(1, updateCounts[0], "update count");
-          Assertions.assertEquals(1, updateCounts[1], "update count");
+          assertEquals(1, updateCounts[0], "update count");
+          assertEquals(1, updateCounts[1], "update count");
 
           preparedStatement.clearBatch();
 
@@ -1877,11 +1874,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           updateCounts = preparedStatement.executeBatch();
 
           // GS optimizes this into one insert execution
-          Assertions.assertEquals(2, updateCounts.length, "Number of update counts");
+          assertEquals(2, updateCounts.length, "Number of update counts");
 
           // update count should be 1
-          Assertions.assertEquals(1, updateCounts[0], "update count");
-          Assertions.assertEquals(1, updateCounts[1], "update count");
+          assertEquals(1, updateCounts[0], "update count");
+          assertEquals(1, updateCounts[1], "update count");
 
           preparedStatement.clearBatch();
 
@@ -1891,10 +1888,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           updateCounts = preparedStatement.executeBatch();
 
           // GS optimizes this into one insert execution
-          Assertions.assertEquals(1, updateCounts.length, "Number of update counts");
+          assertEquals(1, updateCounts.length, "Number of update counts");
 
           // update count should be 1
-          Assertions.assertEquals(1, updateCounts[0], "update count");
+          assertEquals(1, updateCounts[0], "update count");
 
           preparedStatement.clearBatch();
 
@@ -1905,9 +1902,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             preparedStatement.setObject(1, "Null", Types.DOUBLE);
             preparedStatement.addBatch();
             preparedStatement.executeBatch();
-            Assertions.fail("must fail in executeBatch()");
+            fail("must fail in executeBatch()");
           } catch (SnowflakeSQLException ex) {
-            Assertions.assertEquals(2086, ex.getErrorCode());
+            assertEquals(2086, ex.getErrorCode());
           }
 
           preparedStatement.clearBatch();
@@ -1918,9 +1915,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
             preparedStatement.setDouble(1, 1.2);
             preparedStatement.addBatch();
-            Assertions.fail("must fail");
+            fail("must fail");
           } catch (SnowflakeSQLException ex) {
-            Assertions.assertEquals(
+            assertEquals(
                 (int) ErrorCode.ARRAY_BIND_MIXED_TYPES_NOT_SUPPORTED.getMessageCode(),
                 ex.getErrorCode());
           }
@@ -1953,24 +1950,23 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertEquals(6, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
-          Assertions.assertEquals(Types.DECIMAL, resultSetMetaData.getColumnType(3));
-          Assertions.assertEquals(Types.DOUBLE, resultSetMetaData.getColumnType(4));
-          Assertions.assertEquals(Types.DATE, resultSetMetaData.getColumnType(5));
-          Assertions.assertEquals(Types.TIMESTAMP, resultSetMetaData.getColumnType(6));
+          assertEquals(6, resultSetMetaData.getColumnCount());
+          assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
+          assertEquals(Types.DECIMAL, resultSetMetaData.getColumnType(3));
+          assertEquals(Types.DOUBLE, resultSetMetaData.getColumnType(4));
+          assertEquals(Types.DATE, resultSetMetaData.getColumnType(5));
+          assertEquals(Types.TIMESTAMP, resultSetMetaData.getColumnType(6));
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
 
-          Assertions.assertEquals(1, resultSet.getInt(1), "integer");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string");
-          Assertions.assertEquals(new BigDecimal("1.3"), resultSet.getBigDecimal(3), "decimal");
-          Assertions.assertEquals(1.3, resultSet.getDouble(4), 0, "double");
-          Assertions.assertEquals("2014-08-26", resultSet.getString(5), "date");
-          Assertions.assertEquals(
-              "Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(6), "timestamp");
+          assertEquals(1, resultSet.getInt(1), "integer");
+          assertEquals("hello", resultSet.getString(2), "string");
+          assertEquals(new BigDecimal("1.3"), resultSet.getBigDecimal(3), "decimal");
+          assertEquals(1.3, resultSet.getDouble(4), 0, "double");
+          assertEquals("2014-08-26", resultSet.getString(5), "date");
+          assertEquals("Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(6), "timestamp");
 
           preparedStatement.setObject(1, 1, Types.INTEGER);
           preparedStatement.setObject(2, "hello", Types.VARCHAR);
@@ -1984,24 +1980,23 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertEquals(6, resultSetMetaData.getColumnCount());
-          Assertions.assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
-          Assertions.assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
-          Assertions.assertEquals(Types.DECIMAL, resultSetMetaData.getColumnType(3));
-          Assertions.assertEquals(Types.DOUBLE, resultSetMetaData.getColumnType(4));
-          Assertions.assertEquals(Types.DATE, resultSetMetaData.getColumnType(5));
-          Assertions.assertEquals(Types.TIMESTAMP, resultSetMetaData.getColumnType(6));
+          assertEquals(6, resultSetMetaData.getColumnCount());
+          assertEquals(Types.BIGINT, resultSetMetaData.getColumnType(1));
+          assertEquals(Types.VARCHAR, resultSetMetaData.getColumnType(2));
+          assertEquals(Types.DECIMAL, resultSetMetaData.getColumnType(3));
+          assertEquals(Types.DOUBLE, resultSetMetaData.getColumnType(4));
+          assertEquals(Types.DATE, resultSetMetaData.getColumnType(5));
+          assertEquals(Types.TIMESTAMP, resultSetMetaData.getColumnType(6));
 
           // assert we get 1 rows
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
 
-          Assertions.assertEquals(1, resultSet.getInt(1), "integer");
-          Assertions.assertEquals("hello", resultSet.getString(2), "string");
-          Assertions.assertEquals(new BigDecimal("1.3"), resultSet.getBigDecimal(3), "decimal");
-          Assertions.assertEquals(1.3, resultSet.getDouble(4), 0, "double");
-          Assertions.assertEquals("2014-08-26", resultSet.getString(5), "date");
-          Assertions.assertEquals(
-              "Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(6), "timestamp");
+          assertEquals(1, resultSet.getInt(1), "integer");
+          assertEquals("hello", resultSet.getString(2), "string");
+          assertEquals(new BigDecimal("1.3"), resultSet.getBigDecimal(3), "decimal");
+          assertEquals(1.3, resultSet.getDouble(4), 0, "double");
+          assertEquals("2014-08-26", resultSet.getString(5), "date");
+          assertEquals("Mon, 25 Aug 2014 20:52:00 -0700", resultSet.getString(6), "timestamp");
         }
       }
     }
@@ -2026,11 +2021,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         ResultSet res = statement.executeQuery("select ts from testSnow6290");
 
-        Assertions.assertTrue(res.next(), "expect a row");
+        assertTrue(res.next(), "expect a row");
 
         Timestamp tsFromDB = res.getTimestamp(1);
 
-        Assertions.assertEquals(ts.getTime(), tsFromDB.getTime(), "timestamp mismatch");
+        assertEquals(ts.getTime(), tsFromDB.getTime(), "timestamp mismatch");
       } finally {
         statement.execute("DROP TABLE if exists testSnow6290");
       }
@@ -2046,10 +2041,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       // execute DDLs
       statement.executeQuery(null);
 
-      Assertions.fail("expected exception, but no exception");
+      fail("expected exception, but no exception");
 
     } catch (SnowflakeSQLException ex) {
-      Assertions.assertEquals((int) ErrorCode.INVALID_SQL.getMessageCode(), ex.getErrorCode());
+      assertEquals((int) ErrorCode.INVALID_SQL.getMessageCode(), ex.getErrorCode());
     }
   }
 
@@ -2065,29 +2060,29 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         resultSetMetaData = resultSet.getMetaData();
 
-        Assertions.assertEquals(
+        assertEquals(
             Long.class.getName(),
             resultSetMetaData.getColumnClassName(1),
             "column class name=BigDecimal");
 
         // assert we get 1 rows
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
 
-        Assertions.assertTrue(resultSet.getObject(1) instanceof Long, "integer");
+        assertTrue(resultSet.getObject(1) instanceof Long, "integer");
       }
       preparedStatement.setString(1, "hello");
       try (ResultSet resultSet = preparedStatement.executeQuery()) {
         resultSetMetaData = resultSet.getMetaData();
 
-        Assertions.assertEquals(
+        assertEquals(
             String.class.getName(),
             resultSetMetaData.getColumnClassName(1),
             "column class name=String");
 
         // assert we get 1 rows
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
 
-        Assertions.assertTrue(resultSet.getObject(1) instanceof String, "string");
+        assertTrue(resultSet.getObject(1) instanceof String, "string");
       }
 
       preparedStatement.setDouble(1, 1.2);
@@ -2095,15 +2090,15 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         resultSetMetaData = resultSet.getMetaData();
 
-        Assertions.assertEquals(
+        assertEquals(
             Double.class.getName(),
             resultSetMetaData.getColumnClassName(1),
             "column class name=Double");
 
         // assert we get 1 rows
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
 
-        Assertions.assertTrue(resultSet.getObject(1) instanceof Double, "double");
+        assertTrue(resultSet.getObject(1) instanceof Double, "double");
       }
 
       preparedStatement.setTimestamp(1, new Timestamp(0));
@@ -2111,30 +2106,30 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
         resultSetMetaData = resultSet.getMetaData();
 
-        Assertions.assertEquals(
+        assertEquals(
             Timestamp.class.getName(),
             resultSetMetaData.getColumnClassName(1),
             "column class name=Timestamp");
 
         // assert we get 1 rows
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
 
-        Assertions.assertTrue(resultSet.getObject(1) instanceof Timestamp, "timestamp");
+        assertTrue(resultSet.getObject(1) instanceof Timestamp, "timestamp");
       }
 
       preparedStatement.setDate(1, new java.sql.Date(0));
       try (ResultSet resultSet = preparedStatement.executeQuery()) {
         resultSetMetaData = resultSet.getMetaData();
 
-        Assertions.assertEquals(
+        assertEquals(
             Date.class.getName(),
             resultSetMetaData.getColumnClassName(1),
             "column class name=Date");
 
         // assert we get 1 rows
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
 
-        Assertions.assertTrue(resultSet.getObject(1) instanceof Date, "date");
+        assertTrue(resultSet.getObject(1) instanceof Date, "date");
       }
     }
   }
@@ -2144,8 +2139,8 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection();
         Statement stmt = connection.createStatement();
         ResultSet resultSet = stmt.executeQuery("select cast(null as int) as null_int")) {
-      Assertions.assertTrue(resultSet.next());
-      Assertions.assertEquals(0, resultSet.getDouble(1), 0.0001, "0 for null");
+      assertTrue(resultSet.next());
+      assertEquals(0, resultSet.getDouble(1), 0.0001, "0 for null");
     }
   }
 
@@ -2155,7 +2150,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
     try (Connection connection = getConnection();
         Statement stmt = connection.createStatement();
         ResultSet resultSet = stmt.executeQuery("select 'nan'::float")) {
-      Assertions.assertTrue(resultSet.next());
+      assertTrue(resultSet.next());
       assertThat("NaN for NaN", resultSet.getDouble(1), equalTo(Double.NaN));
     }
   }
@@ -2180,10 +2175,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
           // assert column count
-          Assertions.assertTrue(resultSetMetaData.getColumnCount() > 0);
+          assertTrue(resultSetMetaData.getColumnCount() > 0);
           // assert we get 1 rows
           for (int i = 0; i < 1; i++) {
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
           }
         }
       } finally {
@@ -2250,12 +2245,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         resultSetMetaData = resultSet.getMetaData();
 
         // assert column count
-        Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+        assertEquals(1, resultSetMetaData.getColumnCount());
 
         // assert we get 1 row
         for (int i = 0; i < 1; i++) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertTrue(resultSet.getInt(1) > 0);
+          assertTrue(resultSet.next());
+          assertTrue(resultSet.getInt(1) > 0);
         }
       }
 
@@ -2266,12 +2261,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         resultSetMetaData = resultSet.getMetaData();
 
         // assert column count
-        Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+        assertEquals(1, resultSetMetaData.getColumnCount());
 
         // assert we get 1 row
         for (int i = 0; i < 1; i++) {
-          Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals("Fri, 23 Oct 2015 12:35:38 -0700", resultSet.getString(1));
+          assertTrue(resultSet.next());
+          assertEquals("Fri, 23 Oct 2015 12:35:38 -0700", resultSet.getString(1));
         }
       }
     }
@@ -2299,10 +2294,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       // now run a query for 120 seconds
       try (ResultSet resultSet =
           statement.executeQuery("SELECT count(*) FROM TABLE(generator(timeLimit => 120))")) {
-        Assertions.fail("should be canceled");
+        fail("should be canceled");
       } catch (SQLException ex) {
         // assert the sqlstate is what we expect (QUERY CANCELLED)
-        Assertions.assertEquals(SqlState.QUERY_CANCELED, ex.getSQLState(), "sqlstate mismatch");
+        assertEquals(SqlState.QUERY_CANCELED, ex.getSQLState(), "sqlstate mismatch");
       }
     }
   }
@@ -2321,7 +2316,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       // 30 minutes past daylight saving change (from 2am to 3am)
       try (ResultSet res = statement.executeQuery("select '2015-03-08 03:30:00'::timestamp_ntz")) {
 
-        Assertions.assertTrue(res.next());
+        assertTrue(res.next());
 
         // get timestamp in UTC
         calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -2339,12 +2334,12 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         tsStrInLA = sdf.format(tsInLA);
 
         // the timestamp in LA and in UTC should be the same
-        Assertions.assertEquals(tsStrInUTC, tsStrInLA, "timestamp values not equal");
+        assertEquals(tsStrInUTC, tsStrInLA, "timestamp values not equal");
       }
       // 30 minutes before daylight saving change
       try (ResultSet res = statement.executeQuery("select '2015-03-08 01:30:00'::timestamp_ntz")) {
 
-        Assertions.assertTrue(res.next());
+        assertTrue(res.next());
 
         // get timestamp in UTC
         calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -2361,7 +2356,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         tsStrInLA = sdf.format(tsInLA);
 
         // the timestamp in LA and in UTC should be the same
-        Assertions.assertEquals(tsStrInUTC, tsStrInLA, "timestamp values not equal");
+        assertEquals(tsStrInUTC, tsStrInLA, "timestamp values not equal");
       }
     }
   }
@@ -2373,7 +2368,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
       statement.executeQuery("select 1");
 
-      Assertions.assertTrue(!statement.getMoreResults());
+      assertTrue(!statement.getMoreResults());
     }
   }
 
@@ -2435,20 +2430,19 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         Statement statement = connection.createStatement();
         ResultSet res = statement.executeQuery("select current_session_client_info()")) {
 
-      Assertions.assertTrue(res.next(), "result expected");
+      assertTrue(res.next(), "result expected");
 
       String clientInfoJSONStr = res.getString(1);
 
       JsonNode clientInfoJSON = mapper.readTree(clientInfoJSONStr);
 
       // assert that spark version and spark app are found
-      Assertions.assertEquals(
-          "3.0.0", clientInfoJSON.get("spark.version").asText(), "spark version mismatch");
-      Assertions.assertEquals(
+      assertEquals("3.0.0", clientInfoJSON.get("spark.version").asText(), "spark version mismatch");
+      assertEquals(
           "2.8.5",
           clientInfoJSON.get("spark.snowflakedb.version").asText(),
           "snowflakedb version mismatch");
-      Assertions.assertEquals(
+      assertEquals(
           "SnowflakeSourceSuite",
           clientInfoJSON.get("spark.app.name").asText(),
           "spark app mismatch");
@@ -2471,7 +2465,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
         while (result.next()) {
           ++cnt;
         }
-        Assertions.assertEquals(10000, cnt);
+        assertEquals(10000, cnt);
       }
     }
   }
@@ -2498,16 +2492,16 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             resultSetMetaData = resultSet.getMetaData();
 
             // assert column count
-            Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+            assertEquals(1, resultSetMetaData.getColumnCount());
 
             // assert we get 1 row
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
           }
         }
         try (PreparedStatement preparedStatement =
                 connection.prepareStatement("SELECT last_query_id()");
             ResultSet resultSet = preparedStatement.executeQuery()) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           queryId = resultSet.getString(1);
         }
 
@@ -2522,11 +2516,11 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                         + " parse_json(system$get_bind_values(?)) bv)")) {
               preparedStatement.setString(1, queryId);
               try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                Assertions.assertTrue(resultSet.next());
+                assertTrue(resultSet.next());
 
                 // check that the bind values are correct
-                Assertions.assertEquals(3, resultSet.getInt(1));
-                Assertions.assertEquals(9, resultSet.getInt(2));
+                assertEquals(3, resultSet.getInt(1));
+                assertEquals(9, resultSet.getInt(2));
               }
             }
           }
@@ -2557,10 +2551,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           preparedStatement.execute();
 
           // we shouldn't reach here
-          Assertions.fail("Bind variable in view definition did not cause a user error");
+          fail("Bind variable in view definition did not cause a user error");
         } catch (SnowflakeSQLException e) {
-          Assertions.assertEquals(
-              ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
+          assertEquals(ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
         }
 
         /////////////////////////////////////////////
@@ -2569,10 +2562,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
             connection.prepareStatement(
                 "create or replace function f(n number) returns number as " + "'n + ?'")) {
           preparedStatement.execute();
-          Assertions.fail("Bind variable in scalar UDF definition did not cause a user " + "error");
+          fail("Bind variable in scalar UDF definition did not cause a user " + "error");
         } catch (SnowflakeSQLException e) {
-          Assertions.assertEquals(
-              ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
+          assertEquals(ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
         }
 
         ///////////////////////////////////////////
@@ -2582,10 +2574,9 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
                 "create or replace function tf(n number) returns table(b number) as"
                     + " 'select b from t where a=?'")) {
           preparedStatement.execute();
-          Assertions.fail("Bind variable in table UDF definition did not cause a user " + "error");
+          fail("Bind variable in table UDF definition did not cause a user " + "error");
         } catch (SnowflakeSQLException e) {
-          Assertions.assertEquals(
-              ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
+          assertEquals(ERROR_CODE_BIND_VARIABLE_NOT_ALLOWED_IN_VIEW_OR_UDF_DEF, e.getErrorCode());
         }
       } finally {
         regularStatement.execute("drop table t");
@@ -2620,10 +2611,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           // this should not produce a user error
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertFalse(resultSet.getBoolean(2));
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertTrue(resultSet.getBoolean(2));
+            assertTrue(resultSet.next());
+            assertFalse(resultSet.getBoolean(2));
+            assertTrue(resultSet.next());
+            assertTrue(resultSet.getBoolean(2));
           }
         }
         try (PreparedStatement preparedStatement =
@@ -2631,10 +2622,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           preparedStatement.setString(1, null);
 
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertTrue(resultSet.getBoolean(2));
-            Assertions.assertTrue(resultSet.next());
-            Assertions.assertNull(resultSet.getObject(2));
+            assertTrue(resultSet.next());
+            assertTrue(resultSet.getBoolean(2));
+            assertTrue(resultSet.next());
+            assertNull(resultSet.getObject(2));
           }
         }
       } finally {
@@ -2662,21 +2653,21 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           statement.execute("alter session set ENABLE_GCP_PUT_EXCEPTION_FOR_OLD_DRIVERS=false");
           statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
-          Assertions.assertTrue(
+          assertTrue(
               statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"),
               "Failed to put a file");
 
           findFile(statement, "ls @testPutGet_stage/");
 
           // download the file we just uploaded to stage
-          Assertions.assertTrue(
+          assertTrue(
               statement.execute(
                   "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
               "Failed to get a file");
 
           // Make sure that the downloaded file exists, it should be gzip compressed
           File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-          Assertions.assertTrue(downloaded.exists());
+          assertTrue(downloaded.exists());
 
           Process p =
               Runtime.getRuntime()
@@ -2685,7 +2676,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           File original = new File(sourceFilePath);
           File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
-          Assertions.assertEquals(original.length(), unzipped.length());
+          assertEquals(original.length(), unzipped.length());
         } finally {
           statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
         }
@@ -2720,21 +2711,21 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
           statement.execute(
               "CREATE OR REPLACE STAGE testPutGet_unencstage encryption=(TYPE='SNOWFLAKE_SSE')");
 
-          Assertions.assertTrue(
+          assertTrue(
               statement.execute("PUT file://" + sourceFilePath + " @testPutGet_unencstage"),
               "Failed to put a file");
 
           findFile(statement, "ls @testPutGet_unencstage/");
 
           // download the file we just uploaded to stage
-          Assertions.assertTrue(
+          assertTrue(
               statement.execute(
                   "GET @testPutGet_unencstage 'file://" + destFolderCanonicalPath + "' parallel=8"),
               "Failed to get a file");
 
           // Make sure that the downloaded file exists, it should be gzip compressed
           File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");
-          Assertions.assertTrue(downloaded.exists());
+          assertTrue(downloaded.exists());
 
           Process p =
               Runtime.getRuntime()
@@ -2743,7 +2734,7 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
           File original = new File(sourceFilePath);
           File unzipped = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE);
-          Assertions.assertEquals(original.length(), unzipped.length());
+          assertEquals(original.length(), unzipped.length());
         } finally {
           statement.execute("DROP STAGE IF EXISTS testPutGet_unencstage");
         }
@@ -2777,18 +2768,18 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
       try (ResultSet resultSet = preparedStatement.executeQuery()) {
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
         // Assert column count.
-        Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
+        assertEquals(1, resultSetMetaData.getColumnCount());
         // Assert this returned a 3.
-        Assertions.assertTrue(resultSet.next());
-        Assertions.assertEquals(3, resultSet.getInt(1));
-        Assertions.assertFalse(resultSet.next());
+        assertTrue(resultSet.next());
+        assertEquals(3, resultSet.getInt(1));
+        assertFalse(resultSet.next());
 
         // Second test, input is null.
         preparedStatement.setNull(1, Types.INTEGER);
       }
       try (ResultSet resultSet = preparedStatement.executeQuery()) {
         // Assert no rows returned.
-        Assertions.assertFalse(resultSet.next());
+        assertFalse(resultSet.next());
       }
     }
     // NOTE: Don't add new tests here. Instead, add it to other appropriate test class or create a

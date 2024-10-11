@@ -2,6 +2,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.sql.Connection;
@@ -10,7 +11,6 @@ import java.sql.Statement;
 import java.util.UUID;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnection;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -34,7 +34,7 @@ public class CloudStorageClientLatestIT extends BaseJDBCTest {
             connection
                 .unwrap(SnowflakeConnection.class)
                 .downloadStream("@" + stageName, "/fileNotExist.gz", true)) {
-          Assertions.fail("file should not exist");
+          fail("file should not exist");
         } catch (Throwable e) {
           assertThat(e, instanceOf(SQLException.class));
         }

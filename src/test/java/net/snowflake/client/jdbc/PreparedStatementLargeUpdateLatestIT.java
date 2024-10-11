@@ -3,6 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.spy;
 
 import java.sql.Connection;
@@ -12,7 +13,6 @@ import java.sql.Statement;
 import java.util.Map;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.core.ExecTimeTelemetryData;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -47,7 +47,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
                   Mockito.any(boolean.class),
                   Mockito.any(ExecTimeTelemetryData.class));
           long updatedRows = spyp.executeLargeUpdate();
-          Assertions.assertEquals(expectedUpdateRows, updatedRows);
+          assertEquals(expectedUpdateRows, updatedRows);
         }
       } finally {
         statement.execute("drop table if exists test_large_update");
@@ -81,8 +81,8 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
                   Mockito.any(ExecTimeTelemetryData.class));
           pstmt.addBatch();
           long[] queryResult = spyp.executeLargeBatch();
-          Assertions.assertEquals(1, queryResult.length);
-          Assertions.assertEquals(numRows, queryResult[0]);
+          assertEquals(1, queryResult.length);
+          assertEquals(numRows, queryResult[0]);
         }
       } finally {
         statement.execute("drop table if exists over_int_table");

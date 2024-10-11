@@ -2,6 +2,10 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeChunkDownloader.NoOpChunkDownloader;
 import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.ChunkFileMetadata;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,7 +16,6 @@ import net.snowflake.client.core.QueryResultFormat;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFBaseStatement;
 import net.snowflake.client.core.SFStatementType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SnowflakeSerializableTest {
@@ -270,16 +273,16 @@ public class SnowflakeSerializableTest {
 
   private void assertRegularResultSetSerializable(
       SnowflakeResultSetSerializableV1 s, Class<?> expectedChunkDownloaderType) {
-    Assertions.assertNotNull(s);
-    Assertions.assertEquals("01b341c1-0000-772f-0000-0004189328ca", s.getQueryId());
-    Assertions.assertEquals("some-db", s.getFinalDatabaseName());
-    Assertions.assertEquals("some-schema", s.getFinalSchemaName());
-    Assertions.assertEquals("some-warehouse", s.getFinalWarehouseName());
-    Assertions.assertEquals("ENG_OPS_RL", s.getFinalRoleName());
-    Assertions.assertEquals(0, s.getNumberOfBinds());
-    Assertions.assertEquals(QueryResultFormat.JSON, s.getQueryResultFormat());
-    Assertions.assertEquals(SFStatementType.SELECT, s.getStatementType());
-    Assertions.assertEquals(
+    assertNotNull(s);
+    assertEquals("01b341c1-0000-772f-0000-0004189328ca", s.getQueryId());
+    assertEquals("some-db", s.getFinalDatabaseName());
+    assertEquals("some-schema", s.getFinalSchemaName());
+    assertEquals("some-warehouse", s.getFinalWarehouseName());
+    assertEquals("ENG_OPS_RL", s.getFinalRoleName());
+    assertEquals(0, s.getNumberOfBinds());
+    assertEquals(QueryResultFormat.JSON, s.getQueryResultFormat());
+    assertEquals(SFStatementType.SELECT, s.getStatementType());
+    assertEquals(
         new HashMap<String, Object>() {
           {
             put("CLIENT_PREFETCH_THREADS", 4);
@@ -288,91 +291,90 @@ public class SnowflakeSerializableTest {
           }
         },
         s.getParameters());
-    Assertions.assertEquals("ADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=", s.getQrmk());
-    Assertions.assertFalse(s.isArrayBindSupported());
-    Assertions.assertEquals(1, s.getResultVersion());
+    assertEquals("ADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=", s.getQrmk());
+    assertFalse(s.isArrayBindSupported());
+    assertEquals(1, s.getResultVersion());
 
     // column metadata
-    Assertions.assertEquals(1, s.getColumnCount());
-    Assertions.assertEquals(1, s.getResultColumnMetadata().size());
+    assertEquals(1, s.getColumnCount());
+    assertEquals(1, s.getResultColumnMetadata().size());
     SnowflakeColumnMetadata column = s.getResultColumnMetadata().get(0);
-    Assertions.assertEquals("1", column.getName());
-    Assertions.assertEquals("NUMBER", column.getTypeName());
-    Assertions.assertEquals(-5, column.getType());
-    Assertions.assertFalse(column.isNullable());
-    Assertions.assertEquals(256, column.getLength());
-    Assertions.assertEquals(0, column.getScale());
-    Assertions.assertEquals(1, column.getPrecision());
-    Assertions.assertEquals(SnowflakeType.FIXED, column.getBase());
-    Assertions.assertEquals("some-db", column.getColumnSrcDatabase());
-    Assertions.assertEquals("some-schema", column.getColumnSrcSchema());
-    Assertions.assertEquals("some-table", column.getColumnSrcTable());
+    assertEquals("1", column.getName());
+    assertEquals("NUMBER", column.getTypeName());
+    assertEquals(-5, column.getType());
+    assertFalse(column.isNullable());
+    assertEquals(256, column.getLength());
+    assertEquals(0, column.getScale());
+    assertEquals(1, column.getPrecision());
+    assertEquals(SnowflakeType.FIXED, column.getBase());
+    assertEquals("some-db", column.getColumnSrcDatabase());
+    assertEquals("some-schema", column.getColumnSrcSchema());
+    assertEquals("some-table", column.getColumnSrcTable());
 
     // chunks metadata
-    Assertions.assertEquals("[[\"1\"]]", s.getFirstChunkStringData());
-    Assertions.assertEquals(1, s.getChunkHeadersMap().size());
-    Assertions.assertEquals(
+    assertEquals("[[\"1\"]]", s.getFirstChunkStringData());
+    assertEquals(1, s.getChunkHeadersMap().size());
+    assertEquals(
         "A2dDf2ff7HI8OCdsR3pK82g==",
         s.getChunkHeadersMap().get("x-amz-server-side-encryption-customer-key-md5"));
-    Assertions.assertEquals(1, s.getChunkFileCount());
-    Assertions.assertEquals(1, s.getChunkFileMetadatas().size());
+    assertEquals(1, s.getChunkFileCount());
+    assertEquals(1, s.getChunkFileMetadatas().size());
     ChunkFileMetadata chunkMeta = s.getChunkFileMetadatas().get(0);
-    Assertions.assertEquals(756, chunkMeta.getRowCount());
-    Assertions.assertEquals(26828, chunkMeta.getCompressedByteSize());
-    Assertions.assertEquals(312560, chunkMeta.getUncompressedByteSize());
-    Assertions.assertEquals(
+    assertEquals(756, chunkMeta.getRowCount());
+    assertEquals(26828, chunkMeta.getCompressedByteSize());
+    assertEquals(312560, chunkMeta.getUncompressedByteSize());
+    assertEquals(
         "https://sfc-ds2-customer-stage.s3.us-west-2.amazonaws.com", chunkMeta.getFileURL());
-    Assertions.assertNotNull(s.chunkDownloader);
-    Assertions.assertTrue(expectedChunkDownloaderType.isInstance(s.chunkDownloader));
+    assertNotNull(s.chunkDownloader);
+    assertTrue(expectedChunkDownloaderType.isInstance(s.chunkDownloader));
   }
 
   private void assertRichResultSetSerializable(SnowflakeRichResultSetSerializableV1 s) {
     // column metadata
-    Assertions.assertEquals(2, s.getRichResultsColumnCount());
-    Assertions.assertEquals(2, s.getRichResultsColumnMetadata().size());
+    assertEquals(2, s.getRichResultsColumnCount());
+    assertEquals(2, s.getRichResultsColumnMetadata().size());
     SnowflakeRichResultSetSerializableV1.SnowflakeRichResultsColumnMetadata lowerBound =
         s.getRichResultsColumnMetadata().get(0);
-    Assertions.assertEquals("LOWER_BOUND", lowerBound.getName());
-    Assertions.assertEquals("NUMBER", lowerBound.getTypeName());
-    Assertions.assertEquals(-5, lowerBound.getType());
-    Assertions.assertTrue(lowerBound.isNullable());
-    Assertions.assertEquals(16777216, lowerBound.getLength());
-    Assertions.assertEquals(SnowflakeType.FIXED, lowerBound.getBase());
-    Assertions.assertEquals("TEMP", lowerBound.getColumnSrcDatabase());
-    Assertions.assertEquals("PUBLIC", lowerBound.getColumnSrcSchema());
-    Assertions.assertEquals("T_TEST", lowerBound.getColumnSrcTable());
-    Assertions.assertEquals(1, lowerBound.getColumnIndex());
+    assertEquals("LOWER_BOUND", lowerBound.getName());
+    assertEquals("NUMBER", lowerBound.getTypeName());
+    assertEquals(-5, lowerBound.getType());
+    assertTrue(lowerBound.isNullable());
+    assertEquals(16777216, lowerBound.getLength());
+    assertEquals(SnowflakeType.FIXED, lowerBound.getBase());
+    assertEquals("TEMP", lowerBound.getColumnSrcDatabase());
+    assertEquals("PUBLIC", lowerBound.getColumnSrcSchema());
+    assertEquals("T_TEST", lowerBound.getColumnSrcTable());
+    assertEquals(1, lowerBound.getColumnIndex());
 
     SnowflakeRichResultSetSerializableV1.SnowflakeRichResultsColumnMetadata upperBound =
         s.getRichResultsColumnMetadata().get(1);
-    Assertions.assertEquals("UPPER_BOUND", upperBound.getName());
-    Assertions.assertEquals("NUMBER", upperBound.getTypeName());
-    Assertions.assertEquals(-5, upperBound.getType());
-    Assertions.assertTrue(upperBound.isNullable());
-    Assertions.assertEquals(16777216, upperBound.getLength());
-    Assertions.assertEquals(SnowflakeType.FIXED, upperBound.getBase());
-    Assertions.assertEquals("TEMP", upperBound.getColumnSrcDatabase());
-    Assertions.assertEquals("PUBLIC", upperBound.getColumnSrcSchema());
-    Assertions.assertEquals("T_TEST", upperBound.getColumnSrcTable());
-    Assertions.assertEquals(1, upperBound.getColumnIndex());
+    assertEquals("UPPER_BOUND", upperBound.getName());
+    assertEquals("NUMBER", upperBound.getTypeName());
+    assertEquals(-5, upperBound.getType());
+    assertTrue(upperBound.isNullable());
+    assertEquals(16777216, upperBound.getLength());
+    assertEquals(SnowflakeType.FIXED, upperBound.getBase());
+    assertEquals("TEMP", upperBound.getColumnSrcDatabase());
+    assertEquals("PUBLIC", upperBound.getColumnSrcSchema());
+    assertEquals("T_TEST", upperBound.getColumnSrcTable());
+    assertEquals(1, upperBound.getColumnIndex());
 
     // chunks metadata
-    Assertions.assertEquals(
+    assertEquals(
         "[[\"value1_lower\",\"value1_upper\"],[\"value2_lower\",\"value2_upper\"]]",
         s.getRichResultsFirstChunkStringData());
-    Assertions.assertEquals(
-        "ZXYADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=", s.getRichResultsQrmk());
-    Assertions.assertEquals(1, s.getRichResultsChunkHeadersMap().size());
-    Assertions.assertEquals(
+    assertEquals("ZXYADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=", s.getRichResultsQrmk());
+    assertEquals(1, s.getRichResultsChunkHeadersMap().size());
+    assertEquals(
         "f342lkkftyf7HI8OCdsR3pK82g==",
         s.getRichResultsChunkHeadersMap().get("x-amz-server-side-encryption-customer-key-md5"));
-    Assertions.assertEquals(1, s.getRichResultsChunkFileCount());
-    Assertions.assertEquals(1, s.getRichResultsChunkFilesMetadata().size());
+    assertEquals(1, s.getRichResultsChunkFileCount());
+    assertEquals(1, s.getRichResultsChunkFilesMetadata().size());
     ChunkFileMetadata chunkMeta = s.getRichResultsChunkFilesMetadata().get(0);
-    Assertions.assertEquals(756, chunkMeta.getRowCount());
-    Assertions.assertEquals(26828, chunkMeta.getCompressedByteSize());
-    Assertions.assertEquals(312560, chunkMeta.getUncompressedByteSize());
-    Assertions.assertEquals(
+    assertEquals(756, chunkMeta.getRowCount());
+    assertEquals(26828, chunkMeta.getCompressedByteSize());
+    assertEquals(312560, chunkMeta.getUncompressedByteSize());
+    assertEquals(
         "https://sfc-ds2-customer-stage.s3.us-west-2.amazonaws.com/rich-res",
         chunkMeta.getFileURL());
   }

@@ -5,6 +5,9 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import java.io.IOException;
@@ -17,7 +20,6 @@ import java.util.Map;
 import net.snowflake.client.jdbc.MockConnectionTest;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SessionUtilTest {
@@ -65,26 +67,26 @@ public class SessionUtilTest {
     parameterMap.put("other_parameter", BooleanNode.getTrue());
     SFBaseSession session = new MockConnectionTest.MockSnowflakeConnectionImpl().getSFSession();
     SessionUtil.updateSfDriverParamValues(parameterMap, session);
-    Assertions.assertTrue(((BooleanNode) session.getOtherParameter("other_parameter")).asBoolean());
+    assertTrue(((BooleanNode) session.getOtherParameter("other_parameter")).asBoolean());
   }
 
   @Test
   public void testConvertSystemPropertyToIntValue() {
     // Test that setting real value works
     System.setProperty("net.snowflake.jdbc.max_connections", "500");
-    Assertions.assertEquals(
+    assertEquals(
         500,
         SystemUtil.convertSystemPropertyToIntValue(
             HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
     // Test that entering a non-int sets the value to the default
     System.setProperty("net.snowflake.jdbc.max_connections", "notAnInteger");
-    Assertions.assertEquals(
+    assertEquals(
         HttpUtil.DEFAULT_MAX_CONNECTIONS,
         SystemUtil.convertSystemPropertyToIntValue(
             HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
     // Test another system property
     System.setProperty("net.snowflake.jdbc.max_connections_per_route", "30");
-    Assertions.assertEquals(
+    assertEquals(
         30,
         SystemUtil.convertSystemPropertyToIntValue(
             HttpUtil.JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY,
@@ -104,7 +106,7 @@ public class SessionUtilTest {
         uriBuilder.setPath(testCase);
         URI uri = uriBuilder.build();
         HttpPost postRequest = new HttpPost(uri);
-        Assertions.assertTrue(SessionUtil.isNewRetryStrategyRequest(postRequest));
+        assertTrue(SessionUtil.isNewRetryStrategyRequest(postRequest));
       } catch (URISyntaxException e) {
         throw new RuntimeException(e);
       }
@@ -122,7 +124,7 @@ public class SessionUtilTest {
         uriBuilder.setPath(testCase);
         URI uri = uriBuilder.build();
         HttpPost postRequest = new HttpPost(uri);
-        Assertions.assertFalse(SessionUtil.isNewRetryStrategyRequest(postRequest));
+        assertFalse(SessionUtil.isNewRetryStrategyRequest(postRequest));
       } catch (URISyntaxException e) {
         throw new RuntimeException(e);
       }
@@ -134,30 +136,30 @@ public class SessionUtilTest {
     resetOcspConfiguration();
 
     SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.com");
-    Assertions.assertEquals(
+    assertEquals(
         "http://ocsp.test.privatelink.snowflakecomputing.com/ocsp_response_cache.json",
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
-    Assertions.assertEquals(
+    assertEquals(
         "http://ocsp.test.privatelink.snowflakecomputing.com/retry/%s/%s",
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
 
     resetOcspConfiguration();
 
     SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.cn");
-    Assertions.assertEquals(
+    assertEquals(
         "http://ocsp.test.privatelink.snowflakecomputing.cn/ocsp_response_cache.json",
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
-    Assertions.assertEquals(
+    assertEquals(
         "http://ocsp.test.privatelink.snowflakecomputing.cn/retry/%s/%s",
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
 
     resetOcspConfiguration();
 
     SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.xyz");
-    Assertions.assertEquals(
+    assertEquals(
         "http://ocsp.test.privatelink.snowflakecomputing.xyz/ocsp_response_cache.json",
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
-    Assertions.assertEquals(
+    assertEquals(
         "http://ocsp.test.privatelink.snowflakecomputing.xyz/retry/%s/%s",
         SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
   }

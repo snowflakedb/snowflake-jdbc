@@ -5,6 +5,8 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.TestUtil.systemGetEnv;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -30,7 +32,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -110,12 +111,12 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   @Test
   public void testConvertSystemPropertyToIntValue() {
     // SNOW-760642 - Test that new default for net.snowflake.jdbc.ttl is 60 seconds.
-    Assertions.assertEquals(
+    assertEquals(
         60, SystemUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
 
     // Test that TTL can be disabled
     System.setProperty(HttpUtil.JDBC_TTL, "-1");
-    Assertions.assertEquals(
+    assertEquals(
         -1, SystemUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
   }
 
@@ -263,11 +264,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .thenReturn("{\"code\":null,\"message\":\"POST request failed\",\"success\":false}");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      Assertions.fail("Exception should have been thrown");
+      fail("Exception should have been thrown");
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals("POST request failed", e.getMessage());
-      Assertions.assertEquals(
-          SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
+      assertEquals("POST request failed", e.getMessage());
+      assertEquals(SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
     }
   }
 
@@ -294,10 +294,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      Assertions.fail("Exception should have been thrown");
+      fail("Exception should have been thrown");
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
-      Assertions.assertEquals(SqlState.IO_ERROR, e.getSQLState());
+      assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
+      assertEquals(SqlState.IO_ERROR, e.getSQLState());
     }
   }
 
@@ -324,11 +324,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      Assertions.fail("Exception should have been thrown");
+      fail("Exception should have been thrown");
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals((int) ErrorCode.CONNECTION_ERROR.getMessageCode(), e.getErrorCode());
-      Assertions.assertEquals(
-          SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
+      assertEquals((int) ErrorCode.CONNECTION_ERROR.getMessageCode(), e.getErrorCode());
+      assertEquals(SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
     }
   }
 
@@ -382,10 +381,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .thenThrow(new IOException());
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      Assertions.fail("Exception should have been thrown");
+      fail("Exception should have been thrown");
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
-      Assertions.assertEquals(SqlState.IO_ERROR, e.getSQLState());
+      assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
+      assertEquals(SqlState.IO_ERROR, e.getSQLState());
     }
   }
 
@@ -571,9 +570,9 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      Assertions.fail("Should be failed because of the invalid form");
+      fail("Should be failed because of the invalid form");
     } catch (SnowflakeSQLException ex) {
-      Assertions.assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), ex.getErrorCode());
+      assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), ex.getErrorCode());
     }
   }
 
@@ -625,10 +624,9 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .thenReturn("<body><form action=\"https://helloworld.okta.com\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      Assertions.fail("Should be failed because of the invalid form");
+      fail("Should be failed because of the invalid form");
     } catch (SnowflakeSQLException ex) {
-      Assertions.assertEquals(
-          (int) ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), ex.getErrorCode());
+      assertEquals((int) ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), ex.getErrorCode());
     }
   }
 }

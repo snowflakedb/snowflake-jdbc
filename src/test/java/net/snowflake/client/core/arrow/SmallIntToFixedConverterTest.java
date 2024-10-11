@@ -7,6 +7,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -26,7 +29,6 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.SmallIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SmallIntToFixedConverterTest extends BaseConverterTest {
@@ -73,9 +75,9 @@ public class SmallIntToFixedConverterTest extends BaseConverterTest {
       Object longObject = converter.toObject(i); // the logical type is long
       String shortString = converter.toString(i);
       if (shortString != null) {
-        Assertions.assertFalse(converter.isNull(i));
+        assertFalse(converter.isNull(i));
       } else {
-        Assertions.assertTrue(converter.isNull(i));
+        assertTrue(converter.isNull(i));
       }
 
       if (nullValIndex.contains(i)) {
@@ -85,7 +87,7 @@ public class SmallIntToFixedConverterTest extends BaseConverterTest {
         assertThat(converter.toBytes(i), is(nullValue()));
       } else {
         assertThat(shortVal, is(expectedValues.get(i)));
-        Assertions.assertEquals(longObject, (long) expectedValues.get(i));
+        assertEquals(longObject, (long) expectedValues.get(i));
         assertThat(shortString, is(expectedValues.get(i).toString()));
         bb = ByteBuffer.wrap(converter.toBytes(i));
         assertThat(shortVal, is(bb.getShort()));
@@ -237,10 +239,10 @@ public class SmallIntToFixedConverterTest extends BaseConverterTest {
     assertThat(false, is(converter.toBoolean(0)));
     assertThat(true, is(converter.toBoolean(1)));
     assertThat(false, is(converter.toBoolean(2)));
-    Assertions.assertFalse(converter.isNull(0));
-    Assertions.assertFalse(converter.isNull(1));
-    Assertions.assertTrue(converter.isNull(2));
-    Assertions.assertFalse(converter.isNull(3));
+    assertFalse(converter.isNull(0));
+    assertFalse(converter.isNull(1));
+    assertTrue(converter.isNull(2));
+    assertFalse(converter.isNull(3));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toBoolean(3));
 
     vector.close();

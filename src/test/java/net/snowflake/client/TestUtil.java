@@ -5,6 +5,10 @@ package net.snowflake.client;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -15,7 +19,6 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.junit.jupiter.api.Assertions;
 
 public class TestUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(TestUtil.class);
@@ -49,7 +52,7 @@ public class TestUtil {
   public static void assertSFException(int errorCode, TestRunInterface testCode) {
     try {
       testCode.run();
-      Assertions.fail();
+      fail();
     } catch (SFException e) {
       assertThat(e.getVendorCode(), is(errorCode));
     }
@@ -86,8 +89,8 @@ public class TestUtil {
   }
 
   public static void assertValidQueryId(String queryId) {
-    Assertions.assertNotNull(queryId);
-    Assertions.assertTrue(
+    assertNotNull(queryId);
+    assertTrue(
         QUERY_ID_REGEX.matcher(queryId).matches(), "Expecting " + queryId + " is a valid UUID");
   }
 
@@ -135,10 +138,9 @@ public class TestUtil {
   public static void expectSnowflakeLoggedFeatureNotSupportedException(MethodRaisesSQLException f) {
     try {
       f.run();
-      Assertions.fail("must raise exception");
+      fail("must raise exception");
     } catch (SQLException ex) {
-      Assertions.assertEquals(
-          ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
+      assertEquals(ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
     }
   }
 
@@ -149,6 +151,6 @@ public class TestUtil {
    * @param actual actual value
    */
   public static void assertEqualsIgnoringWhitespace(String expected, String actual) {
-    Assertions.assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
+    assertEquals(expected.replaceAll("\\s+", ""), actual.replaceAll("\\s+", ""));
   }
 }

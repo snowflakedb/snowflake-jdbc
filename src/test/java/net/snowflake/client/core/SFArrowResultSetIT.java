@@ -6,6 +6,8 @@ package net.snowflake.client.core;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,7 +61,6 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -646,8 +647,8 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
           resultSet.next();
         }
         // We inserted a null row at the beginning so when sorted, the last row should be null
-        Assertions.assertEquals(null, resultSet.getObject(1));
-        Assertions.assertFalse(resultSet.next());
+        assertEquals(null, resultSet.getObject(1));
+        assertFalse(resultSet.next());
         statement.execute("drop table teststructtimestamp;");
       }
     }
@@ -733,8 +734,8 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
           resultSet.next();
         }
         // We inserted a null row at the beginning so when sorted, the last row should be null
-        Assertions.assertEquals(null, resultSet.getObject(1));
-        Assertions.assertFalse(resultSet.next());
+        assertEquals(null, resultSet.getObject(1));
+        assertFalse(resultSet.next());
         statement.execute("drop table alltypes;");
       }
     }

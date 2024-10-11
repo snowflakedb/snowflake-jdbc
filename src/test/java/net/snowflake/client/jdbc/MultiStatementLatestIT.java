@@ -3,11 +3,16 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -40,27 +45,27 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
 
       boolean hasResultSet = statement.execute(multiStmtQuery);
       // first statement
-      Assertions.assertFalse(hasResultSet);
-      Assertions.assertNull(statement.getResultSet());
-      Assertions.assertEquals(0, statement.getUpdateCount());
+      assertFalse(hasResultSet);
+      assertNull(statement.getResultSet());
+      assertEquals(0, statement.getUpdateCount());
 
       // second statement
-      Assertions.assertTrue(statement.getMoreResults());
-      Assertions.assertNull(statement.getResultSet());
-      Assertions.assertEquals(2, statement.getUpdateCount());
+      assertTrue(statement.getMoreResults());
+      assertNull(statement.getResultSet());
+      assertEquals(2, statement.getUpdateCount());
 
       // third statement
-      Assertions.assertTrue(statement.getMoreResults());
-      Assertions.assertEquals(-1, statement.getUpdateCount());
+      assertTrue(statement.getMoreResults());
+      assertEquals(-1, statement.getUpdateCount());
       try (ResultSet rs = statement.getResultSet()) {
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(1, rs.getInt(1));
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(2, rs.getInt(1));
-        Assertions.assertFalse(rs.next());
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertTrue(rs.next());
+        assertEquals(2, rs.getInt(1));
+        assertFalse(rs.next());
 
-        Assertions.assertFalse(statement.getMoreResults());
-        Assertions.assertEquals(-1, statement.getUpdateCount());
+        assertFalse(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
       }
     }
   }
@@ -82,27 +87,27 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
 
         boolean hasResultSet = statement.execute(multiStmtQuery);
         // first statement
-        Assertions.assertFalse(hasResultSet);
-        Assertions.assertNull(statement.getResultSet());
-        Assertions.assertEquals(0, statement.getUpdateCount());
+        assertFalse(hasResultSet);
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
         // second statement
-        Assertions.assertTrue(statement.getMoreResults());
-        Assertions.assertNull(statement.getResultSet());
-        Assertions.assertEquals(1, statement.getUpdateCount());
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(1, statement.getUpdateCount());
 
         // third statement
-        Assertions.assertTrue(statement.getMoreResults());
-        Assertions.assertNull(statement.getResultSet());
-        Assertions.assertEquals(2, statement.getUpdateCount());
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(2, statement.getUpdateCount());
 
         // fourth statement
-        Assertions.assertFalse(statement.getMoreResults());
-        Assertions.assertNull(statement.getResultSet());
-        Assertions.assertEquals(0, statement.getUpdateCount());
+        assertFalse(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
-        Assertions.assertFalse(statement.getMoreResults());
-        Assertions.assertEquals(-1, statement.getUpdateCount());
+        assertFalse(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
 
       } finally {
         statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
@@ -123,27 +128,27 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
       int rowCount = statement.executeUpdate(multiStmtQuery);
       // first statement
-      Assertions.assertEquals(0, rowCount);
-      Assertions.assertNull(statement.getResultSet());
-      Assertions.assertEquals(0, statement.getUpdateCount());
+      assertEquals(0, rowCount);
+      assertNull(statement.getResultSet());
+      assertEquals(0, statement.getUpdateCount());
 
       // second statement
-      Assertions.assertTrue(statement.getMoreResults());
-      Assertions.assertNull(statement.getResultSet());
-      Assertions.assertEquals(2, statement.getUpdateCount());
+      assertTrue(statement.getMoreResults());
+      assertNull(statement.getResultSet());
+      assertEquals(2, statement.getUpdateCount());
 
       // third statement
-      Assertions.assertTrue(statement.getMoreResults());
-      Assertions.assertEquals(-1, statement.getUpdateCount());
+      assertTrue(statement.getMoreResults());
+      assertEquals(-1, statement.getUpdateCount());
       try (ResultSet rs = statement.getResultSet()) {
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(1, rs.getInt(1));
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(2, rs.getInt(1));
-        Assertions.assertFalse(rs.next());
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertTrue(rs.next());
+        assertEquals(2, rs.getInt(1));
+        assertFalse(rs.next());
 
-        Assertions.assertFalse(statement.getMoreResults());
-        Assertions.assertEquals(-1, statement.getUpdateCount());
+        assertFalse(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
       }
     }
   }
@@ -166,30 +171,30 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
 
         boolean hasResultSet = statement.execute(multiStmtQuery);
         // first statement
-        Assertions.assertFalse(hasResultSet);
-        Assertions.assertNull(statement.getResultSet());
-        Assertions.assertEquals(0, statement.getUpdateCount());
+        assertFalse(hasResultSet);
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
         // second statement
-        Assertions.assertTrue(statement.getMoreResults());
-        Assertions.assertNull(statement.getResultSet());
-        Assertions.assertEquals(1, statement.getUpdateCount());
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(1, statement.getUpdateCount());
 
         // third statement
-        Assertions.assertTrue(statement.getMoreResults());
-        Assertions.assertNull(statement.getResultSet());
-        Assertions.assertEquals(0, statement.getUpdateCount());
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
         // fourth statement
-        Assertions.assertTrue(statement.getMoreResults());
-        Assertions.assertEquals(-1, statement.getUpdateCount());
+        assertTrue(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
         try (ResultSet rs = statement.getResultSet()) {
-          Assertions.assertTrue(rs.next());
-          Assertions.assertEquals(1, rs.getInt(1));
-          Assertions.assertFalse(rs.next());
+          assertTrue(rs.next());
+          assertEquals(1, rs.getInt(1));
+          assertFalse(rs.next());
 
-          Assertions.assertFalse(statement.getMoreResults());
-          Assertions.assertEquals(-1, statement.getUpdateCount());
+          assertFalse(statement.getMoreResults());
+          assertEquals(-1, statement.getUpdateCount());
         }
       } finally {
         statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
@@ -211,36 +216,36 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
       try (ResultSet rs = statement.executeQuery(multiStmtQuery)) {
         // first statement
-        Assertions.assertNotNull(rs);
-        Assertions.assertNotNull(statement.getResultSet());
-        Assertions.assertEquals(-1, statement.getUpdateCount());
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(1, rs.getInt(1));
-        Assertions.assertFalse(rs.next());
+        assertNotNull(rs);
+        assertNotNull(statement.getResultSet());
+        assertEquals(-1, statement.getUpdateCount());
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertFalse(rs.next());
 
         // second statement
-        Assertions.assertTrue(statement.getMoreResults());
-        Assertions.assertNull(statement.getResultSet());
-        Assertions.assertEquals(0, statement.getUpdateCount());
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(0, statement.getUpdateCount());
 
         // third statement
-        Assertions.assertTrue(statement.getMoreResults());
-        Assertions.assertNull(statement.getResultSet());
-        Assertions.assertEquals(2, statement.getUpdateCount());
+        assertTrue(statement.getMoreResults());
+        assertNull(statement.getResultSet());
+        assertEquals(2, statement.getUpdateCount());
 
         // fourth statement
-        Assertions.assertTrue(statement.getMoreResults());
-        Assertions.assertEquals(-1, statement.getUpdateCount());
+        assertTrue(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
       }
       try (ResultSet rs = statement.getResultSet()) {
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(1, rs.getInt(1));
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(2, rs.getInt(1));
-        Assertions.assertFalse(rs.next());
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        assertTrue(rs.next());
+        assertEquals(2, rs.getInt(1));
+        assertFalse(rs.next());
 
-        Assertions.assertFalse(statement.getMoreResults());
-        Assertions.assertEquals(-1, statement.getUpdateCount());
+        assertFalse(statement.getMoreResults());
+        assertEquals(-1, statement.getUpdateCount());
       }
     }
   }
@@ -260,13 +265,13 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
                   + "JOIN INFORMATION_SCHEMA.COLUMNS "
                   + "ON COLUMNS.TABLE_SCHEMA = TABLIST.TABLE_SCHEMA "
                   + "AND COLUMNS.TABLE_NAME = TABLIST.TABLE_NAME;");
-      Assertions.assertEquals(isResultSet, false);
+      assertEquals(isResultSet, false);
       int statementUpdateCount = statement.getUpdateCount();
-      Assertions.assertEquals(statementUpdateCount, 0);
+      assertEquals(statementUpdateCount, 0);
       isResultSet = statement.getMoreResults();
-      Assertions.assertEquals(isResultSet, true);
+      assertEquals(isResultSet, true);
       statementUpdateCount = statement.getUpdateCount();
-      Assertions.assertEquals(statementUpdateCount, -1);
+      assertEquals(statementUpdateCount, -1);
     }
   }
 
@@ -290,11 +295,11 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
 
       statement.execute(multiStmtQuery);
       for (int i = 0; i < multistatementcount - 1; i++) {
-        Assertions.assertTrue(statement.getMoreResults());
+        assertTrue(statement.getMoreResults());
       }
       try (ResultSet rs = statement.getResultSet()) {
-        Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(1, rs.getInt(1));
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
       }
 
       // Test anonymous block in the middle of other queries in multistatement
@@ -311,10 +316,10 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
           .setParameter("MULTI_STATEMENT_COUNT", multistatementcount);
       statement.execute(multiStmtQuery);
       for (int i = 0; i < multistatementcount - 1; i++) {
-        Assertions.assertTrue(statement.getMoreResults());
+        assertTrue(statement.getMoreResults());
       }
       try (ResultSet rs = statement.getResultSet()) {
-        Assertions.assertEquals(4, getSizeOfResultSet(rs));
+        assertEquals(4, getSizeOfResultSet(rs));
       }
     }
   }

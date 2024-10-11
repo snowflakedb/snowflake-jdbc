@@ -8,6 +8,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Time;
 import java.util.HashMap;
@@ -25,7 +27,6 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -84,9 +85,9 @@ public class IntToTimeConverterTest extends BaseConverterTest {
               ResultUtil.getSFTime(testTimesJson[i], scale, new SFSession())
                   .getFractionalSeconds(ResultUtil.DEFAULT_SCALE_OF_SFTIME_FRACTION_SECONDS));
       if (strVal != null) {
-        Assertions.assertFalse(converter.isNull(j));
+        assertFalse(converter.isNull(j));
       } else {
-        Assertions.assertTrue(converter.isNull(j));
+        assertTrue(converter.isNull(j));
       }
       if (nullValIndex.contains(j)) {
         assertThat(obj, is(nullValue()));

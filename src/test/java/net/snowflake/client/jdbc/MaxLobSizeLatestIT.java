@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.text.IsEmptyString.emptyOrNullString;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -11,7 +12,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class MaxLobSizeLatestIT extends BaseJDBCTest {
@@ -37,7 +37,7 @@ public class MaxLobSizeLatestIT extends BaseJDBCTest {
       stmt.execute("alter session set ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT=true");
       try (ResultSet resultSet =
           stmt.executeQuery("select randstr(20000000, random()) as large_str")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         assertThat(resultSet.getString(1), is(not(emptyOrNullString())));
       } finally {
         stmt.execute("alter session unset ENABLE_LARGE_VARCHAR_AND_BINARY_IN_RESULT");

@@ -1,7 +1,8 @@
 package net.snowflake.client.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -29,7 +30,7 @@ public class PrivateLinkDetectorTest {
   @ParameterizedTest
   @ArgumentsSource(DataProvider.class)
   public void shouldDetectPrivateLinkHost(String host, boolean expectedToBePrivateLink) {
-    Assertions.assertEquals(
+    assertEquals(
         expectedToBePrivateLink,
         PrivateLinkDetector.isPrivateLink(host),
         String.format("Expecting %s to be private link: %s", host, expectedToBePrivateLink));

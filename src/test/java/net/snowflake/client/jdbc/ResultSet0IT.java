@@ -3,12 +3,14 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Result set test base class. */
@@ -41,18 +43,18 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
               + "stage_file_format = (field_delimiter='|' "
               + "error_on_column_count_mismatch=false)");
       // put files
-      Assertions.assertTrue(
+      assertTrue(
           statement.execute(
               "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"),
           "Failed to put a file");
-      Assertions.assertTrue(
+      assertTrue(
           statement.execute(
               "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"),
           "Failed to put a file");
 
       int numRows = statement.executeUpdate("copy into orders_jdbc");
 
-      Assertions.assertEquals(73, numRows, "Unexpected number of rows copied: " + numRows);
+      assertEquals(73, numRows, "Unexpected number of rows copied: " + numRows);
     }
   }
 

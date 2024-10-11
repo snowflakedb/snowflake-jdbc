@@ -1,10 +1,13 @@
 package net.snowflake.client.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class ExecTimeTelemetryDataTest {
@@ -35,29 +38,29 @@ public class ExecTimeTelemetryDataTest {
     String telemetry = execTimeTelemetryData.generateTelemetry();
     JSONParser parser = new JSONParser(JSONParser.MODE_JSON_SIMPLE);
     JSONObject json = (JSONObject) parser.parse(telemetry);
-    Assertions.assertNotNull(json.get("BindStart"));
-    Assertions.assertNotNull(json.get("BindEnd"));
-    Assertions.assertEquals(json.get("ocspEnabled"), true);
-    Assertions.assertNotNull(json.get("HttpClientStart"));
-    Assertions.assertNotNull(json.get("HttpClientEnd"));
-    Assertions.assertNotNull(json.get("GzipStart"));
-    Assertions.assertNotNull(json.get("GzipEnd"));
-    Assertions.assertNotNull(json.get("QueryEnd"));
-    Assertions.assertEquals(json.get("QueryID"), "queryid");
-    Assertions.assertNotNull(json.get("ProcessResultChunkStart"));
-    Assertions.assertNotNull(json.get("ProcessResultChunkEnd"));
-    Assertions.assertNotNull(json.get("ResponseIOStreamStart"));
-    Assertions.assertNotNull(json.get("CreateResultSetStart"));
-    Assertions.assertNotNull(json.get("CreateResultSetEnd"));
-    Assertions.assertNotNull(json.get("ElapsedQueryTime"));
-    Assertions.assertNotNull(json.get("ElapsedResultProcessTime"));
-    Assertions.assertNull(json.get("QueryFunction"));
-    Assertions.assertNull(json.get("BatchID"));
-    Assertions.assertEquals(((Long) json.get("RetryCount")).intValue(), 1);
-    Assertions.assertEquals(json.get("RequestID"), "mockId");
-    Assertions.assertEquals(json.get("RetryLocations"), "retry");
-    Assertions.assertEquals(json.get("Urgent"), true);
-    Assertions.assertEquals(json.get("eventType"), "ExecutionTimeRecord");
+    assertNotNull(json.get("BindStart"));
+    assertNotNull(json.get("BindEnd"));
+    assertEquals(json.get("ocspEnabled"), true);
+    assertNotNull(json.get("HttpClientStart"));
+    assertNotNull(json.get("HttpClientEnd"));
+    assertNotNull(json.get("GzipStart"));
+    assertNotNull(json.get("GzipEnd"));
+    assertNotNull(json.get("QueryEnd"));
+    assertEquals(json.get("QueryID"), "queryid");
+    assertNotNull(json.get("ProcessResultChunkStart"));
+    assertNotNull(json.get("ProcessResultChunkEnd"));
+    assertNotNull(json.get("ResponseIOStreamStart"));
+    assertNotNull(json.get("CreateResultSetStart"));
+    assertNotNull(json.get("CreateResultSetEnd"));
+    assertNotNull(json.get("ElapsedQueryTime"));
+    assertNotNull(json.get("ElapsedResultProcessTime"));
+    assertNull(json.get("QueryFunction"));
+    assertNull(json.get("BatchID"));
+    assertEquals(((Long) json.get("RetryCount")).intValue(), 1);
+    assertEquals(json.get("RequestID"), "mockId");
+    assertEquals(json.get("RetryLocations"), "retry");
+    assertEquals(json.get("Urgent"), true);
+    assertEquals(json.get("eventType"), "ExecutionTimeRecord");
   }
 
   @Test
@@ -72,10 +75,10 @@ public class ExecTimeTelemetryDataTest {
 
     JSONParser parser = new JSONParser(JSONParser.MODE_JSON_SIMPLE);
     JSONObject json = (JSONObject) parser.parse(telemetry);
-    Assertions.assertEquals(json.get("QueryFunction"), "queryFunction");
-    Assertions.assertEquals(json.get("BatchID"), "batchId");
-    Assertions.assertNotNull(json.get("QueryStart"));
-    Assertions.assertEquals(json.get("RetryLocations"), "hello, world");
+    assertEquals(json.get("QueryFunction"), "queryFunction");
+    assertEquals(json.get("BatchID"), "batchId");
+    assertNotNull(json.get("QueryStart"));
+    assertEquals(json.get("RetryLocations"), "hello, world");
     TelemetryService.disableHTAP();
   }
 }

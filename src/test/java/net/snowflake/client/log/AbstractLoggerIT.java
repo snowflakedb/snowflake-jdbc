@@ -3,7 +3,9 @@
  */
 package net.snowflake.client.log;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +34,7 @@ public abstract class AbstractLoggerIT {
         "Value: {}",
         (ArgSupplier)
             () -> {
-              Assertions.fail("Lambda expression evaluated even though message " + "is not logged");
+              fail("Lambda expression evaluated even though message " + "is not logged");
               return 0;
             });
   }
@@ -66,7 +68,7 @@ public abstract class AbstractLoggerIT {
       logMessage(level, fakeCreds, true);
       String loggedMsg = getLoggedMessage();
       String expectedMessage = "credentials=(aws_key_id='****' aws_secret_key='****')";
-      Assertions.assertEquals(expectedMessage, loggedMsg);
+      assertEquals(expectedMessage, loggedMsg);
     }
   }
 
@@ -76,7 +78,7 @@ public abstract class AbstractLoggerIT {
       logMessage(level, fakeCreds, false);
       String loggedMsg = getLoggedMessage();
       // message doesn't change since it's not masked
-      Assertions.assertEquals(fakeCreds, loggedMsg);
+      assertEquals(fakeCreds, loggedMsg);
     }
   }
 
@@ -98,7 +100,7 @@ public abstract class AbstractLoggerIT {
       logMessage(level, msg, args);
 
       String loggedMsg = getLoggedMessage();
-      Assertions.assertEquals(
+      assertEquals(
           expectedLogMsg,
           loggedMsg,
           String.format(
@@ -106,7 +108,7 @@ public abstract class AbstractLoggerIT {
               expectedLogMsg, loggedMsg));
 
       LogLevel loggedMsgLevel = getLoggedMessageLevel();
-      Assertions.assertEquals(
+      assertEquals(
           level,
           loggedMsgLevel,
           String.format(

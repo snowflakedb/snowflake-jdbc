@@ -1,5 +1,7 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -23,7 +25,6 @@ import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -72,7 +73,7 @@ public class GcmEncryptionProviderTest {
 
     InputStream inputStream = decryptStream(cipherText, null, null);
     byte[] decryptedPlainText = IOUtils.toByteArray(inputStream);
-    Assertions.assertArrayEquals(plainText, decryptedPlainText);
+    assertArrayEquals(plainText, decryptedPlainText);
   }
 
   @Test
@@ -82,7 +83,7 @@ public class GcmEncryptionProviderTest {
     byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
     InputStream inputStream = decryptStream(cipherText, dataAad, keyAad);
     byte[] decryptedPlainText = IOUtils.toByteArray(inputStream);
-    Assertions.assertArrayEquals(plainText, decryptedPlainText);
+    assertArrayEquals(plainText, decryptedPlainText);
   }
 
   @Test
@@ -103,7 +104,7 @@ public class GcmEncryptionProviderTest {
         assertThrows(
             IOException.class,
             () -> IOUtils.toByteArray(decryptStream(cipherText, new byte[] {'a'}, keyAad)));
-    Assertions.assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
+    assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
   }
 
   @Test
@@ -116,7 +117,7 @@ public class GcmEncryptionProviderTest {
         assertThrows(
             IOException.class,
             () -> IOUtils.toByteArray(decryptStream(cipherText, dataAad, keyAad)));
-    Assertions.assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
+    assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
   }
 
   @Test
@@ -129,7 +130,7 @@ public class GcmEncryptionProviderTest {
         assertThrows(
             IOException.class,
             () -> IOUtils.toByteArray(decryptStream(cipherText, dataAad, keyAad)));
-    Assertions.assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
+    assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
   }
 
   @Test
@@ -175,7 +176,7 @@ public class GcmEncryptionProviderTest {
                       dataAad == null ? "" : Base64.getEncoder().encodeToString(dataAad),
                       keyAad == null ? "" : Base64.getEncoder().encodeToString(keyAad)));
             });
-    Assertions.assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
+    assertEquals(ioException.getCause().getClass(), AEADBadTagException.class);
   }
 
   @Test
@@ -235,7 +236,7 @@ public class GcmEncryptionProviderTest {
     captureKeysAndIvs();
     decryptFile(tempFile, null, null);
     byte[] decryptedCipherText = FileUtils.readFileToByteArray(tempFile);
-    Assertions.assertArrayEquals(plainText, decryptedCipherText);
+    assertArrayEquals(plainText, decryptedCipherText);
   }
 
   @Test
@@ -250,7 +251,7 @@ public class GcmEncryptionProviderTest {
     captureKeysAndIvs();
     decryptFile(tempFile, dataAad, keyAad);
     byte[] decryptedCipherText = FileUtils.readFileToByteArray(tempFile);
-    Assertions.assertArrayEquals(plainText, decryptedCipherText);
+    assertArrayEquals(plainText, decryptedCipherText);
   }
 
   private void decryptFile(File tempFile, byte[] dataAad, byte[] keyAad)

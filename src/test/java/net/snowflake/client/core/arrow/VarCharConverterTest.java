@@ -6,6 +6,8 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Date;
@@ -25,7 +27,6 @@ import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class VarCharConverterTest extends BaseConverterTest {
@@ -67,9 +68,9 @@ public class VarCharConverterTest extends BaseConverterTest {
       Object objectVal = converter.toObject(i);
       byte[] bytesVal = converter.toBytes(i);
       if (stringVal != null) {
-        Assertions.assertFalse(converter.isNull(i));
+        assertFalse(converter.isNull(i));
       } else {
-        Assertions.assertTrue(converter.isNull(i));
+        assertTrue(converter.isNull(i));
       }
 
       if (nullValIndex.contains(i)) {

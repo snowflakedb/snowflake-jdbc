@@ -1,5 +1,6 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -15,7 +16,6 @@ import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -70,7 +70,7 @@ public class EncryptionProviderTest {
             Base64.getEncoder().encodeToString(ivDataArgumentCaptor.getValue()),
             encMat);
     byte[] decryptedPlainText = IOUtils.toByteArray(inputStream);
-    Assertions.assertArrayEquals(plainText, decryptedPlainText);
+    assertArrayEquals(plainText, decryptedPlainText);
   }
 
   @Test
@@ -96,6 +96,6 @@ public class EncryptionProviderTest {
         Base64.getEncoder().encodeToString(ivDataArgumentCaptor.getValue()),
         encMat);
     byte[] decryptedCipherText = FileUtils.readFileToByteArray(tempFile);
-    Assertions.assertArrayEquals(plainText, decryptedCipherText);
+    assertArrayEquals(plainText, decryptedCipherText);
   }
 }

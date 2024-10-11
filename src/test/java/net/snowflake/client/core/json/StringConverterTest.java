@@ -1,5 +1,6 @@
 package net.snowflake.client.core.json;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 import java.sql.Types;
@@ -11,7 +12,6 @@ import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -54,42 +54,37 @@ public class StringConverterTest {
 
   @Test
   public void testConvertingString() throws SFException {
-    Assertions.assertEquals(
-        "test", stringConverter.getString("test", Types.VARCHAR, Types.VARCHAR, 0));
+    assertEquals("test", stringConverter.getString("test", Types.VARCHAR, Types.VARCHAR, 0));
   }
 
   @Test
   public void testConvertingBoolean() throws SFException {
-    Assertions.assertEquals(
-        "TRUE", stringConverter.getString(true, Types.BOOLEAN, Types.BOOLEAN, 0));
-    Assertions.assertEquals(
-        "TRUE", stringConverter.getString("true", Types.BOOLEAN, Types.BOOLEAN, 0));
-    Assertions.assertEquals(
-        "FALSE", stringConverter.getString(false, Types.BOOLEAN, Types.BOOLEAN, 0));
-    Assertions.assertEquals(
-        "FALSE", stringConverter.getString("false", Types.BOOLEAN, Types.BOOLEAN, 0));
+    assertEquals("TRUE", stringConverter.getString(true, Types.BOOLEAN, Types.BOOLEAN, 0));
+    assertEquals("TRUE", stringConverter.getString("true", Types.BOOLEAN, Types.BOOLEAN, 0));
+    assertEquals("FALSE", stringConverter.getString(false, Types.BOOLEAN, Types.BOOLEAN, 0));
+    assertEquals("FALSE", stringConverter.getString("false", Types.BOOLEAN, Types.BOOLEAN, 0));
   }
 
   @Test
   public void testConvertingNumbers() throws SFException {
-    Assertions.assertEquals("12", stringConverter.getString(12, Types.INTEGER, Types.INTEGER, 0));
-    Assertions.assertEquals("12", stringConverter.getString(12, Types.TINYINT, Types.TINYINT, 0));
-    Assertions.assertEquals("12", stringConverter.getString(12, Types.SMALLINT, Types.SMALLINT, 0));
-    Assertions.assertEquals("12", stringConverter.getString(12L, Types.BIGINT, Types.BIGINT, 0));
-    Assertions.assertEquals("12.5", stringConverter.getString(12.5, Types.DOUBLE, Types.DOUBLE, 0));
-    Assertions.assertEquals("12.5", stringConverter.getString(12.5F, Types.FLOAT, Types.FLOAT, 0));
+    assertEquals("12", stringConverter.getString(12, Types.INTEGER, Types.INTEGER, 0));
+    assertEquals("12", stringConverter.getString(12, Types.TINYINT, Types.TINYINT, 0));
+    assertEquals("12", stringConverter.getString(12, Types.SMALLINT, Types.SMALLINT, 0));
+    assertEquals("12", stringConverter.getString(12L, Types.BIGINT, Types.BIGINT, 0));
+    assertEquals("12.5", stringConverter.getString(12.5, Types.DOUBLE, Types.DOUBLE, 0));
+    assertEquals("12.5", stringConverter.getString(12.5F, Types.FLOAT, Types.FLOAT, 0));
   }
 
   @Test
   public void testConvertingTimestamp() throws SFException {
-    Assertions.assertEquals(
+    assertEquals(
         "1988-03-21 22:33:15.000",
         stringConverter.getString("574986795", Types.TIMESTAMP, Types.TIMESTAMP, 0));
-    Assertions.assertEquals(
+    assertEquals(
         "1988-03-21 19:33:15.000",
         stringConverter.getString(
             "574986795", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, 0));
-    Assertions.assertEquals(
+    assertEquals(
         "1988-03-21 14:33:15.000",
         stringConverter.getString(
             "574986795 960", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ, 0));
@@ -97,19 +92,17 @@ public class StringConverterTest {
 
   @Test
   public void testConvertingDate() throws SFException {
-    Assertions.assertEquals(
-        "2023-12-18", stringConverter.getString("19709", Types.DATE, Types.DATE, 0));
+    assertEquals("2023-12-18", stringConverter.getString("19709", Types.DATE, Types.DATE, 0));
   }
 
   @Test
   public void testConvertingTime() throws SFException {
-    Assertions.assertEquals(
+    assertEquals(
         "00:13:18.000", stringConverter.getString("798.838000000", Types.TIME, Types.TIME, 0));
   }
 
   @Test
   public void testConvertingBinary() throws SFException {
-    Assertions.assertEquals(
-        "AQID", stringConverter.getString("010203", Types.BINARY, Types.BINARY, 0));
+    assertEquals("AQID", stringConverter.getString("010203", Types.BINARY, Types.BINARY, 0));
   }
 }

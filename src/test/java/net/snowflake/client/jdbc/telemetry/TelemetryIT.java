@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.jdbc.telemetry;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
@@ -19,7 +23,6 @@ import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SessionUtil;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -70,36 +73,36 @@ public class TelemetryIT extends AbstractDriverIT {
     node2.put("query_id", "eqweqweqweqwe");
     telemetry.addLogToBatch(node1, 1234567);
     telemetry.addLogToBatch(new TelemetryData(node2, 22345678));
-    Assertions.assertEquals(telemetry.bufferSize(), 2);
+    assertEquals(telemetry.bufferSize(), 2);
 
-    Assertions.assertTrue(telemetry.sendBatchAsync().get());
-    Assertions.assertEquals(telemetry.bufferSize(), 0);
+    assertTrue(telemetry.sendBatchAsync().get());
+    assertEquals(telemetry.bufferSize(), 0);
 
-    Assertions.assertTrue(telemetry.sendLog(node1, 1234567));
-    Assertions.assertEquals(telemetry.bufferSize(), 0);
+    assertTrue(telemetry.sendLog(node1, 1234567));
+    assertEquals(telemetry.bufferSize(), 0);
 
-    Assertions.assertTrue(telemetry.sendLog(new TelemetryData(node2, 22345678)));
-    Assertions.assertEquals(telemetry.bufferSize(), 0);
+    assertTrue(telemetry.sendLog(new TelemetryData(node2, 22345678)));
+    assertEquals(telemetry.bufferSize(), 0);
 
     // reach flush threshold
     for (int i = 0; i < 99; i++) {
       telemetry.addLogToBatch(node1, 1111);
     }
-    Assertions.assertEquals(telemetry.bufferSize(), 99);
+    assertEquals(telemetry.bufferSize(), 99);
     telemetry.addLogToBatch(node1, 222);
 
     // flush is async, sleep some time and then check buffer size
     Thread.sleep(1000);
-    Assertions.assertEquals(telemetry.bufferSize(), 0);
+    assertEquals(telemetry.bufferSize(), 0);
 
     telemetry.addLogToBatch(node1, 111);
-    Assertions.assertEquals(telemetry.bufferSize(), 1);
+    assertEquals(telemetry.bufferSize(), 1);
 
-    Assertions.assertFalse(telemetry.isClosed());
+    assertFalse(telemetry.isClosed());
     telemetry.close();
-    Assertions.assertTrue(telemetry.isClosed());
+    assertTrue(telemetry.isClosed());
     // close function sends the metrics to the server
-    Assertions.assertEquals(telemetry.bufferSize(), 0);
+    assertEquals(telemetry.bufferSize(), 0);
   }
 
   @Test
@@ -156,21 +159,21 @@ public class TelemetryIT extends AbstractDriverIT {
     node2.put("query_id", "eqweqweqweqwe");
     telemetry.addLogToBatch(node1, 1234567);
 
-    Assertions.assertEquals(telemetry.bufferSize(), 1);
+    assertEquals(telemetry.bufferSize(), 1);
     telemetry.disableTelemetry();
-    Assertions.assertFalse(telemetry.isTelemetryEnabled());
+    assertFalse(telemetry.isTelemetryEnabled());
 
     telemetry.addLogToBatch(new TelemetryData(node2, 22345678));
-    Assertions.assertEquals(telemetry.bufferSize(), 1);
+    assertEquals(telemetry.bufferSize(), 1);
 
-    Assertions.assertFalse(telemetry.sendBatchAsync().get());
-    Assertions.assertEquals(telemetry.bufferSize(), 1);
+    assertFalse(telemetry.sendBatchAsync().get());
+    assertEquals(telemetry.bufferSize(), 1);
 
-    Assertions.assertFalse(telemetry.sendLog(node1, 1234567));
-    Assertions.assertEquals(telemetry.bufferSize(), 1);
+    assertFalse(telemetry.sendLog(node1, 1234567));
+    assertEquals(telemetry.bufferSize(), 1);
 
-    Assertions.assertFalse(telemetry.sendLog(new TelemetryData(node2, 22345678)));
-    Assertions.assertEquals(telemetry.bufferSize(), 1);
+    assertFalse(telemetry.sendLog(new TelemetryData(node2, 22345678)));
+    assertEquals(telemetry.bufferSize(), 1);
   }
 
   @Test
@@ -182,7 +185,7 @@ public class TelemetryIT extends AbstractDriverIT {
     node.put("type", "query");
     node.put("query_id", "sdasdasdasdasds");
     telemetry.addLogToBatch(node, 1234567);
-    Assertions.assertFalse(telemetry.sendBatchAsync().get());
+    assertFalse(telemetry.sendBatchAsync().get());
   }
 
   @Test
@@ -194,7 +197,7 @@ public class TelemetryIT extends AbstractDriverIT {
     node.put("type", "query");
     node.put("query_id", "sdasdasdasdasds");
     telemetry.addLogToBatch(node, 1234567);
-    Assertions.assertFalse(telemetry.sendBatchAsync().get());
+    assertFalse(telemetry.sendBatchAsync().get());
   }
 
   // Helper function to create a sessionless telemetry
@@ -300,7 +303,7 @@ public class TelemetryIT extends AbstractDriverIT {
               "select system$it('create_oauth_access_token', 'TELEMETRY_OAUTH_INTEGRATION', '"
                   + role
                   + "')")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         token = resultSet.getString(1);
       }
     }

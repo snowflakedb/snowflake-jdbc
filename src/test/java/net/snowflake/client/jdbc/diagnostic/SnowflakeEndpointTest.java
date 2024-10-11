@@ -1,8 +1,9 @@
 package net.snowflake.client.jdbc.diagnostic;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SnowflakeEndpointTest {
@@ -18,7 +19,7 @@ public class SnowflakeEndpointTest {
     hostsToPrivateLinks.forEach(
         (host, expectedToBePrivateLink) -> {
           SnowflakeEndpoint endpoint = new SnowflakeEndpoint("SNOWFLAKE_DEPLOYMENT", host, 443);
-          Assertions.assertEquals(
+          assertEquals(
               expectedToBePrivateLink,
               endpoint.isPrivateLink(),
               String.format("Expecting %s to be private link: %s", host, expectedToBePrivateLink));

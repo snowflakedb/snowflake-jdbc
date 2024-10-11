@@ -3,6 +3,10 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -14,7 +18,6 @@ import net.snowflake.client.providers.SnowflakeArgumentsProvider;
 import net.snowflake.client.providers.TimezoneProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -128,16 +131,16 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
-          Assertions.assertTrue(rs.next());
+          assertTrue(rs.next());
           if (i == cases.length - 2) {
-            Assertions.assertEquals("0001-01-01", rs.getDate(1).toString());
+            assertEquals("0001-01-01", rs.getDate(1).toString());
           } else {
-            Assertions.assertEquals(cases[i], rs.getDate(1).toString());
+            assertEquals(cases[i], rs.getDate(1).toString());
           }
           i++;
         }
-        Assertions.assertTrue(rs.next());
-        Assertions.assertNull(rs.getString(1));
+        assertTrue(rs.next());
+        assertNull(rs.getString(1));
       }
       statement.execute("drop table " + table);
       System.clearProperty("user.timezone");
@@ -153,12 +156,12 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
     try (Statement statement = createStatement(queryResultFormat);
         ResultSet rs = statement.executeQuery("select * from " + table)) {
       for (int i = 0; i < times.length; i++) {
-        Assertions.assertTrue(rs.next());
+        assertTrue(rs.next());
         // Java Time class does not have nanoseconds
-        Assertions.assertEquals("00:01:23", rs.getString(1));
+        assertEquals("00:01:23", rs.getString(1));
       }
-      Assertions.assertTrue(rs.next());
-      Assertions.assertNull(rs.getTime(1));
+      assertTrue(rs.next());
+      assertNull(rs.getTime(1));
     }
   }
 
@@ -199,11 +202,11 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
-          Assertions.assertTrue(rs.next());
-          Assertions.assertEquals(results[i++], rs.getString(1));
+          assertTrue(rs.next());
+          assertEquals(results[i++], rs.getString(1));
         }
-        Assertions.assertTrue(rs.next());
-        Assertions.assertNull(rs.getString(1));
+        assertTrue(rs.next());
+        assertNull(rs.getString(1));
       }
       statement.execute("drop table " + table);
     }
@@ -234,11 +237,11 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
-          Assertions.assertTrue(rs.next());
-          Assertions.assertEquals(cases[i++], rs.getTimestamp(1).toString());
+          assertTrue(rs.next());
+          assertEquals(cases[i++], rs.getTimestamp(1).toString());
         }
-        Assertions.assertTrue(rs.next());
-        Assertions.assertNull(rs.getString(1));
+        assertTrue(rs.next());
+        assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
       }

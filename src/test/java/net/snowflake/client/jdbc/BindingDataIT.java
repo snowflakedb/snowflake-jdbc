@@ -6,6 +6,8 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -18,7 +20,6 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -54,7 +55,7 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
         try (PreparedStatement preparedStatement =
             connection.prepareStatement("insert into test_bind_short values (?)")) {
           preparedStatement.setShort(1, shortValue);
-          Assertions.assertEquals(1, preparedStatement.executeUpdate());
+          assertEquals(1, preparedStatement.executeUpdate());
         }
         try (PreparedStatement preparedStatement =
             connection.prepareStatement("select * from test_bind_short where c1 = ?")) {
@@ -453,8 +454,7 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
         while (result.next()) {
           String testType = result.getString(1);
           for (int i = 2; i <= 13; ++i) {
-            Assertions.assertNull(
-                result.getString(i), String.format("Java Type: %s is not null", testType));
+            assertNull(result.getString(i), String.format("Java Type: %s is not null", testType));
           }
         }
       }

@@ -3,6 +3,12 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.Array;
@@ -30,7 +36,6 @@ import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import net.snowflake.client.providers.FormatProvider;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -101,9 +106,9 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
 
           resultSet.next();
           SimpleClass object = resultSet.getObject(1, SimpleClass.class);
-          Assertions.assertEquals("text2", object.getString());
-          Assertions.assertEquals(Integer.valueOf("3"), object.getIntValue());
-          Assertions.assertFalse(resultSet.next());
+          assertEquals("text2", object.getString());
+          assertEquals(Integer.valueOf("3"), object.getIntValue());
+          assertFalse(resultSet.next());
         }
       }
     }
@@ -129,8 +134,8 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       stmtement2.executeUpdate();
 
       try (ResultSet resultSet = statement3.executeQuery()) {
-        Assertions.assertTrue(resultSet.next());
-        Assertions.assertNull(resultSet.getObject(1));
+        assertTrue(resultSet.next());
+        assertNull(resultSet.getObject(1));
       }
     }
   }
@@ -155,7 +160,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       try (ResultSet resultSet = stmt2.executeQuery()) {
         resultSet.next();
         SimpleClass object = resultSet.getObject(1, SimpleClass.class);
-        Assertions.assertNull(object);
+        assertNull(object);
       }
     }
   }
@@ -220,30 +225,29 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       try (ResultSet resultSet = stmt2.executeQuery()) {
         resultSet.next();
         AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
-        Assertions.assertEquals("string", object.getString());
-        Assertions.assertEquals(49, (long) object.getB());
-        Assertions.assertEquals(2, (long) object.getS());
-        Assertions.assertEquals(3, (long) object.getI());
-        Assertions.assertEquals(4, (long) object.getL());
-        Assertions.assertEquals(1.1, (double) object.getF(), 0.01);
-        Assertions.assertEquals(2.24, (double) object.getD(), 0.01);
-        Assertions.assertEquals(
-            new BigDecimal("999999999999999999999999999999999999.55"), object.getBd());
-        Assertions.assertEquals(Boolean.TRUE, object.getBool());
-        Assertions.assertEquals(
+        assertEquals("string", object.getString());
+        assertEquals(49, (long) object.getB());
+        assertEquals(2, (long) object.getS());
+        assertEquals(3, (long) object.getI());
+        assertEquals(4, (long) object.getL());
+        assertEquals(1.1, (double) object.getF(), 0.01);
+        assertEquals(2.24, (double) object.getD(), 0.01);
+        assertEquals(new BigDecimal("999999999999999999999999999999999999.55"), object.getBd());
+        assertEquals(Boolean.TRUE, object.getBool());
+        assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.getTimestampLtz());
-        Assertions.assertEquals(
+        assertEquals(
             Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
-        Assertions.assertEquals(
+        assertEquals(
             toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
             object.getTimestampTz());
         // TODO uncomment after merge SNOW-928973: Date field is returning one day less when getting
         // through getString method
         //        assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), object.getDate());
-        Assertions.assertEquals(Time.valueOf(LocalTime.of(12, 34, 56)), object.getTime());
-        Assertions.assertArrayEquals(new byte[] {'a', 'b', 'c'}, object.getBinary());
-        Assertions.assertEquals("testString", object.getSimpleClass().getString());
-        Assertions.assertEquals(Integer.valueOf("2"), object.getSimpleClass().getIntValue());
+        assertEquals(Time.valueOf(LocalTime.of(12, 34, 56)), object.getTime());
+        assertArrayEquals(new byte[] {'a', 'b', 'c'}, object.getBinary());
+        assertEquals("testString", object.getSimpleClass().getString());
+        assertEquals(Integer.valueOf("2"), object.getSimpleClass().getIntValue());
       }
     }
   }
@@ -273,9 +277,9 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
         resultSet.next();
 
         Long[] resultArray = (Long[]) resultSet.getArray(1).getArray();
-        Assertions.assertEquals(Long.valueOf(1), resultArray[0]);
-        Assertions.assertEquals(Long.valueOf(2), resultArray[1]);
-        Assertions.assertEquals(Long.valueOf(3), resultArray[2]);
+        assertEquals(Long.valueOf(1), resultArray[0]);
+        assertEquals(Long.valueOf(2), resultArray[1]);
+        assertEquals(Long.valueOf(3), resultArray[2]);
       }
     }
   }
@@ -298,9 +302,9 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
       try (ResultSet resultSet = statement.executeQuery("SELECT * from array_of_integers"); ) {
         resultSet.next();
         Long[] resultArray = (Long[]) resultSet.getArray(1).getArray();
-        Assertions.assertEquals(Long.valueOf(1), resultArray[0]);
-        Assertions.assertEquals(Long.valueOf(2), resultArray[1]);
-        Assertions.assertEquals(Long.valueOf(3), resultArray[2]);
+        assertEquals(Long.valueOf(1), resultArray[0]);
+        assertEquals(Long.valueOf(2), resultArray[1]);
+        assertEquals(Long.valueOf(3), resultArray[2]);
       }
     }
   }

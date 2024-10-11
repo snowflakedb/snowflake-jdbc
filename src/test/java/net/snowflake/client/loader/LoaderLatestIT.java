@@ -4,6 +4,8 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,7 +13,6 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -58,7 +59,7 @@ public class LoaderLatestIT extends LoaderBase {
                 String.format(
                     "SELECT C1, C4, C3" + " FROM \"%s\" WHERE ID=10001", TARGET_TABLE_NAME))) {
 
-      Assertions.assertTrue(rs.next());
+      assertTrue(rs.next());
       assertThat("C1 is not correct", rs.getString("C1"), equalTo("inserted\\,"));
 
       long l = rs.getTimestamp("C4").getTime();
@@ -72,7 +73,7 @@ public class LoaderLatestIT extends LoaderBase {
             .executeQuery(
                 String.format("SELECT C1 AS N" + " FROM \"%s\" WHERE ID=39", TARGET_TABLE_NAME))) {
 
-      Assertions.assertTrue(rs.next());
+      assertTrue(rs.next());
       assertThat("N is not correct", rs.getString("N"), equalTo("modified"));
     }
   }
@@ -121,7 +122,7 @@ public class LoaderLatestIT extends LoaderBase {
 
         loader.finish();
 
-        Assertions.fail("Test must raise Loader.DataError exception");
+        fail("Test must raise Loader.DataError exception");
       } catch (Loader.DataError e) {
         // we are good
         assertThat(
@@ -140,7 +141,7 @@ public class LoaderLatestIT extends LoaderBase {
           testConnection
               .createStatement()
               .executeQuery(String.format("SELECT COUNT(*) AS N FROM \"%s\"", TARGET_TABLE_NAME))) {
-        Assertions.assertTrue(rs.next());
+        assertTrue(rs.next());
         assertThat("N", rs.getInt("N"), equalTo(10001));
       }
       try (ResultSet rs =
@@ -148,7 +149,7 @@ public class LoaderLatestIT extends LoaderBase {
               .createStatement()
               .executeQuery(
                   String.format("SELECT C3 FROM \"%s\" WHERE id=10001", TARGET_TABLE_NAME))) {
-        Assertions.assertTrue(rs.next());
+        assertTrue(rs.next());
         assertThat(
             "C3. No commit should happen",
             Double.toHexString((rs.getDouble("C3"))),
@@ -199,7 +200,7 @@ public class LoaderLatestIT extends LoaderBase {
               .executeQuery(
                   String.format("SELECT * FROM \"%s\" ORDER BY \"Column1\"", targetTableName))) {
 
-        Assertions.assertTrue(rs.next());
+        assertTrue(rs.next());
         assertThat("The first id", rs.getInt(1), equalTo(0));
         assertThat("The first str", rs.getString(2), equalTo("foo_0"));
       }

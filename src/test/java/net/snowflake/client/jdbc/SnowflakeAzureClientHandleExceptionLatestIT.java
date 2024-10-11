@@ -3,7 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.StorageExtendedErrorInformation;
@@ -21,7 +23,6 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeAzureClient;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -99,7 +100,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
     thread.start();
     thread.interrupt();
     thread.join();
-    Assertions.assertNull(exceptionContainer[0], "Exception must not have been thrown in here");
+    assertNull(exceptionContainer[0], "Exception must not have been thrown in here");
     Mockito.verify(spyingClient, Mockito.times(4)).renew(Mockito.anyMap());
   }
 
@@ -164,7 +165,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
             spyingClient.handleStorageException(
                 new InterruptedException(), 0, "upload", sfSession, command, null);
           } catch (Exception e) {
-            Assertions.fail("Should not have exception here");
+            fail("Should not have exception here");
           }
           Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
           spyingClient.handleStorageException(
@@ -183,7 +184,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
             spyingClient.handleStorageException(
                 new SocketTimeoutException(), 0, "upload", sfSession, command, null);
           } catch (Exception e) {
-            Assertions.fail("Should not have exception here");
+            fail("Should not have exception here");
           }
           Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
           spyingClient.handleStorageException(

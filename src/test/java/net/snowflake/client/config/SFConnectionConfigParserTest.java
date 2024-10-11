@@ -2,6 +2,9 @@ package net.snowflake.client.config;
 
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_HOME_KEY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
@@ -23,7 +26,6 @@ import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,14 +55,14 @@ public class SFConnectionConfigParserTest {
     prepareConnectionConfigurationTomlFile();
     ConnectionParameters connectionParameters =
         SFConnectionConfigParser.buildConnectionParameters();
-    Assertions.assertNull(connectionParameters);
+    assertNull(connectionParameters);
   }
 
   @Test
   public void testLoadSFConnectionConfigInValidPath() throws SnowflakeSQLException, IOException {
     SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, Paths.get("unknownPath").toString());
     prepareConnectionConfigurationTomlFile();
-    Assertions.assertNull(SFConnectionConfigParser.buildConnectionParameters());
+    assertNull(SFConnectionConfigParser.buildConnectionParameters());
   }
 
   @Test
@@ -73,8 +75,8 @@ public class SFConnectionConfigParserTest {
         Collections.singletonMap("token_file_path", tokenFile.toString()));
 
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
-    Assertions.assertNotNull(data);
-    Assertions.assertEquals(tokenFile.toString(), data.getParams().get("token_file_path"));
+    assertNotNull(data);
+    assertEquals(tokenFile.toString(), data.getParams().get("token_file_path"));
   }
 
   @Test
@@ -112,10 +114,10 @@ public class SFConnectionConfigParserTest {
     extraparams.put("token", "testToken");
     prepareConnectionConfigurationTomlFile(extraparams);
     ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
-    Assertions.assertNotNull(data);
-    Assertions.assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
-    Assertions.assertEquals("oauth", data.getParams().get("authenticator"));
-    Assertions.assertEquals("testToken", data.getParams().get("token"));
+    assertNotNull(data);
+    assertEquals("jdbc:snowflake://snowflake.reg.local:8082", data.getUrl());
+    assertEquals("oauth", data.getParams().get("authenticator"));
+    assertEquals("testToken", data.getParams().get("token"));
   }
 
   @Test
@@ -126,7 +128,7 @@ public class SFConnectionConfigParserTest {
     extraparams.put("host", null);
     extraparams.put("account", null);
     prepareConnectionConfigurationTomlFile(extraparams);
-    Assertions.assertThrows(
+    assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 

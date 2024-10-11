@@ -1,5 +1,8 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -16,7 +19,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // @Category(TestCategoryOthers.class)
@@ -104,8 +106,8 @@ public class ProxyLatestIT extends BaseWiremockTest {
                 props);
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
-      Assertions.assertTrue(rs.next());
-      Assertions.assertEquals(1, rs.getInt(1));
+      assertTrue(rs.next());
+      assertEquals(1, rs.getInt(1));
     }
   }
 
@@ -117,7 +119,7 @@ public class ProxyLatestIT extends BaseWiremockTest {
       String responseString = EntityUtils.toString(response.getEntity());
       ObjectMapper mapper = new ObjectMapper();
       JsonNode json = mapper.readTree(responseString);
-      Assertions.assertEquals(
+      assertEquals(
           expectedCount,
           json.get("count").asInt(),
           "expected request count not matched for pattern: " + pathPattern);

@@ -3,13 +3,14 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // @Category(TestCategoryStatement.class)
@@ -56,11 +57,11 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
           try (ResultSet resultSet =
               statement.executeQuery("select c1 from test_multi_bind order by c1 asc")) {
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(20));
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(30));
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(40));
           }
         }
@@ -92,7 +93,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
           // first statement
           try {
             preparedStatement.executeUpdate();
-            Assertions.fail();
+            fail();
           } catch (SQLException e) {
             // error code comes from xp, which is js execution failed.
             assertThat(e.getErrorCode(), is(100132));
@@ -137,11 +138,11 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
           try (ResultSet resultSet =
               statement.executeQuery("select c1 from test_multi_bind order by c1 asc")) {
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(20));
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(30));
-            Assertions.assertTrue(resultSet.next());
+            assertTrue(resultSet.next());
             assertThat(resultSet.getInt(1), is(40));
           }
         }
@@ -177,7 +178,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
         // second statement
         assertThat(preparedStatement.getMoreResults(), is(true));
         try (ResultSet resultSet = preparedStatement.getResultSet()) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(20));
           assertThat(resultSet.getInt(2), is(30));
         }
@@ -185,7 +186,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
         // third statement
         assertThat(preparedStatement.getMoreResults(), is(true));
         try (ResultSet resultSet = preparedStatement.getResultSet()) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(40));
           assertThat(resultSet.getInt(2), is(50));
           assertThat(resultSet.getInt(3), is(60));
@@ -214,7 +215,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
         // second statement
         assertThat(preparedStatement.getMoreResults(), is(true));
         try (ResultSet resultSet = preparedStatement.getResultSet()) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(20));
           assertThat(resultSet.getInt(2), is(30));
         }
@@ -222,7 +223,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
         // third statement
         assertThat(preparedStatement.getMoreResults(), is(true));
         try (ResultSet resultSet = preparedStatement.getResultSet()) {
-          Assertions.assertTrue(resultSet.next());
+          assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(40));
           assertThat(resultSet.getInt(2), is(50));
           assertThat(resultSet.getInt(3), is(60));

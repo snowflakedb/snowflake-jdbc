@@ -3,12 +3,15 @@
  */
 package net.snowflake.client.log;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -96,7 +99,7 @@ public class JDK14JCLWrapperLatestIT {
         wrapper.info(message, t);
         break;
     }
-    Assertions.assertEquals(message, getLoggedMessage());
+    assertEquals(message, getLoggedMessage());
   }
 
   private void testLogMessagesNoThrowable(LogLevel level, String message) {
@@ -114,7 +117,7 @@ public class JDK14JCLWrapperLatestIT {
         wrapper.info(message);
         break;
     }
-    Assertions.assertEquals(message, getLoggedMessage());
+    assertEquals(message, getLoggedMessage());
   }
 
   private void testNullLogMessagesWithThrowable(LogLevel level, String message, Throwable t) {
@@ -126,7 +129,7 @@ public class JDK14JCLWrapperLatestIT {
         wrapper.debug(message, t);
         break;
     }
-    Assertions.assertEquals(null, getLoggedMessage());
+    assertEquals(null, getLoggedMessage());
   }
 
   private void testNullLogMessagesNoThrowable(LogLevel level, String message) {
@@ -138,7 +141,7 @@ public class JDK14JCLWrapperLatestIT {
         wrapper.debug(message);
         break;
     }
-    Assertions.assertEquals(null, getLoggedMessage());
+    assertEquals(null, getLoggedMessage());
   }
 
   /**
@@ -168,11 +171,11 @@ public class JDK14JCLWrapperLatestIT {
    */
   @Test
   public void testEnabledMessaging() {
-    Assertions.assertFalse(wrapper.isTraceEnabled());
-    Assertions.assertFalse(wrapper.isDebugEnabled());
-    Assertions.assertTrue(wrapper.isInfoEnabled());
-    Assertions.assertTrue(wrapper.isWarnEnabled());
-    Assertions.assertTrue(wrapper.isErrorEnabled());
-    Assertions.assertTrue(wrapper.isFatalEnabled());
+    assertFalse(wrapper.isTraceEnabled());
+    assertFalse(wrapper.isDebugEnabled());
+    assertTrue(wrapper.isInfoEnabled());
+    assertTrue(wrapper.isWarnEnabled());
+    assertTrue(wrapper.isErrorEnabled());
+    assertTrue(wrapper.isFatalEnabled());
   }
 }

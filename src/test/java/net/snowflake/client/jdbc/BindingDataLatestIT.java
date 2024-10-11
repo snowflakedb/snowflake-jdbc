@@ -5,6 +5,8 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,7 +18,6 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -50,7 +51,7 @@ public class BindingDataLatestIT extends AbstractDriverIT {
 
       try (ResultSet resultSet =
           statement.executeQuery("select cola, colb from testBindTimestampTz")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         assertThat("integer", resultSet.getInt(1), equalTo(123));
         assertThat("timestamp_tz", resultSet.getTimestamp(2), equalTo(ts));
       }
@@ -94,17 +95,17 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         // Compare the results
         try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
             ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
-          Assertions.assertTrue(rs1.next());
-          Assertions.assertTrue(rs2.next());
+          assertTrue(rs1.next());
+          assertTrue(rs2.next());
 
-          Assertions.assertEquals(rs1.getInt(1), rs2.getInt(1));
+          assertEquals(rs1.getInt(1), rs2.getInt(1));
 
           // Check tz type and ltz type columns have the same value.
-          Assertions.assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
 
-          Assertions.assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
-          Assertions.assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
-          Assertions.assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
+          assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
+          assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
         }
       } finally {
         statement.execute("drop table if exists stageinsert");
@@ -144,18 +145,18 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         // Compare the results
         try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
             ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
-          Assertions.assertTrue(rs1.next());
-          Assertions.assertTrue(rs2.next());
+          assertTrue(rs1.next());
+          assertTrue(rs2.next());
 
-          Assertions.assertEquals(rs1.getInt(1), rs2.getInt(1));
+          assertEquals(rs1.getInt(1), rs2.getInt(1));
 
           // Check that all the values are the same.
-          Assertions.assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
-          Assertions.assertEquals(rs1.getTimestamp(3), rs1.getTimestamp(4));
+          assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(3), rs1.getTimestamp(4));
 
-          Assertions.assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
-          Assertions.assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
-          Assertions.assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
+          assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
+          assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
         }
       } finally {
         statement.execute("drop table if exists stageinsert");
@@ -246,39 +247,39 @@ public class BindingDataLatestIT extends AbstractDriverIT {
         // Compare the results
         try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
             ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
-          Assertions.assertTrue(rs1.next());
-          Assertions.assertTrue(rs2.next());
+          assertTrue(rs1.next());
+          assertTrue(rs2.next());
 
-          Assertions.assertEquals(rs1.getInt(1), rs2.getInt(1));
-          Assertions.assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
-          Assertions.assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
-          Assertions.assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
-          Assertions.assertEquals(rs1.getTimestamp(5), rs2.getTimestamp(5));
-          Assertions.assertEquals(rs1.getTimestamp(6), rs2.getTimestamp(6));
-          Assertions.assertEquals(rs1.getTimestamp(7), rs2.getTimestamp(7));
-          Assertions.assertEquals(rs1.getTimestamp(8), rs2.getTimestamp(8));
-          Assertions.assertEquals(rs1.getTimestamp(9), rs2.getTimestamp(9));
-          Assertions.assertEquals(rs1.getTimestamp(10), rs2.getTimestamp(10));
+          assertEquals(rs1.getInt(1), rs2.getInt(1));
+          assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
+          assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
+          assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
+          assertEquals(rs1.getTimestamp(5), rs2.getTimestamp(5));
+          assertEquals(rs1.getTimestamp(6), rs2.getTimestamp(6));
+          assertEquals(rs1.getTimestamp(7), rs2.getTimestamp(7));
+          assertEquals(rs1.getTimestamp(8), rs2.getTimestamp(8));
+          assertEquals(rs1.getTimestamp(9), rs2.getTimestamp(9));
+          assertEquals(rs1.getTimestamp(10), rs2.getTimestamp(10));
 
-          Assertions.assertEquals(ts1.getTime(), rs1.getTimestamp(2).getTime());
-          Assertions.assertEquals(ts2.getTime(), rs1.getTimestamp(3).getTime());
-          Assertions.assertEquals(ts3.getTime(), rs1.getTimestamp(4).getTime());
-          Assertions.assertEquals(ts1.getTime(), rs1.getTimestamp(5).getTime());
-          Assertions.assertEquals(ts2.getTime(), rs1.getTimestamp(6).getTime());
-          Assertions.assertEquals(ts3.getTime(), rs1.getTimestamp(7).getTime());
-          Assertions.assertEquals(ts1.getTime(), rs1.getTimestamp(8).getTime());
-          Assertions.assertEquals(ts2.getTime(), rs1.getTimestamp(9).getTime());
-          Assertions.assertEquals(ts3.getTime(), rs1.getTimestamp(10).getTime());
+          assertEquals(ts1.getTime(), rs1.getTimestamp(2).getTime());
+          assertEquals(ts2.getTime(), rs1.getTimestamp(3).getTime());
+          assertEquals(ts3.getTime(), rs1.getTimestamp(4).getTime());
+          assertEquals(ts1.getTime(), rs1.getTimestamp(5).getTime());
+          assertEquals(ts2.getTime(), rs1.getTimestamp(6).getTime());
+          assertEquals(ts3.getTime(), rs1.getTimestamp(7).getTime());
+          assertEquals(ts1.getTime(), rs1.getTimestamp(8).getTime());
+          assertEquals(ts2.getTime(), rs1.getTimestamp(9).getTime());
+          assertEquals(ts3.getTime(), rs1.getTimestamp(10).getTime());
 
-          Assertions.assertEquals(ts1.getTime(), rs2.getTimestamp(2).getTime());
-          Assertions.assertEquals(ts2.getTime(), rs2.getTimestamp(3).getTime());
-          Assertions.assertEquals(ts3.getTime(), rs2.getTimestamp(4).getTime());
-          Assertions.assertEquals(ts1.getTime(), rs2.getTimestamp(5).getTime());
-          Assertions.assertEquals(ts2.getTime(), rs2.getTimestamp(6).getTime());
-          Assertions.assertEquals(ts3.getTime(), rs2.getTimestamp(7).getTime());
-          Assertions.assertEquals(ts1.getTime(), rs2.getTimestamp(8).getTime());
-          Assertions.assertEquals(ts2.getTime(), rs2.getTimestamp(9).getTime());
-          Assertions.assertEquals(ts3.getTime(), rs2.getTimestamp(10).getTime());
+          assertEquals(ts1.getTime(), rs2.getTimestamp(2).getTime());
+          assertEquals(ts2.getTime(), rs2.getTimestamp(3).getTime());
+          assertEquals(ts3.getTime(), rs2.getTimestamp(4).getTime());
+          assertEquals(ts1.getTime(), rs2.getTimestamp(5).getTime());
+          assertEquals(ts2.getTime(), rs2.getTimestamp(6).getTime());
+          assertEquals(ts3.getTime(), rs2.getTimestamp(7).getTime());
+          assertEquals(ts1.getTime(), rs2.getTimestamp(8).getTime());
+          assertEquals(ts2.getTime(), rs2.getTimestamp(9).getTime());
+          assertEquals(ts3.getTime(), rs2.getTimestamp(10).getTime());
         }
       } finally {
         statement.execute("drop table if exists stageinsert");

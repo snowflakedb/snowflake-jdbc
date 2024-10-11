@@ -9,6 +9,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -32,7 +34,6 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -130,9 +131,9 @@ public class BigIntToTimestampNTZConverterTest extends BaseConverterTest {
       String tsStr = converter.toString(j);
 
       if (tsStr != null) {
-        Assertions.assertFalse(converter.isNull(j));
+        assertFalse(converter.isNull(j));
       } else {
-        Assertions.assertTrue(converter.isNull(j));
+        assertTrue(converter.isNull(j));
       }
 
       if (nullValIndex.contains(j)) {

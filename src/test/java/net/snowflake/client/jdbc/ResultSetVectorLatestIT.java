@@ -1,6 +1,9 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.EXTRA_TYPES_VECTOR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -10,7 +13,6 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.providers.SimpleFormatProvider;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -31,10 +33,10 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       enforceQueryResultFormat(stmt, queryResultFormat);
       Integer[] vector = {-1, 5};
       try (ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "int"))) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         Integer[] result =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
-        Assertions.assertEquals(vector, result);
+        assertEquals(vector, result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
     }
@@ -47,9 +49,9 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       enforceQueryResultFormat(stmt, queryResultFormat);
       Long[] vector = {-1L, 5L};
       try (ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "int"))) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         Long[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Long.class);
-        Assertions.assertEquals(vector, result);
+        assertEquals(vector, result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
     }
@@ -62,9 +64,9 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       enforceQueryResultFormat(stmt, queryResultFormat);
       Float[] vector = {-1.2f, 5.1f, 15.87f};
       try (ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "float"))) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         Float[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
-        Assertions.assertEquals(vector, result);
+        assertEquals(vector, result);
         assertVectorMetadata(resultSet, 1, Types.FLOAT, 1);
       }
     }
@@ -76,10 +78,10 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
     try (Statement stmt = createStatement(queryResultFormat)) {
       enforceQueryResultFormat(stmt, queryResultFormat);
       try (ResultSet resultSet = stmt.executeQuery("select null::vector(int, 2)")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         Integer[] result =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
-        Assertions.assertNull(result);
+        assertNull(result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
     }
@@ -91,10 +93,10 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
     try (Statement stmt = createStatement(queryResultFormat)) {
       enforceQueryResultFormat(stmt, queryResultFormat);
       try (ResultSet resultSet = stmt.executeQuery("select null::vector(float, 2)")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         Integer[] result =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
-        Assertions.assertNull(result);
+        assertNull(result);
         assertVectorMetadata(resultSet, 1, Types.FLOAT, 1);
       }
     }
@@ -108,10 +110,10 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       stmt.execute("create or replace table test_vector_int(x vector(int, 2), y int)");
       stmt.execute("insert into test_vector_int select [3, 7]::vector(int, 2), 15");
       try (ResultSet resultSet = stmt.executeQuery("select x, y from test_vector_int")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         Integer[] result =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
-        Assertions.assertEquals(new Integer[] {3, 7}, result);
+        assertEquals(new Integer[] {3, 7}, result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 2);
       }
     }
@@ -125,9 +127,9 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       stmt.execute("create or replace table test_vector_float(x vector(float, 2), y float)");
       stmt.execute("insert into test_vector_float select [-3, 7.1]::vector(float, 2), 20.3");
       try (ResultSet resultSet = stmt.executeQuery("select x, y from test_vector_float")) {
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         Float[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
-        Assertions.assertEquals(new Float[] {-3f, 7.1f}, result);
+        assertEquals(new Float[] {-3f, 7.1f}, result);
         assertVectorMetadata(resultSet, 1, Types.FLOAT, 2);
       }
     }
@@ -153,7 +155,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
                   + ", "
                   + nullVectorToString("float"))) {
 
-        Assertions.assertTrue(resultSet.next());
+        assertTrue(resultSet.next());
         assertGetObjectAndGetStringBeTheSame(resultSet, "[-1,5]", 1);
         String floatArrayRepresentation =
             "JSON".equals(queryResultFormat)
@@ -169,14 +171,14 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   private static void assertGetObjectAndGetStringBeTheSame(
       ResultSet resultSet, String intArrayRepresentation, int columnIndex) throws SQLException {
-    Assertions.assertEquals(intArrayRepresentation, resultSet.getString(columnIndex));
-    Assertions.assertEquals(intArrayRepresentation, resultSet.getObject(columnIndex));
+    assertEquals(intArrayRepresentation, resultSet.getString(columnIndex));
+    assertEquals(intArrayRepresentation, resultSet.getObject(columnIndex));
   }
 
   private static void assertGetObjectAndGetStringAreNull(ResultSet resultSet, int columnIndex)
       throws SQLException {
-    Assertions.assertNull(resultSet.getString(columnIndex));
-    Assertions.assertNull(resultSet.getObject(columnIndex));
+    assertNull(resultSet.getString(columnIndex));
+    assertNull(resultSet.getObject(columnIndex));
   }
 
   private <T extends Number> String vectorToString(T[] vector, String vectorType) {
@@ -199,15 +201,14 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       ResultSet resultSet, int vectorColumnIndex, int expectedVectorFieldType, int allColumns)
       throws SQLException {
     ResultSetMetaData metadata = resultSet.getMetaData();
-    Assertions.assertEquals(allColumns, metadata.getColumnCount());
-    Assertions.assertEquals(EXTRA_TYPES_VECTOR, metadata.getColumnType(vectorColumnIndex));
-    Assertions.assertEquals("VECTOR", metadata.getColumnTypeName(vectorColumnIndex));
+    assertEquals(allColumns, metadata.getColumnCount());
+    assertEquals(EXTRA_TYPES_VECTOR, metadata.getColumnType(vectorColumnIndex));
+    assertEquals("VECTOR", metadata.getColumnTypeName(vectorColumnIndex));
     SnowflakeResultSetMetaDataV1 sfMetadata = (SnowflakeResultSetMetaDataV1) metadata;
-    Assertions.assertTrue(sfMetadata.isStructuredTypeColumn(vectorColumnIndex));
-    Assertions.assertEquals(
-        EXTRA_TYPES_VECTOR, sfMetadata.getInternalColumnType(vectorColumnIndex));
+    assertTrue(sfMetadata.isStructuredTypeColumn(vectorColumnIndex));
+    assertEquals(EXTRA_TYPES_VECTOR, sfMetadata.getInternalColumnType(vectorColumnIndex));
     List<FieldMetadata> columnFields = sfMetadata.getColumnFields(vectorColumnIndex);
-    Assertions.assertEquals(1, columnFields.size());
-    Assertions.assertEquals(expectedVectorFieldType, columnFields.get(0).getType());
+    assertEquals(1, columnFields.size());
+    assertEquals(expectedVectorFieldType, columnFields.get(0).getType());
   }
 }
