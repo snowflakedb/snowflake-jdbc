@@ -25,7 +25,7 @@
     <awaitility.version>4.2.0</awaitility.version>
     <awssdk.version>1.12.655</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
-    <bouncycastle.version>1.74</bouncycastle.version>
+    <bouncycastle.version>1.78.1</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.4</bouncycastle.bcfips.version>
     <bouncycastle.bcpkixfips.version>1.0.5</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
@@ -446,6 +446,12 @@
         <!-- for non-FIPS JAR -->
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk18on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <!-- for non-FIPS JAR -->
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcutil-jdk18on</artifactId>
         <version>${bouncycastle.version}</version>
       </dependency>
       <dependency>
