@@ -2,19 +2,17 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 public class CallableStatementLatestIT extends CallableStatementIT {
 
   public CallableStatementLatestIT(String format) {
@@ -33,9 +31,7 @@ public class CallableStatementLatestIT extends CallableStatementIT {
       "call square_it(5)", "call no_bracket_function(44)", "call {bracket_function(a=?)}"
     };
     for (int i = 0; i < callStatements.length; i++) {
-      assertEquals(
-          expectedStatements[i],
-          SnowflakeCallableStatementV1.parseSqlEscapeSyntax(callStatements[i]));
+      Assertions.assertEquals(expectedStatements[i], SnowflakeCallableStatementV1.parseSqlEscapeSyntax(callStatements[i]));
     }
   }
 
@@ -61,8 +57,8 @@ public class CallableStatementLatestIT extends CallableStatementIT {
         assertThat(callableStatement.getParameterMetaData().getParameterTypeName(1), is("text"));
         callableStatement.setFloat(1, 7.0f);
         try (ResultSet rs = callableStatement.executeQuery()) {
-          assertTrue(rs.next());
-          assertEquals(49.0f, rs.getFloat(1), 1.0f);
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(49.0f, rs.getFloat(1), 1.0f);
         }
       }
       // test CallableStatement with 2 binding parameters
@@ -70,8 +66,8 @@ public class CallableStatementLatestIT extends CallableStatementIT {
         callableStatement.setDouble(1, 32);
         callableStatement.setDouble(2, 15);
         try (ResultSet rs = callableStatement.executeQuery()) {
-          assertTrue(rs.next());
-          assertEquals(47, rs.getDouble(1), .5);
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(47, rs.getDouble(1), .5);
         }
       }
     }

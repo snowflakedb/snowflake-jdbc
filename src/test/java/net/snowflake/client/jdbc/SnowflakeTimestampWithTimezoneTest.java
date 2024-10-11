@@ -3,8 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -14,6 +12,7 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -77,7 +76,7 @@ public class SnowflakeTimestampWithTimezoneTest extends BaseJDBCTest {
     SnowflakeTimestampWithTimezone stn =
         new SnowflakeTimestampWithTimezone(
             dt.toEpochSecond(ZoneOffset.UTC) * 1000, dt.getNano(), TimeZone.getTimeZone("UTC"));
-    assertEquals(outputTimestamp, stn.toString());
+    Assertions.assertEquals(outputTimestamp, stn.toString());
   }
 
   @Test
@@ -89,7 +88,7 @@ public class SnowflakeTimestampWithTimezoneTest extends BaseJDBCTest {
     SnowflakeTimestampWithTimezone ts =
         new SnowflakeTimestampWithTimezone(currentTimestamp, TimeZone.getTimeZone(timezone));
     // verify timezone was set
-    assertEquals(ts.getTimezone().getID(), timezone);
+    Assertions.assertEquals(ts.getTimezone().getID(), timezone);
   }
 
   @Test
@@ -103,6 +102,6 @@ public class SnowflakeTimestampWithTimezoneTest extends BaseJDBCTest {
         new SnowflakeTimestampWithTimezone(timestamp, TimeZone.getTimeZone(timezone));
     ZonedDateTime zd = ts.toZonedDateTime();
     // verify timestamp was converted to zoned datetime
-    assertEquals(zd.toString(), zonedDateTime);
+    Assertions.assertEquals(zd.toString(), zonedDateTime);
   }
 }

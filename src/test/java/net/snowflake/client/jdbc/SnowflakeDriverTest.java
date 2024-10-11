@@ -4,12 +4,6 @@
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -19,6 +13,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Driver unit test */
@@ -52,16 +49,16 @@ public class SnowflakeDriverTest {
       int port = sc.getPort();
       Map<String, Object> parameters = sc.getParameters();
 
-      assertEquals("URL scheme: " + url, this.scheme, scheme);
-      assertEquals("URL scheme: " + url, this.host, host);
-      assertEquals("URL scheme: " + url, this.port, port);
-      assertEquals("URL scheme: " + url, this.parameters.size(), parameters.size());
-      assertEquals("URL scheme. " + url, this.account, account);
+      Assertions.assertEquals(this.scheme, scheme, "URL scheme: " + url);
+      Assertions.assertEquals(this.host, host, "URL scheme: " + url);
+      Assertions.assertEquals(this.port, port, "URL scheme: " + url);
+      Assertions.assertEquals(this.parameters.size(), parameters.size(), "URL scheme: " + url);
+      Assertions.assertEquals(this.account, account, "URL scheme. " + url);
 
       for (Map.Entry<String, String> entry : this.parameters.entrySet()) {
         String k = entry.getKey().toUpperCase(Locale.US);
         Object v = parameters.get(k);
-        assertEquals("URL scheme: " + url + ", key: " + k, entry.getValue(), v);
+        Assertions.assertEquals(entry.getValue(), v, "URL scheme: " + url + ", key: " + k);
       }
     }
   }
@@ -355,22 +352,21 @@ public class SnowflakeDriverTest {
             expectedParameters));
 
     for (TestCase t : testCases) {
-      assertTrue("URL is not valid: " + t.url, snowflakeDriver.acceptsURL(t.url));
+      Assertions.assertTrue(snowflakeDriver.acceptsURL(t.url), "URL is not valid: " + t.url);
       t.match(t.url, SnowflakeConnectString.parse(t.url, SnowflakeDriver.EMPTY_PROPERTIES));
     }
 
     // negative tests
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://:"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://:8080"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:xyz"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflak://localhost:8080"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8080/a=b"));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%%"));
-    assertFalse(
-        snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%b&proxyPort="));
-    assertFalse(snowflakeDriver.acceptsURL("jdbc:mysql://localhost:3306/dbname"));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:"));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://"));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://:"));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://:8080"));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:xyz"));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflak://localhost:8080"));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8080/a=b"));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%%"));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%b&proxyPort="));
+    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:mysql://localhost:3306/dbname"));
   }
 
   @Test
@@ -378,9 +374,9 @@ public class SnowflakeDriverTest {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
     try {
       snowflakeDriver.connect(/* url= */ null, null);
-      fail();
+      Assertions.fail();
     } catch (SQLException ex) {
-      assertEquals("Unable to connect to url of 'null'.", ex.getMessage());
+      Assertions.assertEquals("Unable to connect to url of 'null'.", ex.getMessage());
     }
   }
 
@@ -391,20 +387,20 @@ public class SnowflakeDriverTest {
     int majorVersion = snowflakeDriver.getMajorVersion();
     int minorVersion = snowflakeDriver.getMinorVersion();
 
-    assertThat(majorVersion, greaterThanOrEqualTo(3));
-    assertThat(minorVersion, greaterThanOrEqualTo(0));
+    MatcherAssert.assertThat(majorVersion, greaterThanOrEqualTo(3));
+    MatcherAssert.assertThat(minorVersion, greaterThanOrEqualTo(0));
   }
 
   @Test
   public void testJDBCCompliant() {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
-    assertFalse(snowflakeDriver.jdbcCompliant());
+    Assertions.assertFalse(snowflakeDriver.jdbcCompliant());
   }
 
   @Test
   public void testGetParentLogger() throws SQLException {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
-    assertNull(snowflakeDriver.getParentLogger());
+    Assertions.assertNull(snowflakeDriver.getParentLogger());
   }
 
   @Test
@@ -430,9 +426,9 @@ public class SnowflakeDriverTest {
         "jdbc:snowflake://abc-test.us-east-1.snowflakecomputing.com/?private_key_file=C:\\temp\\rsa_key.p8&private_key_pwd=test_password&user=test_user";
     try {
       snowflakeDriver.connect(jdbcConnectString, info);
-      fail();
+      Assertions.fail();
     } catch (Exception ex) {
-      assertEquals("Connection string is invalid. Unable to parse.", ex.getMessage());
+      Assertions.assertEquals("Connection string is invalid. Unable to parse.", ex.getMessage());
     }
   }
 
@@ -441,7 +437,7 @@ public class SnowflakeDriverTest {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
     Properties info = new Properties();
     String jdbcConnectString = "jdbc:mysql://host:port/database";
-    assertNull(snowflakeDriver.connect(jdbcConnectString, info));
+    Assertions.assertNull(snowflakeDriver.connect(jdbcConnectString, info));
   }
 
   @Test
@@ -449,10 +445,9 @@ public class SnowflakeDriverTest {
     SnowflakeDriver snowflakeDriver = SnowflakeDriver.INSTANCE;
     try {
       snowflakeDriver.getPropertyInfo("jdbc:snowflake://localhost:443/?&ssl=on", new Properties());
-      fail();
+      Assertions.fail();
     } catch (SnowflakeSQLException ex) {
-      assertEquals(
-          "Invalid Connect String: jdbc:snowflake://localhost:443/?&ssl=on.", ex.getMessage());
+      Assertions.assertEquals("Invalid Connect String: jdbc:snowflake://localhost:443/?&ssl=on.", ex.getMessage());
     }
   }
 }

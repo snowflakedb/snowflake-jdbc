@@ -5,7 +5,6 @@ package net.snowflake.client.loader;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -14,11 +13,11 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryLoader.class)
+//@Category(TestCategoryLoader.class)
 public class LoaderTimestampIT extends LoaderBase {
   @Test
   public void testLoadTimestamp() throws Exception {
@@ -104,7 +103,7 @@ public class LoaderTimestampIT extends LoaderBase {
             .createStatement()
             .executeQuery(String.format("SELECT * FROM \"%s\"", targetTableName))) {
 
-      assertTrue(rs.next());
+      Assertions.assertTrue(rs.next());
       Timestamp ts = rs.getTimestamp("C2");
 
       // format the input TS with the target timezone

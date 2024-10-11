@@ -3,10 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -20,9 +16,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.io.IOUtils;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -33,7 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
  * is not applicable. If it is applicable, move tests to StreamIT so that both the latest and oldest
  * supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class StreamLatestIT extends BaseJDBCTest {
 
   @TempDir private File tmpFolder;
@@ -70,7 +66,7 @@ public class StreamLatestIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+          Assertions.assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
         statement.execute("CREATE or replace TABLE \"ice cream (nice)\" (types STRING)");
 
@@ -90,7 +86,7 @@ public class StreamLatestIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          assertEquals("Unexpected string value: " + ret + " expect: hello", "hello", ret);
+          Assertions.assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
       } finally {
         statement.execute("DROP TABLE IF EXISTS \"ice cream (nice)\"");
@@ -112,12 +108,10 @@ public class StreamLatestIT extends BaseJDBCTest {
         connection
             .unwrap(SnowflakeConnection.class)
             .downloadStream("~", DEST_PREFIX + "/abc.gz", true);
-        fail("should throw a storage provider exception for blob not found");
+        Assertions.fail("should throw a storage provider exception for blob not found");
       } catch (Exception ex) {
-        assertTrue(ex instanceof SQLException);
-        assertTrue(
-            "Wrong exception message: " + ex.getMessage(),
-            ex.getMessage().matches(".*Blob.*not found in bucket.*"));
+        Assertions.assertTrue(ex instanceof SQLException);
+        Assertions.assertTrue(ex.getMessage().matches(".*Blob.*not found in bucket.*"), "Wrong exception message: " + ex.getMessage());
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);
       }
@@ -138,8 +132,8 @@ public class StreamLatestIT extends BaseJDBCTest {
                   + getFullPathFileInResource(TEST_DATA_FILE)
                   + " @testgcpstage/"
                   + DEST_PREFIX)) {
-        assertTrue(rset.next());
-        assertEquals("Error message:" + rset.getString(8), "UPLOADED", rset.getString(7));
+        Assertions.assertTrue(rset.next());
+        Assertions.assertEquals("UPLOADED", rset.getString(7), "Error message:" + rset.getString(8));
 
         InputStream out =
             connection
@@ -149,11 +143,11 @@ public class StreamLatestIT extends BaseJDBCTest {
         IOUtils.copy(out, writer, "UTF-8");
         String output = writer.toString();
         // the first 2 characters
-        assertEquals("1|", output.substring(0, 2));
+        Assertions.assertEquals("1|", output.substring(0, 2));
 
         // the number of lines
         String[] lines = output.split("\n");
-        assertEquals(28, lines.length);
+        Assertions.assertEquals(28, lines.length);
       }
       statement.execute("rm @~/" + DEST_PREFIX);
     }
@@ -172,8 +166,8 @@ public class StreamLatestIT extends BaseJDBCTest {
             statement.executeQuery(
                 "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~/" + DEST_PREFIX)) {
       try {
-        assertTrue(rset.next());
-        assertEquals("UPLOADED", rset.getString(7));
+        Assertions.assertTrue(rset.next());
+        Assertions.assertEquals("UPLOADED", rset.getString(7));
 
         InputStream out =
             connection
@@ -183,11 +177,11 @@ public class StreamLatestIT extends BaseJDBCTest {
         IOUtils.copy(out, writer, "UTF-8");
         String output = writer.toString();
         // the first 2 characters
-        assertEquals("1|", output.substring(0, 2));
+        Assertions.assertEquals("1|", output.substring(0, 2));
 
         // the number of lines
         String[] lines = output.split("\n");
-        assertEquals(28, lines.length);
+        Assertions.assertEquals(28, lines.length);
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);
       }
@@ -230,7 +224,7 @@ public class StreamLatestIT extends BaseJDBCTest {
           StringWriter writer = new StringWriter();
           IOUtils.copy(out, writer, "UTF-8");
           String output = writer.toString();
-          assertEquals("Creating test file for downloadStream test", output);
+          Assertions.assertEquals("Creating test file for downloadStream test", output);
         }
       } finally {
         statement.execute("DROP STAGE IF EXISTS downloadStream_stage");

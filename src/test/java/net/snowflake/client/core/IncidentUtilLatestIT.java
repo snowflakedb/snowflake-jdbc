@@ -6,21 +6,21 @@ package net.snowflake.client.core;
 
 import static net.snowflake.client.core.IncidentUtil.INC_DUMP_FILE_EXT;
 import static net.snowflake.client.core.IncidentUtil.INC_DUMP_FILE_NAME;
-import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.category.TestCategoryCore;
+
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.apache.commons.io.IOUtils;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
 public class IncidentUtilLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
   private static final String FILE_NAME = "sf_incident_123456.dmp.gz";
@@ -28,7 +28,7 @@ public class IncidentUtilLatestIT extends BaseJDBCTest {
   @Test
   public void testOneLinerDescription() {
     String desc = IncidentUtil.oneLiner("unexpected exception", new IOException("File not found"));
-    assertEquals("unexpected exception java.io.IOException: File not found", desc.substring(0, 56));
+    Assertions.assertEquals("unexpected exception java.io.IOException: File not found", desc.substring(0, 56));
   }
 
   /** Tests dumping JVM metrics for the current process */
@@ -53,9 +53,7 @@ public class IncidentUtilLatestIT extends BaseJDBCTest {
     StringWriter sWriter = new StringWriter();
     IOUtils.copy(gzip, sWriter, "UTF-8");
     String output = sWriter.toString();
-    assertEquals(
-        "\n\n\n---------------------------  METRICS " + "---------------------------\n\n",
-        output.substring(0, 69));
+    Assertions.assertEquals("\n\n\n---------------------------  METRICS " + "---------------------------\n\n", output.substring(0, 69));
     sWriter.close();
   }
 }

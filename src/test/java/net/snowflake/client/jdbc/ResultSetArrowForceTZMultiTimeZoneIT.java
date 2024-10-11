@@ -3,22 +3,19 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.category.TestCategoryArrow;
+
 import org.apache.commons.lang3.StringUtils;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Compare json and arrow resultSet behaviors 2/2 */
-@Category(TestCategoryArrow.class)
+//@Category(TestCategoryArrow.class)
 public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0MultiTimeZone {
 
   @ParameterizedTest
@@ -59,12 +56,12 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
       try {
         int i = 0;
         while (i < cases.length) {
-          assertTrue(rs.next());
-          assertEquals(times[i++], rs.getTimestamp(1).getTime());
-          assertEquals(0, rs.getTimestamp(1).getNanos());
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(times[i++], rs.getTimestamp(1).getTime());
+          Assertions.assertEquals(0, rs.getTimestamp(1).getNanos());
         }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
       }
@@ -112,17 +109,17 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
       try {
         int i = 0;
         while (i < cases.length) {
-          assertTrue(rs.next());
+          Assertions.assertTrue(rs.next());
           if (i == cases.length - 1 && tz.equalsIgnoreCase("utc")) {
             // TODO: Is this a JDBC bug which happens in both arrow and json cases?
-            assertEquals("0001-01-01 00:00:01.790870987", rs.getTimestamp(1).toString());
+            Assertions.assertEquals("0001-01-01 00:00:01.790870987", rs.getTimestamp(1).toString());
           }
 
-          assertEquals(times[i], rs.getTimestamp(1).getTime());
-          assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+          Assertions.assertEquals(times[i], rs.getTimestamp(1).getTime());
+          Assertions.assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
         }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
       }
@@ -172,17 +169,17 @@ public class ResultSetArrowForceTZMultiTimeZoneIT extends ResultSetArrowForce0Mu
       try {
         int i = 0;
         while (i < cases.length) {
-          assertTrue(rs.next());
+          Assertions.assertTrue(rs.next());
           if (i == cases.length - 1 && tz.equalsIgnoreCase("utc")) {
             // TODO: Is this a JDBC bug which happens in both arrow and json cases?
-            assertEquals("0001-01-01 00:00:01.79087", rs.getTimestamp(1).toString());
+            Assertions.assertEquals("0001-01-01 00:00:01.79087", rs.getTimestamp(1).toString());
           }
 
-          assertEquals(times[i], rs.getTimestamp(1).getTime());
-          assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+          Assertions.assertEquals(times[i], rs.getTimestamp(1).getTime());
+          Assertions.assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
         }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
       }

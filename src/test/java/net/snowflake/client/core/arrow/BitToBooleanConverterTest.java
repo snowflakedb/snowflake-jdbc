@@ -3,8 +3,6 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +17,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class BitToBooleanConverterTest extends BaseConverterTest {
@@ -60,9 +59,9 @@ public class BitToBooleanConverterTest extends BaseConverterTest {
       String stringVal = converter.toString(i);
 
       if (stringVal != null) {
-        assertFalse(converter.isNull(i));
+        Assertions.assertFalse(converter.isNull(i));
       } else {
-        assertTrue(converter.isNull(i));
+        Assertions.assertTrue(converter.isNull(i));
       }
 
       if (nullValIndex.contains(i)) {

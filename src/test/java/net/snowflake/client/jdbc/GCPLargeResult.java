@@ -3,14 +3,13 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.providers.SimpleFormatProvider;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -38,7 +37,7 @@ public class GCPLargeResult extends BaseJDBCTest {
         while (rset.next()) {
           ++cnt;
         }
-        assertEquals(cnt, 999);
+        Assertions.assertEquals(cnt, 999);
       }
     }
   }

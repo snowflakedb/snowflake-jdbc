@@ -13,13 +13,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AnyOf.anyOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +45,6 @@ import java.util.concurrent.TimeUnit;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnAWS;
-import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
@@ -70,8 +62,9 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -83,7 +76,7 @@ import org.junit.jupiter.api.io.TempDir;
  * if the tests still is not applicable. If it is applicable, move tests to ConnectionIT so that
  * both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
 public class ConnectionLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
   private static final SFLogger logger = SFLoggerFactory.getLogger(ConnectionLatestIT.class);
@@ -124,7 +117,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       statement.execute("select 1");
       SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
       // if QCC disable, this should be null
-      assertNull(session.getQueryContextDTO());
+      Assertions.assertNull(session.getQueryContextDTO());
     }
   }
 
@@ -143,14 +136,14 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             connection
                 .createStatement()
                 .executeQuery(String.format("show parameters like '%s'", key))) {
-          assertTrue(rs.next());
+          Assertions.assertTrue(rs.next());
           String value = rs.getString("value");
 
           assertThat(key, value, equalTo(paramProperties.get(key).toString()));
         }
       }
       SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      assertEquals(1800, session.getHeartbeatFrequency());
+      Assertions.assertEquals(1800, session.getHeartbeatFrequency());
     }
   }
 
@@ -169,7 +162,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             connection
                 .createStatement()
                 .executeQuery(String.format("show parameters like '%s'", key))) {
-          assertTrue(rs.next());
+          Assertions.assertTrue(rs.next());
           String value = rs.getString("value");
 
           assertThat(key, value, equalTo("900"));
@@ -177,7 +170,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       }
 
       SFSession session = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-      assertEquals(900, session.getHeartbeatFrequency());
+      Assertions.assertEquals(900, session.getHeartbeatFrequency());
     }
   }
 
@@ -206,11 +199,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try (ResultSet resultSet = snowflakeStatement.executeAsyncQuery(putStatement)) {
         String statementPutQueryId = snowflakeStatement.getQueryID();
         TestUtil.assertValidQueryId(statementPutQueryId);
-        assertNotEquals(
-            "create query id is override by put query id", createStageQueryId, statementPutQueryId);
+        Assertions.assertNotEquals(createStageQueryId, statementPutQueryId, "create query id is override by put query id");
         resultSetPutQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
         TestUtil.assertValidQueryId(resultSetPutQueryId);
-        assertEquals(resultSetPutQueryId, statementPutQueryId);
+        Assertions.assertEquals(resultSetPutQueryId, statementPutQueryId);
       }
       try (ResultSet resultSet =
           snowflakeStatement.executeAsyncQuery(
@@ -218,9 +210,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         String statementGetQueryId = snowflakeStatement.getQueryID();
         String resultSetGetQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
         TestUtil.assertValidQueryId(resultSetGetQueryId);
-        assertNotEquals(
-            "put and get query id should be different", resultSetGetQueryId, resultSetPutQueryId);
-        assertEquals(resultSetGetQueryId, statementGetQueryId);
+        Assertions.assertNotEquals(resultSetGetQueryId, resultSetPutQueryId, "put and get query id should be different");
+        Assertions.assertEquals(resultSetGetQueryId, statementGetQueryId);
       }
     }
   }
@@ -238,31 +229,31 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       SnowflakeStatement snowflakeStatement = statement.unwrap(SnowflakeStatement.class);
       try {
         statement.executeQuery("PUT file://" + sourceFilePath + " @not_existing_state");
-        fail("PUT statement should fail");
+        Assertions.fail("PUT statement should fail");
       } catch (SnowflakeSQLException e) {
         TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
+        Assertions.assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
       }
       String putQueryId = snowflakeStatement.getQueryID();
       try {
         statement.executeQuery(
             "GET @not_existing_state 'file://" + destFolderCanonicalPath + "' parallel=8");
-        fail("GET statement should fail");
+        Assertions.fail("GET statement should fail");
       } catch (SnowflakeSQLException e) {
         TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
+        Assertions.assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
       }
       String getQueryId = snowflakeStatement.getQueryID();
-      assertNotEquals("put and get query id should be different", putQueryId, getQueryId);
+      Assertions.assertNotEquals(putQueryId, getQueryId, "put and get query id should be different");
       String stageName = "stage_" + SnowflakeUtil.randomAlphaNumeric(10);
       statement.execute("CREATE OR REPLACE STAGE " + stageName);
       TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
       try {
         statement.executeQuery("PUT file://not_existing_file @" + stageName);
-        fail("PUT statement should fail");
+        Assertions.fail("PUT statement should fail");
       } catch (SnowflakeSQLException e) {
         TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
-        assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
+        Assertions.assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
       }
     }
   }
@@ -288,8 +279,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           .until(() -> sfrs.getStatusV2().getStatus(), not(equalTo(QueryStatus.NO_DATA)));
       statusV2 = sfrs.getStatusV2();
       // Query should take 60 seconds so should be running
-      assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
-      assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
+      Assertions.assertEquals(QueryStatus.RUNNING, statusV2.getStatus());
+      Assertions.assertEquals(QueryStatus.RUNNING.name(), statusV2.getName());
       // close connection and wait for 1 minute while query finishes running
     }
 
@@ -298,17 +289,17 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection con = getConnection()) {
       try (ResultSet rs =
           con.unwrap(SnowflakeConnection.class).createResultSet("Totally invalid query ID")) {
-        fail("Query ID should be rejected");
+        Assertions.fail("Query ID should be rejected");
       } catch (SQLException e) {
-        assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+        Assertions.assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
       }
       try (ResultSet rs = con.unwrap(SnowflakeConnection.class).createResultSet(queryID)) {
         statusV2 = rs.unwrap(SnowflakeResultSet.class).getStatusV2();
         // Assert status of query is a success
-        assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
-        assertEquals("No error reported", statusV2.getErrorMessage());
-        assertEquals(0, statusV2.getErrorCode());
-        assertEquals(1, getSizeOfResultSet(rs));
+        Assertions.assertEquals(QueryStatus.SUCCESS, statusV2.getStatus());
+        Assertions.assertEquals("No error reported", statusV2.getErrorMessage());
+        Assertions.assertEquals(0, statusV2.getErrorCode());
+        Assertions.assertEquals(1, getSizeOfResultSet(rs));
         try (Statement statement = con.createStatement();
             // Create another query that will not be successful (querying table that does not exist)
             ResultSet rs1 =
@@ -330,12 +321,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           // response has returned,
           // assert it is the error message that we are expecting.
           if (statusV2.getStatus() != QueryStatus.NO_DATA) {
-            assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
-            assertEquals(2003, statusV2.getErrorCode());
-            assertEquals(
-                "SQL compilation error:\n"
-                    + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
-                statusV2.getErrorMessage());
+            Assertions.assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
+            Assertions.assertEquals(2003, statusV2.getErrorCode());
+            Assertions.assertEquals("SQL compilation error:\n"
+                + "Object 'NONEXISTENTTABLE' does not exist or not authorized.", statusV2.getErrorMessage());
           }
         }
       }
@@ -352,21 +341,16 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         try {
           rs1.next();
         } catch (SQLException ex) {
-          assertEquals(
-              "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
-                  + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
-              ex.getMessage());
-          assertEquals(
-              "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
-              rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+          Assertions.assertEquals("Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
+              + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.", ex.getMessage());
+          Assertions.assertEquals("SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.", rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
         }
       }
       try (ResultSet rs2 =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1")) {
         rs2.next();
         // Assert there is no error message when query is successful
-        assertEquals(
-            "No error reported", rs2.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+        Assertions.assertEquals("No error reported", rs2.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
       }
     }
   }
@@ -398,22 +382,22 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             // query IS synchronous
             ResultSet rs2 = statement.executeQuery("drop table uselessTable")) {
           while (rs2.next()) {
-            assertEquals("USELESSTABLE successfully dropped.", rs2.getString(1));
+            Assertions.assertEquals("USELESSTABLE successfully dropped.", rs2.getString(1));
           }
           // able to successfully fetch results in spite of table being dropped
-          assertEquals(3, getSizeOfResultSet(rs1));
+          Assertions.assertEquals(3, getSizeOfResultSet(rs1));
           statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_LTZ");
 
           // come back to the asynchronously executed result set after finishing other things
-          assertTrue(rs.next());
-          assertEquals(rs.getString(1), "row1");
-          assertEquals(rs.getInt(2), 1);
-          assertTrue(rs.next());
-          assertEquals(rs.getString(1), "row2");
-          assertEquals(rs.getInt(2), 2);
-          assertTrue(rs.next());
-          assertEquals(rs.getString(1), "row3");
-          assertEquals(rs.getInt(2), 3);
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(rs.getString(1), "row1");
+          Assertions.assertEquals(rs.getInt(2), 1);
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(rs.getString(1), "row2");
+          Assertions.assertEquals(rs.getInt(2), 2);
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(rs.getString(1), "row3");
+          Assertions.assertEquals(rs.getInt(2), 3);
         }
       } finally {
         statement.execute("drop table smallTable");
@@ -458,12 +442,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
               prepStatement.unwrap(SnowflakePreparedStatement.class).executeAsyncQuery()) {
             // Get access to results by calling next() function
             // next () will block until results are ready
-            assertTrue(rs.next());
+            Assertions.assertTrue(rs.next());
             // the resultSet consists of a single row, single column containing the number of rows
             // that have
             // been updated by the insert
             // the number of updated rows in testTable is 1 so 1 is returned
-            assertEquals(rs.getString(1), "1");
+            Assertions.assertEquals(rs.getString(1), "1");
           }
         }
       } finally {
@@ -494,11 +478,11 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     };
 
     for (QueryStatus qs : runningStatuses) {
-      assertEquals(true, QueryStatus.isStillRunning(qs));
+      Assertions.assertEquals(true, QueryStatus.isStillRunning(qs));
     }
 
     for (QueryStatus qs : otherStatuses) {
-      assertEquals(false, QueryStatus.isStillRunning(qs));
+      Assertions.assertEquals(false, QueryStatus.isStillRunning(qs));
     }
   }
 
@@ -517,11 +501,11 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     };
 
     for (QueryStatus qs : errorStatuses) {
-      assertEquals(true, QueryStatus.isAnError(qs));
+      Assertions.assertEquals(true, QueryStatus.isAnError(qs));
     }
 
     for (QueryStatus qs : otherStatuses) {
-      assertEquals(false, QueryStatus.isAnError(qs));
+      Assertions.assertEquals(false, QueryStatus.isAnError(qs));
     }
   }
 
@@ -544,7 +528,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       Thread.sleep(100);
       QueryStatus status = rs.unwrap(SnowflakeResultSet.class).getStatus();
       // Since warehouse has just been restarted, warehouse should still be booting
-      assertEquals(QueryStatus.RESUMING_WAREHOUSE, status);
+      Assertions.assertEquals(QueryStatus.RESUMING_WAREHOUSE, status);
 
       // now try to get QUEUED status
       try (ResultSet rs1 =
@@ -567,7 +551,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         Thread.sleep(100);
         status = rs4.unwrap(SnowflakeResultSet.class).getStatus();
         // Since 4 queries were started at once, status is most likely QUEUED
-        assertEquals(QueryStatus.QUEUED, status);
+        Assertions.assertEquals(QueryStatus.QUEUED, status);
       }
     }
   }
@@ -631,7 +615,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       }
       return;
     }
-    fail();
+    Assertions.fail();
   }
 
   @Test
@@ -673,7 +657,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       }
       return;
     }
-    fail();
+    Assertions.fail();
   }
 
   @Test
@@ -713,7 +697,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       }
       return;
     }
-    fail();
+    Assertions.fail();
   }
 
   @Test
@@ -875,9 +859,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
 
   private static void connectExpectingError390144(String fullUri, Properties properties) {
     try (Connection connection = DriverManager.getConnection(fullUri, properties)) {
-      fail();
+      Assertions.fail();
     } catch (SQLException e) {
-      assertEquals(390144, e.getErrorCode());
+      Assertions.assertEquals(390144, e.getErrorCode());
     }
   }
 
@@ -1002,10 +986,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
   private static void connectExpectingInvalidOrUnsupportedPrivateKey(
       String uri, Properties properties) {
     try (Connection connection = DriverManager.getConnection(uri, properties)) {
-      fail();
+      Assertions.fail();
     } catch (SQLException e) {
-      assertEquals(
-          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
+      Assertions.assertEquals((int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
     }
   }
 
@@ -1053,8 +1036,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection con = ds.getConnection();
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("select 1")) {
-      assertTrue(resultSet.next());
-      assertEquals(1, resultSet.getInt(1));
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertEquals(1, resultSet.getInt(1));
     }
   }
 
@@ -1084,14 +1067,14 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         waitForAsyncQueryDone(connection, queryID);
         queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-        assertEquals(queryIDs.length, 1);
+        Assertions.assertEquals(queryIDs.length, 1);
       }
 
       try (ResultSet rs =
           connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0])) {
-        assertTrue(rs.next());
-        assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
-        assertFalse(rs.next());
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
+        Assertions.assertFalse(rs.next());
       }
 
       // Get ResultSet for second statement in another connection
@@ -1099,14 +1082,14 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         waitForAsyncQueryDone(connection2, queryID);
         queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-        assertEquals(queryIDs.length, 1);
+        Assertions.assertEquals(queryIDs.length, 1);
       }
 
       try (ResultSet rs =
           connection2.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0])) {
-        assertTrue(rs.next());
-        assertEquals(rs.getInt(1), 2); // insert 2 rows
-        assertFalse(rs.next());
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(rs.getInt(1), 2); // insert 2 rows
+        Assertions.assertFalse(rs.next());
       }
 
       // Get ResultSet for third statement in another connection
@@ -1114,16 +1097,16 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         queryID = rs.unwrap(SnowflakeResultSet.class).getQueryID();
         waitForAsyncQueryDone(connection2, queryID);
         queryIDs = connection2.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-        assertEquals(queryIDs.length, 1);
+        Assertions.assertEquals(queryIDs.length, 1);
       }
 
       try (ResultSet rs =
           connection2.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0])) {
-        assertTrue(rs.next());
-        assertEquals(rs.getInt(1), 111);
-        assertTrue(rs.next());
-        assertEquals(rs.getInt(1), 222);
-        assertFalse(rs.next());
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(rs.getInt(1), 111);
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(rs.getInt(1), 222);
+        Assertions.assertFalse(rs.next());
       }
     }
   }
@@ -1149,32 +1132,32 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection()) {
       waitForAsyncQueryDone(connection, queryID);
       queryIDs = connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-      assertEquals(queryIDs.length, 3);
+      Assertions.assertEquals(queryIDs.length, 3);
 
       // First statement ResultSet
       try (ResultSet rs =
           connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[0])) {
-        assertTrue(rs.next());
-        assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
-        assertFalse(rs.next());
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(rs.getString(1), "Table TEST_MULTI successfully created.");
+        Assertions.assertFalse(rs.next());
       }
 
       // Second statement ResultSet
       try (ResultSet rs =
           connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[1])) {
-        assertTrue(rs.next());
-        assertEquals(rs.getInt(1), 2);
-        assertFalse(rs.next());
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(rs.getInt(1), 2);
+        Assertions.assertFalse(rs.next());
       }
 
       // Third statement ResultSet
       try (ResultSet rs =
           connection.unwrap(SnowflakeConnection.class).createResultSet(queryIDs[2])) {
-        assertTrue(rs.next());
-        assertEquals(rs.getInt(1), 111);
-        assertTrue(rs.next());
-        assertEquals(rs.getInt(1), 222);
-        assertFalse(rs.next());
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(rs.getInt(1), 111);
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(rs.getInt(1), 222);
+        Assertions.assertFalse(rs.next());
       }
     }
   }
@@ -1193,7 +1176,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         }
         try {
           connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-          fail("The getChildQueryIds() should fail because query is running");
+          Assertions.fail("The getChildQueryIds() should fail because query is running");
         } catch (SQLException ex) {
           String msg = ex.getMessage();
           if (!msg.contains("Status of query associated with resultSet is")
@@ -1204,7 +1187,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                     .unwrap(SnowflakeConnectionV1.class)
                     .getSfSession()
                     .getQueryStatus(queryID);
-            fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
+            Assertions.fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
           }
         }
       } finally {
@@ -1230,13 +1213,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try {
         waitForAsyncQueryDone(connection, queryID);
         connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
-        fail("The getChildQueryIds() should fail because the query fails");
+        Assertions.fail("The getChildQueryIds() should fail because the query fails");
       } catch (SQLException ex) {
-        assertTrue(
-            ex.getMessage()
-                .contains(
-                    "Uncaught Execution of multiple statements failed on statement \"select"
-                        + " to_date('not_date')\""));
+        Assertions.assertTrue(ex.getMessage()
+            .contains(
+                "Uncaught Execution of multiple statements failed on statement \"select"
+                    + " to_date('not_date')\""));
       }
     }
   }
@@ -1277,8 +1259,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         HttpUtil.executeGeneralRequest(postRequest, 60, 0, 0, 0, new HttpClientSettingsKey(null));
 
     JsonNode jsonNode = mapper.readTree(theString);
-    assertEquals(
-        "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}", jsonNode.toString());
+    Assertions.assertEquals("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}", jsonNode.toString());
   }
 
   @Test
@@ -1287,12 +1268,12 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         Statement statement = connection.createStatement()) {
 
       connection.setReadOnly(true);
-      assertEquals(connection.isReadOnly(), false);
+      Assertions.assertEquals(connection.isReadOnly(), false);
 
       connection.setReadOnly(false);
       try {
         statement.execute("create or replace table readonly_test(c1 int)");
-        assertFalse(connection.isReadOnly());
+        Assertions.assertFalse(connection.isReadOnly());
       } finally {
         statement.execute("drop table if exists readonly_test");
       }
@@ -1321,7 +1302,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       long endDownloadTime = System.currentTimeMillis();
       // S3Client retries some exception for a default timeout of 5 minutes
       // Check that 404 was not retried
-      assertTrue(endDownloadTime - startDownloadTime < 400000);
+      Assertions.assertTrue(endDownloadTime - startDownloadTime < 400000);
     }
   }
 
@@ -1338,21 +1319,20 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // safe to close
       long start = System.currentTimeMillis();
       SnowflakeConnectionV1 snowflakeConnection = con.unwrap(SnowflakeConnectionV1.class);
-      assertTrue(snowflakeConnection.getSfSession().isAsyncSession());
-      assertFalse(snowflakeConnection.getSfSession().isSafeToClose());
+      Assertions.assertTrue(snowflakeConnection.getSfSession().isAsyncSession());
+      Assertions.assertFalse(snowflakeConnection.getSfSession().isSafeToClose());
       // ensure that query is finished
-      assertTrue(rs.next());
+      Assertions.assertTrue(rs.next());
       // ensure query took > 4 seconds
-      assertTrue(
-          Duration.ofMillis(System.currentTimeMillis() - start).compareTo(Duration.ofSeconds(4))
-              > 0);
+      Assertions.assertTrue(Duration.ofMillis(System.currentTimeMillis() - start).compareTo(Duration.ofSeconds(4))
+          > 0);
       // Assert that there are no longer any queries running.
       // First, assert session is safe to close. This iterates through active queries, fetches their
       // status, and removes them from the activeQueriesMap if they are no longer active.
-      assertTrue(snowflakeConnection.getSfSession().isSafeToClose());
+      Assertions.assertTrue(snowflakeConnection.getSfSession().isSafeToClose());
       // Next, assert session is no longer async (just fetches size of activeQueriesMap with no
       // other action)
-      assertFalse(snowflakeConnection.getSfSession().isAsyncSession());
+      Assertions.assertFalse(snowflakeConnection.getSfSession().isAsyncSession());
     }
   }
 
@@ -1366,20 +1346,15 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String publicKeyFile = System.getenv(publicKeyFileNameEnv);
     String passphrase = System.getenv(passphraseEnv);
 
-    assertNotNull(
-        privateKeyFileNameEnv
-            + " environment variable can't be empty. "
-            + "Please provide the filename for your private key located in the resource folder",
-        passphrase);
+    Assertions.assertNotNull(passphrase, privateKeyFileNameEnv
+        + " environment variable can't be empty. "
+        + "Please provide the filename for your private key located in the resource folder");
 
-    assertNotNull(
-        publicKeyFileNameEnv
-            + " environment variable can't be empty. "
-            + "Please provide the filename for your public key located in the resource folder",
-        passphrase);
+    Assertions.assertNotNull(passphrase, publicKeyFileNameEnv
+        + " environment variable can't be empty. "
+        + "Please provide the filename for your public key located in the resource folder");
 
-    assertNotNull(
-        passphraseEnv + " environment variable is required to decrypt private key.", passphrase);
+    Assertions.assertNotNull(passphrase, passphraseEnv + " environment variable is required to decrypt private key.");
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
     Properties properties = new Properties();
@@ -1451,7 +1426,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String failureMessage =
         "The failure means that the JDK version can decrypt a private key generated by OpenSSL v3 and "
             + "BouncyCastle shouldn't be needed anymore";
-    assertFalse(failureMessage, pbes2Supported);
+    Assertions.assertFalse(pbes2Supported, failureMessage);
 
     // The expectation is that this is going to pass once we add Bouncy Castle in the list of
     // providers
@@ -1461,7 +1436,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         "Bouncy Castle Provider should have been loaded with the -D"
             + SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM
             + "JVM argument and this should have decrypted the private key generated by OpenSSL v3";
-    assertTrue(failureMessage, pbes2Supported);
+    Assertions.assertTrue(pbes2Supported, failureMessage);
   }
 
   // Test for regenerating okta one-time token for versions > 3.15.1
@@ -1543,7 +1518,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             int rowIdx = 0;
             while (arrowResultSet.next()) {
               logger.debug("Checking row " + rowIdx);
-              assertTrue(jsonResultSet.next());
+              Assertions.assertTrue(jsonResultSet.next());
               for (int column = 1; column <= 4; ++column) {
                 logger.trace(
                     "JSON row[{}],column[{}] as string '{}', timestamp string '{}', as timestamp numeric '{}', tz offset={}, timestamp class {}",
@@ -1563,27 +1538,18 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                     arrowResultSet.getTimestamp(column).getTime(),
                     arrowResultSet.getTimestamp(column).getTimezoneOffset(),
                     arrowResultSet.getTimestamp(column).getClass());
-                assertEquals(
-                    "Expecting that string representation are the same for row "
-                        + rowIdx
-                        + " and column "
-                        + column,
-                    jsonResultSet.getString(column),
-                    arrowResultSet.getString(column));
-                assertEquals(
-                    "Expecting that string representation (via toString) are the same for row "
-                        + rowIdx
-                        + " and column "
-                        + column,
-                    jsonResultSet.getTimestamp(column).toString(),
-                    arrowResultSet.getTimestamp(column).toString());
-                assertEquals(
-                    "Expecting that timestamps are the same for row "
-                        + rowIdx
-                        + " and column "
-                        + column,
-                    jsonResultSet.getTimestamp(column),
-                    arrowResultSet.getTimestamp(column));
+                Assertions.assertEquals(jsonResultSet.getString(column), arrowResultSet.getString(column), "Expecting that string representation are the same for row "
+                    + rowIdx
+                    + " and column "
+                    + column);
+                Assertions.assertEquals(jsonResultSet.getTimestamp(column).toString(), arrowResultSet.getTimestamp(column).toString(), "Expecting that string representation (via toString) are the same for row "
+                    + rowIdx
+                    + " and column "
+                    + column);
+                Assertions.assertEquals(jsonResultSet.getTimestamp(column), arrowResultSet.getTimestamp(column), "Expecting that timestamps are the same for row "
+                    + rowIdx
+                    + " and column "
+                    + column);
               }
               rowIdx++;
             }
@@ -1599,10 +1565,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try {
         connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
       } catch (SQLFeatureNotSupportedException ex) {
-        fail("should not fail");
+        Assertions.fail("should not fail");
       }
       // return an empty type map. setTypeMap is not supported.
-      assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, connection.getHoldability());
+      Assertions.assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, connection.getHoldability());
       connection.close();
       expectConnectionAlreadyClosedException(
           () -> connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
@@ -1617,8 +1583,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     paramProperties.put("HTTP_CLIENT_SOCKET_TIMEOUT", 200);
 
     try (Connection connection = getConnection(paramProperties)) {
-      assertEquals(Duration.ofMillis(100), HttpUtil.getConnectionTimeout());
-      assertEquals(Duration.ofMillis(200), HttpUtil.getSocketTimeout());
+      Assertions.assertEquals(Duration.ofMillis(100), HttpUtil.getConnectionTimeout());
+      Assertions.assertEquals(Duration.ofMillis(200), HttpUtil.getSocketTimeout());
     }
   }
 }

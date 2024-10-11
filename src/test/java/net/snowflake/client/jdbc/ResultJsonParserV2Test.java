@@ -3,13 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import net.snowflake.client.core.SFSession;
 import org.apache.commons.text.StringEscapeUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** This is the unit tests for ResultJsonParserV2 */
@@ -35,24 +33,22 @@ public class ResultJsonParserV2Test {
     byte[] remaining = new byte[byteBuffer.remaining()];
     byteBuffer.get(remaining);
     jp.endParsing(ByteBuffer.wrap(remaining), session);
-    assertEquals("1", chunk.getCell(0, 0).toString());
-    assertEquals("1.01", chunk.getCell(0, 1).toString());
-    assertNull(chunk.getCell(1, 0));
-    assertNull(chunk.getCell(1, 1));
-    assertEquals("2", chunk.getCell(2, 0).toString());
-    assertEquals("0.13", chunk.getCell(2, 1).toString());
-    assertEquals("", chunk.getCell(3, 0).toString());
-    assertEquals("", chunk.getCell(3, 1).toString());
-    assertEquals("\"escape\"", chunk.getCell(4, 0).toString());
-    assertEquals("\"escape\"", chunk.getCell(4, 1).toString());
-    assertEquals("★", chunk.getCell(5, 0).toString());
-    assertEquals("☺☺", chunk.getCell(5, 1).toString());
-    assertEquals("𠜎", chunk.getCell(6, 0).toString());
-    assertEquals("𠜱𠝹", chunk.getCell(6, 1).toString());
-    assertEquals(
-        "{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}",
-        chunk.getCell(7, 0).toString());
-    assertEquals("[1,2,3,4,5]", chunk.getCell(7, 1).toString());
+    Assertions.assertEquals("1", chunk.getCell(0, 0).toString());
+    Assertions.assertEquals("1.01", chunk.getCell(0, 1).toString());
+    Assertions.assertNull(chunk.getCell(1, 0));
+    Assertions.assertNull(chunk.getCell(1, 1));
+    Assertions.assertEquals("2", chunk.getCell(2, 0).toString());
+    Assertions.assertEquals("0.13", chunk.getCell(2, 1).toString());
+    Assertions.assertEquals("", chunk.getCell(3, 0).toString());
+    Assertions.assertEquals("", chunk.getCell(3, 1).toString());
+    Assertions.assertEquals("\"escape\"", chunk.getCell(4, 0).toString());
+    Assertions.assertEquals("\"escape\"", chunk.getCell(4, 1).toString());
+    Assertions.assertEquals("★", chunk.getCell(5, 0).toString());
+    Assertions.assertEquals("☺☺", chunk.getCell(5, 1).toString());
+    Assertions.assertEquals("𠜎", chunk.getCell(6, 0).toString());
+    Assertions.assertEquals("𠜱𠝹", chunk.getCell(6, 1).toString());
+    Assertions.assertEquals("{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}", chunk.getCell(7, 0).toString());
+    Assertions.assertEquals("[1,2,3,4,5]", chunk.getCell(7, 1).toString());
   }
 
   @Test
@@ -86,24 +82,22 @@ public class ResultJsonParserV2Test {
     byteBuffer.get(remaining);
     jp.endParsing(ByteBuffer.wrap(remaining), session);
 
-    assertEquals("1", chunk.getCell(0, 0).toString());
-    assertEquals("1.01", chunk.getCell(0, 1).toString());
-    assertNull(chunk.getCell(1, 0));
-    assertNull(chunk.getCell(1, 1));
-    assertEquals("2", chunk.getCell(2, 0).toString());
-    assertEquals("0.13", chunk.getCell(2, 1).toString());
-    assertEquals("", chunk.getCell(3, 0).toString());
-    assertEquals("", chunk.getCell(3, 1).toString());
-    assertEquals("\"escape\"", chunk.getCell(4, 0).toString());
-    assertEquals("\"escape\"", chunk.getCell(4, 1).toString());
-    assertEquals("☺☺", chunk.getCell(5, 0).toString());
-    assertEquals("☺☺☺", chunk.getCell(5, 1).toString());
-    assertEquals("𠜎", chunk.getCell(6, 0).toString());
-    assertEquals("𠜱𠝹", chunk.getCell(6, 1).toString());
-    assertEquals(
-        "{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}",
-        chunk.getCell(7, 0).toString());
-    assertEquals("[1,2,3,4,5]", chunk.getCell(7, 1).toString());
+    Assertions.assertEquals("1", chunk.getCell(0, 0).toString());
+    Assertions.assertEquals("1.01", chunk.getCell(0, 1).toString());
+    Assertions.assertNull(chunk.getCell(1, 0));
+    Assertions.assertNull(chunk.getCell(1, 1));
+    Assertions.assertEquals("2", chunk.getCell(2, 0).toString());
+    Assertions.assertEquals("0.13", chunk.getCell(2, 1).toString());
+    Assertions.assertEquals("", chunk.getCell(3, 0).toString());
+    Assertions.assertEquals("", chunk.getCell(3, 1).toString());
+    Assertions.assertEquals("\"escape\"", chunk.getCell(4, 0).toString());
+    Assertions.assertEquals("\"escape\"", chunk.getCell(4, 1).toString());
+    Assertions.assertEquals("☺☺", chunk.getCell(5, 0).toString());
+    Assertions.assertEquals("☺☺☺", chunk.getCell(5, 1).toString());
+    Assertions.assertEquals("𠜎", chunk.getCell(6, 0).toString());
+    Assertions.assertEquals("𠜱𠝹", chunk.getCell(6, 1).toString());
+    Assertions.assertEquals("{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}", chunk.getCell(7, 0).toString());
+    Assertions.assertEquals("[1,2,3,4,5]", chunk.getCell(7, 1).toString());
   }
 
   /**
@@ -150,10 +144,10 @@ public class ResultJsonParserV2Test {
     byte[] remaining = new byte[byteBuffer.remaining()];
     byteBuffer.get(remaining);
     jp.endParsing(ByteBuffer.wrap(remaining), session);
-    assertEquals(a.toString(), chunk.getCell(0, 0).toString());
-    assertEquals(b.toString(), chunk.getCell(0, 1).toString());
-    assertEquals(c.toString(), chunk.getCell(1, 0).toString());
-    assertEquals(StringEscapeUtils.unescapeJava(s.toString()), chunk.getCell(1, 1).toString());
+    Assertions.assertEquals(a.toString(), chunk.getCell(0, 0).toString());
+    Assertions.assertEquals(b.toString(), chunk.getCell(0, 1).toString());
+    Assertions.assertEquals(c.toString(), chunk.getCell(1, 0).toString());
+    Assertions.assertEquals(StringEscapeUtils.unescapeJava(s.toString()), chunk.getCell(1, 1).toString());
   }
 
   // SNOW-802910: Test to cover edge case '\u0000\u0000' where null could be dropped.
@@ -181,7 +175,7 @@ public class ResultJsonParserV2Test {
     jp.endParsing(ByteBuffer.wrap(remaining), session);
 
     // check null is not dropped
-    assertEquals("00 00 00 ", stringToHex(chunk.getCell(0, 0).toString()));
+    Assertions.assertEquals("00 00 00 ", stringToHex(chunk.getCell(0, 0).toString()));
   }
 
   // SNOW-802910: Test to cover edge case '\u0003ä\u0000' where null could be dropped.
@@ -208,7 +202,7 @@ public class ResultJsonParserV2Test {
     jp.endParsing(ByteBuffer.wrap(remaining), session);
 
     // Ã00 is returned
-    assertEquals("03 C3 A4 00 ", stringToHex(chunk.getCell(0, 0).toString()));
+    Assertions.assertEquals("03 C3 A4 00 ", stringToHex(chunk.getCell(0, 0).toString()));
   }
 
   public static String stringToHex(String input) {

@@ -4,8 +4,6 @@
 
 package net.snowflake.client.log;
 
-import static org.junit.Assert.assertTrue;
-
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -15,6 +13,8 @@ import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -55,9 +55,7 @@ public class SFFormatterTest {
 
       Date date = extractDate(record);
       long nowInMs = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTimeInMillis();
-      assertTrue(
-          "Time difference boundary should be less than " + TIME_DIFFERENCE_BOUNDARY + "ms",
-          nowInMs - date.getTime() < TIME_DIFFERENCE_BOUNDARY);
+      Assertions.assertTrue(nowInMs - date.getTime() < TIME_DIFFERENCE_BOUNDARY, "Time difference boundary should be less than " + TIME_DIFFERENCE_BOUNDARY + "ms");
     } finally {
       TimeZone.setDefault(originalTz);
     }

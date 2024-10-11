@@ -4,12 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.sql.Clob;
@@ -28,13 +22,13 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.common.core.SqlState;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
-@Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
 public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
@@ -61,37 +55,36 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
       ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
       // getCatalogName(), getSchemaName(), and getTableName() are empty
       // when session is re-opened
-      assertEquals("", resultSetMetaData.getCatalogName(1).toUpperCase());
-      assertEquals("", resultSetMetaData.getSchemaName(1).toUpperCase());
-      assertEquals("", resultSetMetaData.getTableName(1));
-      assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
-      assertEquals(2, resultSetMetaData.getColumnCount());
-      assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
-      assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
-      assertEquals("COLA", resultSetMetaData.getColumnName(1));
-      assertEquals(3, resultSetMetaData.getColumnType(1));
-      assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
-      assertEquals(20, resultSetMetaData.getPrecision(1));
-      assertEquals(5, resultSetMetaData.getScale(1));
-      assertFalse(resultSetMetaData.isAutoIncrement(1));
-      assertFalse(resultSetMetaData.isCaseSensitive(1));
-      assertFalse(resultSetMetaData.isCurrency(1));
-      assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-      assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
-      assertTrue(resultSetMetaData.isReadOnly(1));
-      assertTrue(resultSetMetaData.isSearchable(1));
-      assertTrue(resultSetMetaData.isSigned(1));
+      Assertions.assertEquals("", resultSetMetaData.getCatalogName(1).toUpperCase());
+      Assertions.assertEquals("", resultSetMetaData.getSchemaName(1).toUpperCase());
+      Assertions.assertEquals("", resultSetMetaData.getTableName(1));
+      Assertions.assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
+      Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
+      Assertions.assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
+      Assertions.assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
+      Assertions.assertEquals("COLA", resultSetMetaData.getColumnName(1));
+      Assertions.assertEquals(3, resultSetMetaData.getColumnType(1));
+      Assertions.assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
+      Assertions.assertEquals(20, resultSetMetaData.getPrecision(1));
+      Assertions.assertEquals(5, resultSetMetaData.getScale(1));
+      Assertions.assertFalse(resultSetMetaData.isAutoIncrement(1));
+      Assertions.assertFalse(resultSetMetaData.isCaseSensitive(1));
+      Assertions.assertFalse(resultSetMetaData.isCurrency(1));
+      Assertions.assertFalse(resultSetMetaData.isDefinitelyWritable(1));
+      Assertions.assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
+      Assertions.assertTrue(resultSetMetaData.isReadOnly(1));
+      Assertions.assertTrue(resultSetMetaData.isSearchable(1));
+      Assertions.assertTrue(resultSetMetaData.isSigned(1));
 
       SnowflakeResultSetMetaData secretMetaData =
           resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
       List<String> colNames = secretMetaData.getColumnNames();
-      assertEquals("COLA", colNames.get(0));
-      assertEquals("COLB", colNames.get(1));
-      assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
-      assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
+      Assertions.assertEquals("COLA", colNames.get(0));
+      Assertions.assertEquals("COLB", colNames.get(1));
+      Assertions.assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
+      Assertions.assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
       TestUtil.assertValidQueryId(secretMetaData.getQueryID());
-      assertEquals(
-          secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
+      Assertions.assertEquals(secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
     }
   }
 
@@ -106,36 +99,35 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
                 .unwrap(SnowflakeStatement.class)
                 .executeAsyncQuery("select * from test_rsmd")) {
           ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-          assertEquals("", resultSetMetaData.getCatalogName(1).toUpperCase());
-          assertEquals("", resultSetMetaData.getSchemaName(1).toUpperCase());
-          assertEquals("", resultSetMetaData.getTableName(1));
-          assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
-          assertEquals(2, resultSetMetaData.getColumnCount());
-          assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
-          assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
-          assertEquals("COLA", resultSetMetaData.getColumnName(1));
-          assertEquals(3, resultSetMetaData.getColumnType(1));
-          assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
-          assertEquals(20, resultSetMetaData.getPrecision(1));
-          assertEquals(5, resultSetMetaData.getScale(1));
-          assertFalse(resultSetMetaData.isAutoIncrement(1));
-          assertFalse(resultSetMetaData.isCaseSensitive(1));
-          assertFalse(resultSetMetaData.isCurrency(1));
-          assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-          assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
-          assertTrue(resultSetMetaData.isReadOnly(1));
-          assertTrue(resultSetMetaData.isSearchable(1));
-          assertTrue(resultSetMetaData.isSigned(1));
+          Assertions.assertEquals("", resultSetMetaData.getCatalogName(1).toUpperCase());
+          Assertions.assertEquals("", resultSetMetaData.getSchemaName(1).toUpperCase());
+          Assertions.assertEquals("", resultSetMetaData.getTableName(1));
+          Assertions.assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
+          Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
+          Assertions.assertEquals(22, resultSetMetaData.getColumnDisplaySize(1));
+          Assertions.assertEquals("COLA", resultSetMetaData.getColumnLabel(1));
+          Assertions.assertEquals("COLA", resultSetMetaData.getColumnName(1));
+          Assertions.assertEquals(3, resultSetMetaData.getColumnType(1));
+          Assertions.assertEquals("NUMBER", resultSetMetaData.getColumnTypeName(1));
+          Assertions.assertEquals(20, resultSetMetaData.getPrecision(1));
+          Assertions.assertEquals(5, resultSetMetaData.getScale(1));
+          Assertions.assertFalse(resultSetMetaData.isAutoIncrement(1));
+          Assertions.assertFalse(resultSetMetaData.isCaseSensitive(1));
+          Assertions.assertFalse(resultSetMetaData.isCurrency(1));
+          Assertions.assertFalse(resultSetMetaData.isDefinitelyWritable(1));
+          Assertions.assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
+          Assertions.assertTrue(resultSetMetaData.isReadOnly(1));
+          Assertions.assertTrue(resultSetMetaData.isSearchable(1));
+          Assertions.assertTrue(resultSetMetaData.isSigned(1));
           SnowflakeResultSetMetaData secretMetaData =
               resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
           List<String> colNames = secretMetaData.getColumnNames();
-          assertEquals("COLA", colNames.get(0));
-          assertEquals("COLB", colNames.get(1));
-          assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
-          assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
+          Assertions.assertEquals("COLA", colNames.get(0));
+          Assertions.assertEquals("COLB", colNames.get(1));
+          Assertions.assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
+          Assertions.assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
           TestUtil.assertValidQueryId(secretMetaData.getQueryID());
-          assertEquals(
-              secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
+          Assertions.assertEquals(secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
         }
       } finally {
         statement.execute("drop table if exists test_rsmd");
@@ -155,18 +147,18 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
             statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select * from test_rsmd");
 
         // test isFirst, isBeforeFirst
-        assertTrue("should be before the first", resultSet.isBeforeFirst());
-        assertFalse("should not be the first", resultSet.isFirst());
+        Assertions.assertTrue(resultSet.isBeforeFirst(), "should be before the first");
+        Assertions.assertFalse(resultSet.isFirst(), "should not be the first");
         resultSet.next();
-        assertFalse("should not be before the first", resultSet.isBeforeFirst());
-        assertTrue("should be the first", resultSet.isFirst());
+        Assertions.assertFalse(resultSet.isBeforeFirst(), "should not be before the first");
+        Assertions.assertTrue(resultSet.isFirst(), "should be the first");
 
         // test isClosed functions
         queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
-        assertFalse(resultSet.isClosed());
+        Assertions.assertFalse(resultSet.isClosed());
         // close resultSet and test again
         resultSet.close();
-        assertTrue(resultSet.isClosed());
+        Assertions.assertTrue(resultSet.isClosed());
       } finally {
         statement.execute("drop table if exists test_rsmd");
       }
@@ -174,17 +166,17 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
     try (Connection connection = getConnection()) {
       ResultSet resultSet = connection.unwrap(SnowflakeConnection.class).createResultSet(queryID);
       // test out isClosed, isLast, and isAfterLast
-      assertFalse(resultSet.isClosed());
+      Assertions.assertFalse(resultSet.isClosed());
       resultSet.next();
       resultSet.next();
       // cursor should be on last row
-      assertTrue(resultSet.isLast());
+      Assertions.assertTrue(resultSet.isLast());
       resultSet.next();
       // cursor is after last row
-      assertTrue(resultSet.isAfterLast());
+      Assertions.assertTrue(resultSet.isAfterLast());
       resultSet.close();
       // resultSet should be closed
-      assertTrue(resultSet.isClosed());
+      Assertions.assertTrue(resultSet.isClosed());
     }
   }
 
@@ -210,12 +202,12 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
                   .executeAsyncQuery("select * from test_null")) {
             resultSet.next();
             resultSet.getInt(1);
-            assertTrue(resultSet.wasNull()); // integer value is null
+            Assertions.assertTrue(resultSet.wasNull()); // integer value is null
             resultSet.getString(2);
-            assertFalse(resultSet.wasNull()); // string value is not null
-            assertNull(resultSet.getClob(3));
-            assertNull(resultSet.getClob("COLNULL"));
-            assertEquals("", resultSet.getClob("EMPTYCLOB").toString());
+            Assertions.assertFalse(resultSet.wasNull()); // string value is not null
+            Assertions.assertNull(resultSet.getClob(3));
+            Assertions.assertNull(resultSet.getClob("COLNULL"));
+            Assertions.assertEquals("", resultSet.getClob("EMPTYCLOB").toString());
           }
         }
       } finally {
@@ -271,54 +263,54 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
                   .unwrap(SnowflakeStatement.class)
                   .executeAsyncQuery("select * from test_get")) {
             resultSet.next();
-            assertEquals(bigInt, resultSet.getInt(1));
-            assertEquals(bigInt, resultSet.getInt("COLA"));
-            assertEquals(bigLong, resultSet.getLong(2));
-            assertEquals(bigLong, resultSet.getLong("COLB"));
-            assertEquals(bigShort, resultSet.getShort(3));
-            assertEquals(bigShort, resultSet.getShort("COLC"));
-            assertEquals(str, resultSet.getString(4));
-            assertEquals(str, resultSet.getString("COLD"));
+            Assertions.assertEquals(bigInt, resultSet.getInt(1));
+            Assertions.assertEquals(bigInt, resultSet.getInt("COLA"));
+            Assertions.assertEquals(bigLong, resultSet.getLong(2));
+            Assertions.assertEquals(bigLong, resultSet.getLong("COLB"));
+            Assertions.assertEquals(bigShort, resultSet.getShort(3));
+            Assertions.assertEquals(bigShort, resultSet.getShort("COLC"));
+            Assertions.assertEquals(str, resultSet.getString(4));
+            Assertions.assertEquals(str, resultSet.getString("COLD"));
             Reader reader = resultSet.getCharacterStream("COLD");
             char[] sample = new char[str.length()];
 
-            assertEquals(str.length(), reader.read(sample));
-            assertEquals(str.charAt(0), sample[0]);
-            assertEquals(str, new String(sample));
+            Assertions.assertEquals(str.length(), reader.read(sample));
+            Assertions.assertEquals(str.charAt(0), sample[0]);
+            Assertions.assertEquals(str, new String(sample));
 
-            assertEquals(bigDouble, resultSet.getDouble(5), 0);
-            assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
-            assertEquals(bigFloat, resultSet.getFloat(6), 0);
-            assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
-            assertTrue(resultSet.getBoolean(7));
-            assertTrue(resultSet.getBoolean("COLG"));
-            assertEquals("hello world", resultSet.getClob("COLH").toString());
+            Assertions.assertEquals(bigDouble, resultSet.getDouble(5), 0);
+            Assertions.assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
+            Assertions.assertEquals(bigFloat, resultSet.getFloat(6), 0);
+            Assertions.assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
+            Assertions.assertTrue(resultSet.getBoolean(7));
+            Assertions.assertTrue(resultSet.getBoolean("COLG"));
+            Assertions.assertEquals("hello world", resultSet.getClob("COLH").toString());
 
             // TODO: figure out why getBytes returns an offset.
             // assertEquals(bytes, resultSet.getBytes(9));
             // assertEquals(bytes, resultSet.getBytes("COLI"));
 
             DecimalFormat df = new DecimalFormat("#.00");
-            assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal(10)));
-            assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal("COLJ")));
+            Assertions.assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal(10)));
+            Assertions.assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal("COLJ")));
 
-            assertEquals(oneByte, resultSet.getByte(11));
-            assertEquals(oneByte, resultSet.getByte("COLK"));
+            Assertions.assertEquals(oneByte, resultSet.getByte(11));
+            Assertions.assertEquals(oneByte, resultSet.getByte("COLK"));
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            assertEquals(sdf.format(date), sdf.format(resultSet.getDate(12)));
-            assertEquals(sdf.format(date), sdf.format(resultSet.getDate("COLL")));
-            assertEquals(time, resultSet.getTime(13));
-            assertEquals(time, resultSet.getTime("COLM"));
-            assertEquals(ts, resultSet.getTimestamp(14));
-            assertEquals(ts, resultSet.getTimestamp("COLN"));
+            Assertions.assertEquals(sdf.format(date), sdf.format(resultSet.getDate(12)));
+            Assertions.assertEquals(sdf.format(date), sdf.format(resultSet.getDate("COLL")));
+            Assertions.assertEquals(time, resultSet.getTime(13));
+            Assertions.assertEquals(time, resultSet.getTime("COLM"));
+            Assertions.assertEquals(ts, resultSet.getTimestamp(14));
+            Assertions.assertEquals(ts, resultSet.getTimestamp("COLN"));
 
             // test getObject
-            assertEquals(str, resultSet.getObject(4).toString());
-            assertEquals(str, resultSet.getObject("COLD").toString());
+            Assertions.assertEquals(str, resultSet.getObject(4).toString());
+            Assertions.assertEquals(str, resultSet.getObject("COLD").toString());
 
             // test getStatement method
-            assertEquals(statement, resultSet.getStatement());
+            Assertions.assertEquals(statement, resultSet.getStatement());
           }
         }
       } finally {
@@ -345,14 +337,14 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
                 .executeAsyncQuery("select * from empty_table")) {
       // if user never calls getMetadata() or next(), empty result set is used to get results.
       // empty ResultSet returns all nulls, 0s, and empty values.
-      assertFalse(rs.isClosed());
-      assertEquals(0, rs.getInt(1));
+      Assertions.assertFalse(rs.isClosed());
+      Assertions.assertEquals(0, rs.getInt(1));
       try {
         rs.getInt("col1");
-        fail("Fetching from a column name that does not exist should return a SQLException");
+        Assertions.fail("Fetching from a column name that does not exist should return a SQLException");
       } catch (SQLException e) {
         // findColumn fails with empty metadata with exception "Column not found".
-        assertEquals(SqlState.UNDEFINED_COLUMN, e.getSQLState());
+        Assertions.assertEquals(SqlState.UNDEFINED_COLUMN, e.getSQLState());
       }
     }
   }

@@ -7,13 +7,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,14 +24,14 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.providers.SimpleFormatProvider;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Test ResultSet */
-@Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
 public class ResultSetIT extends ResultSet0IT {
   private final String selectAllSQL = "select * from test_rs";
 
@@ -53,7 +46,7 @@ public class ResultSetIT extends ResultSet0IT {
   public void testFindColumn(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat);
         ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
-      assertEquals(1, resultSet.findColumn("COLA"));
+      Assertions.assertEquals(1, resultSet.findColumn("COLA"));
     }
   }
 
@@ -66,16 +59,16 @@ public class ResultSetIT extends ResultSet0IT {
         statement.execute("insert into bintable values ('00f1f2')");
         try (ResultSet resultSet = statement.executeQuery("select * from bintable")) {
           ResultSetMetaData metaData = resultSet.getMetaData();
-          assertEquals(SnowflakeType.BINARY_CLASS_NAME, metaData.getColumnClassName(1));
-          assertTrue(resultSet.next());
+          Assertions.assertEquals(SnowflakeType.BINARY_CLASS_NAME, metaData.getColumnClassName(1));
+          Assertions.assertTrue(resultSet.next());
           Class<?> klass = Class.forName(SnowflakeType.BINARY_CLASS_NAME);
           Object ret0 = resultSet.getObject(1);
-          assertEquals(ret0.getClass(), klass);
+          Assertions.assertEquals(ret0.getClass(), klass);
           byte[] ret = (byte[]) ret0;
-          assertEquals(3, ret.length);
-          assertEquals(ret[0], (byte) 0);
-          assertEquals(ret[1], (byte) -15);
-          assertEquals(ret[2], (byte) -14);
+          Assertions.assertEquals(3, ret.length);
+          Assertions.assertEquals(ret[0], (byte) 0);
+          Assertions.assertEquals(ret[1], (byte) -15);
+          Assertions.assertEquals(ret[2], (byte) -14);
         }
       } finally {
         statement.execute("drop table if exists bintable");
@@ -115,32 +108,32 @@ public class ResultSetIT extends ResultSet0IT {
 
           statement.execute("select * from test_get");
           try (ResultSet resultSet = statement.getResultSet()) {
-            assertTrue(resultSet.next());
-            assertEquals(bigInt, resultSet.getInt(1));
-            assertEquals(bigInt, resultSet.getInt("COLA"));
-            assertEquals(bigLong, resultSet.getLong(2));
-            assertEquals(bigLong, resultSet.getLong("COLB"));
-            assertEquals(bigShort, resultSet.getShort(3));
-            assertEquals(bigShort, resultSet.getShort("COLC"));
-            assertEquals(str, resultSet.getString(4));
-            assertEquals(str, resultSet.getString("COLD"));
+            Assertions.assertTrue(resultSet.next());
+            Assertions.assertEquals(bigInt, resultSet.getInt(1));
+            Assertions.assertEquals(bigInt, resultSet.getInt("COLA"));
+            Assertions.assertEquals(bigLong, resultSet.getLong(2));
+            Assertions.assertEquals(bigLong, resultSet.getLong("COLB"));
+            Assertions.assertEquals(bigShort, resultSet.getShort(3));
+            Assertions.assertEquals(bigShort, resultSet.getShort("COLC"));
+            Assertions.assertEquals(str, resultSet.getString(4));
+            Assertions.assertEquals(str, resultSet.getString("COLD"));
             Reader reader = resultSet.getCharacterStream("COLD");
             char[] sample = new char[str.length()];
 
-            assertEquals(str.length(), reader.read(sample));
-            assertEquals(str.charAt(0), sample[0]);
-            assertEquals(str, new String(sample));
+            Assertions.assertEquals(str.length(), reader.read(sample));
+            Assertions.assertEquals(str.charAt(0), sample[0]);
+            Assertions.assertEquals(str, new String(sample));
 
             // assertEquals(bigDouble, resultSet.getDouble(5), 0);
             // assertEquals(bigDouble, resultSet.getDouble("COLE"), 0);
-            assertEquals(bigFloat, resultSet.getFloat(6), 0);
-            assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
-            assertTrue(resultSet.getBoolean(7));
-            assertTrue(resultSet.getBoolean("COLG"));
-            assertEquals("hello world", resultSet.getClob("COLH").toString());
+            Assertions.assertEquals(bigFloat, resultSet.getFloat(6), 0);
+            Assertions.assertEquals(bigFloat, resultSet.getFloat("COLF"), 0);
+            Assertions.assertTrue(resultSet.getBoolean(7));
+            Assertions.assertTrue(resultSet.getBoolean("COLG"));
+            Assertions.assertEquals("hello world", resultSet.getClob("COLH").toString());
 
             // test getStatement method
-            assertEquals(statement, resultSet.getStatement());
+            Assertions.assertEquals(statement, resultSet.getStatement());
           }
         }
       } finally {
@@ -156,9 +149,9 @@ public class ResultSetIT extends ResultSet0IT {
     try (Statement statement = createStatement(queryResultFormat)) {}
     DatabaseMetaData databaseMetaData = connection.getMetaData();
     try (ResultSet resultSet = databaseMetaData.getTypeInfo()) {
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // SNOW-21375 "NULLABLE" Column is a SMALLINT TYPE
-      assertEquals(DatabaseMetaData.typeNullable, resultSet.getObject("NULLABLE"));
+      Assertions.assertEquals(DatabaseMetaData.typeNullable, resultSet.getObject("NULLABLE"));
     }
   }
 
@@ -166,30 +159,30 @@ public class ResultSetIT extends ResultSet0IT {
   @ArgumentsSource(SimpleFormatProvider.class)
   public void testGetShort(String queryResultFormat) throws SQLException {
     try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
-        assertEquals(0, resultSet.getShort(i));
+        Assertions.assertEquals(0, resultSet.getShort(i));
       }
 
-      assertTrue(resultSet.next());
-      assertEquals(2, resultSet.getShort(1));
-      assertEquals(5, resultSet.getShort(2));
-      assertEquals(3, resultSet.getShort(3));
-      assertEquals(1, resultSet.getShort(4));
-      assertEquals(1, resultSet.getShort(5));
-      assertEquals(1, resultSet.getShort(6));
-      assertEquals(9126, resultSet.getShort(7));
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertEquals(2, resultSet.getShort(1));
+      Assertions.assertEquals(5, resultSet.getShort(2));
+      Assertions.assertEquals(3, resultSet.getShort(3));
+      Assertions.assertEquals(1, resultSet.getShort(4));
+      Assertions.assertEquals(1, resultSet.getShort(5));
+      Assertions.assertEquals(1, resultSet.getShort(6));
+      Assertions.assertEquals(9126, resultSet.getShort(7));
 
       for (int i = 8; i < 13; i++) {
         try {
           resultSet.getShort(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getShort() or else a
       // SQLexception is thrown.
       // These column types are varchar, char, and float.
@@ -197,9 +190,9 @@ public class ResultSetIT extends ResultSet0IT {
       for (int i = 5; i < 7; i++) {
         try {
           resultSet.getShort(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
     }
@@ -209,39 +202,39 @@ public class ResultSetIT extends ResultSet0IT {
   @ArgumentsSource(SimpleFormatProvider.class)
   public void testGetInt(String queryResultFormat) throws SQLException {
     try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
-        assertEquals(0, resultSet.getInt(i));
+        Assertions.assertEquals(0, resultSet.getInt(i));
       }
 
-      assertTrue(resultSet.next());
-      assertEquals(2, resultSet.getInt(1));
-      assertEquals(5, resultSet.getInt(2));
-      assertEquals(3, resultSet.getInt(3));
-      assertEquals(1, resultSet.getInt(4));
-      assertEquals(1, resultSet.getInt(5));
-      assertEquals(1, resultSet.getInt(6));
-      assertEquals(9126, resultSet.getInt(7));
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertEquals(2, resultSet.getInt(1));
+      Assertions.assertEquals(5, resultSet.getInt(2));
+      Assertions.assertEquals(3, resultSet.getInt(3));
+      Assertions.assertEquals(1, resultSet.getInt(4));
+      Assertions.assertEquals(1, resultSet.getInt(5));
+      Assertions.assertEquals(1, resultSet.getInt(6));
+      Assertions.assertEquals(9126, resultSet.getInt(7));
 
       for (int i = 8; i < 13; i++) {
         try {
           resultSet.getInt(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getInt() or else a
       // SQLException is thrown.
       // These column types are varchar, char, and float.
       for (int i = 5; i < 7; i++) {
         try {
           resultSet.getInt(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
     }
@@ -251,39 +244,39 @@ public class ResultSetIT extends ResultSet0IT {
   @ArgumentsSource(SimpleFormatProvider.class)
   public void testGetLong(String queryResultFormat) throws SQLException {
     try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
-        assertEquals(0, resultSet.getLong(i));
+        Assertions.assertEquals(0, resultSet.getLong(i));
       }
 
-      assertTrue(resultSet.next());
-      assertEquals(2, resultSet.getLong(1));
-      assertEquals(5, resultSet.getLong(2));
-      assertEquals(3, resultSet.getLong(3));
-      assertEquals(1, resultSet.getLong(4));
-      assertEquals(1, resultSet.getLong(5));
-      assertEquals(1, resultSet.getLong(6));
-      assertEquals(9126, resultSet.getLong(7));
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertEquals(2, resultSet.getLong(1));
+      Assertions.assertEquals(5, resultSet.getLong(2));
+      Assertions.assertEquals(3, resultSet.getLong(3));
+      Assertions.assertEquals(1, resultSet.getLong(4));
+      Assertions.assertEquals(1, resultSet.getLong(5));
+      Assertions.assertEquals(1, resultSet.getLong(6));
+      Assertions.assertEquals(9126, resultSet.getLong(7));
 
       for (int i = 8; i < 13; i++) {
         try {
           resultSet.getLong(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getLong() or else a
       // SQLexception is thrown.
       // These column types are varchar, char, and float.
       for (int i = 5; i < 7; i++) {
         try {
           resultSet.getLong(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
     }
@@ -293,39 +286,39 @@ public class ResultSetIT extends ResultSet0IT {
   @ArgumentsSource(SimpleFormatProvider.class)
   public void testGetFloat(String queryResultFormat) throws SQLException {
     try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
-        assertEquals(0, resultSet.getFloat(i), .1);
+        Assertions.assertEquals(0, resultSet.getFloat(i), .1);
       }
 
-      assertTrue(resultSet.next());
-      assertEquals(2, resultSet.getFloat(1), .1);
-      assertEquals(5, resultSet.getFloat(2), .1);
-      assertEquals(3.5, resultSet.getFloat(3), .1);
-      assertEquals(1, resultSet.getFloat(4), .1);
-      assertEquals(1, resultSet.getFloat(5), .1);
-      assertEquals(1, resultSet.getFloat(6), .1);
-      assertEquals(9126, resultSet.getFloat(7), .1);
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertEquals(2, resultSet.getFloat(1), .1);
+      Assertions.assertEquals(5, resultSet.getFloat(2), .1);
+      Assertions.assertEquals(3.5, resultSet.getFloat(3), .1);
+      Assertions.assertEquals(1, resultSet.getFloat(4), .1);
+      Assertions.assertEquals(1, resultSet.getFloat(5), .1);
+      Assertions.assertEquals(1, resultSet.getFloat(6), .1);
+      Assertions.assertEquals(9126, resultSet.getFloat(7), .1);
 
       for (int i = 8; i < 13; i++) {
         try {
           resultSet.getFloat(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getFloat() or else a
       // SQLexception is thrown.
       // These column types are varchar and char.
       for (int i = 5; i < 7; i++) {
         try {
           resultSet.getFloat(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
     }
@@ -335,39 +328,39 @@ public class ResultSetIT extends ResultSet0IT {
   @ArgumentsSource(SimpleFormatProvider.class)
   public void testGetDouble(String queryResultFormat) throws SQLException {
     try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // assert that 0 is returned for null values for every type of value
       for (int i = 1; i < 13; i++) {
-        assertEquals(0, resultSet.getDouble(i), .1);
+        Assertions.assertEquals(0, resultSet.getDouble(i), .1);
       }
 
-      assertTrue(resultSet.next());
-      assertEquals(2, resultSet.getDouble(1), .1);
-      assertEquals(5, resultSet.getDouble(2), .1);
-      assertEquals(3.5, resultSet.getDouble(3), .1);
-      assertEquals(1, resultSet.getDouble(4), .1);
-      assertEquals(1, resultSet.getDouble(5), .1);
-      assertEquals(1, resultSet.getDouble(6), .1);
-      assertEquals(9126, resultSet.getDouble(7), .1);
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertEquals(2, resultSet.getDouble(1), .1);
+      Assertions.assertEquals(5, resultSet.getDouble(2), .1);
+      Assertions.assertEquals(3.5, resultSet.getDouble(3), .1);
+      Assertions.assertEquals(1, resultSet.getDouble(4), .1);
+      Assertions.assertEquals(1, resultSet.getDouble(5), .1);
+      Assertions.assertEquals(1, resultSet.getDouble(6), .1);
+      Assertions.assertEquals(9126, resultSet.getDouble(7), .1);
 
       for (int i = 8; i < 13; i++) {
         try {
           resultSet.getDouble(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       // certain column types can only have certain values when called by getDouble() or else a
       // SQLexception is thrown.
       // These column types are varchar and char.
       for (int i = 5; i < 7; i++) {
         try {
           resultSet.getDouble(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
     }
@@ -390,42 +383,42 @@ public class ResultSetIT extends ResultSet0IT {
 
         statement.execute("select * from test_get order by 1");
         try (ResultSet resultSet = statement.getResultSet()) {
-          assertTrue(resultSet.next());
-          assertEquals(bigDecimal2, resultSet.getBigDecimal(1));
-          assertEquals(bigDecimal2, resultSet.getBigDecimal("COLA"));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertEquals(bigDecimal2, resultSet.getBigDecimal(1));
+          Assertions.assertEquals(bigDecimal2, resultSet.getBigDecimal("COLA"));
         }
       }
       statement.execute("drop table if exists test_get");
     }
 
     try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       for (int i = 1; i < 13; i++) {
-        assertNull(resultSet.getBigDecimal(i));
+        Assertions.assertNull(resultSet.getBigDecimal(i));
       }
-      assertTrue(resultSet.next());
-      assertEquals(new BigDecimal(2), resultSet.getBigDecimal(1));
-      assertEquals(new BigDecimal(5), resultSet.getBigDecimal(2));
-      assertEquals(new BigDecimal(3.5), resultSet.getBigDecimal(3));
-      assertEquals(new BigDecimal(1), resultSet.getBigDecimal(4));
-      assertEquals(new BigDecimal(1), resultSet.getBigDecimal(5));
-      assertEquals(new BigDecimal(1), resultSet.getBigDecimal(6));
-      assertEquals(new BigDecimal(9126), resultSet.getBigDecimal(7));
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertEquals(new BigDecimal(2), resultSet.getBigDecimal(1));
+      Assertions.assertEquals(new BigDecimal(5), resultSet.getBigDecimal(2));
+      Assertions.assertEquals(new BigDecimal(3.5), resultSet.getBigDecimal(3));
+      Assertions.assertEquals(new BigDecimal(1), resultSet.getBigDecimal(4));
+      Assertions.assertEquals(new BigDecimal(1), resultSet.getBigDecimal(5));
+      Assertions.assertEquals(new BigDecimal(1), resultSet.getBigDecimal(6));
+      Assertions.assertEquals(new BigDecimal(9126), resultSet.getBigDecimal(7));
       for (int i = 8; i < 13; i++) {
         try {
           resultSet.getBigDecimal(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       for (int i = 5; i < 7; i++) {
         try {
           resultSet.getBigDecimal(i);
-          fail("Failing on " + i);
+          Assertions.fail("Failing on " + i);
         } catch (SQLException ex) {
-          assertEquals(200038, ex.getErrorCode());
+          Assertions.assertEquals(200038, ex.getErrorCode());
         }
       }
     }
@@ -445,12 +438,12 @@ public class ResultSetIT extends ResultSet0IT {
 
           statement.execute("select * from test_dec order by 1");
           try (ResultSet resultSet = statement.getResultSet(); ) {
-            assertTrue(resultSet.next());
+            Assertions.assertTrue(resultSet.next());
             try {
               resultSet.getBigDecimal(2, 38);
-              fail();
+              Assertions.fail();
             } catch (SQLException ex) {
-              assertEquals(200032, ex.getErrorCode());
+              Assertions.assertEquals(200032, ex.getErrorCode());
             }
           }
         }
@@ -466,18 +459,18 @@ public class ResultSetIT extends ResultSet0IT {
     try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute(selectAllSQL);
       try (ResultSet resultSet = statement.getResultSet()) {
-        assertTrue(resultSet.next());
-        assertTrue(resultSet.isFirst());
-        assertEquals(1, resultSet.getRow());
-        assertTrue(resultSet.next());
-        assertFalse(resultSet.isFirst());
-        assertEquals(2, resultSet.getRow());
-        assertFalse(resultSet.isLast());
-        assertTrue(resultSet.next());
-        assertEquals(3, resultSet.getRow());
-        assertTrue(resultSet.isLast());
-        assertFalse(resultSet.next());
-        assertTrue(resultSet.isAfterLast());
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.isFirst());
+        Assertions.assertEquals(1, resultSet.getRow());
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertFalse(resultSet.isFirst());
+        Assertions.assertEquals(2, resultSet.getRow());
+        Assertions.assertFalse(resultSet.isLast());
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertEquals(3, resultSet.getRow());
+        Assertions.assertTrue(resultSet.isLast());
+        Assertions.assertFalse(resultSet.next());
+        Assertions.assertTrue(resultSet.isAfterLast());
       }
     }
   }
@@ -498,15 +491,15 @@ public class ResultSetIT extends ResultSet0IT {
 
         // Get results in hex format (default).
         try (ResultSet resultSet = statement.executeQuery("select * from bin")) {
-          assertTrue(resultSet.next());
-          assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
-          assertEquals("", resultSet.getString(1));
-          assertTrue(resultSet.next());
-          assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
-          assertEquals("ABCD12", resultSet.getString(1));
-          assertTrue(resultSet.next());
-          assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
-          assertEquals("00FF4201", resultSet.getString(1));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
+          Assertions.assertEquals("", resultSet.getString(1));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
+          Assertions.assertEquals("ABCD12", resultSet.getString(1));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
+          Assertions.assertEquals("00FF4201", resultSet.getString(1));
         }
       } finally {
         statement.execute("drop table if exists bin");
@@ -549,15 +542,15 @@ public class ResultSetIT extends ResultSet0IT {
         ingestBinaryTestData(connection);
 
         try (ResultSet resultSet = statement.executeQuery("select * from bin")) {
-          assertTrue(resultSet.next());
-          assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
-          assertEquals("", resultSet.getString(1));
-          assertTrue(resultSet.next());
-          assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
-          assertEquals("q80S", resultSet.getString(1));
-          assertTrue(resultSet.next());
-          assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
-          assertEquals("AP9CAQ==", resultSet.getString(1));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertArrayEquals(byteArrayTestCase1, resultSet.getBytes(1));
+          Assertions.assertEquals("", resultSet.getString(1));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertArrayEquals(byteArrayTestCase2, resultSet.getBytes(1));
+          Assertions.assertEquals("q80S", resultSet.getString(1));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertArrayEquals(byteArrayTestCase3, resultSet.getBytes(1));
+          Assertions.assertEquals("AP9CAQ==", resultSet.getString(1));
         }
       } finally {
         statement.execute("drop table if exists bin");
@@ -602,10 +595,8 @@ public class ResultSetIT extends ResultSet0IT {
                 + "error_on_column_count_mismatch=false)");
 
         // put files
-        assertTrue(
-            "Failed to put a file",
-            statement.execute(
-                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%testFixedView"));
+        Assertions.assertTrue(statement.execute(
+            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%testFixedView"), "Failed to put a file");
 
         try (ResultSet resultSet =
             statement.executeQuery(
@@ -614,7 +605,7 @@ public class ResultSetIT extends ResultSet0IT {
           ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
           while (resultSet.next()) {
             for (int i = 0; i < resultSetMetaData.getColumnCount(); i++) {
-              assertNotNull(resultSet.getObject(i + 1));
+              Assertions.assertNotNull(resultSet.getObject(i + 1));
             }
           }
         }
@@ -633,46 +624,46 @@ public class ResultSetIT extends ResultSet0IT {
 
       try (ResultSet resultSet = statement.executeQuery("select cast(1 as char)")) {
         resultSetMetaData = resultSet.getMetaData();
-        assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
-        assertEquals(1, resultSetMetaData.getPrecision(1));
+        Assertions.assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
+        Assertions.assertEquals(1, resultSetMetaData.getPrecision(1));
       }
 
       try (ResultSet resultSet = statement.executeQuery("select cast(1 as number(38, 0))")) {
         resultSetMetaData = resultSet.getMetaData();
-        assertEquals(39, resultSetMetaData.getColumnDisplaySize(1));
-        assertEquals(38, resultSetMetaData.getPrecision(1));
+        Assertions.assertEquals(39, resultSetMetaData.getColumnDisplaySize(1));
+        Assertions.assertEquals(38, resultSetMetaData.getPrecision(1));
       }
 
       try (ResultSet resultSet = statement.executeQuery("select cast(1 as decimal(25, 15))")) {
         resultSetMetaData = resultSet.getMetaData();
-        assertEquals(27, resultSetMetaData.getColumnDisplaySize(1));
-        assertEquals(25, resultSetMetaData.getPrecision(1));
+        Assertions.assertEquals(27, resultSetMetaData.getColumnDisplaySize(1));
+        Assertions.assertEquals(25, resultSetMetaData.getPrecision(1));
       }
 
       try (ResultSet resultSet = statement.executeQuery("select cast(1 as string)")) {
         resultSetMetaData = resultSet.getMetaData();
-        assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
-        assertEquals(1, resultSetMetaData.getPrecision(1));
+        Assertions.assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
+        Assertions.assertEquals(1, resultSetMetaData.getPrecision(1));
       }
 
       try (ResultSet resultSet = statement.executeQuery("select cast(1 as string(30))")) {
         resultSetMetaData = resultSet.getMetaData();
-        assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
-        assertEquals(1, resultSetMetaData.getPrecision(1));
+        Assertions.assertEquals(1, resultSetMetaData.getColumnDisplaySize(1));
+        Assertions.assertEquals(1, resultSetMetaData.getPrecision(1));
       }
 
       try (ResultSet resultSet =
           statement.executeQuery("select to_date('2016-12-13', 'YYYY-MM-DD')")) {
         resultSetMetaData = resultSet.getMetaData();
-        assertEquals(10, resultSetMetaData.getColumnDisplaySize(1));
-        assertEquals(10, resultSetMetaData.getPrecision(1));
+        Assertions.assertEquals(10, resultSetMetaData.getColumnDisplaySize(1));
+        Assertions.assertEquals(10, resultSetMetaData.getPrecision(1));
       }
 
       try (ResultSet resultSet =
           statement.executeQuery("select to_time('12:34:56', 'HH24:MI:SS')")) {
         resultSetMetaData = resultSet.getMetaData();
-        assertEquals(8, resultSetMetaData.getColumnDisplaySize(1));
-        assertEquals(8, resultSetMetaData.getPrecision(1));
+        Assertions.assertEquals(8, resultSetMetaData.getColumnDisplaySize(1));
+        Assertions.assertEquals(8, resultSetMetaData.getPrecision(1));
       }
     }
   }
@@ -684,15 +675,15 @@ public class ResultSetIT extends ResultSet0IT {
       statement.execute("create or replace table testBoolean(cola boolean)");
       statement.execute("insert into testBoolean values(false)");
       try (ResultSet resultSet = statement.executeQuery("select * from testBoolean")) {
-        assertTrue(resultSet.next());
-        assertFalse(resultSet.getBoolean(1));
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertFalse(resultSet.getBoolean(1));
       }
       statement.execute("insert into testBoolean values(true)");
       try (ResultSet resultSet = statement.executeQuery("select * from testBoolean")) {
-        assertTrue(resultSet.next());
-        assertFalse(resultSet.getBoolean(1));
-        assertTrue(resultSet.next());
-        assertTrue(resultSet.getBoolean(1));
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertFalse(resultSet.getBoolean(1));
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.getBoolean(1));
       }
       statement.execute("drop table if exists testBoolean");
 
@@ -710,36 +701,36 @@ public class ResultSetIT extends ResultSet0IT {
       statement.execute("insert into test_types (c1, c2, c3, c4) values(2, 3, '4', '5')");
       try (ResultSet resultSet = statement.executeQuery("select * from test_types")) {
 
-        assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.next());
         // assert that getBoolean returns false for null values
         for (int i = 1; i < 13; i++) {
-          assertFalse(resultSet.getBoolean(i));
+          Assertions.assertFalse(resultSet.getBoolean(i));
         }
         // do the other columns that are out of order
         // go to next row of result set column
-        assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.next());
         // assert that getBoolean returns true for values that equal 1
-        assertTrue(resultSet.getBoolean(1));
-        assertTrue(resultSet.getBoolean(2));
-        assertTrue(resultSet.getBoolean(3));
-        assertTrue(resultSet.getBoolean(4));
-        assertTrue(resultSet.getBoolean(5));
+        Assertions.assertTrue(resultSet.getBoolean(1));
+        Assertions.assertTrue(resultSet.getBoolean(2));
+        Assertions.assertTrue(resultSet.getBoolean(3));
+        Assertions.assertTrue(resultSet.getBoolean(4));
+        Assertions.assertTrue(resultSet.getBoolean(5));
         for (int i = 6; i < 13; i++) {
           try {
             resultSet.getBoolean(i);
-            fail("Failing on " + i);
+            Assertions.fail("Failing on " + i);
           } catch (SQLException ex) {
-            assertEquals(200038, ex.getErrorCode());
+            Assertions.assertEquals(200038, ex.getErrorCode());
           }
         }
 
-        assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.next());
         for (int i = 1; i < 5; i++) {
           try {
             resultSet.getBoolean(i);
-            fail("Failing on " + i);
+            Assertions.fail("Failing on " + i);
           } catch (SQLException ex) {
-            assertEquals(200038, ex.getErrorCode());
+            Assertions.assertEquals(200038, ex.getErrorCode());
           }
         }
       }
@@ -756,32 +747,32 @@ public class ResultSetIT extends ResultSet0IT {
       statement.execute("insert into testClob values('hello world2')");
       statement.execute("insert into testClob values('hello world3')");
       try (ResultSet resultSet = statement.executeQuery("select * from testClob")) {
-        assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.next());
         // test reading Clob
         char[] chars = new char[100];
         Reader reader = resultSet.getClob(1).getCharacterStream();
         int charRead;
         charRead = reader.read(chars, 0, chars.length);
-        assertEquals(charRead, 11);
-        assertEquals("hello world", resultSet.getClob(1).toString());
+        Assertions.assertEquals(charRead, 11);
+        Assertions.assertEquals("hello world", resultSet.getClob(1).toString());
 
         // test reading truncated clob
-        assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.next());
         Clob clob = resultSet.getClob(1);
-        assertEquals(clob.length(), 12);
+        Assertions.assertEquals(clob.length(), 12);
         clob.truncate(5);
         reader = clob.getCharacterStream();
 
         charRead = reader.read(chars, 0, chars.length);
-        assertEquals(charRead, 5);
+        Assertions.assertEquals(charRead, 5);
 
         // read from input stream
-        assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.next());
         final InputStream input = resultSet.getClob(1).getAsciiStream();
 
         Reader in = new InputStreamReader(input, StandardCharsets.UTF_8);
         charRead = in.read(chars, 0, chars.length);
-        assertEquals(charRead, 12);
+        Assertions.assertEquals(charRead, 12);
       }
     }
   }
@@ -791,10 +782,10 @@ public class ResultSetIT extends ResultSet0IT {
   public void testFetchOnClosedResultSet(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat)) {
       ResultSet resultSet = statement.executeQuery(selectAllSQL);
-      assertFalse(resultSet.isClosed());
+      Assertions.assertFalse(resultSet.isClosed());
       resultSet.close();
-      assertTrue(resultSet.isClosed());
-      assertFalse(resultSet.next());
+      Assertions.assertTrue(resultSet.isClosed());
+      Assertions.assertFalse(resultSet.next());
     }
   }
 
@@ -842,28 +833,28 @@ public class ResultSetIT extends ResultSet0IT {
 
       try (ResultSet resultSet = statement.executeQuery("select 1 AS TESTCOL")) {
 
-        assertTrue(resultSet.next());
-        assertEquals("1", resultSet.getString("TESTCOL"));
-        assertEquals("1", resultSet.getString("TESTCOL"));
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertEquals("1", resultSet.getString("TESTCOL"));
+        Assertions.assertEquals("1", resultSet.getString("TESTCOL"));
         try {
           resultSet.getString("testcol");
-          fail();
+          Assertions.fail();
         } catch (SQLException e) {
-          assertEquals("Column not found: testcol", e.getMessage());
+          Assertions.assertEquals("Column not found: testcol", e.getMessage());
         }
       }
       // try to do case-insensitive search
       statement.executeQuery(String.format("alter session set %s=true", parameterName));
 
       try (ResultSet resultSet = statement.executeQuery("select 1 AS TESTCOL")) {
-        assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.next());
 
         // get twice so that the code path can hit the place where
         // we use cached key pair (columnName, index)
-        assertEquals("1", resultSet.getString("TESTCOL"));
-        assertEquals("1", resultSet.getString("TESTCOL"));
-        assertEquals("1", resultSet.getString("testcol"));
-        assertEquals("1", resultSet.getString("testcol"));
+        Assertions.assertEquals("1", resultSet.getString("TESTCOL"));
+        Assertions.assertEquals("1", resultSet.getString("TESTCOL"));
+        Assertions.assertEquals("1", resultSet.getString("testcol"));
+        Assertions.assertEquals("1", resultSet.getString("testcol"));
       }
     }
   }
@@ -874,18 +865,18 @@ public class ResultSetIT extends ResultSet0IT {
     try (Statement statement = createStatement(queryResultFormat);
         ResultSet resultSet = statement.executeQuery(selectAllSQL)) {
 
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       try {
         resultSet.getString(0);
-        fail();
+        Assertions.fail();
       } catch (SQLException e) {
-        assertEquals(200032, e.getErrorCode());
+        Assertions.assertEquals(200032, e.getErrorCode());
       }
       try {
         resultSet.getString(2);
-        fail();
+        Assertions.fail();
       } catch (SQLException e) {
-        assertEquals(200032, e.getErrorCode());
+        Assertions.assertEquals(200032, e.getErrorCode());
       }
     }
   }
@@ -900,7 +891,7 @@ public class ResultSetIT extends ResultSet0IT {
                 "select cast(1/nullif(0,0) as double),"
                     + "cast(1/nullif(0,0) as int), 100, "
                     + "cast(1/nullif(0,0) as number(8,2))")) {
-      assertTrue(ret.next());
+      Assertions.assertTrue(ret.next());
       assertThat("Double value cannot be null", ret.getDouble(1), equalTo(0.0));
       assertThat("wasNull should be true", ret.wasNull());
       assertThat("Integer value cannot be null", ret.getInt(2), equalTo(0));
@@ -918,14 +909,14 @@ public class ResultSetIT extends ResultSet0IT {
   public void testParseInfAndNaNNumber(String queryResultFormat) throws Exception {
     try (Statement statement = createStatement(queryResultFormat)) {
       try (ResultSet ret = statement.executeQuery("select to_double('inf'), to_double('-inf')")) {
-        assertTrue(ret.next());
+        Assertions.assertTrue(ret.next());
         assertThat("Positive Infinite Number", ret.getDouble(1), equalTo(Double.POSITIVE_INFINITY));
         assertThat("Negative Infinite Number", ret.getDouble(2), equalTo(Double.NEGATIVE_INFINITY));
         assertThat("Positive Infinite Number", ret.getFloat(1), equalTo(Float.POSITIVE_INFINITY));
         assertThat("Negative Infinite Number", ret.getFloat(2), equalTo(Float.NEGATIVE_INFINITY));
       }
       try (ResultSet ret = statement.executeQuery("select to_double('nan')")) {
-        assertTrue(ret.next());
+        Assertions.assertTrue(ret.next());
         assertThat("Parse NaN", ret.getDouble(1), equalTo(Double.NaN));
         assertThat("Parse NaN", ret.getFloat(1), equalTo(Float.NaN));
       }
@@ -958,49 +949,49 @@ public class ResultSetIT extends ResultSet0IT {
   public void testIsLast(String queryResultFormat) throws Exception {
     try (Statement statement = createStatement(queryResultFormat)) {
       try (ResultSet ret = statement.executeQuery("select * from orders_jdbc")) {
-        assertTrue("should be before the first", ret.isBeforeFirst());
-        assertFalse("should not be the first", ret.isFirst());
+        Assertions.assertTrue(ret.isBeforeFirst(), "should be before the first");
+        Assertions.assertFalse(ret.isFirst(), "should not be the first");
 
-        assertTrue(ret.next());
+        Assertions.assertTrue(ret.next());
 
-        assertFalse("should not be before the first", ret.isBeforeFirst());
-        assertTrue("should be the first", ret.isFirst());
+        Assertions.assertFalse(ret.isBeforeFirst(), "should not be before the first");
+        Assertions.assertTrue(ret.isFirst(), "should be the first");
 
         int cnt = 0;
         while (ret.next()) {
           cnt++;
           if (cnt == 72) {
-            assertTrue("should be the last", ret.isLast());
-            assertFalse("should not be after the last", ret.isAfterLast());
+            Assertions.assertTrue(ret.isLast(), "should be the last");
+            Assertions.assertFalse(ret.isAfterLast(), "should not be after the last");
           }
         }
-        assertEquals(72, cnt);
+        Assertions.assertEquals(72, cnt);
 
-        assertFalse(ret.next());
+        Assertions.assertFalse(ret.next());
 
-        assertFalse("should not be the last", ret.isLast());
-        assertTrue("should be afterthe last", ret.isAfterLast());
+        Assertions.assertFalse(ret.isLast(), "should not be the last");
+        Assertions.assertTrue(ret.isAfterLast(), "should be afterthe last");
       }
       // PUT one file
       try (ResultSet ret =
           statement.executeQuery(
               "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @~")) {
 
-        assertTrue("should be before the first", ret.isBeforeFirst());
-        assertFalse("should not be the first", ret.isFirst());
+        Assertions.assertTrue(ret.isBeforeFirst(), "should be before the first");
+        Assertions.assertFalse(ret.isFirst(), "should not be the first");
 
-        assertTrue(ret.next());
+        Assertions.assertTrue(ret.next());
 
-        assertFalse("should not be before the first", ret.isBeforeFirst());
-        assertTrue("should be the first", ret.isFirst());
+        Assertions.assertFalse(ret.isBeforeFirst(), "should not be before the first");
+        Assertions.assertTrue(ret.isFirst(), "should be the first");
 
-        assertTrue("should be the last", ret.isLast());
-        assertFalse("should not be after the last", ret.isAfterLast());
+        Assertions.assertTrue(ret.isLast(), "should be the last");
+        Assertions.assertFalse(ret.isAfterLast(), "should not be after the last");
 
-        assertFalse(ret.next());
+        Assertions.assertFalse(ret.next());
 
-        assertFalse("should not be the last", ret.isLast());
-        assertTrue("should be after the last", ret.isAfterLast());
+        Assertions.assertFalse(ret.isLast(), "should not be the last");
+        Assertions.assertTrue(ret.isAfterLast(), "should be after the last");
       }
     }
   }
@@ -1036,9 +1027,9 @@ public class ResultSetIT extends ResultSet0IT {
         statement.execute("create or replace table testnullts(c1 timestamp, c2 time)");
         statement.execute("insert into testnullts(c1, c2) values(null, null)");
         try (ResultSet rs = statement.executeQuery("select * from testnullts")) {
-          assertTrue("should return result", rs.next());
-          assertNull("return value must be null", rs.getTime(1));
-          assertNull("return value must be null", rs.getTimestamp(2));
+          Assertions.assertTrue(rs.next(), "should return result");
+          Assertions.assertNull(rs.getTime(1), "return value must be null");
+          Assertions.assertNull(rs.getTimestamp(2), "return value must be null");
         }
       } finally {
         statement.execute("drop table if exists testnullts");
@@ -1050,13 +1041,13 @@ public class ResultSetIT extends ResultSet0IT {
   @ArgumentsSource(SimpleFormatProvider.class)
   public void testNextNegative(String queryResultFormat) throws SQLException {
     try (ResultSet rs = createStatement(queryResultFormat).executeQuery("select 1")) {
-      assertTrue(rs.next());
+      Assertions.assertTrue(rs.next());
       System.setProperty("snowflake.enable_incident_test2", "true");
       try {
-        assertTrue(rs.next());
-        fail();
+        Assertions.assertTrue(rs.next());
+        Assertions.fail();
       } catch (SQLException ex) {
-        assertEquals(200014, ex.getErrorCode());
+        Assertions.assertEquals(200014, ex.getErrorCode());
       }
       System.setProperty("snowflake.enable_incident_test2", "false");
     }
@@ -1071,13 +1062,13 @@ public class ResultSetIT extends ResultSet0IT {
         ResultSet resultSet =
             statement.executeQuery(
                 "select ARRAY_CONSTRUCT(1,2,3), OBJECT_CONSTRUCT('a', 4, 'b', 'test')")) {
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
       String expectedArrayAsString = "[\n  1,\n  2,\n  3\n]";
-      assertEquals(expectedArrayAsString, resultSet.getObject(1));
-      assertEquals(expectedArrayAsString, resultSet.getString(1));
+      Assertions.assertEquals(expectedArrayAsString, resultSet.getObject(1));
+      Assertions.assertEquals(expectedArrayAsString, resultSet.getString(1));
       String expectedObjectAsString = "{\n  \"a\": 4,\n  \"b\": \"test\"\n}";
-      assertEquals(expectedObjectAsString, resultSet.getObject(2));
-      assertEquals(expectedObjectAsString, resultSet.getString(2));
+      Assertions.assertEquals(expectedObjectAsString, resultSet.getObject(2));
+      Assertions.assertEquals(expectedObjectAsString, resultSet.getString(2));
     }
   }
 }

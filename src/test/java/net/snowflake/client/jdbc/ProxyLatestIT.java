@@ -1,8 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -13,17 +10,18 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
 import java.util.Properties;
-import net.snowflake.client.category.TestCategoryOthers;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class ProxyLatestIT extends BaseWiremockTest {
 
   @AfterEach
@@ -108,8 +106,8 @@ public class ProxyLatestIT extends BaseWiremockTest {
                 props);
         Statement stmt = con.createStatement();
         ResultSet rs = stmt.executeQuery("select 1")) {
-      assertTrue(rs.next());
-      assertEquals(1, rs.getInt(1));
+      Assertions.assertTrue(rs.next());
+      Assertions.assertEquals(1, rs.getInt(1));
     }
   }
 
@@ -121,10 +119,7 @@ public class ProxyLatestIT extends BaseWiremockTest {
       String responseString = EntityUtils.toString(response.getEntity());
       ObjectMapper mapper = new ObjectMapper();
       JsonNode json = mapper.readTree(responseString);
-      assertEquals(
-          "expected request count not matched for pattern: " + pathPattern,
-          expectedCount,
-          json.get("count").asInt());
+      Assertions.assertEquals(expectedCount, json.get("count").asInt(), "expected request count not matched for pattern: " + pathPattern);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

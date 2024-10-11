@@ -2,9 +2,6 @@ package net.snowflake.client.jdbc.telemetryOOB;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.Connection;
@@ -15,7 +12,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import net.snowflake.client.annotations.RunOnTestaccount;
-import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
@@ -23,14 +19,15 @@ import net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.lang3.time.StopWatch;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Standalone test cases for the out of band telemetry service */
-@Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
 public class TelemetryServiceIT extends BaseJDBCTest {
   private static final int WAIT_FOR_TELEMETRY_REPORT_IN_MILLISECS = 5000;
   private boolean defaultState;
@@ -236,7 +233,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     int fakeVendorCode = 27;
     try {
       generateDummyException(fakeVendorCode, null);
-      fail();
+      Assertions.fail();
     } catch (SnowflakeSQLLoggedException e) {
       // The error response has the same code as the fakeErrorCode
       assertThat("Communication error", e.getErrorCode(), equalTo(fakeVendorCode));
@@ -269,7 +266,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
     // with null session, OOB telemetry will be thrown
     try {
       generateSQLFeatureNotSupportedException();
-      fail("SqlFeatureNotSupportedException failed to throw.");
+      Assertions.fail("SqlFeatureNotSupportedException failed to throw.");
     } catch (SQLFeatureNotSupportedException e) {
       // since it returns normal response,
       // the telemetry does not create new event
@@ -326,7 +323,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       Statement statement = con.createStatement();
       statement.execute("select 1");
       // Make sure OOB telemetry is enabled
-      assertTrue(TelemetryService.getInstance().isEnabled());
+      Assertions.assertTrue(TelemetryService.getInstance().isEnabled());
     }
   }
 
@@ -343,7 +340,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       Statement statement = con.createStatement();
       statement.execute("select 1");
       // Make sure OOB telemetry is disabled
-      assertFalse(TelemetryService.getInstance().isEnabled());
+      Assertions.assertFalse(TelemetryService.getInstance().isEnabled());
     }
   }
 
@@ -361,7 +358,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       Statement statement = con.createStatement();
       statement.execute("select 1");
       // Make sure OOB telemetry is enabled
-      assertTrue(TelemetryService.getInstance().isEnabled());
+      Assertions.assertTrue(TelemetryService.getInstance().isEnabled());
     }
   }
 
@@ -379,7 +376,7 @@ public class TelemetryServiceIT extends BaseJDBCTest {
       try {
         generateDummyException(
             fakeErrorCode, con.unwrap(SnowflakeConnectionV1.class).getSfSession());
-        fail();
+        Assertions.fail();
       } catch (SnowflakeSQLLoggedException e) {
         // The error response has the same code as the fakeErrorCode
         assertThat("Communication error", e.getErrorCode(), equalTo(fakeErrorCode));

@@ -5,11 +5,7 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -32,6 +28,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -147,15 +144,15 @@ public class RestRequestTest {
                 String params = arg.getURI().getQuery();
 
                 if (callCount == 0) {
-                  assertFalse(params.contains("retryCount="));
-                  assertFalse(params.contains("retryReason="));
-                  assertFalse(params.contains("clientStartTime="));
-                  assertTrue(params.contains("request_guid="));
+                  Assertions.assertFalse(params.contains("retryCount="));
+                  Assertions.assertFalse(params.contains("retryReason="));
+                  Assertions.assertFalse(params.contains("clientStartTime="));
+                  Assertions.assertTrue(params.contains("request_guid="));
                 } else {
-                  assertTrue(params.contains("retryCount=" + callCount));
-                  assertTrue(params.contains("retryReason=503"));
-                  assertTrue(params.contains("clientStartTime="));
-                  assertTrue(params.contains("request_guid="));
+                  Assertions.assertTrue(params.contains("retryCount=" + callCount));
+                  Assertions.assertTrue(params.contains("retryReason=503"));
+                  Assertions.assertTrue(params.contains("clientStartTime="));
+                  Assertions.assertTrue(params.contains("request_guid="));
                 }
 
                 callCount += 1;
@@ -183,10 +180,10 @@ public class RestRequestTest {
                 HttpUriRequest arg = (HttpUriRequest) invocation.getArguments()[0];
                 String params = arg.getURI().getQuery();
 
-                assertFalse(params.contains("retryCount="));
-                assertFalse(params.contains("retryReason="));
-                assertFalse(params.contains("clientStartTime="));
-                assertTrue(params.contains("request_guid="));
+                Assertions.assertFalse(params.contains("retryCount="));
+                Assertions.assertFalse(params.contains("retryReason="));
+                Assertions.assertFalse(params.contains("clientStartTime="));
+                Assertions.assertTrue(params.contains("request_guid="));
 
                 callCount += 1;
                 if (callCount >= 3) {
@@ -336,19 +333,15 @@ public class RestRequestTest {
 
     for (TestCase t : testCases) {
       if (t.result) {
-        assertTrue(
-            String.format(
+        Assertions.assertTrue(RestRequest.isNonRetryableHTTPCode(
+            anyStatusCodeResponse(t.statusCode), t.retryHTTP403), String.format(
                 "Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
-                t.statusCode, t.retryHTTP403),
-            RestRequest.isNonRetryableHTTPCode(
-                anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
+                t.statusCode, t.retryHTTP403));
       } else {
-        assertFalse(
-            String.format(
+        Assertions.assertFalse(RestRequest.isNonRetryableHTTPCode(
+            anyStatusCodeResponse(t.statusCode), t.retryHTTP403), String.format(
                 "Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
-                t.statusCode, t.retryHTTP403),
-            RestRequest.isNonRetryableHTTPCode(
-                anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
+                t.statusCode, t.retryHTTP403));
       }
     }
   }
@@ -398,7 +391,7 @@ public class RestRequestTest {
                   if (callCount <= 1) {
                     return retryResponse(); // return a retryable resp on the first attempt
                   } else {
-                    fail("No retry should happen when noRetry = true");
+                    Assertions.fail("No retry should happen when noRetry = true");
                   }
                   return successResponse();
                 }
@@ -436,15 +429,15 @@ public class RestRequestTest {
                 String params = arg.getURI().getQuery();
 
                 if (callCount == 0) {
-                  assertFalse(params.contains("retryCount="));
-                  assertFalse(params.contains("retryReason="));
-                  assertFalse(params.contains("clientStartTime="));
-                  assertTrue(params.contains("request_guid="));
+                  Assertions.assertFalse(params.contains("retryCount="));
+                  Assertions.assertFalse(params.contains("retryReason="));
+                  Assertions.assertFalse(params.contains("clientStartTime="));
+                  Assertions.assertTrue(params.contains("request_guid="));
                 } else {
-                  assertTrue(params.contains("retryCount=" + callCount));
-                  assertTrue(params.contains("retryReason=0"));
-                  assertTrue(params.contains("clientStartTime="));
-                  assertTrue(params.contains("request_guid="));
+                  Assertions.assertTrue(params.contains("retryCount=" + callCount));
+                  Assertions.assertTrue(params.contains("retryReason=0"));
+                  Assertions.assertTrue(params.contains("clientStartTime="));
+                  Assertions.assertTrue(params.contains("request_guid="));
                 }
 
                 callCount += 1;
@@ -487,7 +480,7 @@ public class RestRequestTest {
           try {
             TelemetryService.disable();
             execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1);
-            fail("testMaxRetries");
+            Assertions.fail("testMaxRetries");
           } finally {
             if (telemetryEnabled) {
               TelemetryService.enable();
@@ -549,7 +542,7 @@ public class RestRequestTest {
           try {
             TelemetryService.disable();
             execute(client, "/session/v1/login-request", 0, 0, 0, true, false, 1);
-            fail("testMaxRetries");
+            Assertions.fail("testMaxRetries");
           } finally {
             if (telemetryEnabled) {
               TelemetryService.enable();
@@ -623,7 +616,7 @@ public class RestRequestTest {
       TelemetryService.disable();
       execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 4);
     } catch (SnowflakeSQLException e) {
-      fail("testMaxRetriesWithSuccessfulResponse");
+      Assertions.fail("testMaxRetriesWithSuccessfulResponse");
     } finally {
       if (telemetryEnabled) {
         TelemetryService.enable();
@@ -652,19 +645,12 @@ public class RestRequestTest {
               retryTimeoutInMilli,
               elapsedMilliForTransientIssues);
 
-      assertTrue(
-          "Backoff should be lower or equal to max backoff limit",
-          backoffInMilli <= maxBackoffInMilli);
+      Assertions.assertTrue(backoffInMilli <= maxBackoffInMilli, "Backoff should be lower or equal to max backoff limit");
       if (elapsedMilliForTransientIssues + backoffInMilli >= retryTimeoutInMilli) {
-        assertEquals(
-            "Backoff should fill time till retry timeout",
-            retryTimeoutInMilli - elapsedMilliForTransientIssues,
-            backoffInMilli);
+        Assertions.assertEquals(retryTimeoutInMilli - elapsedMilliForTransientIssues, backoffInMilli, "Backoff should fill time till retry timeout");
         break;
       } else {
-        assertTrue(
-            "Backoff should be higher or equal to min backoff limit",
-            backoffInMilli >= minBackoffInMilli);
+        Assertions.assertTrue(backoffInMilli >= minBackoffInMilli, "Backoff should be higher or equal to min backoff limit");
       }
       elapsedMilliForTransientIssues += backoffInMilli;
     }

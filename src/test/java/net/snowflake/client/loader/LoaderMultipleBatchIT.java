@@ -5,16 +5,15 @@ package net.snowflake.client.loader;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.List;
-import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryLoader.class)
+//@Category(TestCategoryLoader.class)
 public class LoaderMultipleBatchIT extends LoaderBase {
   @Test
   public void testLoaderMultipleBatch() throws Exception {
@@ -46,12 +45,12 @@ public class LoaderMultipleBatchIT extends LoaderBase {
         try (ResultSet rsReference =
             statement.executeQuery(
                 String.format("SELECT hash_agg(*) FROM \"%s\"", TARGET_TABLE_NAME))) {
-          assertTrue(rsReference.next());
+          Assertions.assertTrue(rsReference.next());
           long hashValueReference = rsReference.getLong(1);
           try (ResultSet rsTarget =
               statement.executeQuery(
                   String.format("SELECT hash_agg(*) FROM \"%s\"", refTableName))) {
-            assertTrue(rsTarget.next());
+            Assertions.assertTrue(rsTarget.next());
             long hashValueTarget = rsTarget.getLong(1);
             assertThat("hash values", hashValueTarget, equalTo(hashValueReference));
           }

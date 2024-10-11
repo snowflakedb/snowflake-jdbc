@@ -3,9 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -13,16 +10,16 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
 
@@ -35,12 +32,12 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
     String SF_AWS_USER_BUCKET = TestUtil.systemGetEnv("SF_AWS_USER_BUCKET");
     if (SF_AWS_USER_BUCKET == null) {
       String userName = TestUtil.systemGetEnv("USERNAME");
-      assertNotNull(userName);
+      Assertions.assertNotNull(userName);
       SF_AWS_USER_BUCKET = "sfc-dev1-regression/" + userName + "/snow-13400";
     }
 
-    assertNotNull(AWS_SECRET_KEY);
-    assertNotNull(AWS_KEY_ID);
+    Assertions.assertNotNull(AWS_SECRET_KEY);
+    Assertions.assertNotNull(AWS_KEY_ID);
 
     File dataFolder = new File(tmpFolder, "data");
     dataFolder.mkdirs();
@@ -77,7 +74,7 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
           while (resultSet.next()) {
             cnt++;
           }
-          assertEquals(cnt, 1);
+          Assertions.assertEquals(cnt, 1);
         }
         statement.execute("create or replace table snow13400(a string)");
         statement.execute("copy into snow13400 from @snow13400");
@@ -88,8 +85,8 @@ public class PutFileWithSpaceIncludedIT extends BaseJDBCTest {
             output = resultSet.getString(1);
             cnt++;
           }
-          assertEquals(cnt, 1);
-          assertEquals(output, "hello");
+          Assertions.assertEquals(cnt, 1);
+          Assertions.assertEquals(output, "hello");
         }
       } finally {
         statement.execute("rm @snow13400");

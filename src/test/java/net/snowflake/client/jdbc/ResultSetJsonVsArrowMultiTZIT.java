@@ -3,23 +3,20 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-import net.snowflake.client.category.TestCategoryArrow;
+
 import net.snowflake.client.providers.ProvidersUtil;
 import net.snowflake.client.providers.ScaleProvider;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import net.snowflake.client.providers.SnowflakeArgumentsProvider;
 import net.snowflake.client.providers.TimezoneProvider;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -28,7 +25,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Completely compare json and arrow resultSet behaviors */
-@Category(TestCategoryArrow.class)
+//@Category(TestCategoryArrow.class)
 public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionIT {
   static String originalTz;
 
@@ -133,16 +130,16 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
-          assertTrue(rs.next());
+          Assertions.assertTrue(rs.next());
           if (i == cases.length - 2) {
-            assertEquals("0001-01-01", rs.getDate(1).toString());
+            Assertions.assertEquals("0001-01-01", rs.getDate(1).toString());
           } else {
-            assertEquals(cases[i], rs.getDate(1).toString());
+            Assertions.assertEquals(cases[i], rs.getDate(1).toString());
           }
           i++;
         }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertNull(rs.getString(1));
       }
       statement.execute("drop table " + table);
       System.clearProperty("user.timezone");
@@ -158,12 +155,12 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
     try (Statement statement = createStatement(queryResultFormat);
         ResultSet rs = statement.executeQuery("select * from " + table)) {
       for (int i = 0; i < times.length; i++) {
-        assertTrue(rs.next());
+        Assertions.assertTrue(rs.next());
         // Java Time class does not have nanoseconds
-        assertEquals("00:01:23", rs.getString(1));
+        Assertions.assertEquals("00:01:23", rs.getString(1));
       }
-      assertTrue(rs.next());
-      assertNull(rs.getTime(1));
+      Assertions.assertTrue(rs.next());
+      Assertions.assertNull(rs.getTime(1));
     }
   }
 
@@ -204,11 +201,11 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
-          assertTrue(rs.next());
-          assertEquals(results[i++], rs.getString(1));
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(results[i++], rs.getString(1));
         }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertNull(rs.getString(1));
       }
       statement.execute("drop table " + table);
     }
@@ -239,11 +236,11 @@ public class ResultSetJsonVsArrowMultiTZIT extends BaseJDBCWithSharedConnectionI
       try (ResultSet rs = statement.executeQuery("select * from " + table)) {
         int i = 0;
         while (i < cases.length) {
-          assertTrue(rs.next());
-          assertEquals(cases[i++], rs.getTimestamp(1).toString());
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(cases[i++], rs.getTimestamp(1).toString());
         }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
       }

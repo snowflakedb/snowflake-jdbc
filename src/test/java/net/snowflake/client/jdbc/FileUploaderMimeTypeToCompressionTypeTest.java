@@ -3,11 +3,10 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Optional;
 import java.util.stream.Stream;
 import net.snowflake.common.core.FileCompressionType;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -49,9 +48,9 @@ public class FileUploaderMimeTypeToCompressionTypeTest {
     Optional<FileCompressionType> foundCompType =
         SnowflakeFileTransferAgent.mimeTypeToCompressionType(mimeType);
     if (foundCompType.isPresent()) {
-      assertEquals(mimeSubType, foundCompType.get());
+      Assertions.assertEquals(mimeSubType, foundCompType.get());
     } else {
-      assertEquals(mimeSubType, null);
+      Assertions.assertEquals(mimeSubType, null);
     }
   }
 }

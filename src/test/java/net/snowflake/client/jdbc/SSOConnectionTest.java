@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.mock;
@@ -38,6 +37,7 @@ import net.snowflake.client.core.SessionUtilExternalBrowser;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -250,12 +250,11 @@ public class SSOConnectionTest {
                   resp = retInitialSSO;
                 } else if (callCount == 1) {
                   jsonNode = parseRequest((HttpPost) args[0]);
-                  assertTrue(
-                      jsonNode
-                          .path("data")
-                          .path("SESSION_PARAMETERS")
-                          .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
-                          .asBoolean());
+                  Assertions.assertTrue(jsonNode
+                      .path("data")
+                      .path("SESSION_PARAMETERS")
+                      .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
+                      .asBoolean());
                   assertThat(
                       "authenticator",
                       jsonNode.path("data").path("AUTHENTICATOR").asText(),
@@ -263,12 +262,11 @@ public class SSOConnectionTest {
                   resp = retInitialAuthentication;
                 } else if (callCount == 2) {
                   jsonNode = parseRequest((HttpPost) args[0]);
-                  assertTrue(
-                      jsonNode
-                          .path("data")
-                          .path("SESSION_PARAMETERS")
-                          .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
-                          .asBoolean());
+                  Assertions.assertTrue(jsonNode
+                      .path("data")
+                      .path("SESSION_PARAMETERS")
+                      .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
+                      .asBoolean());
                   assertThat(
                       "authenticator",
                       jsonNode.path("data").path("AUTHENTICATOR").asText(),

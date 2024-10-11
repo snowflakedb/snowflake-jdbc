@@ -5,8 +5,8 @@ package net.snowflake.client;
 
 /** Skip tests on CI when thin jar is tested */
 @Deprecated
-public class SkipOnThinJar implements ConditionalIgnoreRule.IgnoreCondition {
-  @Override
+public class SkipOnThinJar {
+  //@Override
   public boolean isSatisfied() {
     return "-Dthin-jar".equals(TestUtil.systemGetEnv("ADDITIONAL_MAVEN_PROFILE"));
   }

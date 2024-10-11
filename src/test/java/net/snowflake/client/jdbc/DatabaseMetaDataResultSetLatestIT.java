@@ -3,11 +3,7 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -16,6 +12,8 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
@@ -35,7 +33,7 @@ public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
                 new SnowflakeDatabaseMetaDataResultSet(
                     columnNames, columnTypeNames, columnTypes, rows, st)) {
               resultSet.next();
-              assertEquals(1.2F, resultSet.getObject(1));
+              Assertions.assertEquals(1.2F, resultSet.getObject(1));
             }
           }
         });
@@ -57,9 +55,9 @@ public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
       try (ResultSet resultSet =
           metaData.getColumns(
               connection.getCatalog(), connection.getSchema(), "TABLEWITHOBJECTCOLUMN", null)) {
-        assertTrue(resultSet.next());
-        assertEquals("OBJECT", resultSet.getObject("TYPE_NAME"));
-        assertFalse(resultSet.next());
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertEquals("OBJECT", resultSet.getObject("TYPE_NAME"));
+        Assertions.assertFalse(resultSet.next());
       }
     }
   }

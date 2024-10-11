@@ -6,8 +6,6 @@ package net.snowflake.client.core;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import net.snowflake.client.annotations.DontRunOnThinJar;
-import net.snowflake.client.category.TestCategoryArrow;
 import net.snowflake.client.jdbc.ArrowResultChunk;
 import net.snowflake.client.jdbc.BaseJDBCWithSharedConnectionIT;
 import net.snowflake.client.jdbc.ErrorCode;
@@ -62,11 +59,12 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@Category(TestCategoryArrow.class)
+//@Category(TestCategoryArrow.class)
 public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
   private Random random = new Random();
 
@@ -649,8 +647,8 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
           resultSet.next();
         }
         // We inserted a null row at the beginning so when sorted, the last row should be null
-        assertEquals(null, resultSet.getObject(1));
-        assertFalse(resultSet.next());
+        Assertions.assertEquals(null, resultSet.getObject(1));
+        Assertions.assertFalse(resultSet.next());
         statement.execute("drop table teststructtimestamp;");
       }
     }
@@ -736,8 +734,8 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
           resultSet.next();
         }
         // We inserted a null row at the beginning so when sorted, the last row should be null
-        assertEquals(null, resultSet.getObject(1));
-        assertFalse(resultSet.next());
+        Assertions.assertEquals(null, resultSet.getObject(1));
+        Assertions.assertFalse(resultSet.next());
         statement.execute("drop table alltypes;");
       }
     }

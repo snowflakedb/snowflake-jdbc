@@ -4,10 +4,6 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -18,8 +14,8 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +25,7 @@ import org.junit.jupiter.api.Test;
  * if the tests still are not applicable. If it is applicable, move tests to PreparedStatement1IT so
  * that both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   public PreparedStatement1LatestIT() {
     super("json");
@@ -55,12 +51,12 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       }
 
       try (ResultSet resultSet = statement.executeQuery("select * from test_prepst")) {
-        assertTrue(resultSet.next());
-        assertEquals(resultSet.getInt(1), 1);
-        assertTrue(resultSet.next());
-        assertEquals(resultSet.getInt(1), 1);
-        assertTrue(resultSet.next());
-        assertEquals(resultSet.getInt(1), 100);
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertEquals(resultSet.getInt(1), 1);
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertEquals(resultSet.getInt(1), 1);
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertEquals(resultSet.getInt(1), 100);
       }
 
       try (PreparedStatement prepStatement =
@@ -68,14 +64,14 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         prepStatement.setInt(1, 1);
         prepStatement.setInt(2, 1);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          assertTrue(resultSet.next());
-          assertEquals(resultSet.getInt(2), 2);
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertEquals(resultSet.getInt(2), 2);
           prepStatement.setInt(1, 1);
           prepStatement.setInt(2, 100);
         }
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          assertTrue(resultSet.next());
-          assertEquals(resultSet.getInt(2), 101);
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertEquals(resultSet.getInt(2), 101);
         }
       }
       try (PreparedStatement prepStatement =
@@ -84,15 +80,15 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         prepStatement.setInt(1, 1);
 
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          assertTrue(resultSet.next());
-          assertFalse(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertFalse(resultSet.next());
           prepStatement.setInt(1, 3);
         }
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          assertTrue(resultSet.next());
-          assertTrue(resultSet.next());
-          assertTrue(resultSet.next());
-          assertFalse(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertFalse(resultSet.next());
         }
       }
     }
@@ -131,9 +127,9 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         // check results
         try (ResultSet rs = statement.executeQuery("select * from testStageBindTime")) {
           for (Time[] timeValue : timeValues) {
-            assertTrue(rs.next());
-            assertEquals(timeValue[0].toString(), rs.getTime(1).toString());
-            assertEquals(timeValue[1].toString(), rs.getTime(2).toString());
+            Assertions.assertTrue(rs.next());
+            Assertions.assertEquals(timeValue[0].toString(), rs.getTime(1).toString());
+            Assertions.assertEquals(timeValue[1].toString(), rs.getTime(2).toString());
           }
         }
       } finally {
@@ -187,12 +183,12 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
           for (int i = 0; i < testTzs.length; i++) {
             // Assert that the first row of inserts with payload binding matches the second row of
             // inserts that used stage array binding
-            assertTrue(rs.next());
+            Assertions.assertTrue(rs.next());
             Timestamp expectedNTZTs = rs.getTimestamp(1);
             Timestamp expectedLTZTs = rs.getTimestamp(2);
-            assertTrue(rs.next());
-            assertEquals(expectedNTZTs, rs.getTimestamp(1));
-            assertEquals(expectedLTZTs, rs.getTimestamp(2));
+            Assertions.assertTrue(rs.next());
+            Assertions.assertEquals(expectedNTZTs, rs.getTimestamp(1));
+            Assertions.assertEquals(expectedLTZTs, rs.getTimestamp(2));
           }
         }
       } finally {
@@ -215,8 +211,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
     try (Connection connection = init()) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         // executeBatch shouldn't throw exceptions
-        assertEquals(
-            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
+        Assertions.assertEquals(0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
       }
 
       connection
@@ -226,8 +221,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       // we need a new PreparedStatement to pick up the changed status (not use stage bind)
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         // executeBatch shouldn't throw exceptions
-        assertEquals(
-            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
+        Assertions.assertEquals(0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
       }
     }
   }
@@ -259,13 +253,12 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
           connection.prepareStatement("insert into test_bigint(id) values(?)")) {
         prepStatement.setObject(1, BigInteger.valueOf(9999));
         int rows = prepStatement.executeUpdate();
-        assertTrue("Row count doesn't match", rows == 1);
+        Assertions.assertTrue(rows == 1, "Row count doesn't match");
       }
     } catch (SQLException e) {
       e.printStackTrace();
-      fail(
-          "testSetObjectMethodWithBigIntegerColumn failed with an exception message: "
-              + e.getMessage());
+      Assertions.fail("testSetObjectMethodWithBigIntegerColumn failed with an exception message: "
+          + e.getMessage());
     }
   }
 
@@ -279,13 +272,12 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         BigInteger largeBigInt = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.TEN);
         prepStatement.setObject(1, largeBigInt);
         int rows = prepStatement.executeUpdate();
-        assertTrue("Row count doesn't match", rows == 1);
+        Assertions.assertTrue(rows == 1, "Row count doesn't match");
       }
     } catch (SQLException e) {
       e.printStackTrace();
-      fail(
-          "testSetObjectMethodWithLargeBigIntegerColumn failed with an exception message: "
-              + e.getMessage());
+      Assertions.fail("testSetObjectMethodWithLargeBigIntegerColumn failed with an exception message: "
+          + e.getMessage());
     }
   }
 
@@ -348,7 +340,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
           try (ResultSet rs = prepStatement.executeQuery()) {
             String result = "1 \"[2,3]\" [2,3]";
             while (rs.next()) {
-              assertEquals(result, rs.getString(1));
+              Assertions.assertEquals(result, rs.getString(1));
             }
           }
         }

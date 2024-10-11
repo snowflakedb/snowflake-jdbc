@@ -5,8 +5,6 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.EventUtil.DUMP_PATH_PROP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +13,7 @@ import java.nio.file.Files;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -42,8 +41,8 @@ public class EventTest {
     Event event = new BasicEvent(Event.EventType.NONE, "basic event");
     event.setType(Event.EventType.NETWORK_ERROR);
     event.setMessage("network timeout");
-    assertEquals(1, event.getType().getId());
-    assertEquals("network timeout", event.getMessage());
+    Assertions.assertEquals(1, event.getType().getId());
+    Assertions.assertEquals("network timeout", event.getMessage());
   }
 
   @Test
@@ -59,7 +58,7 @@ public class EventTest {
       // created
       String dmpPath1 = EventUtil.getDumpPathPrefix();
       String dmpPath2 = dmpDirectory.getCanonicalPath();
-      assertEquals("dump path is: " + EventUtil.getDumpPathPrefix(), dmpPath2, dmpPath1);
+      Assertions.assertEquals(dmpPath2, dmpPath1, "dump path is: " + EventUtil.getDumpPathPrefix());
       File dumpFile =
           new File(
               EventUtil.getDumpPathPrefix()
@@ -71,7 +70,7 @@ public class EventTest {
       StringWriter sWriter = new StringWriter();
       IOUtils.copy(gzip, sWriter, "UTF-8");
 
-      assertTrue(sWriter.toString().contains("network timeout after 60 seconds"));
+      Assertions.assertTrue(sWriter.toString().contains("network timeout after 60 seconds"));
 
       gzip.close();
       sWriter.close();

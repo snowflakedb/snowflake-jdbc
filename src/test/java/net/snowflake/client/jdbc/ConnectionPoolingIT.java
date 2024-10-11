@@ -3,8 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -15,17 +13,18 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
-import net.snowflake.client.category.TestCategoryConnection;
+
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Connection pool interface test */
-@Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
 public class ConnectionPoolingIT {
   private BasicDataSource bds = null;
   private ComboPooledDataSource cpds = null;
@@ -186,7 +185,7 @@ public class ConnectionPoolingIT {
         try (Statement st = con.createStatement();
             ResultSet resultSet = st.executeQuery("SELECT * FROM test_pooling")) {
           while (resultSet.next()) {
-            assertEquals("test_str", resultSet.getString(1));
+            Assertions.assertEquals("test_str", resultSet.getString(1));
           }
         }
       } catch (Exception e) {

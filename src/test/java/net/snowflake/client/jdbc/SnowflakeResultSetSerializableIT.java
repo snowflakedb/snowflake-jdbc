@@ -1,10 +1,6 @@
 package net.snowflake.client.jdbc;
 
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,14 +17,15 @@ import java.util.List;
 import java.util.Properties;
 import javax.annotation.Nullable;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.experimental.categories.Category;
+
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** SnowflakeResultSetSerializable tests */
-@Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
 
@@ -284,7 +281,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     }
 
     String chunkResultString = deserializeResultSet(fileNameList);
-    assertEquals(chunkResultString, originalResultCSVString);
+    Assertions.assertEquals(chunkResultString, originalResultCSVString);
   }
 
   @Test
@@ -414,7 +411,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     }
 
     String chunkResultString = deserializeResultSet(fileNameList);
-    assertEquals(chunkResultString, originalResultCSVString);
+    Assertions.assertEquals(chunkResultString, originalResultCSVString);
   }
 
   @Test
@@ -476,7 +473,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     }
 
     String chunkResultString = deserializeResultSet(fileNameList);
-    assertEquals(chunkResultString, originalResultCSVString);
+    Assertions.assertEquals(chunkResultString, originalResultCSVString);
   }
 
   /**
@@ -558,22 +555,22 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     // Split deserializedResultSet by 3M, the result should be the same
     List<String> fileNameSplit3M = splitResultSetSerializables(fileNameList, 3 * 1024 * 1024);
     String chunkResultString = deserializeResultSet(fileNameSplit3M);
-    assertEquals(chunkResultString, originalResultCSVString);
+    Assertions.assertEquals(chunkResultString, originalResultCSVString);
 
     // Split deserializedResultSet by 2M, the result should be the same
     List<String> fileNameSplit2M = splitResultSetSerializables(fileNameSplit3M, 2 * 1024 * 1024);
     chunkResultString = deserializeResultSet(fileNameSplit2M);
-    assertEquals(chunkResultString, originalResultCSVString);
+    Assertions.assertEquals(chunkResultString, originalResultCSVString);
 
     // Split deserializedResultSet by 1M, the result should be the same
     List<String> fileNameSplit1M = splitResultSetSerializables(fileNameSplit2M, 1 * 1024 * 1024);
     chunkResultString = deserializeResultSet(fileNameSplit1M);
-    assertEquals(chunkResultString, originalResultCSVString);
+    Assertions.assertEquals(chunkResultString, originalResultCSVString);
 
     // Split deserializedResultSet by smallest, the result should be the same
     List<String> fileNameSplitSmallest = splitResultSetSerializables(fileNameSplit1M, 1);
     chunkResultString = deserializeResultSet(fileNameSplitSmallest);
-    assertEquals(chunkResultString, originalResultCSVString);
+    Assertions.assertEquals(chunkResultString, originalResultCSVString);
   }
 
   /**
@@ -651,7 +648,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
           hackToSetupWrongURL(resultSetSerializables);
 
           // Expected to hit credential issue when access the result.
-          assertEquals(resultSetSerializables.size(), 1);
+          Assertions.assertEquals(resultSetSerializables.size(), 1);
           try {
             SnowflakeResultSetSerializable resultSetSerializable = resultSetSerializables.get(0);
 
@@ -665,11 +662,10 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
             while (resultSet.next()) {
               resultSet.getString(1);
             }
-            fail(
-                "error should happen when accessing the data because the "
-                    + "file URL is corrupted.");
+            Assertions.fail("error should happen when accessing the data because the "
+                + "file URL is corrupted.");
           } catch (SQLException ex) {
-            assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
+            Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
           }
         }
       }
@@ -703,7 +699,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
       try {
         List<SnowflakeResultSetSerializable> resultSetSerializables =
             ((SnowflakeResultSet) rs).getResultSetSerializables(100 * 1024 * 1024);
-        fail("error should happen when accessing closed result set.");
+        Assertions.fail("error should happen when accessing closed result set.");
       } catch (SQLException ex) {
         System.out.println("Negative test hits expected error: " + ex.getMessage());
       }
@@ -737,7 +733,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
 
     if (generateFiles) {
       generateTestFiles();
-      fail("This is generate test file.");
+      Assertions.fail("This is generate test file.");
     }
 
     // Setup proxy information
@@ -766,7 +762,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     } else {
       try {
         deserializeResultSetWithProperties(fileNameList, props);
-        fail("This is negative test.");
+        Assertions.fail("This is negative test.");
       } catch (Exception ex) {
         // since the proxy is wrong, the connection should hit error.
       }
@@ -826,7 +822,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
         fileNameList = serializeResultSet((SnowflakeResultSet) rs, 100 * 1024 * 1024, "txt");
 
         // Only one serializable object is generated with 100M data.
-        assertEquals(fileNameList.size(), 1);
+        Assertions.assertEquals(fileNameList.size(), 1);
 
         try (FileInputStream fi = new FileInputStream(fileNameList.get(0));
             ObjectInputStream si = new ObjectInputStream(fi)) {
@@ -847,53 +843,49 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
         }
       }
     }
-    assertEquals(expectedTotalRowCount, rowCount);
-    assertThat(expectedTotalCompressedSize, greaterThan((long) 0));
-    assertThat(expectedTotalUncompressedSize, greaterThan((long) 0));
+    Assertions.assertEquals(expectedTotalRowCount, rowCount);
+    MatcherAssert.assertThat(expectedTotalCompressedSize, greaterThan((long) 0));
+    MatcherAssert.assertThat(expectedTotalUncompressedSize, greaterThan((long) 0));
 
     // Split deserializedResultSet by 3M
     List<String> fileNameSplit3M = splitResultSetSerializables(fileNameList, 3 * 1024 * 1024);
     // Verify the metadata is correct.
-    assertTrue(
-        isMetadataConsistent(
-            expectedTotalRowCount,
-            expectedTotalCompressedSize,
-            expectedTotalUncompressedSize,
-            fileNameSplit3M,
-            null));
+    Assertions.assertTrue(isMetadataConsistent(
+        expectedTotalRowCount,
+        expectedTotalCompressedSize,
+        expectedTotalUncompressedSize,
+        fileNameSplit3M,
+        null));
 
     // Split deserializedResultSet by 2M
     List<String> fileNameSplit2M = splitResultSetSerializables(fileNameSplit3M, 2 * 1024 * 1024);
     // Verify the metadata is correct.
-    assertTrue(
-        isMetadataConsistent(
-            expectedTotalRowCount,
-            expectedTotalCompressedSize,
-            expectedTotalUncompressedSize,
-            fileNameSplit2M,
-            null));
+    Assertions.assertTrue(isMetadataConsistent(
+        expectedTotalRowCount,
+        expectedTotalCompressedSize,
+        expectedTotalUncompressedSize,
+        fileNameSplit2M,
+        null));
 
     // Split deserializedResultSet by 3M
     List<String> fileNameSplit1M = splitResultSetSerializables(fileNameSplit2M, 1 * 1024 * 1024);
     // Verify the metadata is correct.
-    assertTrue(
-        isMetadataConsistent(
-            expectedTotalRowCount,
-            expectedTotalCompressedSize,
-            expectedTotalUncompressedSize,
-            fileNameSplit1M,
-            null));
+    Assertions.assertTrue(isMetadataConsistent(
+        expectedTotalRowCount,
+        expectedTotalCompressedSize,
+        expectedTotalUncompressedSize,
+        fileNameSplit1M,
+        null));
 
     // Split deserializedResultSet by smallest
     List<String> fileNameSplitSmallest = splitResultSetSerializables(fileNameSplit1M, 1);
     // Verify the metadata is correct.
-    assertTrue(
-        isMetadataConsistent(
-            expectedTotalRowCount,
-            expectedTotalCompressedSize,
-            expectedTotalUncompressedSize,
-            fileNameSplitSmallest,
-            null));
+    Assertions.assertTrue(isMetadataConsistent(
+        expectedTotalRowCount,
+        expectedTotalCompressedSize,
+        expectedTotalUncompressedSize,
+        fileNameSplitSmallest,
+        null));
   }
 
   /**
@@ -988,6 +980,6 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     } catch (Exception ex) {
       hitExpectedException = true;
     }
-    assertTrue(hitExpectedException);
+    Assertions.assertTrue(hitExpectedException);
   }
 }

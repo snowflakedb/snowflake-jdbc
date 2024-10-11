@@ -32,9 +32,9 @@ import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-@Category(TestCategoryFips.class)
+
+//@Category(TestCategoryFips.class)
 public class ConnectionFipsIT extends AbstractDriverIT {
   private static final String JCE_PROVIDER_BOUNCY_CASTLE_FIPS = "BCFIPS";
   private static final String JCE_PROVIDER_SUN_JCE = "SunJCE";

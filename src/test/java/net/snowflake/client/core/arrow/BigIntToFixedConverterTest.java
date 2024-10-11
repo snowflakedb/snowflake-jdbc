@@ -7,8 +7,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -27,6 +25,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class BigIntToFixedConverterTest extends BaseConverterTest {
@@ -74,9 +73,9 @@ public class BigIntToFixedConverterTest extends BaseConverterTest {
       String longString = converter.toString(i);
 
       if (longString != null) {
-        assertFalse(converter.isNull(i));
+        Assertions.assertFalse(converter.isNull(i));
       } else {
-        assertTrue(converter.isNull(i));
+        Assertions.assertTrue(converter.isNull(i));
       }
 
       if (nullValIndex.contains(i)) {

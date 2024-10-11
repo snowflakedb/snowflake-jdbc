@@ -6,11 +6,6 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.ErrorCode.ROW_DOES_NOT_EXIST;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.net.URL;
@@ -24,11 +19,11 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -38,7 +33,7 @@ import org.junit.jupiter.api.io.TempDir;
  * if the tests still is not applicable. If it is applicable, move tests to StatementIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
@@ -57,26 +52,26 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
 
       boolean success = statement.execute("create or replace table test_create(colA integer)");
-      assertFalse(success);
-      assertEquals(0, statement.getUpdateCount());
-      assertEquals(0, statement.getLargeUpdateCount());
-      assertNull(statement.getResultSet());
+      Assertions.assertFalse(success);
+      Assertions.assertEquals(0, statement.getUpdateCount());
+      Assertions.assertEquals(0, statement.getLargeUpdateCount());
+      Assertions.assertNull(statement.getResultSet());
 
       int rowCount = statement.executeUpdate("create or replace table test_create_2(colA integer)");
-      assertEquals(0, rowCount);
-      assertEquals(0, statement.getUpdateCount());
+      Assertions.assertEquals(0, rowCount);
+      Assertions.assertEquals(0, statement.getUpdateCount());
 
       success = statement.execute("drop table if exists TEST_CREATE");
-      assertFalse(success);
-      assertEquals(0, statement.getUpdateCount());
-      assertEquals(0, statement.getLargeUpdateCount());
-      assertNull(statement.getResultSet());
+      Assertions.assertFalse(success);
+      Assertions.assertEquals(0, statement.getUpdateCount());
+      Assertions.assertEquals(0, statement.getLargeUpdateCount());
+      Assertions.assertNull(statement.getResultSet());
 
       rowCount = statement.executeUpdate("drop table if exists TEST_CREATE_2");
-      assertEquals(0, rowCount);
-      assertEquals(0, statement.getUpdateCount());
-      assertEquals(0, statement.getLargeUpdateCount());
-      assertNull(statement.getResultSet());
+      Assertions.assertEquals(0, rowCount);
+      Assertions.assertEquals(0, statement.getUpdateCount());
+      Assertions.assertEquals(0, statement.getLargeUpdateCount());
+      Assertions.assertNull(statement.getResultSet());
     }
   }
 
@@ -94,8 +89,8 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
           Statement statement = connection.createStatement()) {
         try {
           statement.execute("create or replace table test_copy(c1 number, c2 number, c3 string)");
-          assertEquals(0, statement.getUpdateCount());
-          assertEquals(0, statement.getLargeUpdateCount());
+          Assertions.assertEquals(0, statement.getUpdateCount());
+          Assertions.assertEquals(0, statement.getLargeUpdateCount());
 
           String path = resource.getFile();
 
@@ -103,7 +98,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
           try (ResultSet rset = statement.executeQuery("PUT file://" + path + " @%test_copy")) {
             try {
               rset.getString(1);
-              fail("Should raise No row found exception, because no next() is called.");
+              Assertions.fail("Should raise No row found exception, because no next() is called.");
             } catch (SQLException ex) {
               assertThat(
                   "No row found error",
@@ -115,13 +110,13 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
               assertThat("uploaded file name", rset.getString(1), equalTo(fileName));
               ++cnt;
             }
-            assertEquals(0, statement.getUpdateCount());
-            assertEquals(0, statement.getLargeUpdateCount());
+            Assertions.assertEquals(0, statement.getUpdateCount());
+            Assertions.assertEquals(0, statement.getLargeUpdateCount());
             assertThat("number of files", cnt, equalTo(1));
             int numRows = statement.executeUpdate("copy into test_copy");
-            assertEquals(2, numRows);
-            assertEquals(2, statement.getUpdateCount());
-            assertEquals(2L, statement.getLargeUpdateCount());
+            Assertions.assertEquals(2, numRows);
+            Assertions.assertEquals(2, statement.getUpdateCount());
+            Assertions.assertEquals(2L, statement.getLargeUpdateCount());
 
             // get files
             statement.executeQuery(
@@ -130,7 +125,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
             // Make sure that the downloaded file exists, it should be gzip compressed
             File downloaded =
                 new File(tempFolder.getCanonicalPath() + File.separator + fileName + ".gz");
-            assertTrue(downloaded.exists());
+            Assertions.assertTrue(downloaded.exists());
           }
           // unzip the new file
           Process p =
@@ -154,12 +149,12 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
           try (ResultSet rset =
               statement.executeQuery(
                   "select * from @%test_copy minus select * from @%test_copy_2")) {
-            assertFalse(rset.next());
+            Assertions.assertFalse(rset.next());
           }
           try (ResultSet rset =
               statement.executeQuery(
                   "select * from @%test_copy_2 minus select * from @%test_copy")) {
-            assertFalse(rset.next());
+            Assertions.assertFalse(rset.next());
           }
         } finally {
           statement.execute("drop table if exists test_copy");
@@ -182,7 +177,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         statement.getResultSet();
       }
 
-      assertEquals(9, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+      Assertions.assertEquals(9, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
     }
 
     try (Statement statement = connection.createStatement()) {
@@ -192,7 +187,7 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         resultSet.close();
       }
 
-      assertEquals(0, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+      Assertions.assertEquals(0, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
     }
   }
 
@@ -227,9 +222,9 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
 
         Map<String, ParameterBindingDTO> bindings =
             pstatement.unwrap(SnowflakePreparedStatementV1.class).getBatchParameterBindings();
-        assertTrue(bindings.size() > 0);
+        Assertions.assertTrue(bindings.size() > 0);
         int bindValues = BindUploader.arrayBindValueCount(bindings);
-        assertEquals(8008, bindValues);
+        Assertions.assertEquals(8008, bindValues);
         pstatement.executeBatch();
       } finally {
         stmt.execute("drop table if exists mytab");
@@ -253,14 +248,14 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testQueryIdIsSetOnFailedQueryExecute() throws SQLException {
     try (Statement stmt = connection.createStatement()) {
-      assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+      Assertions.assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
       try {
         stmt.execute("use database not_existing_database");
-        fail("Statement should fail with exception");
+        Assertions.fail("Statement should fail with exception");
       } catch (SnowflakeSQLException e) {
         String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
         TestUtil.assertValidQueryId(queryID);
-        assertEquals(queryID, e.getQueryId());
+        Assertions.assertEquals(queryID, e.getQueryId());
       }
     }
   }
@@ -269,14 +264,14 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testQueryIdIsSetOnFailedExecuteUpdate() throws SQLException {
     try (Statement stmt = connection.createStatement()) {
-      assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+      Assertions.assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
       try {
         stmt.executeUpdate("update not_existing_table set a = 1 where id = 42");
-        fail("Statement should fail with exception");
+        Assertions.fail("Statement should fail with exception");
       } catch (SnowflakeSQLException e) {
         String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
         TestUtil.assertValidQueryId(queryID);
-        assertEquals(queryID, e.getQueryId());
+        Assertions.assertEquals(queryID, e.getQueryId());
       }
     }
   }
@@ -285,14 +280,14 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testQueryIdIsSetOnFailedExecuteQuery() throws SQLException {
     try (Statement stmt = connection.createStatement()) {
-      assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
+      Assertions.assertNull(stmt.unwrap(SnowflakeStatement.class).getQueryID());
       try {
         stmt.executeQuery("select * from not_existing_table");
-        fail("Statement should fail with exception");
+        Assertions.fail("Statement should fail with exception");
       } catch (SnowflakeSQLException e) {
         String queryID = stmt.unwrap(SnowflakeStatement.class).getQueryID();
         TestUtil.assertValidQueryId(queryID);
-        assertEquals(queryID, e.getQueryId());
+        Assertions.assertEquals(queryID, e.getQueryId());
       }
     }
   }

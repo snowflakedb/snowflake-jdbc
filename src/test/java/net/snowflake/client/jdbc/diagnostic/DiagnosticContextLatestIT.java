@@ -1,9 +1,5 @@
 package net.snowflake.client.jdbc.diagnostic;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -11,15 +7,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.category.TestCategoryDiagnostic;
+
 import net.snowflake.client.core.SFSessionProperty;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryDiagnostic.class)
+//@Category(TestCategoryDiagnostic.class)
 public class DiagnosticContextLatestIT {
 
   private static final String HTTP_NON_PROXY_HOSTS = "http.nonProxyHosts";
@@ -97,7 +94,7 @@ public class DiagnosticContextLatestIT {
 
     String testFailedMessage =
         "The lists of SnowflakeEndpoints in mockEndpoints and endpointsFromTestFile should be identical";
-    assertTrue(testFailedMessage, endpointsFromTestFile.containsAll(mockEndpoints));
+    Assertions.assertTrue(endpointsFromTestFile.containsAll(mockEndpoints), testFailedMessage);
   }
 
   /**
@@ -112,24 +109,12 @@ public class DiagnosticContextLatestIT {
 
     DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
 
-    assertFalse("Proxy configurations should be empty", diagnosticContext.isProxyEnabled());
-    assertTrue(
-        "getHttpProxyHost() must return an empty string in the absence of proxy configuration",
-        diagnosticContext.getHttpProxyHost().isEmpty());
-    assertEquals(
-        "getHttpProxyPort() must return -1 in the absence of proxy configuration",
-        -1,
-        diagnosticContext.getHttpProxyPort());
-    assertTrue(
-        "getHttpsProxyHost() must return an empty string in the absence of proxy configuration",
-        diagnosticContext.getHttpsProxyHost().isEmpty());
-    assertEquals(
-        "getHttpsProxyPort() must return -1 in the absence of proxy configuration",
-        -1,
-        diagnosticContext.getHttpsProxyPort());
-    assertTrue(
-        "getHttpNonProxyHosts() must return an empty string in the absence of proxy configuration",
-        diagnosticContext.getHttpNonProxyHosts().isEmpty());
+    Assertions.assertFalse(diagnosticContext.isProxyEnabled(), "Proxy configurations should be empty");
+    Assertions.assertTrue(diagnosticContext.getHttpProxyHost().isEmpty(), "getHttpProxyHost() must return an empty string in the absence of proxy configuration");
+    Assertions.assertEquals(-1, diagnosticContext.getHttpProxyPort(), "getHttpProxyPort() must return -1 in the absence of proxy configuration");
+    Assertions.assertTrue(diagnosticContext.getHttpsProxyHost().isEmpty(), "getHttpsProxyHost() must return an empty string in the absence of proxy configuration");
+    Assertions.assertEquals(-1, diagnosticContext.getHttpsProxyPort(), "getHttpsProxyPort() must return -1 in the absence of proxy configuration");
+    Assertions.assertTrue(diagnosticContext.getHttpNonProxyHosts().isEmpty(), "getHttpNonProxyHosts() must return an empty string in the absence of proxy configuration");
   }
 
   /** Test added in version > 3.16.1 */
@@ -145,13 +130,13 @@ public class DiagnosticContextLatestIT {
 
     DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
 
-    assertTrue(diagnosticContext.isProxyEnabled());
-    assertTrue(diagnosticContext.isProxyEnabledOnJvm());
-    assertEquals(diagnosticContext.getHttpProxyHost(), "http.proxyHost.com");
-    assertEquals(diagnosticContext.getHttpProxyPort(), 8080);
-    assertEquals(diagnosticContext.getHttpsProxyHost(), "https.proxyHost.com");
-    assertEquals(diagnosticContext.getHttpsProxyPort(), 8083);
-    assertEquals(diagnosticContext.getHttpNonProxyHosts(), "*.domain.com|localhost");
+    Assertions.assertTrue(diagnosticContext.isProxyEnabled());
+    Assertions.assertTrue(diagnosticContext.isProxyEnabledOnJvm());
+    Assertions.assertEquals(diagnosticContext.getHttpProxyHost(), "http.proxyHost.com");
+    Assertions.assertEquals(diagnosticContext.getHttpProxyPort(), 8080);
+    Assertions.assertEquals(diagnosticContext.getHttpsProxyHost(), "https.proxyHost.com");
+    Assertions.assertEquals(diagnosticContext.getHttpsProxyPort(), 8083);
+    Assertions.assertEquals(diagnosticContext.getHttpNonProxyHosts(), "*.domain.com|localhost");
   }
 
   /**
@@ -177,13 +162,13 @@ public class DiagnosticContextLatestIT {
 
     DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
 
-    assertTrue(diagnosticContext.isProxyEnabled());
-    assertFalse(diagnosticContext.isProxyEnabledOnJvm());
-    assertEquals(diagnosticContext.getHttpProxyHost(), "override.proxyHost.com");
-    assertEquals(diagnosticContext.getHttpProxyPort(), 80);
-    assertEquals(diagnosticContext.getHttpsProxyHost(), "override.proxyHost.com");
-    assertEquals(diagnosticContext.getHttpsProxyPort(), 80);
-    assertEquals(diagnosticContext.getHttpNonProxyHosts(), "*.new_domain.com|localhost");
+    Assertions.assertTrue(diagnosticContext.isProxyEnabled());
+    Assertions.assertFalse(diagnosticContext.isProxyEnabledOnJvm());
+    Assertions.assertEquals(diagnosticContext.getHttpProxyHost(), "override.proxyHost.com");
+    Assertions.assertEquals(diagnosticContext.getHttpProxyPort(), 80);
+    Assertions.assertEquals(diagnosticContext.getHttpsProxyHost(), "override.proxyHost.com");
+    Assertions.assertEquals(diagnosticContext.getHttpsProxyPort(), 80);
+    Assertions.assertEquals(diagnosticContext.getHttpNonProxyHosts(), "*.new_domain.com|localhost");
   }
 
   /** Test added in version > 3.16.1 */
@@ -219,10 +204,10 @@ public class DiagnosticContextLatestIT {
     Proxy httpsProxy =
         new Proxy(Proxy.Type.HTTP, new InetSocketAddress(httpsProxyHost, httpsProxyPort));
 
-    assertEquals(byPassProxy, diagnosticContext.getProxy(httpsHostBypassingProxy));
-    assertEquals(byPassProxy, diagnosticContext.getProxy(httpHostBypassingProxy));
-    assertEquals(httpProxy, diagnosticContext.getProxy(hostWithHttpProxy));
-    assertEquals(httpsProxy, diagnosticContext.getProxy(hostWithHttpsProxy));
+    Assertions.assertEquals(byPassProxy, diagnosticContext.getProxy(httpsHostBypassingProxy));
+    Assertions.assertEquals(byPassProxy, diagnosticContext.getProxy(httpHostBypassingProxy));
+    Assertions.assertEquals(httpProxy, diagnosticContext.getProxy(hostWithHttpProxy));
+    Assertions.assertEquals(httpsProxy, diagnosticContext.getProxy(hostWithHttpsProxy));
   }
 
   /**
@@ -255,8 +240,8 @@ public class DiagnosticContextLatestIT {
     SnowflakeEndpoint httpHostProxy =
         new SnowflakeEndpoint("OCSP_CACHE", "ocsp_cache.snowflakecomputing.com", 80);
 
-    assertEquals(noProxy, diagnosticContext.getProxy(httpsHostDirectConnection));
-    assertEquals(httpProxy, diagnosticContext.getProxy(httpHostProxy));
+    Assertions.assertEquals(noProxy, diagnosticContext.getProxy(httpsHostDirectConnection));
+    Assertions.assertEquals(httpProxy, diagnosticContext.getProxy(httpHostProxy));
   }
 
   /**
@@ -286,8 +271,8 @@ public class DiagnosticContextLatestIT {
     SnowflakeEndpoint httpHostDirectConnection =
         new SnowflakeEndpoint("OCSP_CACHE", "ocsp_cache.snowflakecomputing.com", 80);
 
-    assertEquals(noProxy, diagnosticContext.getProxy(httpHostDirectConnection));
-    assertEquals(httpsProxy, diagnosticContext.getProxy(httpsHostProxy));
+    Assertions.assertEquals(noProxy, diagnosticContext.getProxy(httpHostDirectConnection));
+    Assertions.assertEquals(httpsProxy, diagnosticContext.getProxy(httpsHostProxy));
   }
 
   /**
@@ -323,10 +308,10 @@ public class DiagnosticContextLatestIT {
     SnowflakeEndpoint host4 =
         new SnowflakeEndpoint("STAGE", "stage-bucket.s3-us-west-2.amazonaws.com", 443);
 
-    assertEquals(noProxy, diagnosticContext.getProxy(host1));
-    assertEquals(noProxy, diagnosticContext.getProxy(host2));
-    assertEquals(noProxy, diagnosticContext.getProxy(host3));
-    assertEquals(noProxy, diagnosticContext.getProxy(host4));
+    Assertions.assertEquals(noProxy, diagnosticContext.getProxy(host1));
+    Assertions.assertEquals(noProxy, diagnosticContext.getProxy(host2));
+    Assertions.assertEquals(noProxy, diagnosticContext.getProxy(host3));
+    Assertions.assertEquals(noProxy, diagnosticContext.getProxy(host4));
   }
 
   @AfterEach

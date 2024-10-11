@@ -6,9 +6,6 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -27,6 +24,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.TinyIntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TinyIntToFixedConverterTest extends BaseConverterTest {
@@ -77,7 +75,7 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest {
         assertThat(byteString, is(nullValue()));
       } else {
         assertThat(byteVal, is(expectedValues.get(i)));
-        assertEquals(longObject, (long) expectedValues.get(i));
+        Assertions.assertEquals(longObject, (long) expectedValues.get(i));
         assertThat(byteString, is(expectedValues.get(i).toString()));
       }
     }
@@ -235,15 +233,15 @@ public class TinyIntToFixedConverterTest extends BaseConverterTest {
 
     final ArrowVectorConverter converter = new TinyIntToScaledFixedConverter(vector, 0, this, 3);
 
-    assertFalse(converter.toBoolean(0));
+    Assertions.assertFalse(converter.toBoolean(0));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toBoolean(3));
-    assertFalse(converter.toBoolean(2));
+    Assertions.assertFalse(converter.toBoolean(2));
     TestUtil.assertSFException(invalidConversionErrorCode, () -> converter.toBoolean(3));
 
-    assertFalse(converter.isNull(0));
-    assertFalse(converter.isNull(1));
-    assertTrue(converter.isNull(2));
-    assertFalse(converter.isNull(3));
+    Assertions.assertFalse(converter.isNull(0));
+    Assertions.assertFalse(converter.isNull(1));
+    Assertions.assertTrue(converter.isNull(2));
+    Assertions.assertFalse(converter.isNull(3));
     vector.close();
   }
 }

@@ -3,8 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertFalse;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,7 +10,6 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFBaseSession;
@@ -20,11 +17,12 @@ import net.snowflake.client.core.SFStatement;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
 
   private SFStatement sfStatement;
@@ -86,9 +84,9 @@ public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
         true,
         new ExecTimeTelemetryData()); // retry HTTP 403
 
-    assertFalse(getRequest.containsHeader("retryCount"));
-    assertFalse(getRequest.containsHeader("retryReason"));
-    assertFalse(getRequest.containsHeader("clientStartTime"));
-    assertFalse(getRequest.containsHeader("request_guid"));
+    Assertions.assertFalse(getRequest.containsHeader("retryCount"));
+    Assertions.assertFalse(getRequest.containsHeader("retryReason"));
+    Assertions.assertFalse(getRequest.containsHeader("clientStartTime"));
+    Assertions.assertFalse(getRequest.containsHeader("request_guid"));
   }
 }

@@ -3,16 +3,12 @@
  */
 package net.snowflake.client.log;
 
-import static org.junit.Assert.assertEquals;
-
-import net.snowflake.client.category.TestCategoryCore;
-import org.junit.Assert;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** A base class for testing implementations of {@link SFLogger} */
-@Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
 public abstract class AbstractLoggerIT {
   public static final String fakeCreds =
       "credentials=(aws_key_id='abc123' aws_secret_key='rtyuiop')";
@@ -36,7 +32,7 @@ public abstract class AbstractLoggerIT {
         "Value: {}",
         (ArgSupplier)
             () -> {
-              Assert.fail("Lambda expression evaluated even though message " + "is not logged");
+              Assertions.fail("Lambda expression evaluated even though message " + "is not logged");
               return 0;
             });
   }
@@ -70,7 +66,7 @@ public abstract class AbstractLoggerIT {
       logMessage(level, fakeCreds, true);
       String loggedMsg = getLoggedMessage();
       String expectedMessage = "credentials=(aws_key_id='****' aws_secret_key='****')";
-      assertEquals(expectedMessage, loggedMsg);
+      Assertions.assertEquals(expectedMessage, loggedMsg);
     }
   }
 
@@ -80,7 +76,7 @@ public abstract class AbstractLoggerIT {
       logMessage(level, fakeCreds, false);
       String loggedMsg = getLoggedMessage();
       // message doesn't change since it's not masked
-      assertEquals(fakeCreds, loggedMsg);
+      Assertions.assertEquals(fakeCreds, loggedMsg);
     }
   }
 
@@ -102,20 +98,14 @@ public abstract class AbstractLoggerIT {
       logMessage(level, msg, args);
 
       String loggedMsg = getLoggedMessage();
-      assertEquals(
-          String.format(
-              "Message logged did not match expected value. " + "expected=%s actual=%s",
-              expectedLogMsg, loggedMsg),
-          expectedLogMsg,
-          loggedMsg);
+      Assertions.assertEquals(expectedLogMsg, loggedMsg, String.format(
+          "Message logged did not match expected value. " + "expected=%s actual=%s",
+          expectedLogMsg, loggedMsg));
 
       LogLevel loggedMsgLevel = getLoggedMessageLevel();
-      assertEquals(
-          String.format(
-              "Message was not logged at expected log level. " + "expected=%s actual=%s",
-              level.toString(), loggedMsgLevel.toString()),
-          level,
-          loggedMsgLevel);
+      Assertions.assertEquals(level, loggedMsgLevel, String.format(
+          "Message was not logged at expected log level. " + "expected=%s actual=%s",
+          level.toString(), loggedMsgLevel.toString()));
     }
   }
 

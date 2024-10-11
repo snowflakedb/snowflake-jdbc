@@ -1,20 +1,21 @@
 package net.snowflake.client.log;
 
 import static net.snowflake.client.log.SFToJavaLogMapper.toJavaUtilLoggingLevel;
-import static org.junit.Assert.assertEquals;
 
 import java.util.logging.Level;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SFToJavaLogMapperTest {
 
   @Test
   public void testToJavaUtilLoggingLevel() {
-    assertEquals(toJavaUtilLoggingLevel(SFLogLevel.OFF), java.util.logging.Level.OFF);
-    assertEquals(toJavaUtilLoggingLevel(SFLogLevel.ERROR), java.util.logging.Level.SEVERE);
-    assertEquals(toJavaUtilLoggingLevel(SFLogLevel.WARN), java.util.logging.Level.WARNING);
-    assertEquals(toJavaUtilLoggingLevel(SFLogLevel.INFO), java.util.logging.Level.INFO);
-    assertEquals(toJavaUtilLoggingLevel(SFLogLevel.DEBUG), Level.FINE);
-    assertEquals(toJavaUtilLoggingLevel(SFLogLevel.TRACE), java.util.logging.Level.FINEST);
+    Assertions.assertEquals(toJavaUtilLoggingLevel(SFLogLevel.OFF), Level.OFF);
+    Assertions.assertEquals(toJavaUtilLoggingLevel(SFLogLevel.ERROR), Level.SEVERE);
+    Assertions.assertEquals(toJavaUtilLoggingLevel(SFLogLevel.WARN), Level.WARNING);
+    Assertions.assertEquals(toJavaUtilLoggingLevel(SFLogLevel.INFO), Level.INFO);
+    Assertions.assertEquals(toJavaUtilLoggingLevel(SFLogLevel.DEBUG), Level.FINE);
+    Assertions.assertEquals(toJavaUtilLoggingLevel(SFLogLevel.TRACE), Level.FINEST);
   }
 }

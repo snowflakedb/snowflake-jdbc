@@ -4,10 +4,6 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
@@ -20,18 +16,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryOthers;
+
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class BindUploaderIT extends BaseJDBCTest {
   BindUploader bindUploader;
   Connection conn;
@@ -152,26 +149,26 @@ public class BindUploaderIT extends BaseJDBCTest {
   @Test
   public void testIsArrayBindEmpty() {
     Map<String, ParameterBindingDTO> map = new HashMap<>();
-    assertFalse(BindUploader.isArrayBind(map));
+    Assertions.assertFalse(BindUploader.isArrayBind(map));
   }
 
   @Test
   public void testIsArrayBindNull() {
-    assertFalse(BindUploader.isArrayBind(null));
+    Assertions.assertFalse(BindUploader.isArrayBind(null));
   }
 
   @Test
   public void testIsArrayBindNonArray() {
     Map<String, ParameterBindingDTO> map = new HashMap<>();
     map.put("1", new ParameterBindingDTO("", "string value"));
-    assertFalse(BindUploader.isArrayBind(map));
+    Assertions.assertFalse(BindUploader.isArrayBind(map));
   }
 
   @Test
   public void testIsArrayBindEmptyArray() {
     Map<String, ParameterBindingDTO> map = new HashMap<>();
     map.put("1", new ParameterBindingDTO("", new ArrayList<String>()));
-    assertTrue(BindUploader.isArrayBind(map));
+    Assertions.assertTrue(BindUploader.isArrayBind(map));
   }
 
   @Test
@@ -181,32 +178,32 @@ public class BindUploaderIT extends BaseJDBCTest {
     list.add("bind value");
     map.put("1", new ParameterBindingDTO("", list));
     list.add("another bind value");
-    assertTrue(BindUploader.isArrayBind(map));
+    Assertions.assertTrue(BindUploader.isArrayBind(map));
   }
 
   @Test
   public void tetArrayBindValueCountEmpty() {
     Map<String, ParameterBindingDTO> map = new HashMap<>();
-    assertEquals(0, BindUploader.arrayBindValueCount(map));
+    Assertions.assertEquals(0, BindUploader.arrayBindValueCount(map));
   }
 
   @Test
   public void testArrayBindValueCountNull() {
-    assertEquals(0, BindUploader.arrayBindValueCount(null));
+    Assertions.assertEquals(0, BindUploader.arrayBindValueCount(null));
   }
 
   @Test
   public void testArrayBindValueCountNonArray() {
     Map<String, ParameterBindingDTO> map = new HashMap<>();
     map.put("1", new ParameterBindingDTO("", "string value"));
-    assertEquals(0, BindUploader.arrayBindValueCount(map));
+    Assertions.assertEquals(0, BindUploader.arrayBindValueCount(map));
   }
 
   @Test
   public void testArrayBindValueCountEmptyArray() {
     Map<String, ParameterBindingDTO> map = new HashMap<>();
     map.put("1", new ParameterBindingDTO("", new ArrayList<String>()));
-    assertEquals(0, BindUploader.arrayBindValueCount(map));
+    Assertions.assertEquals(0, BindUploader.arrayBindValueCount(map));
   }
 
   @Test
@@ -216,6 +213,6 @@ public class BindUploaderIT extends BaseJDBCTest {
     list.add("bind value");
     list.add("another bind value");
     map.put("1", new ParameterBindingDTO("", list));
-    assertEquals(2, BindUploader.arrayBindValueCount(map));
+    Assertions.assertEquals(2, BindUploader.arrayBindValueCount(map));
   }
 }

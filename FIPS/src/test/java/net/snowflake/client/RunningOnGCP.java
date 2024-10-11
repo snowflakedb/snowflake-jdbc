@@ -4,7 +4,7 @@
 package net.snowflake.client;
 
 /** Run tests only on specified cloud provider or ignore */
-public class RunningOnGCP implements ConditionalIgnoreRule.IgnoreCondition {
+public class RunningOnGCP {
   public boolean isSatisfied() {
     String cloudProvider = TestUtil.systemGetEnv("CLOUD_PROVIDER");
     return cloudProvider != null && cloudProvider.equalsIgnoreCase("GCP");

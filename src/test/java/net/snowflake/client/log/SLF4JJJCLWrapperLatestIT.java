@@ -3,22 +3,18 @@
  */
 package net.snowflake.client.log;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
-import net.snowflake.client.category.TestCategoryCore;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
 public class SLF4JJJCLWrapperLatestIT {
 
   /** Message last logged using SLF4JLogger. */
@@ -94,7 +90,7 @@ public class SLF4JJJCLWrapperLatestIT {
         wrapper.trace(message, t);
         break;
     }
-    assertEquals(null, getLoggedMessage());
+    Assertions.assertEquals(null, getLoggedMessage());
   }
 
   // helper function, no throwables
@@ -119,7 +115,7 @@ public class SLF4JJJCLWrapperLatestIT {
         wrapper.trace(message);
         break;
     }
-    assertEquals(null, getLoggedMessage());
+    Assertions.assertEquals(null, getLoggedMessage());
   }
 
   /** Test that all levels are disabled for wrapper class. No messages returned at any level. */
@@ -137,11 +133,11 @@ public class SLF4JJJCLWrapperLatestIT {
    */
   @Test
   public void testEnabledMessaging() {
-    assertFalse(wrapper.isTraceEnabled());
-    assertFalse(wrapper.isDebugEnabled());
-    assertTrue(wrapper.isInfoEnabled());
-    assertTrue(wrapper.isWarnEnabled());
-    assertTrue(wrapper.isErrorEnabled());
-    assertTrue(wrapper.isFatalEnabled());
+    Assertions.assertFalse(wrapper.isTraceEnabled());
+    Assertions.assertFalse(wrapper.isDebugEnabled());
+    Assertions.assertTrue(wrapper.isInfoEnabled());
+    Assertions.assertTrue(wrapper.isWarnEnabled());
+    Assertions.assertTrue(wrapper.isErrorEnabled());
+    Assertions.assertTrue(wrapper.isFatalEnabled());
   }
 }

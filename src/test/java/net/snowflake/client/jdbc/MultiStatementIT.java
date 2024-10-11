@@ -5,26 +5,20 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
-import org.junit.Assert;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Multi Statement tests */
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
@@ -47,7 +41,7 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
       try {
         statement.executeUpdate(multiStmtQuery);
-        fail("executeUpdate should have failed because the first statement yields a result set");
+        Assertions.fail("executeUpdate should have failed because the first statement yields a result set");
       } catch (SQLException ex) {
         assertThat(
             ex.getErrorCode(), is(ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT.getMessageCode()));
@@ -66,7 +60,7 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
       try {
         statement.executeQuery(multiStmtQuery);
-        fail("executeQuery should have failed because the first statement yields an update count");
+        Assertions.fail("executeQuery should have failed because the first statement yields an update count");
       } catch (SQLException ex) {
         assertThat(
             ex.getErrorCode(), is(ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET.getMessageCode()));
@@ -84,25 +78,25 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
 
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select $testvar")) {
-        assertTrue(rs.next());
-        assertEquals(1, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(1, rs.getInt(1));
 
         // selecting unset variable should cause error
         try {
           statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
           statement.execute("unset testvar; select $testvar");
-          fail("Expected a failure");
+          Assertions.fail("Expected a failure");
         } catch (SQLException ex) {
-          assertEquals(SqlState.PLSQL_ERROR, ex.getSQLState());
+          Assertions.assertEquals(SqlState.PLSQL_ERROR, ex.getSQLState());
         }
 
         // unsetting session variable should propagate outside of query
         try {
           statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
           statement.execute("select $testvar");
-          fail("Expected a failure");
+          Assertions.fail("Expected a failure");
         } catch (SQLException ex) {
-          assertEquals(SqlState.NO_DATA, ex.getSQLState());
+          Assertions.assertEquals(SqlState.NO_DATA, ex.getSQLState());
         }
       }
     }
@@ -116,14 +110,14 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       try {
         // fails in the antlr parser
         statement.execute("garbage text; set testvar = 2");
-        fail("Expected a compiler error to be thrown");
+        Assertions.fail("Expected a compiler error to be thrown");
       } catch (SQLException ex) {
-        assertEquals(SqlState.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION, ex.getSQLState());
+        Assertions.assertEquals(SqlState.SYNTAX_ERROR_OR_ACCESS_RULE_VIOLATION, ex.getSQLState());
       }
 
       try (ResultSet rs = statement.executeQuery("select $testvar")) {
-        assertTrue(rs.next());
-        assertEquals(1, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(1, rs.getInt(1));
       }
     }
   }
@@ -136,15 +130,15 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
         // fails during execution (javascript invokes statement where it gets typechecked)
         statement.execute(
             "set testvar = 1; select nonexistent_column from nonexistent_table; set testvar = 2");
-        fail("Expected an execution error to be thrown");
+        Assertions.fail("Expected an execution error to be thrown");
       } catch (SQLException ex) {
-        assertEquals(SqlState.PLSQL_ERROR, ex.getSQLState());
+        Assertions.assertEquals(SqlState.PLSQL_ERROR, ex.getSQLState());
       }
 
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select $testvar")) {
-        assertTrue(rs.next());
-        assertEquals(1, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(1, rs.getInt(1));
       }
     }
   }
@@ -162,8 +156,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       // temporary table should persist outside of the above statement
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select * from test_multi")) {
-        assertTrue(rs.next());
-        assertEquals(entry, rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(entry, rs.getString(1));
       }
     }
   }
@@ -181,22 +175,22 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("use schema public; select 1");
       // current schema change should persist outside of the above statement
 
-      assertEquals("PUBLIC", session.getSchema());
+      Assertions.assertEquals("PUBLIC", session.getSchema());
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select current_schema()")) {
-        assertTrue(rs.next());
-        assertEquals("PUBLIC", rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals("PUBLIC", rs.getString(1));
       }
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute(String.format("use schema %s; select 1", originalSchema));
       // current schema change should persist outside of the above statement
 
       session = statement.getConnection().unwrap(SnowflakeConnectionV1.class).getSfSession();
-      assertEquals(originalSchema, session.getSchema());
+      Assertions.assertEquals(originalSchema, session.getSchema());
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 1);
       try (ResultSet rs = statement.executeQuery("select current_schema()")) {
-        assertTrue(rs.next());
-        assertEquals(originalSchema, rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(originalSchema, rs.getString(1));
       }
     }
   }
@@ -213,10 +207,10 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       String param = "AUTOCOMMIT";
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute("alter session set " + param + "=false; select 1");
-      assertFalse(session.getAutoCommit());
+      Assertions.assertFalse(session.getAutoCommit());
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       statement.execute("alter session set " + param + "=true; select 1");
-      assertTrue(session.getAutoCommit());
+      Assertions.assertTrue(session.getAutoCommit());
     }
   }
 
@@ -259,8 +253,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("rollback");
       try (ResultSet rs =
           statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
-        assertTrue(rs.next());
-        assertEquals(2, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(2, rs.getInt(1));
       }
 
       statement.execute("create or replace table test_multi_commit_rollback (cola string)");
@@ -273,8 +267,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("commit");
       try (ResultSet rs =
           statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
-        assertTrue(rs.next());
-        assertEquals(0, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(0, rs.getInt(1));
       }
       statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
@@ -285,8 +279,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("commit");
       try (ResultSet rs =
           statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
-        assertTrue(rs.next());
-        assertEquals(2, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(2, rs.getInt(1));
       }
       statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
@@ -297,8 +291,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("rollback");
       try (ResultSet rs =
           statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
-        assertTrue(rs.next());
-        assertEquals(0, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(0, rs.getInt(1));
       }
     }
   }
@@ -316,8 +310,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("rollback");
       try (ResultSet rs =
           statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
-        assertTrue(rs.next());
-        assertEquals(2, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(2, rs.getInt(1));
       }
 
       statement.execute("create or replace table test_multi_commit_rollback (cola string)");
@@ -329,8 +323,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("commit");
       try (ResultSet rs =
           statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
-        assertTrue(rs.next());
-        assertEquals(0, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(0, rs.getInt(1));
       }
 
       statement.execute("create or replace table test_multi_commit_rollback (cola string)");
@@ -342,8 +336,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("commit");
       try (ResultSet rs =
           statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
-        assertTrue(rs.next());
-        assertEquals(2, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(2, rs.getInt(1));
       }
       statement.execute("create or replace table test_multi_commit_rollback (cola string)");
       // open transaction inside multistatement continues after
@@ -354,8 +348,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.execute("rollback");
       try (ResultSet rs =
           statement.executeQuery("select count(*) from test_multi_commit_rollback")) {
-        assertTrue(rs.next());
-        assertEquals(0, rs.getInt(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertEquals(0, rs.getInt(1));
       }
     }
   }
@@ -373,19 +367,19 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       }
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 100);
 
-      assertTrue(statement.execute(multiStmtBuilder.toString()));
+      Assertions.assertTrue(statement.execute(multiStmtBuilder.toString()));
       for (int i = 0; i < 100; i++) {
         try (ResultSet rs = statement.getResultSet()) {
-          assertNotNull(rs);
-          assertEquals(-1, statement.getUpdateCount());
-          assertTrue(rs.next());
-          assertEquals(i, rs.getInt(1));
-          assertFalse(rs.next());
+          Assertions.assertNotNull(rs);
+          Assertions.assertEquals(-1, statement.getUpdateCount());
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(i, rs.getInt(1));
+          Assertions.assertFalse(rs.next());
 
           if (i != 99) {
-            assertTrue(statement.getMoreResults());
+            Assertions.assertTrue(statement.getMoreResults());
           } else {
-            assertFalse(statement.getMoreResults());
+            Assertions.assertFalse(statement.getMoreResults());
           }
         }
       }
@@ -397,7 +391,7 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
       try {
         statement.execute("select 1; select 2; select 3");
-        fail();
+        Assertions.fail();
       } catch (SQLException e) {
         assertThat(e.getErrorCode(), is(8));
       }
@@ -405,7 +399,7 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       try {
         statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
         statement.execute("select 1");
-        fail();
+        Assertions.fail();
       } catch (SQLException e) {
         assertThat(e.getErrorCode(), is(8));
       }
@@ -424,12 +418,12 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
     try (Statement statement = connection.createStatement()) {
 
       try (ResultSet rs = statement.executeQuery("select current_account_locator()")) {
-        assertTrue(rs.next());
+        Assertions.assertTrue(rs.next());
         accountName = rs.getString(1);
       }
 
       try (ResultSet rs = statement.executeQuery("select current_user()")) {
-        assertTrue(rs.next());
+        Assertions.assertTrue(rs.next());
         userName = rs.getString(1);
       }
 
@@ -454,7 +448,7 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       for (int i = 0; i < testSuites.length; i++) {
         try {
           statement.execute(testSuites[i]);
-          Assert.fail();
+          Assertions.fail();
         } catch (SQLException e) {
           assertThat(e.getErrorCode(), is(expectedErrorCodes[i]));
         }

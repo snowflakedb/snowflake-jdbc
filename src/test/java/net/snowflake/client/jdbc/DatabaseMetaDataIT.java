@@ -8,12 +8,6 @@ import static java.sql.ResultSetMetaData.columnNullableUnknown;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.google.common.base.Strings;
 import java.sql.Connection;
@@ -30,12 +24,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.experimental.categories.Category;
+
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataIT extends BaseJDBCTest {
   private static final Pattern VERSION_PATTERN =
       Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
@@ -66,7 +61,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   public void testGetConnection() throws SQLException {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
-      assertEquals(connection, metaData.getConnection());
+      Assertions.assertEquals(connection, metaData.getConnection());
     }
   }
 
@@ -76,17 +71,17 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       DatabaseMetaData metaData = connection.getMetaData();
 
       // identifiers
-      assertEquals("Snowflake", metaData.getDatabaseProductName());
-      assertEquals("Snowflake", metaData.getDriverName());
+      Assertions.assertEquals("Snowflake", metaData.getDatabaseProductName());
+      Assertions.assertEquals("Snowflake", metaData.getDriverName());
 
       // Snowflake JDBC driver version
       String driverVersion = metaData.getDriverVersion();
       Matcher m = VERSION_PATTERN.matcher(driverVersion);
-      assertTrue(m.matches());
+      Assertions.assertTrue(m.matches());
       int majorVersion = metaData.getDriverMajorVersion();
       int minorVersion = metaData.getDriverMinorVersion();
-      assertEquals(m.group(1), String.valueOf(majorVersion));
-      assertEquals(m.group(2), String.valueOf(minorVersion));
+      Assertions.assertEquals(m.group(1), String.valueOf(majorVersion));
+      Assertions.assertEquals(m.group(2), String.valueOf(minorVersion));
     }
   }
 
@@ -94,46 +89,46 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   public void testGetCatalogs() throws SQLException {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
-      assertEquals(".", metaData.getCatalogSeparator());
-      assertEquals("database", metaData.getCatalogTerm());
+      Assertions.assertEquals(".", metaData.getCatalogSeparator());
+      Assertions.assertEquals("database", metaData.getCatalogTerm());
 
       ResultSet resultSet = metaData.getCatalogs();
       verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_CATALOGS);
-      assertTrue(resultSet.isBeforeFirst());
+      Assertions.assertTrue(resultSet.isBeforeFirst());
 
       int cnt = 0;
       Set<String> allVisibleDatabases = new HashSet<>();
       while (resultSet.next()) {
         allVisibleDatabases.add(resultSet.getString(1));
         if (cnt == 0) {
-          assertTrue(resultSet.isFirst());
+          Assertions.assertTrue(resultSet.isFirst());
         }
         ++cnt;
         try {
           resultSet.isLast();
-          fail("No isLast support for query based metadata");
+          Assertions.fail("No isLast support for query based metadata");
         } catch (SQLFeatureNotSupportedException ex) {
           // nop
         }
         try {
           resultSet.isAfterLast();
-          fail("No isAfterLast support for query based metadata");
+          Assertions.fail("No isAfterLast support for query based metadata");
         } catch (SQLFeatureNotSupportedException ex) {
           // nop
         }
       }
-      assertThat(cnt, greaterThanOrEqualTo(1));
+      MatcherAssert.assertThat(cnt, greaterThanOrEqualTo(1));
       try {
-        assertTrue(resultSet.isAfterLast());
-        fail("The result set is automatically closed when all rows are fetched.");
+        Assertions.assertTrue(resultSet.isAfterLast());
+        Assertions.fail("The result set is automatically closed when all rows are fetched.");
       } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
+        Assertions.assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
       }
       try {
         resultSet.isAfterLast();
-        fail("No isAfterLast support for query based metadata");
+        Assertions.fail("No isAfterLast support for query based metadata");
       } catch (SQLException ex) {
-        assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
+        Assertions.assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
       }
       resultSet.close(); // double closing does nothing.
       resultSet.next(); // no exception
@@ -141,7 +136,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       List<String> allAccessibleDatabases =
           getInfoBySQL("select database_name from information_schema.databases");
 
-      assertTrue(allVisibleDatabases.containsAll(allAccessibleDatabases));
+      Assertions.assertTrue(allVisibleDatabases.containsAll(allAccessibleDatabases));
     }
   }
 
@@ -151,7 +146,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
       String currentSchema = connection.getSchema();
-      assertEquals("schema", metaData.getSchemaTerm());
+      Assertions.assertEquals("schema", metaData.getSchemaTerm());
       Set<String> schemas = new HashSet<>();
       try (ResultSet resultSet = metaData.getSchemas()) {
         verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_SCHEMAS);
@@ -162,7 +157,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           }
         }
       }
-      assertThat(schemas.size(), greaterThanOrEqualTo(1));
+      MatcherAssert.assertThat(schemas.size(), greaterThanOrEqualTo(1));
 
       Set<String> schemasInDb = new HashSet<>();
       try (ResultSet resultSet = metaData.getSchemas(connection.getCatalog(), "%")) {
@@ -173,11 +168,11 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           }
         }
       }
-      assertThat(schemasInDb.size(), greaterThanOrEqualTo(1));
-      assertThat(schemas.size(), greaterThanOrEqualTo(schemasInDb.size()));
-      schemasInDb.forEach(schemaInDb -> assertThat(schemas, hasItem(schemaInDb)));
-      assertTrue(schemas.contains(currentSchema));
-      assertTrue(schemasInDb.contains(currentSchema));
+      MatcherAssert.assertThat(schemasInDb.size(), greaterThanOrEqualTo(1));
+      MatcherAssert.assertThat(schemas.size(), greaterThanOrEqualTo(schemasInDb.size()));
+      schemasInDb.forEach(schemaInDb -> MatcherAssert.assertThat(schemas, hasItem(schemaInDb)));
+      Assertions.assertTrue(schemas.contains(currentSchema));
+      Assertions.assertTrue(schemasInDb.contains(currentSchema));
     }
 
     // CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX = true
@@ -186,13 +181,13 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       statement.execute("alter SESSION set CLIENT_METADATA_REQUEST_USE_CONNECTION_CTX=true");
 
       DatabaseMetaData metaData = connection.getMetaData();
-      assertEquals("schema", metaData.getSchemaTerm());
+      Assertions.assertEquals("schema", metaData.getSchemaTerm());
       try (ResultSet resultSet = metaData.getSchemas()) {
         Set<String> schemas = new HashSet<>();
         while (resultSet.next()) {
           schemas.add(resultSet.getString(1));
         }
-        assertThat(schemas.size(), equalTo(1));
+        MatcherAssert.assertThat(schemas.size(), equalTo(1));
       }
     }
   }
@@ -206,9 +201,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
         while (resultSet.next()) {
           types.add(resultSet.getString(1));
         }
-        assertEquals(2, types.size());
-        assertTrue(types.contains("TABLE"));
-        assertTrue(types.contains("VIEW"));
+        Assertions.assertEquals(2, types.size());
+        Assertions.assertTrue(types.contains("TABLE"));
+        Assertions.assertTrue(types.contains("VIEW"));
       }
     }
   }
@@ -237,7 +232,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           while (resultSet.next()) {
             tables.add(resultSet.getString(3));
           }
-          assertTrue(tables.contains("T0"));
+          Assertions.assertTrue(tables.contains("T0"));
         }
         // exact match table
         try (ResultSet resultSet =
@@ -246,7 +241,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           while (resultSet.next()) {
             tables.add(resultSet.getString(3));
           }
-          assertEquals(targetTable, tables.iterator().next());
+          Assertions.assertEquals(targetTable, tables.iterator().next());
         }
         // match view
         try (ResultSet resultSet =
@@ -255,11 +250,11 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           while (resultSet.next()) {
             views.add(resultSet.getString(3));
           }
-          assertTrue(views.contains(targetView));
+          Assertions.assertTrue(views.contains(targetView));
         }
 
         try (ResultSet resultSet = metaData.getTablePrivileges(database, schema, targetTable)) {
-          assertEquals(1, getSizeOfResultSet(resultSet));
+          Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
         }
       } finally {
         statement.execute("drop table if exists " + targetTable);
@@ -283,13 +278,13 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
         try (ResultSet resultSet = metaData.getPrimaryKeys(database, schema, targetTable)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PRIMARY_KEYS);
-          assertTrue(resultSet.next());
-          assertEquals(database, resultSet.getString("TABLE_CAT"));
-          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
-          assertEquals(targetTable, resultSet.getString("TABLE_NAME"));
-          assertEquals("C1", resultSet.getString("COLUMN_NAME"));
-          assertEquals(1, resultSet.getInt("KEY_SEQ"));
-          assertNotEquals("", resultSet.getString("PK_NAME"));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertEquals(database, resultSet.getString("TABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+          Assertions.assertEquals(targetTable, resultSet.getString("TABLE_NAME"));
+          Assertions.assertEquals("C1", resultSet.getString("COLUMN_NAME"));
+          Assertions.assertEquals(1, resultSet.getInt("KEY_SEQ"));
+          Assertions.assertNotEquals("", resultSet.getString("PK_NAME"));
         }
       } finally {
         statement.execute("drop table if exists " + targetTable);
@@ -301,39 +296,35 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       ResultSet resultSet, DBMetadataResultSetMetadata metadata) throws SQLException {
     final int numCol = metadata.getColumnNames().size();
     ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-    assertEquals(numCol, resultSetMetaData.getColumnCount());
+    Assertions.assertEquals(numCol, resultSetMetaData.getColumnCount());
 
     for (int col = 1; col <= numCol; ++col) {
       List<String> colNames = metadata.getColumnNames();
       List<String> colTypeNames = metadata.getColumnTypeNames();
       List<Integer> colTypes = metadata.getColumnTypes();
 
-      assertEquals("", resultSetMetaData.getCatalogName(col));
-      assertEquals("", resultSetMetaData.getSchemaName(col));
-      assertEquals("T", resultSetMetaData.getTableName(col));
-      assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnName(col));
+      Assertions.assertEquals("", resultSetMetaData.getCatalogName(col));
+      Assertions.assertEquals("", resultSetMetaData.getSchemaName(col));
+      Assertions.assertEquals("T", resultSetMetaData.getTableName(col));
+      Assertions.assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnName(col));
 
-      assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnLabel(col));
-      assertEquals(
-          SnowflakeType.javaTypeToClassName(resultSetMetaData.getColumnType(col)),
-          resultSetMetaData.getColumnClassName(col));
-      assertEquals(25, resultSetMetaData.getColumnDisplaySize(col));
-      assertEquals((int) colTypes.get(col - 1), resultSetMetaData.getColumnType(col));
-      assertEquals(colTypeNames.get(col - 1), resultSetMetaData.getColumnTypeName(col));
-      assertEquals(9, resultSetMetaData.getPrecision(col));
-      assertEquals(9, resultSetMetaData.getScale(col));
+      Assertions.assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnLabel(col));
+      Assertions.assertEquals(SnowflakeType.javaTypeToClassName(resultSetMetaData.getColumnType(col)), resultSetMetaData.getColumnClassName(col));
+      Assertions.assertEquals(25, resultSetMetaData.getColumnDisplaySize(col));
+      Assertions.assertEquals((int) colTypes.get(col - 1), resultSetMetaData.getColumnType(col));
+      Assertions.assertEquals(colTypeNames.get(col - 1), resultSetMetaData.getColumnTypeName(col));
+      Assertions.assertEquals(9, resultSetMetaData.getPrecision(col));
+      Assertions.assertEquals(9, resultSetMetaData.getScale(col));
 
-      assertEquals(
-          SnowflakeType.isJavaTypeSigned(resultSetMetaData.getColumnType(col)),
-          resultSetMetaData.isSigned(col));
-      assertFalse(resultSetMetaData.isAutoIncrement(col));
-      assertFalse(resultSetMetaData.isCurrency(col));
-      assertTrue(resultSetMetaData.isReadOnly(col));
-      assertTrue(resultSetMetaData.isSearchable(col));
-      assertFalse(resultSetMetaData.isWritable(col));
-      assertFalse(resultSetMetaData.isDefinitelyWritable(col));
+      Assertions.assertEquals(SnowflakeType.isJavaTypeSigned(resultSetMetaData.getColumnType(col)), resultSetMetaData.isSigned(col));
+      Assertions.assertFalse(resultSetMetaData.isAutoIncrement(col));
+      Assertions.assertFalse(resultSetMetaData.isCurrency(col));
+      Assertions.assertTrue(resultSetMetaData.isReadOnly(col));
+      Assertions.assertTrue(resultSetMetaData.isSearchable(col));
+      Assertions.assertFalse(resultSetMetaData.isWritable(col));
+      Assertions.assertFalse(resultSetMetaData.isDefinitelyWritable(col));
 
-      assertEquals(columnNullableUnknown, resultSetMetaData.isNullable(col));
+      Assertions.assertEquals(columnNullableUnknown, resultSetMetaData.isNullable(col));
     }
   }
 
@@ -359,22 +350,21 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
         try (ResultSet resultSet = metaData.getImportedKeys(database, schema, targetTable2)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
-          assertTrue(resultSet.next());
-          assertEquals(database, resultSet.getString("PKTABLE_CAT"));
-          assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
-          assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
-          assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
-          assertEquals(database, resultSet.getString("FKTABLE_CAT"));
-          assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
-          assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
-          assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
-          assertEquals(1, resultSet.getInt("KEY_SEQ"));
-          assertNotEquals("", resultSet.getString("PK_NAME"));
-          assertNotEquals("", resultSet.getString("FK_NAME"));
-          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-          assertEquals(
-              DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertEquals(database, resultSet.getString("PKTABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
+          Assertions.assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
+          Assertions.assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
+          Assertions.assertEquals(database, resultSet.getString("FKTABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
+          Assertions.assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
+          Assertions.assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
+          Assertions.assertEquals(1, resultSet.getInt("KEY_SEQ"));
+          Assertions.assertNotEquals("", resultSet.getString("PK_NAME"));
+          Assertions.assertNotEquals("", resultSet.getString("FK_NAME"));
+          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+          Assertions.assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
         }
       } finally {
         statement.execute("drop table if exists " + targetTable1);
@@ -406,22 +396,21 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
         try (ResultSet resultSet = metaData.getExportedKeys(database, schema, targetTable1)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
 
-          assertTrue(resultSet.next());
-          assertEquals(database, resultSet.getString("PKTABLE_CAT"));
-          assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
-          assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
-          assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
-          assertEquals(database, resultSet.getString("FKTABLE_CAT"));
-          assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
-          assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
-          assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
-          assertEquals(1, resultSet.getInt("KEY_SEQ"));
-          assertNotEquals("", resultSet.getString("PK_NAME"));
-          assertNotEquals("", resultSet.getString("FK_NAME"));
-          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-          assertEquals(
-              DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertEquals(database, resultSet.getString("PKTABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
+          Assertions.assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
+          Assertions.assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
+          Assertions.assertEquals(database, resultSet.getString("FKTABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
+          Assertions.assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
+          Assertions.assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
+          Assertions.assertEquals(1, resultSet.getInt("KEY_SEQ"));
+          Assertions.assertNotEquals("", resultSet.getString("PK_NAME"));
+          Assertions.assertNotEquals("", resultSet.getString("FK_NAME"));
+          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+          Assertions.assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
         }
       } finally {
         statement.execute("drop table if exists " + targetTable1);
@@ -455,22 +444,21 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
                 database, schema, targetTable1, database, schema, targetTable2)) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FOREIGN_KEYS);
 
-          assertTrue(resultSet.next());
-          assertEquals(database, resultSet.getString("PKTABLE_CAT"));
-          assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
-          assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
-          assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
-          assertEquals(database, resultSet.getString("FKTABLE_CAT"));
-          assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
-          assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
-          assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
-          assertEquals(1, resultSet.getInt("KEY_SEQ"));
-          assertNotEquals("", resultSet.getString("PK_NAME"));
-          assertNotEquals("", resultSet.getString("FK_NAME"));
-          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-          assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-          assertEquals(
-              DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertEquals(database, resultSet.getString("PKTABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("PKTABLE_SCHEM"));
+          Assertions.assertEquals(targetTable1, resultSet.getString("PKTABLE_NAME"));
+          Assertions.assertEquals("C1", resultSet.getString("PKCOLUMN_NAME"));
+          Assertions.assertEquals(database, resultSet.getString("FKTABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("FKTABLE_SCHEM"));
+          Assertions.assertEquals(targetTable2, resultSet.getString("FKTABLE_NAME"));
+          Assertions.assertEquals("C3", resultSet.getString("FKCOLUMN_NAME"));
+          Assertions.assertEquals(1, resultSet.getInt("KEY_SEQ"));
+          Assertions.assertNotEquals("", resultSet.getString("PK_NAME"));
+          Assertions.assertNotEquals("", resultSet.getString("FK_NAME"));
+          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+          Assertions.assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
         }
       } finally {
         statement.execute("drop table if exists " + targetTable1);
@@ -495,44 +483,44 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
         // sanity check if getTables really works.
         try (ResultSet resultSet = metaData.getTables(database, schema, "%", null)) {
-          assertTrue(getSizeOfResultSet(resultSet) > 0);
+          Assertions.assertTrue(getSizeOfResultSet(resultSet) > 0);
         }
 
         // invalid object type. empty result is expected.
         try (ResultSet resultSet =
             metaData.getTables(database, schema, "%", new String[] {"INVALID_TYPE"})) {
-          assertEquals(0, getSizeOfResultSet(resultSet));
+          Assertions.assertEquals(0, getSizeOfResultSet(resultSet));
         }
 
         // rest of the cases should return empty results.
         try (ResultSet resultSet = metaData.getSchemas("DB_NOT_EXIST", "SCHEMA_NOT_EXIST")) {
-          assertFalse(resultSet.next());
-          assertTrue(resultSet.isClosed());
+          Assertions.assertFalse(resultSet.next());
+          Assertions.assertTrue(resultSet.isClosed());
         }
 
         try (ResultSet resultSet =
             metaData.getTables("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", null)) {
-          assertFalse(resultSet.next());
+          Assertions.assertFalse(resultSet.next());
         }
 
         try (ResultSet resultSet =
             metaData.getTables(database, "SCHEMA\\_NOT\\_EXIST", "%", null)) {
-          assertFalse(resultSet.next());
+          Assertions.assertFalse(resultSet.next());
         }
 
         try (ResultSet resultSet =
             metaData.getColumns("DB_NOT_EXIST", "SCHEMA_NOT_EXIST", "%", "%")) {
-          assertFalse(resultSet.next());
+          Assertions.assertFalse(resultSet.next());
         }
 
         try (ResultSet resultSet =
             metaData.getColumns(database, "SCHEMA\\_NOT\\_EXIST", "%", "%")) {
-          assertFalse(resultSet.next());
+          Assertions.assertFalse(resultSet.next());
         }
 
         try (ResultSet resultSet =
             metaData.getColumns(database, schema, "TBL\\_NOT\\_EXIST", "%")) {
-          assertFalse(resultSet.next());
+          Assertions.assertFalse(resultSet.next());
         }
       } finally {
         statement.execute("drop table if exists " + targetTable);
@@ -547,22 +535,22 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       DatabaseMetaData metaData = connection.getMetaData();
       ResultSet resultSet = metaData.getTypeInfo();
       resultSet.next();
-      assertEquals("NUMBER", resultSet.getString(1));
+      Assertions.assertEquals("NUMBER", resultSet.getString(1));
       resultSet.next();
-      assertEquals("INTEGER", resultSet.getString(1));
+      Assertions.assertEquals("INTEGER", resultSet.getString(1));
       resultSet.next();
-      assertEquals("DOUBLE", resultSet.getString(1));
+      Assertions.assertEquals("DOUBLE", resultSet.getString(1));
       resultSet.next();
-      assertEquals("VARCHAR", resultSet.getString(1));
+      Assertions.assertEquals("VARCHAR", resultSet.getString(1));
       resultSet.next();
-      assertEquals("DATE", resultSet.getString(1));
+      Assertions.assertEquals("DATE", resultSet.getString(1));
       resultSet.next();
-      assertEquals("TIME", resultSet.getString(1));
+      Assertions.assertEquals("TIME", resultSet.getString(1));
       resultSet.next();
-      assertEquals("TIMESTAMP", resultSet.getString(1));
+      Assertions.assertEquals("TIMESTAMP", resultSet.getString(1));
       resultSet.next();
-      assertEquals("BOOLEAN", resultSet.getString(1));
-      assertFalse(resultSet.next());
+      Assertions.assertEquals("BOOLEAN", resultSet.getString(1));
+      Assertions.assertFalse(resultSet.next());
     }
   }
 
@@ -570,14 +558,14 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   public void testProcedure() throws Throwable {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metaData = connection.getMetaData();
-      assertEquals("procedure", metaData.getProcedureTerm());
+      Assertions.assertEquals("procedure", metaData.getProcedureTerm());
       // no stored procedure support
-      assertTrue(metaData.supportsStoredProcedures());
+      Assertions.assertTrue(metaData.supportsStoredProcedures());
       try (ResultSet resultSet = metaData.getProcedureColumns("%", "%", "%", "%")) {
-        assertEquals(0, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(0, getSizeOfResultSet(resultSet));
       }
       try (ResultSet resultSet = metaData.getProcedures("%", "%", "%")) {
-        assertEquals(0, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(0, getSizeOfResultSet(resultSet));
       }
     }
   }
@@ -597,40 +585,40 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           verifyResultSetMetaDataColumns(
               resultSet, DBMetadataResultSetMetadata.GET_TABLE_PRIVILEGES);
           resultSet.next();
-          assertEquals(database, resultSet.getString("TABLE_CAT"));
-          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
-          assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
-          assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
-          assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
+          Assertions.assertEquals(database, resultSet.getString("TABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+          Assertions.assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
+          Assertions.assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
+          Assertions.assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+          Assertions.assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
+          Assertions.assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
         }
         // grant select privileges to table for role security admin and test that a new row of table
         // privileges is added
         statement.execute("grant select on table PRIVTEST to role securityadmin");
         try (ResultSet resultSet = metaData.getTablePrivileges(database, schema, "PRIVTEST")) {
           resultSet.next();
-          assertEquals(database, resultSet.getString("TABLE_CAT"));
-          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
-          assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
-          assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
-          assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
+          Assertions.assertEquals(database, resultSet.getString("TABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+          Assertions.assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
+          Assertions.assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
+          Assertions.assertEquals("SYSADMIN", resultSet.getString("GRANTEE"));
+          Assertions.assertEquals("OWNERSHIP", resultSet.getString("PRIVILEGE"));
+          Assertions.assertEquals("YES", resultSet.getString("IS_GRANTABLE"));
           resultSet.next();
-          assertEquals(database, resultSet.getString("TABLE_CAT"));
-          assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
-          assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
-          assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
-          assertEquals("SECURITYADMIN", resultSet.getString("GRANTEE"));
-          assertEquals("SELECT", resultSet.getString("PRIVILEGE"));
-          assertEquals("NO", resultSet.getString("IS_GRANTABLE"));
+          Assertions.assertEquals(database, resultSet.getString("TABLE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("TABLE_SCHEM"));
+          Assertions.assertEquals("PRIVTEST", resultSet.getString("TABLE_NAME"));
+          Assertions.assertEquals("SYSADMIN", resultSet.getString("GRANTOR"));
+          Assertions.assertEquals("SECURITYADMIN", resultSet.getString("GRANTEE"));
+          Assertions.assertEquals("SELECT", resultSet.getString("PRIVILEGE"));
+          Assertions.assertEquals("NO", resultSet.getString("IS_GRANTABLE"));
         }
 
         // if tableNamePattern is null, empty resultSet is returned.
         try (ResultSet resultSet = metaData.getTablePrivileges(null, null, null)) {
-          assertEquals(7, resultSet.getMetaData().getColumnCount());
-          assertEquals(0, getSizeOfResultSet(resultSet));
+          Assertions.assertEquals(7, resultSet.getMetaData().getColumnCount());
+          Assertions.assertEquals(0, getSizeOfResultSet(resultSet));
         }
       } finally {
         statement.execute("drop table if exists PRIVTEST");
@@ -653,13 +641,13 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
         try (ResultSet resultSet = metaData.getProcedures(database, schema, "GETPI")) {
           verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_PROCEDURES);
           resultSet.next();
-          assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
-          assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
-          assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
-          assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
-          assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
-          assertEquals(procedureReturnsResult, resultSet.getShort("PROCEDURE_TYPE"));
-          assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
+          Assertions.assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+          Assertions.assertEquals(database, resultSet.getString("PROCEDURE_CAT"));
+          Assertions.assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
+          Assertions.assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
+          Assertions.assertEquals("user-defined procedure", resultSet.getString("REMARKS"));
+          Assertions.assertEquals(procedureReturnsResult, resultSet.getShort("PROCEDURE_TYPE"));
+          Assertions.assertEquals("GETPI() RETURN FLOAT", resultSet.getString("SPECIFIC_NAME"));
         }
       } finally {
         statement.execute("drop procedure if exists GETPI()");
@@ -674,156 +662,151 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
       String dbVersion = metaData.getDatabaseProductVersion();
       Matcher m = VERSION_PATTERN.matcher(dbVersion);
-      assertTrue(m.matches());
+      Assertions.assertTrue(m.matches());
       int majorVersion = metaData.getDatabaseMajorVersion();
       int minorVersion = metaData.getDatabaseMinorVersion();
-      assertEquals(m.group(1), String.valueOf(majorVersion));
-      assertEquals(m.group(2), String.valueOf(minorVersion));
+      Assertions.assertEquals(m.group(1), String.valueOf(majorVersion));
+      Assertions.assertEquals(m.group(2), String.valueOf(minorVersion));
 
-      assertFalse(Strings.isNullOrEmpty(metaData.getSQLKeywords()));
-      assertFalse(Strings.isNullOrEmpty(metaData.getNumericFunctions()));
-      assertFalse(Strings.isNullOrEmpty(metaData.getStringFunctions()));
-      assertFalse(Strings.isNullOrEmpty(metaData.getSystemFunctions()));
-      assertFalse(Strings.isNullOrEmpty(metaData.getTimeDateFunctions()));
+      Assertions.assertFalse(Strings.isNullOrEmpty(metaData.getSQLKeywords()));
+      Assertions.assertFalse(Strings.isNullOrEmpty(metaData.getNumericFunctions()));
+      Assertions.assertFalse(Strings.isNullOrEmpty(metaData.getStringFunctions()));
+      Assertions.assertFalse(Strings.isNullOrEmpty(metaData.getSystemFunctions()));
+      Assertions.assertFalse(Strings.isNullOrEmpty(metaData.getTimeDateFunctions()));
 
-      assertEquals("\\", metaData.getSearchStringEscape());
+      Assertions.assertEquals("\\", metaData.getSearchStringEscape());
 
-      assertTrue(metaData.getURL().startsWith("jdbc:snowflake://"));
-      assertFalse(metaData.allProceduresAreCallable());
-      assertTrue(metaData.allTablesAreSelectable());
-      assertTrue(metaData.dataDefinitionCausesTransactionCommit());
-      assertFalse(metaData.dataDefinitionIgnoredInTransactions());
-      assertFalse(metaData.deletesAreDetected(1));
-      assertTrue(metaData.doesMaxRowSizeIncludeBlobs());
-      assertTrue(metaData.supportsTransactions());
-      assertEquals(
-          Connection.TRANSACTION_READ_COMMITTED, metaData.getDefaultTransactionIsolation());
-      assertEquals("$", metaData.getExtraNameCharacters());
-      assertEquals("\"", metaData.getIdentifierQuoteString());
-      assertEquals(0, getSizeOfResultSet(metaData.getIndexInfo(null, null, null, true, true)));
-      assertEquals(EXPECTED_MAX_BINARY_LENGTH, metaData.getMaxBinaryLiteralLength());
-      assertEquals(255, metaData.getMaxCatalogNameLength());
-      assertEquals(EXPECTED_MAX_CHAR_LENGTH, metaData.getMaxCharLiteralLength());
-      assertEquals(255, metaData.getMaxColumnNameLength());
-      assertEquals(0, metaData.getMaxColumnsInGroupBy());
-      assertEquals(0, metaData.getMaxColumnsInIndex());
-      assertEquals(0, metaData.getMaxColumnsInOrderBy());
-      assertEquals(0, metaData.getMaxColumnsInSelect());
-      assertEquals(0, metaData.getMaxColumnsInTable());
-      assertEquals(0, metaData.getMaxConnections());
-      assertEquals(0, metaData.getMaxCursorNameLength());
-      assertEquals(0, metaData.getMaxIndexLength());
-      assertEquals(0, metaData.getMaxProcedureNameLength());
-      assertEquals(0, metaData.getMaxRowSize());
-      assertEquals(255, metaData.getMaxSchemaNameLength());
-      assertEquals(0, metaData.getMaxStatementLength());
-      assertEquals(0, metaData.getMaxStatements());
-      assertEquals(255, metaData.getMaxTableNameLength());
-      assertEquals(0, metaData.getMaxTablesInSelect());
-      assertEquals(255, metaData.getMaxUserNameLength());
-      assertEquals(0, getSizeOfResultSet(metaData.getTablePrivileges(null, null, null)));
+      Assertions.assertTrue(metaData.getURL().startsWith("jdbc:snowflake://"));
+      Assertions.assertFalse(metaData.allProceduresAreCallable());
+      Assertions.assertTrue(metaData.allTablesAreSelectable());
+      Assertions.assertTrue(metaData.dataDefinitionCausesTransactionCommit());
+      Assertions.assertFalse(metaData.dataDefinitionIgnoredInTransactions());
+      Assertions.assertFalse(metaData.deletesAreDetected(1));
+      Assertions.assertTrue(metaData.doesMaxRowSizeIncludeBlobs());
+      Assertions.assertTrue(metaData.supportsTransactions());
+      Assertions.assertEquals(Connection.TRANSACTION_READ_COMMITTED, metaData.getDefaultTransactionIsolation());
+      Assertions.assertEquals("$", metaData.getExtraNameCharacters());
+      Assertions.assertEquals("\"", metaData.getIdentifierQuoteString());
+      Assertions.assertEquals(0, getSizeOfResultSet(metaData.getIndexInfo(null, null, null, true, true)));
+      Assertions.assertEquals(EXPECTED_MAX_BINARY_LENGTH, metaData.getMaxBinaryLiteralLength());
+      Assertions.assertEquals(255, metaData.getMaxCatalogNameLength());
+      Assertions.assertEquals(EXPECTED_MAX_CHAR_LENGTH, metaData.getMaxCharLiteralLength());
+      Assertions.assertEquals(255, metaData.getMaxColumnNameLength());
+      Assertions.assertEquals(0, metaData.getMaxColumnsInGroupBy());
+      Assertions.assertEquals(0, metaData.getMaxColumnsInIndex());
+      Assertions.assertEquals(0, metaData.getMaxColumnsInOrderBy());
+      Assertions.assertEquals(0, metaData.getMaxColumnsInSelect());
+      Assertions.assertEquals(0, metaData.getMaxColumnsInTable());
+      Assertions.assertEquals(0, metaData.getMaxConnections());
+      Assertions.assertEquals(0, metaData.getMaxCursorNameLength());
+      Assertions.assertEquals(0, metaData.getMaxIndexLength());
+      Assertions.assertEquals(0, metaData.getMaxProcedureNameLength());
+      Assertions.assertEquals(0, metaData.getMaxRowSize());
+      Assertions.assertEquals(255, metaData.getMaxSchemaNameLength());
+      Assertions.assertEquals(0, metaData.getMaxStatementLength());
+      Assertions.assertEquals(0, metaData.getMaxStatements());
+      Assertions.assertEquals(255, metaData.getMaxTableNameLength());
+      Assertions.assertEquals(0, metaData.getMaxTablesInSelect());
+      Assertions.assertEquals(255, metaData.getMaxUserNameLength());
+      Assertions.assertEquals(0, getSizeOfResultSet(metaData.getTablePrivileges(null, null, null)));
       // assertEquals("", metaData.getTimeDateFunctions());
-      assertEquals(TestUtil.systemGetEnv("SNOWFLAKE_TEST_USER"), metaData.getUserName());
-      assertFalse(metaData.insertsAreDetected(1));
-      assertTrue(metaData.isCatalogAtStart());
-      assertFalse(metaData.isReadOnly());
-      assertTrue(metaData.nullPlusNonNullIsNull());
-      assertFalse(metaData.nullsAreSortedAtEnd());
-      assertFalse(metaData.nullsAreSortedAtStart());
-      assertTrue(metaData.nullsAreSortedHigh());
-      assertFalse(metaData.nullsAreSortedLow());
-      assertFalse(metaData.othersDeletesAreVisible(1));
-      assertFalse(metaData.othersInsertsAreVisible(1));
-      assertFalse(metaData.othersUpdatesAreVisible(1));
-      assertFalse(metaData.ownDeletesAreVisible(1));
-      assertFalse(metaData.ownInsertsAreVisible(1));
-      assertFalse(metaData.ownUpdatesAreVisible(ResultSet.TYPE_SCROLL_INSENSITIVE));
-      assertFalse(metaData.storesLowerCaseIdentifiers());
-      assertFalse(metaData.storesLowerCaseQuotedIdentifiers());
-      assertFalse(metaData.storesMixedCaseIdentifiers());
-      assertTrue(metaData.storesMixedCaseQuotedIdentifiers());
-      assertTrue(metaData.storesUpperCaseIdentifiers());
-      assertFalse(metaData.storesUpperCaseQuotedIdentifiers());
-      assertTrue(metaData.supportsAlterTableWithAddColumn());
-      assertTrue(metaData.supportsAlterTableWithDropColumn());
-      assertTrue(metaData.supportsANSI92EntryLevelSQL());
-      assertFalse(metaData.supportsANSI92FullSQL());
-      assertFalse(metaData.supportsANSI92IntermediateSQL());
-      assertTrue(metaData.supportsBatchUpdates());
-      assertTrue(metaData.supportsCatalogsInDataManipulation());
-      assertFalse(metaData.supportsCatalogsInIndexDefinitions());
-      assertFalse(metaData.supportsCatalogsInPrivilegeDefinitions());
-      assertFalse(metaData.supportsCatalogsInProcedureCalls());
-      assertTrue(metaData.supportsCatalogsInTableDefinitions());
-      assertTrue(metaData.supportsColumnAliasing());
-      assertFalse(metaData.supportsConvert());
-      assertFalse(metaData.supportsConvert(1, 2));
-      assertFalse(metaData.supportsCoreSQLGrammar());
-      assertTrue(metaData.supportsCorrelatedSubqueries());
-      assertTrue(metaData.supportsDataDefinitionAndDataManipulationTransactions());
-      assertFalse(metaData.supportsDataManipulationTransactionsOnly());
-      assertFalse(metaData.supportsDifferentTableCorrelationNames());
-      assertTrue(metaData.supportsExpressionsInOrderBy());
-      assertFalse(metaData.supportsExtendedSQLGrammar());
-      assertTrue(metaData.supportsFullOuterJoins());
-      assertFalse(metaData.supportsGetGeneratedKeys());
-      assertTrue(metaData.supportsGroupBy());
-      assertTrue(metaData.supportsGroupByBeyondSelect());
-      assertFalse(metaData.supportsGroupByUnrelated());
-      assertFalse(metaData.supportsIntegrityEnhancementFacility());
-      assertFalse(metaData.supportsLikeEscapeClause());
-      assertTrue(metaData.supportsLimitedOuterJoins());
-      assertFalse(metaData.supportsMinimumSQLGrammar());
-      assertFalse(metaData.supportsMixedCaseIdentifiers());
-      assertTrue(metaData.supportsMixedCaseQuotedIdentifiers());
-      assertFalse(metaData.supportsMultipleOpenResults());
-      assertFalse(metaData.supportsMultipleResultSets());
-      assertTrue(metaData.supportsMultipleTransactions());
-      assertFalse(metaData.supportsNamedParameters());
-      assertTrue(metaData.supportsNonNullableColumns());
-      assertFalse(metaData.supportsOpenCursorsAcrossCommit());
-      assertFalse(metaData.supportsOpenCursorsAcrossRollback());
-      assertFalse(metaData.supportsOpenStatementsAcrossCommit());
-      assertFalse(metaData.supportsOpenStatementsAcrossRollback());
-      assertTrue(metaData.supportsOrderByUnrelated());
-      assertTrue(metaData.supportsOuterJoins());
-      assertFalse(metaData.supportsPositionedDelete());
-      assertFalse(metaData.supportsPositionedUpdate());
-      assertTrue(
-          metaData.supportsResultSetConcurrency(
-              ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
-      assertFalse(
-          metaData.supportsResultSetConcurrency(
-              ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY));
-      assertTrue(metaData.supportsResultSetType(ResultSet.TYPE_FORWARD_ONLY));
-      assertTrue(metaData.supportsResultSetHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
-      assertFalse(metaData.supportsResultSetHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
-      assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, metaData.getResultSetHoldability());
-      assertFalse(metaData.supportsSavepoints());
-      assertTrue(metaData.supportsSchemasInDataManipulation());
-      assertFalse(metaData.supportsSchemasInIndexDefinitions());
-      assertFalse(metaData.supportsSchemasInPrivilegeDefinitions());
-      assertFalse(metaData.supportsSchemasInProcedureCalls());
-      assertTrue(metaData.supportsSchemasInTableDefinitions());
-      assertFalse(metaData.supportsSelectForUpdate());
-      assertFalse(metaData.supportsStatementPooling());
-      assertTrue(metaData.supportsStoredFunctionsUsingCallSyntax());
-      assertTrue(metaData.supportsSubqueriesInComparisons());
-      assertTrue(metaData.supportsSubqueriesInExists());
-      assertTrue(metaData.supportsSubqueriesInIns());
-      assertFalse(metaData.supportsSubqueriesInQuantifieds());
-      assertTrue(metaData.supportsTableCorrelationNames());
-      assertTrue(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_COMMITTED));
-      assertFalse(
-          metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ));
-      assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_SERIALIZABLE));
-      assertFalse(
-          metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_UNCOMMITTED));
-      assertTrue(metaData.supportsUnion());
-      assertTrue(metaData.supportsUnionAll());
-      assertFalse(metaData.updatesAreDetected(1));
-      assertFalse(metaData.usesLocalFilePerTable());
-      assertFalse(metaData.usesLocalFiles());
+      Assertions.assertEquals(TestUtil.systemGetEnv("SNOWFLAKE_TEST_USER"), metaData.getUserName());
+      Assertions.assertFalse(metaData.insertsAreDetected(1));
+      Assertions.assertTrue(metaData.isCatalogAtStart());
+      Assertions.assertFalse(metaData.isReadOnly());
+      Assertions.assertTrue(metaData.nullPlusNonNullIsNull());
+      Assertions.assertFalse(metaData.nullsAreSortedAtEnd());
+      Assertions.assertFalse(metaData.nullsAreSortedAtStart());
+      Assertions.assertTrue(metaData.nullsAreSortedHigh());
+      Assertions.assertFalse(metaData.nullsAreSortedLow());
+      Assertions.assertFalse(metaData.othersDeletesAreVisible(1));
+      Assertions.assertFalse(metaData.othersInsertsAreVisible(1));
+      Assertions.assertFalse(metaData.othersUpdatesAreVisible(1));
+      Assertions.assertFalse(metaData.ownDeletesAreVisible(1));
+      Assertions.assertFalse(metaData.ownInsertsAreVisible(1));
+      Assertions.assertFalse(metaData.ownUpdatesAreVisible(ResultSet.TYPE_SCROLL_INSENSITIVE));
+      Assertions.assertFalse(metaData.storesLowerCaseIdentifiers());
+      Assertions.assertFalse(metaData.storesLowerCaseQuotedIdentifiers());
+      Assertions.assertFalse(metaData.storesMixedCaseIdentifiers());
+      Assertions.assertTrue(metaData.storesMixedCaseQuotedIdentifiers());
+      Assertions.assertTrue(metaData.storesUpperCaseIdentifiers());
+      Assertions.assertFalse(metaData.storesUpperCaseQuotedIdentifiers());
+      Assertions.assertTrue(metaData.supportsAlterTableWithAddColumn());
+      Assertions.assertTrue(metaData.supportsAlterTableWithDropColumn());
+      Assertions.assertTrue(metaData.supportsANSI92EntryLevelSQL());
+      Assertions.assertFalse(metaData.supportsANSI92FullSQL());
+      Assertions.assertFalse(metaData.supportsANSI92IntermediateSQL());
+      Assertions.assertTrue(metaData.supportsBatchUpdates());
+      Assertions.assertTrue(metaData.supportsCatalogsInDataManipulation());
+      Assertions.assertFalse(metaData.supportsCatalogsInIndexDefinitions());
+      Assertions.assertFalse(metaData.supportsCatalogsInPrivilegeDefinitions());
+      Assertions.assertFalse(metaData.supportsCatalogsInProcedureCalls());
+      Assertions.assertTrue(metaData.supportsCatalogsInTableDefinitions());
+      Assertions.assertTrue(metaData.supportsColumnAliasing());
+      Assertions.assertFalse(metaData.supportsConvert());
+      Assertions.assertFalse(metaData.supportsConvert(1, 2));
+      Assertions.assertFalse(metaData.supportsCoreSQLGrammar());
+      Assertions.assertTrue(metaData.supportsCorrelatedSubqueries());
+      Assertions.assertTrue(metaData.supportsDataDefinitionAndDataManipulationTransactions());
+      Assertions.assertFalse(metaData.supportsDataManipulationTransactionsOnly());
+      Assertions.assertFalse(metaData.supportsDifferentTableCorrelationNames());
+      Assertions.assertTrue(metaData.supportsExpressionsInOrderBy());
+      Assertions.assertFalse(metaData.supportsExtendedSQLGrammar());
+      Assertions.assertTrue(metaData.supportsFullOuterJoins());
+      Assertions.assertFalse(metaData.supportsGetGeneratedKeys());
+      Assertions.assertTrue(metaData.supportsGroupBy());
+      Assertions.assertTrue(metaData.supportsGroupByBeyondSelect());
+      Assertions.assertFalse(metaData.supportsGroupByUnrelated());
+      Assertions.assertFalse(metaData.supportsIntegrityEnhancementFacility());
+      Assertions.assertFalse(metaData.supportsLikeEscapeClause());
+      Assertions.assertTrue(metaData.supportsLimitedOuterJoins());
+      Assertions.assertFalse(metaData.supportsMinimumSQLGrammar());
+      Assertions.assertFalse(metaData.supportsMixedCaseIdentifiers());
+      Assertions.assertTrue(metaData.supportsMixedCaseQuotedIdentifiers());
+      Assertions.assertFalse(metaData.supportsMultipleOpenResults());
+      Assertions.assertFalse(metaData.supportsMultipleResultSets());
+      Assertions.assertTrue(metaData.supportsMultipleTransactions());
+      Assertions.assertFalse(metaData.supportsNamedParameters());
+      Assertions.assertTrue(metaData.supportsNonNullableColumns());
+      Assertions.assertFalse(metaData.supportsOpenCursorsAcrossCommit());
+      Assertions.assertFalse(metaData.supportsOpenCursorsAcrossRollback());
+      Assertions.assertFalse(metaData.supportsOpenStatementsAcrossCommit());
+      Assertions.assertFalse(metaData.supportsOpenStatementsAcrossRollback());
+      Assertions.assertTrue(metaData.supportsOrderByUnrelated());
+      Assertions.assertTrue(metaData.supportsOuterJoins());
+      Assertions.assertFalse(metaData.supportsPositionedDelete());
+      Assertions.assertFalse(metaData.supportsPositionedUpdate());
+      Assertions.assertTrue(metaData.supportsResultSetConcurrency(
+          ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
+      Assertions.assertFalse(metaData.supportsResultSetConcurrency(
+          ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY));
+      Assertions.assertTrue(metaData.supportsResultSetType(ResultSet.TYPE_FORWARD_ONLY));
+      Assertions.assertTrue(metaData.supportsResultSetHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
+      Assertions.assertFalse(metaData.supportsResultSetHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
+      Assertions.assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, metaData.getResultSetHoldability());
+      Assertions.assertFalse(metaData.supportsSavepoints());
+      Assertions.assertTrue(metaData.supportsSchemasInDataManipulation());
+      Assertions.assertFalse(metaData.supportsSchemasInIndexDefinitions());
+      Assertions.assertFalse(metaData.supportsSchemasInPrivilegeDefinitions());
+      Assertions.assertFalse(metaData.supportsSchemasInProcedureCalls());
+      Assertions.assertTrue(metaData.supportsSchemasInTableDefinitions());
+      Assertions.assertFalse(metaData.supportsSelectForUpdate());
+      Assertions.assertFalse(metaData.supportsStatementPooling());
+      Assertions.assertTrue(metaData.supportsStoredFunctionsUsingCallSyntax());
+      Assertions.assertTrue(metaData.supportsSubqueriesInComparisons());
+      Assertions.assertTrue(metaData.supportsSubqueriesInExists());
+      Assertions.assertTrue(metaData.supportsSubqueriesInIns());
+      Assertions.assertFalse(metaData.supportsSubqueriesInQuantifieds());
+      Assertions.assertTrue(metaData.supportsTableCorrelationNames());
+      Assertions.assertTrue(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_COMMITTED));
+      Assertions.assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ));
+      Assertions.assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_SERIALIZABLE));
+      Assertions.assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_UNCOMMITTED));
+      Assertions.assertTrue(metaData.supportsUnion());
+      Assertions.assertTrue(metaData.supportsUnionAll());
+      Assertions.assertFalse(metaData.updatesAreDetected(1));
+      Assertions.assertFalse(metaData.usesLocalFilePerTable());
+      Assertions.assertFalse(metaData.usesLocalFiles());
     }
   }
 
@@ -834,11 +817,11 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
 
       // index is not supported.
       try (ResultSet resultSet = metaData.getIndexInfo(null, null, null, true, true)) {
-        assertEquals(0, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(0, getSizeOfResultSet(resultSet));
       }
       // UDT is not supported.
       try (ResultSet resultSet = metaData.getUDTs(null, null, null, new int[] {})) {
-        assertEquals(0, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(0, getSizeOfResultSet(resultSet));
       }
     }
   }

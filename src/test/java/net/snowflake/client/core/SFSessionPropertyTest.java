@@ -9,7 +9,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import net.snowflake.client.jdbc.ErrorCode;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SFSessionPropertyTest {
@@ -28,7 +28,7 @@ public class SFSessionPropertyTest {
     for (String invalid : invalidApplicationName) {
       try {
         SFSessionProperty.checkPropertyValue(SFSessionProperty.APPLICATION, invalid);
-        Assert.fail();
+        Assertions.fail();
       } catch (SFException e) {
         assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
       }
@@ -48,7 +48,7 @@ public class SFSessionPropertyTest {
   public void testInvalidMaxRetries() {
     try {
       SFSessionProperty.checkPropertyValue(SFSessionProperty.MAX_HTTP_RETRIES, "invalidValue");
-      Assert.fail("testInvalidMaxRetries");
+      Assertions.fail("testInvalidMaxRetries");
     } catch (SFException e) {
       assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
     }
@@ -67,7 +67,7 @@ public class SFSessionPropertyTest {
   public void testInvalidPutGetMaxRetries() {
     try {
       SFSessionProperty.checkPropertyValue(SFSessionProperty.PUT_GET_MAX_RETRIES, "invalidValue");
-      Assert.fail("testInvalidMaxRetries");
+      Assertions.fail("testInvalidMaxRetries");
     } catch (SFException e) {
       assertThat(e.getVendorCode(), is(ErrorCode.INVALID_PARAMETER_VALUE.getMessageCode()));
     }

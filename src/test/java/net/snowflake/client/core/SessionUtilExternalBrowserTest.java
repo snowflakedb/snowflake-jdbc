@@ -5,10 +5,6 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -32,6 +28,8 @@ import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -164,11 +162,11 @@ public class SessionUtilExternalBrowserTest {
       SessionUtilExternalBrowser sub =
           FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
       sub.authenticate();
-      assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+      MatcherAssert.assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
 
       sub = FakeSessionUtilExternalBrowser.createInstance(loginInput, true);
       sub.authenticate();
-      assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+      MatcherAssert.assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
     }
   }
 
@@ -198,9 +196,9 @@ public class SessionUtilExternalBrowserTest {
           FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
       try {
         sub.authenticate();
-        fail("should have failed with an exception.");
+        Assertions.fail("should have failed with an exception.");
       } catch (SnowflakeSQLException ex) {
-        assertThat("Error is expected", ex.getErrorCode(), equalTo(123456));
+        MatcherAssert.assertThat("Error is expected", ex.getErrorCode(), equalTo(123456));
       }
     }
   }
@@ -212,9 +210,7 @@ public class SessionUtilExternalBrowserTest {
     URI uri =
         new URI("https://testaccount.snowflakecomputing.com:443/session/authenticator-request");
     HttpPost postReq = handler.build(uri);
-    assertEquals(
-        "POST https://testaccount.snowflakecomputing.com:443/session/authenticator-request HTTP/1.1",
-        postReq.toString());
+    Assertions.assertEquals("POST https://testaccount.snowflakecomputing.com:443/session/authenticator-request HTTP/1.1", postReq.toString());
   }
 
   @Test
@@ -224,7 +220,7 @@ public class SessionUtilExternalBrowserTest {
     try {
       handler.openBrowser("file://invalidUrl");
     } catch (SFException ex) {
-      assertTrue(ex.getMessage().contains("Invalid SSOUrl found"));
+      Assertions.assertTrue(ex.getMessage().contains("Invalid SSOUrl found"));
     }
   }
 
@@ -261,7 +257,7 @@ public class SessionUtilExternalBrowserTest {
     for (int i = 0; i < 3; i++) {
       try (Connection con = ds.getConnection();
           ResultSet rs = con.createStatement().executeQuery("SELECT 1")) {
-        assertTrue(rs.next());
+        Assertions.assertTrue(rs.next());
       }
     }
   }
@@ -281,9 +277,9 @@ public class SessionUtilExternalBrowserTest {
     ds.setBrowserResponseTimeout(10);
     try {
       ds.getConnection();
-      fail();
+      Assertions.fail();
     } catch (SnowflakeSQLLoggedException e) {
-      assertTrue(e.getMessage().contains("External browser authentication failed"));
+      Assertions.assertTrue(e.getMessage().contains("External browser authentication failed"));
     }
   }
 }

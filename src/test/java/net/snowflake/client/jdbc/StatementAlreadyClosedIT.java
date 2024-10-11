@@ -3,25 +3,22 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 public class StatementAlreadyClosedIT extends BaseJDBCTest {
   @Test
   public void testStatementAlreadyClosed() throws Throwable {
     try (Connection connection = getConnection()) {
       Statement statement = connection.createStatement();
-      assertFalse(statement.isClosed());
+      Assertions.assertFalse(statement.isClosed());
       statement.close();
-      assertTrue(statement.isClosed());
+      Assertions.assertTrue(statement.isClosed());
 
       expectStatementAlreadyClosedException(
           () -> statement.execute("select 1", Statement.NO_GENERATED_KEYS));

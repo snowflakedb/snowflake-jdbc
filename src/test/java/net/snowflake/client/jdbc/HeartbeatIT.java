@@ -5,10 +5,6 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -26,14 +22,15 @@ import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.experimental.categories.Category;
+
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /** This test assumes that GS has been set up */
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class HeartbeatIT extends AbstractDriverIT {
   private static Logger logger = Logger.getLogger(HeartbeatIT.class.getName());
 
@@ -100,10 +97,10 @@ public class HeartbeatIT extends AbstractDriverIT {
         resultSetMetaData = resultSet.getMetaData();
 
         // assert column count
-        assertEquals(1, resultSetMetaData.getColumnCount());
+        Assertions.assertEquals(1, resultSetMetaData.getColumnCount());
 
         // assert we get 1 row
-        assertTrue(resultSet.next());
+        Assertions.assertTrue(resultSet.next());
 
         logger.fine("Query " + queryIdx + " passed ");
       }
@@ -163,15 +160,15 @@ public class HeartbeatIT extends AbstractDriverIT {
               });
       executorService.shutdown();
       future.get();
-      fail("should fail and raise an exception");
+      Assertions.fail("should fail and raise an exception");
     } catch (ExecutionException ex) {
       Throwable rootCause = ex.getCause();
-      assertThat("Runtime Exception", rootCause, instanceOf(RuntimeSQLException.class));
+      MatcherAssert.assertThat("Runtime Exception", rootCause, instanceOf(RuntimeSQLException.class));
 
       rootCause = rootCause.getCause();
 
-      assertThat("Root cause class", rootCause, instanceOf(SnowflakeSQLException.class));
-      assertThat("Error code", ((SnowflakeSQLException) rootCause).getErrorCode(), equalTo(390114));
+      MatcherAssert.assertThat("Root cause class", rootCause, instanceOf(SnowflakeSQLException.class));
+      MatcherAssert.assertThat("Error code", ((SnowflakeSQLException) rootCause).getErrorCode(), equalTo(390114));
     }
   }
 

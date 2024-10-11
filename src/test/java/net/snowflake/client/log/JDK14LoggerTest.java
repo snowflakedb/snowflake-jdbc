@@ -4,12 +4,12 @@
 package net.snowflake.client.log;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.logging.Level;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class JDK14LoggerTest {
@@ -21,14 +21,14 @@ public class JDK14LoggerTest {
     System.setProperty("net.snowflake.jdbc.loggerImpl", "net.snowflake.client.log.JDK14Logger");
 
     JDK14Logger logger = new JDK14Logger(JDK14LoggerTest.class.getName());
-    assertFalse(logger.isDebugEnabled());
-    assertTrue(logger.isInfoEnabled());
+    Assertions.assertFalse(logger.isDebugEnabled());
+    Assertions.assertTrue(logger.isInfoEnabled());
 
     String level = "all";
     Level tracingLevel = Level.parse(level.toUpperCase());
     String logOutputPath =
         Paths.get(systemGetProperty("java.io.tmpdir"), "snowflake_jdbc.log").toString();
     JDK14Logger.instantiateLogger(tracingLevel, logOutputPath);
-    assertTrue(logger.isDebugEnabled());
+    Assertions.assertTrue(logger.isDebugEnabled());
   }
 }

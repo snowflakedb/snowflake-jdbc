@@ -5,8 +5,6 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.TestUtil.systemGetEnv;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -21,7 +19,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.category.TestCategoryCore;
+
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
@@ -33,14 +31,15 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
 
-@Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
 public class SessionUtilLatestIT extends BaseJDBCTest {
 
   /**
@@ -113,13 +112,11 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
   @Test
   public void testConvertSystemPropertyToIntValue() {
     // SNOW-760642 - Test that new default for net.snowflake.jdbc.ttl is 60 seconds.
-    assertEquals(
-        60, SystemUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
+    Assertions.assertEquals(60, SystemUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
 
     // Test that TTL can be disabled
     System.setProperty(HttpUtil.JDBC_TTL, "-1");
-    assertEquals(
-        -1, SystemUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
+    Assertions.assertEquals(-1, SystemUtil.convertSystemPropertyToIntValue(HttpUtil.JDBC_TTL, HttpUtil.DEFAULT_TTL));
   }
 
   /**
@@ -266,10 +263,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .thenReturn("{\"code\":null,\"message\":\"POST request failed\",\"success\":false}");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Exception should have been thrown");
+      Assertions.fail("Exception should have been thrown");
     } catch (SnowflakeSQLException e) {
-      assertEquals("POST request failed", e.getMessage());
-      assertEquals(SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
+      Assertions.assertEquals("POST request failed", e.getMessage());
+      Assertions.assertEquals(SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
     }
   }
 
@@ -296,10 +293,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Exception should have been thrown");
+      Assertions.fail("Exception should have been thrown");
     } catch (SnowflakeSQLException e) {
-      assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
-      assertEquals(SqlState.IO_ERROR, e.getSQLState());
+      Assertions.assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
+      Assertions.assertEquals(SqlState.IO_ERROR, e.getSQLState());
     }
   }
 
@@ -326,10 +323,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
                   + "\"proofKey\":null},\"code\":null,\"message\":null,\"success\":true}");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Exception should have been thrown");
+      Assertions.fail("Exception should have been thrown");
     } catch (SnowflakeSQLException e) {
-      assertEquals((int) ErrorCode.CONNECTION_ERROR.getMessageCode(), e.getErrorCode());
-      assertEquals(SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
+      Assertions.assertEquals((int) ErrorCode.CONNECTION_ERROR.getMessageCode(), e.getErrorCode());
+      Assertions.assertEquals(SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION, e.getSQLState());
     }
   }
 
@@ -383,10 +380,10 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .thenThrow(new IOException());
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Exception should have been thrown");
+      Assertions.fail("Exception should have been thrown");
     } catch (SnowflakeSQLException e) {
-      assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
-      assertEquals(SqlState.IO_ERROR, e.getSQLState());
+      Assertions.assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), e.getErrorCode());
+      Assertions.assertEquals(SqlState.IO_ERROR, e.getSQLState());
     }
   }
 
@@ -572,9 +569,9 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .thenReturn("<body><form action=\"invalidformError\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Should be failed because of the invalid form");
+      Assertions.fail("Should be failed because of the invalid form");
     } catch (SnowflakeSQLException ex) {
-      assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), ex.getErrorCode());
+      Assertions.assertEquals((int) ErrorCode.NETWORK_ERROR.getMessageCode(), ex.getErrorCode());
     }
   }
 
@@ -626,9 +623,9 @@ public class SessionUtilLatestIT extends BaseJDBCTest {
           .thenReturn("<body><form action=\"https://helloworld.okta.com\"></form></body>");
 
       SessionUtil.openSession(loginInput, connectionPropertiesMap, "ALL");
-      fail("Should be failed because of the invalid form");
+      Assertions.fail("Should be failed because of the invalid form");
     } catch (SnowflakeSQLException ex) {
-      assertEquals((int) ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), ex.getErrorCode());
+      Assertions.assertEquals((int) ErrorCode.IDP_INCORRECT_DESTINATION.getMessageCode(), ex.getErrorCode());
     }
   }
 }

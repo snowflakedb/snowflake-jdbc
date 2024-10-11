@@ -8,8 +8,6 @@ import static java.util.stream.Stream.concat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -37,26 +35,14 @@ import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
-import org.junit.runners.Parameterized;
 
 public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
-  }
 
   private static void setTimezone(String tz) {
     System.setProperty("user.timezone", tz);
@@ -204,9 +190,9 @@ public class TwoFieldStructToTimestampNTZConverterTest extends BaseConverterTest
       Time time = converter.toTime(j);
       String tsStr = converter.toString(j);
       if (tsStr != null) {
-        assertFalse(converter.isNull(j));
+        Assertions.assertFalse(converter.isNull(j));
       } else {
-        assertTrue(converter.isNull(j));
+        Assertions.assertTrue(converter.isNull(j));
       }
 
       if (nullValIndex.contains(j)) {

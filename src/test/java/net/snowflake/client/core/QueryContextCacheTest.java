@@ -5,11 +5,11 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class QueryContextCacheTest {
@@ -243,10 +243,10 @@ public class QueryContextCacheTest {
     // Compare elements
     qcc.getElements(ids, readTimestamps, priorities, contexts);
     for (int i = 0; i < size; i++) {
-      assertEquals(expectedIDs[i], ids[i]);
-      assertEquals(expectedReadTimestamp[i], readTimestamps[i]);
-      assertEquals(expectedPriority[i], priorities[i]);
-      assertEquals(context, contexts[i]);
+      Assertions.assertEquals(expectedIDs[i], ids[i]);
+      Assertions.assertEquals(expectedReadTimestamp[i], readTimestamps[i]);
+      Assertions.assertEquals(expectedPriority[i], priorities[i]);
+      Assertions.assertEquals(context, contexts[i]);
     }
   }
 }

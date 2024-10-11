@@ -12,8 +12,6 @@ import static net.snowflake.client.jdbc.BindUploaderIT.dummyInsert;
 import static net.snowflake.client.jdbc.BindUploaderIT.getBindings;
 import static net.snowflake.client.jdbc.BindUploaderIT.parseRow;
 import static net.snowflake.client.jdbc.BindUploaderIT.row1;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -21,13 +19,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryOthers;
+
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +37,7 @@ import org.junit.jupiter.api.Test;
  * tests still is not applicable. If it is applicable, move tests to BindUploaderIT so that both the
  * latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class BindUploaderLatestIT extends BaseJDBCTest {
   BindUploader bindUploader;
   Connection conn;
@@ -82,15 +81,15 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
     bindUploader.setInputStreamBufferSize(lengthOfOneRow);
     bindUploader.upload(getBindings(conn));
     // assert 2 files were created on internal stage
-    assertEquals(2, bindUploader.getFileCount());
+    Assertions.assertEquals(2, bindUploader.getFileCount());
     Statement stmt = conn.createStatement();
     // assert that the results look proper
     ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
     rs.next();
-    assertEquals(csv1, parseRow(rs));
+    Assertions.assertEquals(csv1, parseRow(rs));
     rs.next();
-    assertEquals(csv2, parseRow(rs));
-    assertFalse(rs.next());
+    Assertions.assertEquals(csv2, parseRow(rs));
+    Assertions.assertFalse(rs.next());
     rs.close();
     stmt.close();
   }
@@ -103,10 +102,10 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
     Statement stmt = conn.createStatement();
     ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
     rs.next();
-    assertEquals(csv1, parseRow(rs));
+    Assertions.assertEquals(csv1, parseRow(rs));
     rs.next();
-    assertEquals(csv2, parseRow(rs));
-    assertFalse(rs.next());
+    Assertions.assertEquals(csv2, parseRow(rs));
+    Assertions.assertFalse(rs.next());
     rs.close();
     stmt.close();
   }
@@ -126,9 +125,9 @@ public class BindUploaderLatestIT extends BaseJDBCTest {
     ResultSet rs = stmt.executeQuery(SELECT_FROM_STAGE);
     for (int i = 0; i < batchSize; i++) {
       rs.next();
-      assertEquals(csv1, parseRow(rs));
+      Assertions.assertEquals(csv1, parseRow(rs));
     }
-    assertFalse(rs.next());
+    Assertions.assertFalse(rs.next());
     rs.close();
     stmt.close();
   }

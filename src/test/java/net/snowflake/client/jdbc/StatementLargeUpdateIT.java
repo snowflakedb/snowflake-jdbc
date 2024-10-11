@@ -1,15 +1,13 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-
 import java.sql.Connection;
 import java.sql.Statement;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Large update test. No JSON/ARROW specific test case is required. */
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 public class StatementLargeUpdateIT extends BaseJDBCTest {
   @Test
   public void testLargeUpdate() throws Throwable {
@@ -23,8 +21,8 @@ public class StatementLargeUpdateIT extends BaseJDBCTest {
                 "insert into test_large_update select true from table(generator(rowcount=>"
                     + expectedUpdateRows
                     + "))");
-        assertEquals(expectedUpdateRows, updatedRows);
-        assertEquals(expectedUpdateRows, statement.getLargeUpdateCount());
+        Assertions.assertEquals(expectedUpdateRows, updatedRows);
+        Assertions.assertEquals(expectedUpdateRows, statement.getLargeUpdateCount());
       } finally {
         statement.execute("drop table if exists test_large_update");
       }

@@ -8,7 +8,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.fail;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -20,11 +19,11 @@ import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryConnection;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
 public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
   @Test
   public void testPooledConnection() throws SQLException {
@@ -50,7 +49,7 @@ public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
       try {
         // should fire connection error events
         connection.setCatalog("nonexistent_database");
-        fail();
+        Assertions.fail();
       } catch (SQLException e) {
         assertThat(e.getErrorCode(), is(2043));
       }

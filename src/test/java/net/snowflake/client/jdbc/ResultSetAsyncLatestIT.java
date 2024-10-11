@@ -4,19 +4,17 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
-@Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
 public class ResultSetAsyncLatestIT extends BaseJDBCTest {
   @Test
   public void testAsyncResultSet() throws SQLException {
@@ -45,8 +43,7 @@ public class ResultSetAsyncLatestIT extends BaseJDBCTest {
       ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
       SnowflakeResultSetMetaData secretMetaData =
           resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
-      assertEquals(
-          secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
+      Assertions.assertEquals(secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
     }
   }
 }

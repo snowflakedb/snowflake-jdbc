@@ -3,13 +3,7 @@
  */
 package net.snowflake.client.pooling;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,14 +21,15 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import javax.sql.PooledConnection;
-import net.snowflake.client.category.TestCategoryConnection;
+
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeDriver;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
 public class LogicalConnectionLatestIT extends BaseJDBCTest {
   Map<String, String> properties = getConnectionParameters();
 
@@ -50,13 +45,13 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
             ResultSet.CONCUR_READ_ONLY,
             ResultSet.CLOSE_CURSORS_AT_COMMIT)) {
       try (ResultSet resultSet = statement.executeQuery("show parameters")) {
-        assertTrue(resultSet.next());
-        assertFalse(logicalConnection.isClosed());
-        assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, logicalConnection.getHoldability());
+        Assertions.assertTrue(resultSet.next());
+        Assertions.assertFalse(logicalConnection.isClosed());
+        Assertions.assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, logicalConnection.getHoldability());
       }
     }
     logicalConnection.close();
-    assertTrue(logicalConnection.isClosed());
+    Assertions.assertTrue(logicalConnection.isClosed());
     pooledConnection.close();
   }
 
@@ -67,9 +62,9 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       int millis = logicalConnection.getNetworkTimeout();
-      assertEquals(0, millis);
+      Assertions.assertEquals(0, millis);
       logicalConnection.setNetworkTimeout(null, 200);
-      assertEquals(200, logicalConnection.getNetworkTimeout());
+      Assertions.assertEquals(200, logicalConnection.getNetworkTimeout());
     }
     pooledConnection.close();
   }
@@ -81,10 +76,10 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
 
     try (Connection logicalConnection = pooledConnection.getConnection()) {
-      assertTrue(logicalConnection.isValid(10));
+      Assertions.assertTrue(logicalConnection.isValid(10));
       try {
-        assertTrue(logicalConnection.isValid(-10));
-        fail("must fail");
+        Assertions.assertTrue(logicalConnection.isValid(-10));
+        Assertions.fail("must fail");
       } catch (SQLException ex) {
         // nop, no specific error code is provided.
       }
@@ -99,7 +94,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       Properties property = logicalConnection.getClientInfo();
-      assertEquals(0, property.size());
+      Assertions.assertEquals(0, property.size());
       Properties clientInfo = new Properties();
       clientInfo.setProperty("name", "Peter");
       clientInfo.setProperty("description", "SNOWFLAKE JDBC");
@@ -107,7 +102,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
       expectSQLClientInfoException(() -> logicalConnection.setClientInfo(clientInfo));
       expectSQLClientInfoException(
           () -> logicalConnection.setClientInfo("ApplicationName", "valueA"));
-      assertNull(logicalConnection.getClientInfo("Peter"));
+      Assertions.assertNull(logicalConnection.getClientInfo("Peter"));
     }
     pooledConnection.close();
   }
@@ -120,9 +115,9 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     Connection logicalConnection = pooledConnection.getConnection();
     Connection physicalConnection =
         ((SnowflakePooledConnection) pooledConnection).getPhysicalConnection();
-    assertTrue(!physicalConnection.isClosed());
+    Assertions.assertTrue(!physicalConnection.isClosed());
     logicalConnection.abort(null);
-    assertTrue(physicalConnection.isClosed());
+    Assertions.assertTrue(physicalConnection.isClosed());
   }
 
   @Test
@@ -132,7 +127,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       // today returning the source SQL.
-      assertEquals("select 1", logicalConnection.nativeSQL("select 1"));
+      Assertions.assertEquals("select 1", logicalConnection.nativeSQL("select 1"));
     }
     pooledConnection.close();
   }
@@ -144,16 +139,16 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       boolean canUnwrap = logicalConnection.isWrapperFor(SnowflakeConnectionV1.class);
-      assertTrue(canUnwrap);
+      Assertions.assertTrue(canUnwrap);
       if (canUnwrap) {
         SnowflakeConnectionV1 sfconnection = logicalConnection.unwrap(SnowflakeConnectionV1.class);
         sfconnection.createStatement();
       } else {
-        fail("should be able to unwrap");
+        Assertions.fail("should be able to unwrap");
       }
       try {
         logicalConnection.unwrap(SnowflakeDriver.class);
-        fail("should fail to cast");
+        Assertions.fail("should fail to cast");
       } catch (SQLException ex) {
         // nop
       }
@@ -167,9 +162,9 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       logicalConnection.setAutoCommit(false);
-      assertFalse(logicalConnection.getAutoCommit());
+      Assertions.assertFalse(logicalConnection.getAutoCommit());
       logicalConnection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-      assertEquals(2, logicalConnection.getTransactionIsolation());
+      Assertions.assertEquals(2, logicalConnection.getTransactionIsolation());
 
       try (Statement statement = logicalConnection.createStatement()) {
         statement.executeUpdate("create or replace table test_transaction (colA int, colB string)");
@@ -180,8 +175,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
         logicalConnection.commit();
         try (ResultSet resultSet =
             statement.executeQuery("select count(*) from test_transaction")) {
-          assertTrue(resultSet.next());
-          assertEquals(1, resultSet.getInt(1));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertEquals(1, resultSet.getInt(1));
         }
 
         // rollback
@@ -189,8 +184,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
         logicalConnection.rollback();
         try (ResultSet resultSet =
             statement.executeQuery("select count(*) from test_transaction")) {
-          assertTrue(resultSet.next());
-          assertEquals(1, resultSet.getInt(1));
+          Assertions.assertTrue(resultSet.next());
+          Assertions.assertEquals(1, resultSet.getInt(1));
         }
       } finally {
         try (Statement statement = logicalConnection.createStatement()) {
@@ -208,9 +203,9 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       // read only is not supported - will always be false
-      assertEquals(false, logicalConnection.isReadOnly());
+      Assertions.assertEquals(false, logicalConnection.isReadOnly());
       logicalConnection.setReadOnly(true);
-      assertEquals(false, logicalConnection.isReadOnly());
+      Assertions.assertEquals(false, logicalConnection.isReadOnly());
     }
     pooledConnection.close();
   }
@@ -222,7 +217,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       // return an empty type map. setTypeMap is not supported.
-      assertEquals(Collections.emptyMap(), logicalConnection.getTypeMap());
+      Assertions.assertEquals(Collections.emptyMap(), logicalConnection.getTypeMap());
     }
     pooledConnection.close();
   }
@@ -246,7 +241,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
               count++;
             }
           }
-          assertEquals(1, count);
+          Assertions.assertEquals(1, count);
         } finally {
           statement.execute("drop table if exists test_prep");
         }
@@ -265,8 +260,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
       // get the current schema
       try (ResultSet rst =
           logicalConnection.createStatement().executeQuery("select current_schema()")) {
-        assertTrue(rst.next());
-        assertEquals(schema, rst.getString(1));
+        Assertions.assertTrue(rst.next());
+        Assertions.assertEquals(schema, rst.getString(1));
       }
 
       logicalConnection.setSchema("PUBLIC");
@@ -274,8 +269,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
       // get the current schema
       try (ResultSet rst =
           logicalConnection.createStatement().executeQuery("select current_schema()")) {
-        assertTrue(rst.next());
-        assertEquals("PUBLIC", rst.getString(1));
+        Assertions.assertTrue(rst.next());
+        Assertions.assertEquals("PUBLIC", rst.getString(1));
       }
     }
     pooledConnection.close();
@@ -303,7 +298,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
           callableStatement.setString(1, "hello world");
           try (ResultSet resultSet = callableStatement.executeQuery()) {
             resultSet.next();
-            assertEquals("hello world", resultSet.getString(1));
+            Assertions.assertEquals("hello world", resultSet.getString(1));
           }
         }
 
@@ -314,9 +309,9 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
                 ResultSet.CONCUR_READ_ONLY)) {
           try (ResultSet resultSet = callableStatement.executeQuery()) {
             resultSet.next();
-            assertEquals("hello world", resultSet.getString(1));
-            assertEquals(1003, callableStatement.getResultSetType());
-            assertEquals(1007, callableStatement.getResultSetConcurrency());
+            Assertions.assertEquals("hello world", resultSet.getString(1));
+            Assertions.assertEquals(1003, callableStatement.getResultSetType());
+            Assertions.assertEquals(1007, callableStatement.getResultSetConcurrency());
           }
         }
 
@@ -328,7 +323,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
                 ResultSet.CLOSE_CURSORS_AT_COMMIT)) {
           try (ResultSet resultSet = callableStatement.executeQuery()) {
             resultSet.next();
-            assertEquals(2, callableStatement.getResultSetHoldability());
+            Assertions.assertEquals(2, callableStatement.getResultSetHoldability());
           }
         }
         statement.execute("drop procedure if exists output_message(varchar)");
@@ -358,7 +353,7 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
         statement.execute("select * from test_clob");
         try (ResultSet resultSet = statement.getResultSet()) {
           resultSet.next();
-          assertEquals("hello world", resultSet.getString("COLA"));
+          Assertions.assertEquals("hello world", resultSet.getString("COLA"));
         }
       }
     }
@@ -371,8 +366,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
     PooledConnection pooledConnection = poolDataSource.getPooledConnection();
     try (Connection logicalConnection = pooledConnection.getConnection()) {
       DatabaseMetaData databaseMetaData = logicalConnection.getMetaData();
-      assertEquals("Snowflake", databaseMetaData.getDatabaseProductName());
-      assertEquals(properties.get("user"), databaseMetaData.getUserName());
+      Assertions.assertEquals("Snowflake", databaseMetaData.getDatabaseProductName());
+      Assertions.assertEquals(properties.get("user"), databaseMetaData.getUserName());
     }
   }
 

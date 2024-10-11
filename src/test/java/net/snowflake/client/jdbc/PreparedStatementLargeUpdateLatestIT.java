@@ -3,7 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.spy;
 
 import java.sql.Connection;
@@ -12,13 +11,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ExecTimeTelemetryData;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
 
   /**
@@ -49,7 +48,7 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
                   Mockito.any(boolean.class),
                   Mockito.any(ExecTimeTelemetryData.class));
           long updatedRows = spyp.executeLargeUpdate();
-          assertEquals(expectedUpdateRows, updatedRows);
+          Assertions.assertEquals(expectedUpdateRows, updatedRows);
         }
       } finally {
         statement.execute("drop table if exists test_large_update");
@@ -83,8 +82,8 @@ public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
                   Mockito.any(ExecTimeTelemetryData.class));
           pstmt.addBatch();
           long[] queryResult = spyp.executeLargeBatch();
-          assertEquals(1, queryResult.length);
-          assertEquals(numRows, queryResult[0]);
+          Assertions.assertEquals(1, queryResult.length);
+          Assertions.assertEquals(numRows, queryResult[0]);
         }
       } finally {
         statement.execute("drop table if exists over_int_table");

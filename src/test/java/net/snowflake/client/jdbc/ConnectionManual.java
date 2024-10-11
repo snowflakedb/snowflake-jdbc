@@ -1,13 +1,12 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertTrue;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.SessionUtil;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Connection Manual Tests
@@ -140,8 +139,8 @@ public class ConnectionManual {
         "[INFO] 1st connection gets id token and stores in the cache file. "
             + "This popup a browser to SSO login");
     try (Connection con1 = DriverManager.getConnection(url, properties)) {
-      assertTrue(database.equalsIgnoreCase(con1.getCatalog()));
-      assertTrue(schema1.equalsIgnoreCase(con1.getSchema()));
+      Assertions.assertTrue(database.equalsIgnoreCase(con1.getCatalog()));
+      Assertions.assertTrue(schema1.equalsIgnoreCase(con1.getSchema()));
     }
 
     System.out.println(
@@ -151,23 +150,23 @@ public class ConnectionManual {
     properties.setProperty("schema", schema1);
     try (Connection con2 = DriverManager.getConnection(url, properties);
         Statement statement = con2.createStatement()) {
-      assertTrue(database.equalsIgnoreCase(con2.getCatalog()));
-      assertTrue(schema1.equalsIgnoreCase(con2.getSchema()));
+      Assertions.assertTrue(database.equalsIgnoreCase(con2.getCatalog()));
+      Assertions.assertTrue(schema1.equalsIgnoreCase(con2.getSchema()));
 
       System.out.println("[INFO] Running a statement... 10 seconds");
       statement.execute("select seq8() from table(generator(timelimit=>10))");
-      assertTrue(database.equalsIgnoreCase(con2.getCatalog()));
-      assertTrue(schema1.equalsIgnoreCase(con2.getSchema()));
+      Assertions.assertTrue(database.equalsIgnoreCase(con2.getCatalog()));
+      Assertions.assertTrue(schema1.equalsIgnoreCase(con2.getSchema()));
 
       System.out.println("[INFO] Running a statement... 1 second");
       statement.execute("select seq8() from table(generator(timelimit=>1))");
-      assertTrue(database.equalsIgnoreCase(con2.getCatalog()));
-      assertTrue(schema1.equalsIgnoreCase(con2.getSchema()));
+      Assertions.assertTrue(database.equalsIgnoreCase(con2.getCatalog()));
+      Assertions.assertTrue(schema1.equalsIgnoreCase(con2.getSchema()));
 
       System.out.println("[INFO] Running a statement... 90 seconds");
       statement.execute("select seq8() from table(generator(timelimit=>90))");
-      assertTrue(database.equalsIgnoreCase(con2.getCatalog()));
-      assertTrue(schema1.equalsIgnoreCase(con2.getSchema()));
+      Assertions.assertTrue(database.equalsIgnoreCase(con2.getCatalog()));
+      Assertions.assertTrue(schema1.equalsIgnoreCase(con2.getSchema()));
     }
 
     System.out.println(
@@ -176,8 +175,8 @@ public class ConnectionManual {
             + "A specified schema should be set in the connection object.");
     properties.setProperty("schema", schema2);
     try (Connection con3 = DriverManager.getConnection(url, properties)) {
-      assertTrue(database.equalsIgnoreCase(con3.getCatalog()));
-      assertTrue(schema1.equalsIgnoreCase(con3.getSchema()));
+      Assertions.assertTrue(database.equalsIgnoreCase(con3.getCatalog()));
+      Assertions.assertTrue(schema1.equalsIgnoreCase(con3.getSchema()));
     }
 
     System.out.println(

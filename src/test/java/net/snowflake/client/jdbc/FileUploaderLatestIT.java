@@ -5,10 +5,6 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
@@ -46,12 +41,12 @@ import net.snowflake.client.jdbc.cloud.storage.StorageObjectMetadata;
 import net.snowflake.client.jdbc.cloud.storage.StorageProviderException;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class FileUploaderLatestIT extends FileUploaderPrepIT {
   private static final String OBJ_META_STAGE = "testObjMeta";
   private ObjectMapper mapper = new ObjectMapper();
@@ -73,16 +68,16 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
       // Get sample stage info with session
       StageInfo stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3JsonNode, sfSession);
-      Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+      Assertions.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
       // Assert that true value from session is reflected in StageInfo
-      Assert.assertEquals(true, stageInfo.getUseS3RegionalUrl());
+      Assertions.assertEquals(true, stageInfo.getUseS3RegionalUrl());
 
       // Set UseRegionalS3EndpointsForPresignedURL to false in session
       sfSession.setUseRegionalS3EndpointsForPresignedURL(false);
       stageInfo = SnowflakeFileTransferAgent.getStageInfo(exampleS3JsonNode, sfSession);
-      Assert.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
+      Assertions.assertEquals(StageInfo.StageType.S3, stageInfo.getStageType());
       // Assert that false value from session is reflected in StageInfo
-      Assert.assertEquals(false, stageInfo.getUseS3RegionalUrl());
+      Assertions.assertEquals(false, stageInfo.getUseS3RegionalUrl());
     }
   }
 
@@ -105,13 +100,13 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
       // Get sample stage info with session
       StageInfo stageInfo =
           SnowflakeFileTransferAgent.getStageInfo(exampleAzureJsonNode, sfSession);
-      Assert.assertEquals(StageInfo.StageType.AZURE, stageInfo.getStageType());
-      Assert.assertEquals("EXAMPLE_LOCATION/", stageInfo.getLocation());
+      Assertions.assertEquals(StageInfo.StageType.AZURE, stageInfo.getStageType());
+      Assertions.assertEquals("EXAMPLE_LOCATION/", stageInfo.getLocation());
       // Assert that UseRegionalS3EndpointsForPresignedURL is false in StageInfo even if it was set
       // to
       // true.
       // The value should always be false for non-S3 accounts
-      Assert.assertEquals(false, stageInfo.getUseS3RegionalUrl());
+      Assertions.assertEquals(false, stageInfo.getUseS3RegionalUrl());
     }
   }
 
@@ -142,7 +137,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         String remoteStageLocation = location.substring(0, idx);
         String path = location.substring(idx + 1) + TEST_DATA_FILE + ".gz";
         StorageObjectMetadata metadata = client.getObjectMetadata(remoteStageLocation, path);
-        Assert.assertEquals("gzip", metadata.getContentEncoding());
+        Assertions.assertEquals("gzip", metadata.getContentEncoding());
       } finally {
         statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
       }
@@ -176,12 +171,10 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         String remoteStageLocation = location.substring(0, idx);
         String path = location.substring(idx + 1) + "wrong_file.csv.gz";
         client.getObjectMetadata(remoteStageLocation, path);
-        fail("should raise exception");
+        Assertions.fail("should raise exception");
       } catch (Exception ex) {
-        assertTrue(
-            "Wrong type of exception. Message: " + ex.getMessage(),
-            ex instanceof StorageProviderException);
-        assertTrue(ex.getMessage().matches(".*Blob.*not found in bucket.*"));
+        Assertions.assertTrue(ex instanceof StorageProviderException, "Wrong type of exception. Message: " + ex.getMessage());
+        Assertions.assertTrue(ex.getMessage().matches(".*Blob.*not found in bucket.*"));
       } finally {
         statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
       }
@@ -214,12 +207,10 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         int idx = location.indexOf('/');
         String remoteStageLocation = location.substring(0, idx);
         client.getObjectMetadata(remoteStageLocation, "");
-        fail("should raise exception");
+        Assertions.fail("should raise exception");
       } catch (Exception ex) {
-        assertTrue(
-            "Wrong type of exception. Message: " + ex.getMessage(),
-            ex instanceof StorageProviderException);
-        assertTrue(ex.getMessage().matches(".*Permission.*denied.*"));
+        Assertions.assertTrue(ex instanceof StorageProviderException, "Wrong type of exception. Message: " + ex.getMessage());
+        Assertions.assertTrue(ex.getMessage().matches(".*Permission.*denied.*"));
       } finally {
         statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
       }
@@ -235,7 +226,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         SFSession sfSession = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
-        assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, sfAgent.getCommandType());
+        Assertions.assertEquals(SFBaseFileTransferAgent.CommandType.UPLOAD, sfAgent.getCommandType());
       } finally {
         statement.execute("drop stage if exists testStage");
       }
@@ -252,10 +243,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(null, sfSession, new SFStatement(sfSession));
       } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(
-            err.getMessage()
-                .contains("JDBC driver internal error: Missing sql for statement execution"));
+        Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+        Assertions.assertTrue(err.getMessage()
+            .contains("JDBC driver internal error: Missing sql for statement execution"));
       } finally {
         statement.execute("drop stage if exists testStage");
       }
@@ -293,10 +283,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
                 .setCommand(PUT_COMMAND)
                 .build());
       } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(
-            err.getMessage()
-                .contains("JDBC driver internal error: error encountered for compression"));
+        Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+        Assertions.assertTrue(err.getMessage()
+            .contains("JDBC driver internal error: error encountered for compression"));
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -337,10 +326,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
                 .setCommand(PUT_COMMAND)
                 .build());
       } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(
-            err.getMessage()
-                .contains("JDBC driver internal error: error encountered for compression"));
+        Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+        Assertions.assertTrue(err.getMessage()
+            .contains("JDBC driver internal error: error encountered for compression"));
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -381,10 +369,9 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
                 .setCommand(PUT_COMMAND)
                 .build());
       } catch (Exception err) {
-        Assert.assertTrue(
-            err.getMessage()
-                .contains(
-                    "Exception encountered during file upload: failed to push to remote store"));
+        Assertions.assertTrue(err.getMessage()
+            .contains(
+                "Exception encountered during file upload: failed to push to remote store"));
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -404,7 +391,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
         sfAgent.execute();
       } catch (SnowflakeSQLException err) {
-        Assert.assertEquals(200008, err.getErrorCode());
+        Assertions.assertEquals(200008, err.getErrorCode());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -425,7 +412,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         sfAgent.execute();
       } catch (SnowflakeSQLException err) {
-        Assert.assertEquals(200009, err.getErrorCode());
+        Assertions.assertEquals(200009, err.getErrorCode());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -448,8 +435,8 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
         sfAgent.execute();
       } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(err.getMessage().contains("Error reading:"));
+        Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+        Assertions.assertTrue(err.getMessage().contains("Error reading:"));
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -471,8 +458,8 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
 
       } catch (SnowflakeSQLException err) {
-        Assert.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-        Assert.assertTrue(err.getMessage().contains("Failed to parse the locations"));
+        Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
+        Assertions.assertTrue(err.getMessage().contains("Failed to parse the locations"));
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -500,16 +487,16 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
         sfAgent1.execute(); // upload files
 
         // check that source files were sorted
-        assertEquals(2, sfAgent1.statusRows.size());
-        assertEquals("orders_100.csv", sfAgent1.getNextRow().get(0).toString());
+        Assertions.assertEquals(2, sfAgent1.statusRows.size());
+        Assertions.assertEquals("orders_100.csv", sfAgent1.getNextRow().get(0).toString());
 
         String getCommand = "GET @testStage file:///tmp";
         SnowflakeFileTransferAgent sfAgent2 =
             new SnowflakeFileTransferAgent(getCommand, sfSession, new SFStatement(sfSession));
         sfAgent2.execute();
         // check that files are sorted on download
-        assertEquals(2, sfAgent2.statusRows.size());
-        assertEquals("orders_100.csv.gz", sfAgent2.getNextRow().get(0).toString());
+        Assertions.assertEquals(2, sfAgent2.statusRows.size());
+        Assertions.assertEquals("orders_100.csv.gz", sfAgent2.getNextRow().get(0).toString());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -533,8 +520,8 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
         sfAgent.execute();
       } catch (SnowflakeSQLException err) {
-        Assert.assertEquals(200016, err.getErrorCode());
-        Assert.assertTrue(err.getMessage().contains("Encountered exception during listObjects"));
+        Assertions.assertEquals(200016, err.getErrorCode());
+        Assertions.assertTrue(err.getMessage().contains("Encountered exception during listObjects"));
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -562,7 +549,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
                 "~", DEST_PREFIX, outputStream.asByteSource().openStream(), "hello.txt", false);
 
       } catch (SnowflakeSQLLoggedException err) {
-        Assert.assertEquals(200003, err.getErrorCode());
+        Assertions.assertEquals(200003, err.getErrorCode());
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);
       }
@@ -582,8 +569,8 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
             new SnowflakeFileTransferAgent(PUT_COMMAND, sfSession, new SFStatement(sfSession));
 
         StageInfo stageInfo = sfAgent.getStageInfo();
-        assertEquals(sfAgent.getStageCredentials(), stageInfo.getCredentials());
-        assertEquals(sfAgent.getStageLocation(), stageInfo.getLocation());
+        Assertions.assertEquals(sfAgent.getStageCredentials(), stageInfo.getCredentials());
+        Assertions.assertEquals(sfAgent.getStageLocation(), stageInfo.getLocation());
       } finally {
         statement.execute("drop stage if exists testStage");
       }
@@ -611,8 +598,8 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
             new SnowflakeFileTransferAgent(
                 "GET @testStage file:///tmp/", sfSession, new SFStatement(sfSession));
 
-        assertEquals(2, sfAgent2.getSrcToMaterialsMap().size());
-        assertEquals(2, sfAgent2.getSrcToPresignedUrlMap().size());
+        Assertions.assertEquals(2, sfAgent2.getSrcToMaterialsMap().size());
+        Assertions.assertEquals(2, sfAgent2.getSrcToPresignedUrlMap().size());
       } finally {
         statement.execute("drop stage if exists testStage");
       }
@@ -635,7 +622,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
             new SnowflakeFileTransferAgent(command, sfSession, new SFStatement(sfSession));
         sfAgent.execute();
       } catch (Exception err) {
-        assertEquals(err.getCause(), instanceOf(FileNotFoundException.class));
+        Assertions.assertEquals(err.getCause(), instanceOf(FileNotFoundException.class));
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -653,19 +640,19 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
         uploadFileToStageUsingStream(connection, false);
         try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
-          assertTrue(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
           expectedValue = resultSet.getString("last_modified");
         }
         Thread.sleep(1000); // add 1 sec delay between uploads.
 
         uploadFileToStageUsingStream(connection, false);
         try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
-          assertTrue(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
           String actualValue = resultSet.getString("last_modified");
-          assertEquals(expectedValue, actualValue);
+          Assertions.assertEquals(expectedValue, actualValue);
         }
       } catch (Exception e) {
-        Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
+        Assertions.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -682,20 +669,20 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
 
         uploadFileToStageUsingStream(connection, true);
         try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
-          assertTrue(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
           expectedValue = resultSet.getString("last_modified");
         }
         Thread.sleep(1000); // add 1 sec delay between uploads.
 
         uploadFileToStageUsingStream(connection, true);
         try (ResultSet resultSet = statement.executeQuery("LIST @testStage")) {
-          assertTrue(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
           String actualValue = resultSet.getString("last_modified");
 
-          assertFalse(expectedValue.equals(actualValue));
+          Assertions.assertFalse(expectedValue.equals(actualValue));
         }
       } catch (Exception e) {
-        Assert.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
+        Assertions.fail("testUploadFileStreamWithNoOverwrite failed " + e.getMessage());
       } finally {
         statement.execute("DROP STAGE if exists testStage");
       }
@@ -759,10 +746,10 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
           Map<String, String> matDesc =
               mapper.readValue(s3Metadata.getUserMetadata().get("x-amz-matdesc"), Map.class);
 
-          assertEquals(encMat.getQueryId(), matDesc.get("queryId"));
-          assertEquals(encMat.getSmkId().toString(), matDesc.get("smkId"));
-          assertEquals(1360, s3Metadata.getContentLength());
-          assertEquals("gzip", s3Metadata.getContentEncoding());
+          Assertions.assertEquals(encMat.getQueryId(), matDesc.get("queryId"));
+          Assertions.assertEquals(encMat.getSmkId().toString(), matDesc.get("smkId"));
+          Assertions.assertEquals(1360, s3Metadata.getContentLength());
+          Assertions.assertEquals("gzip", s3Metadata.getContentEncoding());
         }
       } finally {
         statement.execute("DROP STAGE if exists " + OBJ_META_STAGE);
@@ -823,7 +810,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
           sql = sql.replaceAll("\\\\", "\\\\\\\\");
           try (ResultSet resultSet = statement.executeQuery(sql)) {
             while (resultSet.next()) {
-              assertEquals("UPLOADED", resultSet.getString("status"));
+              Assertions.assertEquals("UPLOADED", resultSet.getString("status"));
             }
           }
         } finally {
@@ -861,7 +848,7 @@ public class FileUploaderLatestIT extends FileUploaderPrepIT {
           try (ResultSet resultSet =
               statement.executeQuery("PUT 'file://~/snowflake/test.txt' @testStage")) {
             while (resultSet.next()) {
-              assertEquals("UPLOADED", resultSet.getString("status"));
+              Assertions.assertEquals("UPLOADED", resultSet.getString("status"));
             }
           }
         } finally {

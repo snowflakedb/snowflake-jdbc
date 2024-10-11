@@ -3,20 +3,18 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.category.TestCategoryResultSet;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Result set test base class. */
-@Category(TestCategoryResultSet.class)
+//@Category(TestCategoryResultSet.class)
 public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
   public Connection init(Properties paramProperties, String queryResultFormat) throws SQLException {
     Connection conn =
@@ -45,18 +43,14 @@ public class ResultSet0IT extends BaseJDBCWithSharedConnectionIT {
               + "stage_file_format = (field_delimiter='|' "
               + "error_on_column_count_mismatch=false)");
       // put files
-      assertTrue(
-          "Failed to put a file",
-          statement.execute(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"));
-      assertTrue(
-          "Failed to put a file",
-          statement.execute(
-              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"));
+      Assertions.assertTrue(statement.execute(
+          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"), "Failed to put a file");
+      Assertions.assertTrue(statement.execute(
+          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"), "Failed to put a file");
 
       int numRows = statement.executeUpdate("copy into orders_jdbc");
 
-      assertEquals("Unexpected number of rows copied: " + numRows, 73, numRows);
+      Assertions.assertEquals(73, numRows, "Unexpected number of rows copied: " + numRows);
     }
   }
 

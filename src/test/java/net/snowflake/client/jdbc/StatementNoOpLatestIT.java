@@ -4,17 +4,14 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 public class StatementNoOpLatestIT {
   @Test
   public void testSnowflakeNoOpStatement() throws SQLException {
@@ -68,8 +65,8 @@ public class StatementNoOpLatestIT {
   public void testGetQueryID() throws SQLException {
     SnowflakeStatementV1.NoOpSnowflakeStatementV1 statement =
         new SnowflakeStatementV1.NoOpSnowflakeStatementV1();
-    assertEquals("invalid_query_id", statement.getQueryID());
-    assertEquals(new ArrayList<>(), statement.getBatchQueryIDs());
+    Assertions.assertEquals("invalid_query_id", statement.getQueryID());
+    Assertions.assertEquals(new ArrayList<>(), statement.getBatchQueryIDs());
   }
 
   @Test
@@ -99,7 +96,7 @@ public class StatementNoOpLatestIT {
   protected void expectSQLException(BaseJDBCTest.MethodRaisesSQLException f) {
     try {
       f.run();
-      fail("must raise exception");
+      Assertions.fail("must raise exception");
     } catch (SQLException ex) {
       // no op
     }

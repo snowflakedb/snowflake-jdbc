@@ -5,9 +5,6 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.EXPECTED_MAX_BINARY_LENGTH;
 import static net.snowflake.client.jdbc.DatabaseMetaDataIT.verifyResultSetMetaDataColumns;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -16,15 +13,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   private Connection connection;
   private Statement statement;
@@ -94,70 +91,68 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     int numSnowflakeColumns = getSizeOfResultSet(snowflakeResultSet);
 
     resultSet = databaseMetaData.getColumns(null, null, null, null);
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getAllColumnsCount),
-        getSizeOfResultSet(resultSet) - numSnowflakeColumns);
+    Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllColumnsCount), getSizeOfResultSet(resultSet) - numSnowflakeColumns);
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA11", null, null);
-    assertEquals(3, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(3, getSizeOfResultSet(resultSet));
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCH_MA11", null, null);
-    assertEquals(3, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(3, getSizeOfResultSet(resultSet));
 
     resultSet = databaseMetaData.getColumns(null, "JDBC%", null, null);
-    assertEquals(10, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(10, getSizeOfResultSet(resultSet));
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA1_", null, null);
-    assertEquals(7, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(7, getSizeOfResultSet(resultSet));
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA21", "JDBC_BIN", "BIN1");
     resultSet.next();
-    assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("COLUMN_SIZE"));
-    assertEquals(1, getSizeOfResultSet(resultSet) + 1);
+    Assertions.assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("COLUMN_SIZE"));
+    Assertions.assertEquals(1, getSizeOfResultSet(resultSet) + 1);
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA21", "JDBC_BIN", "BIN2");
     resultSet.next();
-    assertEquals(100, resultSet.getInt("COLUMN_SIZE"));
-    assertEquals(1, getSizeOfResultSet(resultSet) + 1);
+    Assertions.assertEquals(100, resultSet.getInt("COLUMN_SIZE"));
+    Assertions.assertEquals(1, getSizeOfResultSet(resultSet) + 1);
 
     // test if return the correct info
     resultSet = databaseMetaData.getColumns("JDBC_DB1", "JDBC_SCHEMA12", "JDBC_TBL122", "COLA");
     resultSet.next();
     // fetchResultSet(resultSet, true);
-    assertEquals("JDBC_DB1", resultSet.getString("TABLE_CAT"));
-    assertEquals("JDBC_SCHEMA12", resultSet.getString("TABLE_SCHEM"));
-    assertEquals("JDBC_TBL122", resultSet.getString("TABLE_NAME"));
-    assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
-    assertEquals(Types.DECIMAL, resultSet.getInt("DATA_TYPE"));
-    assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
-    assertEquals("20", resultSet.getString("COLUMN_SIZE"));
-    assertEquals("2", resultSet.getString("DECIMAL_DIGITS"));
-    assertEquals(DatabaseMetaData.columnNullable, resultSet.getInt("NULLABLE"));
-    assertEquals("cmt colA", resultSet.getString("REMARKS"));
-    assertEquals(null, resultSet.getString("COLUMN_DEF"));
-    assertEquals("YES", resultSet.getString("IS_NULLABLE"));
-    assertEquals("YES", resultSet.getString("IS_AUTOINCREMENT"));
+    Assertions.assertEquals("JDBC_DB1", resultSet.getString("TABLE_CAT"));
+    Assertions.assertEquals("JDBC_SCHEMA12", resultSet.getString("TABLE_SCHEM"));
+    Assertions.assertEquals("JDBC_TBL122", resultSet.getString("TABLE_NAME"));
+    Assertions.assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
+    Assertions.assertEquals(Types.DECIMAL, resultSet.getInt("DATA_TYPE"));
+    Assertions.assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
+    Assertions.assertEquals("20", resultSet.getString("COLUMN_SIZE"));
+    Assertions.assertEquals("2", resultSet.getString("DECIMAL_DIGITS"));
+    Assertions.assertEquals(DatabaseMetaData.columnNullable, resultSet.getInt("NULLABLE"));
+    Assertions.assertEquals("cmt colA", resultSet.getString("REMARKS"));
+    Assertions.assertEquals(null, resultSet.getString("COLUMN_DEF"));
+    Assertions.assertEquals("YES", resultSet.getString("IS_NULLABLE"));
+    Assertions.assertEquals("YES", resultSet.getString("IS_AUTOINCREMENT"));
     resultSet.close();
 
     // more on default and autoincrement
     resultSet = databaseMetaData.getColumns("JDBC_DB1", "JDBC_SCHEMA12", "JDBC_TBL122", "COLB");
     resultSet.next();
-    assertEquals(DatabaseMetaData.columnNoNulls, resultSet.getInt(11));
-    assertEquals("3", resultSet.getString(13));
-    assertEquals("NO", resultSet.getString(23));
+    Assertions.assertEquals(DatabaseMetaData.columnNoNulls, resultSet.getInt(11));
+    Assertions.assertEquals("3", resultSet.getString(13));
+    Assertions.assertEquals("NO", resultSet.getString(23));
     resultSet.close();
 
     resultSet = databaseMetaData.getColumns("JDBC_DB1", "JDBC_SCHEMA1_", null, "COL_");
 
     resultSet = databaseMetaData.getColumns("JDBC_DB1", "JDBC_SCHEMA12", "JDBC_TBL122", "COLC");
     resultSet.next();
-    assertEquals(null, resultSet.getString(13));
-    assertEquals("YES", resultSet.getString(23));
+    Assertions.assertEquals(null, resultSet.getString(13));
+    Assertions.assertEquals("YES", resultSet.getString(23));
 
     // SNOW-24558 Metadata request with special characters in table name
     statement.execute("create or replace table \"@@specialchartable$1234\"(colA int)");
     resultSet = databaseMetaData.getColumns(null, null, "@@specialchartable$%", null);
-    assertEquals(1, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
 
     resultSet.close();
     resultSet.next();
@@ -190,47 +185,47 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA11", "JDBCFUNCTEST111");
     verifyResultSetMetaDataColumns(resultSet, DBMetadataResultSetMetadata.GET_FUNCTIONS);
     resultSet.next();
-    assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
-    assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("JDBCFUNCTEST111", resultSet.getString("FUNCTION_NAME"));
-    assertEquals("multiply numbers", resultSet.getString("REMARKS"));
-    assertEquals(DatabaseMetaData.functionNoTable, resultSet.getInt("FUNCTION_TYPE"));
-    assertEquals("JDBCFUNCTEST111", resultSet.getString("SPECIFIC_NAME"));
-    assertFalse(resultSet.next());
+    Assertions.assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
+    Assertions.assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
+    Assertions.assertEquals("JDBCFUNCTEST111", resultSet.getString("FUNCTION_NAME"));
+    Assertions.assertEquals("multiply numbers", resultSet.getString("REMARKS"));
+    Assertions.assertEquals(DatabaseMetaData.functionNoTable, resultSet.getInt("FUNCTION_TYPE"));
+    Assertions.assertEquals("JDBCFUNCTEST111", resultSet.getString("SPECIFIC_NAME"));
+    Assertions.assertFalse(resultSet.next());
 
     // test a table function
     resultSet = databaseMetaData.getFunctions("JDBC_DB2", "JDBC_SCHEMA21", "JDBCFUNCTEST212");
     resultSet.next();
-    assertEquals(DatabaseMetaData.functionReturnsTable, resultSet.getInt("FUNCTION_TYPE"));
-    assertFalse(resultSet.next());
+    Assertions.assertEquals(DatabaseMetaData.functionReturnsTable, resultSet.getInt("FUNCTION_TYPE"));
+    Assertions.assertFalse(resultSet.next());
 
     // test a builtin function
     resultSet = databaseMetaData.getFunctions(null, null, "AND");
     resultSet.next();
-    assertEquals("", resultSet.getString("FUNCTION_CAT"));
-    assertEquals("", resultSet.getString("FUNCTION_SCHEM"));
-    assertEquals("AND", resultSet.getString("FUNCTION_NAME"));
-    assertEquals(DatabaseMetaData.functionNoTable, resultSet.getInt("FUNCTION_TYPE"));
-    assertEquals("AND", resultSet.getString("SPECIFIC_NAME"));
-    assertFalse(resultSet.next());
+    Assertions.assertEquals("", resultSet.getString("FUNCTION_CAT"));
+    Assertions.assertEquals("", resultSet.getString("FUNCTION_SCHEM"));
+    Assertions.assertEquals("AND", resultSet.getString("FUNCTION_NAME"));
+    Assertions.assertEquals(DatabaseMetaData.functionNoTable, resultSet.getInt("FUNCTION_TYPE"));
+    Assertions.assertEquals("AND", resultSet.getString("SPECIFIC_NAME"));
+    Assertions.assertFalse(resultSet.next());
 
     // test pattern
     resultSet = databaseMetaData.getFunctions(null, null, "JDBCFUNCTEST%");
-    assertEquals(5, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(5, getSizeOfResultSet(resultSet));
     resultSet = databaseMetaData.getFunctions(null, "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
-    assertEquals(3, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(3, getSizeOfResultSet(resultSet));
     // resultSet = databaseMetaData.getFunctions("JDBC_DB1", "AAAAAAAAAAA", "AAAAAAA");
     try {
       resultSet = databaseMetaData.getFunctions("JDBC_DB3", "JDBC_SCHEMA1_", "_DBCFUNCTEST%");
     } catch (SQLException e) {
-      assertEquals(2003, e.getErrorCode());
+      Assertions.assertEquals(2003, e.getErrorCode());
     }
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA__", "_DBCFUNCTEST%");
-    assertEquals(3, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(3, getSizeOfResultSet(resultSet));
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", "JDBC_SCHEMA1_", "_DBCFUNCTEST11_");
-    assertEquals(1, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
     resultSet = databaseMetaData.getFunctions("JDBC_DB1", null, "_DBCFUNCTEST11_");
-    assertEquals(1, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
 
     resultSet.close();
     resultSet.next();
@@ -245,38 +240,34 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     String getSchemaCount = "select count(*) from db.information_schema.schemata";
     connection = getConnection();
     databaseMetaData = connection.getMetaData();
-    assertEquals("schema", databaseMetaData.getSchemaTerm());
+    Assertions.assertEquals("schema", databaseMetaData.getSchemaTerm());
 
     // Exclude SNOWFLAKE system database from DatabaseMetadata
     ResultSet snowflakeResultSet = databaseMetaData.getSchemas("SNOWFLAKE", null);
     int numSnowflakeSchemas = getSizeOfResultSet(snowflakeResultSet);
 
     resultSet = databaseMetaData.getSchemas();
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getSchemaCount),
-        getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
+    Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getSchemaCount), getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
 
     resultSet = databaseMetaData.getSchemas(null, null);
-    assertEquals(
-        getAllObjectCountInDBViaInforSchema(getSchemaCount),
-        getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
+    Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getSchemaCount), getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
 
     resultSet = databaseMetaData.getSchemas("JDBC_DB1", "%");
     resultSet.next();
-    assertEquals("INFORMATION_SCHEMA", resultSet.getString(1));
-    assertEquals("JDBC_DB1", resultSet.getString(2));
+    Assertions.assertEquals("INFORMATION_SCHEMA", resultSet.getString(1));
+    Assertions.assertEquals("JDBC_DB1", resultSet.getString(2));
     resultSet.next();
-    assertEquals("JDBC_SCHEMA11", resultSet.getString(1));
-    assertEquals("JDBC_DB1", resultSet.getString(2));
+    Assertions.assertEquals("JDBC_SCHEMA11", resultSet.getString(1));
+    Assertions.assertEquals("JDBC_DB1", resultSet.getString(2));
     resultSet.next();
-    assertEquals("JDBC_SCHEMA12", resultSet.getString(1));
-    assertEquals("JDBC_DB1", resultSet.getString(2));
+    Assertions.assertEquals("JDBC_SCHEMA12", resultSet.getString(1));
+    Assertions.assertEquals("JDBC_DB1", resultSet.getString(2));
     resultSet.next();
-    assertEquals("PUBLIC", resultSet.getString(1));
-    assertEquals("JDBC_DB1", resultSet.getString(2));
+    Assertions.assertEquals("PUBLIC", resultSet.getString(1));
+    Assertions.assertEquals("JDBC_DB1", resultSet.getString(2));
 
     resultSet = databaseMetaData.getSchemas("JDBC_DB1", "JDBC%");
-    assertEquals(2, getSizeOfResultSet(resultSet));
+    Assertions.assertEquals(2, getSizeOfResultSet(resultSet));
     resultSet.close();
     resultSet.next();
 
@@ -322,24 +313,24 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     long newNumCacheRes = getNumCachedResults(stmt, accountId);
     // the number of cached results should increase by one
-    assertEquals(1, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(1, newNumCacheRes - oldNumCacheRes);
     // run show objects in database again and the #cache should be the same
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
     // the number of cached results should not increase
-    assertEquals(0, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(0, newNumCacheRes - oldNumCacheRes);
 
     // create new table, then the first getTables should create a new cache
     // and the 2nd getTables should reuse the cache
     stmt.execute("create table show2(c2 number);");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
-    assertEquals(1, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(1, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
-    assertEquals(0, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(0, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
 
     // rename table, then the first getTables should create a new cache
@@ -347,11 +338,11 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     stmt.execute("alter table show2 rename to show3");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
-    assertEquals(1, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(1, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
-    assertEquals(0, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(0, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
 
     // comment table, then the first getTables should create a new cache
@@ -359,29 +350,29 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     stmt.execute("alter table show3 set comment = 'show3'");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
-    assertEquals(1, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(1, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
-    assertEquals(0, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(0, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
 
     // insert table, then getTables should reuse last cache
     stmt.execute("insert into show3 values (3),(4)");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
-    assertEquals(0, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(0, newNumCacheRes - oldNumCacheRes);
 
     // drop table, then the first getTables should create a new cache
     // and the 2nd getTables should reuse the cache
     stmt.execute("drop table show1");
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
-    assertEquals(1, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(1, newNumCacheRes - oldNumCacheRes);
     oldNumCacheRes = newNumCacheRes;
     resultSet = databaseMetaData.getTables(dbname, null, null, null);
     newNumCacheRes = getNumCachedResults(stmt, accountId);
-    assertEquals(0, newNumCacheRes - oldNumCacheRes);
+    Assertions.assertEquals(0, newNumCacheRes - oldNumCacheRes);
 
     // clean up
     stmt.execute("drop database if exists " + dbname);
@@ -408,7 +399,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
             + "   }'));";
     stmt.execute(String.format(query, accountId));
     resultSet = stmt.getResultSet();
-    assertTrue(resultSet.next());
+    Assertions.assertTrue(resultSet.next());
     return resultSet.getLong(1);
   }
 
@@ -426,7 +417,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   private String getAccountName(Statement stmt) throws SQLException {
     stmt.execute("select current_account_locator()");
     resultSet = stmt.getResultSet();
-    assertTrue(resultSet.next());
+    Assertions.assertTrue(resultSet.next());
     return resultSet.getString(1);
   }
 
@@ -443,7 +434,7 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
             + "          ]\n"
             + "   }'));");
     resultSet = stmt.getResultSet();
-    assertTrue(resultSet.next());
+    Assertions.assertTrue(resultSet.next());
     return resultSet.getLong(1);
   }
 
@@ -467,13 +458,13 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
       try {
         ResultSet resultSet = databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"});
       } catch (SQLException e) {
-        assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
-        assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
+        Assertions.assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
+        Assertions.assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"SYSTEM_TABLE"})) {
-        assertEquals(0, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(0, getSizeOfResultSet(resultSet));
       }
 
       // Get the count of tables in the SNOWFLAKE system database, so we can exclude them from
@@ -485,66 +476,54 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
       }
 
       try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
-        assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllTable),
-            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"VIEW", "SYSTEM_TABLE"})) {
-        assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllView),
-            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllView), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"TABLE", "SYSTEM_TABLE"})) {
-        assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(
               null, null, null, new String[] {"TABLE", "VIEW", "SYSTEM_TABLE"})) {
-        assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllTable),
-            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"TABLE", "VIEW"})) {
-        assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllTable),
-            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"TABLE"})) {
-        assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"VIEW"})) {
-        assertEquals(
-            getAllObjectCountInDBViaInforSchema(getAllView),
-            getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllView), getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables("JDBC_DB1", "JDBC_SCHEMA11", null, new String[] {"TABLE"})) {
-        assertEquals(1, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
       }
 
       // snow-26032. JDBC should strip backslash before sending the show functions to server
       try (ResultSet resultSet =
           databaseMetaData.getTables("JDBC_DB1", "JDBC\\_SCHEMA11", "%", new String[] {"TABLE"})) {
-        assertEquals(1, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables("JDBC_DB1", "JDBC%", null, new String[] {"TABLE"})) {
-        assertEquals(3, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(3, getSizeOfResultSet(resultSet));
       }
 
       // SNOW-487548: disable the key-value feature to hide is_hybrid column
@@ -555,23 +534,23 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
           databaseMetaData.getTables(
               "JDBC_DB1", "JDBC_SCH%", "J_BC_TBL122", new String[] {"TABLE"})) {
         resultSet.next();
-        assertEquals("JDBC_DB1", resultSet.getString(1));
-        assertEquals("JDBC_SCHEMA12", resultSet.getString(2));
-        assertEquals("JDBC_TBL122", resultSet.getString(3));
-        assertEquals("TABLE", resultSet.getString(4));
-        assertEquals("", resultSet.getString(5));
+        Assertions.assertEquals("JDBC_DB1", resultSet.getString(1));
+        Assertions.assertEquals("JDBC_SCHEMA12", resultSet.getString(2));
+        Assertions.assertEquals("JDBC_TBL122", resultSet.getString(3));
+        Assertions.assertEquals("TABLE", resultSet.getString(4));
+        Assertions.assertEquals("", resultSet.getString(5));
         stmt.execute("alter session unset ENABLE_KEY_VALUE_TABLE;");
       }
       try (ResultSet resultSet =
           databaseMetaData.getTables("JDBC_DB1", null, "JDBC_TBL211", new String[] {"TABLE"})) {
-        assertEquals(0, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(0, getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet = databaseMetaData.getTableTypes()) {
         resultSet.next();
-        assertEquals("TABLE", resultSet.getString(1));
+        Assertions.assertEquals("TABLE", resultSet.getString(1));
         resultSet.next();
-        assertEquals("VIEW", resultSet.getString(1));
+        Assertions.assertEquals("VIEW", resultSet.getString(1));
       }
       stmt.execute("alter session set ENABLE_DRIVER_TERSE_SHOW = default;");
     }
@@ -592,38 +571,38 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
 
       // this should only return JDBC_SCHEMA11
       try (ResultSet resultSet = databaseMetaData.getSchemas(null, null)) {
-        assertEquals(1, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
       }
       // only returns tables in JDBC_DB1.JDBC_SCHEMA11
       try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
-        assertEquals(1, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
       }
 
       statement.execute("use schema JDBC_SCHEMA12");
       try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
-        assertEquals(2, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(2, getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet = databaseMetaData.getColumns(null, null, null, null)) {
-        assertEquals(4, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(4, getSizeOfResultSet(resultSet));
       }
 
       statement.execute("use schema TEST_CTX");
       try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, null)) {
-        assertEquals(1, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet = databaseMetaData.getImportedKeys(null, null, null)) {
-        assertEquals(1, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet = databaseMetaData.getExportedKeys(null, null, null)) {
-        assertEquals(1, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getCrossReference(null, null, null, null, null, null)) {
-        assertEquals(1, getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(1, getSizeOfResultSet(resultSet));
       }
     }
   }

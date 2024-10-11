@@ -7,8 +7,6 @@ package net.snowflake.client.core.arrow;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -35,6 +33,7 @@ import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -130,9 +129,9 @@ public class TwoFieldStructToTimestampTZConverterTest extends BaseConverterTest 
       Time time = converter.toTime(j);
       String tsStr = converter.toString(j);
       if (tsStr != null) {
-        assertFalse(converter.isNull(j));
+        Assertions.assertFalse(converter.isNull(j));
       } else {
-        assertTrue(converter.isNull(j));
+        Assertions.assertTrue(converter.isNull(j));
       }
 
       if (nullValIndex.contains(j)) {

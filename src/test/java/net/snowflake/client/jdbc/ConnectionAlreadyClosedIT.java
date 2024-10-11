@@ -5,11 +5,10 @@ package net.snowflake.client.jdbc;
 
 import java.sql.Connection;
 import java.util.Properties;
-import net.snowflake.client.category.TestCategoryConnection;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
 public class ConnectionAlreadyClosedIT extends BaseJDBCTest {
 
   @Test

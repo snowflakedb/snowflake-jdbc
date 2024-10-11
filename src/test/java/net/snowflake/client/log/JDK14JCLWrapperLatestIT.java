@@ -3,21 +3,17 @@
  */
 package net.snowflake.client.log;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import net.snowflake.client.category.TestCategoryCore;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
 public class JDK14JCLWrapperLatestIT {
   JDK14JCLWrapper wrapper = new JDK14JCLWrapper(JDK14JCLWrapperLatestIT.class.getName());
   JDK14Logger logger = (JDK14Logger) wrapper.getLogger();
@@ -101,7 +97,7 @@ public class JDK14JCLWrapperLatestIT {
         wrapper.info(message, t);
         break;
     }
-    assertEquals(message, getLoggedMessage());
+    Assertions.assertEquals(message, getLoggedMessage());
   }
 
   private void testLogMessagesNoThrowable(LogLevel level, String message) {
@@ -119,7 +115,7 @@ public class JDK14JCLWrapperLatestIT {
         wrapper.info(message);
         break;
     }
-    assertEquals(message, getLoggedMessage());
+    Assertions.assertEquals(message, getLoggedMessage());
   }
 
   private void testNullLogMessagesWithThrowable(LogLevel level, String message, Throwable t) {
@@ -131,7 +127,7 @@ public class JDK14JCLWrapperLatestIT {
         wrapper.debug(message, t);
         break;
     }
-    assertEquals(null, getLoggedMessage());
+    Assertions.assertEquals(null, getLoggedMessage());
   }
 
   private void testNullLogMessagesNoThrowable(LogLevel level, String message) {
@@ -143,7 +139,7 @@ public class JDK14JCLWrapperLatestIT {
         wrapper.debug(message);
         break;
     }
-    assertEquals(null, getLoggedMessage());
+    Assertions.assertEquals(null, getLoggedMessage());
   }
 
   /**
@@ -173,11 +169,11 @@ public class JDK14JCLWrapperLatestIT {
    */
   @Test
   public void testEnabledMessaging() {
-    assertFalse(wrapper.isTraceEnabled());
-    assertFalse(wrapper.isDebugEnabled());
-    assertTrue(wrapper.isInfoEnabled());
-    assertTrue(wrapper.isWarnEnabled());
-    assertTrue(wrapper.isErrorEnabled());
-    assertTrue(wrapper.isFatalEnabled());
+    Assertions.assertFalse(wrapper.isTraceEnabled());
+    Assertions.assertFalse(wrapper.isDebugEnabled());
+    Assertions.assertTrue(wrapper.isInfoEnabled());
+    Assertions.assertTrue(wrapper.isWarnEnabled());
+    Assertions.assertTrue(wrapper.isErrorEnabled());
+    Assertions.assertTrue(wrapper.isFatalEnabled());
   }
 }

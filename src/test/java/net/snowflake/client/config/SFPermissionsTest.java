@@ -1,7 +1,5 @@
 package net.snowflake.client.config;
 
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,6 +8,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.stream.Stream;
 import net.snowflake.client.annotations.DontRunOnWindows;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -68,7 +67,7 @@ public class SFPermissionsTest {
     Boolean result =
         SFClientConfigParser.checkGroupOthersWritePermissions(configFilePath.toString());
     if (isSucceed != result) {
-      fail("testLogDirectoryPermissions failed. Expected " + isSucceed);
+      Assertions.fail("testLogDirectoryPermissions failed. Expected " + isSucceed);
     }
   }
 }

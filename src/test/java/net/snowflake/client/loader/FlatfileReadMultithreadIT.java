@@ -16,13 +16,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryLoader.class)
+//@Category(TestCategoryLoader.class)
 public class FlatfileReadMultithreadIT {
   private final int NUM_RECORDS = 100000;
 

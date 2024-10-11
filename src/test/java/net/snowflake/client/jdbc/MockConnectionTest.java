@@ -1,9 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +27,7 @@ import java.util.TimeZone;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import net.snowflake.client.category.TestCategoryConnection;
+
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.QueryContextDTO;
@@ -52,7 +48,8 @@ import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.common.core.SFBinaryFormat;
 import net.snowflake.common.core.SnowflakeDateTimeFormat;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -60,7 +57,7 @@ import org.junit.jupiter.api.Test;
  * and ResultSet. These tests will query Snowflake normally, retrieve the JSON result, and replay it
  * back using a custom implementation of these objects that simply echoes a given JSON response.
  */
-@Category(TestCategoryConnection.class)
+//@Category(TestCategoryConnection.class)
 public class MockConnectionTest extends BaseJDBCTest {
 
   // Simple pair class container for the error test.
@@ -277,7 +274,7 @@ public class MockConnectionTest extends BaseJDBCTest {
         mockConnection.prepareStatement("select count(*) from " + testTableName).executeQuery();
     fakeResultSet.next();
     String val = fakeResultSet.getString(1);
-    assertEquals("colA value from the mock connection was not what was expected", "rowOne", val);
+    Assertions.assertEquals("rowOne", val, "colA value from the mock connection was not what was expected");
 
     mockConnection.close();
   }
@@ -314,7 +311,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     // Grab the errors logged by the session. Our session handler code
     // will simply append the errors to this list.
     List<String> loggedErrors = mockSession.getErrorsEncountered();
-    assertEquals(loggedErrors.size(), errors.size());
+    Assertions.assertEquals(loggedErrors.size(), errors.size());
 
     // Craft what we expect
     List<String> expectedErrorMessages =
@@ -333,7 +330,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     // Check equality of strings in the logged messages.
     zippedList.forEach(
         err -> {
-          assertEquals(err.first, err.second);
+          Assertions.assertEquals(err.first, err.second);
         });
 
     mockConnection.close();
@@ -411,7 +408,7 @@ public class MockConnectionTest extends BaseJDBCTest {
     InputStream downloadStream1 = mockConnection.downloadStream("@fakeStage", "file1", false);
     byte[] outputBytes1 = new byte[downloadStream1.available()];
     downloadStream1.read(outputBytes1);
-    assertArrayEquals("downloaded bytes not what was expected", outputBytes1, inputBytes1);
+    Assertions.assertArrayEquals(outputBytes1, inputBytes1, "downloaded bytes not what was expected");
   }
 
   private JsonNode createDummyResponseWithRows(List<List<Object>> rows, List<DataType> dataTypes) {
@@ -504,7 +501,7 @@ public class MockConnectionTest extends BaseJDBCTest {
       ResultSet resultSet, List<List<Object>> expectedRows, List<DataType> dataTypes)
       throws SQLException {
     if (expectedRows == null || expectedRows.size() == 0) {
-      assertFalse(resultSet.next());
+      Assertions.assertFalse(resultSet.next());
       return;
     }
 
@@ -525,10 +522,10 @@ public class MockConnectionTest extends BaseJDBCTest {
             expected = 0;
           }
           int actual = resultSet.getInt(columnIdx);
-          assertEquals(expected, actual);
+          Assertions.assertEquals(expected, actual);
         } else if (type == DataType.STRING) {
           String actual = resultSet.getString(columnIdx);
-          assertEquals(expected, actual);
+          Assertions.assertEquals(expected, actual);
         }
       }
 
@@ -540,7 +537,7 @@ public class MockConnectionTest extends BaseJDBCTest {
       resultSetRows++;
     }
 
-    assertEquals("row-count was not what was expected", numRows, resultSetRows);
+    Assertions.assertEquals(numRows, resultSetRows, "row-count was not what was expected");
   }
 
   // DataTypes supported with mock responses in test:

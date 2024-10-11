@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLHandshakeException;
-import net.snowflake.client.category.TestCategoryCore;
+
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.client.log.SFLogger;
@@ -30,7 +30,7 @@ import net.snowflake.client.log.SFLoggerFactory;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -40,7 +40,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@Category(TestCategoryCore.class)
+//@Category(TestCategoryCore.class)
 public class SFTrustManagerIT extends BaseJDBCTest {
   private static final SFLogger logger = SFLoggerFactory.getLogger(SFTrustManagerIT.class);
 

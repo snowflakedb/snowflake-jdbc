@@ -3,24 +3,21 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryArrow;
+
 import org.apache.commons.lang3.StringUtils;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Compare json and arrow resultSet behaviors 1/2 */
-@Category(TestCategoryArrow.class)
+//@Category(TestCategoryArrow.class)
 public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0MultiTimeZone {
 
   @ParameterizedTest
@@ -62,12 +59,12 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
     ResultSet rs = con.createStatement().executeQuery("select * from " + table);
     int i = 0;
     while (i < cases.length) {
-      assertTrue(rs.next());
-      assertEquals(times[i++], rs.getTimestamp(1).getTime());
-      assertEquals(0, rs.getTimestamp(1).getNanos());
+      Assertions.assertTrue(rs.next());
+      Assertions.assertEquals(times[i++], rs.getTimestamp(1).getTime());
+      Assertions.assertEquals(0, rs.getTimestamp(1).getNanos());
     }
-    assertTrue(rs.next());
-    assertNull(rs.getString(1));
+    Assertions.assertTrue(rs.next());
+    Assertions.assertNull(rs.getString(1));
     finish(table, con);
   }
 
@@ -94,10 +91,10 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
         // use initialized ltz output format
         try (ResultSet rs = statement.executeQuery("select * from " + table)) {
           for (int i = 0; i < cases.length; i++) {
-            assertTrue(rs.next());
-            assertEquals(times[i], rs.getTimestamp(1).getTime());
+            Assertions.assertTrue(rs.next());
+            Assertions.assertEquals(times[i], rs.getTimestamp(1).getTime());
             String weekday = rs.getString(1).split(",")[0];
-            assertEquals(3, weekday.length());
+            Assertions.assertEquals(3, weekday.length());
           }
         }
         // change ltz output format
@@ -105,10 +102,10 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
             "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS TZH:TZM'");
         try (ResultSet rs = statement.executeQuery("select * from " + table)) {
           for (int i = 0; i < cases.length; i++) {
-            assertTrue(rs.next());
-            assertEquals(times[i], rs.getTimestamp(1).getTime());
+            Assertions.assertTrue(rs.next());
+            Assertions.assertEquals(times[i], rs.getTimestamp(1).getTime());
             String year = rs.getString(1).split("-")[0];
-            assertEquals(4, year.length());
+            Assertions.assertEquals(4, year.length());
           }
         }
 
@@ -116,10 +113,10 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
         statement.execute("alter session unset TIMESTAMP_LTZ_OUTPUT_FORMAT");
         try (ResultSet rs = statement.executeQuery("select * from " + table)) {
           for (int i = 0; i < cases.length; i++) {
-            assertTrue(rs.next());
-            assertEquals(times[i], rs.getTimestamp(1).getTime());
+            Assertions.assertTrue(rs.next());
+            Assertions.assertEquals(times[i], rs.getTimestamp(1).getTime());
             String weekday = rs.getString(1).split(",")[0];
-            assertEquals(3, weekday.length());
+            Assertions.assertEquals(3, weekday.length());
           }
         }
         // set ltz output format back to init value
@@ -127,10 +124,10 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
             "alter session set TIMESTAMP_LTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
         try (ResultSet rs = statement.executeQuery("select * from " + table)) {
           for (int i = 0; i < cases.length; i++) {
-            assertTrue(rs.next());
-            assertEquals(times[i], rs.getTimestamp(1).getTime());
+            Assertions.assertTrue(rs.next());
+            Assertions.assertEquals(times[i], rs.getTimestamp(1).getTime());
             String weekday = rs.getString(1).split(",")[0];
-            assertEquals(3, weekday.length());
+            Assertions.assertEquals(3, weekday.length());
           }
         }
       } finally {
@@ -179,12 +176,12 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
       try {
         int i = 0;
         while (i < 2 * cases.length - 1) {
-          assertTrue(rs.next());
+          Assertions.assertTrue(rs.next());
           if (i % 2 != 0) {
-            assertNull(rs.getTimestamp(1));
+            Assertions.assertNull(rs.getTimestamp(1));
           } else {
-            assertEquals(times[i / 2], rs.getTimestamp(1).getTime());
-            assertEquals(0, rs.getTimestamp(1).getNanos());
+            Assertions.assertEquals(times[i / 2], rs.getTimestamp(1).getTime());
+            Assertions.assertEquals(0, rs.getTimestamp(1).getNanos());
           }
           i++;
         }
@@ -226,12 +223,12 @@ public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0M
       try {
         int i = 0;
         while (i < cases.length) {
-          assertTrue(rs.next());
-          assertEquals(times[i], rs.getTimestamp(1).getTime());
-          assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
+          Assertions.assertTrue(rs.next());
+          Assertions.assertEquals(times[i], rs.getTimestamp(1).getTime());
+          Assertions.assertEquals(nanos[i++], rs.getTimestamp(1).getNanos());
         }
-        assertTrue(rs.next());
-        assertNull(rs.getString(1));
+        Assertions.assertTrue(rs.next());
+        Assertions.assertNull(rs.getString(1));
       } finally {
         statement.execute("drop table " + table);
       }

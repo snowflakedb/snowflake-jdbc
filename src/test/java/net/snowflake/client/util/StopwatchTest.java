@@ -7,11 +7,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,12 +43,12 @@ public class StopwatchTest {
   @Test
   public void testShouldBeStarted() {
     stopwatch.start();
-    assertTrue(stopwatch.isStarted());
+    Assertions.assertTrue(stopwatch.isStarted());
   }
 
   @Test
   public void testShouldBeStopped() {
-    assertFalse(stopwatch.isStarted());
+    Assertions.assertFalse(stopwatch.isStarted());
   }
 
   @Test
@@ -58,7 +57,7 @@ public class StopwatchTest {
 
     Exception e = assertThrows(IllegalStateException.class, () -> stopwatch.start());
 
-    assertTrue(e.getMessage().contains("Stopwatch is already running"));
+    Assertions.assertTrue(e.getMessage().contains("Stopwatch is already running"));
   }
 
   @Test
@@ -68,38 +67,38 @@ public class StopwatchTest {
 
     Exception e = assertThrows(IllegalStateException.class, () -> stopwatch.stop());
 
-    assertTrue(e.getMessage().contains("Stopwatch is already stopped"));
+    Assertions.assertTrue(e.getMessage().contains("Stopwatch is already stopped"));
   }
 
   @Test
   public void testThrowsExceptionWhenStoppedWithoutStarting() {
     Exception e = assertThrows(IllegalStateException.class, () -> stopwatch.stop());
 
-    assertTrue(e.getMessage().contains("Stopwatch has not been started"));
+    Assertions.assertTrue(e.getMessage().contains("Stopwatch has not been started"));
   }
 
   @Test
   public void testThrowsExceptionWhenElapsedMillisWithoutStarting() {
     Exception e = assertThrows(IllegalStateException.class, () -> stopwatch.elapsedMillis());
 
-    assertTrue(e.getMessage().contains("Stopwatch has not been started"));
+    Assertions.assertTrue(e.getMessage().contains("Stopwatch has not been started"));
   }
 
   @Test
   public void testShouldReset() {
     stopwatch.start();
-    assertTrue(stopwatch.isStarted());
+    Assertions.assertTrue(stopwatch.isStarted());
     stopwatch.reset();
-    assertFalse(stopwatch.isStarted());
+    Assertions.assertFalse(stopwatch.isStarted());
   }
 
   @Test
   public void testShouldRestart() {
     stopwatch.start();
-    assertTrue(stopwatch.isStarted());
+    Assertions.assertTrue(stopwatch.isStarted());
     stopwatch.stop();
-    assertFalse(stopwatch.isStarted());
+    Assertions.assertFalse(stopwatch.isStarted());
     stopwatch.restart();
-    assertTrue(stopwatch.isStarted());
+    Assertions.assertTrue(stopwatch.isStarted());
   }
 }

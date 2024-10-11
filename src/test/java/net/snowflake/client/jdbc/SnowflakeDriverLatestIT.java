@@ -7,11 +7,6 @@ import static net.snowflake.client.jdbc.SnowflakeDriver.getClientVersionStringFr
 import static net.snowflake.client.jdbc.SnowflakeDriver.implementVersion;
 import static net.snowflake.client.jdbc.SnowflakeDriverIT.findFile;
 import static net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1.mapper;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.cloud.storage.StorageException;
@@ -43,7 +38,6 @@ import java.util.zip.GZIPInputStream;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.DontRunOnTestaccount;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.OCSPMode;
 import net.snowflake.client.core.SFSession;
@@ -58,7 +52,8 @@ import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -69,7 +64,7 @@ import org.junit.jupiter.api.io.TempDir;
  * is not applicable. If it is applicable, move tests to SnowflakeDriverIT so that both the latest
  * and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
   @TempDir private File tmpFolder2;
@@ -100,7 +95,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   @Test
   public void testStaticVersionMatchesManifest() {
-    assertEquals(implementVersion, getClientVersionStringFromManifest().replace("-SNAPSHOT", ""));
+    Assertions.assertEquals(implementVersion, getClientVersionStringFromManifest().replace("-SNAPSHOT", ""));
   }
 
   @Test
@@ -117,15 +112,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
         Statement statement = connection.createStatement();
         ResultSet res = statement.executeQuery("select current_session_client_info()")) {
-      assertTrue(res.next());
+      Assertions.assertTrue(res.next());
       clientInfoJSONStr = res.getString(1);
       clientInfoJSON = mapper.readTree(clientInfoJSONStr);
       // assert that spart version and spark app are found
-      assertEquals("spark version mismatch", "3.0.0", clientInfoJSON.get("spark.version").asText());
-      assertEquals(
-          "spark app mismatch",
-          "SnowflakeSourceSuite",
-          clientInfoJSON.get("spark.app.name").asText());
+      Assertions.assertEquals("3.0.0", clientInfoJSON.get("spark.version").asText(), "spark version mismatch");
+      Assertions.assertEquals("SnowflakeSourceSuite", clientInfoJSON.get("spark.app.name").asText(), "spark app mismatch");
     }
 
     // Test that when session property is set, connection parameter overrides it
@@ -137,15 +129,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection(DONT_INJECT_SOCKET_TIMEOUT, props, false, false);
         Statement statement = connection.createStatement();
         ResultSet res = statement.executeQuery("select current_session_client_info()")) {
-      assertTrue(res.next());
+      Assertions.assertTrue(res.next());
       clientInfoJSONStr = res.getString(1);
       clientInfoJSON = mapper.readTree(clientInfoJSONStr);
       // assert that spart version and spark app are found
-      assertEquals("spark version mismatch", "3.0.0", clientInfoJSON.get("spark.version").asText());
-      assertEquals(
-          "spark app mismatch",
-          "SnowflakeSourceSuite",
-          clientInfoJSON.get("spark.app.name").asText());
+      Assertions.assertEquals("3.0.0", clientInfoJSON.get("spark.version").asText(), "spark version mismatch");
+      Assertions.assertEquals("SnowflakeSourceSuite", clientInfoJSON.get("spark.app.name").asText(), "spark app mismatch");
     }
     System.clearProperty("snowflake.client.info");
   }
@@ -156,8 +145,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         Statement statement = con.createStatement();
         ResultSet rset = statement.executeQuery("select current_session()")) {
       String sessionID = con.unwrap(SnowflakeConnection.class).getSessionID();
-      assertTrue(rset.next());
-      assertEquals(sessionID, rset.getString(1));
+      Assertions.assertTrue(rset.next());
+      Assertions.assertEquals(sessionID, rset.getString(1));
     }
   }
 
@@ -174,15 +163,15 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @PUTTHRESHOLDSTAGE";
         SnowflakeFileTransferAgent agent =
             new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
-        assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
+        Assertions.assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
         // assert that setting threshold via put statement directly sets the big file threshold
         // appropriately
         String commandWithPut = command + " threshold=314572800";
         agent = new SnowflakeFileTransferAgent(commandWithPut, sfSession, sfStatement);
-        assertEquals(314572800, agent.getBigFileThreshold());
+        Assertions.assertEquals(314572800, agent.getBigFileThreshold());
         // assert that after put statement, threshold goes back to previous session threshold
         agent = new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
-        assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
+        Assertions.assertEquals(200 * 1024 * 1024, agent.getBigFileThreshold());
         // Attempt to set threshold to an invalid value such as a negative number
         String commandWithInvalidThreshold = command + " threshold=-1";
         try {
@@ -191,7 +180,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         }
         // assert invalid value causes exception to be thrown of type INVALID_PARAMETER_VALUE
         catch (SQLException e) {
-          assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
+          Assertions.assertEquals(SqlState.INVALID_PARAMETER_VALUE, e.getSQLState());
         }
       }
     } catch (SQLException ex) {
@@ -225,7 +214,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         for (SnowflakeFileTransferMetadata oneMetadata : metadatas1) {
           InputStream inputStream = new FileInputStream(srcPath1);
 
-          assertTrue(oneMetadata.isForOneFile());
+          Assertions.assertTrue(oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -253,7 +242,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           p.waitFor();
 
           InputStream gzInputStream = new FileInputStream(gzfilePath);
-          assertTrue(oneMetadata.isForOneFile());
+          Assertions.assertTrue(oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -265,17 +254,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         }
 
         // Download two files and verify their content.
-        assertTrue(
-            "Failed to get files",
-            statement.execute(
-                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
+        Assertions.assertTrue(statement.execute(
+            "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"), "Failed to get files");
 
         // Make sure that the downloaded files are EQUAL,
         // they should be gzip compressed
-        assertTrue(
-            isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
-        assertTrue(
-            isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+        Assertions.assertTrue(isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+        Assertions.assertTrue(isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
       } finally {
         statement.execute("DROP STAGE if exists " + testStageName);
       }
@@ -353,21 +338,17 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           }
 
           // Download two files and verify their content.
-          assertTrue(
-              "Failed to get files",
-              statement.execute(
-                  "GET @"
-                      + testStageName
-                      + " 'file://"
-                      + destFolderCanonicalPath
-                      + "/' parallel=8"));
+          Assertions.assertTrue(statement.execute(
+              "GET @"
+                  + testStageName
+                  + " 'file://"
+                  + destFolderCanonicalPath
+                  + "/' parallel=8"), "Failed to get files");
 
           // Make sure that the downloaded files are EQUAL,
           // they should be gzip compressed
-          assertTrue(
-              isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
-          assertTrue(
-              isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+          Assertions.assertTrue(isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+          Assertions.assertTrue(isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
         } finally {
           statement.execute("DROP STAGE if exists " + testStageName);
         }
@@ -409,7 +390,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // Below function call should fail.
         actualExceptionCount = 0;
         sfAgent.getFileTransferMetadatas();
-        fail("Above function should raise exception for GET");
+        Assertions.fail("Above function should raise exception for GET");
 
       } catch (Exception ex) {
         System.out.println("Negative test to hit expected exception: " + ex.getMessage());
@@ -418,7 +399,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         statement.execute("DROP STAGE if exists " + testStageName);
       }
     }
-    assertEquals(expectExceptionCount, actualExceptionCount);
+    Assertions.assertEquals(expectExceptionCount, actualExceptionCount);
   }
 
   @Test
@@ -428,57 +409,53 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     Properties props = new Properties();
     Driver driver = DriverManager.getDriver("jdbc:snowflake://snowflake.reg.local:8082");
     DriverPropertyInfo[] info = driver.getPropertyInfo(url, props);
-    assertEquals(1, info.length);
-    assertEquals("serverURL", info[0].name);
-    assertEquals(
-        "server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>",
-        info[0].description);
+    Assertions.assertEquals(1, info.length);
+    Assertions.assertEquals("serverURL", info[0].name);
+    Assertions.assertEquals("server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>", info[0].description);
 
     // Test with null URL and no properties. ServerURL is needed.
     url = null;
     props = new Properties();
     driver = DriverManager.getDriver("jdbc:snowflake://snowflake.reg.local:8082");
     info = driver.getPropertyInfo(url, props);
-    assertEquals(1, info.length);
-    assertEquals("serverURL", info[0].name);
-    assertEquals(
-        "server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>",
-        info[0].description);
+    Assertions.assertEquals(1, info.length);
+    Assertions.assertEquals("serverURL", info[0].name);
+    Assertions.assertEquals("server URL in form of <protocol>://<host or domain>:<port number>/<path of resource>", info[0].description);
 
     // Test with URL that requires username and password.
     url = "jdbc:snowflake://snowflake.reg.local:8082";
     info = driver.getPropertyInfo(url, props);
-    assertEquals(2, info.length);
-    assertEquals("user", info[0].name);
-    assertEquals("username for account", info[0].description);
-    assertEquals("password", info[1].name);
-    assertEquals("password for account", info[1].description);
+    Assertions.assertEquals(2, info.length);
+    Assertions.assertEquals("user", info[0].name);
+    Assertions.assertEquals("username for account", info[0].description);
+    Assertions.assertEquals("password", info[1].name);
+    Assertions.assertEquals("password for account", info[1].description);
 
     // Add username and try again; get password requirement back
     props.put("user", "snowman");
     props.put("password", "test");
     info = driver.getPropertyInfo(url, props);
-    assertEquals(0, info.length);
+    Assertions.assertEquals(0, info.length);
 
     props.put("useProxy", "true");
     info = driver.getPropertyInfo(url, props);
-    assertEquals(2, info.length);
-    assertEquals("proxyHost", info[0].name);
-    assertEquals("proxy host name", info[0].description);
-    assertEquals("proxyPort", info[1].name);
-    assertEquals("proxy port; should be an integer", info[1].description);
+    Assertions.assertEquals(2, info.length);
+    Assertions.assertEquals("proxyHost", info[0].name);
+    Assertions.assertEquals("proxy host name", info[0].description);
+    Assertions.assertEquals("proxyPort", info[1].name);
+    Assertions.assertEquals("proxy port; should be an integer", info[1].description);
 
     props.put("proxyHost", "dummyHost");
     props.put("proxyPort", "dummyPort");
     info = driver.getPropertyInfo(url, props);
-    assertEquals(0, info.length);
+    Assertions.assertEquals(0, info.length);
 
     // invalid URL still throws SQLException
     try {
       url = "snowflake.reg.local:8082";
       driver.getPropertyInfo(url, props);
     } catch (SQLException e) {
-      assertEquals((int) ErrorCode.INVALID_CONNECT_STRING.getMessageCode(), e.getErrorCode());
+      Assertions.assertEquals((int) ErrorCode.INVALID_CONNECT_STRING.getMessageCode(), e.getErrorCode());
     }
   }
 
@@ -522,30 +499,24 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         try {
           // create a stage to put the file in
           statement.execute("CREATE OR REPLACE STAGE testing_stage");
-          assertTrue(
-              "Failed to put a file",
-              statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"));
+          Assertions.assertTrue(statement.execute("PUT file://" + sourceFilePathOriginal + " @testing_stage"), "Failed to put a file");
           // check that file exists in stage after PUT
           findFile(statement, "ls @testing_stage/");
 
           // put another file in same stage with same filename with overwrite = true
-          assertTrue(
-              "Failed to put a file",
-              statement.execute(
-                  "PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=false"));
+          Assertions.assertTrue(statement.execute(
+              "PUT file://" + sourceFilePathOverwrite + " @testing_stage overwrite=false"), "Failed to put a file");
 
           // check that file exists in stage after PUT
           findFile(statement, "ls @testing_stage/");
 
           // get file from new stage
-          assertTrue(
-              "Failed to get files",
-              statement.execute(
-                  "GET @testing_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+          Assertions.assertTrue(statement.execute(
+              "GET @testing_stage 'file://" + destFolderCanonicalPath + "' parallel=8"), "Failed to get files");
 
           // Make sure that the downloaded file exists; it should be gzip compressed
           File downloaded = new File(destFolderCanonicalPathWithSeparator + "testfile.csv.gz");
-          assertTrue(downloaded.exists());
+          Assertions.assertTrue(downloaded.exists());
 
           // unzip the file
           Process p =
@@ -555,7 +526,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           // 2nd file should never be uploaded
           File unzipped = new File(destFolderCanonicalPathWithSeparator + "testfile.csv");
-          assertTrue(FileUtils.contentEqualsIgnoreEOL(file1, unzipped, null));
+          Assertions.assertTrue(FileUtils.contentEqualsIgnoreEOL(file1, unzipped, null));
         } finally {
           statement.execute("DROP TABLE IF EXISTS testLoadToLocalFS");
         }
@@ -590,10 +561,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           Statement statement = connection.createStatement()) {
         statement.execute("PUT file://" + sourceFilePathOriginal + " @testPutGet_disable_stage");
 
-        assertTrue("Shouldn't come here", false);
+        Assertions.assertTrue(false, "Shouldn't come here");
       } catch (Exception ex) {
         // Expected
-        assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
+        Assertions.assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
       }
     }
   }
@@ -623,10 +594,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         statement.execute(
             "GET @testPutGet_disable_stage 'file://" + destFolderCanonicalPath + "' parallel=8");
 
-        assertTrue("Shouldn't come here", false);
+        Assertions.assertTrue(false, "Shouldn't come here");
       } catch (Exception ex) {
         // Expected
-        assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
+        Assertions.assertTrue(ex.getMessage().equalsIgnoreCase("File transfers have been disabled."));
       }
     }
   }
@@ -653,17 +624,17 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(1, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(2, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(10, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(1, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(2, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(8, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(10, resultSet.getInt(1));
             }
           } else {
-            fail("Could not execute preparedStatement with OFFSET and LIMIT set " + "to NULL");
+            Assertions.fail("Could not execute preparedStatement with OFFSET and LIMIT set " + "to NULL");
           }
 
           ////////////////////////////
@@ -673,19 +644,18 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(1, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(2, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(10, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(1, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(2, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(8, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(10, resultSet.getInt(1));
             }
           } else {
-            fail(
-                "Could not execute preparedStatement with OFFSET and LIMIT set "
-                    + "to empty string");
+            Assertions.fail("Could not execute preparedStatement with OFFSET and LIMIT set "
+                + "to empty string");
           }
 
           ////////////////////////////
@@ -695,13 +665,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(10, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(8, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(10, resultSet.getInt(1));
             }
           } else {
-            fail("Could not execute preparedStatement with LIMIT set to NULL");
+            Assertions.fail("Could not execute preparedStatement with LIMIT set to NULL");
           }
 
           ////////////////////////////
@@ -711,13 +681,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(10, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(8, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(10, resultSet.getInt(1));
             }
           } else {
-            fail("Could not execute preparedStatement with LIMIT set to empty " + "string");
+            Assertions.fail("Could not execute preparedStatement with LIMIT set to empty " + "string");
           }
 
           ////////////////////////////
@@ -727,15 +697,15 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(1, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(2, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(1, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(2, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(8, resultSet.getInt(1));
             }
           } else {
-            fail("Could not execute preparedStatement with OFFSET set to NULL");
+            Assertions.fail("Could not execute preparedStatement with OFFSET set to NULL");
           }
 
           ////////////////////////////
@@ -745,15 +715,15 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
-              assertTrue(resultSet.next());
-              assertEquals(1, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(2, resultSet.getInt(1));
-              assertTrue(resultSet.next());
-              assertEquals(8, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(1, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(2, resultSet.getInt(1));
+              Assertions.assertTrue(resultSet.next());
+              Assertions.assertEquals(8, resultSet.getInt(1));
             }
           } else {
-            fail("Could not execute preparedStatement with OFFSET set to empty " + "string");
+            Assertions.fail("Could not execute preparedStatement with OFFSET set to empty " + "string");
           }
         }
         ////////////////////////////
@@ -765,14 +735,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
               for (int i = 0; i < 4; i++) {
-                assertTrue(resultSet.next());
-                assertEquals(1, resultSet.getInt(1));
+                Assertions.assertTrue(resultSet.next());
+                Assertions.assertEquals(1, resultSet.getInt(1));
               }
             }
           } else {
-            fail(
-                "Could not execute constant preparedStatement with OFFSET and "
-                    + "LIMIT set to NULL");
+            Assertions.fail("Could not execute constant preparedStatement with OFFSET and "
+                + "LIMIT set to NULL");
           }
 
           ////////////////////////////
@@ -782,14 +751,13 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           if (preparedStatement.execute()) {
             try (ResultSet resultSet = preparedStatement.getResultSet()) {
               for (int i = 0; i < 4; i++) {
-                assertTrue(resultSet.next());
-                assertEquals(1, resultSet.getInt(1));
+                Assertions.assertTrue(resultSet.next());
+                Assertions.assertEquals(1, resultSet.getInt(1));
               }
             }
           } else {
-            fail(
-                "Could not execute constant preparedStatement with OFFSET and "
-                    + "LIMIT set to empty string");
+            Assertions.fail("Could not execute constant preparedStatement with OFFSET and "
+                + "LIMIT set to empty string");
           }
         }
       } finally {
@@ -859,12 +827,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try (ResultSet resultSet = regularStatement.executeQuery("select * from t_geo")) {
       ResultSetMetaData metadata = resultSet.getMetaData();
 
-      assertEquals(1, metadata.getColumnCount());
+      Assertions.assertEquals(1, metadata.getColumnCount());
 
       // GeoJSON: SQL type OBJECT, Java type String
-      assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
-      assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
-      assertEquals(expectedColumnType, metadata.getColumnType(1));
+      Assertions.assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
+      Assertions.assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
+      Assertions.assertEquals(expectedColumnType, metadata.getColumnType(1));
     }
   }
 
@@ -910,12 +878,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try (ResultSet resultSet = md.getColumns(null, null, "T_GEO", null)) {
       ResultSetMetaData metadata = resultSet.getMetaData();
 
-      assertEquals(24, metadata.getColumnCount());
+      Assertions.assertEquals(24, metadata.getColumnCount());
 
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
 
-      assertEquals(expectedColumnType, resultSet.getInt(5));
-      assertEquals("GEOGRAPHY", resultSet.getString(6));
+      Assertions.assertEquals(expectedColumnType, resultSet.getInt(5));
+      Assertions.assertEquals("GEOGRAPHY", resultSet.getString(6));
     }
   }
 
@@ -964,12 +932,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
       ResultSetMetaData metadata = resultSet.getMetaData();
 
-      assertEquals(1, metadata.getColumnCount());
+      Assertions.assertEquals(1, metadata.getColumnCount());
 
       // GeoJSON: SQL type OBJECT, Java type String
-      assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
-      assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
-      assertEquals(expectedColumnType, metadata.getColumnType(1));
+      Assertions.assertEquals(expectedColumnTypeName, metadata.getColumnTypeName(1));
+      Assertions.assertEquals(expectedColumnClassName, metadata.getColumnClassName(1));
+      Assertions.assertEquals(expectedColumnType, metadata.getColumnType(1));
     }
   }
 
@@ -1006,12 +974,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try (ResultSet resultSet = md.getColumns(null, null, "T_GEO2", null)) {
       ResultSetMetaData metadata = resultSet.getMetaData();
 
-      assertEquals(24, metadata.getColumnCount());
+      Assertions.assertEquals(24, metadata.getColumnCount());
 
-      assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
 
-      assertEquals(expectedColumnType, resultSet.getInt(5));
-      assertEquals("GEOMETRY", resultSet.getString(6));
+      Assertions.assertEquals(expectedColumnType, resultSet.getInt(5));
+      Assertions.assertEquals("GEOMETRY", resultSet.getString(6));
     }
   }
 
@@ -1056,21 +1024,17 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
     try {
       statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
 
-      assertTrue(
-          "Failed to put a file",
-          statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"));
+      Assertions.assertTrue(statement.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"), "Failed to put a file");
 
       findFile(statement, "ls @testPutGet_stage/");
 
       // download the file we just uploaded to stage
-      assertTrue(
-          "Failed to get a file",
-          statement.execute(
-              "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+      Assertions.assertTrue(statement.execute(
+          "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"), "Failed to get a file");
 
       // Make sure that the downloaded file exists, it should be gzip compressed
       File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE_2 + ".gz");
-      assertTrue(downloaded.exists());
+      Assertions.assertTrue(downloaded.exists());
 
       Process p =
           Runtime.getRuntime()
@@ -1083,7 +1047,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           "Original file: " + original.getAbsolutePath() + ", size: " + original.length());
       System.out.println(
           "Unzipped file: " + unzipped.getAbsolutePath() + ", size: " + unzipped.length());
-      assertEquals(original.length(), unzipped.length());
+      Assertions.assertEquals(original.length(), unzipped.length());
     } finally {
       statement.execute("DROP STAGE IF EXISTS testGetPut_stage");
     }
@@ -1130,9 +1094,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE largefile_stage");
-        assertTrue(
-            "Failed to put a file",
-            statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
+        Assertions.assertTrue(statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"), "Failed to put a file");
 
         // check that file exists in stage after PUT
         findFile(statement, "ls @largefile_stage/");
@@ -1146,14 +1108,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
 
         // get file from new stage
-        assertTrue(
-            "Failed to get files",
-            statement.execute(
-                "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+        Assertions.assertTrue(statement.execute(
+            "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"), "Failed to get files");
 
         // Make sure that the downloaded file exists; it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-        assertTrue(downloaded.exists());
+        Assertions.assertTrue(downloaded.exists());
 
         // unzip the file
         Process p =
@@ -1165,8 +1125,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // back into a stage,
         // downloaded, and unzipped
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
-        assertEquals(largeTempFile.length(), unzipped.length());
-        assertTrue(FileUtils.contentEquals(largeTempFile, unzipped));
+        Assertions.assertEquals(largeTempFile.length(), unzipped.length());
+        Assertions.assertTrue(FileUtils.contentEquals(largeTempFile, unzipped));
       } finally {
         statement.execute("DROP STAGE IF EXISTS largefile_stage");
         statement.execute("DROP STAGE IF EXISTS extra_stage");
@@ -1209,9 +1169,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
         // create a stage to put the file in
         statement.execute("CREATE OR REPLACE STAGE largefile_stage");
-        assertTrue(
-            "Failed to put a file",
-            statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"));
+        Assertions.assertTrue(statement.execute("PUT file://" + sourceFilePath + " @largefile_stage"), "Failed to put a file");
 
         // check that file exists in stage after PUT
         findFile(statement, "ls @largefile_stage/");
@@ -1225,14 +1183,12 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         statement.execute("copy into @extra_stage/bigFile.csv.gz from large_table single=true");
 
         // get file from new stage
-        assertTrue(
-            "Failed to get files",
-            statement.execute(
-                "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"));
+        Assertions.assertTrue(statement.execute(
+            "GET @extra_stage 'file://" + destFolderCanonicalPath + "' parallel=8"), "Failed to get files");
 
         // Make sure that the downloaded file exists; it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv.gz");
-        assertTrue(downloaded.exists());
+        Assertions.assertTrue(downloaded.exists());
 
         // unzip the file
         Process p =
@@ -1244,8 +1200,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         // back into a stage,
         // downloaded, and unzipped
         File unzipped = new File(destFolderCanonicalPathWithSeparator + "bigFile.csv");
-        assertEquals(largeTempFile.length(), unzipped.length());
-        assertTrue(FileUtils.contentEquals(largeTempFile, unzipped));
+        Assertions.assertEquals(largeTempFile.length(), unzipped.length());
+        Assertions.assertTrue(FileUtils.contentEquals(largeTempFile, unzipped));
       } finally {
         statement.execute("DROP STAGE IF EXISTS largefile_stage");
         statement.execute("DROP STAGE IF EXISTS extra_stage");
@@ -1358,21 +1314,17 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
           }
 
           // Download two files and verify their content.
-          assertTrue(
-              "Failed to get files",
-              statement.execute(
-                  "GET @"
-                      + testStageName
-                      + " 'file://"
-                      + destFolderCanonicalPath
-                      + "/' parallel=8"));
+          Assertions.assertTrue(statement.execute(
+              "GET @"
+                  + testStageName
+                  + " 'file://"
+                  + destFolderCanonicalPath
+                  + "/' parallel=8"), "Failed to get files");
 
           // Make sure that the downloaded files are EQUAL,
           // they should be gzip compressed
-          assertTrue(
-              isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
-          assertTrue(
-              isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
+          Assertions.assertTrue(isFileContentEqual(srcPath1, false, destFolderCanonicalPath + "/file1.gz", true));
+          Assertions.assertTrue(isFileContentEqual(srcPath2, false, destFolderCanonicalPath + "/file2.gz", true));
         } finally {
           statement.execute("DROP STAGE if exists " + testStageName);
         }
@@ -1438,8 +1390,8 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             StorageObjectMetadata meta = client.getObjectMetadata(remoteStageLocation, path);
 
             // Verify that we are able to fetch the metadata
-            assertEquals(clientName, client.getStreamingIngestClientName(meta));
-            assertEquals(clientKey, client.getStreamingIngestClientKey(meta));
+            Assertions.assertEquals(clientName, client.getStreamingIngestClientName(meta));
+            Assertions.assertEquals(clientKey, client.getStreamingIngestClientKey(meta));
           }
         } finally {
           statement.execute("DROP STAGE if exists " + testStageName);
@@ -1450,7 +1402,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   @Test
   public void testNoSpaceLeftOnDeviceException() {
-    assertThrows(
+    Assertions.assertThrows(
         SnowflakeSQLException.class,
         () -> {
           List<String> supportedAccounts =
@@ -1521,7 +1473,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
           InputStream inputStream = new FileInputStream(srcPath);
 
-          assertTrue(oneMetadata.isForOneFile());
+          Assertions.assertTrue(oneMetadata.isForOneFile());
           SnowflakeFileTransferAgent.uploadWithoutConnection(
               SnowflakeFileTransferConfig.Builder.newInstance()
                   .setSnowflakeFileTransferMetadata(oneMetadata)
@@ -1532,11 +1484,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                   .build());
         }
 
-        assertTrue(
-            "Failed to get files",
-            statement.execute(
-                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
-        assertTrue(isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
+        Assertions.assertTrue(statement.execute(
+            "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"), "Failed to get files");
+        Assertions.assertTrue(isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
       } finally {
         statement.execute("DROP STAGE if exists " + testStageName);
       }
@@ -1582,9 +1532,9 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         SnowflakeFileTransferAgent sfAgent =
             new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
         List<SnowflakeFileTransferMetadata> metadataList = sfAgent.getFileTransferMetadatas();
-        assertEquals(1, metadataList.size());
+        Assertions.assertEquals(1, metadataList.size());
         SnowflakeFileTransferMetadata oneMetadata = metadataList.get(0);
-        assertFalse(oneMetadata.isForOneFile());
+        Assertions.assertFalse(oneMetadata.isForOneFile());
 
         // Upload multiple file with the same SnowflakeFileTransferMetadata
         String[] fileNames = {TEST_DATA_FILE, TEST_DATA_FILE_2};
@@ -1602,13 +1552,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
                     .setNetworkTimeoutInMilli(0)
                     .setOcspMode(OCSPMode.FAIL_OPEN)
                     .build());
-            assertTrue(
-                "Failed to get files with down-scoped token",
-                statement.execute(
-                    "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/'"));
-            assertTrue(
-                isFileContentEqual(
-                    srcPath, false, destFolderCanonicalPath + "/" + targetFileName, true));
+            Assertions.assertTrue(statement.execute(
+                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/'"), "Failed to get files with down-scoped token");
+            Assertions.assertTrue(isFileContentEqual(
+                srcPath, false, destFolderCanonicalPath + "/" + targetFileName, true));
           }
         }
       } finally {
@@ -1640,13 +1587,10 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
       // values
       try (Connection con = getConnection()) {
         SFSession session = con.unwrap(SnowflakeConnectionV1.class).getSfSession();
-        assertTrue(
-            TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
-        assertTrue(
-            TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").equalsIgnoreCase(con.getCatalog()));
-        assertTrue(
-            TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE")
-                .equalsIgnoreCase(session.getWarehouse()));
+        Assertions.assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
+        Assertions.assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE").equalsIgnoreCase(con.getCatalog()));
+        Assertions.assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE")
+            .equalsIgnoreCase(session.getWarehouse()));
         try (Statement statement = con.createStatement()) {
           // Set TIMESTAMP_OUTPUT_FORMAT (which is a session parameter) to check its value later
           try {
@@ -1656,22 +1600,17 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             statement.execute(
                 "insert into testtable1 values ('row1', 1), ('row2', 2), ('row3', 3)");
             try (ResultSet rs = statement.executeQuery("select * from testtable1")) {
-              assertEquals(3, getSizeOfResultSet(rs));
+              Assertions.assertEquals(3, getSizeOfResultSet(rs));
               // Assert database, schema, and warehouse have the same values as before even though
               // the select statement will return no parameters or metadata
-              assertTrue(
-                  TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
-              assertTrue(
-                  TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE")
-                      .equalsIgnoreCase(con.getCatalog()));
-              assertTrue(
-                  TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE")
-                      .equalsIgnoreCase(session.getWarehouse()));
+              Assertions.assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_SCHEMA").equalsIgnoreCase(con.getSchema()));
+              Assertions.assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_DATABASE")
+                  .equalsIgnoreCase(con.getCatalog()));
+              Assertions.assertTrue(TestUtil.systemGetEnv("SNOWFLAKE_TEST_WAREHOUSE")
+                  .equalsIgnoreCase(session.getWarehouse()));
               // Assert session parameter TIMESTAMP_OUTPUT_FORMAT has the same value as before the
               // select statement
-              assertEquals(
-                  "YYYY-MM-DD HH24:MI:SS.FFTZH",
-                  session.getCommonParameters().get("TIMESTAMP_OUTPUT_FORMAT"));
+              Assertions.assertEquals("YYYY-MM-DD HH24:MI:SS.FFTZH", session.getCommonParameters().get("TIMESTAMP_OUTPUT_FORMAT"));
             }
           } finally {
             statement.execute("alter session unset TIMESTAMP_OUTPUT_FORMAT");
@@ -1725,21 +1664,21 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
             .unwrap(SnowflakeStatement.class)
             .setParameter("TIMESTAMP_OUTPUT_FORMAT", "YYYY-MM-DD\"T\"HH24:MI:SS");
         try (ResultSet resultSet = statement.executeQuery("select * from timetable")) {
-          assertTrue(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
           // Assert that the values match the format of the specified statement parameter output
           // format
           // values
-          assertEquals("01:53:11.000000000 PM", resultSet.getString(1));
-          assertEquals("2023-08-17T13:53:33", resultSet.getString(2));
-          assertEquals("17-Aug-2023", resultSet.getString(3));
+          Assertions.assertEquals("01:53:11.000000000 PM", resultSet.getString(1));
+          Assertions.assertEquals("2023-08-17T13:53:33", resultSet.getString(2));
+          Assertions.assertEquals("17-Aug-2023", resultSet.getString(3));
         }
 
         // Set a different statement parameter value for DATE_OUTPUT_FORMAT
         statement.unwrap(SnowflakeStatement.class).setParameter("DATE_OUTPUT_FORMAT", "MM/DD/YYYY");
         try (ResultSet resultSet = statement.executeQuery("select * from timetable")) {
-          assertTrue(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
           // Verify it matches the new statement parameter specified output format
-          assertEquals("08/17/2023", resultSet.getString(3));
+          Assertions.assertEquals("08/17/2023", resultSet.getString(3));
         }
       } finally {
         statement.execute("drop table if exists timetable");
@@ -1785,8 +1724,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
         InputStream downloadedFileStream =
             new FileInputStream(destFolderCanonicalPath + "/" + fileName);
         String downloadedFile = IOUtils.toString(downloadedFileStream, StandardCharsets.UTF_8);
-        assertTrue(
-            "downloaded content does not equal uploaded content", content.equals(downloadedFile));
+        Assertions.assertTrue(content.equals(downloadedFile), "downloaded content does not equal uploaded content");
       } finally {
         statement.execute("DROP STAGE if exists " + testStageName);
       }
@@ -1798,7 +1736,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   public void shouldLoadDriverWithDisabledTelemetryOob() throws ClassNotFoundException {
     Class.forName("net.snowflake.client.jdbc.SnowflakeDriver");
 
-    assertFalse(TelemetryService.getInstance().isEnabled());
-    assertFalse(TelemetryService.getInstance().isHTAPEnabled());
+    Assertions.assertFalse(TelemetryService.getInstance().isEnabled());
+    Assertions.assertFalse(TelemetryService.getInstance().isHTAPEnabled());
   }
 }

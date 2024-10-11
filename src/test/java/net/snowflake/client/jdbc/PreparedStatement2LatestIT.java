@@ -6,10 +6,6 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,9 +13,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Assert;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -28,7 +23,7 @@ import org.junit.jupiter.api.Test;
  * if the tests still are not applicable. If it is applicable, move tests to PreparedStatement2IT so
  * that both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   public PreparedStatement2LatestIT() {
     super("json");
@@ -76,10 +71,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           // second argument is invalid
           prepStatement.setInt(1, 1);
           prepStatement.execute();
-          Assert.fail();
+          Assertions.fail();
         } catch (SQLException e) {
           // failed because argument type did not match
-          Assert.assertThat(e.getErrorCode(), is(1044));
+          assertThat(e.getErrorCode(), is(1044));
         }
 
         // create a udf with same name but different arguments and return type
@@ -122,7 +117,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           ps.setObject(1, 0);
           ps.setObject(2, null);
           try (ResultSet rs = ps.executeQuery()) {
-            assertFalse(rs.next());
+            Assertions.assertFalse(rs.next());
           }
         }
 
@@ -134,7 +129,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           ps.setObject(2, null);
 
           try (ResultSet rs = ps.executeQuery()) {
-            assertFalse(rs.next());
+            Assertions.assertFalse(rs.next());
           }
         }
       } finally {
@@ -163,7 +158,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         prepStatement.setInt(1, 10);
         prepStatement.setInt(2, 0);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          assertTrue(resultSet.next());
+          Assertions.assertTrue(resultSet.next());
           assertThat(resultSet.getInt(1), is(1));
           assertThat(resultSet.next(), is(false));
         }
@@ -178,7 +173,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
       try (PreparedStatement prepStatement = connection.prepareStatement(tableFuncSQL)) {
         prepStatement.setInt(1, 2);
         try (ResultSet resultSet = prepStatement.executeQuery()) {
-          assertEquals(2, getSizeOfResultSet(resultSet));
+          Assertions.assertEquals(2, getSizeOfResultSet(resultSet));
         }
       }
     }
@@ -201,8 +196,8 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           pstatement.executeLargeBatch();
           con.commit();
           try (ResultSet resultSet = statement.executeQuery("select * from mytab")) {
-            assertTrue(resultSet.next());
-            assertEquals(4, resultSet.getInt(1));
+            Assertions.assertTrue(resultSet.next());
+            Assertions.assertEquals(4, resultSet.getInt(1));
           }
         }
       } finally {
@@ -222,7 +217,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         try (PreparedStatement preparedStatement =
             connection.prepareStatement("insert into test_uuid_with_bind values (?)")) {
           preparedStatement.setInt(1, 5);
-          assertEquals(1, preparedStatement.executeUpdate());
+          Assertions.assertEquals(1, preparedStatement.executeUpdate());
           queryId1 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
           // Calling getMetadata() should no longer require an additional server call because we
           // have
@@ -233,14 +228,13 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           // Assert the query IDs are the same. This will be the case if there is no additional
           // describe
           // call for getMetadata().
-          assertEquals(queryId1, queryId2);
+          Assertions.assertEquals(queryId1, queryId2);
 
           preparedStatement.addBatch();
         }
         try (PreparedStatement preparedStatement =
             connection.prepareStatement("select * from test_uuid_with_bind where c1 = ?")) {
-          assertFalse(
-              preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          Assertions.assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
           preparedStatement.setInt(1, 5);
 
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -253,8 +247,8 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
                     .getQueryID();
             String queryId3 = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
             // Assert all 3 query IDs are the same because only 1 server call was executed
-            assertEquals(queryId1, queryId2);
-            assertEquals(queryId1, queryId3);
+            Assertions.assertEquals(queryId1, queryId2);
+            Assertions.assertEquals(queryId1, queryId3);
           }
         }
       } finally {
@@ -275,8 +269,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
       }
       try (PreparedStatement preparedStatement =
           connection.prepareStatement("insert into test_uuid_with_bind values (?, ?)")) {
-        assertFalse(
-            preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        Assertions.assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         preparedStatement.setInt(1, 5);
         preparedStatement.setString(2, "hello");
         preparedStatement.addBatch();
@@ -286,11 +279,11 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         String queryId2 =
             preparedStatement.getMetaData().unwrap(SnowflakeResultSetMetaData.class).getQueryID();
         // These query IDs should not match because they are from 2 different prepared statements
-        assertNotEquals(queryId1, queryId2);
+        Assertions.assertNotEquals(queryId1, queryId2);
         preparedStatement.executeBatch();
         String queryId3 = preparedStatement.unwrap(SnowflakePreparedStatement.class).getQueryID();
         // Another execute call was created, so prepared statement has new query ID
-        assertNotEquals(queryId2, queryId3);
+        Assertions.assertNotEquals(queryId2, queryId3);
         // Calling getMetadata() should no longer require an additional server call because we
         // have
         // the
@@ -300,7 +293,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         // Assert the query IDs for the 2 identical getMetadata() calls are the same. They should
         // match
         // since metadata no longer gets overwritten after successive query calls.
-        assertEquals(queryId2, queryId4);
+        Assertions.assertEquals(queryId2, queryId4);
         connection.createStatement().execute("drop table if exists test_uuid_with_bind");
       }
     }
@@ -313,23 +306,23 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
         prepStatement.execute();
         // The statement above has already been described since it has been executed
-        assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
       }
       try (PreparedStatement prepStatement = connection.prepareStatement(selectSQL)) {
         // Assert the statement, once it has been re-created, has already described set to false
-        assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        Assertions.assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         prepStatement.setInt(1, 1);
         try (ResultSet rs = prepStatement.executeQuery()) {
-          assertTrue(rs.next());
-          assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          Assertions.assertTrue(rs.next());
+          Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         }
       }
       try (PreparedStatement prepStatement = connection.prepareStatement(selectAllSQL)) {
         // Assert the statement, once it has been re-created, has already described set to false
-        assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        Assertions.assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         try (ResultSet rs = prepStatement.executeQuery()) {
-          assertTrue(rs.next());
-          assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          Assertions.assertTrue(rs.next());
+          Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         }
       }
     }
@@ -350,10 +343,8 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         try (PreparedStatement prepStatement =
             connection.prepareStatement("insert into testStageArrayBind values (?, ?)")) {
           // Assert to begin with that before the describe call, array binding is not supported
-          assertFalse(
-              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-          assertFalse(
-              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+          Assertions.assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          Assertions.assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
           // Insert enough rows to hit the default binding array threshold
           for (int i = 0; i < 35000; i++) {
             prepStatement.setInt(1, i);
@@ -362,8 +353,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           }
           prepStatement.executeBatch();
           // After executing the first batch, verify that array bind support is still true
-          assertTrue(
-              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+          Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
           for (int i = 0; i < 35000; i++) {
             prepStatement.setInt(1, i);
             prepStatement.setString(2, "test" + i);
@@ -371,8 +361,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           }
           prepStatement.executeBatch();
           // After executing the second batch, verify that array bind support is still true
-          assertTrue(
-              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+          Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
         }
       } finally {
         statement.execute("drop table if exists testStageArrayBind");
@@ -387,16 +376,13 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
             connection.prepareStatement("select current_version() --testing toString()")) {
 
       // Query ID is going to be null since we didn't execute the statement yet
-      assertEquals(
-          "select current_version() --testing toString() - Query ID: null",
-          prepStatement.toString());
+      Assertions.assertEquals("select current_version() --testing toString() - Query ID: null", prepStatement.toString());
 
       prepStatement.executeQuery();
-      assertTrue(
-          prepStatement
-              .toString()
-              .matches(
-                  "select current_version\\(\\) --testing toString\\(\\) - Query ID: (\\d|\\w)+(-(\\d|\\w)+)+$"));
+      Assertions.assertTrue(prepStatement
+          .toString()
+          .matches(
+              "select current_version\\(\\) --testing toString\\(\\) - Query ID: (\\d|\\w)+(-(\\d|\\w)+)+$"));
     }
   }
 }

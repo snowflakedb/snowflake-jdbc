@@ -13,21 +13,20 @@ import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeGCSClient;
-import org.junit.Assert;
-import org.junit.experimental.categories.Category;
+
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeGcsClient handle exception function, only work with latest driver */
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT {
   @TempDir private File tmpFolder;
   private Connection connection;
@@ -94,7 +93,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
     thread.start();
     thread.interrupt();
     thread.join();
-    Assert.assertNull("Exception must not have been thrown in here", exceptionContainer[0]);
+    Assertions.assertNull(exceptionContainer[0], "Exception must not have been thrown in here");
     Mockito.verify(spyingClient, Mockito.times(2)).renew(Mockito.anyMap());
   }
 
@@ -135,7 +134,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
             spyingClient.handleStorageException(
                 new InterruptedException(), 0, "upload", sfSession, command, null);
           } catch (Exception e) {
-            Assert.fail("Should not have exception here");
+            Assertions.fail("Should not have exception here");
           }
           Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
           spyingClient.handleStorageException(
@@ -154,7 +153,7 @@ public class SnowflakeGcsClientHandleExceptionLatestIT extends AbstractDriverIT 
             spyingClient.handleStorageException(
                 new SocketTimeoutException(), 0, "upload", sfSession, command, null);
           } catch (Exception e) {
-            Assert.fail("Should not have exception here");
+            Assertions.fail("Should not have exception here");
           }
           Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
           spyingClient.handleStorageException(

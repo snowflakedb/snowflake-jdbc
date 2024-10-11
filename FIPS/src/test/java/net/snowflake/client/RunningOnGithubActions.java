@@ -4,7 +4,7 @@
 package net.snowflake.client;
 
 /** Run tests on CI */
-public class RunningOnGithubActions implements ConditionalIgnoreRule.IgnoreCondition {
+public class RunningOnGithubActions {
   public boolean isSatisfied() {
     return TestUtil.systemGetEnv("GITHUB_ACTIONS") != null;
   }

@@ -1,9 +1,6 @@
 package net.snowflake.client.jdbc;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -13,16 +10,16 @@ import java.time.Duration;
 import java.util.Properties;
 import java.util.logging.Logger;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.QueryStatus;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
  * Test class for using heartbeat with asynchronous querying. This is a "Latest" class because old
  * driver versions do not contain the asynchronous querying API.
  */
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   private static Logger logger = Logger.getLogger(HeartbeatAsyncLatestIT.class.getName());
 
@@ -58,11 +55,11 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
           .atMost(Duration.ofSeconds(60))
           .until(() -> !QueryStatus.isStillRunning(rs.getStatus()));
       // Query should succeed eventually. Assert this is the case.
-      assertEquals(QueryStatus.SUCCESS, qs);
+      Assertions.assertEquals(QueryStatus.SUCCESS, qs);
 
       // assert we get 1 row
-      assertTrue(resultSet.next());
-      assertFalse(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertFalse(resultSet.next());
       logger.fine("Query " + queryIdx + " passed ");
     }
   }
@@ -85,10 +82,10 @@ public class HeartbeatAsyncLatestIT extends HeartbeatIT {
   public void testIsValidWithInvalidSession() throws Exception {
     try (Connection connection = getConnection()) {
       // assert that connection starts out valid
-      assertTrue(connection.isValid(5));
+      Assertions.assertTrue(connection.isValid(5));
       Thread.sleep(61000); // sleep 61 seconds to await session expiration time
       // assert that connection is no longer valid after session has expired
-      assertFalse(connection.isValid(5));
+      Assertions.assertFalse(connection.isValid(5));
     }
   }
 }

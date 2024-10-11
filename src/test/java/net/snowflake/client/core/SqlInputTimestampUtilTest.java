@@ -1,13 +1,12 @@
 package net.snowflake.client.core;
 
-import static org.junit.Assert.assertEquals;
-
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 import net.snowflake.client.jdbc.SnowflakeUtil;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -42,9 +41,9 @@ public class SqlInputTimestampUtilTest {
     Timestamp resultNtz =
         getFromType(SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_NTZ, TIMESTAMP_IN_FORMAT_1, null);
 
-    assertEquals(EXPECTED_TIMESTAMP, resultLtz);
-    assertEquals(EXPECTED_TIMESTAMP, resultTz);
-    assertEquals(EXPECTED_TIMESTAMP, resultNtz);
+    Assertions.assertEquals(EXPECTED_TIMESTAMP, resultLtz);
+    Assertions.assertEquals(EXPECTED_TIMESTAMP, resultTz);
+    Assertions.assertEquals(EXPECTED_TIMESTAMP, resultNtz);
   }
 
   private Timestamp getFromType(int type, String value, TimeZone explicitTimezone) {

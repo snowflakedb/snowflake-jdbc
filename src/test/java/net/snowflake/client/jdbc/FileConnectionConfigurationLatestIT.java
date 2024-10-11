@@ -10,8 +10,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ public class FileConnectionConfigurationLatestIT {
   @Test
   public void testThrowExceptionIfConfigurationDoesNotExist() {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "non-existent");
-    Assert.assertThrows(SnowflakeSQLException.class, () -> SnowflakeDriver.INSTANCE.connect());
+    Assertions.assertThrows(SnowflakeSQLException.class, () -> SnowflakeDriver.INSTANCE.connect());
   }
 
   @Test
@@ -46,7 +46,7 @@ public class FileConnectionConfigurationLatestIT {
             DriverManager.getConnection(SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX, null);
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("show parameters")) {
-      Assert.assertTrue(resultSet.next());
+      Assertions.assertTrue(resultSet.next());
     }
   }
 }

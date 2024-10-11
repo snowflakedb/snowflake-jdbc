@@ -7,9 +7,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -29,6 +26,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class IntToFixedConverterTest extends BaseConverterTest {
@@ -74,9 +72,9 @@ public class IntToFixedConverterTest extends BaseConverterTest {
       Object longObj = converter.toObject(i);
       String intString = converter.toString(i);
       if (intString != null) {
-        assertFalse(converter.isNull(i));
+        Assertions.assertFalse(converter.isNull(i));
       } else {
-        assertTrue(converter.isNull(i));
+        Assertions.assertTrue(converter.isNull(i));
       }
 
       if (nullValIndex.contains(i)) {
@@ -86,7 +84,7 @@ public class IntToFixedConverterTest extends BaseConverterTest {
         assertThat(converter.toBytes(i), is(nullValue()));
       } else {
         assertThat(intVal, is(expectedValues.get(i)));
-        assertEquals(longObj, (long) expectedValues.get(i));
+        Assertions.assertEquals(longObj, (long) expectedValues.get(i));
         assertThat(intString, is(expectedValues.get(i).toString()));
         bb = ByteBuffer.wrap(converter.toBytes(i));
         assertThat(intVal, is(bb.getInt()));

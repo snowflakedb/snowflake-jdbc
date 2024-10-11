@@ -9,8 +9,6 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,13 +20,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Random;
 import java.util.TimeZone;
-import net.snowflake.client.category.TestCategoryLoader;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Loader IT */
-@Category(TestCategoryLoader.class)
+//@Category(TestCategoryLoader.class)
 public class LoaderIT extends LoaderBase {
   @Test
   public void testInjectBadStagedFileInsert() throws Exception {
@@ -50,7 +48,7 @@ public class LoaderIT extends LoaderBase {
     }
     try {
       loader.finish();
-      fail("Should raise and error");
+      Assertions.fail("Should raise and error");
     } catch (Loader.DataError ex) {
       assertThat("Loader.DataError is raised", true);
     }
@@ -64,7 +62,7 @@ public class LoaderIT extends LoaderBase {
     loaderBefore.start();
     try {
       loaderBefore.finish();
-      fail("SQL Error should be raised.");
+      Assertions.fail("SQL Error should be raised.");
     } catch (Loader.ConnectionError e) {
       assertThat(e.getCause(), instanceOf(SQLException.class));
     }
@@ -76,7 +74,7 @@ public class LoaderIT extends LoaderBase {
     loaderAfter.start();
     try {
       loaderAfter.finish();
-      fail("SQL Error should be raised.");
+      Assertions.fail("SQL Error should be raised.");
     } catch (Loader.ConnectionError e) {
       assertThat(e.getCause(), instanceOf(SQLException.class));
     }
@@ -147,7 +145,7 @@ public class LoaderIT extends LoaderBase {
       try (Statement statement = testConnection.createStatement()) {
         try (ResultSet rs =
             statement.executeQuery(String.format("SELECT c1, c2 FROM %s LIMIT 1", tableName))) {
-          assertTrue(rs.next());
+          Assertions.assertTrue(rs.next());
           Time rsTm = rs.getTime(1);
           Date rsDt = rs.getDate(2);
           assertThat("Time column didn't match", rsTm, equalTo(tm));
@@ -482,7 +480,7 @@ public class LoaderIT extends LoaderBase {
     }
     try {
       loader.finish();
-      fail("should raise an exception");
+      Assertions.fail("should raise an exception");
     } catch (Loader.DataError ex) {
       assertThat(ex.toString(), containsString("INVALID_INTEGER"));
     }

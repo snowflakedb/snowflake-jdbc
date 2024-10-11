@@ -3,10 +3,6 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
@@ -18,11 +14,11 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.experimental.categories.Category;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryOthers.class)
+//@Category(TestCategoryOthers.class)
 public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   private static final int columnCount = 9;
   private static final int INT_DATA = 1;
@@ -72,28 +68,28 @@ public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   public void testRowIndex() throws SQLException {
     try (ResultSet resultSet = getResultSet(false)) {
 
-      assertEquals(columnCount, resultSet.getMetaData().getColumnCount());
-      assertEquals(-1, resultSet.getRow());
-      assertTrue(resultSet.isBeforeFirst());
-      assertFalse(resultSet.isFirst());
+      Assertions.assertEquals(columnCount, resultSet.getMetaData().getColumnCount());
+      Assertions.assertEquals(-1, resultSet.getRow());
+      Assertions.assertTrue(resultSet.isBeforeFirst());
+      Assertions.assertFalse(resultSet.isFirst());
 
-      assertTrue(resultSet.next());
-      assertEquals(0, resultSet.getRow());
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertEquals(0, resultSet.getRow());
 
-      assertFalse(resultSet.isBeforeFirst());
-      assertTrue(resultSet.isFirst());
+      Assertions.assertFalse(resultSet.isBeforeFirst());
+      Assertions.assertTrue(resultSet.isFirst());
 
-      assertTrue(resultSet.next());
-      assertEquals(1, resultSet.getRow());
+      Assertions.assertTrue(resultSet.next());
+      Assertions.assertEquals(1, resultSet.getRow());
 
-      assertTrue(resultSet.isLast());
-      assertFalse(resultSet.isAfterLast());
+      Assertions.assertTrue(resultSet.isLast());
+      Assertions.assertFalse(resultSet.isAfterLast());
 
-      assertFalse(resultSet.next());
-      assertEquals(2, resultSet.getRow());
+      Assertions.assertFalse(resultSet.next());
+      Assertions.assertEquals(2, resultSet.getRow());
 
-      assertFalse(resultSet.isLast());
-      assertTrue(resultSet.isAfterLast());
+      Assertions.assertFalse(resultSet.isLast());
+      Assertions.assertTrue(resultSet.isAfterLast());
     }
   }
 
@@ -111,64 +107,64 @@ public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   @Test
   public void testGetInt() throws SQLException {
     try (ResultSet resultSet = getResultSet(true)) {
-      assertEquals(INT_DATA, resultSet.getInt("int"));
+      Assertions.assertEquals(INT_DATA, resultSet.getInt("int"));
     }
   }
 
   @Test
   public void testGetString() throws SQLException {
     try (ResultSet resultSet = getResultSet(true)) {
-      assertEquals(TEXT_DATA, resultSet.getString("text"));
+      Assertions.assertEquals(TEXT_DATA, resultSet.getString("text"));
     }
   }
 
   @Test
   public void testGetDate() throws SQLException {
     try (ResultSet resultSet = getResultSet(true)) {
-      assertEquals(Date.valueOf(EPOCH_DATE), resultSet.getDate("date"));
+      Assertions.assertEquals(Date.valueOf(EPOCH_DATE), resultSet.getDate("date"));
     }
   }
 
   @Test
   public void testGetDouble() throws SQLException {
     try (ResultSet resultSet = getResultSet(true)) {
-      assertEquals(DOUBLE_DATA, resultSet.getDouble("double"), DELTA);
+      Assertions.assertEquals(DOUBLE_DATA, resultSet.getDouble("double"), DELTA);
     }
   }
 
   @Test
   public void testGetTime() throws SQLException {
     try (ResultSet resultSet = getResultSet(true)) {
-      assertEquals(TIME_DATA, resultSet.getTime("time"));
+      Assertions.assertEquals(TIME_DATA, resultSet.getTime("time"));
     }
   }
 
   @Test
   public void testGetTimestamp() throws SQLException {
     try (ResultSet resultSet = getResultSet(true)) {
-      assertEquals(TIMESTAMP_DATA, resultSet.getTimestamp("timestamp"));
+      Assertions.assertEquals(TIMESTAMP_DATA, resultSet.getTimestamp("timestamp"));
     }
   }
 
   @Test
   public void testGetBoolean() throws SQLException {
     try (ResultSet resultSet = getResultSet(true)) {
-      assertEquals(BOOLEAN_DATA, resultSet.getBoolean("bool"));
+      Assertions.assertEquals(BOOLEAN_DATA, resultSet.getBoolean("bool"));
     }
   }
 
   @Test
   public void testGetObject() throws SQLException {
     try (ResultSet resultSet = getResultSet(true)) {
-      assertEquals(INT_DATA, resultSet.getObject(1));
-      assertEquals(TEXT_DATA, resultSet.getObject(2));
-      assertEquals(Date.valueOf(EPOCH_DATE), resultSet.getObject(3));
-      assertEquals(DOUBLE_DATA, resultSet.getObject(4));
-      assertEquals(TIME_DATA, resultSet.getObject(5));
-      assertEquals(TIMESTAMP_DATA, resultSet.getObject(6));
-      assertEquals(BOOLEAN_DATA, resultSet.getObject(7));
-      assertEquals(DECIMAL_DATA, resultSet.getObject(8));
-      assertEquals(BIGINT_DATA, resultSet.getObject(9));
+      Assertions.assertEquals(INT_DATA, resultSet.getObject(1));
+      Assertions.assertEquals(TEXT_DATA, resultSet.getObject(2));
+      Assertions.assertEquals(Date.valueOf(EPOCH_DATE), resultSet.getObject(3));
+      Assertions.assertEquals(DOUBLE_DATA, resultSet.getObject(4));
+      Assertions.assertEquals(TIME_DATA, resultSet.getObject(5));
+      Assertions.assertEquals(TIMESTAMP_DATA, resultSet.getObject(6));
+      Assertions.assertEquals(BOOLEAN_DATA, resultSet.getObject(7));
+      Assertions.assertEquals(DECIMAL_DATA, resultSet.getObject(8));
+      Assertions.assertEquals(BIGINT_DATA, resultSet.getObject(9));
     }
   }
 }
