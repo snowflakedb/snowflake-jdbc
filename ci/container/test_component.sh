@@ -105,7 +105,7 @@ for c in "${CATEGORY[@]}"; do
                 --batch-mode --show-version
         popd >& /dev/null
     else
-        echo "[INFO] Run $c tests"
+        echo "[INFO] Run new JDBC $c tests"
         $MVNW_EXE -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
