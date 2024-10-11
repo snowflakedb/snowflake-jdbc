@@ -7,7 +7,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +16,7 @@ import org.junit.jupiter.api.Test;
  * if the tests still is not applicable. If it is applicable, move tests to MultiStatementIT so that
  * both the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class MultiStatementLatestIT extends BaseJDBCTest {
   protected static String queryResultFormat = "json";
 

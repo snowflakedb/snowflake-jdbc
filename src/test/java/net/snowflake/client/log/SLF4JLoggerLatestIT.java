@@ -11,7 +11,6 @@ import ch.qos.logback.core.AppenderBase;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.LoggerFactory;
 
 /** A class for testing {@link SLF4JLogger} */
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 public class SLF4JLoggerLatestIT extends AbstractLoggerIT {
   /** {@link SLF4JLogger} instance that will be tested in this class */
   private static final SLF4JLogger LOGGER = new SLF4JLogger(SLF4JLoggerLatestIT.class);

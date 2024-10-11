@@ -15,13 +15,12 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedStatic;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 public class SFTrustManagerMockitoMockLatestIT {
 
   @TempDir private File tmpFolder;

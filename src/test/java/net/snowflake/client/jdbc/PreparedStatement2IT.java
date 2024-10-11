@@ -23,11 +23,10 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Set;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class PreparedStatement2IT extends PreparedStatement0IT {
   public PreparedStatement2IT() {
     super("json");
@@ -102,7 +101,10 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
             }
 
             for (int i = 0; i < dates.length; i++) {
-              Assertions.assertEquals(nonStageResult[i], stageResult[i], "Stage binding date should match non-stage binding date");
+              Assertions.assertEquals(
+                  nonStageResult[i],
+                  stageResult[i],
+                  "Stage binding date should match non-stage binding date");
             }
           }
         }
@@ -605,17 +607,24 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    */
   private void checkResultSetEqual(ResultSet rs1, ResultSet rs2) throws SQLException {
     int columns = rs1.getMetaData().getColumnCount();
-    Assertions.assertEquals(columns, rs2.getMetaData().getColumnCount(), "Resultsets do not match in the number of columns returned");
+    Assertions.assertEquals(
+        columns,
+        rs2.getMetaData().getColumnCount(),
+        "Resultsets do not match in the number of columns returned");
 
     while (rs1.next() && rs2.next()) {
       for (int columnIndex = 1; columnIndex <= columns; columnIndex++) {
         final Object res1 = rs1.getObject(columnIndex);
         final Object res2 = rs2.getObject(columnIndex);
 
-        Assertions.assertEquals(res1, res2, String.format("%s and %s are not equal values at column %d", res1, res2, columnIndex));
+        Assertions.assertEquals(
+            res1,
+            res2,
+            String.format("%s and %s are not equal values at column %d", res1, res2, columnIndex));
       }
 
-      Assertions.assertEquals(rs1.isLast(), rs2.isLast(), "Number of records returned by the results does not match");
+      Assertions.assertEquals(
+          rs1.isLast(), rs2.isLast(), "Number of records returned by the results does not match");
     }
   }
 
@@ -664,8 +673,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   @Test
   public void testSnow44393() throws Exception {
     try (Connection con = init()) {
-      Assertions.assertFalse(con.createStatement()
-          .execute("alter session set timestamp_ntz_output_format='YYYY-MM-DD HH24:MI:SS'"));
+      Assertions.assertFalse(
+          con.createStatement()
+              .execute("alter session set timestamp_ntz_output_format='YYYY-MM-DD HH24:MI:SS'"));
       try (PreparedStatement stmt = con.prepareStatement("select to_timestamp_ntz(?, 3)")) {
         stmt.setBigDecimal(1, new BigDecimal("1261440000000"));
         try (ResultSet resultSet = stmt.executeQuery()) {
@@ -816,7 +826,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
             "select 1", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
         Assertions.fail("updateable cursor is not supported.");
       } catch (SQLException ex) {
-        Assertions.assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+        Assertions.assertEquals(
+            (int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       }
       connection.prepareStatement(
           "select 1",
@@ -831,7 +842,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
             ResultSet.HOLD_CURSORS_OVER_COMMIT);
         Assertions.fail("hold cursor over commit is not supported.");
       } catch (SQLException ex) {
-        Assertions.assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+        Assertions.assertEquals(
+            (int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       }
     }
   }

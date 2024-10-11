@@ -223,10 +223,12 @@ public class SecretDetectorTest {
     testParametersUnmasked.put("private_key_file", "test");
 
     for (Map.Entry<String, String> entry : testParametersMasked.entrySet()) {
-      Assertions.assertEquals("****", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
+      Assertions.assertEquals(
+          "****", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
     }
     for (Map.Entry<String, String> entry : testParametersUnmasked.entrySet()) {
-      Assertions.assertEquals("test", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
+      Assertions.assertEquals(
+          "test", SecretDetector.maskParameterValue(entry.getKey(), entry.getValue()));
     }
   }
 

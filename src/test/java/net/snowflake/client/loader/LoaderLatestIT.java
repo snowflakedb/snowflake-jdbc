@@ -11,7 +11,6 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +20,7 @@ import org.junit.jupiter.api.Test;
  * is not applicable. If it is applicable, move tests to LoaderIT so that both the latest and oldest
  * supported driver run the tests.
  */
-//@Category(TestCategoryLoader.class)
+// @Category(TestCategoryLoader.class)
 public class LoaderLatestIT extends LoaderBase {
   @Test
   public void testLoaderUpsert() throws Exception {

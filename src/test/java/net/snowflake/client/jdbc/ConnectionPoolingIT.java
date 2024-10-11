@@ -13,18 +13,16 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.Properties;
-
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.pool.impl.GenericObjectPool;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Connection pool interface test */
-//@Category(TestCategoryConnection.class)
+// @Category(TestCategoryConnection.class)
 public class ConnectionPoolingIT {
   private BasicDataSource bds = null;
   private ComboPooledDataSource cpds = null;

@@ -250,11 +250,12 @@ public class SSOConnectionTest {
                   resp = retInitialSSO;
                 } else if (callCount == 1) {
                   jsonNode = parseRequest((HttpPost) args[0]);
-                  Assertions.assertTrue(jsonNode
-                      .path("data")
-                      .path("SESSION_PARAMETERS")
-                      .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
-                      .asBoolean());
+                  Assertions.assertTrue(
+                      jsonNode
+                          .path("data")
+                          .path("SESSION_PARAMETERS")
+                          .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
+                          .asBoolean());
                   assertThat(
                       "authenticator",
                       jsonNode.path("data").path("AUTHENTICATOR").asText(),
@@ -262,11 +263,12 @@ public class SSOConnectionTest {
                   resp = retInitialAuthentication;
                 } else if (callCount == 2) {
                   jsonNode = parseRequest((HttpPost) args[0]);
-                  Assertions.assertTrue(jsonNode
-                      .path("data")
-                      .path("SESSION_PARAMETERS")
-                      .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
-                      .asBoolean());
+                  Assertions.assertTrue(
+                      jsonNode
+                          .path("data")
+                          .path("SESSION_PARAMETERS")
+                          .path("CLIENT_STORE_TEMPORARY_CREDENTIAL")
+                          .asBoolean());
                   assertThat(
                       "authenticator",
                       jsonNode.path("data").path("AUTHENTICATOR").asText(),

@@ -162,11 +162,13 @@ public class SessionUtilExternalBrowserTest {
       SessionUtilExternalBrowser sub =
           FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
       sub.authenticate();
-      MatcherAssert.assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+      MatcherAssert.assertThat(
+          "", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
 
       sub = FakeSessionUtilExternalBrowser.createInstance(loginInput, true);
       sub.authenticate();
-      MatcherAssert.assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+      MatcherAssert.assertThat(
+          "", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
     }
   }
 
@@ -210,7 +212,9 @@ public class SessionUtilExternalBrowserTest {
     URI uri =
         new URI("https://testaccount.snowflakecomputing.com:443/session/authenticator-request");
     HttpPost postReq = handler.build(uri);
-    Assertions.assertEquals("POST https://testaccount.snowflakecomputing.com:443/session/authenticator-request HTTP/1.1", postReq.toString());
+    Assertions.assertEquals(
+        "POST https://testaccount.snowflakecomputing.com:443/session/authenticator-request HTTP/1.1",
+        postReq.toString());
   }
 
   @Test

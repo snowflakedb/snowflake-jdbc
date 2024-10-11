@@ -32,7 +32,6 @@ import net.snowflake.client.jdbc.structuredtypes.sqldata.NullableFieldsSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.StringClass;
 import net.snowflake.client.providers.FormatProvider;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -40,7 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @BeforeEach
   public void setup() {
@@ -139,13 +138,18 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         Assertions.assertEquals(Float.valueOf(1.1f), object.getF(), 0.01);
         Assertions.assertEquals(Double.valueOf(2.2), object.getD(), 0.01);
         Assertions.assertEquals(BigDecimal.valueOf(3.3), object.getBd());
-        Assertions.assertEquals(LocalDateTime.of(2021, 12, 22, 9, 43, 44)
-            .atZone(ZoneId.of("Europe/Warsaw"))
-            .toInstant(), object.getTimestampLtz().toInstant());
-        Assertions.assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
-        Assertions.assertEquals(LocalDateTime.of(2021, 12, 24, 2, 45, 45)
-            .atZone(ZoneId.of("Europe/Warsaw"))
-            .toInstant(), object.getTimestampTz().toInstant());
+        Assertions.assertEquals(
+            LocalDateTime.of(2021, 12, 22, 9, 43, 44)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            object.getTimestampLtz().toInstant());
+        Assertions.assertEquals(
+            Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
+        Assertions.assertEquals(
+            LocalDateTime.of(2021, 12, 24, 2, 45, 45)
+                .atZone(ZoneId.of("Europe/Warsaw"))
+                .toInstant(),
+            object.getTimestampTz().toInstant());
         // TODO uncomment after merge SNOW-928973: Date field is returning one day less when getting
         // through getString method
         //                assertEquals(
@@ -493,12 +497,16 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         (resultSet) -> {
           Map<String, Timestamp> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
-          Assertions.assertEquals(LocalDateTime.of(2021, 12, 23, 9, 44, 44)
-              .atZone(ZoneId.of("Europe/Warsaw"))
-              .toInstant(), map.get("x").toInstant());
-          Assertions.assertEquals(LocalDateTime.of(2021, 12, 24, 9, 55, 55)
-              .atZone(ZoneId.of("Europe/Warsaw"))
-              .toInstant(), map.get("y").toInstant());
+          Assertions.assertEquals(
+              LocalDateTime.of(2021, 12, 23, 9, 44, 44)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("x").toInstant());
+          Assertions.assertEquals(
+              LocalDateTime.of(2021, 12, 24, 9, 55, 55)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("y").toInstant());
         },
         format);
   }
@@ -512,12 +520,16 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         (resultSet) -> {
           Map<String, Timestamp> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Timestamp.class);
-          Assertions.assertEquals(LocalDateTime.of(2021, 12, 23, 9, 44, 44)
-              .atZone(ZoneId.of("Europe/Warsaw"))
-              .toInstant(), map.get("x").toInstant());
-          Assertions.assertEquals(LocalDateTime.of(2021, 12, 24, 9, 55, 55)
-              .atZone(ZoneId.of("Europe/Warsaw"))
-              .toInstant(), map.get("y").toInstant());
+          Assertions.assertEquals(
+              LocalDateTime.of(2021, 12, 23, 9, 44, 44)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("x").toInstant());
+          Assertions.assertEquals(
+              LocalDateTime.of(2021, 12, 24, 9, 55, 55)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              map.get("y").toInstant());
         },
         format);
   }
@@ -547,8 +559,10 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         (resultSet) -> {
           Map<String, Date> map =
               resultSet.unwrap(SnowflakeBaseResultSet.class).getMap(1, Date.class);
-          Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), map.get("x").toString());
-          Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), map.get("y").toString());
+          Assertions.assertEquals(
+              Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), map.get("x").toString());
+          Assertions.assertEquals(
+              Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), map.get("y").toString());
         },
         format);
   }
@@ -668,9 +682,12 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                 "SELECT ARRAY_CONSTRUCT(10.2, 20.02, 30)::ARRAY(DECIMAL(20,2))"); ) {
       resultSet.next();
       BigDecimal[] resultArray2 = (BigDecimal[]) resultSet.getArray(1).getArray();
-      Assertions.assertEquals(BigDecimal.valueOf(10.20).doubleValue(), resultArray2[0].doubleValue(), 0);
-      Assertions.assertEquals(BigDecimal.valueOf(20.02).doubleValue(), resultArray2[1].doubleValue(), 0);
-      Assertions.assertEquals(BigDecimal.valueOf(30.00).doubleValue(), resultArray2[2].doubleValue(), 0);
+      Assertions.assertEquals(
+          BigDecimal.valueOf(10.20).doubleValue(), resultArray2[0].doubleValue(), 0);
+      Assertions.assertEquals(
+          BigDecimal.valueOf(20.02).doubleValue(), resultArray2[1].doubleValue(), 0);
+      Assertions.assertEquals(
+          BigDecimal.valueOf(30.00).doubleValue(), resultArray2[2].doubleValue(), 0);
     }
 
     //    when: jdbc_treat_decimal_as_int=false scale=0
@@ -712,8 +729,10 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         "SELECT ARRAY_CONSTRUCT(to_date('2023-12-24', 'YYYY-MM-DD'), to_date('2023-12-25', 'YYYY-MM-DD'))::ARRAY(DATE)",
         (resultSet) -> {
           Date[] resultArray = (Date[]) resultSet.getArray(1).getArray();
-          Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), resultArray[0].toString());
-          Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), resultArray[1].toString());
+          Assertions.assertEquals(
+              Date.valueOf(LocalDate.of(2023, 12, 24)).toString(), resultArray[0].toString());
+          Assertions.assertEquals(
+              Date.valueOf(LocalDate.of(2023, 12, 25)).toString(), resultArray[1].toString());
         },
         format);
   }
@@ -726,8 +745,10 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         "SELECT ARRAY_CONSTRUCT(to_time('15:39:20.123'), to_time('09:12:20.123'))::ARRAY(TIME)",
         (resultSet) -> {
           Time[] resultArray = (Time[]) resultSet.getArray(1).getArray();
-          Assertions.assertEquals(Time.valueOf(LocalTime.of(15, 39, 20)).toString(), resultArray[0].toString());
-          Assertions.assertEquals(Time.valueOf(LocalTime.of(9, 12, 20)).toString(), resultArray[1].toString());
+          Assertions.assertEquals(
+              Time.valueOf(LocalTime.of(15, 39, 20)).toString(), resultArray[0].toString());
+          Assertions.assertEquals(
+              Time.valueOf(LocalTime.of(9, 12, 20)).toString(), resultArray[1].toString());
         },
         format);
   }
@@ -740,12 +761,16 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         "SELECT ARRAY_CONSTRUCT(TO_TIMESTAMP_NTZ('2021-12-23 09:44:44'), TO_TIMESTAMP_NTZ('2021-12-24 09:55:55'))::ARRAY(TIMESTAMP)",
         (resultSet) -> {
           Timestamp[] resultArray = (Timestamp[]) resultSet.getArray(1).getArray();
-          Assertions.assertEquals(LocalDateTime.of(2021, 12, 23, 9, 44, 44)
-              .atZone(ZoneId.of("Europe/Warsaw"))
-              .toInstant(), resultArray[0].toInstant());
-          Assertions.assertEquals(LocalDateTime.of(2021, 12, 24, 9, 55, 55)
-              .atZone(ZoneId.of("Europe/Warsaw"))
-              .toInstant(), resultArray[1].toInstant());
+          Assertions.assertEquals(
+              LocalDateTime.of(2021, 12, 23, 9, 44, 44)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              resultArray[0].toInstant());
+          Assertions.assertEquals(
+              LocalDateTime.of(2021, 12, 24, 9, 55, 55)
+                  .atZone(ZoneId.of("Europe/Warsaw"))
+                  .toInstant(),
+              resultArray[1].toInstant());
         },
         format);
   }
@@ -842,22 +867,35 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               resultSet.getObject(1, NestedStructSqlData.class);
           ;
           Assertions.assertEquals("a", nestedStructSqlData.getSimpleClass().getString());
-          Assertions.assertEquals(Integer.valueOf(2), nestedStructSqlData.getSimpleClass().getIntValue());
+          Assertions.assertEquals(
+              Integer.valueOf(2), nestedStructSqlData.getSimpleClass().getIntValue());
 
           Assertions.assertEquals("a", nestedStructSqlData.getSimpleClassses().get(0).getString());
-          Assertions.assertEquals(Integer.valueOf(2), nestedStructSqlData.getSimpleClassses().get(0).getIntValue());
+          Assertions.assertEquals(
+              Integer.valueOf(2), nestedStructSqlData.getSimpleClassses().get(0).getIntValue());
           Assertions.assertEquals("b", nestedStructSqlData.getSimpleClassses().get(1).getString());
-          Assertions.assertEquals(Integer.valueOf(2), nestedStructSqlData.getSimpleClassses().get(1).getIntValue());
+          Assertions.assertEquals(
+              Integer.valueOf(2), nestedStructSqlData.getSimpleClassses().get(1).getIntValue());
 
-          Assertions.assertEquals("a", nestedStructSqlData.getArrayOfSimpleClasses()[0].getString());
-          Assertions.assertEquals(Integer.valueOf(2), nestedStructSqlData.getArrayOfSimpleClasses()[0].getIntValue());
-          Assertions.assertEquals("b", nestedStructSqlData.getArrayOfSimpleClasses()[1].getString());
-          Assertions.assertEquals(Integer.valueOf(2), nestedStructSqlData.getArrayOfSimpleClasses()[1].getIntValue());
+          Assertions.assertEquals(
+              "a", nestedStructSqlData.getArrayOfSimpleClasses()[0].getString());
+          Assertions.assertEquals(
+              Integer.valueOf(2), nestedStructSqlData.getArrayOfSimpleClasses()[0].getIntValue());
+          Assertions.assertEquals(
+              "b", nestedStructSqlData.getArrayOfSimpleClasses()[1].getString());
+          Assertions.assertEquals(
+              Integer.valueOf(2), nestedStructSqlData.getArrayOfSimpleClasses()[1].getIntValue());
 
-          Assertions.assertEquals("c", nestedStructSqlData.getMapOfSimpleClasses().get("x").getString());
-          Assertions.assertEquals(Integer.valueOf(2), nestedStructSqlData.getMapOfSimpleClasses().get("x").getIntValue());
-          Assertions.assertEquals("d", nestedStructSqlData.getMapOfSimpleClasses().get("y").getString());
-          Assertions.assertEquals(Integer.valueOf(2), nestedStructSqlData.getMapOfSimpleClasses().get("y").getIntValue());
+          Assertions.assertEquals(
+              "c", nestedStructSqlData.getMapOfSimpleClasses().get("x").getString());
+          Assertions.assertEquals(
+              Integer.valueOf(2),
+              nestedStructSqlData.getMapOfSimpleClasses().get("x").getIntValue());
+          Assertions.assertEquals(
+              "d", nestedStructSqlData.getMapOfSimpleClasses().get("y").getString());
+          Assertions.assertEquals(
+              Integer.valueOf(2),
+              nestedStructSqlData.getMapOfSimpleClasses().get("y").getIntValue());
 
           Assertions.assertEquals("string", nestedStructSqlData.getTexts().get(0));
           Assertions.assertEquals("a", nestedStructSqlData.getTexts().get(1));
@@ -871,8 +909,10 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
           //              Date.valueOf(LocalDate.of(2023, 12, 25)).toString(),
           //              nestedStructSqlData.getArrayOfDates()[1].toString());
 
-          Assertions.assertEquals(Integer.valueOf(3), nestedStructSqlData.getMapOfIntegers().get("x"));
-          Assertions.assertEquals(Integer.valueOf(4), nestedStructSqlData.getMapOfIntegers().get("y"));
+          Assertions.assertEquals(
+              Integer.valueOf(3), nestedStructSqlData.getMapOfIntegers().get("x"));
+          Assertions.assertEquals(
+              Integer.valueOf(4), nestedStructSqlData.getMapOfIntegers().get("y"));
           TestUtil.assertEqualsIgnoringWhitespace(expectedQueryResult, resultSet.getString(1));
         },
         format);
@@ -900,23 +940,29 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         "SELECT {'string':'a'}::OBJECT(string VARCHAR)",
         resultSet -> {
           Assertions.assertEquals(Types.STRUCT, resultSet.getMetaData().getColumnType(1));
-          Assertions.assertEquals(1, resultSet
-              .getMetaData()
-              .unwrap(SnowflakeResultSetMetaData.class)
-              .getColumnFields(1)
-              .size());
-          Assertions.assertEquals("VARCHAR", resultSet
-              .getMetaData()
-              .unwrap(SnowflakeResultSetMetaData.class)
-              .getColumnFields(1)
-              .get(0)
-              .getTypeName());
-          Assertions.assertEquals("string", resultSet
-              .getMetaData()
-              .unwrap(SnowflakeResultSetMetaData.class)
-              .getColumnFields(1)
-              .get(0)
-              .getName());
+          Assertions.assertEquals(
+              1,
+              resultSet
+                  .getMetaData()
+                  .unwrap(SnowflakeResultSetMetaData.class)
+                  .getColumnFields(1)
+                  .size());
+          Assertions.assertEquals(
+              "VARCHAR",
+              resultSet
+                  .getMetaData()
+                  .unwrap(SnowflakeResultSetMetaData.class)
+                  .getColumnFields(1)
+                  .get(0)
+                  .getTypeName());
+          Assertions.assertEquals(
+              "string",
+              resultSet
+                  .getMetaData()
+                  .unwrap(SnowflakeResultSetMetaData.class)
+                  .getColumnFields(1)
+                  .get(0)
+                  .getName());
         },
         format);
   }

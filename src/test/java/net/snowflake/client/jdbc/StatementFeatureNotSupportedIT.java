@@ -6,10 +6,9 @@ package net.snowflake.client.jdbc;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class StatementFeatureNotSupportedIT extends BaseJDBCTest {
   @Test
   public void testFeatureNotSupportedException() throws Throwable {

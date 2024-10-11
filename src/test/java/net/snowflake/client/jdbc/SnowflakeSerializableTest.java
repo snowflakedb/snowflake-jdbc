@@ -279,13 +279,15 @@ public class SnowflakeSerializableTest {
     Assertions.assertEquals(0, s.getNumberOfBinds());
     Assertions.assertEquals(QueryResultFormat.JSON, s.getQueryResultFormat());
     Assertions.assertEquals(SFStatementType.SELECT, s.getStatementType());
-    Assertions.assertEquals(new HashMap<String, Object>() {
-      {
-        put("CLIENT_PREFETCH_THREADS", 4);
-        put("TIMESTAMP_OUTPUT_FORMAT", "YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM");
-        put("CLIENT_RESULT_CHUNK_SIZE", 128);
-      }
-    }, s.getParameters());
+    Assertions.assertEquals(
+        new HashMap<String, Object>() {
+          {
+            put("CLIENT_PREFETCH_THREADS", 4);
+            put("TIMESTAMP_OUTPUT_FORMAT", "YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM");
+            put("CLIENT_RESULT_CHUNK_SIZE", 128);
+          }
+        },
+        s.getParameters());
     Assertions.assertEquals("ADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=", s.getQrmk());
     Assertions.assertFalse(s.isArrayBindSupported());
     Assertions.assertEquals(1, s.getResultVersion());
@@ -309,14 +311,17 @@ public class SnowflakeSerializableTest {
     // chunks metadata
     Assertions.assertEquals("[[\"1\"]]", s.getFirstChunkStringData());
     Assertions.assertEquals(1, s.getChunkHeadersMap().size());
-    Assertions.assertEquals("A2dDf2ff7HI8OCdsR3pK82g==", s.getChunkHeadersMap().get("x-amz-server-side-encryption-customer-key-md5"));
+    Assertions.assertEquals(
+        "A2dDf2ff7HI8OCdsR3pK82g==",
+        s.getChunkHeadersMap().get("x-amz-server-side-encryption-customer-key-md5"));
     Assertions.assertEquals(1, s.getChunkFileCount());
     Assertions.assertEquals(1, s.getChunkFileMetadatas().size());
     ChunkFileMetadata chunkMeta = s.getChunkFileMetadatas().get(0);
     Assertions.assertEquals(756, chunkMeta.getRowCount());
     Assertions.assertEquals(26828, chunkMeta.getCompressedByteSize());
     Assertions.assertEquals(312560, chunkMeta.getUncompressedByteSize());
-    Assertions.assertEquals("https://sfc-ds2-customer-stage.s3.us-west-2.amazonaws.com", chunkMeta.getFileURL());
+    Assertions.assertEquals(
+        "https://sfc-ds2-customer-stage.s3.us-west-2.amazonaws.com", chunkMeta.getFileURL());
     Assertions.assertNotNull(s.chunkDownloader);
     Assertions.assertTrue(expectedChunkDownloaderType.isInstance(s.chunkDownloader));
   }
@@ -352,16 +357,23 @@ public class SnowflakeSerializableTest {
     Assertions.assertEquals(1, upperBound.getColumnIndex());
 
     // chunks metadata
-    Assertions.assertEquals("[[\"value1_lower\",\"value1_upper\"],[\"value2_lower\",\"value2_upper\"]]", s.getRichResultsFirstChunkStringData());
-    Assertions.assertEquals("ZXYADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=", s.getRichResultsQrmk());
+    Assertions.assertEquals(
+        "[[\"value1_lower\",\"value1_upper\"],[\"value2_lower\",\"value2_upper\"]]",
+        s.getRichResultsFirstChunkStringData());
+    Assertions.assertEquals(
+        "ZXYADCDEFGHIJdwadawYhiF81aC0wT0IU+NN8QtobPWCk=", s.getRichResultsQrmk());
     Assertions.assertEquals(1, s.getRichResultsChunkHeadersMap().size());
-    Assertions.assertEquals("f342lkkftyf7HI8OCdsR3pK82g==", s.getRichResultsChunkHeadersMap().get("x-amz-server-side-encryption-customer-key-md5"));
+    Assertions.assertEquals(
+        "f342lkkftyf7HI8OCdsR3pK82g==",
+        s.getRichResultsChunkHeadersMap().get("x-amz-server-side-encryption-customer-key-md5"));
     Assertions.assertEquals(1, s.getRichResultsChunkFileCount());
     Assertions.assertEquals(1, s.getRichResultsChunkFilesMetadata().size());
     ChunkFileMetadata chunkMeta = s.getRichResultsChunkFilesMetadata().get(0);
     Assertions.assertEquals(756, chunkMeta.getRowCount());
     Assertions.assertEquals(26828, chunkMeta.getCompressedByteSize());
     Assertions.assertEquals(312560, chunkMeta.getUncompressedByteSize());
-    Assertions.assertEquals("https://sfc-ds2-customer-stage.s3.us-west-2.amazonaws.com/rich-res", chunkMeta.getFileURL());
+    Assertions.assertEquals(
+        "https://sfc-ds2-customer-stage.s3.us-west-2.amazonaws.com/rich-res",
+        chunkMeta.getFileURL());
   }
 }

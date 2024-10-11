@@ -49,8 +49,11 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
               SFBaseFileTransferAgent.CommandType.UPLOAD, exampleNode);
 
       Assertions.assertEquals(1, encryptionMaterials.size());
-      Assertions.assertEquals(expected.get(0).getQueryStageMasterKey(), encryptionMaterials.get(0).getQueryStageMasterKey());
-      Assertions.assertEquals(expected.get(0).getQueryId(), encryptionMaterials.get(0).getQueryId());
+      Assertions.assertEquals(
+          expected.get(0).getQueryStageMasterKey(),
+          encryptionMaterials.get(0).getQueryStageMasterKey());
+      Assertions.assertEquals(
+          expected.get(0).getQueryId(), encryptionMaterials.get(0).getQueryId());
       Assertions.assertEquals(expected.get(0).getSmkId(), encryptionMaterials.get(0).getSmkId());
     }
   }
@@ -153,7 +156,9 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
 
     // EncryptionMaterial check
     Assertions.assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
-    Assertions.assertEquals("EXAMPLE_QUERY_STAGE_MASTER_KEY", metadata.getEncryptionMaterial().getQueryStageMasterKey());
+    Assertions.assertEquals(
+        "EXAMPLE_QUERY_STAGE_MASTER_KEY",
+        metadata.getEncryptionMaterial().getQueryStageMasterKey());
     Assertions.assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
 
     // Misc check
@@ -229,7 +234,9 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
 
     // EncryptionMaterial check
     Assertions.assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
-    Assertions.assertEquals("EXAMPLE_QUERY_STAGE_MASTER_KEY", metadata.getEncryptionMaterial().getQueryStageMasterKey());
+    Assertions.assertEquals(
+        "EXAMPLE_QUERY_STAGE_MASTER_KEY",
+        metadata.getEncryptionMaterial().getQueryStageMasterKey());
     Assertions.assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
 
     // Misc check
@@ -262,7 +269,9 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
 
     // EncryptionMaterial check
     Assertions.assertEquals("EXAMPLE_QUERY_ID", metadata.getEncryptionMaterial().getQueryId());
-    Assertions.assertEquals("EXAMPLE_QUERY_STAGE_MASTER_KEY", metadata.getEncryptionMaterial().getQueryStageMasterKey());
+    Assertions.assertEquals(
+        "EXAMPLE_QUERY_STAGE_MASTER_KEY",
+        metadata.getEncryptionMaterial().getQueryStageMasterKey());
     Assertions.assertEquals(123L, (long) metadata.getEncryptionMaterial().getSmkId());
 
     // Misc check
@@ -279,7 +288,8 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
       Assertions.assertTrue(false);
     } catch (SnowflakeSQLException err) {
       Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      Assertions.assertEquals("JDBC driver internal error: This API only supports PUT commands.", err.getMessage());
+      Assertions.assertEquals(
+          "JDBC driver internal error: This API only supports PUT commands.", err.getMessage());
     }
   }
 
@@ -291,7 +301,8 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
       Assertions.assertTrue(false);
     } catch (SnowflakeSQLException err) {
       Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      Assertions.assertTrue(err.getMessage().contains("JDBC driver internal error: Failed to parse the credentials"));
+      Assertions.assertTrue(
+          err.getMessage().contains("JDBC driver internal error: Failed to parse the credentials"));
     }
   }
 
@@ -305,7 +316,8 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
       Assertions.assertTrue(false);
     } catch (SnowflakeSQLException err) {
       Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      Assertions.assertTrue(err.getMessage().contains("JDBC driver internal error: This API only supports"));
+      Assertions.assertTrue(
+          err.getMessage().contains("JDBC driver internal error: This API only supports"));
     }
   }
 
@@ -317,7 +329,8 @@ public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
       Assertions.assertTrue(false);
     } catch (SnowflakeSQLException err) {
       Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), err.getErrorCode());
-      Assertions.assertTrue(err.getMessage().contains("JDBC driver internal error: src_locations must be an array"));
+      Assertions.assertTrue(
+          err.getMessage().contains("JDBC driver internal error: src_locations must be an array"));
     }
   }
 

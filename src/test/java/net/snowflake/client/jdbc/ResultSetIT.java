@@ -25,13 +25,12 @@ import java.sql.Types;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.providers.SimpleFormatProvider;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Test ResultSet */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class ResultSetIT extends ResultSet0IT {
   private final String selectAllSQL = "select * from test_rs";
 
@@ -595,8 +594,10 @@ public class ResultSetIT extends ResultSet0IT {
                 + "error_on_column_count_mismatch=false)");
 
         // put files
-        Assertions.assertTrue(statement.execute(
-            "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%testFixedView"), "Failed to put a file");
+        Assertions.assertTrue(
+            statement.execute(
+                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%testFixedView"),
+            "Failed to put a file");
 
         try (ResultSet resultSet =
             statement.executeQuery(

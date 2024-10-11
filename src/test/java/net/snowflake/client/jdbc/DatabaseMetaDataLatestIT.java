@@ -28,7 +28,6 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
-
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
@@ -40,7 +39,7 @@ import org.junit.jupiter.api.Test;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   private static final String TEST_PROC =
       "create or replace procedure testproc(param1 float, param2 string)\n"
@@ -792,14 +791,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // radix column is not supported and will always be default of 10 (assumes base 10 system)
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
         // nullable column is not supported and always returns NullableUnknown
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("multiply numbers", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
         /* Call next function to get next row in resultSet, which contains row with info about first parameter of FUNC111
         function */
         resultSet.next();
@@ -817,14 +818,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // radix column is not supported and will always be default of 10 (assumes base 10 system)
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
         // nullable column is not supported and always returns NullableUnknown
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("multiply numbers", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
         /* Call next to get next row with info about second parameter of FUNC111 function */
         resultSet.next();
         Assertions.assertEquals(database, resultSet.getString("FUNCTION_CAT"));
@@ -841,14 +844,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // radix column is not supported and will always be default of 10 (assumes base 10 system)
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
         // nullable column is not supported and always returns NullableUnknown
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("multiply numbers", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
         /* Assert that there are no more rows left in resultSet */
         Assertions.assertFalse(resultSet.next());
       }
@@ -860,7 +865,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         Assertions.assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
         Assertions.assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
         Assertions.assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
         Assertions.assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
         Assertions.assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
         Assertions.assertEquals(0, resultSet.getInt("PRECISION"));
@@ -870,20 +876,24 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // radix column is not supported and will always be default of 10 (assumes base 10 system)
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
         // nullable column is not supported and always returns NullableUnknown
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
         Assertions.assertEquals(EXPECTED_MAX_CHAR_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+            resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         Assertions.assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         Assertions.assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
         Assertions.assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
         Assertions.assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
         Assertions.assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
         Assertions.assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
         Assertions.assertEquals(38, resultSet.getInt("PRECISION"));
@@ -893,20 +903,24 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // radix column is not supported and will always be default of 10 (assumes base 10 system)
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
         // nullable column is not supported and always returns NullableUnknown
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+            resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         Assertions.assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         Assertions.assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
         Assertions.assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
         Assertions.assertEquals("BIN2", resultSet.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
         Assertions.assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
         Assertions.assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
         Assertions.assertEquals(38, resultSet.getInt("PRECISION"));
@@ -916,20 +930,24 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // radix column is not supported and will always be default of 10 (assumes base 10 system)
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
         // nullable column is not supported and always returns NullableUnknown
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
         Assertions.assertEquals(EXPECTED_MAX_BINARY_LENGTH, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+            resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         Assertions.assertEquals(database, resultSet.getString("FUNCTION_CAT"));
         Assertions.assertEquals(schema, resultSet.getString("FUNCTION_SCHEM"));
         Assertions.assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
         Assertions.assertEquals("SHAREDCOL", resultSet.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
         Assertions.assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
         Assertions.assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
         Assertions.assertEquals(38, resultSet.getInt("PRECISION"));
@@ -939,14 +957,17 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // radix column is not supported and will always be default of 10 (assumes base 10 system)
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
         // nullable column is not supported and always returns NullableUnknown
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+            resultSet.getString("SPECIFIC_NAME"));
         Assertions.assertFalse(resultSet.next());
       }
 
@@ -981,14 +1002,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // radix column is not supported and will always be default of 10 (assumes base 10 system)
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
         // nullable column is not supported and always returns NullableUnknown
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("user-defined function", resultSet.getString("REMARKS"));
         // char octet length column is not supported and always returns 0
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
         // is_nullable column is not supported and always returns empty string
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("TOTAL_ROWS_IN_TABLE() RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "TOTAL_ROWS_IN_TABLE() RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
         Assertions.assertFalse(resultSet.next());
       }
     }
@@ -1679,7 +1702,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           Assertions.assertEquals(schema, resultSet.getString("PROCEDURE_SCHEM"));
           Assertions.assertEquals("GETPI", resultSet.getString("PROCEDURE_NAME"));
           Assertions.assertEquals("", resultSet.getString("COLUMN_NAME"));
-          Assertions.assertEquals(DatabaseMetaData.procedureColumnReturn, resultSet.getInt("COLUMN_TYPE"));
+          Assertions.assertEquals(
+              DatabaseMetaData.procedureColumnReturn, resultSet.getInt("COLUMN_TYPE"));
           Assertions.assertEquals(Types.FLOAT, resultSet.getInt("DATA_TYPE"));
           Assertions.assertEquals("FLOAT", resultSet.getString("TYPE_NAME"));
           Assertions.assertEquals(38, resultSet.getInt("PRECISION"));
@@ -1731,19 +1755,23 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
           res.next();
           Assertions.assertEquals("PROCTEST", res.getString("PROCEDURE_NAME"));
           Assertions.assertEquals("id", res.getString("COLUMN_NAME"));
-          Assertions.assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE")); // procedureColumnResult
+          Assertions.assertEquals(
+              DatabaseMetaData.procedureColumnResult,
+              res.getInt("COLUMN_TYPE")); // procedureColumnResult
           Assertions.assertEquals(Types.NUMERIC, res.getInt("DATA_TYPE"));
           Assertions.assertEquals("NUMBER", res.getString("TYPE_NAME"));
           Assertions.assertEquals(1, res.getInt("ORDINAL_POSITION")); // result set column 1
           res.next();
           Assertions.assertEquals("name", res.getString("COLUMN_NAME"));
-          Assertions.assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
+          Assertions.assertEquals(
+              DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
           Assertions.assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
           Assertions.assertEquals("VARCHAR", res.getString("TYPE_NAME"));
           Assertions.assertEquals(2, res.getInt("ORDINAL_POSITION")); // result set column 2
           res.next();
           Assertions.assertEquals("address", res.getString("COLUMN_NAME"));
-          Assertions.assertEquals(DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
+          Assertions.assertEquals(
+              DatabaseMetaData.procedureColumnResult, res.getInt("COLUMN_TYPE"));
           Assertions.assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
           Assertions.assertEquals("VARCHAR", res.getString("TYPE_NAME"));
           Assertions.assertEquals(3, res.getInt("ORDINAL_POSITION")); // result set column 3
@@ -1778,13 +1806,16 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         res.next();
         Assertions.assertEquals("MESSAGE_PROC", res.getString("PROCEDURE_NAME"));
         Assertions.assertEquals("", res.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.procedureColumnReturn, res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+        Assertions.assertEquals(
+            DatabaseMetaData.procedureColumnReturn,
+            res.getInt("COLUMN_TYPE")); // procedureColumnReturn
         Assertions.assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
         Assertions.assertEquals("VARCHAR", res.getString("TYPE_NAME"));
         Assertions.assertEquals(0, res.getInt("ORDINAL_POSITION"));
         res.next();
         Assertions.assertEquals("MESSAGE", res.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.procedureColumnIn, res.getInt("COLUMN_TYPE")); // procedureColumnIn
+        Assertions.assertEquals(
+            DatabaseMetaData.procedureColumnIn, res.getInt("COLUMN_TYPE")); // procedureColumnIn
         Assertions.assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
         Assertions.assertEquals("VARCHAR", res.getString("TYPE_NAME"));
         Assertions.assertEquals(1, res.getInt("ORDINAL_POSITION"));
@@ -1816,7 +1847,9 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
         // the procedure will return null as the value but column type will be varchar.
         Assertions.assertEquals("INSERTPROC", res.getString("PROCEDURE_NAME"));
         Assertions.assertEquals("", res.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.procedureColumnReturn, res.getInt("COLUMN_TYPE")); // procedureColumnReturn
+        Assertions.assertEquals(
+            DatabaseMetaData.procedureColumnReturn,
+            res.getInt("COLUMN_TYPE")); // procedureColumnReturn
         Assertions.assertEquals(Types.VARCHAR, res.getInt("DATA_TYPE"));
         Assertions.assertEquals("VARCHAR", res.getString("TYPE_NAME"));
         Assertions.assertEquals(0, res.getInt("ORDINAL_POSITION"));
@@ -1878,146 +1911,204 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             String database = connection.getCatalog();
 
             // Should return result for matching schema and table name
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
 
             // Should return an empty result if we try a pattern match on the schema
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)));
 
             // Should return an empty result if we try a pattern match on the schema
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)));
 
             // Should return an empty result if we try a pattern match on the schema
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)));
 
             // Should return an empty result if we try a pattern match on the schema
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)));
 
             // Should return result for matching schema and table name
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
 
             // Should return an empty result if we try a pattern match on the schema
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)));
 
             // Should return an empty result if we try a pattern match on the schema
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)));
 
             // Should return an empty result if we try a pattern match on the schema
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)));
 
             // Should return an empty result if we try a pattern match on the schema
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)));
 
             // Should return result for matching schema and table name
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
 
             // Should return an empty result if we try a pattern match on the schema
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)));
 
             // Should return an empty result if we try a pattern match on the table name
-            Assertions.assertEquals(0, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)));
+            Assertions.assertEquals(
+                0, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)));
 
             // Should return result for matching schema and table name
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
 
             // Should return an empty result if we try a pattern match on any of the table or schema
             // names
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schemaPattern1, table1, database, schema, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern1, table1, database, schema, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schemaPattern2, table1, database, schema, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern2, table1, database, schema, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schemaPattern1, null, database, schema, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern1, null, database, schema, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schemaPattern2, null, database, schema, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern2, null, database, schema, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schemaPattern1, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern1, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schemaPattern2, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern2, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schemaPattern1, null)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern1, null)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schemaPattern2, null)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern2, null)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, null, tablePattern1, database, schema, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, null, tablePattern1, database, schema, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, null, tablePattern2, database, schema, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, null, tablePattern2, database, schema, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, tablePattern1, database, schema, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, tablePattern1, database, schema, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, tablePattern2, database, schema, table2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, tablePattern2, database, schema, table2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, null, tablePattern1)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, null, tablePattern1)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, null, tablePattern2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, null, tablePattern2)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schema, tablePattern1)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schema, tablePattern1)));
 
-            Assertions.assertEquals(0, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schema, tablePattern2)));
+            Assertions.assertEquals(
+                0,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schema, tablePattern2)));
           });
     }
   }
@@ -2066,120 +2157,184 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
 
             // Should return result for matching on either an exact schema and table name or a
             // pattern
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, table1)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, table1)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, table1)));
 
-            Assertions.assertEquals(2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)));
+            Assertions.assertEquals(
+                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern1, null)));
 
-            Assertions.assertEquals(2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)));
+            Assertions.assertEquals(
+                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schemaPattern2, null)));
 
-            Assertions.assertEquals(2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)));
+            Assertions.assertEquals(
+                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern1)));
 
-            Assertions.assertEquals(2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
+            Assertions.assertEquals(
+                2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)),
+                greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)),
+                greaterThanOrEqualTo(1));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern1, null)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)),
+                greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)),
+                greaterThanOrEqualTo(1));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern1)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getImportedKeys(database, schema, tablePattern2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, table1)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)),
+                greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)),
+                greaterThanOrEqualTo(1));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern1)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)));
+            Assertions.assertEquals(
+                1, getSizeOfResultSet(dbmd.getExportedKeys(database, schema, tablePattern2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(database, schema, table1, database, schema, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schemaPattern1, table1, database, schema, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern1, table1, database, schema, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schemaPattern2, table1, database, schema, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern2, table1, database, schema, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schemaPattern1, null, database, schema, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern1, null, database, schema, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schemaPattern2, null, database, schema, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schemaPattern2, null, database, schema, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schemaPattern1, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern1, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schemaPattern2, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern2, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schemaPattern1, null)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern1, null)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schemaPattern2, null)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schemaPattern2, null)));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, null, tablePattern1, database, schema, table2)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, null, tablePattern1, database, schema, table2)),
+                greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, null, tablePattern2, database, schema, table2)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, null, tablePattern2, database, schema, table2)),
+                greaterThanOrEqualTo(1));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, tablePattern1, database, schema, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, tablePattern1, database, schema, table2)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, tablePattern2, database, schema, table2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, tablePattern2, database, schema, table2)));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, null, tablePattern1)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, null, tablePattern1)),
+                greaterThanOrEqualTo(1));
 
-            MatcherAssert.assertThat(getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, null, tablePattern2)), greaterThanOrEqualTo(1));
+            MatcherAssert.assertThat(
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, null, tablePattern2)),
+                greaterThanOrEqualTo(1));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schema, tablePattern1)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schema, tablePattern1)));
 
-            Assertions.assertEquals(1, getSizeOfResultSet(
-                dbmd.getCrossReference(
-                    database, schema, table1, database, schema, tablePattern2)));
+            Assertions.assertEquals(
+                1,
+                getSizeOfResultSet(
+                    dbmd.getCrossReference(
+                        database, schema, table1, database, schema, tablePattern2)));
           });
     }
   }

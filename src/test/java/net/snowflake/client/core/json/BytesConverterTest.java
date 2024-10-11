@@ -18,30 +18,42 @@ public class BytesConverterTest {
   @Test
   public void testConvertFloatingPointToBytes() throws SFException {
     byte[] expected = ByteBuffer.allocate(Float8Vector.TYPE_WIDTH).putDouble(0, 12.5).array();
-    Assertions.assertArrayEquals(expected, bytesConverter.getBytes(12.5f, Types.FLOAT, Types.FLOAT, 0));
-    Assertions.assertArrayEquals(expected, bytesConverter.getBytes(12.5f, Types.DOUBLE, Types.DOUBLE, 0));
-    Assertions.assertArrayEquals(expected, bytesConverter.getBytes(12.5, Types.FLOAT, Types.DOUBLE, 0));
-    Assertions.assertArrayEquals(expected, bytesConverter.getBytes(12.5, Types.DOUBLE, Types.DOUBLE, 0));
+    Assertions.assertArrayEquals(
+        expected, bytesConverter.getBytes(12.5f, Types.FLOAT, Types.FLOAT, 0));
+    Assertions.assertArrayEquals(
+        expected, bytesConverter.getBytes(12.5f, Types.DOUBLE, Types.DOUBLE, 0));
+    Assertions.assertArrayEquals(
+        expected, bytesConverter.getBytes(12.5, Types.FLOAT, Types.DOUBLE, 0));
+    Assertions.assertArrayEquals(
+        expected, bytesConverter.getBytes(12.5, Types.DOUBLE, Types.DOUBLE, 0));
   }
 
   @Test
   public void testConvertIntegerNumberToBytes() throws SFException {
     byte[] expected = new BigInteger("12").toByteArray();
-    Assertions.assertArrayEquals(expected, bytesConverter.getBytes(12, Types.NUMERIC, Types.NUMERIC, 0));
-    Assertions.assertArrayEquals(expected, bytesConverter.getBytes(12, Types.INTEGER, Types.INTEGER, 0));
-    Assertions.assertArrayEquals(expected, bytesConverter.getBytes(12, Types.SMALLINT, Types.SMALLINT, 0));
-    Assertions.assertArrayEquals(expected, bytesConverter.getBytes(12, Types.TINYINT, Types.TINYINT, 0));
-    Assertions.assertArrayEquals(expected, bytesConverter.getBytes(12, Types.BIGINT, Types.BIGINT, 0));
+    Assertions.assertArrayEquals(
+        expected, bytesConverter.getBytes(12, Types.NUMERIC, Types.NUMERIC, 0));
+    Assertions.assertArrayEquals(
+        expected, bytesConverter.getBytes(12, Types.INTEGER, Types.INTEGER, 0));
+    Assertions.assertArrayEquals(
+        expected, bytesConverter.getBytes(12, Types.SMALLINT, Types.SMALLINT, 0));
+    Assertions.assertArrayEquals(
+        expected, bytesConverter.getBytes(12, Types.TINYINT, Types.TINYINT, 0));
+    Assertions.assertArrayEquals(
+        expected, bytesConverter.getBytes(12, Types.BIGINT, Types.BIGINT, 0));
   }
 
   @Test
   public void testString() throws SFException {
-    Assertions.assertArrayEquals("abc".getBytes(), bytesConverter.getBytes("abc", Types.VARCHAR, Types.VARCHAR, 0));
+    Assertions.assertArrayEquals(
+        "abc".getBytes(), bytesConverter.getBytes("abc", Types.VARCHAR, Types.VARCHAR, 0));
   }
 
   @Test
   public void testConvertBooleanToBytes() throws SFException {
-    Assertions.assertArrayEquals(new byte[] {1}, bytesConverter.getBytes(true, Types.BOOLEAN, Types.BOOLEAN, 0));
-    Assertions.assertArrayEquals(new byte[] {0}, bytesConverter.getBytes(false, Types.BOOLEAN, Types.BOOLEAN, 0));
+    Assertions.assertArrayEquals(
+        new byte[] {1}, bytesConverter.getBytes(true, Types.BOOLEAN, Types.BOOLEAN, 0));
+    Assertions.assertArrayEquals(
+        new byte[] {0}, bytesConverter.getBytes(false, Types.BOOLEAN, Types.BOOLEAN, 0));
   }
 }

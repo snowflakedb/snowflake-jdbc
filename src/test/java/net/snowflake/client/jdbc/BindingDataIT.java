@@ -17,7 +17,6 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,7 +29,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /** Integration tests for binding variable */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
   static TimeZone timeZone;
 
@@ -454,7 +453,8 @@ public class BindingDataIT extends BaseJDBCWithSharedConnectionIT {
         while (result.next()) {
           String testType = result.getString(1);
           for (int i = 2; i <= 13; ++i) {
-            Assertions.assertNull(result.getString(i), String.format("Java Type: %s is not null", testType));
+            Assertions.assertNull(
+                result.getString(i), String.format("Java Type: %s is not null", testType));
           }
         }
       }

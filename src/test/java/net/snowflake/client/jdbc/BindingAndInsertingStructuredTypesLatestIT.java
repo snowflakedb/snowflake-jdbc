@@ -29,7 +29,6 @@ import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import net.snowflake.client.providers.FormatProvider;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -37,7 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   public Connection init(ResultSetFormatType queryResultFormat) throws SQLException {
     Connection conn = BaseJDBCTest.getConnection(BaseJDBCTest.DONT_INJECT_SOCKET_TIMEOUT);
@@ -228,11 +227,16 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
         Assertions.assertEquals(4, (long) object.getL());
         Assertions.assertEquals(1.1, (double) object.getF(), 0.01);
         Assertions.assertEquals(2.24, (double) object.getD(), 0.01);
-        Assertions.assertEquals(new BigDecimal("999999999999999999999999999999999999.55"), object.getBd());
+        Assertions.assertEquals(
+            new BigDecimal("999999999999999999999999999999999999.55"), object.getBd());
         Assertions.assertEquals(Boolean.TRUE, object.getBool());
-        Assertions.assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.getTimestampLtz());
-        Assertions.assertEquals(Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
-        Assertions.assertEquals(toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))), object.getTimestampTz());
+        Assertions.assertEquals(
+            Timestamp.valueOf(LocalDateTime.of(2021, 12, 22, 9, 43, 44)), object.getTimestampLtz());
+        Assertions.assertEquals(
+            Timestamp.valueOf(LocalDateTime.of(2021, 12, 23, 9, 44, 44)), object.getTimestampNtz());
+        Assertions.assertEquals(
+            toTimestamp(ZonedDateTime.of(2021, 12, 23, 9, 44, 44, 0, ZoneId.of("Asia/Tokyo"))),
+            object.getTimestampTz());
         // TODO uncomment after merge SNOW-928973: Date field is returning one day less when getting
         // through getString method
         //        assertEquals(Date.valueOf(LocalDate.of(2023, 12, 24)), object.getDate());

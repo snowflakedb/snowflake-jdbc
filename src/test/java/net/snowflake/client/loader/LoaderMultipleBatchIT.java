@@ -9,11 +9,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.List;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryLoader.class)
+// @Category(TestCategoryLoader.class)
 public class LoaderMultipleBatchIT extends LoaderBase {
   @Test
   public void testLoaderMultipleBatch() throws Exception {

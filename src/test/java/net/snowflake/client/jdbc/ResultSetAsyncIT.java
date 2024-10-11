@@ -23,12 +23,11 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.TestUtil;
 import net.snowflake.common.core.SqlState;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
 
   @Test
@@ -84,7 +83,8 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
       Assertions.assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
       Assertions.assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
       TestUtil.assertValidQueryId(secretMetaData.getQueryID());
-      Assertions.assertEquals(secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
+      Assertions.assertEquals(
+          secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
     }
   }
 
@@ -115,7 +115,8 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
           Assertions.assertFalse(resultSetMetaData.isCaseSensitive(1));
           Assertions.assertFalse(resultSetMetaData.isCurrency(1));
           Assertions.assertFalse(resultSetMetaData.isDefinitelyWritable(1));
-          Assertions.assertEquals(ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
+          Assertions.assertEquals(
+              ResultSetMetaData.columnNullable, resultSetMetaData.isNullable(1));
           Assertions.assertTrue(resultSetMetaData.isReadOnly(1));
           Assertions.assertTrue(resultSetMetaData.isSearchable(1));
           Assertions.assertTrue(resultSetMetaData.isSigned(1));
@@ -127,7 +128,8 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
           Assertions.assertEquals(Types.DECIMAL, secretMetaData.getInternalColumnType(1));
           Assertions.assertEquals(Types.VARCHAR, secretMetaData.getInternalColumnType(2));
           TestUtil.assertValidQueryId(secretMetaData.getQueryID());
-          Assertions.assertEquals(secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
+          Assertions.assertEquals(
+              secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
         }
       } finally {
         statement.execute("drop table if exists test_rsmd");
@@ -292,7 +294,8 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
 
             DecimalFormat df = new DecimalFormat("#.00");
             Assertions.assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal(10)));
-            Assertions.assertEquals(df.format(bigDecimal), df.format(resultSet.getBigDecimal("COLJ")));
+            Assertions.assertEquals(
+                df.format(bigDecimal), df.format(resultSet.getBigDecimal("COLJ")));
 
             Assertions.assertEquals(oneByte, resultSet.getByte(11));
             Assertions.assertEquals(oneByte, resultSet.getByte("COLK"));
@@ -341,7 +344,8 @@ public class ResultSetAsyncIT extends BaseJDBCWithSharedConnectionIT {
       Assertions.assertEquals(0, rs.getInt(1));
       try {
         rs.getInt("col1");
-        Assertions.fail("Fetching from a column name that does not exist should return a SQLException");
+        Assertions.fail(
+            "Fetching from a column name that does not exist should return a SQLException");
       } catch (SQLException e) {
         // findColumn fails with empty metadata with exception "Column not found".
         Assertions.assertEquals(SqlState.UNDEFINED_COLUMN, e.getSQLState());

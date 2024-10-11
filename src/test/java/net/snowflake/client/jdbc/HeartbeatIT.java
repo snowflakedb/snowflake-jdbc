@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -30,7 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /** This test assumes that GS has been set up */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class HeartbeatIT extends AbstractDriverIT {
   private static Logger logger = Logger.getLogger(HeartbeatIT.class.getName());
 
@@ -163,12 +162,15 @@ public class HeartbeatIT extends AbstractDriverIT {
       Assertions.fail("should fail and raise an exception");
     } catch (ExecutionException ex) {
       Throwable rootCause = ex.getCause();
-      MatcherAssert.assertThat("Runtime Exception", rootCause, instanceOf(RuntimeSQLException.class));
+      MatcherAssert.assertThat(
+          "Runtime Exception", rootCause, instanceOf(RuntimeSQLException.class));
 
       rootCause = rootCause.getCause();
 
-      MatcherAssert.assertThat("Root cause class", rootCause, instanceOf(SnowflakeSQLException.class));
-      MatcherAssert.assertThat("Error code", ((SnowflakeSQLException) rootCause).getErrorCode(), equalTo(390114));
+      MatcherAssert.assertThat(
+          "Root cause class", rootCause, instanceOf(SnowflakeSQLException.class));
+      MatcherAssert.assertThat(
+          "Error code", ((SnowflakeSQLException) rootCause).getErrorCode(), equalTo(390114));
     }
   }
 

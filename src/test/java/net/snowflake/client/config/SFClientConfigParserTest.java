@@ -142,6 +142,8 @@ public class SFClientConfigParserTest {
       Assertions.assertEquals(resultWindowsPath, convertToWindowsPath(testcase + mockWindowsPath));
     }
 
-    Assertions.assertEquals(mockCloudPrefix + resultWindowsPath, convertToWindowsPath(mockCloudPrefix + mockWindowsPath));
+    Assertions.assertEquals(
+        mockCloudPrefix + resultWindowsPath,
+        convertToWindowsPath(mockCloudPrefix + mockWindowsPath));
   }
 }

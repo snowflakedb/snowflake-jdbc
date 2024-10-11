@@ -17,12 +17,11 @@ import net.snowflake.client.core.SFStatement;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class ChunkDownloaderS3RetryUrlLatestIT extends AbstractDriverIT {
 
   private SFStatement sfStatement;

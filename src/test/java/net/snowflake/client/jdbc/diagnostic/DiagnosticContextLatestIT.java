@@ -7,16 +7,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import net.snowflake.client.core.SFSessionProperty;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryDiagnostic.class)
+// @Category(TestCategoryDiagnostic.class)
 public class DiagnosticContextLatestIT {
 
   private static final String HTTP_NON_PROXY_HOSTS = "http.nonProxyHosts";
@@ -109,12 +107,25 @@ public class DiagnosticContextLatestIT {
 
     DiagnosticContext diagnosticContext = new DiagnosticContext(connectionPropertiesMap);
 
-    Assertions.assertFalse(diagnosticContext.isProxyEnabled(), "Proxy configurations should be empty");
-    Assertions.assertTrue(diagnosticContext.getHttpProxyHost().isEmpty(), "getHttpProxyHost() must return an empty string in the absence of proxy configuration");
-    Assertions.assertEquals(-1, diagnosticContext.getHttpProxyPort(), "getHttpProxyPort() must return -1 in the absence of proxy configuration");
-    Assertions.assertTrue(diagnosticContext.getHttpsProxyHost().isEmpty(), "getHttpsProxyHost() must return an empty string in the absence of proxy configuration");
-    Assertions.assertEquals(-1, diagnosticContext.getHttpsProxyPort(), "getHttpsProxyPort() must return -1 in the absence of proxy configuration");
-    Assertions.assertTrue(diagnosticContext.getHttpNonProxyHosts().isEmpty(), "getHttpNonProxyHosts() must return an empty string in the absence of proxy configuration");
+    Assertions.assertFalse(
+        diagnosticContext.isProxyEnabled(), "Proxy configurations should be empty");
+    Assertions.assertTrue(
+        diagnosticContext.getHttpProxyHost().isEmpty(),
+        "getHttpProxyHost() must return an empty string in the absence of proxy configuration");
+    Assertions.assertEquals(
+        -1,
+        diagnosticContext.getHttpProxyPort(),
+        "getHttpProxyPort() must return -1 in the absence of proxy configuration");
+    Assertions.assertTrue(
+        diagnosticContext.getHttpsProxyHost().isEmpty(),
+        "getHttpsProxyHost() must return an empty string in the absence of proxy configuration");
+    Assertions.assertEquals(
+        -1,
+        diagnosticContext.getHttpsProxyPort(),
+        "getHttpsProxyPort() must return -1 in the absence of proxy configuration");
+    Assertions.assertTrue(
+        diagnosticContext.getHttpNonProxyHosts().isEmpty(),
+        "getHttpNonProxyHosts() must return an empty string in the absence of proxy configuration");
   }
 
   /** Test added in version > 3.16.1 */

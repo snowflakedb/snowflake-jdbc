@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Properties;
 import javax.annotation.Nullable;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
@@ -25,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** SnowflakeResultSetSerializable tests */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
 
@@ -662,10 +661,12 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
             while (resultSet.next()) {
               resultSet.getString(1);
             }
-            Assertions.fail("error should happen when accessing the data because the "
-                + "file URL is corrupted.");
+            Assertions.fail(
+                "error should happen when accessing the data because the "
+                    + "file URL is corrupted.");
           } catch (SQLException ex) {
-            Assertions.assertEquals((long) ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
+            Assertions.assertEquals(
+                (long) ErrorCode.INTERNAL_ERROR.getMessageCode(), ex.getErrorCode());
           }
         }
       }
@@ -850,42 +851,46 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
     // Split deserializedResultSet by 3M
     List<String> fileNameSplit3M = splitResultSetSerializables(fileNameList, 3 * 1024 * 1024);
     // Verify the metadata is correct.
-    Assertions.assertTrue(isMetadataConsistent(
-        expectedTotalRowCount,
-        expectedTotalCompressedSize,
-        expectedTotalUncompressedSize,
-        fileNameSplit3M,
-        null));
+    Assertions.assertTrue(
+        isMetadataConsistent(
+            expectedTotalRowCount,
+            expectedTotalCompressedSize,
+            expectedTotalUncompressedSize,
+            fileNameSplit3M,
+            null));
 
     // Split deserializedResultSet by 2M
     List<String> fileNameSplit2M = splitResultSetSerializables(fileNameSplit3M, 2 * 1024 * 1024);
     // Verify the metadata is correct.
-    Assertions.assertTrue(isMetadataConsistent(
-        expectedTotalRowCount,
-        expectedTotalCompressedSize,
-        expectedTotalUncompressedSize,
-        fileNameSplit2M,
-        null));
+    Assertions.assertTrue(
+        isMetadataConsistent(
+            expectedTotalRowCount,
+            expectedTotalCompressedSize,
+            expectedTotalUncompressedSize,
+            fileNameSplit2M,
+            null));
 
     // Split deserializedResultSet by 3M
     List<String> fileNameSplit1M = splitResultSetSerializables(fileNameSplit2M, 1 * 1024 * 1024);
     // Verify the metadata is correct.
-    Assertions.assertTrue(isMetadataConsistent(
-        expectedTotalRowCount,
-        expectedTotalCompressedSize,
-        expectedTotalUncompressedSize,
-        fileNameSplit1M,
-        null));
+    Assertions.assertTrue(
+        isMetadataConsistent(
+            expectedTotalRowCount,
+            expectedTotalCompressedSize,
+            expectedTotalUncompressedSize,
+            fileNameSplit1M,
+            null));
 
     // Split deserializedResultSet by smallest
     List<String> fileNameSplitSmallest = splitResultSetSerializables(fileNameSplit1M, 1);
     // Verify the metadata is correct.
-    Assertions.assertTrue(isMetadataConsistent(
-        expectedTotalRowCount,
-        expectedTotalCompressedSize,
-        expectedTotalUncompressedSize,
-        fileNameSplitSmallest,
-        null));
+    Assertions.assertTrue(
+        isMetadataConsistent(
+            expectedTotalRowCount,
+            expectedTotalCompressedSize,
+            expectedTotalUncompressedSize,
+            fileNameSplitSmallest,
+            null));
   }
 
   /**

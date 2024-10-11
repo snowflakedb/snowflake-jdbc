@@ -21,7 +21,6 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SFTrustManager;
 import org.hamcrest.Matcher;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +34,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>hang_webserver.py 12345
  */
-//@Category(TestCategoryConnection.class)
+// @Category(TestCategoryConnection.class)
 public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
   private final String testUser = "fakeuser";
   private final String testPassword = "testpassword";

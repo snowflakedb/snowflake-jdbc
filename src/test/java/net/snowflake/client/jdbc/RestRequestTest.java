@@ -333,13 +333,15 @@ public class RestRequestTest {
 
     for (TestCase t : testCases) {
       if (t.result) {
-        Assertions.assertTrue(RestRequest.isNonRetryableHTTPCode(
-            anyStatusCodeResponse(t.statusCode), t.retryHTTP403), String.format(
+        Assertions.assertTrue(
+            RestRequest.isNonRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403),
+            String.format(
                 "Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403));
       } else {
-        Assertions.assertFalse(RestRequest.isNonRetryableHTTPCode(
-            anyStatusCodeResponse(t.statusCode), t.retryHTTP403), String.format(
+        Assertions.assertFalse(
+            RestRequest.isNonRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403),
+            String.format(
                 "Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
                 t.statusCode, t.retryHTTP403));
       }
@@ -645,12 +647,19 @@ public class RestRequestTest {
               retryTimeoutInMilli,
               elapsedMilliForTransientIssues);
 
-      Assertions.assertTrue(backoffInMilli <= maxBackoffInMilli, "Backoff should be lower or equal to max backoff limit");
+      Assertions.assertTrue(
+          backoffInMilli <= maxBackoffInMilli,
+          "Backoff should be lower or equal to max backoff limit");
       if (elapsedMilliForTransientIssues + backoffInMilli >= retryTimeoutInMilli) {
-        Assertions.assertEquals(retryTimeoutInMilli - elapsedMilliForTransientIssues, backoffInMilli, "Backoff should fill time till retry timeout");
+        Assertions.assertEquals(
+            retryTimeoutInMilli - elapsedMilliForTransientIssues,
+            backoffInMilli,
+            "Backoff should fill time till retry timeout");
         break;
       } else {
-        Assertions.assertTrue(backoffInMilli >= minBackoffInMilli, "Backoff should be higher or equal to min backoff limit");
+        Assertions.assertTrue(
+            backoffInMilli >= minBackoffInMilli,
+            "Backoff should be higher or equal to min backoff limit");
       }
       elapsedMilliForTransientIssues += backoffInMilli;
     }

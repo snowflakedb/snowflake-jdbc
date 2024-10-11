@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -34,7 +33,7 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Test ResultSet */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
   static TimeZone ogTz;
 
@@ -137,10 +136,14 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
               + "stage_file_format = (field_delimiter='|' "
               + "error_on_column_count_mismatch=false)");
       // put files
-      Assertions.assertTrue(statement.execute(
-          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"), "Failed to put a file");
-      Assertions.assertTrue(statement.execute(
-          "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"), "Failed to put a file");
+      Assertions.assertTrue(
+          statement.execute(
+              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @%orders_jdbc"),
+          "Failed to put a file");
+      Assertions.assertTrue(
+          statement.execute(
+              "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE_2) + " @%orders_jdbc"),
+          "Failed to put a file");
 
       int numRows = statement.executeUpdate("copy into orders_jdbc");
 
@@ -282,7 +285,8 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
     final String insertTime = "insert into datetime values (?, ?, ?)";
     try (Connection connection = init(queryResultFormat)) {
 
-      Assertions.assertFalse(connection.createStatement().execute("alter session set TIMEZONE='UTC'"));
+      Assertions.assertFalse(
+          connection.createStatement().execute("alter session set TIMEZONE='UTC'"));
 
       try (Statement statement = connection.createStatement()) {
         try {
@@ -442,20 +446,26 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
               resultSet.getDate("COLTIME");
               Assertions.fail();
             } catch (SnowflakeSQLException e) {
-              Assertions.assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-              Assertions.assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
+              Assertions.assertEquals(
+                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
+              Assertions.assertEquals(
+                  ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
             }
 
             // ResultSet.getTimestamp()
-            Assertions.assertEquals(new Timestamp(date.getTime()), resultSet.getTimestamp("COLDATE"));
+            Assertions.assertEquals(
+                new Timestamp(date.getTime()), resultSet.getTimestamp("COLDATE"));
             Assertions.assertEquals(ts, resultSet.getTimestamp("COLTS"));
-            Assertions.assertEquals(new Timestamp(time.getTime()), resultSet.getTimestamp("COLTIME"));
+            Assertions.assertEquals(
+                new Timestamp(time.getTime()), resultSet.getTimestamp("COLTIME"));
             try {
               resultSet.getTimestamp("COLSTRING");
               Assertions.fail();
             } catch (SnowflakeSQLException e) {
-              Assertions.assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-              Assertions.assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
+              Assertions.assertEquals(
+                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
+              Assertions.assertEquals(
+                  ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
             }
 
             // ResultSet.getTime()
@@ -463,8 +473,10 @@ public class ResultSetMultiTimeZoneIT extends BaseJDBCTest {
               resultSet.getTime("COLDATE");
               Assertions.fail();
             } catch (SnowflakeSQLException e) {
-              Assertions.assertEquals((int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
-              Assertions.assertEquals(ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
+              Assertions.assertEquals(
+                  (int) ErrorCode.INVALID_VALUE_CONVERT.getMessageCode(), e.getErrorCode());
+              Assertions.assertEquals(
+                  ErrorCode.INVALID_VALUE_CONVERT.getSqlState(), e.getSQLState());
             }
             Assertions.assertEquals(time, resultSet.getTime("COLTIME"));
             Assertions.assertEquals(new Time(ts.getTime()), resultSet.getTime("COLTS"));

@@ -7,9 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
@@ -18,7 +16,6 @@ import net.snowflake.client.providers.ProvidersUtil;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import net.snowflake.client.providers.SnowflakeArgumentsProvider;
 import net.snowflake.client.providers.TimezoneProvider;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,10 +23,11 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsSource;
+
 /**
  * ResultSet multi timezone tests for the latest JDBC driver. This cannot run for the old driver.
  */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnectionIT {
 
   private static String originalTz;
@@ -109,8 +107,10 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
               + "')");
       try (ResultSet rs = statement.executeQuery("select * from SRC_DATE_TIME")) {
         Assertions.assertTrue(rs.next());
-        Assertions.assertEquals(timestampStringValue.substring(0, length - 6), rs.getTimestamp(1).toString());
-        Assertions.assertEquals(timestampStringValue.substring(0, length - 4), rs.getTimestamp(2).toString());
+        Assertions.assertEquals(
+            timestampStringValue.substring(0, length - 6), rs.getTimestamp(1).toString());
+        Assertions.assertEquals(
+            timestampStringValue.substring(0, length - 4), rs.getTimestamp(2).toString());
         Assertions.assertEquals(timestampStringValue, rs.getTimestamp(3).toString());
       }
     }

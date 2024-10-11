@@ -14,11 +14,10 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   private static final int columnCount = 9;
   private static final int INT_DATA = 1;

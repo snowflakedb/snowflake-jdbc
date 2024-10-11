@@ -24,7 +24,6 @@ import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeS3Client;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 /** Test for SnowflakeS3Client handle exception function */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class SnowflakeS3ClientHandleExceptionLatestIT extends AbstractDriverIT {
   @TempDir private File tmpFolder;
   private Connection connection;

@@ -50,7 +50,6 @@ import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -63,7 +62,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
  * if the tests still is not applicable. If it is applicable, move tests to ResultSetIT so that both
  * the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class ResultSetLatestIT extends ResultSet0IT {
   private static void setQueryResultFormat(Statement stmt, String queryResultFormat)
       throws SQLException {
@@ -226,9 +225,12 @@ public class ResultSetLatestIT extends ResultSet0IT {
     // Logs should contain 1 item: the data about the getColumns() parameters
     Assertions.assertEquals(logs.size(), 1);
     // Assert the log is of type client_metadata_api_metrics
-    Assertions.assertEquals(logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(), TelemetryField.METADATA_METRICS.toString());
+    Assertions.assertEquals(
+        logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
+        TelemetryField.METADATA_METRICS.toString());
     // Assert function name and params match and that query id exists
-    Assertions.assertEquals(logs.get(0).getMessage().get("function_name").textValue(), "getColumns");
+    Assertions.assertEquals(
+        logs.get(0).getMessage().get("function_name").textValue(), "getColumns");
     TestUtil.assertValidQueryId(logs.get(0).getMessage().get("query_id").textValue());
     JsonNode parameterValues = logs.get(0).getMessage().get("function_parameters");
     Assertions.assertEquals(parameterValues.get("catalog").textValue(), "fakecatalog");
@@ -246,12 +248,17 @@ public class ResultSetLatestIT extends ResultSet0IT {
     logs = ((TelemetryClient) telemetry).logBuffer();
     Assertions.assertEquals(logs.size(), 2);
     // first item in log buffer is metrics on time to consume first result set chunk
-    Assertions.assertEquals(logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(), TelemetryField.TIME_CONSUME_FIRST_RESULT.toString());
+    Assertions.assertEquals(
+        logs.get(0).getMessage().get(TelemetryUtil.TYPE).textValue(),
+        TelemetryField.TIME_CONSUME_FIRST_RESULT.toString());
     // second item in log buffer is metrics on getProcedureColumns() parameters
     // Assert the log is of type client_metadata_api_metrics
-    Assertions.assertEquals(logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(), TelemetryField.METADATA_METRICS.toString());
+    Assertions.assertEquals(
+        logs.get(1).getMessage().get(TelemetryUtil.TYPE).textValue(),
+        TelemetryField.METADATA_METRICS.toString());
     // Assert function name and params match and that query id exists
-    Assertions.assertEquals(logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
+    Assertions.assertEquals(
+        logs.get(1).getMessage().get("function_name").textValue(), "getColumns");
     TestUtil.assertValidQueryId(logs.get(1).getMessage().get("query_id").textValue());
     parameterValues = logs.get(1).getMessage().get("function_parameters");
     Assertions.assertEquals(parameterValues.get("catalog").textValue(), catalog);
@@ -347,8 +354,11 @@ public class ResultSetLatestIT extends ResultSet0IT {
         statement.execute("insert into test_rsmd values(1.00, 'str'),(2.00, 'str2')");
         ResultSet resultSet = statement.executeQuery("select * from test_rsmd");
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-        Assertions.assertEquals(params.get("database").toUpperCase(), resultSetMetaData.getCatalogName(1).toUpperCase());
-        Assertions.assertEquals(params.get("schema").toUpperCase(), resultSetMetaData.getSchemaName(1).toUpperCase());
+        Assertions.assertEquals(
+            params.get("database").toUpperCase(),
+            resultSetMetaData.getCatalogName(1).toUpperCase());
+        Assertions.assertEquals(
+            params.get("schema").toUpperCase(), resultSetMetaData.getSchemaName(1).toUpperCase());
         Assertions.assertEquals("TEST_RSMD", resultSetMetaData.getTableName(1));
         Assertions.assertEquals(String.class.getName(), resultSetMetaData.getColumnClassName(2));
         Assertions.assertEquals(2, resultSetMetaData.getColumnCount());
@@ -554,7 +564,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
             // get
             // result from the first chunk downloader
             while (resultSet.next()) {}
-            Assertions.fail("Should not reach here. Last next() command is supposed to throw an exception");
+            Assertions.fail(
+                "Should not reach here. Last next() command is supposed to throw an exception");
           } catch (SnowflakeSQLException ex) {
             // pass, do nothing
           }
@@ -620,8 +631,10 @@ public class ResultSetLatestIT extends ResultSet0IT {
           Assertions.assertEquals(null, resultSet.getBigDecimal(1, 5));
           Assertions.assertEquals(null, resultSet.getBigDecimal("COLA", 5));
           Assertions.assertTrue(resultSet.next());
-          Assertions.assertEquals(bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal(1, 5));
-          Assertions.assertEquals(bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal("COLA", 5));
+          Assertions.assertEquals(
+              bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal(1, 5));
+          Assertions.assertEquals(
+              bigDecimal.setScale(5, RoundingMode.HALF_UP), resultSet.getBigDecimal("COLA", 5));
         }
       }
     }
@@ -640,7 +653,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
           // Assert that TIMESTAMP_TZ type matches java.sql.TIMESTAMP_WITH_TIMEZONE
           Assertions.assertEquals(resultSetMetaData.getColumnType(1), 2014);
           // Assert that TIMESTAMP_TZ column returns Timestamp class name
-          Assertions.assertEquals(resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
+          Assertions.assertEquals(
+              resultSetMetaData.getColumnClassName(1), Timestamp.class.getName());
         }
       }
       SFBaseSession baseSession = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession();
@@ -776,7 +790,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
         try (CallableStatement cs = connection.prepareCall("CALL SP_ZSDLEADTIME_ARCHIVE_DAILY()")) {
           cs.execute();
           ResultSetMetaData resultSetMetaData = cs.getMetaData();
-          Assertions.assertEquals("SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
+          Assertions.assertEquals(
+              "SP_ZSDLEADTIME_ARCHIVE_DAILY", resultSetMetaData.getColumnName(1));
           Assertions.assertEquals("VARCHAR", resultSetMetaData.getColumnTypeName(1));
           Assertions.assertEquals(0, resultSetMetaData.getScale(1));
         }
@@ -848,7 +863,9 @@ public class ResultSetLatestIT extends ResultSet0IT {
       try {
         rs.unwrap(SnowflakeUtil.class);
       } catch (SQLException ex) {
-        Assertions.assertEquals(ex.getMessage(), "net.snowflake.client.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.jdbc.SnowflakeUtil");
+        Assertions.assertEquals(
+            ex.getMessage(),
+            "net.snowflake.client.jdbc.SnowflakeResultSetV1 not unwrappable from net.snowflake.client.jdbc.SnowflakeUtil");
       }
     }
   }

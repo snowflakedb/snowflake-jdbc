@@ -9,12 +9,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.TestUtil;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Test OpenGroup CLI */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class OpenGroupCLIFuncIT extends BaseJDBCTest {
   public static Connection getConnection() throws SQLException {
     Connection connection = AbstractDriverIT.getConnection();

@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import com.microsoft.azure.storage.StorageExtendedErrorInformation;
 import java.util.LinkedHashMap;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

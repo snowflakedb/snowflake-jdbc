@@ -22,7 +22,6 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -33,7 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
  * if the tests still is not applicable. If it is applicable, move tests to StatementIT so that both
  * the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
@@ -177,7 +176,8 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         statement.getResultSet();
       }
 
-      Assertions.assertEquals(9, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+      Assertions.assertEquals(
+          9, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
     }
 
     try (Statement statement = connection.createStatement()) {
@@ -187,7 +187,8 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         resultSet.close();
       }
 
-      Assertions.assertEquals(0, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
+      Assertions.assertEquals(
+          0, statement.unwrap(SnowflakeStatementV1.class).getOpenResultSets().size());
     }
   }
 

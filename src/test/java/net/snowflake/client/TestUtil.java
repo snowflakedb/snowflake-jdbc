@@ -6,7 +6,6 @@ package net.snowflake.client;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
@@ -138,7 +137,8 @@ public class TestUtil {
       f.run();
       Assertions.fail("must raise exception");
     } catch (SQLException ex) {
-      Assertions.assertEquals(ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
+      Assertions.assertEquals(
+          ex.getClass().getSimpleName(), "SnowflakeLoggedFeatureNotSupportedException");
     }
   }
 

@@ -7,12 +7,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import javax.sql.PooledConnection;
-
 import net.snowflake.client.jdbc.BaseJDBCTest;
-
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryConnection.class)
+// @Category(TestCategoryConnection.class)
 public class LogicalConnectionAlreadyClosedLatestIT extends BaseJDBCTest {
 
   @Test

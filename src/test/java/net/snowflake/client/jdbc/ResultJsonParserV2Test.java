@@ -47,7 +47,9 @@ public class ResultJsonParserV2Test {
     Assertions.assertEquals("☺☺", chunk.getCell(5, 1).toString());
     Assertions.assertEquals("𠜎", chunk.getCell(6, 0).toString());
     Assertions.assertEquals("𠜱𠝹", chunk.getCell(6, 1).toString());
-    Assertions.assertEquals("{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}", chunk.getCell(7, 0).toString());
+    Assertions.assertEquals(
+        "{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}",
+        chunk.getCell(7, 0).toString());
     Assertions.assertEquals("[1,2,3,4,5]", chunk.getCell(7, 1).toString());
   }
 
@@ -96,7 +98,9 @@ public class ResultJsonParserV2Test {
     Assertions.assertEquals("☺☺☺", chunk.getCell(5, 1).toString());
     Assertions.assertEquals("𠜎", chunk.getCell(6, 0).toString());
     Assertions.assertEquals("𠜱𠝹", chunk.getCell(6, 1).toString());
-    Assertions.assertEquals("{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}", chunk.getCell(7, 0).toString());
+    Assertions.assertEquals(
+        "{\"date\" : \"2017-04-28\",\"dealership\" : \"Tindel Toyota\"}",
+        chunk.getCell(7, 0).toString());
     Assertions.assertEquals("[1,2,3,4,5]", chunk.getCell(7, 1).toString());
   }
 
@@ -147,7 +151,8 @@ public class ResultJsonParserV2Test {
     Assertions.assertEquals(a.toString(), chunk.getCell(0, 0).toString());
     Assertions.assertEquals(b.toString(), chunk.getCell(0, 1).toString());
     Assertions.assertEquals(c.toString(), chunk.getCell(1, 0).toString());
-    Assertions.assertEquals(StringEscapeUtils.unescapeJava(s.toString()), chunk.getCell(1, 1).toString());
+    Assertions.assertEquals(
+        StringEscapeUtils.unescapeJava(s.toString()), chunk.getCell(1, 1).toString());
   }
 
   // SNOW-802910: Test to cover edge case '\u0000\u0000' where null could be dropped.

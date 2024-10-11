@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +20,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
   private Connection connection;
   private Statement statement;
@@ -91,7 +90,9 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     int numSnowflakeColumns = getSizeOfResultSet(snowflakeResultSet);
 
     resultSet = databaseMetaData.getColumns(null, null, null, null);
-    Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllColumnsCount), getSizeOfResultSet(resultSet) - numSnowflakeColumns);
+    Assertions.assertEquals(
+        getAllObjectCountInDBViaInforSchema(getAllColumnsCount),
+        getSizeOfResultSet(resultSet) - numSnowflakeColumns);
 
     resultSet = databaseMetaData.getColumns(null, "JDBC_SCHEMA11", null, null);
     Assertions.assertEquals(3, getSizeOfResultSet(resultSet));
@@ -196,7 +197,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     // test a table function
     resultSet = databaseMetaData.getFunctions("JDBC_DB2", "JDBC_SCHEMA21", "JDBCFUNCTEST212");
     resultSet.next();
-    Assertions.assertEquals(DatabaseMetaData.functionReturnsTable, resultSet.getInt("FUNCTION_TYPE"));
+    Assertions.assertEquals(
+        DatabaseMetaData.functionReturnsTable, resultSet.getInt("FUNCTION_TYPE"));
     Assertions.assertFalse(resultSet.next());
 
     // test a builtin function
@@ -247,10 +249,14 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
     int numSnowflakeSchemas = getSizeOfResultSet(snowflakeResultSet);
 
     resultSet = databaseMetaData.getSchemas();
-    Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getSchemaCount), getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
+    Assertions.assertEquals(
+        getAllObjectCountInDBViaInforSchema(getSchemaCount),
+        getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
 
     resultSet = databaseMetaData.getSchemas(null, null);
-    Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getSchemaCount), getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
+    Assertions.assertEquals(
+        getAllObjectCountInDBViaInforSchema(getSchemaCount),
+        getSizeOfResultSet(resultSet) - numSnowflakeSchemas);
 
     resultSet = databaseMetaData.getSchemas("JDBC_DB1", "%");
     resultSet.next();
@@ -459,7 +465,8 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
         ResultSet resultSet = databaseMetaData.getTables(null, null, null, new String[] {"ALIAS"});
       } catch (SQLException e) {
         Assertions.assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getSqlState(), e.getSQLState());
-        Assertions.assertEquals(ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
+        Assertions.assertEquals(
+            ErrorCode.FEATURE_UNSUPPORTED.getMessageCode().intValue(), e.getErrorCode());
       }
 
       try (ResultSet resultSet =
@@ -476,38 +483,50 @@ public class DatabaseMetaDataInternalIT extends BaseJDBCTest {
       }
 
       try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
-        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllTable),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"VIEW", "SYSTEM_TABLE"})) {
-        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllView), getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllView),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"TABLE", "SYSTEM_TABLE"})) {
-        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(
               null, null, null, new String[] {"TABLE", "VIEW", "SYSTEM_TABLE"})) {
-        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllTable),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"TABLE", "VIEW"})) {
-        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllTable), getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllTable),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"TABLE"})) {
-        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
+        Assertions.assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllBaseTable), getSizeOfResultSet(resultSet));
       }
 
       try (ResultSet resultSet =
           databaseMetaData.getTables(null, null, null, new String[] {"VIEW"})) {
-        Assertions.assertEquals(getAllObjectCountInDBViaInforSchema(getAllView), getSizeOfResultSet(resultSet) - numSnowflakeTables);
+        Assertions.assertEquals(
+            getAllObjectCountInDBViaInforSchema(getAllView),
+            getSizeOfResultSet(resultSet) - numSnowflakeTables);
       }
 
       try (ResultSet resultSet =

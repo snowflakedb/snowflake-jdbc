@@ -14,7 +14,6 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -25,7 +24,7 @@ import org.junit.jupiter.api.Test;
  * if the tests still are not applicable. If it is applicable, move tests to PreparedStatement1IT so
  * that both the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   public PreparedStatement1LatestIT() {
     super("json");
@@ -211,7 +210,8 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
     try (Connection connection = init()) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         // executeBatch shouldn't throw exceptions
-        Assertions.assertEquals(0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
+        Assertions.assertEquals(
+            0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
       }
 
       connection
@@ -221,7 +221,8 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       // we need a new PreparedStatement to pick up the changed status (not use stage bind)
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         // executeBatch shouldn't throw exceptions
-        Assertions.assertEquals(0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
+        Assertions.assertEquals(
+            0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
       }
     }
   }
@@ -257,8 +258,9 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       }
     } catch (SQLException e) {
       e.printStackTrace();
-      Assertions.fail("testSetObjectMethodWithBigIntegerColumn failed with an exception message: "
-          + e.getMessage());
+      Assertions.fail(
+          "testSetObjectMethodWithBigIntegerColumn failed with an exception message: "
+              + e.getMessage());
     }
   }
 
@@ -276,8 +278,9 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       }
     } catch (SQLException e) {
       e.printStackTrace();
-      Assertions.fail("testSetObjectMethodWithLargeBigIntegerColumn failed with an exception message: "
-          + e.getMessage());
+      Assertions.fail(
+          "testSetObjectMethodWithLargeBigIntegerColumn failed with an exception message: "
+              + e.getMessage());
     }
   }
 

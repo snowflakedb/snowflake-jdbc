@@ -8,11 +8,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class CallableStatementLatestIT extends CallableStatementIT {
 
   public CallableStatementLatestIT(String format) {
@@ -31,7 +30,9 @@ public class CallableStatementLatestIT extends CallableStatementIT {
       "call square_it(5)", "call no_bracket_function(44)", "call {bracket_function(a=?)}"
     };
     for (int i = 0; i < callStatements.length; i++) {
-      Assertions.assertEquals(expectedStatements[i], SnowflakeCallableStatementV1.parseSqlEscapeSyntax(callStatements[i]));
+      Assertions.assertEquals(
+          expectedStatements[i],
+          SnowflakeCallableStatementV1.parseSqlEscapeSyntax(callStatements[i]));
     }
   }
 

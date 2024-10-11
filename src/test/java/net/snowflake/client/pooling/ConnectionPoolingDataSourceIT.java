@@ -19,11 +19,10 @@ import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import net.snowflake.client.AbstractDriverIT;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryConnection.class)
+// @Category(TestCategoryConnection.class)
 public class ConnectionPoolingDataSourceIT extends AbstractDriverIT {
   @Test
   public void testPooledConnection() throws SQLException {

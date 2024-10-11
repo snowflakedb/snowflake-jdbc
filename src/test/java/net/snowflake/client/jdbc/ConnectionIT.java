@@ -45,14 +45,13 @@ import net.snowflake.client.annotations.RunOnTestaccount;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.codec.binary.Base64;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** Connection integration tests */
-//@Category(TestCategoryConnection.class)
+// @Category(TestCategoryConnection.class)
 public class ConnectionIT extends BaseJDBCTest {
   // create a local constant for this code for testing purposes (already defined in GS)
   public static final int INVALID_CONNECTION_INFO_CODE = 390100;
@@ -892,7 +891,8 @@ public class ConnectionIT extends BaseJDBCTest {
       DriverManager.getConnection(params.get("uri"), props);
       Assertions.fail("should fail");
     } catch (SQLException ex) {
-      Assertions.assertEquals(ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED, "error code");
+      Assertions.assertEquals(
+          ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED, "error code");
     }
 
     // schema is invalid
@@ -902,7 +902,8 @@ public class ConnectionIT extends BaseJDBCTest {
       DriverManager.getConnection(params.get("uri"), props);
       Assertions.fail("should fail");
     } catch (SQLException ex) {
-      Assertions.assertEquals(ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED, "error code");
+      Assertions.assertEquals(
+          ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED, "error code");
     }
 
     // warehouse is invalid
@@ -912,7 +913,8 @@ public class ConnectionIT extends BaseJDBCTest {
       DriverManager.getConnection(params.get("uri"), props);
       Assertions.fail("should fail");
     } catch (SQLException ex) {
-      Assertions.assertEquals(ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED, "error code");
+      Assertions.assertEquals(
+          ex.getErrorCode(), SESSION_CREATION_OBJECT_DOES_NOT_EXIST_NOT_AUTHORIZED, "error code");
     }
 
     // role is invalid
@@ -922,7 +924,8 @@ public class ConnectionIT extends BaseJDBCTest {
       DriverManager.getConnection(params.get("uri"), props);
       Assertions.fail("should fail");
     } catch (SQLException ex) {
-      Assertions.assertEquals(ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST, "error code");
+      Assertions.assertEquals(
+          ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST, "error code");
     }
   }
 
@@ -952,7 +955,8 @@ public class ConnectionIT extends BaseJDBCTest {
       DriverManager.getConnection(params.get("uri"), props);
       Assertions.fail("should fail");
     } catch (SQLException ex) {
-      Assertions.assertEquals(ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST, "error code");
+      Assertions.assertEquals(
+          ex.getErrorCode(), ROLE_IN_CONNECT_STRING_DOES_NOT_EXIST, "error code");
     }
   }
 

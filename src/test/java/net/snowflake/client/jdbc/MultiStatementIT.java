@@ -12,13 +12,12 @@ import java.sql.Statement;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Multi Statement tests */
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
@@ -41,7 +40,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 4);
       try {
         statement.executeUpdate(multiStmtQuery);
-        Assertions.fail("executeUpdate should have failed because the first statement yields a result set");
+        Assertions.fail(
+            "executeUpdate should have failed because the first statement yields a result set");
       } catch (SQLException ex) {
         assertThat(
             ex.getErrorCode(), is(ErrorCode.UPDATE_FIRST_RESULT_NOT_UPDATE_COUNT.getMessageCode()));
@@ -60,7 +60,8 @@ public class MultiStatementIT extends BaseJDBCWithSharedConnectionIT {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
       try {
         statement.executeQuery(multiStmtQuery);
-        Assertions.fail("executeQuery should have failed because the first statement yields an update count");
+        Assertions.fail(
+            "executeQuery should have failed because the first statement yields an update count");
       } catch (SQLException ex) {
         assertThat(
             ex.getErrorCode(), is(ErrorCode.QUERY_FIRST_RESULT_NOT_RESULT_SET.getMessageCode()));

@@ -54,15 +54,20 @@ public class StringConverterTest {
 
   @Test
   public void testConvertingString() throws SFException {
-    Assertions.assertEquals("test", stringConverter.getString("test", Types.VARCHAR, Types.VARCHAR, 0));
+    Assertions.assertEquals(
+        "test", stringConverter.getString("test", Types.VARCHAR, Types.VARCHAR, 0));
   }
 
   @Test
   public void testConvertingBoolean() throws SFException {
-    Assertions.assertEquals("TRUE", stringConverter.getString(true, Types.BOOLEAN, Types.BOOLEAN, 0));
-    Assertions.assertEquals("TRUE", stringConverter.getString("true", Types.BOOLEAN, Types.BOOLEAN, 0));
-    Assertions.assertEquals("FALSE", stringConverter.getString(false, Types.BOOLEAN, Types.BOOLEAN, 0));
-    Assertions.assertEquals("FALSE", stringConverter.getString("false", Types.BOOLEAN, Types.BOOLEAN, 0));
+    Assertions.assertEquals(
+        "TRUE", stringConverter.getString(true, Types.BOOLEAN, Types.BOOLEAN, 0));
+    Assertions.assertEquals(
+        "TRUE", stringConverter.getString("true", Types.BOOLEAN, Types.BOOLEAN, 0));
+    Assertions.assertEquals(
+        "FALSE", stringConverter.getString(false, Types.BOOLEAN, Types.BOOLEAN, 0));
+    Assertions.assertEquals(
+        "FALSE", stringConverter.getString("false", Types.BOOLEAN, Types.BOOLEAN, 0));
   }
 
   @Test
@@ -77,25 +82,34 @@ public class StringConverterTest {
 
   @Test
   public void testConvertingTimestamp() throws SFException {
-    Assertions.assertEquals("1988-03-21 22:33:15.000", stringConverter.getString("574986795", Types.TIMESTAMP, Types.TIMESTAMP, 0));
-    Assertions.assertEquals("1988-03-21 19:33:15.000", stringConverter.getString(
-        "574986795", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, 0));
-    Assertions.assertEquals("1988-03-21 14:33:15.000", stringConverter.getString(
-        "574986795 960", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ, 0));
+    Assertions.assertEquals(
+        "1988-03-21 22:33:15.000",
+        stringConverter.getString("574986795", Types.TIMESTAMP, Types.TIMESTAMP, 0));
+    Assertions.assertEquals(
+        "1988-03-21 19:33:15.000",
+        stringConverter.getString(
+            "574986795", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_LTZ, 0));
+    Assertions.assertEquals(
+        "1988-03-21 14:33:15.000",
+        stringConverter.getString(
+            "574986795 960", Types.TIMESTAMP, SnowflakeUtil.EXTRA_TYPES_TIMESTAMP_TZ, 0));
   }
 
   @Test
   public void testConvertingDate() throws SFException {
-    Assertions.assertEquals("2023-12-18", stringConverter.getString("19709", Types.DATE, Types.DATE, 0));
+    Assertions.assertEquals(
+        "2023-12-18", stringConverter.getString("19709", Types.DATE, Types.DATE, 0));
   }
 
   @Test
   public void testConvertingTime() throws SFException {
-    Assertions.assertEquals("00:13:18.000", stringConverter.getString("798.838000000", Types.TIME, Types.TIME, 0));
+    Assertions.assertEquals(
+        "00:13:18.000", stringConverter.getString("798.838000000", Types.TIME, Types.TIME, 0));
   }
 
   @Test
   public void testConvertingBinary() throws SFException {
-    Assertions.assertEquals("AQID", stringConverter.getString("010203", Types.BINARY, Types.BINARY, 0));
+    Assertions.assertEquals(
+        "AQID", stringConverter.getString("010203", Types.BINARY, Types.BINARY, 0));
   }
 }

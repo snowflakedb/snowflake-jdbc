@@ -20,11 +20,9 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
-
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.UUIDUtils;
 import org.apache.commons.text.RandomStringGenerator;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,7 +32,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class LobSizeLatestIT extends BaseJDBCTest {
 
   private static final Logger logger = Logger.getLogger(SnowflakeDriverIT.class.getName());

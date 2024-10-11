@@ -3,9 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-
 /** Test PreparedStatement in ARROW format 2/2 */
-//@Category(TestCategoryArrow.class)
+// @Category(TestCategoryArrow.class)
 public class PreparedStatementArrow1IT extends PreparedStatement1IT {
   public PreparedStatementArrow1IT() {
     super("arrow");

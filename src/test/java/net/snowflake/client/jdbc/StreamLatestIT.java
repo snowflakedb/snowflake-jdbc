@@ -17,7 +17,6 @@ import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import org.apache.commons.io.IOUtils;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
  * is not applicable. If it is applicable, move tests to StreamIT so that both the latest and oldest
  * supported driver run the tests.
  */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class StreamLatestIT extends BaseJDBCTest {
 
   @TempDir private File tmpFolder;
@@ -66,7 +65,8 @@ public class StreamLatestIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          Assertions.assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
+          Assertions.assertEquals(
+              "hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
         statement.execute("CREATE or replace TABLE \"ice cream (nice)\" (types STRING)");
 
@@ -86,7 +86,8 @@ public class StreamLatestIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          Assertions.assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
+          Assertions.assertEquals(
+              "hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
       } finally {
         statement.execute("DROP TABLE IF EXISTS \"ice cream (nice)\"");
@@ -111,7 +112,9 @@ public class StreamLatestIT extends BaseJDBCTest {
         Assertions.fail("should throw a storage provider exception for blob not found");
       } catch (Exception ex) {
         Assertions.assertTrue(ex instanceof SQLException);
-        Assertions.assertTrue(ex.getMessage().matches(".*Blob.*not found in bucket.*"), "Wrong exception message: " + ex.getMessage());
+        Assertions.assertTrue(
+            ex.getMessage().matches(".*Blob.*not found in bucket.*"),
+            "Wrong exception message: " + ex.getMessage());
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);
       }
@@ -133,7 +136,8 @@ public class StreamLatestIT extends BaseJDBCTest {
                   + " @testgcpstage/"
                   + DEST_PREFIX)) {
         Assertions.assertTrue(rset.next());
-        Assertions.assertEquals("UPLOADED", rset.getString(7), "Error message:" + rset.getString(8));
+        Assertions.assertEquals(
+            "UPLOADED", rset.getString(7), "Error message:" + rset.getString(8));
 
         InputStream out =
             connection

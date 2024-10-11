@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;import static org.mockito.Mockito.spy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.spy;
 
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.sql.Connection;

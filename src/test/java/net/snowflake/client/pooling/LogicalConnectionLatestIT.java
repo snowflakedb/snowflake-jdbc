@@ -3,7 +3,8 @@
  */
 package net.snowflake.client.pooling;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;import static org.mockito.Mockito.doThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -21,15 +22,13 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 import javax.sql.PooledConnection;
-
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeDriver;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryConnection.class)
+// @Category(TestCategoryConnection.class)
 public class LogicalConnectionLatestIT extends BaseJDBCTest {
   Map<String, String> properties = getConnectionParameters();
 
@@ -47,7 +46,8 @@ public class LogicalConnectionLatestIT extends BaseJDBCTest {
       try (ResultSet resultSet = statement.executeQuery("show parameters")) {
         Assertions.assertTrue(resultSet.next());
         Assertions.assertFalse(logicalConnection.isClosed());
-        Assertions.assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, logicalConnection.getHoldability());
+        Assertions.assertEquals(
+            ResultSet.CLOSE_CURSORS_AT_COMMIT, logicalConnection.getHoldability());
       }
     }
     logicalConnection.close();

@@ -13,12 +13,11 @@ import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import org.apache.commons.io.IOUtils;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Stream interface tests. Snowflake JDBC specific API */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class StreamIT extends BaseJDBCTest {
   /**
    * Test Upload Stream
@@ -49,7 +48,8 @@ public class StreamIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          Assertions.assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
+          Assertions.assertEquals(
+              "hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);
@@ -128,7 +128,8 @@ public class StreamIT extends BaseJDBCTest {
           while (rset.next()) {
             ret = rset.getString(1);
           }
-          Assertions.assertEquals("hello", ret, "Unexpected string value: " + ret + " expect: hello");
+          Assertions.assertEquals(
+              "hello", ret, "Unexpected string value: " + ret + " expect: hello");
         }
 
       } finally {

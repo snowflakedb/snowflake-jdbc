@@ -69,7 +69,9 @@ public class SqlFeatureNotSupportedTelemetryTest {
         "net.snowflake.client.jdbc.SnowflakeSQLException\n"
             + "\tat net.snowflake.client.jdbc.SnowflakeUtil.checkErrorAndThrowExceptionSub(SnowflakeUtil.java:124)\n";
 
-    Assertions.assertEquals(maskedSnowflakeSQLStacktrace, SnowflakeSQLLoggedException.maskStacktrace(snowflakeSQLStacktrace));
+    Assertions.assertEquals(
+        maskedSnowflakeSQLStacktrace,
+        SnowflakeSQLLoggedException.maskStacktrace(snowflakeSQLStacktrace));
 
     // Unmasked stacktrace for SQLFeatureNotSupportedException. Contains reason as well
     String featureNotSupportedStacktrace =
@@ -81,8 +83,12 @@ public class SqlFeatureNotSupportedTelemetryTest {
         "net.snowflake.client.jdbc.SnowflakeLoggedFeatureNotSupportedException\n"
             + "\tat net.snowflake.client.jdbc.SnowflakeStatementV1.execute(SnowflakeStatementV1.java:344)\n";
 
-    Assertions.assertEquals(maskedFeatureNotSupportedStacktrace, SnowflakeSQLLoggedException.maskStacktrace(featureNotSupportedStacktrace));
+    Assertions.assertEquals(
+        maskedFeatureNotSupportedStacktrace,
+        SnowflakeSQLLoggedException.maskStacktrace(featureNotSupportedStacktrace));
 
-    Assertions.assertEquals(maskedMultipleLineReasonMessage, SnowflakeSQLLoggedException.maskStacktrace(multipleLineReasonMessage));
+    Assertions.assertEquals(
+        maskedMultipleLineReasonMessage,
+        SnowflakeSQLLoggedException.maskStacktrace(multipleLineReasonMessage));
   }
 }

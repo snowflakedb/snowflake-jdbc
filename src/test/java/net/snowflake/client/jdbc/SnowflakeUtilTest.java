@@ -12,13 +12,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
-
 import net.snowflake.client.core.ObjectMapperFactory;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 public class SnowflakeUtilTest extends BaseJDBCTest {
 
   private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getObjectMapper();
@@ -40,7 +38,9 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
         SnowflakeUtil.extractColumnMetadata(rootNode, false, null);
     // then
     Assertions.assertNotNull(columnMetadata);
-    Assertions.assertEquals(OBJECT_MAPPER.writeValueAsString(expectedColumnMetadata), OBJECT_MAPPER.writeValueAsString(columnMetadata));
+    Assertions.assertEquals(
+        OBJECT_MAPPER.writeValueAsString(expectedColumnMetadata),
+        OBJECT_MAPPER.writeValueAsString(columnMetadata));
   }
 
   @Test

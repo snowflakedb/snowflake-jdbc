@@ -123,11 +123,12 @@ public class SnowflakeMFACacheTest {
                   if (callCount == 0) {
                     // First connection request
                     jsonNode = parseRequest((HttpPost) args[0]);
-                    Assertions.assertTrue(jsonNode
-                        .path("data")
-                        .path("SESSION_PARAMETERS")
-                        .path("CLIENT_REQUEST_MFA_TOKEN")
-                        .asBoolean());
+                    Assertions.assertTrue(
+                        jsonNode
+                            .path("data")
+                            .path("SESSION_PARAMETERS")
+                            .path("CLIENT_REQUEST_MFA_TOKEN")
+                            .asBoolean());
                     // return first mfa token
                     res = getNormalMockedHttpResponse(true, 0).toString();
                   } else if (callCount == 1) {
@@ -136,12 +137,14 @@ public class SnowflakeMFACacheTest {
                   } else if (callCount == 2) {
                     // Second connection request
                     jsonNode = parseRequest((HttpPost) args[0]);
-                    Assertions.assertTrue(jsonNode
-                        .path("data")
-                        .path("SESSION_PARAMETERS")
-                        .path("CLIENT_REQUEST_MFA_TOKEN")
-                        .asBoolean());
-                    Assertions.assertEquals(mockedMfaToken[0], jsonNode.path("data").path("TOKEN").asText());
+                    Assertions.assertTrue(
+                        jsonNode
+                            .path("data")
+                            .path("SESSION_PARAMETERS")
+                            .path("CLIENT_REQUEST_MFA_TOKEN")
+                            .asBoolean());
+                    Assertions.assertEquals(
+                        mockedMfaToken[0], jsonNode.path("data").path("TOKEN").asText());
                     // Normally backend won't send a new mfa token in this case. For testing
                     // purpose, we issue a new token to test whether the mfa token can be refreshed
                     // when receiving a new one from server.
@@ -153,12 +156,14 @@ public class SnowflakeMFACacheTest {
                     // Third connection request
                     // Check for the new mfa token
                     jsonNode = parseRequest((HttpPost) args[0]);
-                    Assertions.assertTrue(jsonNode
-                        .path("data")
-                        .path("SESSION_PARAMETERS")
-                        .path("CLIENT_REQUEST_MFA_TOKEN")
-                        .asBoolean());
-                    Assertions.assertEquals(mockedMfaToken[1], jsonNode.path("data").path("TOKEN").asText());
+                    Assertions.assertTrue(
+                        jsonNode
+                            .path("data")
+                            .path("SESSION_PARAMETERS")
+                            .path("CLIENT_REQUEST_MFA_TOKEN")
+                            .asBoolean());
+                    Assertions.assertEquals(
+                        mockedMfaToken[1], jsonNode.path("data").path("TOKEN").asText());
                     res = getNormalMockedHttpResponse(true, -1).toString();
                   } else if (callCount == 5) {
                     // Third close() request
@@ -168,11 +173,12 @@ public class SnowflakeMFACacheTest {
                     res = getNormalMockedHttpResponse(false, -1).toString();
                   } else if (callCount == 7) {
                     jsonNode = parseRequest((HttpPost) args[0]);
-                    Assertions.assertTrue(jsonNode
-                        .path("data")
-                        .path("SESSION_PARAMETERS")
-                        .path("CLIENT_REQUEST_MFA_TOKEN")
-                        .asBoolean());
+                    Assertions.assertTrue(
+                        jsonNode
+                            .path("data")
+                            .path("SESSION_PARAMETERS")
+                            .path("CLIENT_REQUEST_MFA_TOKEN")
+                            .asBoolean());
                     // no token should be included this time.
                     Assertions.assertEquals("", jsonNode.path("data").path("TOKEN").asText());
                     res = getNormalMockedHttpResponse(true, -1).toString();
@@ -261,10 +267,11 @@ public class SnowflakeMFACacheTest {
 
                 private String validationHelper(Object[] args) throws IOException {
                   JsonNode node = parseRequest((HttpPost) args[0]);
-                  Assertions.assertTrue(node.path("data")
-                      .path("SESSION_PARAMETERS")
-                      .path("CLIENT_REQUEST_MFA_TOKEN")
-                      .asBoolean());
+                  Assertions.assertTrue(
+                      node.path("data")
+                          .path("SESSION_PARAMETERS")
+                          .path("CLIENT_REQUEST_MFA_TOKEN")
+                          .asBoolean());
                   // no token should be included.
                   Assertions.assertEquals("", node.path("data").path("TOKEN").asText());
                   return getNormalMockedHttpResponse(true, 0).toString();

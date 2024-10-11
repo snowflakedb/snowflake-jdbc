@@ -55,7 +55,8 @@ public class BaseJDBCTest extends AbstractDriverIT {
       f.run();
       Assertions.fail("must raise exception");
     } catch (SQLException ex) {
-      Assertions.assertEquals((int) ErrorCode.CONNECTION_CLOSED.getMessageCode(), ex.getErrorCode());
+      Assertions.assertEquals(
+          (int) ErrorCode.CONNECTION_CLOSED.getMessageCode(), ex.getErrorCode());
     }
   }
 
@@ -73,7 +74,8 @@ public class BaseJDBCTest extends AbstractDriverIT {
       f.run();
       Assertions.fail("must raise exception");
     } catch (SQLException ex) {
-      Assertions.assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
+      Assertions.assertEquals(
+          (int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
     }
   }
 

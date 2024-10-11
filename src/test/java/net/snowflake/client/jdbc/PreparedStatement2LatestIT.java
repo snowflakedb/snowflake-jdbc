@@ -13,7 +13,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +22,7 @@ import org.junit.jupiter.api.Test;
  * if the tests still are not applicable. If it is applicable, move tests to PreparedStatement2IT so
  * that both the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   public PreparedStatement2LatestIT() {
     super("json");
@@ -234,7 +233,8 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         }
         try (PreparedStatement preparedStatement =
             connection.prepareStatement("select * from test_uuid_with_bind where c1 = ?")) {
-          Assertions.assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          Assertions.assertFalse(
+              preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
           preparedStatement.setInt(1, 5);
 
           try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -269,7 +269,8 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
       }
       try (PreparedStatement preparedStatement =
           connection.prepareStatement("insert into test_uuid_with_bind values (?, ?)")) {
-        Assertions.assertFalse(preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        Assertions.assertFalse(
+            preparedStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         preparedStatement.setInt(1, 5);
         preparedStatement.setString(2, "hello");
         preparedStatement.addBatch();
@@ -306,23 +307,28 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         bindOneParamSet(prepStatement, 1, 1.22222, (float) 1.2, "test", 12121212121L, (short) 12);
         prepStatement.execute();
         // The statement above has already been described since it has been executed
-        Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        Assertions.assertTrue(
+            prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
       }
       try (PreparedStatement prepStatement = connection.prepareStatement(selectSQL)) {
         // Assert the statement, once it has been re-created, has already described set to false
-        Assertions.assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        Assertions.assertFalse(
+            prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         prepStatement.setInt(1, 1);
         try (ResultSet rs = prepStatement.executeQuery()) {
           Assertions.assertTrue(rs.next());
-          Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          Assertions.assertTrue(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         }
       }
       try (PreparedStatement prepStatement = connection.prepareStatement(selectAllSQL)) {
         // Assert the statement, once it has been re-created, has already described set to false
-        Assertions.assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+        Assertions.assertFalse(
+            prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         try (ResultSet rs = prepStatement.executeQuery()) {
           Assertions.assertTrue(rs.next());
-          Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          Assertions.assertTrue(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
         }
       }
     }
@@ -343,8 +349,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
         try (PreparedStatement prepStatement =
             connection.prepareStatement("insert into testStageArrayBind values (?, ?)")) {
           // Assert to begin with that before the describe call, array binding is not supported
-          Assertions.assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
-          Assertions.assertFalse(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+          Assertions.assertFalse(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isAlreadyDescribed());
+          Assertions.assertFalse(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
           // Insert enough rows to hit the default binding array threshold
           for (int i = 0; i < 35000; i++) {
             prepStatement.setInt(1, i);
@@ -353,7 +361,8 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           }
           prepStatement.executeBatch();
           // After executing the first batch, verify that array bind support is still true
-          Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+          Assertions.assertTrue(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
           for (int i = 0; i < 35000; i++) {
             prepStatement.setInt(1, i);
             prepStatement.setString(2, "test" + i);
@@ -361,7 +370,8 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           }
           prepStatement.executeBatch();
           // After executing the second batch, verify that array bind support is still true
-          Assertions.assertTrue(prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
+          Assertions.assertTrue(
+              prepStatement.unwrap(SnowflakePreparedStatementV1.class).isArrayBindSupported());
         }
       } finally {
         statement.execute("drop table if exists testStageArrayBind");
@@ -376,13 +386,16 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
             connection.prepareStatement("select current_version() --testing toString()")) {
 
       // Query ID is going to be null since we didn't execute the statement yet
-      Assertions.assertEquals("select current_version() --testing toString() - Query ID: null", prepStatement.toString());
+      Assertions.assertEquals(
+          "select current_version() --testing toString() - Query ID: null",
+          prepStatement.toString());
 
       prepStatement.executeQuery();
-      Assertions.assertTrue(prepStatement
-          .toString()
-          .matches(
-              "select current_version\\(\\) --testing toString\\(\\) - Query ID: (\\d|\\w)+(-(\\d|\\w)+)+$"));
+      Assertions.assertTrue(
+          prepStatement
+              .toString()
+              .matches(
+                  "select current_version\\(\\) --testing toString\\(\\) - Query ID: (\\d|\\w)+(-(\\d|\\w)+)+$"));
     }
   }
 }

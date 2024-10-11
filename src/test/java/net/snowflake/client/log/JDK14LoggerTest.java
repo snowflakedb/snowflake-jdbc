@@ -8,7 +8,6 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.logging.Level;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

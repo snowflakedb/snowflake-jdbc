@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** A base class for testing implementations of {@link SFLogger} */
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 public abstract class AbstractLoggerIT {
   public static final String fakeCreds =
       "credentials=(aws_key_id='abc123' aws_secret_key='rtyuiop')";
@@ -98,14 +98,20 @@ public abstract class AbstractLoggerIT {
       logMessage(level, msg, args);
 
       String loggedMsg = getLoggedMessage();
-      Assertions.assertEquals(expectedLogMsg, loggedMsg, String.format(
-          "Message logged did not match expected value. " + "expected=%s actual=%s",
-          expectedLogMsg, loggedMsg));
+      Assertions.assertEquals(
+          expectedLogMsg,
+          loggedMsg,
+          String.format(
+              "Message logged did not match expected value. " + "expected=%s actual=%s",
+              expectedLogMsg, loggedMsg));
 
       LogLevel loggedMsgLevel = getLoggedMessageLevel();
-      Assertions.assertEquals(level, loggedMsgLevel, String.format(
-          "Message was not logged at expected log level. " + "expected=%s actual=%s",
-          level.toString(), loggedMsgLevel.toString()));
+      Assertions.assertEquals(
+          level,
+          loggedMsgLevel,
+          String.format(
+              "Message was not logged at expected log level. " + "expected=%s actual=%s",
+              level.toString(), loggedMsgLevel.toString()));
     }
   }
 

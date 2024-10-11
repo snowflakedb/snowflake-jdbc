@@ -20,12 +20,11 @@ import java.sql.Types;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class PreparedStatement1IT extends PreparedStatement0IT {
   public PreparedStatement1IT() {
     super("json");
@@ -401,9 +400,12 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
               }
 
               for (int i = 0; i < timestamps.length; i++) {
-                Assertions.assertEquals(nonStageResult[i], stageResult[i], "Stage binding timestamp should match non-stage binding timestamp ("
-                    + tsType
-                    + ")");
+                Assertions.assertEquals(
+                    nonStageResult[i],
+                    stageResult[i],
+                    "Stage binding timestamp should match non-stage binding timestamp ("
+                        + tsType
+                        + ")");
               }
             }
           }
@@ -476,7 +478,10 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
             }
 
             for (int i = 0; i < times.length; i++) {
-              Assertions.assertEquals(nonStageResult[i], stageResult[i], "Stage binding time should match non-stage binding time");
+              Assertions.assertEquals(
+                  nonStageResult[i],
+                  stageResult[i],
+                  "Stage binding time should match non-stage binding time");
             }
           }
         }

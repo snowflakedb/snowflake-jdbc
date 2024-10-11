@@ -11,11 +11,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.AbstractDriverIT;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public final class SessionVariablesIT extends AbstractDriverIT {
   @Test
   public void testSettingSessionVariablesInConnectionProperties() throws SQLException {

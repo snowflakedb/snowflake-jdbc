@@ -24,13 +24,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataIT extends BaseJDBCTest {
   private static final Pattern VERSION_PATTERN =
       Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
@@ -122,13 +121,15 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
         Assertions.assertTrue(resultSet.isAfterLast());
         Assertions.fail("The result set is automatically closed when all rows are fetched.");
       } catch (SQLException ex) {
-        Assertions.assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
+        Assertions.assertEquals(
+            (int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
       }
       try {
         resultSet.isAfterLast();
         Assertions.fail("No isAfterLast support for query based metadata");
       } catch (SQLException ex) {
-        Assertions.assertEquals((int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
+        Assertions.assertEquals(
+            (int) ErrorCode.RESULTSET_ALREADY_CLOSED.getMessageCode(), ex.getErrorCode());
       }
       resultSet.close(); // double closing does nothing.
       resultSet.next(); // no exception
@@ -309,14 +310,18 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       Assertions.assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnName(col));
 
       Assertions.assertEquals(colNames.get(col - 1), resultSetMetaData.getColumnLabel(col));
-      Assertions.assertEquals(SnowflakeType.javaTypeToClassName(resultSetMetaData.getColumnType(col)), resultSetMetaData.getColumnClassName(col));
+      Assertions.assertEquals(
+          SnowflakeType.javaTypeToClassName(resultSetMetaData.getColumnType(col)),
+          resultSetMetaData.getColumnClassName(col));
       Assertions.assertEquals(25, resultSetMetaData.getColumnDisplaySize(col));
       Assertions.assertEquals((int) colTypes.get(col - 1), resultSetMetaData.getColumnType(col));
       Assertions.assertEquals(colTypeNames.get(col - 1), resultSetMetaData.getColumnTypeName(col));
       Assertions.assertEquals(9, resultSetMetaData.getPrecision(col));
       Assertions.assertEquals(9, resultSetMetaData.getScale(col));
 
-      Assertions.assertEquals(SnowflakeType.isJavaTypeSigned(resultSetMetaData.getColumnType(col)), resultSetMetaData.isSigned(col));
+      Assertions.assertEquals(
+          SnowflakeType.isJavaTypeSigned(resultSetMetaData.getColumnType(col)),
+          resultSetMetaData.isSigned(col));
       Assertions.assertFalse(resultSetMetaData.isAutoIncrement(col));
       Assertions.assertFalse(resultSetMetaData.isCurrency(col));
       Assertions.assertTrue(resultSetMetaData.isReadOnly(col));
@@ -362,9 +367,12 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           Assertions.assertEquals(1, resultSet.getInt("KEY_SEQ"));
           Assertions.assertNotEquals("", resultSet.getString("PK_NAME"));
           Assertions.assertNotEquals("", resultSet.getString("FK_NAME"));
-          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-          Assertions.assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+          Assertions.assertEquals(
+              DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+          Assertions.assertEquals(
+              DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+          Assertions.assertEquals(
+              DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
         }
       } finally {
         statement.execute("drop table if exists " + targetTable1);
@@ -408,9 +416,12 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           Assertions.assertEquals(1, resultSet.getInt("KEY_SEQ"));
           Assertions.assertNotEquals("", resultSet.getString("PK_NAME"));
           Assertions.assertNotEquals("", resultSet.getString("FK_NAME"));
-          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-          Assertions.assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+          Assertions.assertEquals(
+              DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+          Assertions.assertEquals(
+              DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+          Assertions.assertEquals(
+              DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
         }
       } finally {
         statement.execute("drop table if exists " + targetTable1);
@@ -456,9 +467,12 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           Assertions.assertEquals(1, resultSet.getInt("KEY_SEQ"));
           Assertions.assertNotEquals("", resultSet.getString("PK_NAME"));
           Assertions.assertNotEquals("", resultSet.getString("FK_NAME"));
-          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
-          Assertions.assertEquals(DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
-          Assertions.assertEquals(DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
+          Assertions.assertEquals(
+              DatabaseMetaData.importedKeyNoAction, resultSet.getShort("UPDATE_RULE"));
+          Assertions.assertEquals(
+              DatabaseMetaData.importedKeyNoAction, resultSet.getShort("DELETE_RULE"));
+          Assertions.assertEquals(
+              DatabaseMetaData.importedKeyNotDeferrable, resultSet.getShort("DEFERRABILITY"));
         }
       } finally {
         statement.execute("drop table if exists " + targetTable1);
@@ -684,10 +698,12 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       Assertions.assertFalse(metaData.deletesAreDetected(1));
       Assertions.assertTrue(metaData.doesMaxRowSizeIncludeBlobs());
       Assertions.assertTrue(metaData.supportsTransactions());
-      Assertions.assertEquals(Connection.TRANSACTION_READ_COMMITTED, metaData.getDefaultTransactionIsolation());
+      Assertions.assertEquals(
+          Connection.TRANSACTION_READ_COMMITTED, metaData.getDefaultTransactionIsolation());
       Assertions.assertEquals("$", metaData.getExtraNameCharacters());
       Assertions.assertEquals("\"", metaData.getIdentifierQuoteString());
-      Assertions.assertEquals(0, getSizeOfResultSet(metaData.getIndexInfo(null, null, null, true, true)));
+      Assertions.assertEquals(
+          0, getSizeOfResultSet(metaData.getIndexInfo(null, null, null, true, true)));
       Assertions.assertEquals(EXPECTED_MAX_BINARY_LENGTH, metaData.getMaxBinaryLiteralLength());
       Assertions.assertEquals(255, metaData.getMaxCatalogNameLength());
       Assertions.assertEquals(EXPECTED_MAX_CHAR_LENGTH, metaData.getMaxCharLiteralLength());
@@ -776,14 +792,19 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       Assertions.assertTrue(metaData.supportsOuterJoins());
       Assertions.assertFalse(metaData.supportsPositionedDelete());
       Assertions.assertFalse(metaData.supportsPositionedUpdate());
-      Assertions.assertTrue(metaData.supportsResultSetConcurrency(
-          ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
-      Assertions.assertFalse(metaData.supportsResultSetConcurrency(
-          ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY));
+      Assertions.assertTrue(
+          metaData.supportsResultSetConcurrency(
+              ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY));
+      Assertions.assertFalse(
+          metaData.supportsResultSetConcurrency(
+              ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY));
       Assertions.assertTrue(metaData.supportsResultSetType(ResultSet.TYPE_FORWARD_ONLY));
-      Assertions.assertTrue(metaData.supportsResultSetHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
-      Assertions.assertFalse(metaData.supportsResultSetHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
-      Assertions.assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, metaData.getResultSetHoldability());
+      Assertions.assertTrue(
+          metaData.supportsResultSetHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
+      Assertions.assertFalse(
+          metaData.supportsResultSetHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT));
+      Assertions.assertEquals(
+          ResultSet.CLOSE_CURSORS_AT_COMMIT, metaData.getResultSetHoldability());
       Assertions.assertFalse(metaData.supportsSavepoints());
       Assertions.assertTrue(metaData.supportsSchemasInDataManipulation());
       Assertions.assertFalse(metaData.supportsSchemasInIndexDefinitions());
@@ -798,10 +819,14 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
       Assertions.assertTrue(metaData.supportsSubqueriesInIns());
       Assertions.assertFalse(metaData.supportsSubqueriesInQuantifieds());
       Assertions.assertTrue(metaData.supportsTableCorrelationNames());
-      Assertions.assertTrue(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_COMMITTED));
-      Assertions.assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ));
-      Assertions.assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_SERIALIZABLE));
-      Assertions.assertFalse(metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_UNCOMMITTED));
+      Assertions.assertTrue(
+          metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_COMMITTED));
+      Assertions.assertFalse(
+          metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_REPEATABLE_READ));
+      Assertions.assertFalse(
+          metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_SERIALIZABLE));
+      Assertions.assertFalse(
+          metaData.supportsTransactionIsolationLevel(Connection.TRANSACTION_READ_UNCOMMITTED));
       Assertions.assertTrue(metaData.supportsUnion());
       Assertions.assertTrue(metaData.supportsUnionAll());
       Assertions.assertFalse(metaData.updatesAreDetected(1));

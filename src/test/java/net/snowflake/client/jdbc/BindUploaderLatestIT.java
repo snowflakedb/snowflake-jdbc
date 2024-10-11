@@ -19,11 +19,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.TimeZone;
-
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -37,7 +35,7 @@ import org.junit.jupiter.api.Test;
  * tests still is not applicable. If it is applicable, move tests to BindUploaderIT so that both the
  * latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class BindUploaderLatestIT extends BaseJDBCTest {
   BindUploader bindUploader;
   Connection conn;

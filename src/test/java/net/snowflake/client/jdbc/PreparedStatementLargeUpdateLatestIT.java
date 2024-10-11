@@ -12,12 +12,11 @@ import java.sql.Statement;
 import java.util.Map;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.core.ExecTimeTelemetryData;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class PreparedStatementLargeUpdateLatestIT extends BaseJDBCTest {
 
   /**

@@ -138,7 +138,8 @@ public class CoreUtilsMiscellaneousTest {
     try {
       S3HttpUtil.setSessionlessProxyForS3(props, clientConfig);
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
+      Assertions.assertEquals(
+          (int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
     }
   }
 
@@ -178,7 +179,8 @@ public class CoreUtilsMiscellaneousTest {
     try {
       HttpUtil.setSessionlessProxyForAzure(props, op);
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
+      Assertions.assertEquals(
+          (int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
     }
   }
 
@@ -337,7 +339,8 @@ public class CoreUtilsMiscellaneousTest {
     try {
       settingsKey = SnowflakeUtil.convertProxyPropertiesToHttpClientKey(mode, props);
     } catch (SnowflakeSQLException e) {
-      Assertions.assertEquals((int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
+      Assertions.assertEquals(
+          (int) ErrorCode.INVALID_PROXY_PROPERTIES.getMessageCode(), e.getErrorCode());
     }
   }
 

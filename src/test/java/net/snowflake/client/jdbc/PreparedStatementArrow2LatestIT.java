@@ -3,12 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-
 /**
  * PreparedStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
  * supported driver. Drop this file when PrepareStatement2IT is dropped.
  */
-//@Category(TestCategoryArrow.class)
+// @Category(TestCategoryArrow.class)
 public class PreparedStatementArrow2LatestIT extends PreparedStatement2LatestIT {
   public PreparedStatementArrow2LatestIT() {
     super("arrow");

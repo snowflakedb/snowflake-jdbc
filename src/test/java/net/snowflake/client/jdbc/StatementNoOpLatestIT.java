@@ -7,11 +7,10 @@ package net.snowflake.client.jdbc;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class StatementNoOpLatestIT {
   @Test
   public void testSnowflakeNoOpStatement() throws SQLException {

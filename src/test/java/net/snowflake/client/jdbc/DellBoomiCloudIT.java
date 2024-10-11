@@ -7,12 +7,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** A simple run on fetch result under boomi cloud environment's policy file */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class DellBoomiCloudIT extends AbstractDriverIT {
   @BeforeEach
   public void setup() {

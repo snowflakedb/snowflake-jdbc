@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -364,8 +363,10 @@ public class SnowflakeDriverTest {
     Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:xyz"));
     Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflak://localhost:8080"));
     Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://localhost:8080/a=b"));
-    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%%"));
-    Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%b&proxyPort="));
+    Assertions.assertFalse(
+        snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%%"));
+    Assertions.assertFalse(
+        snowflakeDriver.acceptsURL("jdbc:snowflake://testaccount.com?proxyHost=%b&proxyPort="));
     Assertions.assertFalse(snowflakeDriver.acceptsURL("jdbc:mysql://localhost:3306/dbname"));
   }
 
@@ -447,7 +448,8 @@ public class SnowflakeDriverTest {
       snowflakeDriver.getPropertyInfo("jdbc:snowflake://localhost:443/?&ssl=on", new Properties());
       Assertions.fail();
     } catch (SnowflakeSQLException ex) {
-      Assertions.assertEquals("Invalid Connect String: jdbc:snowflake://localhost:443/?&ssl=on.", ex.getMessage());
+      Assertions.assertEquals(
+          "Invalid Connect String: jdbc:snowflake://localhost:443/?&ssl=on.", ex.getMessage());
     }
   }
 }

@@ -28,45 +28,66 @@ public class DateTimeConverterTest {
 
   @Test
   public void testGetVariousTypesWhenNullObjectGiven() throws SFException {
-    Assertions.assertNull(dateTimeConverter.getTimestamp(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
-    Assertions.assertNull(dateTimeConverter.getTime(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
-    Assertions.assertNull(dateTimeConverter.getDate(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
+    Assertions.assertNull(
+        dateTimeConverter.getTimestamp(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
+    Assertions.assertNull(
+        dateTimeConverter.getTime(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
+    Assertions.assertNull(
+        dateTimeConverter.getDate(null, Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
   }
 
   @Test
   public void testGetTimestampWithDefaultTimeZone() throws SFException {
-    Assertions.assertEquals(Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3)), dateTimeConverter.getTimestamp("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
-    Assertions.assertEquals(Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789000)), dateTimeConverter.getTimestamp(
-        "1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
-    Assertions.assertEquals(Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789123)), dateTimeConverter.getTimestamp(
-        "1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
+    Assertions.assertEquals(
+        Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3)),
+        dateTimeConverter.getTimestamp("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
+    Assertions.assertEquals(
+        Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789000)),
+        dateTimeConverter.getTimestamp(
+            "1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
+    Assertions.assertEquals(
+        Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789123)),
+        dateTimeConverter.getTimestamp(
+            "1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0));
   }
 
   @Test
   public void testGetTimestampWithSpecificTimeZone() throws SFException {
-    Assertions.assertEquals(Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3)).toString(), dateTimeConverterWithTreatNTZAsUTC
-        .getTimestamp("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
-        .toString());
-    Assertions.assertEquals(Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789000)).toString(), dateTimeConverterWithTreatNTZAsUTC
-        .getTimestamp("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
-        .toString());
-    Assertions.assertEquals(Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789123)).toString(), dateTimeConverterWithTreatNTZAsUTC
-        .getTimestamp("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
-        .toString());
+    Assertions.assertEquals(
+        Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3)).toString(),
+        dateTimeConverterWithTreatNTZAsUTC
+            .getTimestamp("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
+            .toString());
+    Assertions.assertEquals(
+        Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789000)).toString(),
+        dateTimeConverterWithTreatNTZAsUTC
+            .getTimestamp("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
+            .toString());
+    Assertions.assertEquals(
+        Timestamp.valueOf(LocalDateTime.of(2023, 8, 9, 8, 2, 3, 456789123)).toString(),
+        dateTimeConverterWithTreatNTZAsUTC
+            .getTimestamp("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
+            .toString());
   }
 
   // TODO replace equality when SNOW-991418 is fixed
   @Test
   public void testGetTimeWithDefaultTimeZone() throws SFException {
-    Assertions.assertEquals(Time.valueOf(LocalTime.of(8, 2, 3)).toString(), dateTimeConverter
-        .getTime("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
-        .toString());
-    Assertions.assertEquals(Time.valueOf(LocalTime.of(8, 2, 3)).toString(), dateTimeConverter
-        .getTime("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
-        .toString());
-    Assertions.assertEquals(Time.valueOf(LocalTime.of(8, 2, 3)).toString(), dateTimeConverter
-        .getTime("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
-        .toString());
+    Assertions.assertEquals(
+        Time.valueOf(LocalTime.of(8, 2, 3)).toString(),
+        dateTimeConverter
+            .getTime("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
+            .toString());
+    Assertions.assertEquals(
+        Time.valueOf(LocalTime.of(8, 2, 3)).toString(),
+        dateTimeConverter
+            .getTime("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
+            .toString());
+    Assertions.assertEquals(
+        Time.valueOf(LocalTime.of(8, 2, 3)).toString(),
+        dateTimeConverter
+            .getTime("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
+            .toString());
   }
 
   @Test
@@ -80,28 +101,40 @@ public class DateTimeConverterTest {
 
   @Test
   public void testGetDateWithDefaultTimeZone() throws SFException {
-    Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 8, 9)).toString(), dateTimeConverter
-        .getDate("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
-        .toString());
-    Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 8, 9)).toString(), dateTimeConverter
-        .getDate("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
-        .toString());
-    Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 8, 9)).toString(), dateTimeConverter
-        .getDate("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
-        .toString());
+    Assertions.assertEquals(
+        Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
+        dateTimeConverter
+            .getDate("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
+            .toString());
+    Assertions.assertEquals(
+        Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
+        dateTimeConverter
+            .getDate("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
+            .toString());
+    Assertions.assertEquals(
+        Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
+        dateTimeConverter
+            .getDate("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, null, 0)
+            .toString());
   }
 
   @Test
   public void testGetDateWithSpecificTimeZone() throws SFException {
-    Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 8, 9)).toString(), dateTimeConverter
-        .getDate("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
-        .toString());
-    Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 8, 9)).toString(), dateTimeConverter
-        .getDate("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
-        .toString());
-    Assertions.assertEquals(Date.valueOf(LocalDate.of(2023, 8, 9)).toString(), dateTimeConverter
-        .getDate("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
-        .toString());
+    Assertions.assertEquals(
+        Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
+        dateTimeConverter
+            .getDate("1691568123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
+            .toString());
+    Assertions.assertEquals(
+        Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
+        dateTimeConverter
+            .getDate("1691568123.456789", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
+            .toString());
+    Assertions.assertEquals(
+        Date.valueOf(LocalDate.of(2023, 8, 9)).toString(),
+        dateTimeConverter
+            .getDate("1691568123.456789123", Types.TIMESTAMP, Types.TIMESTAMP, nuukTimeZone, 0)
+            .toString());
   }
 
   @Test

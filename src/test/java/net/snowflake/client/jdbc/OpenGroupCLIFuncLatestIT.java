@@ -7,7 +7,6 @@ import static net.snowflake.client.jdbc.OpenGroupCLIFuncIT.testFunction;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -16,7 +15,7 @@ import org.junit.jupiter.api.Test;
  * examine if the tests still are not applicable. If it is applicable, move tests to
  * OpenGroupCLIFuncIT so that both the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class OpenGroupCLIFuncLatestIT extends BaseJDBCTest {
   /**
    * Numeric function tests

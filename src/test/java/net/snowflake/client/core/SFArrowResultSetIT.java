@@ -59,12 +59,11 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 import org.apache.commons.lang3.RandomStringUtils;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-//@Category(TestCategoryArrow.class)
+// @Category(TestCategoryArrow.class)
 public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
   private Random random = new Random();
 

@@ -9,12 +9,11 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /** Test AsyncResultSet */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class ResultSetAsyncLatestIT extends BaseJDBCTest {
   @Test
   public void testAsyncResultSet() throws SQLException {
@@ -43,7 +42,8 @@ public class ResultSetAsyncLatestIT extends BaseJDBCTest {
       ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
       SnowflakeResultSetMetaData secretMetaData =
           resultSetMetaData.unwrap(SnowflakeResultSetMetaData.class);
-      Assertions.assertEquals(secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
+      Assertions.assertEquals(
+          secretMetaData.getQueryID(), resultSet.unwrap(SnowflakeResultSet.class).getQueryID());
     }
   }
 }

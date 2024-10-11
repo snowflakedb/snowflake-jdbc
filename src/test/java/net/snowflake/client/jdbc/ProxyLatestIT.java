@@ -10,18 +10,16 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Objects;
 import java.util.Properties;
-
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class ProxyLatestIT extends BaseWiremockTest {
 
   @AfterEach
@@ -119,7 +117,10 @@ public class ProxyLatestIT extends BaseWiremockTest {
       String responseString = EntityUtils.toString(response.getEntity());
       ObjectMapper mapper = new ObjectMapper();
       JsonNode json = mapper.readTree(responseString);
-      Assertions.assertEquals(expectedCount, json.get("count").asInt(), "expected request count not matched for pattern: " + pathPattern);
+      Assertions.assertEquals(
+          expectedCount,
+          json.get("count").asInt(),
+          "expected request count not matched for pattern: " + pathPattern);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

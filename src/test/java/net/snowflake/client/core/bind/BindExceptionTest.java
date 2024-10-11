@@ -8,7 +8,8 @@ public class BindExceptionTest {
 
   @Test
   public void testBindExceptionType() {
-    Assertions.assertEquals(BindException.Type.SERIALIZATION.field, TelemetryField.FAILED_BIND_SERIALIZATION);
+    Assertions.assertEquals(
+        BindException.Type.SERIALIZATION.field, TelemetryField.FAILED_BIND_SERIALIZATION);
     Assertions.assertEquals(BindException.Type.UPLOAD.field, TelemetryField.FAILED_BIND_UPLOAD);
     Assertions.assertEquals(BindException.Type.OTHER.field, TelemetryField.FAILED_BIND_OTHER);
   }

@@ -10,8 +10,11 @@ public class SnowflakeS3ClientTest {
 
   @Test
   public void shouldDetermineDomainForRegion() {
-    Assertions.assertEquals("amazonaws.com", SnowflakeS3Client.getDomainSuffixForRegionalUrl("us-east-1"));
-    Assertions.assertEquals("amazonaws.com.cn", SnowflakeS3Client.getDomainSuffixForRegionalUrl("cn-northwest-1"));
-    Assertions.assertEquals("amazonaws.com.cn", SnowflakeS3Client.getDomainSuffixForRegionalUrl("CN-NORTHWEST-1"));
+    Assertions.assertEquals(
+        "amazonaws.com", SnowflakeS3Client.getDomainSuffixForRegionalUrl("us-east-1"));
+    Assertions.assertEquals(
+        "amazonaws.com.cn", SnowflakeS3Client.getDomainSuffixForRegionalUrl("cn-northwest-1"));
+    Assertions.assertEquals(
+        "amazonaws.com.cn", SnowflakeS3Client.getDomainSuffixForRegionalUrl("CN-NORTHWEST-1"));
   }
 }

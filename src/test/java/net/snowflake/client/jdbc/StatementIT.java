@@ -22,14 +22,13 @@ import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.common.core.SqlState;
 import org.awaitility.Awaitility;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /** Statement tests */
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
@@ -271,11 +270,15 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
               + "select s1, s2, s3 from source";
 
       try {
-        Assertions.assertFalse(statement.execute("create or replace table foo (f1 integer, f2 integer, f3 integer)"));
-        Assertions.assertFalse(statement.execute("create or replace table foo1 (f1 integer, f2 integer, f3 integer)"));
-        Assertions.assertFalse(statement.execute("create or replace table bar (b1 integer, b2 integer, b3 integer)"));
-        Assertions.assertFalse(statement.execute(
-            "create or replace table source(s1 integer, s2 integer, s3 integer)"));
+        Assertions.assertFalse(
+            statement.execute("create or replace table foo (f1 integer, f2 integer, f3 integer)"));
+        Assertions.assertFalse(
+            statement.execute("create or replace table foo1 (f1 integer, f2 integer, f3 integer)"));
+        Assertions.assertFalse(
+            statement.execute("create or replace table bar (b1 integer, b2 integer, b3 integer)"));
+        Assertions.assertFalse(
+            statement.execute(
+                "create or replace table source(s1 integer, s2 integer, s3 integer)"));
         Assertions.assertFalse(statement.execute("insert into source values(1, 2, 3)"));
         Assertions.assertFalse(statement.execute("insert into source values(11, 22, 33)"));
         Assertions.assertFalse(statement.execute("insert into source values(111, 222, 333)"));
@@ -313,7 +316,8 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
 
         List<String> batchQueryIDs = statement.unwrap(SnowflakeStatement.class).getBatchQueryIDs();
         Assertions.assertEquals(3, batchQueryIDs.size());
-        Assertions.assertEquals(statement.unwrap(SnowflakeStatement.class).getQueryID(), batchQueryIDs.get(2));
+        Assertions.assertEquals(
+            statement.unwrap(SnowflakeStatement.class).getQueryID(), batchQueryIDs.get(2));
 
         try (ResultSet resultSet =
             statement.executeQuery("select * from test_batch order by b asc")) {
@@ -561,7 +565,8 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
         connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
         Assertions.fail("updateable cursor is not supported.");
       } catch (SQLException ex) {
-        Assertions.assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+        Assertions.assertEquals(
+            (int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       }
       connection.createStatement(
           ResultSet.TYPE_FORWARD_ONLY,
@@ -574,7 +579,8 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
             ResultSet.HOLD_CURSORS_OVER_COMMIT);
         Assertions.fail("hold cursor over commit is not supported.");
       } catch (SQLException ex) {
-        Assertions.assertEquals((int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
+        Assertions.assertEquals(
+            (int) ErrorCode.FEATURE_UNSUPPORTED.getMessageCode(), ex.getErrorCode());
       }
     }
   }

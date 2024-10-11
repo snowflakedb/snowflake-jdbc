@@ -72,17 +72,23 @@ public class SessionUtilTest {
   public void testConvertSystemPropertyToIntValue() {
     // Test that setting real value works
     System.setProperty("net.snowflake.jdbc.max_connections", "500");
-    Assertions.assertEquals(500, SystemUtil.convertSystemPropertyToIntValue(
-        HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
+    Assertions.assertEquals(
+        500,
+        SystemUtil.convertSystemPropertyToIntValue(
+            HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
     // Test that entering a non-int sets the value to the default
     System.setProperty("net.snowflake.jdbc.max_connections", "notAnInteger");
-    Assertions.assertEquals(HttpUtil.DEFAULT_MAX_CONNECTIONS, SystemUtil.convertSystemPropertyToIntValue(
-        HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
+    Assertions.assertEquals(
+        HttpUtil.DEFAULT_MAX_CONNECTIONS,
+        SystemUtil.convertSystemPropertyToIntValue(
+            HttpUtil.JDBC_MAX_CONNECTIONS_PROPERTY, HttpUtil.DEFAULT_MAX_CONNECTIONS));
     // Test another system property
     System.setProperty("net.snowflake.jdbc.max_connections_per_route", "30");
-    Assertions.assertEquals(30, SystemUtil.convertSystemPropertyToIntValue(
-        HttpUtil.JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY,
-        HttpUtil.DEFAULT_MAX_CONNECTIONS_PER_ROUTE));
+    Assertions.assertEquals(
+        30,
+        SystemUtil.convertSystemPropertyToIntValue(
+            HttpUtil.JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY,
+            HttpUtil.DEFAULT_MAX_CONNECTIONS_PER_ROUTE));
   }
 
   @Test
@@ -128,20 +134,32 @@ public class SessionUtilTest {
     resetOcspConfiguration();
 
     SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.com");
-    Assertions.assertEquals("http://ocsp.test.privatelink.snowflakecomputing.com/ocsp_response_cache.json", SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
-    Assertions.assertEquals("http://ocsp.test.privatelink.snowflakecomputing.com/retry/%s/%s", SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
+    Assertions.assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.com/ocsp_response_cache.json",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
+    Assertions.assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.com/retry/%s/%s",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
 
     resetOcspConfiguration();
 
     SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.cn");
-    Assertions.assertEquals("http://ocsp.test.privatelink.snowflakecomputing.cn/ocsp_response_cache.json", SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
-    Assertions.assertEquals("http://ocsp.test.privatelink.snowflakecomputing.cn/retry/%s/%s", SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
+    Assertions.assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.cn/ocsp_response_cache.json",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
+    Assertions.assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.cn/retry/%s/%s",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
 
     resetOcspConfiguration();
 
     SessionUtil.resetOCSPUrlIfNecessary("https://test.privatelink.snowflakecomputing.xyz");
-    Assertions.assertEquals("http://ocsp.test.privatelink.snowflakecomputing.xyz/ocsp_response_cache.json", SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
-    Assertions.assertEquals("http://ocsp.test.privatelink.snowflakecomputing.xyz/retry/%s/%s", SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
+    Assertions.assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.xyz/ocsp_response_cache.json",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE);
+    Assertions.assertEquals(
+        "http://ocsp.test.privatelink.snowflakecomputing.xyz/retry/%s/%s",
+        SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN);
   }
 
   private void resetOcspConfiguration() {

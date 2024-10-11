@@ -13,17 +13,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import net.snowflake.client.core.StmtUtil.StmtInput;
 import net.snowflake.client.jdbc.BaseJDBCTest;
 import org.apache.http.Header;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.MockedStatic.Verification;
 import org.mockito.Mockito;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 public class StmtUtilTest extends BaseJDBCTest {
 
   /** SNOW-862760 Verify that additional headers are added to request */

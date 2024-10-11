@@ -62,7 +62,6 @@ import net.snowflake.common.core.SqlState;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,7 +75,7 @@ import org.junit.jupiter.api.io.TempDir;
  * if the tests still is not applicable. If it is applicable, move tests to ConnectionIT so that
  * both the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryConnection.class)
+// @Category(TestCategoryConnection.class)
 public class ConnectionLatestIT extends BaseJDBCTest {
   @TempDir private File tmpFolder;
   private static final SFLogger logger = SFLoggerFactory.getLogger(ConnectionLatestIT.class);
@@ -199,7 +198,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       try (ResultSet resultSet = snowflakeStatement.executeAsyncQuery(putStatement)) {
         String statementPutQueryId = snowflakeStatement.getQueryID();
         TestUtil.assertValidQueryId(statementPutQueryId);
-        Assertions.assertNotEquals(createStageQueryId, statementPutQueryId, "create query id is override by put query id");
+        Assertions.assertNotEquals(
+            createStageQueryId, statementPutQueryId, "create query id is override by put query id");
         resultSetPutQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
         TestUtil.assertValidQueryId(resultSetPutQueryId);
         Assertions.assertEquals(resultSetPutQueryId, statementPutQueryId);
@@ -210,7 +210,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         String statementGetQueryId = snowflakeStatement.getQueryID();
         String resultSetGetQueryId = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
         TestUtil.assertValidQueryId(resultSetGetQueryId);
-        Assertions.assertNotEquals(resultSetGetQueryId, resultSetPutQueryId, "put and get query id should be different");
+        Assertions.assertNotEquals(
+            resultSetGetQueryId, resultSetPutQueryId, "put and get query id should be different");
         Assertions.assertEquals(resultSetGetQueryId, statementGetQueryId);
       }
     }
@@ -244,7 +245,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         Assertions.assertEquals(snowflakeStatement.getQueryID(), e.getQueryId());
       }
       String getQueryId = snowflakeStatement.getQueryID();
-      Assertions.assertNotEquals(putQueryId, getQueryId, "put and get query id should be different");
+      Assertions.assertNotEquals(
+          putQueryId, getQueryId, "put and get query id should be different");
       String stageName = "stage_" + SnowflakeUtil.randomAlphaNumeric(10);
       statement.execute("CREATE OR REPLACE STAGE " + stageName);
       TestUtil.assertValidQueryId(snowflakeStatement.getQueryID());
@@ -323,8 +325,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
           if (statusV2.getStatus() != QueryStatus.NO_DATA) {
             Assertions.assertEquals(QueryStatus.FAILED_WITH_ERROR, statusV2.getStatus());
             Assertions.assertEquals(2003, statusV2.getErrorCode());
-            Assertions.assertEquals("SQL compilation error:\n"
-                + "Object 'NONEXISTENTTABLE' does not exist or not authorized.", statusV2.getErrorMessage());
+            Assertions.assertEquals(
+                "SQL compilation error:\n"
+                    + "Object 'NONEXISTENTTABLE' does not exist or not authorized.",
+                statusV2.getErrorMessage());
           }
         }
       }
@@ -341,16 +345,21 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         try {
           rs1.next();
         } catch (SQLException ex) {
-          Assertions.assertEquals("Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
-              + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.", ex.getMessage());
-          Assertions.assertEquals("SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.", rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+          Assertions.assertEquals(
+              "Status of query associated with resultSet is FAILED_WITH_ERROR. SQL compilation error:\n"
+                  + "syntax error line 1 at position 0 unexpected 'bad'. Results not generated.",
+              ex.getMessage());
+          Assertions.assertEquals(
+              "SQL compilation error:\n" + "syntax error line 1 at position 0 unexpected 'bad'.",
+              rs1.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
         }
       }
       try (ResultSet rs2 =
           statement.unwrap(SnowflakeStatement.class).executeAsyncQuery("select 1")) {
         rs2.next();
         // Assert there is no error message when query is successful
-        Assertions.assertEquals("No error reported", rs2.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
+        Assertions.assertEquals(
+            "No error reported", rs2.unwrap(SnowflakeResultSet.class).getQueryErrorMessage());
       }
     }
   }
@@ -988,7 +997,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection connection = DriverManager.getConnection(uri, properties)) {
       Assertions.fail();
     } catch (SQLException e) {
-      Assertions.assertEquals((int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
+      Assertions.assertEquals(
+          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
     }
   }
 
@@ -1187,7 +1197,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                     .unwrap(SnowflakeConnectionV1.class)
                     .getSfSession()
                     .getQueryStatus(queryID);
-            Assertions.fail("Don't get expected message, query Status: " + qs + " actual message is: " + msg);
+            Assertions.fail(
+                "Don't get expected message, query Status: " + qs + " actual message is: " + msg);
           }
         }
       } finally {
@@ -1215,10 +1226,11 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         connection.unwrap(SnowflakeConnectionV1.class).getChildQueryIds(queryID);
         Assertions.fail("The getChildQueryIds() should fail because the query fails");
       } catch (SQLException ex) {
-        Assertions.assertTrue(ex.getMessage()
-            .contains(
-                "Uncaught Execution of multiple statements failed on statement \"select"
-                    + " to_date('not_date')\""));
+        Assertions.assertTrue(
+            ex.getMessage()
+                .contains(
+                    "Uncaught Execution of multiple statements failed on statement \"select"
+                        + " to_date('not_date')\""));
       }
     }
   }
@@ -1259,7 +1271,8 @@ public class ConnectionLatestIT extends BaseJDBCTest {
         HttpUtil.executeGeneralRequest(postRequest, 60, 0, 0, 0, new HttpClientSettingsKey(null));
 
     JsonNode jsonNode = mapper.readTree(theString);
-    Assertions.assertEquals("{\"data\":null,\"code\":null,\"message\":null,\"success\":true}", jsonNode.toString());
+    Assertions.assertEquals(
+        "{\"data\":null,\"code\":null,\"message\":null,\"success\":true}", jsonNode.toString());
   }
 
   @Test
@@ -1324,8 +1337,9 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       // ensure that query is finished
       Assertions.assertTrue(rs.next());
       // ensure query took > 4 seconds
-      Assertions.assertTrue(Duration.ofMillis(System.currentTimeMillis() - start).compareTo(Duration.ofSeconds(4))
-          > 0);
+      Assertions.assertTrue(
+          Duration.ofMillis(System.currentTimeMillis() - start).compareTo(Duration.ofSeconds(4))
+              > 0);
       // Assert that there are no longer any queries running.
       // First, assert session is safe to close. This iterates through active queries, fetches their
       // status, and removes them from the activeQueriesMap if they are no longer active.
@@ -1346,15 +1360,20 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String publicKeyFile = System.getenv(publicKeyFileNameEnv);
     String passphrase = System.getenv(passphraseEnv);
 
-    Assertions.assertNotNull(passphrase, privateKeyFileNameEnv
-        + " environment variable can't be empty. "
-        + "Please provide the filename for your private key located in the resource folder");
+    Assertions.assertNotNull(
+        passphrase,
+        privateKeyFileNameEnv
+            + " environment variable can't be empty. "
+            + "Please provide the filename for your private key located in the resource folder");
 
-    Assertions.assertNotNull(passphrase, publicKeyFileNameEnv
-        + " environment variable can't be empty. "
-        + "Please provide the filename for your public key located in the resource folder");
+    Assertions.assertNotNull(
+        passphrase,
+        publicKeyFileNameEnv
+            + " environment variable can't be empty. "
+            + "Please provide the filename for your public key located in the resource folder");
 
-    Assertions.assertNotNull(passphrase, passphraseEnv + " environment variable is required to decrypt private key.");
+    Assertions.assertNotNull(
+        passphrase, passphraseEnv + " environment variable is required to decrypt private key.");
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
     Properties properties = new Properties();
@@ -1538,18 +1557,27 @@ public class ConnectionLatestIT extends BaseJDBCTest {
                     arrowResultSet.getTimestamp(column).getTime(),
                     arrowResultSet.getTimestamp(column).getTimezoneOffset(),
                     arrowResultSet.getTimestamp(column).getClass());
-                Assertions.assertEquals(jsonResultSet.getString(column), arrowResultSet.getString(column), "Expecting that string representation are the same for row "
-                    + rowIdx
-                    + " and column "
-                    + column);
-                Assertions.assertEquals(jsonResultSet.getTimestamp(column).toString(), arrowResultSet.getTimestamp(column).toString(), "Expecting that string representation (via toString) are the same for row "
-                    + rowIdx
-                    + " and column "
-                    + column);
-                Assertions.assertEquals(jsonResultSet.getTimestamp(column), arrowResultSet.getTimestamp(column), "Expecting that timestamps are the same for row "
-                    + rowIdx
-                    + " and column "
-                    + column);
+                Assertions.assertEquals(
+                    jsonResultSet.getString(column),
+                    arrowResultSet.getString(column),
+                    "Expecting that string representation are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column);
+                Assertions.assertEquals(
+                    jsonResultSet.getTimestamp(column).toString(),
+                    arrowResultSet.getTimestamp(column).toString(),
+                    "Expecting that string representation (via toString) are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column);
+                Assertions.assertEquals(
+                    jsonResultSet.getTimestamp(column),
+                    arrowResultSet.getTimestamp(column),
+                    "Expecting that timestamps are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column);
               }
               rowIdx++;
             }

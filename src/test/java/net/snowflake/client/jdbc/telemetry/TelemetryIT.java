@@ -19,13 +19,12 @@ import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SessionUtil;
 import org.apache.http.impl.client.CloseableHttpClient;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 public class TelemetryIT extends AbstractDriverIT {
   private Connection connection = null;
   private static final ObjectMapper mapper = new ObjectMapper();

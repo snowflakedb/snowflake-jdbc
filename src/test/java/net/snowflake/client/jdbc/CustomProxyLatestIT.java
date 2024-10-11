@@ -15,13 +15,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.HttpProtocol;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.common.core.SqlState;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -34,7 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 // 2.) Enter your own username and password for the account you're connecting to
 // 3.) Adjust parameters like role, database, schema, etc to match with account accordingly
 
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class CustomProxyLatestIT {
   @TempDir private File tmpFolder;
 
@@ -210,7 +208,9 @@ public class CustomProxyLatestIT {
       // Assert that nonProxyHosts string is correct for initial value
       HttpUtil.httpClient
           .entrySet()
-          .forEach((entry) -> Assertions.assertEquals(".foo.com|.baz.com", entry.getKey().getNonProxyHosts()));
+          .forEach(
+              (entry) ->
+                  Assertions.assertEquals(".foo.com|.baz.com", entry.getKey().getNonProxyHosts()));
     }
     // Now make 2nd connection with all the same settings except different nonProxyHosts field
     props.put("nonProxyHosts", "*.snowflakecomputing.com");
@@ -230,7 +230,8 @@ public class CustomProxyLatestIT {
           .entrySet()
           .forEach(
               (entry) ->
-                      Assertions.assertEquals("*.snowflakecomputing.com", entry.getKey().getNonProxyHosts()));
+                  Assertions.assertEquals(
+                      "*.snowflakecomputing.com", entry.getKey().getNonProxyHosts()));
     }
   }
 
@@ -431,10 +432,10 @@ public class CustomProxyLatestIT {
           Statement stmt = con.createStatement()) {
         stmt.execute("use warehouse TINY_WAREHOUSE");
         stmt.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-        Assertions.assertTrue(stmt.execute(
-            "PUT file://"
-                + getFullPathFileInResource("orders_100.csv")
-                + " @testPutGet_stage"), "Failed to put a file");
+        Assertions.assertTrue(
+            stmt.execute(
+                "PUT file://" + getFullPathFileInResource("orders_100.csv") + " @testPutGet_stage"),
+            "Failed to put a file");
         String sql = "select $1 from values(1),(3),(5),(7)";
         try (ResultSet res = stmt.executeQuery(sql)) {
           while (res.next()) {
@@ -724,12 +725,16 @@ public class CustomProxyLatestIT {
         destFolder.mkdirs();
         String destFolderCanonicalPath = destFolder.getCanonicalPath();
         String destFolderCanonicalPathWithSeparator = destFolderCanonicalPath + File.separator;
-        Assertions.assertTrue(stmt.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"), "Failed to put a file");
+        Assertions.assertTrue(
+            stmt.execute("PUT file://" + sourceFilePath + " @testPutGet_stage"),
+            "Failed to put a file");
         findFile(stmt, "ls @testPutGet_stage/");
 
         // download the file we just uploaded to stage
-        Assertions.assertTrue(stmt.execute(
-            "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"), "Failed to get a file");
+        Assertions.assertTrue(
+            stmt.execute(
+                "GET @testPutGet_stage 'file://" + destFolderCanonicalPath + "' parallel=8"),
+            "Failed to get a file");
 
         // Make sure that the downloaded file exists, it should be gzip compressed
         File downloaded = new File(destFolderCanonicalPathWithSeparator + TEST_DATA_FILE + ".gz");

@@ -9,9 +9,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
-
 import net.snowflake.client.providers.SimpleFormatProvider;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -23,7 +21,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
  * If it is applicable, move tests to ResultSetVectorIT so that both the latest and oldest supported
  * driver run the tests.
  */
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   @ParameterizedTest
@@ -206,7 +204,8 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
     Assertions.assertEquals("VECTOR", metadata.getColumnTypeName(vectorColumnIndex));
     SnowflakeResultSetMetaDataV1 sfMetadata = (SnowflakeResultSetMetaDataV1) metadata;
     Assertions.assertTrue(sfMetadata.isStructuredTypeColumn(vectorColumnIndex));
-    Assertions.assertEquals(EXTRA_TYPES_VECTOR, sfMetadata.getInternalColumnType(vectorColumnIndex));
+    Assertions.assertEquals(
+        EXTRA_TYPES_VECTOR, sfMetadata.getInternalColumnType(vectorColumnIndex));
     List<FieldMetadata> columnFields = sfMetadata.getColumnFields(vectorColumnIndex);
     Assertions.assertEquals(1, columnFields.size());
     Assertions.assertEquals(expectedVectorFieldType, columnFields.get(0).getType());

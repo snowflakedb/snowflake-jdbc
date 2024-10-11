@@ -9,10 +9,9 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Collections;
-
 import org.junit.jupiter.api.Test;
 
-//@Category(TestCategoryResultSet.class)
+// @Category(TestCategoryResultSet.class)
 public class ResultSetFeatureNotSupportedIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testQueryResultSetNotSupportedException() throws Throwable {

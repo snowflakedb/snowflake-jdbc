@@ -16,7 +16,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +27,7 @@ import org.junit.jupiter.api.Test;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-//@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
 public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
 
   @BeforeEach
@@ -110,12 +109,14 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         Assertions.assertEquals(0, resultSet.getInt("LENGTH"));
         Assertions.assertEquals(0, resultSet.getShort("SCALE"));
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("multiply numbers", resultSet.getString("REMARKS"));
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(0, resultSet.getInt("ORDINAL_POSITION"));
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         Assertions.assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         Assertions.assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -128,12 +129,14 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         Assertions.assertEquals(0, resultSet.getInt("LENGTH"));
         Assertions.assertEquals(0, resultSet.getShort("SCALE"));
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("multiply numbers", resultSet.getString("REMARKS"));
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         Assertions.assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         Assertions.assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
@@ -146,12 +149,14 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         Assertions.assertEquals(0, resultSet.getInt("LENGTH"));
         Assertions.assertEquals(0, resultSet.getShort("SCALE"));
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("multiply numbers", resultSet.getString("REMARKS"));
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC111(NUMBER, NUMBER) RETURN NUMBER", resultSet.getString("SPECIFIC_NAME"));
         Assertions.assertFalse(resultSet.next());
       }
       try (ResultSet resultSet =
@@ -161,73 +166,91 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         Assertions.assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
         Assertions.assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
         Assertions.assertEquals("COLA", resultSet.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
         Assertions.assertEquals(Types.VARCHAR, resultSet.getInt("DATA_TYPE"));
         Assertions.assertEquals("VARCHAR", resultSet.getString("TYPE_NAME"));
         Assertions.assertEquals(0, resultSet.getInt("PRECISION"));
         Assertions.assertEquals(0, resultSet.getInt("LENGTH"));
         Assertions.assertEquals(0, resultSet.getInt("SCALE"));
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-        Assertions.assertEquals(databaseMetaData.getMaxCharLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
+        Assertions.assertEquals(
+            databaseMetaData.getMaxCharLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+            resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         Assertions.assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         Assertions.assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
         Assertions.assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
         Assertions.assertEquals("COLB", resultSet.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
         Assertions.assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
         Assertions.assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
         Assertions.assertEquals(38, resultSet.getInt("PRECISION"));
         Assertions.assertEquals(0, resultSet.getInt("LENGTH"));
         Assertions.assertEquals(0, resultSet.getInt("SCALE"));
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(2, resultSet.getInt("ORDINAL_POSITION"));
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+            resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         Assertions.assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         Assertions.assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
         Assertions.assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
         Assertions.assertEquals("BIN2", resultSet.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
         Assertions.assertEquals(Types.BINARY, resultSet.getInt("DATA_TYPE"));
         Assertions.assertEquals("BINARY", resultSet.getString("TYPE_NAME"));
         Assertions.assertEquals(38, resultSet.getInt("PRECISION"));
         Assertions.assertEquals(0, resultSet.getInt("LENGTH"));
         Assertions.assertEquals(0, resultSet.getInt("SCALE"));
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-        Assertions.assertEquals(databaseMetaData.getMaxBinaryLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
+        Assertions.assertEquals(
+            databaseMetaData.getMaxBinaryLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+            resultSet.getString("SPECIFIC_NAME"));
         resultSet.next();
         Assertions.assertEquals("JDBC_DB1", resultSet.getString("FUNCTION_CAT"));
         Assertions.assertEquals("JDBC_SCHEMA11", resultSet.getString("FUNCTION_SCHEM"));
         Assertions.assertEquals("FUNC112", resultSet.getString("FUNCTION_NAME"));
         Assertions.assertEquals("SHAREDCOL", resultSet.getString("COLUMN_NAME"));
-        Assertions.assertEquals(DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionColumnResult, resultSet.getInt("COLUMN_TYPE"));
         Assertions.assertEquals(Types.NUMERIC, resultSet.getInt("DATA_TYPE"));
         Assertions.assertEquals("NUMBER", resultSet.getString("TYPE_NAME"));
         Assertions.assertEquals(38, resultSet.getInt("PRECISION"));
         Assertions.assertEquals(0, resultSet.getInt("LENGTH"));
         Assertions.assertEquals(0, resultSet.getInt("SCALE"));
         Assertions.assertEquals(10, resultSet.getInt("RADIX"));
-        Assertions.assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
+        Assertions.assertEquals(
+            DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         Assertions.assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
         Assertions.assertEquals(0, resultSet.getInt("CHAR_OCTET_LENGTH"));
         Assertions.assertEquals(4, resultSet.getInt("ORDINAL_POSITION"));
         Assertions.assertEquals("", resultSet.getString("IS_NULLABLE"));
-        Assertions.assertEquals("FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)", resultSet.getString("SPECIFIC_NAME"));
+        Assertions.assertEquals(
+            "FUNC112() RETURN TABLE (COLA VARCHAR, COLB NUMBER, BIN2 BINARY, SHAREDCOL NUMBER)",
+            resultSet.getString("SPECIFIC_NAME"));
         // setting catalog to % will result in 0 columns. % does not apply for catalog, only for
         // other
         // params

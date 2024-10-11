@@ -9,15 +9,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
-
 import org.apache.commons.lang3.StringUtils;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /** Compare json and arrow resultSet behaviors 1/2 */
-//@Category(TestCategoryArrow.class)
+// @Category(TestCategoryArrow.class)
 public class ResultSetArrowForceLTZMultiTimeZoneIT extends ResultSetArrowForce0MultiTimeZone {
 
   @ParameterizedTest

@@ -3,7 +3,6 @@ package net.snowflake.client.log;
 import static net.snowflake.client.log.SFToJavaLogMapper.toJavaUtilLoggingLevel;
 
 import java.util.logging.Level;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

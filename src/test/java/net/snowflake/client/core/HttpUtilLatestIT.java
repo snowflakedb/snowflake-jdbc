@@ -6,17 +6,15 @@ package net.snowflake.client.core;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
-
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-//@Category(TestCategoryCore.class)
+// @Category(TestCategoryCore.class)
 public class HttpUtilLatestIT {
 
   private static final String HANG_WEBSERVER_ADDRESS = "http://localhost:12345/hang";
