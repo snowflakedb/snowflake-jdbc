@@ -38,7 +38,7 @@ public abstract class BaseWiremockTest {
   protected static final String WIREMOCK_HOME_DIR = ".wiremock";
   protected static final String WIREMOCK_M2_PATH =
       "/.m2/repository/org/wiremock/wiremock-standalone/3.8.0/wiremock-standalone-3.8.0.jar";
-  protected static final String WIREMOCK_HOST = "localhost";
+  protected static final String WIREMOCK_HOST = "127.0.0.1";
   protected static final String TRUST_STORE_PROPERTY = "javax.net.ssl.trustStore";
   protected static int wiremockHttpPort;
   protected static int wiremockHttpsPort;
