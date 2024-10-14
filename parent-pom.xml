@@ -26,8 +26,8 @@
     <awssdk.version>1.12.655</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
-    <bouncycastle.bcfips.version>2.0.0</bouncycastle.bcfips.version>
-    <bouncycastle.bcpkixfips.version>2.0.7</bouncycastle.bcpkixfips.version>
+    <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
+    <bouncycastle.bcpkixfips.version>1.0.7</bouncycastle.bcpkixfips.version>
     <bytebuddy.version>1.14.17</bytebuddy.version>
     <classworlds.version>1.1</classworlds.version>
     <checkerframework.version>3.33.0</checkerframework.version>
