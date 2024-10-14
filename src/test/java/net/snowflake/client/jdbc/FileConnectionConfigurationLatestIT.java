@@ -4,22 +4,23 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /** This test could be run only on environment where file connection.toml is configured */
-@Ignore
+@Disabled
 public class FileConnectionConfigurationLatestIT {
 
-  @After
+  @AfterEach
   public void cleanUp() {
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);
   }
@@ -27,7 +28,7 @@ public class FileConnectionConfigurationLatestIT {
   @Test
   public void testThrowExceptionIfConfigurationDoesNotExist() {
     SnowflakeUtil.systemSetEnv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "non-existent");
-    Assert.assertThrows(SnowflakeSQLException.class, () -> SnowflakeDriver.INSTANCE.connect());
+    assertThrows(SnowflakeSQLException.class, () -> SnowflakeDriver.INSTANCE.connect());
   }
 
   @Test
@@ -46,7 +47,7 @@ public class FileConnectionConfigurationLatestIT {
             DriverManager.getConnection(SnowflakeDriver.AUTO_CONNECTION_STRING_PREFIX, null);
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("show parameters")) {
-      Assert.assertTrue(resultSet.next());
+      assertTrue(resultSet.next());
     }
   }
 }

@@ -6,12 +6,12 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.ErrorCode.NUMERIC_VALUE_OUT_OF_RANGE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -25,14 +25,14 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Map;
 import java.util.Properties;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement1IT extends PreparedStatement0IT {
   public PreparedStatement1IT() {
     super("json");
@@ -139,7 +139,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testInsertBatch() throws SQLException {
     int[] countResult;
     try (Connection connection = init()) {
@@ -165,7 +165,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testInsertBatchStage() throws SQLException {
     int[] countResult;
     try (Connection connection = init()) {
@@ -189,7 +189,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testInsertBatchStageMultipleTimes() throws SQLException {
     // using the same statement to run a query multiple times shouldn't result in duplicates
     int[] countResult;
@@ -224,7 +224,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageBatchNull() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -253,24 +253,24 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
           String errorMessage =
               "Column should be null (" + (threshold > 0 ? "stage" : "non-stage") + ")";
           resultSet.getInt(1);
-          assertTrue(errorMessage, resultSet.wasNull());
+          assertTrue(resultSet.wasNull(), errorMessage);
           resultSet.getDouble(2);
-          assertTrue(errorMessage, resultSet.wasNull());
+          assertTrue(resultSet.wasNull(), errorMessage);
           resultSet.getFloat(3);
-          assertTrue(errorMessage, resultSet.wasNull());
+          assertTrue(resultSet.wasNull(), errorMessage);
           resultSet.getString(4);
-          assertTrue(errorMessage, resultSet.wasNull());
+          assertTrue(resultSet.wasNull(), errorMessage);
           resultSet.getLong(5);
-          assertTrue(errorMessage, resultSet.wasNull());
+          assertTrue(resultSet.wasNull(), errorMessage);
           resultSet.getShort(6);
-          assertTrue(errorMessage, resultSet.wasNull());
+          assertTrue(resultSet.wasNull(), errorMessage);
         }
       }
     }
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageString() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -297,7 +297,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
                 "Strings should match (" + (threshold > 0 ? "stage" : "non-stage") + ")";
             for (String row : rows) {
               assertTrue(resultSet.next());
-              assertEquals(errorMessage, row, resultSet.getString(1));
+              assertEquals(row, resultSet.getString(1), errorMessage);
             }
           }
         }
@@ -306,7 +306,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testIncorrectTypes() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -339,7 +339,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageBatchTimestamps() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -409,11 +409,11 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
               for (int i = 0; i < timestamps.length; i++) {
                 assertEquals(
+                    nonStageResult[i],
+                    stageResult[i],
                     "Stage binding timestamp should match non-stage binding timestamp ("
                         + tsType
-                        + ")",
-                    nonStageResult[i],
-                    stageResult[i]);
+                        + ")");
               }
             }
           }
@@ -425,7 +425,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageBatchTimes() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -487,9 +487,9 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
             for (int i = 0; i < times.length; i++) {
               assertEquals(
-                  "Stage binding time should match non-stage binding time",
                   nonStageResult[i],
-                  stageResult[i]);
+                  stageResult[i],
+                  "Stage binding time should match non-stage binding time");
             }
           }
         }
@@ -764,7 +764,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
    * @throws SQLException arises if any exception occurs
    */
   @Test
-  @Ignore
+  @Disabled
   public void manualTestForPreparedStatementLogging() throws SQLException {
     Map<String, String> params = getConnectionParameters();
     Properties props = new Properties();

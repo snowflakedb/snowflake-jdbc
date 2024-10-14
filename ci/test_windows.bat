@@ -138,7 +138,7 @@ for %%a in ("%JDBC_TEST_CATEGORY:,=" "%") do (
         cmd /c %MVNW_EXE% -B -DjenkinsIT ^
             -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
             -Djacoco.skip.instrument=false ^
-            -DtestCategory=net.snowflake.client.category.%%a ^
+            -Dgroups=%%a ^
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
             -Dnot-self-contained-jar %ADDITIONAL_MAVEN_PROFILE% ^
             verify ^

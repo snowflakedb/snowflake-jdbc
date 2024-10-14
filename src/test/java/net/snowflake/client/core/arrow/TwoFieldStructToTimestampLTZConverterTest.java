@@ -4,15 +4,17 @@
 
 package net.snowflake.client.core.arrow;
 
+import static java.util.stream.Stream.concat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Stream;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
@@ -33,27 +36,68 @@ import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class TwoFieldStructToTimestampLTZConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
+
+  static class DataProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      List<String> timezones =
+          new ArrayList<String>() {
+            {
+              add("America/Los_Angeles");
+              add("America/New_York");
+              add("Pacific/Honolulu");
+              add("Asia/Singapore");
+              add("MESZ");
+              add("MEZ");
+              add("UTC");
+            }
+          };
+
+      Stream<Arguments> args = Stream.empty();
+
+      for (String timezone : timezones) {
+        args =
+            concat(
+                args,
+                Stream.of(
+                    Arguments.argumentSet(
+                        timezone,
+                        timezone,
+                        new long[] {1546391837, 0, -1546391838, -1546391838, -1546391838},
+                        new int[] {0, 1, 999999990, 876543211, 1},
+                        new String[] {
+                          "1546391837.000000000",
+                          "0.000000001",
+                          "-1546391837.000000010",
+                          "-1546391837.123456789",
+                          "-1546391837.999999999"
+                        }),
+                    Arguments.argumentSet(
+                        timezone + " Overflow",
+                        timezone,
+                        new long[] {154639183700000L},
+                        new int[] {0},
+                        new String[] {"154639183700000.000000000"})));
+      }
+      return args;
+    }
   }
 
-  public TwoFieldStructToTimestampLTZConverterTest(String tz) {
+  private static void setTimezone(String tz) {
     System.setProperty("user.timezone", tz);
+  }
+
+  @AfterAll
+  public static void clearTimezone() {
+    System.clearProperty("user.timezone");
   }
 
   /** allocator for arrow */
@@ -63,37 +107,13 @@ public class TwoFieldStructToTimestampLTZConverterTest extends BaseConverterTest
 
   private int oldScale = 9;
 
-  @Test
-  public void simpleTests() throws SFException {
-    // test old and new dates
-    long[] testSecondsInt64 = {1546391837, 0, -1546391838, -1546391838, -1546391838};
-
-    int[] testNanoSecs = {0, 1, 999999990, 876543211, 1};
-
-    String[] testTimesJson = {
-      "1546391837.000000000",
-      "0.000000001",
-      "-1546391837.000000010",
-      "-1546391837.123456789",
-      "-1546391837.999999999"
-    };
-    testTimestampLTZ(testSecondsInt64, testNanoSecs, testTimesJson);
-  }
-
-  @Test
-  public void timestampOverflowTests() throws SFException {
-    // test old and new dates
-    long[] testSecondsInt64 = {154639183700000l};
-
-    int[] testNanoSecs = {0};
-
-    String[] testTimesJson = {"154639183700000.000000000"};
-    testTimestampLTZ(testSecondsInt64, testNanoSecs, testTimesJson);
-  }
-
-  public void testTimestampLTZ(long[] testSecondsInt64, int[] testNanoSecs, String[] testTimesJson)
+  @ParameterizedTest
+  @ArgumentsSource(DataProvider.class)
+  public void testTimestampLTZ(
+      String timezone, long[] testSecondsInt64, int[] testNanoSecs, String[] testTimesJson)
       throws SFException {
 
+    setTimezone(timezone);
     Map<String, String> customFieldMeta = new HashMap<>();
     customFieldMeta.put("logicalType", "TIMESTAMP");
     Set<Integer> nullValIndex = new HashSet<>();

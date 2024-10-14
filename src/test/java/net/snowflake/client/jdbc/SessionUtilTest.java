@@ -1,11 +1,14 @@
 package net.snowflake.client.jdbc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SessionUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SessionUtilTest {
   @Test
@@ -16,56 +19,56 @@ public class SessionUtilTest {
     Map<String, Object> result =
         SessionUtil.getCommonParams(
             mapper.readTree("[{\"name\": \"testParam\", \"value\": true}]"));
-    Assert.assertTrue((boolean) result.get("testParam"));
+    assertTrue((boolean) result.get("testParam"));
     result =
         SessionUtil.getCommonParams(
             mapper.readTree("[{\"name\": \"testParam\", \"value\": false}]"));
-    Assert.assertFalse((boolean) result.get("testParam"));
+    assertFalse((boolean) result.get("testParam"));
 
     result =
         SessionUtil.getCommonParams(mapper.readTree("[{\"name\": \"testParam\", \"value\": 0}]"));
-    Assert.assertEquals(0, (int) result.get("testParam"));
+    assertEquals(0, (int) result.get("testParam"));
     result =
         SessionUtil.getCommonParams(
             mapper.readTree("[{\"name\": \"testParam\", \"value\": 1000}]"));
-    Assert.assertEquals(1000, (int) result.get("testParam"));
+    assertEquals(1000, (int) result.get("testParam"));
 
     result =
         SessionUtil.getCommonParams(
             mapper.readTree("[{\"name\": \"testParam\", \"value\": \"\"}]"));
-    Assert.assertEquals("", result.get("testParam"));
+    assertEquals("", result.get("testParam"));
     result =
         SessionUtil.getCommonParams(
             mapper.readTree("[{\"name\": \"testParam\", \"value\": \"value\"}]"));
-    Assert.assertEquals("value", result.get("testParam"));
+    assertEquals("value", result.get("testParam"));
 
     // Test known param name
     result =
         SessionUtil.getCommonParams(
             mapper.readTree("[{\"name\": \"CLIENT_DISABLE_INCIDENTS\", \"value\": true}]"));
-    Assert.assertTrue((boolean) result.get("CLIENT_DISABLE_INCIDENTS"));
+    assertTrue((boolean) result.get("CLIENT_DISABLE_INCIDENTS"));
     result =
         SessionUtil.getCommonParams(
             mapper.readTree("[{\"name\": \"CLIENT_DISABLE_INCIDENTS\", \"value\": false}]"));
-    Assert.assertFalse((boolean) result.get("CLIENT_DISABLE_INCIDENTS"));
+    assertFalse((boolean) result.get("CLIENT_DISABLE_INCIDENTS"));
 
     result =
         SessionUtil.getCommonParams(
             mapper.readTree(
                 "[{\"name\": \"CLIENT_STAGE_ARRAY_BINDING_THRESHOLD\", \"value\": 0}]"));
-    Assert.assertEquals(0, (int) result.get("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
+    assertEquals(0, (int) result.get("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
     result =
         SessionUtil.getCommonParams(
             mapper.readTree(
                 "[{\"name\": \"CLIENT_STAGE_ARRAY_BINDING_THRESHOLD\", \"value\": 1000}]"));
-    Assert.assertEquals(1000, (int) result.get("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
+    assertEquals(1000, (int) result.get("CLIENT_STAGE_ARRAY_BINDING_THRESHOLD"));
 
     result =
         SessionUtil.getCommonParams(mapper.readTree("[{\"name\": \"TIMEZONE\", \"value\": \"\"}]"));
-    Assert.assertEquals("", result.get("TIMEZONE"));
+    assertEquals("", result.get("TIMEZONE"));
     result =
         SessionUtil.getCommonParams(
             mapper.readTree("[{\"name\": \"TIMEZONE\", \"value\": \"value\"}]"));
-    Assert.assertEquals("value", result.get("TIMEZONE"));
+    assertEquals("value", result.get("TIMEZONE"));
   }
 }

@@ -4,7 +4,7 @@ import static net.snowflake.client.TestUtil.expectSnowflakeLoggedFeatureNotSuppo
 import static org.mockito.Mockito.mock;
 
 import java.sql.SQLData;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SQLInputOutputTest {
 

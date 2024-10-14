@@ -3,12 +3,11 @@
  */
 package net.snowflake.client.jdbc;
 
-import net.snowflake.client.category.TestCategoryArrow;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 
-@Category(TestCategoryArrow.class)
+// @Category(TestCategoryArrow.class)
+@Tag(TestTags.ARROW)
 public class ResultSetArrowIT extends ResultSetIT {
-  public ResultSetArrowIT() {
-    super("arrow");
-  }
+  public ResultSetArrowIT() {}
 }

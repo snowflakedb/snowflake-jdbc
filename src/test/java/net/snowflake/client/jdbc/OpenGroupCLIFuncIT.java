@@ -3,8 +3,8 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -12,12 +12,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Test OpenGroup CLI */
-@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class OpenGroupCLIFuncIT extends BaseJDBCTest {
   public static Connection getConnection() throws SQLException {
     Connection connection = AbstractDriverIT.getConnection();

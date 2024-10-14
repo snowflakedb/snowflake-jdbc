@@ -4,7 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.sql.Connection;
 import java.sql.ResultSet;

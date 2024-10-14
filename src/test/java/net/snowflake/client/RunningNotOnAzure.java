@@ -4,7 +4,8 @@
 package net.snowflake.client;
 
 /** Run tests only on specified cloud provider or ignore */
-public class RunningNotOnAzure implements ConditionalIgnoreRule.IgnoreCondition {
+@Deprecated
+public class RunningNotOnAzure {
   public boolean isSatisfied() {
     String cloudProvider = TestUtil.systemGetEnv("CLOUD_PROVIDER");
     return cloudProvider != null && !cloudProvider.equalsIgnoreCase("Azure");

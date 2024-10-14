@@ -8,12 +8,11 @@ import static java.sql.ResultSetMetaData.columnNullableUnknown;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.base.Strings;
 import java.sql.Connection;
@@ -28,15 +27,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** Database Metadata IT */
-@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataIT extends BaseJDBCTest {
   private static final Pattern VERSION_PATTERN =
       Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.\\d+)+\\s*.*");
@@ -123,7 +123,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           // nop
         }
       }
-      assertThat(cnt, greaterThanOrEqualTo(1));
+      MatcherAssert.assertThat(cnt, greaterThanOrEqualTo(1));
       try {
         assertTrue(resultSet.isAfterLast());
         fail("The result set is automatically closed when all rows are fetched.");
@@ -163,7 +163,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           }
         }
       }
-      assertThat(schemas.size(), greaterThanOrEqualTo(1));
+      MatcherAssert.assertThat(schemas.size(), greaterThanOrEqualTo(1));
 
       Set<String> schemasInDb = new HashSet<>();
       try (ResultSet resultSet = metaData.getSchemas(connection.getCatalog(), "%")) {
@@ -174,9 +174,9 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
           }
         }
       }
-      assertThat(schemasInDb.size(), greaterThanOrEqualTo(1));
-      assertThat(schemas.size(), greaterThanOrEqualTo(schemasInDb.size()));
-      schemasInDb.forEach(schemaInDb -> assertThat(schemas, hasItem(schemaInDb)));
+      MatcherAssert.assertThat(schemasInDb.size(), greaterThanOrEqualTo(1));
+      MatcherAssert.assertThat(schemas.size(), greaterThanOrEqualTo(schemasInDb.size()));
+      schemasInDb.forEach(schemaInDb -> MatcherAssert.assertThat(schemas, hasItem(schemaInDb)));
       assertTrue(schemas.contains(currentSchema));
       assertTrue(schemasInDb.contains(currentSchema));
     }
@@ -193,7 +193,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
         while (resultSet.next()) {
           schemas.add(resultSet.getString(1));
         }
-        assertThat(schemas.size(), equalTo(1));
+        MatcherAssert.assertThat(schemas.size(), equalTo(1));
       }
     }
   }
@@ -215,7 +215,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTables() throws Throwable {
     Set<String> tables = null;
     try (Connection connection = getConnection();
@@ -584,7 +584,7 @@ public class DatabaseMetaDataIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetTablePrivileges() throws Exception {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {

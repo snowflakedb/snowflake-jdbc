@@ -8,10 +8,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.ByteBuffer;
 import java.sql.Time;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,46 +21,31 @@ import net.snowflake.client.TestUtil;
 import net.snowflake.client.core.ResultUtil;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.providers.TimezoneProvider;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
 public class IntToTimeConverterTest extends BaseConverterTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    return new Object[][] {
-      {"UTC"},
-      {"America/Los_Angeles"},
-      {"America/New_York"},
-      {"Pacific/Honolulu"},
-      {"Asia/Singapore"},
-      {"MEZ"},
-      {"MESZ"}
-    };
-  }
-
-  private ByteBuffer bb;
-
-  public IntToTimeConverterTest(String tz) {
-    System.setProperty("user.timezone", tz);
-    this.setScale(scale);
-  }
-
   /** allocator for arrow */
   private BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
 
   private Random random = new Random();
 
+  public IntToTimeConverterTest() {
+    this.setScale(scale);
+  }
+
   private int scale = 3;
 
-  @Test
-  public void testTime() throws SFException {
+  @ParameterizedTest
+  @ArgumentsSource(TimezoneProvider.class)
+  public void testTime(String timezone) throws SFException {
+    System.setProperty("user.timezone", timezone);
     // test old and new dates
     int[] testTimesInt = {12345678};
 

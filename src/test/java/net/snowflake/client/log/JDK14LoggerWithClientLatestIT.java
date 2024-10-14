@@ -1,9 +1,9 @@
 package net.snowflake.client.log;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
@@ -51,14 +51,18 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     }
   }
 
-  @Test(expected = SQLException.class)
-  public void testJDK14LoggingWithClientConfigInvalidConfigFilePath() throws SQLException {
-    Path configFilePath = Paths.get("invalid.json");
-    Properties properties = new Properties();
-    properties.put("client_config_file", configFilePath.toString());
-    try (Connection connection = getConnection(properties)) {
-      connection.createStatement().executeQuery("select 1");
-    }
+  @Test
+  public void testJDK14LoggingWithClientConfigInvalidConfigFilePath() {
+    assertThrows(
+        SQLException.class,
+        () -> {
+          Path configFilePath = Paths.get("invalid.json");
+          Properties properties = new Properties();
+          properties.put("client_config_file", configFilePath.toString());
+          try (Connection connection = getConnection(properties)) {
+            connection.createStatement().executeQuery("select 1");
+          }
+        });
   }
 
   @Test

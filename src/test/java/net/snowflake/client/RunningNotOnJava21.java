@@ -2,7 +2,8 @@ package net.snowflake.client;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-public class RunningNotOnJava21 implements ConditionalIgnoreRule.IgnoreCondition {
+@Deprecated
+public class RunningNotOnJava21 {
   public boolean isSatisfied() {
     return isRunningOnJava21();
   }

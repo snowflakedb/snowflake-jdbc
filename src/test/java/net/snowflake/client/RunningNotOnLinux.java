@@ -2,7 +2,8 @@ package net.snowflake.client;
 
 import net.snowflake.client.core.Constants;
 
-public class RunningNotOnLinux implements ConditionalIgnoreRule.IgnoreCondition {
+@Deprecated
+public class RunningNotOnLinux {
   public boolean isSatisfied() {
     return Constants.getOS() != Constants.OS.LINUX;
   }

@@ -3,9 +3,10 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -15,25 +16,29 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
 
-  @Test(expected = SnowflakeLoggedFeatureNotSupportedException.class)
+  @Test
   public void testGetObjectNotSupported() throws SQLException {
-    try (Connection con = getConnection();
-        Statement st = con.createStatement()) {
-      Object[][] rows = {{1.2F}};
-      List<String> columnNames = Arrays.asList("float");
-      List<String> columnTypeNames = Arrays.asList("FLOAT");
-      List<Integer> columnTypes = Arrays.asList(Types.FLOAT);
-      try (ResultSet resultSet =
-          new SnowflakeDatabaseMetaDataResultSet(
-              columnNames, columnTypeNames, columnTypes, rows, st)) {
-        resultSet.next();
-        assertEquals(1.2F, resultSet.getObject(1));
-      }
-    }
+    assertThrows(
+        SnowflakeLoggedFeatureNotSupportedException.class,
+        () -> {
+          try (Connection con = getConnection();
+              Statement st = con.createStatement()) {
+            Object[][] rows = {{1.2F}};
+            List<String> columnNames = Arrays.asList("float");
+            List<String> columnTypeNames = Arrays.asList("FLOAT");
+            List<Integer> columnTypes = Arrays.asList(Types.FLOAT);
+            try (ResultSet resultSet =
+                new SnowflakeDatabaseMetaDataResultSet(
+                    columnNames, columnTypeNames, columnTypes, rows, st)) {
+              resultSet.next();
+              assertEquals(1.2F, resultSet.getObject(1));
+            }
+          }
+        });
   }
 
   /** Added in > 3.17.0 */

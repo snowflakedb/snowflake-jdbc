@@ -3,19 +3,20 @@ package net.snowflake.client.jdbc;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   protected static String queryResultFormat = "json";
@@ -95,7 +96,7 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
           // first statement
           try {
             preparedStatement.executeUpdate();
-            Assert.fail();
+            fail();
           } catch (SQLException e) {
             // error code comes from xp, which is js execution failed.
             assertThat(e.getErrorCode(), is(100132));

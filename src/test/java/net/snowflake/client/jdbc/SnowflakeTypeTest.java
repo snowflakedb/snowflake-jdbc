@@ -2,15 +2,16 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeType.convertStringToType;
 import static net.snowflake.client.jdbc.SnowflakeType.getJavaType;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Time;
 import java.sql.Types;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SnowflakeTypeTest {
 
@@ -97,7 +98,7 @@ public class SnowflakeTypeTest {
   @Test
   public void testJavaTypeToClassName() throws SQLException {
     assertEquals(SnowflakeType.javaTypeToClassName(Types.DECIMAL), BigDecimal.class.getName());
-    assertEquals(SnowflakeType.javaTypeToClassName(Types.TIME), java.sql.Time.class.getName());
+    assertEquals(SnowflakeType.javaTypeToClassName(Types.TIME), Time.class.getName());
     assertEquals(SnowflakeType.javaTypeToClassName(Types.BOOLEAN), Boolean.class.getName());
     assertThrows(
         SQLFeatureNotSupportedException.class,

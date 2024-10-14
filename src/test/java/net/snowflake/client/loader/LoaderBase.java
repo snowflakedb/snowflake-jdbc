@@ -6,8 +6,8 @@ package net.snowflake.client.loader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import net.snowflake.client.AbstractDriverIT;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 
 public class LoaderBase {
   static final String TARGET_TABLE_NAME = "LOADER_test_TABLE";
@@ -16,7 +16,7 @@ public class LoaderBase {
   static Connection putConnection;
   static String SCHEMA_NAME;
 
-  @BeforeClass
+  @BeforeAll
   public static void setUpClass() throws Throwable {
     testConnection = AbstractDriverIT.getConnection();
     putConnection = AbstractDriverIT.getConnection();
@@ -40,7 +40,7 @@ public class LoaderBase {
         .execute("alter session set JDBC_QUERY_RESULT_FORMAT='ARROW', QUERY_RESULT_FORMAT='ARROW'");
   }
 
-  @AfterClass
+  @AfterAll
   public static void tearDownClass() throws SQLException {
     testConnection
         .createStatement()

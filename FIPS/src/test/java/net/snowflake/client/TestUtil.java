@@ -9,7 +9,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 public class TestUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(TestUtil.class);
@@ -22,7 +22,7 @@ public class TestUtil {
   public static void assertSFException(int errorCode, TestRunInterface testCode) {
     try {
       testCode.run();
-      Assert.fail();
+      Assertions.fail();
     } catch (SFException e) {
       assertThat(e.getVendorCode(), is(errorCode));
     }

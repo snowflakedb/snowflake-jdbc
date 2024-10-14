@@ -6,22 +6,21 @@ package net.snowflake.client.jdbc;
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * PreparedStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -29,7 +28,8 @@ import org.junit.experimental.categories.Category;
  * if the tests still are not applicable. If it is applicable, move tests to PreparedStatement2IT so
  * that both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   public PreparedStatement2LatestIT() {
     super("json");
@@ -77,10 +77,10 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
           // second argument is invalid
           prepStatement.setInt(1, 1);
           prepStatement.execute();
-          Assert.fail();
+          fail();
         } catch (SQLException e) {
           // failed because argument type did not match
-          Assert.assertThat(e.getErrorCode(), is(1044));
+          assertThat(e.getErrorCode(), is(1044));
         }
 
         // create a udf with same name but different arguments and return type
@@ -173,7 +173,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testTableFuncBindInput() throws SQLException {
     try (Connection connection = init()) {
       try (PreparedStatement prepStatement = connection.prepareStatement(tableFuncSQL)) {

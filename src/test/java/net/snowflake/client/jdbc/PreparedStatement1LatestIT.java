@@ -4,10 +4,10 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.PreparedStatement1IT.bindOneParamSet;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -17,12 +17,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * PreparedStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -30,7 +29,8 @@ import org.junit.experimental.categories.Category;
  * if the tests still are not applicable. If it is applicable, move tests to PreparedStatement1IT so
  * that both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   public PreparedStatement1LatestIT() {
     super("json");
@@ -108,7 +108,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException arises if any exception occurs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testInsertStageArrayBindWithTime() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -155,7 +155,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSetObjectForTimestampTypes() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -211,13 +211,13 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException arises if any exception occurs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testExecuteEmptyBatch() throws SQLException {
     try (Connection connection = init()) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         // executeBatch shouldn't throw exceptions
         assertEquals(
-            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
+            0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
       }
 
       connection
@@ -228,7 +228,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
         // executeBatch shouldn't throw exceptions
         assertEquals(
-            "For empty batch, we should return int[0].", 0, prepStatement.executeBatch().length);
+            0, prepStatement.executeBatch().length, "For empty batch, we should return int[0].");
       }
     }
   }
@@ -260,7 +260,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
           connection.prepareStatement("insert into test_bigint(id) values(?)")) {
         prepStatement.setObject(1, BigInteger.valueOf(9999));
         int rows = prepStatement.executeUpdate();
-        assertTrue("Row count doesn't match", rows == 1);
+        assertTrue(rows == 1, "Row count doesn't match");
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -280,7 +280,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
         BigInteger largeBigInt = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.TEN);
         prepStatement.setObject(1, largeBigInt);
         int rows = prepStatement.executeUpdate();
-        assertTrue("Row count doesn't match", rows == 1);
+        assertTrue(rows == 1, "Row count doesn't match");
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -325,7 +325,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException
    */
   @Test
-  @Ignore
+  @Disabled
   public void testCallStatement() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {

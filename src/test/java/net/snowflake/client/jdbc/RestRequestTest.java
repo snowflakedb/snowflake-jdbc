@@ -5,12 +5,12 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -32,7 +32,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -337,18 +337,16 @@ public class RestRequestTest {
     for (TestCase t : testCases) {
       if (t.result) {
         assertTrue(
+            RestRequest.isNonRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403),
             String.format(
                 "Result must be true but false: HTTP Code: %d, RetryHTTP403: %s",
-                t.statusCode, t.retryHTTP403),
-            RestRequest.isNonRetryableHTTPCode(
-                anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
+                t.statusCode, t.retryHTTP403));
       } else {
         assertFalse(
+            RestRequest.isNonRetryableHTTPCode(anyStatusCodeResponse(t.statusCode), t.retryHTTP403),
             String.format(
                 "Result must be false but true: HTTP Code: %d, RetryHTTP403: %s",
-                t.statusCode, t.retryHTTP403),
-            RestRequest.isNonRetryableHTTPCode(
-                anyStatusCodeResponse(t.statusCode), t.retryHTTP403));
+                t.statusCode, t.retryHTTP403));
       }
     }
   }
@@ -459,38 +457,43 @@ public class RestRequestTest {
     execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false);
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  public void testMaxRetriesExceeded() throws IOException, SnowflakeSQLException {
-    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+  @Test
+  public void testMaxRetriesExceeded() {
+    assertThrows(
+        SnowflakeSQLException.class,
+        () -> {
+          boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
-    CloseableHttpClient client = mock(CloseableHttpClient.class);
-    when(client.execute(any(HttpUriRequest.class)))
-        .thenAnswer(
-            new Answer<CloseableHttpResponse>() {
-              int callCount = 0;
+          CloseableHttpClient client = mock(CloseableHttpClient.class);
+          when(client.execute(any(HttpUriRequest.class)))
+              .thenAnswer(
+                  new Answer<CloseableHttpResponse>() {
+                    int callCount = 0;
 
-              @Override
-              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
-                callCount += 1;
-                if (callCount >= 4) {
-                  return successResponse();
-                } else {
-                  return socketTimeoutResponse();
-                }
-              }
-            });
+                    @Override
+                    public CloseableHttpResponse answer(InvocationOnMock invocation)
+                        throws Throwable {
+                      callCount += 1;
+                      if (callCount >= 4) {
+                        return successResponse();
+                      } else {
+                        return socketTimeoutResponse();
+                      }
+                    }
+                  });
 
-    try {
-      TelemetryService.disable();
-      execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1);
-      fail("testMaxRetries");
-    } finally {
-      if (telemetryEnabled) {
-        TelemetryService.enable();
-      } else {
-        TelemetryService.disable();
-      }
-    }
+          try {
+            TelemetryService.disable();
+            execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1);
+            fail("testMaxRetries");
+          } finally {
+            if (telemetryEnabled) {
+              TelemetryService.enable();
+            } else {
+              TelemetryService.disable();
+            }
+          }
+        });
   }
 
   @Test
@@ -516,38 +519,43 @@ public class RestRequestTest {
     execute(client, "fakeurl.com/?requestId=abcd-1234", 0, 0, 0, true, false, 1);
   }
 
-  @Test(expected = SnowflakeSQLException.class)
-  public void testLoginMaxRetries() throws IOException, SnowflakeSQLException {
-    boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
+  @Test
+  public void testLoginMaxRetries() {
+    assertThrows(
+        SnowflakeSQLException.class,
+        () -> {
+          boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
-    CloseableHttpClient client = mock(CloseableHttpClient.class);
-    when(client.execute(any(HttpUriRequest.class)))
-        .thenAnswer(
-            new Answer<CloseableHttpResponse>() {
-              int callCount = 0;
+          CloseableHttpClient client = mock(CloseableHttpClient.class);
+          when(client.execute(any(HttpUriRequest.class)))
+              .thenAnswer(
+                  new Answer<CloseableHttpResponse>() {
+                    int callCount = 0;
 
-              @Override
-              public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
-                callCount += 1;
-                if (callCount >= 4) {
-                  return retryLoginResponse();
-                } else {
-                  return socketTimeoutResponse();
-                }
-              }
-            });
+                    @Override
+                    public CloseableHttpResponse answer(InvocationOnMock invocation)
+                        throws Throwable {
+                      callCount += 1;
+                      if (callCount >= 4) {
+                        return retryLoginResponse();
+                      } else {
+                        return socketTimeoutResponse();
+                      }
+                    }
+                  });
 
-    try {
-      TelemetryService.disable();
-      execute(client, "/session/v1/login-request", 0, 0, 0, true, false, 1);
-      fail("testMaxRetries");
-    } finally {
-      if (telemetryEnabled) {
-        TelemetryService.enable();
-      } else {
-        TelemetryService.disable();
-      }
-    }
+          try {
+            TelemetryService.disable();
+            execute(client, "/session/v1/login-request", 0, 0, 0, true, false, 1);
+            fail("testMaxRetries");
+          } finally {
+            if (telemetryEnabled) {
+              TelemetryService.enable();
+            } else {
+              TelemetryService.disable();
+            }
+          }
+        });
   }
 
   @Test
@@ -643,18 +651,18 @@ public class RestRequestTest {
               elapsedMilliForTransientIssues);
 
       assertTrue(
-          "Backoff should be lower or equal to max backoff limit",
-          backoffInMilli <= maxBackoffInMilli);
+          backoffInMilli <= maxBackoffInMilli,
+          "Backoff should be lower or equal to max backoff limit");
       if (elapsedMilliForTransientIssues + backoffInMilli >= retryTimeoutInMilli) {
         assertEquals(
-            "Backoff should fill time till retry timeout",
             retryTimeoutInMilli - elapsedMilliForTransientIssues,
-            backoffInMilli);
+            backoffInMilli,
+            "Backoff should fill time till retry timeout");
         break;
       } else {
         assertTrue(
-            "Backoff should be higher or equal to min backoff limit",
-            backoffInMilli >= minBackoffInMilli);
+            backoffInMilli >= minBackoffInMilli,
+            "Backoff should be higher or equal to min backoff limit");
       }
       elapsedMilliForTransientIssues += backoffInMilli;
     }

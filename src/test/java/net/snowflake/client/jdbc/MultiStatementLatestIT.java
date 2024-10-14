@@ -3,19 +3,19 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * MultiStatement integration tests for the latest JDBC driver. This doesn't work for the oldest
@@ -23,7 +23,8 @@ import org.junit.experimental.categories.Category;
  * if the tests still is not applicable. If it is applicable, move tests to MultiStatementIT so that
  * both the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class MultiStatementLatestIT extends BaseJDBCTest {
   protected static String queryResultFormat = "json";
 

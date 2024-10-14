@@ -3,55 +3,49 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Stream;
 import net.snowflake.common.core.FileCompressionType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 /**
  * Tests for SnowflakeFileTransferAgent.mimeTypeToCompressionType See
  * https://github.com/apache/tika/blob/master/tika-core/src/main/resources/org/apache/tika/mime/tika-mimetypes.xml
  * for test cases
  */
-@RunWith(Parameterized.class)
 public class FileUploaderMimeTypeToCompressionTypeTest {
-  private final String mimeType;
-  private final FileCompressionType mimeSubType;
 
-  public FileUploaderMimeTypeToCompressionTypeTest(
-      String mimeType, FileCompressionType mimeSubType) {
-    this.mimeType = mimeType;
-    this.mimeSubType = mimeSubType;
+  static class MimeTypesProvider implements ArgumentsProvider {
+    @Override
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+      return Stream.of(
+          Arguments.of("text/", null),
+          Arguments.of("text/csv", null),
+          Arguments.of("snowflake/orc", FileCompressionType.ORC),
+          Arguments.of("snowflake/orc;p=1", FileCompressionType.ORC),
+          Arguments.of("snowflake/parquet", FileCompressionType.PARQUET),
+          Arguments.of("application/zlib", FileCompressionType.DEFLATE),
+          Arguments.of("application/x-bzip2", FileCompressionType.BZIP2),
+          Arguments.of("application/zstd", FileCompressionType.ZSTD),
+          Arguments.of("application/x-brotli", FileCompressionType.BROTLI),
+          Arguments.of("application/x-lzip", FileCompressionType.LZIP),
+          Arguments.of("application/x-lzma", FileCompressionType.LZMA),
+          Arguments.of("application/x-xz", FileCompressionType.XZ),
+          Arguments.of("application/x-compress", FileCompressionType.COMPRESS),
+          Arguments.of("application/x-gzip", FileCompressionType.GZIP));
+    }
   }
 
-  @Parameterized.Parameters(name = "mimeType={0}, mimeSubType={1}")
-  public static Collection primeNumbers() {
-    return Arrays.asList(
-        new Object[][] {
-          {"text/", null},
-          {"text/csv", null},
-          {"snowflake/orc", FileCompressionType.ORC},
-          {"snowflake/orc;p=1", FileCompressionType.ORC},
-          {"snowflake/parquet", FileCompressionType.PARQUET},
-          {"application/zlib", FileCompressionType.DEFLATE},
-          {"application/x-bzip2", FileCompressionType.BZIP2},
-          {"application/zstd", FileCompressionType.ZSTD},
-          {"application/x-brotli", FileCompressionType.BROTLI},
-          {"application/x-lzip", FileCompressionType.LZIP},
-          {"application/x-lzma", FileCompressionType.LZMA},
-          {"application/x-xz", FileCompressionType.XZ},
-          {"application/x-compress", FileCompressionType.COMPRESS},
-          {"application/x-gzip", FileCompressionType.GZIP}
-        });
-  }
-
-  @Test
-  public void testMimeTypeToCompressionType() throws Throwable {
+  @ParameterizedTest
+  @ArgumentsSource(MimeTypesProvider.class)
+  public void testMimeTypeToCompressionType(String mimeType, FileCompressionType mimeSubType)
+      throws Throwable {
     Optional<FileCompressionType> foundCompType =
         SnowflakeFileTransferAgent.mimeTypeToCompressionType(mimeType);
     if (foundCompType.isPresent()) {

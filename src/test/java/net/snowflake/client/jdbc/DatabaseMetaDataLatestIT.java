@@ -10,12 +10,11 @@ import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.NumericFunctio
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.StringFunctionsSupported;
 import static net.snowflake.client.jdbc.SnowflakeDatabaseMetaData.SystemFunctionsSupported;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
@@ -30,15 +29,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
-import net.snowflake.client.category.TestCategoryOthers;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSessionProperty;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * DatabaseMetaData test for the latest JDBC driver. This doesn't work for the oldest supported
@@ -46,7 +45,8 @@ import org.junit.experimental.categories.Category;
  * tests still is not applicable. If it is applicable, move tests to DatabaseMetaDataIT so that both
  * the latest and oldest supported driver run the tests.
  */
-@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   private static final String TEST_PROC =
       "create or replace procedure testproc(param1 float, param2 string)\n"
@@ -160,32 +160,32 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             databaseMetaData = connection.getMetaData();
 
             try (ResultSet resultSet = databaseMetaData.getSchemas(null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
 
             try (ResultSet resultSet = databaseMetaData.getTables(null, null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
+              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(6));
             }
 
             try (ResultSet resultSet = databaseMetaData.getColumns(null, null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
+              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(26));
             }
 
             try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
 
             try (ResultSet resultSet = databaseMetaData.getImportedKeys(null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
 
             try (ResultSet resultSet = databaseMetaData.getExportedKeys(null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
 
             try (ResultSet resultSet =
                 databaseMetaData.getCrossReference(null, null, null, null, null, null)) {
-              assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
+              MatcherAssert.assertThat(getSizeOfResultSet(resultSet), greaterThanOrEqualTo(2));
             }
           });
     }
@@ -252,7 +252,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * This tests the ability to have quotes inside a database or schema within getSchemas() function.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetSchemas() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -281,7 +281,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetTables() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -298,7 +298,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetColumns() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -315,7 +315,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeys() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -345,7 +345,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * getPrimaryKeys and getImportedKeys functions by setting enablePatternSearch = false.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseforGetPrimaryKeysAndForeignKeysWithPatternSearchDisabled()
       throws SQLException {
     Properties properties = new Properties();
@@ -374,7 +374,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetProcedures() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -392,7 +392,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetTablePrivileges() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -579,7 +579,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSessionDatabaseParameter() throws Throwable {
     String altdb = "ALTERNATEDB";
     String altschema1 = "ALTERNATESCHEMA1";
@@ -746,7 +746,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * returns 1 row per return value and 1 row per input parameter.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetFunctionColumns() throws Exception {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -1662,7 +1662,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
    * This tests that an empty resultset will be returned for getProcedures when using a reader account.
    */
   @Test
-  @Ignore
+  @Disabled
   public void testGetProceduresWithReaderAccount() throws SQLException {
     try (Connection connection = getConnection()) {
       DatabaseMetaData metadata = connection.getMetaData();
@@ -1673,7 +1673,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testGetProcedureColumns() throws Exception {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -2160,11 +2160,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             assertEquals(
                 2, getSizeOfResultSet(dbmd.getPrimaryKeys(database, schema, tablePattern2)));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern1)),
                 greaterThanOrEqualTo(1));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(dbmd.getPrimaryKeys(database, null, tablePattern2)),
                 greaterThanOrEqualTo(1));
 
@@ -2182,11 +2182,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             assertEquals(
                 1, getSizeOfResultSet(dbmd.getImportedKeys(database, schemaPattern2, null)));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern1)),
                 greaterThanOrEqualTo(1));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(dbmd.getImportedKeys(database, null, tablePattern2)),
                 greaterThanOrEqualTo(1));
 
@@ -2201,11 +2201,11 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
             assertEquals(
                 1, getSizeOfResultSet(dbmd.getExportedKeys(database, schemaPattern1, table1)));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern1)),
                 greaterThanOrEqualTo(1));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(dbmd.getExportedKeys(database, null, tablePattern2)),
                 greaterThanOrEqualTo(1));
 
@@ -2268,13 +2268,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
                     dbmd.getCrossReference(
                         database, schema, table1, database, schemaPattern2, null)));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(
                     dbmd.getCrossReference(
                         database, null, tablePattern1, database, schema, table2)),
                 greaterThanOrEqualTo(1));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(
                     dbmd.getCrossReference(
                         database, null, tablePattern2, database, schema, table2)),
@@ -2292,13 +2292,13 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCTest {
                     dbmd.getCrossReference(
                         database, schema, tablePattern2, database, schema, table2)));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(
                     dbmd.getCrossReference(
                         database, schema, table1, database, null, tablePattern1)),
                 greaterThanOrEqualTo(1));
 
-            assertThat(
+            MatcherAssert.assertThat(
                 getSizeOfResultSet(
                     dbmd.getCrossReference(
                         database, schema, table1, database, null, tablePattern2)),

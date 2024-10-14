@@ -5,10 +5,9 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -24,16 +23,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /** This test assumes that GS has been set up */
-@Category(TestCategoryOthers.class)
+// @Category(TestCategoryOthers.class)
+@Tag(TestTags.OTHERS)
 public class HeartbeatIT extends AbstractDriverIT {
   private static Logger logger = Logger.getLogger(HeartbeatIT.class.getName());
 
@@ -43,7 +44,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * <p>change the master token validity to 10 seconds change the session token validity to 5
    * seconds change the SESSION_RECORD_ACCESS_INTERVAL_SECS to 1 second
    */
-  @BeforeClass
+  @BeforeAll
   public static void setUpClass() throws Exception {
     if (!RunningOnGithubAction.isRunningOnGithubAction()) {
       try (Connection connection = getSnowflakeAdminConnection();
@@ -61,7 +62,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * Reset master_token_validity, session_token_validity, SESSION_RECORD_ACCESS_INTERVAL_SECS to
    * default.
    */
-  @AfterClass
+  @AfterAll
   public static void tearDownClass() throws Exception {
     if (!RunningOnGithubAction.isRunningOnGithubAction()) {
       try (Connection connection = getSnowflakeAdminConnection();
@@ -115,7 +116,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * master token validity and issue a query to make sure the query succeeds.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSuccess() throws Exception {
     int concurrency = 10;
     ExecutorService executorService = Executors.newFixedThreadPool(10);
@@ -146,7 +147,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    * master token validity and issue a query to make sure the query fails.
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testFailure() throws Exception {
     ExecutorService executorService = Executors.newFixedThreadPool(1);
     try {
@@ -166,12 +167,15 @@ public class HeartbeatIT extends AbstractDriverIT {
       fail("should fail and raise an exception");
     } catch (ExecutionException ex) {
       Throwable rootCause = ex.getCause();
-      assertThat("Runtime Exception", rootCause, instanceOf(RuntimeSQLException.class));
+      MatcherAssert.assertThat(
+          "Runtime Exception", rootCause, instanceOf(RuntimeSQLException.class));
 
       rootCause = rootCause.getCause();
 
-      assertThat("Root cause class", rootCause, instanceOf(SnowflakeSQLException.class));
-      assertThat("Error code", ((SnowflakeSQLException) rootCause).getErrorCode(), equalTo(390114));
+      MatcherAssert.assertThat(
+          "Root cause class", rootCause, instanceOf(SnowflakeSQLException.class));
+      MatcherAssert.assertThat(
+          "Error code", ((SnowflakeSQLException) rootCause).getErrorCode(), equalTo(390114));
     }
   }
 

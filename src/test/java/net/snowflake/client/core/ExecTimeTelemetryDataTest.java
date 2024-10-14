@@ -1,14 +1,14 @@
 package net.snowflake.client.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ExecTimeTelemetryDataTest {
 

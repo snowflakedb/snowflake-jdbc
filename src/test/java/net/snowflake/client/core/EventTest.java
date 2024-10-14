@@ -5,8 +5,8 @@
 package net.snowflake.client.core;
 
 import static net.snowflake.client.core.EventUtil.DUMP_PATH_PROP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,24 +14,25 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class EventTest {
-  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  @TempDir private File tmpFolder;
   private File homeDirectory;
   private File dmpDirectory;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
-    homeDirectory = tmpFolder.newFolder("homedir");
-    dmpDirectory = tmpFolder.newFolder("homedir", "snowflake_dumps");
+    homeDirectory = new File(tmpFolder, "homedir");
+    homeDirectory.mkdirs();
+    dmpDirectory = new File(homeDirectory, "snowflake_dumps");
+    dmpDirectory.mkdirs();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     dmpDirectory.delete();
   }
@@ -58,7 +59,7 @@ public class EventTest {
       // created
       String dmpPath1 = EventUtil.getDumpPathPrefix();
       String dmpPath2 = dmpDirectory.getCanonicalPath();
-      assertEquals("dump path is: " + EventUtil.getDumpPathPrefix(), dmpPath2, dmpPath1);
+      assertEquals(dmpPath2, dmpPath1, "dump path is: " + EventUtil.getDumpPathPrefix());
       File dumpFile =
           new File(
               EventUtil.getDumpPathPrefix()

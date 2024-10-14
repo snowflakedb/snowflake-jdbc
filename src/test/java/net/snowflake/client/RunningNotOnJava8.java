@@ -2,7 +2,8 @@ package net.snowflake.client;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
-public class RunningNotOnJava8 implements ConditionalIgnoreRule.IgnoreCondition {
+@Deprecated
+public class RunningNotOnJava8 {
   public boolean isSatisfied() {
     return isRunningOnJava8();
   }

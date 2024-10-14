@@ -1,15 +1,14 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.spy;
 
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.sql.Connection;
 import java.sql.SQLException;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -17,11 +16,11 @@ import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAzureClientSetupInvalidEncryptionKeySize() throws SQLException {
     try (Connection connection = getConnection("azureaccount")) {
       SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();

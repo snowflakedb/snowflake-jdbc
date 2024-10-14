@@ -5,10 +5,9 @@
 package net.snowflake.client.core;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -32,8 +31,9 @@ import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.ClientAuthnDTO;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -164,11 +164,13 @@ public class SessionUtilExternalBrowserTest {
       SessionUtilExternalBrowser sub =
           FakeSessionUtilExternalBrowser.createInstance(loginInput, false);
       sub.authenticate();
-      assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+      MatcherAssert.assertThat(
+          "", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
 
       sub = FakeSessionUtilExternalBrowser.createInstance(loginInput, true);
       sub.authenticate();
-      assertThat("", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
+      MatcherAssert.assertThat(
+          "", sub.getToken(), equalTo(FakeSessionUtilExternalBrowser.MOCK_SAML_TOKEN));
     }
   }
 
@@ -200,7 +202,7 @@ public class SessionUtilExternalBrowserTest {
         sub.authenticate();
         fail("should have failed with an exception.");
       } catch (SnowflakeSQLException ex) {
-        assertThat("Error is expected", ex.getErrorCode(), equalTo(123456));
+        MatcherAssert.assertThat("Error is expected", ex.getErrorCode(), equalTo(123456));
       }
     }
   }
@@ -248,7 +250,7 @@ public class SessionUtilExternalBrowserTest {
   // Run this test manually to test disabling storing temporary credetials with external browser
   // auth. This is valid for versions after 3.18.0.
   @Test
-  @Ignore
+  @Disabled
   public void testEnableClientStoreTemporaryCredential() throws Exception {
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
@@ -270,7 +272,7 @@ public class SessionUtilExternalBrowserTest {
   // open a browser window for authentication, close the window, and you should get the expected
   // error message within the set timeout. Valid for driver versions after 3.18.0.
   @Test
-  @Ignore
+  @Disabled
   public void testExternalBrowserTimeout() throws Exception {
     Map<String, String> params = AbstractDriverIT.getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();

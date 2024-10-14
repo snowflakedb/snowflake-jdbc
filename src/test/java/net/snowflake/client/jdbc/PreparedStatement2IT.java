@@ -7,12 +7,12 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.Sets;
 import java.math.BigDecimal;
@@ -28,14 +28,13 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Set;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class PreparedStatement2IT extends PreparedStatement0IT {
   public PreparedStatement2IT() {
     super("json");
@@ -46,7 +45,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testStageBatchDates() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -111,9 +110,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
             for (int i = 0; i < dates.length; i++) {
               assertEquals(
-                  "Stage binding date should match non-stage binding date",
                   nonStageResult[i],
-                  stageResult[i]);
+                  stageResult[i],
+                  "Stage binding date should match non-stage binding date");
             }
           }
         }
@@ -254,7 +253,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * @throws InterruptedException Will be thrown if the sleep is interrupted
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testPrepareTimeout() throws SQLException, InterruptedException {
     try (Connection adminCon = getSnowflakeAdminConnection();
         Statement adminStatement = adminCon.createStatement()) {
@@ -296,15 +295,15 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
           rowcount++;
           valuesReturned.add(rs.getString(1));
         }
-        assertEquals("Should get back 2 rows", 2, rowcount);
-        assertEquals("", valuesReturned, Sets.newHashSet("a", "b"));
+        assertEquals(2, rowcount, "Should get back 2 rows");
+        assertEquals(valuesReturned, Sets.newHashSet("a", "b"), "");
       }
     }
   }
 
   /** Test for coalesce with bind and null arguments in a prepared statement */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testSnow35923() throws Exception {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -326,7 +325,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * object IDs
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBindObjectLiteral() throws Exception {
     long t1Id = 0;
     long t2Id = 0;
@@ -510,7 +509,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * timestamp format: YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testBindTimestampTZViaStringBatch() throws SQLException {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
@@ -617,9 +616,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   private void checkResultSetEqual(ResultSet rs1, ResultSet rs2) throws SQLException {
     int columns = rs1.getMetaData().getColumnCount();
     assertEquals(
-        "Resultsets do not match in the number of columns returned",
         columns,
-        rs2.getMetaData().getColumnCount());
+        rs2.getMetaData().getColumnCount(),
+        "Resultsets do not match in the number of columns returned");
 
     while (rs1.next() && rs2.next()) {
       for (int columnIndex = 1; columnIndex <= columns; columnIndex++) {
@@ -627,13 +626,13 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         final Object res2 = rs2.getObject(columnIndex);
 
         assertEquals(
-            String.format("%s and %s are not equal values at column %d", res1, res2, columnIndex),
             res1,
-            res2);
+            res2,
+            String.format("%s and %s are not equal values at column %d", res1, res2, columnIndex));
       }
 
       assertEquals(
-          "Number of records returned by the results does not match", rs1.isLast(), rs2.isLast());
+          rs1.isLast(), rs2.isLast(), "Number of records returned by the results does not match");
     }
   }
 
@@ -698,7 +697,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void testAddBatchNumericNullFloatMixed() throws Exception {
     try (Connection connection = init()) {
       for (int threshold = 0; threshold < 2; ++threshold) {
@@ -815,7 +814,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   private void assertException(RunnableWithSQLException runnable, int expectedCode) {
     try {
       runnable.run();
-      Assert.fail();
+      fail();
     } catch (SQLException e) {
       assertThat(e.getErrorCode(), is(expectedCode));
     }

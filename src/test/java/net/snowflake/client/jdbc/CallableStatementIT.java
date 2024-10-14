@@ -5,8 +5,8 @@ package net.snowflake.client.jdbc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.net.URL;
@@ -21,30 +21,23 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.HashMap;
-import net.snowflake.client.category.TestCategoryStatement;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.SimpleFormatProvider;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-@RunWith(Parameterized.class)
-@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
+@Tag(TestTags.STATEMENT)
 public class CallableStatementIT extends BaseJDBCTest {
-  @Parameterized.Parameters
-  public static Object[][] data() {
-    // all tests in this class need to run for both query result formats json and arrow
-    return new Object[][] {{"JSON"}, {"arrow"}};
-  }
-
-  private static String queryResultFormat;
-
-  public CallableStatementIT(String format) {
-    queryResultFormat = format;
-  }
 
   public static Connection getConnection() throws SQLException {
+    return BaseJDBCTest.getConnection();
+  }
+
+  public static Connection getConnection(String queryResultFormat) throws SQLException {
     Connection conn = BaseJDBCTest.getConnection();
     try (Statement stmt = conn.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
@@ -61,7 +54,7 @@ public class CallableStatementIT extends BaseJDBCTest {
   private final String deleteStoredProcedure = "drop procedure if exists square_it(FLOAT)";
   private final String deleteSecondStoredProcedure = "drop procedure if exists add_nums(INT, INT)";
 
-  @Before
+  @BeforeEach
   public void setUp() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -70,7 +63,7 @@ public class CallableStatementIT extends BaseJDBCTest {
     }
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws SQLException {
     try (Connection con = getConnection();
         Statement statement = con.createStatement()) {
@@ -79,10 +72,11 @@ public class CallableStatementIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  public void testPrepareCall() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleFormatProvider.class)
+  public void testPrepareCall(String queryResultFormat) throws SQLException {
     // test CallableStatement with no binding parameters
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection(queryResultFormat)) {
       try (CallableStatement callableStatement = connection.prepareCall("call square_it(5)")) {
         assertThat(callableStatement.getParameterMetaData().getParameterCount(), is(0));
       }
@@ -112,9 +106,10 @@ public class CallableStatementIT extends BaseJDBCTest {
     }
   }
 
-  @Test
-  public void testFeatureNotSupportedException() throws Throwable {
-    try (Connection connection = getConnection()) {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleFormatProvider.class)
+  public void testFeatureNotSupportedException(String queryResultFormat) throws Throwable {
+    try (Connection connection = getConnection(queryResultFormat); ) {
       CallableStatement callableStatement = connection.prepareCall("select ?");
       expectFeatureNotSupportedException(
           () -> callableStatement.registerOutParameter(1, Types.INTEGER));

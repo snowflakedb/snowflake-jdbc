@@ -2,11 +2,11 @@ package net.snowflake.client.config;
 
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_HOME_KEY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import java.io.File;
@@ -25,22 +25,21 @@ import net.snowflake.client.RunningNotOnLinuxMac;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SFConnectionConfigParserTest {
 
   private Path tempPath = null;
   private TomlMapper tomlMapper = new TomlMapper();
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
     tempPath = Files.createTempDirectory(".snowflake");
   }
 
-  @After
+  @AfterEach
   public void close() throws IOException {
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_HOME_KEY);
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);
@@ -129,7 +128,7 @@ public class SFConnectionConfigParserTest {
     extraparams.put("host", null);
     extraparams.put("account", null);
     prepareConnectionConfigurationTomlFile(extraparams);
-    Assert.assertThrows(
+    assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
 
