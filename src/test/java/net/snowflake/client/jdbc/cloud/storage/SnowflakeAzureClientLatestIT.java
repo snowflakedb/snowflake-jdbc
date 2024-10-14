@@ -5,7 +5,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
 
-import com.microsoft.azure.storage.blob.ListBlobItem;
+import com.azure.storage.blob.models.BlobItem;
 import java.sql.Connection;
 import java.sql.SQLException;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -42,8 +42,9 @@ public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
 
   @Test
   public void testCloudExceptionTest() {
-    Iterable<ListBlobItem> mockList = null;
-    AzureObjectSummariesIterator iterator = new AzureObjectSummariesIterator(mockList);
+    Iterable<BlobItem> mockList = null;
+    String azStorageLocation = "dummy_location";
+    AzureObjectSummariesIterator iterator = new AzureObjectSummariesIterator(mockList, azStorageLocation);
     AzureObjectSummariesIterator spyIterator = spy(iterator);
     UnsupportedOperationException ex =
         assertThrows(UnsupportedOperationException.class, () -> spyIterator.remove());

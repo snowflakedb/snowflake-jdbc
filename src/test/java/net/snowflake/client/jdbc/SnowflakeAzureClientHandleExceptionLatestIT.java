@@ -3,15 +3,19 @@
  */
 package net.snowflake.client.jdbc;
 
-import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.StorageExtendedErrorInformation;
 import java.io.File;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import com.azure.core.http.HttpHeaders;
+import com.azure.core.http.HttpResponse;
+import com.azure.storage.blob.models.BlobStorageException;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
@@ -20,6 +24,7 @@ import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.cloud.storage.SnowflakeAzureClient;
+import org.apache.http.HttpStatus;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,6 +33,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /** Test for SnowflakeAzureClient handle exception function */
 @Category(TestCategoryOthers.class)
@@ -59,13 +66,52 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
     spyingClient = Mockito.spy(client);
   }
 
+  private HttpResponse constructHttpResponse(int httpStatus) {
+    return new HttpResponse(null) {
+      @Override
+      public int getStatusCode() {
+        return httpStatus;
+      }
+
+      @Override
+      public String getHeaderValue(String s) {
+        return "";
+      }
+
+      @Override
+      public HttpHeaders getHeaders() {
+        return null;
+      }
+
+      @Override
+      public Flux<ByteBuffer> getBody() {
+        return null;
+      }
+
+      @Override
+      public Mono<byte[]> getBodyAsByteArray() {
+        return null;
+      }
+
+      @Override
+      public Mono<String> getBodyAsString() {
+        return null;
+      }
+
+      @Override
+      public Mono<String> getBodyAsString(Charset charset) {
+        return null;
+      }
+    };
+  }
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void error403RenewExpired() throws SQLException, InterruptedException {
     // Unauthenticated, renew is called.
     spyingClient.handleStorageException(
-        new StorageException(
-            "403", "Unauthenticated", 403, new StorageExtendedErrorInformation(), new Exception()),
+        new BlobStorageException(
+            "Unauthenticated", constructHttpResponse(HttpStatus.SC_FORBIDDEN), new Exception()),
         0,
         "upload",
         sfSession,
@@ -82,11 +128,9 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
               public void run() {
                 try {
                   spyingClient.handleStorageException(
-                      new StorageException(
-                          "403",
+                      new BlobStorageException(
                           "Unauthenticated",
-                          403,
-                          new StorageExtendedErrorInformation(),
+                          constructHttpResponse(HttpStatus.SC_FORBIDDEN),
                           new Exception()),
                       maxRetry,
                       "upload",
@@ -109,8 +153,8 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void error403OverMaxRetryThrow() throws SQLException {
     spyingClient.handleStorageException(
-        new StorageException(
-            "403", "Unauthenticated", 403, new StorageExtendedErrorInformation(), new Exception()),
+        new BlobStorageException(
+            "Unauthenticated", constructHttpResponse(HttpStatus.SC_FORBIDDEN), new Exception()),
         overMaxRetry,
         "upload",
         sfSession,
@@ -122,8 +166,8 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void error403NullSession() throws SQLException {
     spyingClient.handleStorageException(
-        new StorageException(
-            "403", "Unauthenticated", 403, new StorageExtendedErrorInformation(), new Exception()),
+        new BlobStorageException(
+            "Unauthenticated", constructHttpResponse(HttpStatus.SC_FORBIDDEN),  new Exception()),
         0,
         "upload",
         null,
@@ -182,10 +226,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
     String getCommand =
         "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file://" + destFolderCanonicalPath + "'";
     spyingClient.handleStorageException(
-        new StorageException(
-            "",
-            Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
-            new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+            new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR),
         0,
         "download",
         null,
