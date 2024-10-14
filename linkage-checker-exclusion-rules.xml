@@ -44,6 +44,16 @@
         <Source><Package name="org.bouncycastle.pkix"/></Source>
         <Reason>?</Reason>
     </LinkageError>
+    <LinkageError>
+        <Target><Package name="java.nio"/></Target>
+        <Source><Package name="org.bouncycastle.jcajce.provider.symmetric.util"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="java.nio"/></Target>
+        <Source><Package name="org.bouncycastle.pqc.legacy.crypto.ntru"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
     <!--
     <LinkageError>
         <Target><Package name=""/></Target>
