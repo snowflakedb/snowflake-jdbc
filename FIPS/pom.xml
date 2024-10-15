@@ -5,28 +5,16 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.19.1</version>
+    <version>3.19.1-SNAPSHOT</version>
     <relativePath>../parent-pom.xml</relativePath>
   </parent>
 
   <artifactId>snowflake-jdbc-fips</artifactId>
-  <version>3.19.1</version>
+  <version>3.19.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>snowflake-jdbc-fips</name>
   <url>http://maven.apache.org</url>
-
-  <repositories>
-    <repository>
-      <id>Central</id>
-      <name>Internal Central Repo2</name>
-      <layout>default</layout>
-      <url>https://artifactory.ci1.us-west-2.aws-dev.app.snowflake.com/artifactory/development-maven-virtual/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 
   <prerequisites>
     <maven>3.3.9</maven>
@@ -608,15 +596,15 @@
                     <unzip dest="${project.build.directory}/relocate" src="${project.build.directory}/${project.build.finalName}.jar"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/19/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <!-- com.fasterxml.* packages are relocated to ${relocationBase}.fasterxml.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/19/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/19/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/19/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                   </target>
                 </configuration>
               </execution>

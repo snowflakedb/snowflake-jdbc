@@ -116,8 +116,22 @@ public abstract class SFBaseStatement {
    *
    * @throws SFException if the statement is already closed.
    * @throws SQLException if there are server-side errors from trying to abort.
+   * @deprecated use {@link #cancel(CancellationReason)} instead
    */
+  @Deprecated
   public abstract void cancel() throws SFException, SQLException;
+
+  /**
+   * Aborts the statement.
+   *
+   * @param cancellationReason reason for the cancellation
+   * @throws SFException if the statement is already closed.
+   * @throws SQLException if there are server-side errors from trying to abort.
+   */
+  @SnowflakeJdbcInternalApi
+  public void cancel(CancellationReason cancellationReason) throws SFException, SQLException {
+    cancel(); // default cancel is called to keep interface backward compatibility
+  }
 
   /**
    * Sets a property within session properties, i.e., if the sql is using set-sf-property

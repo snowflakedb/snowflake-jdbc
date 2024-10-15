@@ -298,7 +298,7 @@ public class SFStatement extends SFBaseStatement {
       @Override
       public Void call() throws SQLException {
         try {
-          statement.cancel();
+          statement.cancel(CancellationReason.TIMEOUT);
         } catch (SFException ex) {
           throw new SnowflakeSQLLoggedException(
               session, ex.getSqlState(), ex.getVendorCode(), ex, ex.getParams());
@@ -711,10 +711,11 @@ public class SFStatement extends SFBaseStatement {
    *
    * @param sql sql statement
    * @param mediaType media type
+   * @param cancellationReason reason for the cancellation
    * @throws SnowflakeSQLException if failed to cancel the statement
    * @throws SFException if statement is already closed
    */
-  private void cancelHelper(String sql, String mediaType)
+  private void cancelHelper(String sql, String mediaType, CancellationReason cancellationReason)
       throws SnowflakeSQLException, SFException {
     synchronized (this) {
       if (isClosed) {
@@ -734,7 +735,7 @@ public class SFStatement extends SFBaseStatement {
         .setMaxRetries(session.getMaxHttpRetries())
         .setHttpClientSettingsKey(session.getHttpClientKey());
 
-    StmtUtil.cancel(stmtInput);
+    StmtUtil.cancel(stmtInput, cancellationReason);
 
     synchronized (this) {
       /*
@@ -842,6 +843,12 @@ public class SFStatement extends SFBaseStatement {
   @Override
   public void cancel() throws SFException, SQLException {
     logger.trace("void cancel()", false);
+    cancel(CancellationReason.UNKNOWN);
+  }
+
+  @Override
+  public void cancel(CancellationReason cancellationReason) throws SFException, SQLException {
+    logger.trace("void cancel(CancellationReason)", false);
 
     if (canceling.get()) {
       logger.debug("Query is already cancelled", false);
@@ -866,7 +873,7 @@ public class SFStatement extends SFBaseStatement {
       }
 
       // cancel the query on the server side if it has been issued
-      cancelHelper(this.sqlText, StmtUtil.SF_MEDIA_TYPE);
+      cancelHelper(this.sqlText, StmtUtil.SF_MEDIA_TYPE, cancellationReason);
     }
   }
 
