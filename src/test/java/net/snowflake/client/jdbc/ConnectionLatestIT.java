@@ -1316,7 +1316,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             .unwrap(SnowflakeConnection.class)
             .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
       } catch (SQLException ex) {
-        assertThat(ex.getErrorCode(), is(ErrorCode.S3_OPERATION_ERROR.getMessageCode()));
+        assertThat(ex.getErrorCode(), is(ErrorCode.FILE_NOT_FOUND.getMessageCode()));
       }
       long endDownloadTime = System.currentTimeMillis();
       // S3Client retries some exception for a default timeout of 5 minutes
