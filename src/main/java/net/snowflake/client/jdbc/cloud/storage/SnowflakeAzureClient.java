@@ -41,6 +41,8 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
@@ -273,7 +275,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       blob.downloadAttributes(null, null, opContext);
 
       // Get the user-defined BLOB metadata
-      Map<String, String> userDefinedMetadata = blob.getMetadata();
+      Map<String, String> userDefinedMetadata = getUserDefinedMetadata(blob);
 
       // Get the BLOB system properties we care about
       BlobProperties properties = blob.getProperties();
@@ -348,7 +350,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         blob.downloadAttributes(null, transferOptions, opContext);
 
         // Get the user-defined BLOB metadata
-        Map<String, String> userDefinedMetadata = blob.getMetadata();
+        Map<String, String> userDefinedMetadata = getUserDefinedMetadata(blob);
         AbstractMap.SimpleEntry<String, String> encryptionData =
             parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
@@ -447,13 +449,10 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         InputStream stream = blob.openInputStream(null, null, opContext);
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
-        Map<String, String> userDefinedMetadata = blob.getMetadata();
-
+        Map<String, String> userDefinedMetadata = getUserDefinedMetadata(blob);
         AbstractMap.SimpleEntry<String, String> encryptionData =
             parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-
         String key = encryptionData.getKey();
-
         String iv = encryptionData.getValue();
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
@@ -932,6 +931,17 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         new URI("https", storageAccount + "." + storageEndPoint + "/", null, null);
 
     return storageEndpoint;
+  }
+
+  /*
+   * getUserDefinedMetadata
+   * Method introduced to avoid inconsistencies in custom headers handling, since these are defined on drivers side
+   * e.g. some drivers might internally convert headers to canonical form.
+   */
+  private Map<String, String> getUserDefinedMetadata(CloudBlob blob) {
+    Map<String, String> userDefinedMetadata = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    userDefinedMetadata.putAll(blob.getMetadata());
+    return userDefinedMetadata;
   }
 
   /*
