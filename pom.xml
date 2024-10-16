@@ -36,6 +36,10 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk18on</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcutil-jdk18on</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
@@ -1031,6 +1035,7 @@
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/21/org" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <!-- com.fasterxml.* packages are relocated to ${relocationBase}.fasterxml.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
@@ -1105,7 +1110,7 @@
           <!--
             Downloading
               1. japicmp
-              2. maven-dependency-lugin analyst
+              2. maven-dependency-plugin analyst
             in jenkins node would cause http connection failure. Temporarily disable them.
           -->
           <plugin>
