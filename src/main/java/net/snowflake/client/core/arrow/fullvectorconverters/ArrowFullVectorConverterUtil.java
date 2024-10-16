@@ -4,15 +4,12 @@ import static net.snowflake.client.core.arrow.ArrowVectorConverterUtil.getScale;
 
 import java.util.Map;
 import java.util.TimeZone;
-
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.client.jdbc.SnowflakeType;
-import net.snowflake.common.core.SqlState;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.ValueVector;
@@ -21,7 +18,8 @@ import org.apache.arrow.vector.types.Types;
 public class ArrowFullVectorConverterUtil {
   private ArrowFullVectorConverterUtil() {}
 
-  static Types.MinorType deduceType(ValueVector vector, SFBaseSession session) throws SnowflakeSQLLoggedException {
+  static Types.MinorType deduceType(ValueVector vector, SFBaseSession session)
+      throws SnowflakeSQLLoggedException {
     Types.MinorType type = Types.getMinorTypeForArrowType(vector.getField().getType());
     // each column's metadata
     Map<String, String> customMeta = vector.getField().getMetadata();
@@ -39,23 +37,25 @@ public class ArrowFullVectorConverterUtil {
             }
             break;
           }
+        case VECTOR:
+          return Types.MinorType.FIXED_SIZE_LIST;
         case TIME:
-        {
-          String scaleStr = vector.getField().getMetadata().get("scale");
-          int sfScale = Integer.parseInt(scaleStr);
-          if (sfScale == 0) {
-            return Types.MinorType.TIMESEC;
+          {
+            String scaleStr = vector.getField().getMetadata().get("scale");
+            int sfScale = Integer.parseInt(scaleStr);
+            if (sfScale == 0) {
+              return Types.MinorType.TIMESEC;
+            }
+            if (sfScale <= 3) {
+              return Types.MinorType.TIMEMILLI;
+            }
+            if (sfScale <= 6) {
+              return Types.MinorType.TIMEMICRO;
+            }
+            if (sfScale <= 9) {
+              return Types.MinorType.TIMENANO;
+            }
           }
-          if (sfScale <= 3) {
-            return Types.MinorType.TIMEMILLI;
-          }
-          if (sfScale <= 6) {
-            return Types.MinorType.TIMEMICRO;
-          }
-          if (sfScale <= 9) {
-            return Types.MinorType.TIMENANO;
-          }
-        }
         case TIMESTAMP_NTZ:
           return Types.MinorType.TIMESTAMPNANO;
         case TIMESTAMP_LTZ:
@@ -74,7 +74,7 @@ public class ArrowFullVectorConverterUtil {
       TimeZone timeZoneToUse,
       int idx,
       Object targetType)
-      throws SnowflakeSQLException {
+      throws SFArrowException {
     try {
       if (targetType == null) {
         targetType = deduceType(vector, session);
@@ -99,7 +99,7 @@ public class ArrowFullVectorConverterUtil {
             return new BinaryVectorConverter(allocator, vector, context, session, idx).convert();
           case DATEDAY:
             return new DateVectorConverter(allocator, vector, context, session, idx, timeZoneToUse)
-                    .convert();
+                .convert();
           case TIMESEC:
             return new TimeSecVectorConverter(allocator, vector).convert();
           case TIMEMILLI:
@@ -108,18 +108,35 @@ public class ArrowFullVectorConverterUtil {
             return new TimeMicroVectorConverter(allocator, vector).convert();
           case TIMENANO:
             return new TimeNanoVectorConverter(allocator, vector).convert();
+          case STRUCT:
+            return new StructVectorConverter(
+                    allocator, vector, context, session, timeZoneToUse, idx, null)
+                .convert();
+          case LIST:
+            return new ListVectorConverter(
+                    allocator, vector, context, session, timeZoneToUse, idx, null)
+                .convert();
+          case VARCHAR:
+            return new VarCharVectorConverter(allocator, vector, context, session, idx).convert();
+          case MAP:
+            return new MapVectorConverter(
+                    allocator, vector, context, session, timeZoneToUse, idx, null)
+                .convert();
+          case FIXED_SIZE_LIST:
+            return new FixedSizeListVectorConverter(
+                    allocator, vector, context, session, timeZoneToUse, idx, null)
+                .convert();
           default:
-            throw new SnowflakeSQLLoggedException(
-                session,
-                ErrorCode.INTERNAL_ERROR.getMessageCode(),
-                SqlState.INTERNAL_ERROR,
-                "Unsupported target type");
+            throw new SFArrowException(
+                ArrowErrorCode.CONVERT_FAILED,
+                "Unexpected arrow type " + targetType + " at index " + idx);
         }
       }
-    } catch (SFException ex) {
-      throw new SnowflakeSQLException(
-          ex.getCause(), ex.getSqlState(), ex.getVendorCode(), ex.getParams());
+    } catch (SnowflakeSQLException | SFException | SFArrowException e) {
+      throw new SFArrowException(
+          ArrowErrorCode.CONVERT_FAILED, "Converting vector at index " + idx + " failed", e);
     }
-    return null;
+    throw new SFArrowException(
+        ArrowErrorCode.CONVERT_FAILED, "Converting vector at index " + idx + " failed");
   }
 }

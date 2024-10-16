@@ -17,7 +17,9 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.ArrowResultChunkIndexSorter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import net.snowflake.client.core.arrow.ThreeFieldStructToTimestampTZConverter;
+import net.snowflake.client.core.arrow.fullvectorconverters.ArrowErrorCode;
 import net.snowflake.client.core.arrow.fullvectorconverters.ArrowFullVectorConverterUtil;
+import net.snowflake.client.core.arrow.fullvectorconverters.SFArrowException;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.SqlState;
@@ -501,9 +503,10 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     }
   }
 
-  public ArrowBatch getArrowBatch(DataConversionContext context, TimeZone timeZoneToUse) {
+  public ArrowBatch getArrowBatch(
+      DataConversionContext context, TimeZone timeZoneToUse, long batchIndex) {
     batchesMode = true;
-    return new ArrowResultBatch(context, timeZoneToUse);
+    return new ArrowResultBatch(context, timeZoneToUse, batchIndex);
   }
 
   private boolean sortFirstResultChunkEnabled() {
@@ -533,24 +536,32 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   public class ArrowResultBatch implements ArrowBatch {
     private DataConversionContext context;
     private TimeZone timeZoneToUse;
+    private long batchIndex;
 
-    ArrowResultBatch(DataConversionContext context, TimeZone timeZoneToUse) {
+    ArrowResultBatch(DataConversionContext context, TimeZone timeZoneToUse, long batchIndex) {
       this.context = context;
       this.timeZoneToUse = timeZoneToUse;
+      this.batchIndex = batchIndex;
     }
 
-    public List<VectorSchemaRoot> fetch() throws SnowflakeSQLException {
-      List<VectorSchemaRoot> result = new ArrayList<>();
-      for (List<ValueVector> record : batchOfVectors) {
-        List<FieldVector> convertedVectors = new ArrayList<>();
-        for (int i = 0; i < record.size(); i++) {
-          ValueVector vector = record.get(i);
-          convertedVectors.add(
-              ArrowFullVectorConverterUtil.convert(rootAllocator, vector, context, session, timeZoneToUse, i, null));
+    public List<VectorSchemaRoot> fetch() throws SFArrowException {
+      try {
+        List<VectorSchemaRoot> result = new ArrayList<>();
+        for (List<ValueVector> record : batchOfVectors) {
+          List<FieldVector> convertedVectors = new ArrayList<>();
+          for (int i = 0; i < record.size(); i++) {
+            ValueVector vector = record.get(i);
+            convertedVectors.add(
+                ArrowFullVectorConverterUtil.convert(
+                    rootAllocator, vector, context, session, timeZoneToUse, i, null));
+          }
+          result.add(new VectorSchemaRoot(convertedVectors));
         }
-        result.add(new VectorSchemaRoot(convertedVectors));
+        return result;
+      } catch (SFArrowException e) {
+        throw new SFArrowException(
+            ArrowErrorCode.CHUNK_FETCH_FAILED, "Failed to fetch batch number " + batchIndex, e);
       }
-      return result;
     }
 
     @Override
