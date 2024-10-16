@@ -42,7 +42,8 @@ public abstract class SimpleArrowFullVectorConverter<T extends FieldVector>
 
   protected void additionalConverterInit(ArrowVectorConverter converter) {}
 
-  public FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException {
+  protected FieldVector convertVector()
+      throws SFException, SnowflakeSQLException, SFArrowException {
     if (matchingType()) {
       return (FieldVector) vector;
     }

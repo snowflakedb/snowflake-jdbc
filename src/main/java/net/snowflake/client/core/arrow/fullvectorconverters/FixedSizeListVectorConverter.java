@@ -42,7 +42,8 @@ public class FixedSizeListVectorConverter extends AbstractFullVectorConverter {
   }
 
   @Override
-  public FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException {
+  protected FieldVector convertVector()
+      throws SFException, SnowflakeSQLException, SFArrowException {
     try {
       FixedSizeListVector listVector = (FixedSizeListVector) vector;
       FieldVector dataVector = listVector.getDataVector();

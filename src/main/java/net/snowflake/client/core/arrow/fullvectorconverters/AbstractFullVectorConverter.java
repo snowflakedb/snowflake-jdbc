@@ -7,7 +7,7 @@ import org.apache.arrow.vector.FieldVector;
 public abstract class AbstractFullVectorConverter implements ArrowFullVectorConverter {
   private boolean converted;
 
-  public abstract FieldVector convertVector()
+  protected abstract FieldVector convertVector()
       throws SFException, SnowflakeSQLException, SFArrowException;
 
   @Override

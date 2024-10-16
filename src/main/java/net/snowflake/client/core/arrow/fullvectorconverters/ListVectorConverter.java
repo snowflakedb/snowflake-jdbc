@@ -50,7 +50,8 @@ public class ListVectorConverter extends AbstractFullVectorConverter {
   }
 
   @Override
-  public FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException {
+  protected FieldVector convertVector()
+      throws SFException, SnowflakeSQLException, SFArrowException {
     try {
       ListVector listVector = (ListVector) vector;
       FieldVector dataVector = listVector.getDataVector();

@@ -45,7 +45,8 @@ public class StructVectorConverter extends AbstractFullVectorConverter {
     this.targetTypes = targetTypes;
   }
 
-  public FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException {
+  protected FieldVector convertVector()
+      throws SFException, SnowflakeSQLException, SFArrowException {
     try {
       StructVector structVector = (StructVector) vector;
       List<FieldVector> childVectors = structVector.getChildrenFromFields();

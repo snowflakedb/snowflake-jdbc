@@ -136,6 +136,7 @@ public class ArrowFullVectorConverterUtil {
       throw new SFArrowException(
           ArrowErrorCode.CONVERT_FAILED, "Converting vector at index " + idx + " failed", e);
     }
-    return null;
+    throw new SFArrowException(
+        ArrowErrorCode.CONVERT_FAILED, "Converting vector at index " + idx + " failed");
   }
 }

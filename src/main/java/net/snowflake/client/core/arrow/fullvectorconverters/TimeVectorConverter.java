@@ -28,7 +28,8 @@ public abstract class TimeVectorConverter<T extends BaseFixedWidthVector>
   protected abstract int targetScale();
 
   @Override
-  public FieldVector convertVector() throws SFException, SnowflakeSQLException, SFArrowException {
+  protected FieldVector convertVector()
+      throws SFException, SnowflakeSQLException, SFArrowException {
     try {
       int size = vector.getValueCount();
       T converted = initVector();
