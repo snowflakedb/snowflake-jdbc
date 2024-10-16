@@ -4,6 +4,7 @@
 
 package net.snowflake.client.jdbc;
 
+import static java.util.Arrays.stream;
 import static net.snowflake.client.jdbc.SnowflakeType.GEOGRAPHY;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,10 +33,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.core.HttpClientSettingsKey;
 import net.snowflake.client.core.OCSPMode;
@@ -53,6 +56,7 @@ import net.snowflake.common.util.FixedViewColumn;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 
 /**
  * @author jhuang
@@ -834,5 +838,23 @@ public class SnowflakeUtil {
       return null;
     }
     return node.isValueNode() ? node.asText() : node.toString();
+  }
+
+  /**
+   * Method introduced to avoid inconsistencies in custom headers handling, since these are defined
+   * on drivers side e.g. some drivers might internally convert headers to canonical form.
+   */
+  @SnowflakeJdbcInternalApi
+  public static Map<String, String> toCaseInsensitiveMap(Map<String, String> input) {
+    Map<String, String> caseInsensitiveMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    caseInsensitiveMap.putAll(input);
+    return caseInsensitiveMap;
+  }
+
+  /** toCaseInsensitiveMap, but adjusted to Headers[] argument type */
+  @SnowflakeJdbcInternalApi
+  public static Map<String, String> toCaseInsensitiveMap(Header[] headers) {
+    return toCaseInsensitiveMap(
+        stream(headers).collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)));
   }
 }

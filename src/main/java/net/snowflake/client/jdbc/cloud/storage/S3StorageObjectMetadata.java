@@ -3,6 +3,8 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.toCaseInsensitiveMap;
+
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import java.util.Map;
 
@@ -26,7 +28,7 @@ public class S3StorageObjectMetadata implements StorageObjectMetadata {
    */
   @Override
   public Map<String, String> getUserMetadata() {
-    return this.s3Metadata.getUserMetadata();
+    return toCaseInsensitiveMap(this.s3Metadata.getUserMetadata());
   }
 
   /**

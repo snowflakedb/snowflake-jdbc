@@ -1259,6 +1259,21 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  public void getFIleFromTestStage() {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "GET @dheyman_test_stage file:///Users/dheyman/Documents/Snowflake/Projects/snowflake-jdbc/downloaded_files");
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPutS3RegionalUrl() throws Throwable {
     File destFolder = tmpFolder.newFolder();

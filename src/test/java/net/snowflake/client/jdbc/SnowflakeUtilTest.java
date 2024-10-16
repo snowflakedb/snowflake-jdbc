@@ -3,7 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.extractColumnMetadata;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
+import static net.snowflake.client.jdbc.SnowflakeUtil.toCaseInsensitiveMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -16,8 +18,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.ObjectMapperFactory;
+import org.apache.http.Header;
+import org.apache.http.message.BasicHeader;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -39,8 +46,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     SnowflakeColumnMetadata expectedColumnMetadata =
         createExpectedMetadata(rootNode, fieldOne, fieldTwo);
     // when
-    SnowflakeColumnMetadata columnMetadata =
-        SnowflakeUtil.extractColumnMetadata(rootNode, false, null);
+    SnowflakeColumnMetadata columnMetadata = extractColumnMetadata(rootNode, false, null);
     // then
     assertNotNull(columnMetadata);
     assertEquals(
@@ -62,8 +68,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     rootNode.putIfAbsent("fields", fields);
 
     // when
-    SnowflakeColumnMetadata columnMetadata =
-        SnowflakeUtil.extractColumnMetadata(rootNode, false, null);
+    SnowflakeColumnMetadata columnMetadata = extractColumnMetadata(rootNode, false, null);
     // then
     assertNotNull(columnMetadata);
     assertEquals("OBJECT", columnMetadata.getTypeName());
@@ -80,6 +85,37 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
     assertEquals(128, secondField.getByteLength());
     assertEquals(5, secondField.getPrecision());
     assertTrue(secondField.isNullable());
+  }
+
+  @Test
+  public void shouldConvertToCaseInsensitiveMap() {
+    Map<String, String> map = new HashMap<>();
+    map.put("key1", "value1");
+
+    map = toCaseInsensitiveMap(map);
+    assertTrue(map instanceof TreeMap);
+    assertEquals(String.CASE_INSENSITIVE_ORDER, ((TreeMap<String, String>) map).comparator());
+    assertEquals("value1", map.get("key1"));
+    assertEquals("value1", map.get("Key1"));
+    assertEquals("value1", map.get("KEy1"));
+
+    map.put("KEY1", "changed_value1");
+    assertEquals("changed_value1", map.get("KEY1"));
+  }
+
+  @Test
+  public void shouldConvertHeadersToCaseInsensitiveMap() {
+    Header[] headers =
+        new Header[] {
+          new BasicHeader("key1", "value1"), new BasicHeader("key2", "value2"),
+        };
+    Map<String, String> map = toCaseInsensitiveMap(headers);
+    assertTrue(map instanceof TreeMap);
+    assertEquals(String.CASE_INSENSITIVE_ORDER, ((TreeMap<String, String>) map).comparator());
+    assertEquals("value1", map.get("key1"));
+    assertEquals("value2", map.get("key2"));
+    assertEquals("value1", map.get("Key1"));
+    assertEquals("value2", map.get("Key2"));
   }
 
   private static SnowflakeColumnMetadata createExpectedMetadata(

@@ -4,7 +4,10 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
+import static net.snowflake.client.core.HttpUtil.setProxyForAzure;
+import static net.snowflake.client.core.HttpUtil.setSessionlessProxyForAzure;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
+import static net.snowflake.client.jdbc.SnowflakeUtil.toCaseInsensitiveMap;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -41,9 +44,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
@@ -156,9 +156,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       this.azStorageClient = new CloudBlobClient(storageEndpoint, azCreds);
       opContext = new OperationContext();
       if (session != null) {
-        HttpUtil.setProxyForAzure(session.getHttpClientKey(), opContext);
+        setProxyForAzure(session.getHttpClientKey(), opContext);
       } else {
-        HttpUtil.setSessionlessProxyForAzure(stage.getProxyProperties(), opContext);
+        setSessionlessProxyForAzure(stage.getProxyProperties(), opContext);
       }
     } catch (URISyntaxException ex) {
       throw new IllegalArgumentException("invalid_azure_credentials");
@@ -275,7 +275,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       blob.downloadAttributes(null, null, opContext);
 
       // Get the user-defined BLOB metadata
-      Map<String, String> userDefinedMetadata = getUserDefinedMetadata(blob);
+      Map<String, String> userDefinedMetadata = toCaseInsensitiveMap(blob.getMetadata());
 
       // Get the BLOB system properties we care about
       BlobProperties properties = blob.getProperties();
@@ -350,7 +350,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         blob.downloadAttributes(null, transferOptions, opContext);
 
         // Get the user-defined BLOB metadata
-        Map<String, String> userDefinedMetadata = getUserDefinedMetadata(blob);
+        Map<String, String> userDefinedMetadata = toCaseInsensitiveMap(blob.getMetadata());
         AbstractMap.SimpleEntry<String, String> encryptionData =
             parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
@@ -449,7 +449,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         InputStream stream = blob.openInputStream(null, null, opContext);
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
-        Map<String, String> userDefinedMetadata = getUserDefinedMetadata(blob);
+        Map<String, String> userDefinedMetadata = toCaseInsensitiveMap(blob.getMetadata());
         AbstractMap.SimpleEntry<String, String> encryptionData =
             parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
         String key = encryptionData.getKey();
@@ -931,17 +931,6 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         new URI("https", storageAccount + "." + storageEndPoint + "/", null, null);
 
     return storageEndpoint;
-  }
-
-  /*
-   * getUserDefinedMetadata
-   * Method introduced to avoid inconsistencies in custom headers handling, since these are defined on drivers side
-   * e.g. some drivers might internally convert headers to canonical form.
-   */
-  private Map<String, String> getUserDefinedMetadata(CloudBlob blob) {
-    Map<String, String> userDefinedMetadata = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    userDefinedMetadata.putAll(blob.getMetadata());
-    return userDefinedMetadata;
   }
 
   /*
