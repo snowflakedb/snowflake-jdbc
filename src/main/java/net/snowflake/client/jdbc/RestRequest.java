@@ -283,7 +283,14 @@ public class RestRequest {
         // if an SSL issue occurs like an SSLHandshakeException then fail
         // immediately and stop retrying the requests
 
-        throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, ex.getMessage());
+        String formattedMsg =
+            ex.getMessage()
+                + "\n"
+                + "Verify that the hostnames and portnumbers in SYSTEM$ALLOWLIST are added to your firewall's allowed list.\n"
+                + "To troubleshoot your connection further, you can refer to this article:\n"
+                + "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview";
+
+        throw new SnowflakeSQLLoggedException(null, ErrorCode.NETWORK_ERROR, ex, formattedMsg);
 
       } catch (Exception ex) {
 
