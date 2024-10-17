@@ -18,6 +18,13 @@ public class SmallIntToFixedConverter extends AbstractArrowVectorConverter {
   protected SmallIntVector smallIntVector;
   ByteBuffer byteBuf = ByteBuffer.allocate(SmallIntVector.TYPE_WIDTH);
 
+  /**
+   * Constructor
+   *
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public SmallIntToFixedConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(

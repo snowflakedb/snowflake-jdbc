@@ -31,6 +31,14 @@ public class DateConverter extends AbstractArrowVectorConverter {
     this.useDateFormat = false;
   }
 
+  /**
+   * Constructor
+   *
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   * @param useDateFormat boolean indicates whether to use session timezone
+   */
   public DateConverter(
       ValueVector fieldVector,
       int columnIndex,

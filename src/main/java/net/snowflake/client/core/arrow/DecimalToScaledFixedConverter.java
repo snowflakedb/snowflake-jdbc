@@ -17,6 +17,13 @@ import org.apache.arrow.vector.ValueVector;
 public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter {
   protected DecimalVector decimalVector;
 
+  /**
+   * Constructor
+   *
+   * @param fieldVector ValueVector
+   * @param vectorIndex vector index
+   * @param context DataConversionContext
+   */
   public DecimalToScaledFixedConverter(
       ValueVector fieldVector, int vectorIndex, DataConversionContext context) {
     super(

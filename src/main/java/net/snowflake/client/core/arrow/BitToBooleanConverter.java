@@ -14,6 +14,13 @@ import org.apache.arrow.vector.ValueVector;
 public class BitToBooleanConverter extends AbstractArrowVectorConverter {
   private BitVector bitVector;
 
+  /**
+   * Constructor
+   *
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public BitToBooleanConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.BOOLEAN.name(), fieldVector, columnIndex, context);

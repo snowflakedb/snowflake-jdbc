@@ -13,10 +13,18 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.ValueVector;
 
+/** Convert from Arrow Float8Vector to Real. */
 public class DoubleToRealConverter extends AbstractArrowVectorConverter {
   private Float8Vector float8Vector;
   private ByteBuffer byteBuf = ByteBuffer.allocate(Float8Vector.TYPE_WIDTH);
 
+  /**
+   * Constructor
+   *
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public DoubleToRealConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.REAL.name(), fieldVector, columnIndex, context);
