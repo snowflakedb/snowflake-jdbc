@@ -5,6 +5,7 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import java.util.Map;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 
 /**
  * Implementation of StorageObjectMetadata for S3 for remote storage object metadata.
@@ -26,7 +27,7 @@ public class S3StorageObjectMetadata implements StorageObjectMetadata {
    */
   @Override
   public Map<String, String> getUserMetadata() {
-    return this.s3Metadata.getUserMetadata();
+    return SnowflakeUtil.createCaseInsensitiveMap(this.s3Metadata.getUserMetadata());
   }
 
   /**

@@ -4,6 +4,8 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
+import static net.snowflake.client.core.HttpUtil.setProxyForAzure;
+import static net.snowflake.client.core.HttpUtil.setSessionlessProxyForAzure;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -41,7 +43,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFSession;
@@ -154,9 +155,9 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       this.azStorageClient = new CloudBlobClient(storageEndpoint, azCreds);
       opContext = new OperationContext();
       if (session != null) {
-        HttpUtil.setProxyForAzure(session.getHttpClientKey(), opContext);
+        setProxyForAzure(session.getHttpClientKey(), opContext);
       } else {
-        HttpUtil.setSessionlessProxyForAzure(stage.getProxyProperties(), opContext);
+        setSessionlessProxyForAzure(stage.getProxyProperties(), opContext);
       }
     } catch (URISyntaxException ex) {
       throw new IllegalArgumentException("invalid_azure_credentials");
@@ -273,7 +274,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       blob.downloadAttributes(null, null, opContext);
 
       // Get the user-defined BLOB metadata
-      Map<String, String> userDefinedMetadata = blob.getMetadata();
+      Map<String, String> userDefinedMetadata =
+          SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
 
       // Get the BLOB system properties we care about
       BlobProperties properties = blob.getProperties();
@@ -348,7 +350,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         blob.downloadAttributes(null, transferOptions, opContext);
 
         // Get the user-defined BLOB metadata
-        Map<String, String> userDefinedMetadata = blob.getMetadata();
+        Map<String, String> userDefinedMetadata =
+            SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
         AbstractMap.SimpleEntry<String, String> encryptionData =
             parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
@@ -447,13 +450,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         InputStream stream = blob.openInputStream(null, null, opContext);
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
-        Map<String, String> userDefinedMetadata = blob.getMetadata();
-
+        Map<String, String> userDefinedMetadata =
+            SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
         AbstractMap.SimpleEntry<String, String> encryptionData =
             parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-
         String key = encryptionData.getKey();
-
         String iv = encryptionData.getValue();
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {
@@ -574,7 +575,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         CloudBlockBlob blob = container.getBlockBlobReference(destFileName);
 
         // Set the user-defined/Snowflake metadata and upload the BLOB
-        blob.setMetadata((HashMap<String, String>) meta.getUserMetadata());
+        blob.setMetadata(new HashMap<>(meta.getUserMetadata()));
 
         BlobRequestOptions transferOptions = new BlobRequestOptions();
         transferOptions.setConcurrentRequestCount(parallelism);
