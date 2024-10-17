@@ -4,7 +4,9 @@
 
 package net.snowflake.client.core;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import net.snowflake.client.jdbc.BindingParameterMetadata;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 
 /** This class represents a binding object passed to server side Created by hyu on 6/15/17. */
 public class ParameterBindingDTO {
@@ -19,6 +21,12 @@ public class ParameterBindingDTO {
 
   public ParameterBindingDTO(
       String fmt, String type, Object value, BindingParameterMetadata schema) {
+    System.out.println("VALUE " + value);
+    try {
+      System.out.println("SCHEMA " + SnowflakeUtil.mapJson(schema));
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
     this.fmt = fmt;
     this.type = type;
     this.value = value;

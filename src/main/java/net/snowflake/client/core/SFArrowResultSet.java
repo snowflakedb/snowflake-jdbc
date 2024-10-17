@@ -379,11 +379,11 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
   @SnowflakeJdbcInternalApi
   public SQLInput createSqlInputForColumn(
       Object input,
-      Class<?> parentObjectClass,
+      boolean isJsonMapping,
       int columnIndex,
       SFBaseSession session,
       List<FieldMetadata> fields) {
-    if (parentObjectClass.equals(JsonSqlInput.class)) {
+    if (isJsonMapping) {
       return createJsonSqlInputForColumn(input, session, fields);
     } else {
       return new ArrowSqlInput((Map<String, Object>) input, session, converters, fields);
@@ -705,6 +705,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
               columnSubType,
               mapAndConvert(elements, converters.timeFromIntConverter(scale)).toArray(Time[]::new));
         case Types.TIMESTAMP:
+        case Types.TIMESTAMP_WITH_TIMEZONE:
           return new SfSqlArray(
               columnSubType,
               mapAndConvert(
