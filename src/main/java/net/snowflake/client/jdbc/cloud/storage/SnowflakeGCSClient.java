@@ -8,7 +8,7 @@ import static net.snowflake.client.jdbc.SnowflakeUtil.convertSystemPropertyToBoo
 import static net.snowflake.client.jdbc.SnowflakeUtil.getRootCause;
 import static net.snowflake.client.jdbc.SnowflakeUtil.isBlank;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static net.snowflake.client.jdbc.SnowflakeUtil.toCaseInsensitiveMap;
+import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -57,6 +57,7 @@ import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -313,7 +314,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               bodyStream.close();
               if (isEncrypting()) {
                 Map<String, String> userDefinedHeaders =
-                    toCaseInsensitiveMap(response.getAllHeaders());
+                    createCaseInsensitiveMap(response.getAllHeaders());
                 AbstractMap.SimpleEntry<String, String> encryptionData =
                     parseEncryptionData(
                         userDefinedHeaders.get(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP),
@@ -353,7 +354,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Download successful", false);
 
           // Get the user-defined BLOB metadata
-          Map<String, String> userDefinedMetadata = toCaseInsensitiveMap(blob.getMetadata());
+          Map<String, String> userDefinedMetadata = SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
           if (isEncrypting()) {
             if (!userDefinedMetadata.isEmpty()) {
               AbstractMap.SimpleEntry<String, String> encryptionData =
@@ -498,7 +499,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
               if (isEncrypting()) {
                 Map<String, String> userDefinedHeaders =
-                    toCaseInsensitiveMap(response.getAllHeaders());
+                    createCaseInsensitiveMap(response.getAllHeaders());
                 AbstractMap.SimpleEntry<String, String> encryptionData =
                     parseEncryptionData(
                         userDefinedHeaders.get(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP),
@@ -532,7 +533,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           inputStream = Channels.newInputStream(blob.reader());
           if (isEncrypting()) {
             // Get the user-defined BLOB metadata
-            Map<String, String> userDefinedMetadata = toCaseInsensitiveMap(blob.getMetadata());
+            Map<String, String> userDefinedMetadata = SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
             AbstractMap.SimpleEntry<String, String> encryptionData =
                 parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP), queryId);
 

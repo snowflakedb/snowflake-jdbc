@@ -32,7 +32,7 @@ public class CommonObjectMetadata implements StorageObjectMetadata {
       long contentLength, String contentEncoding, Map<String, String> userDefinedMetadata) {
     this.contentEncoding = contentEncoding;
     this.contentLength = contentLength;
-    this.userDefinedMetadata = SnowflakeUtil.toCaseInsensitiveMap(userDefinedMetadata);
+    this.userDefinedMetadata = SnowflakeUtil.createCaseInsensitiveMap(userDefinedMetadata);
   }
 
   /**

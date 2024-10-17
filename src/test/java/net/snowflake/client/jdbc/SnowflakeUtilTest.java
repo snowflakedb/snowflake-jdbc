@@ -5,7 +5,7 @@ package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.extractColumnMetadata;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
-import static net.snowflake.client.jdbc.SnowflakeUtil.toCaseInsensitiveMap;
+import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.http.Header;
-import org.apache.http.message.BasicHeader;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -88,11 +87,11 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
   }
 
   @Test
-  public void shouldConvertToCaseInsensitiveMap() {
+  public void shouldConvertCreateCaseInsensitiveMap() {
     Map<String, String> map = new HashMap<>();
     map.put("key1", "value1");
 
-    map = toCaseInsensitiveMap(map);
+    map = SnowflakeUtil.createCaseInsensitiveMap(map);
     assertTrue(map instanceof TreeMap);
     assertEquals(String.CASE_INSENSITIVE_ORDER, ((TreeMap<String, String>) map).comparator());
     assertEquals("value1", map.get("key1"));
@@ -104,12 +103,10 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
   }
 
   @Test
-  public void shouldConvertHeadersToCaseInsensitiveMap() {
+  public void shouldConvertHeadersCreateCaseInsensitiveMap() {
     Header[] headers =
-        new Header[] {
-          new BasicHeader("key1", "value1"), new BasicHeader("key2", "value2"),
-        };
-    Map<String, String> map = toCaseInsensitiveMap(headers);
+        null;
+    Map<String, String> map = createCaseInsensitiveMap(headers);
     assertTrue(map instanceof TreeMap);
     assertEquals(String.CASE_INSENSITIVE_ORDER, ((TreeMap<String, String>) map).comparator());
     assertEquals("value1", map.get("key1"));

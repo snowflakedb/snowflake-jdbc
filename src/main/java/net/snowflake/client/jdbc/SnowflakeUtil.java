@@ -845,16 +845,22 @@ public class SnowflakeUtil {
    * on drivers side e.g. some drivers might internally convert headers to canonical form.
    */
   @SnowflakeJdbcInternalApi
-  public static Map<String, String> toCaseInsensitiveMap(Map<String, String> input) {
+  public static Map<String, String> createCaseInsensitiveMap(Map<String, String> input) {
     Map<String, String> caseInsensitiveMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    caseInsensitiveMap.putAll(input);
+    if (input != null) {
+      caseInsensitiveMap.putAll(input);
+    }
     return caseInsensitiveMap;
   }
 
   /** toCaseInsensitiveMap, but adjusted to Headers[] argument type */
   @SnowflakeJdbcInternalApi
-  public static Map<String, String> toCaseInsensitiveMap(Header[] headers) {
-    return toCaseInsensitiveMap(
-        stream(headers).collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)));
+  public static Map<String, String> createCaseInsensitiveMap(Header[] headers) {
+    if (headers != null) {
+      return createCaseInsensitiveMap(
+              stream(headers).collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)));
+    } else {
+      return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
   }
 }

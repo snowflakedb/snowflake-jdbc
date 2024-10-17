@@ -29,7 +29,7 @@ public class S3ObjectMetadata implements StorageObjectMetadata {
 
   @Override
   public Map<String, String> getUserMetadata() {
-    return SnowflakeUtil.toCaseInsensitiveMap(objectMetadata.getUserMetadata());
+    return SnowflakeUtil.createCaseInsensitiveMap(objectMetadata.getUserMetadata());
   }
 
   @Override

@@ -8,7 +8,7 @@ import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPI
 import static net.snowflake.client.jdbc.SnowflakeUtil.createDefaultExecutorService;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getRootCause;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static net.snowflake.client.jdbc.SnowflakeUtil.toCaseInsensitiveMap;
+import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -66,6 +66,7 @@ import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.util.SFPair;
@@ -381,7 +382,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         // Pull object metadata from S3
         ObjectMetadata meta = amazonClient.getObjectMetadata(remoteStorageLocation, stageFilePath);
 
-        Map<String, String> metaMap = toCaseInsensitiveMap(meta.getUserMetadata());
+        Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
         String key = metaMap.get(AMZ_KEY);
         String iv = metaMap.get(AMZ_IV);
 
@@ -483,7 +484,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
         InputStream stream = file.getObjectContent();
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
-        Map<String, String> metaMap = toCaseInsensitiveMap(meta.getUserMetadata());
+        Map<String, String> metaMap = SnowflakeUtil.createCaseInsensitiveMap(meta.getUserMetadata());
 
         String key = metaMap.get(AMZ_KEY);
         String iv = metaMap.get(AMZ_IV);
