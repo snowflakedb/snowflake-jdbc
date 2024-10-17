@@ -485,7 +485,7 @@ public interface SnowflakeStorageClient {
    * @param contentLength the length of the encrypted content
    */
   @SnowflakeJdbcInternalApi
-  default void addEncryptionMetadataForGcm(
+  void addEncryptionMetadataForGcm(
       StorageObjectMetadata meta,
       MatDesc matDesc,
       byte[] encryptedKey,
@@ -493,9 +493,7 @@ public interface SnowflakeStorageClient {
       byte[] keyIvBytes,
       byte[] keyAad,
       byte[] dataAad,
-      long contentLength) {
-    // TODO GCM SNOW-1431870
-  }
+      long contentLength);
 
   /**
    * Adds digest metadata to the StorageObjectMetadata object
