@@ -127,9 +127,8 @@ public class StatementIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testExecuteSelect() throws SQLException {
     try (Statement statement = connection.createStatement()) {
-      statement.execute("alter session set jdbc_query_result_format = 'json'");
-      statement.execute("alter session set CLIENT_RESULT_CHUNK_SIZE = 48");
-      String sqlSelect = "select * from fake_sample_data.public.customer";
+
+      String sqlSelect = "select seq4() from table(generator(rowcount=>3))";
       boolean success = statement.execute(sqlSelect);
       assertTrue(success);
       String queryID1 = statement.unwrap(SnowflakeStatement.class).getQueryID();
