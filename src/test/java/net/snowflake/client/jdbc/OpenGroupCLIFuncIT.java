@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryOthers;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -20,7 +20,7 @@ import org.junit.experimental.categories.Category;
 @Category(TestCategoryOthers.class)
 public class OpenGroupCLIFuncIT extends BaseJDBCWithSharedConnectionIT {
 
-  @Before
+  @BeforeClass
   public void setSessionTimezone() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       statement.execute(
