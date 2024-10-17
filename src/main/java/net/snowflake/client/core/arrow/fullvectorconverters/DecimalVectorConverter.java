@@ -8,6 +8,8 @@ import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.DecimalVector;
 import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 @SnowflakeJdbcInternalApi
 public class DecimalVectorConverter extends SimpleArrowFullVectorConverter<DecimalVector> {
@@ -21,6 +23,10 @@ public class DecimalVectorConverter extends SimpleArrowFullVectorConverter<Decim
     super(allocator, vector, context, session, idx);
   }
 
+  private static FieldType getFieldType(boolean nullable, int scale, int precision) {
+    return new FieldType(nullable, new ArrowType.Decimal(precision, scale, 128), null);
+  }
+
   @Override
   protected boolean matchingType() {
     return (vector instanceof DecimalVector);
@@ -32,7 +38,9 @@ public class DecimalVectorConverter extends SimpleArrowFullVectorConverter<Decim
     String precisionString = vector.getField().getMetadata().get("precision");
     int scale = Integer.parseInt(scaleString);
     int precision = Integer.parseInt(precisionString);
-    DecimalVector resultVector = new DecimalVector(vector.getName(), allocator, precision, scale);
+    boolean nullable = vector.getField().isNullable();
+    DecimalVector resultVector =
+        new DecimalVector(vector.getName(), getFieldType(nullable, scale, precision), allocator);
     resultVector.allocateNew(vector.getValueCount());
     return resultVector;
   }

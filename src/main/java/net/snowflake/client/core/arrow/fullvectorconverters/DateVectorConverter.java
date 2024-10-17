@@ -9,6 +9,9 @@ import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.DateDayVector;
 import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.types.DateUnit;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 @SnowflakeJdbcInternalApi
 public class DateVectorConverter extends SimpleArrowFullVectorConverter<DateDayVector> {
@@ -25,6 +28,10 @@ public class DateVectorConverter extends SimpleArrowFullVectorConverter<DateDayV
     this.timeZone = timeZone;
   }
 
+  private static FieldType getFieldType(boolean nullable) {
+    return new FieldType(nullable, new ArrowType.Date(DateUnit.DAY), null);
+  }
+
   @Override
   protected boolean matchingType() {
     return vector instanceof DateDayVector;
@@ -32,7 +39,9 @@ public class DateVectorConverter extends SimpleArrowFullVectorConverter<DateDayV
 
   @Override
   protected DateDayVector initVector() {
-    DateDayVector resultVector = new DateDayVector(vector.getName(), allocator);
+    boolean nullable = vector.getField().isNullable();
+    DateDayVector resultVector =
+        new DateDayVector(vector.getName(), getFieldType(nullable), allocator);
     resultVector.allocateNew(vector.getValueCount());
     return resultVector;
   }
