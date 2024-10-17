@@ -3,12 +3,9 @@
  */
 package net.snowflake.client.jdbc.cloud.storage;
 
-import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
-
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import net.snowflake.client.jdbc.SnowflakeUtil;
-
 import java.util.Map;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 
 /**
  * Implementation of StorageObjectMetadata for S3 for remote storage object metadata.

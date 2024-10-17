@@ -7,7 +7,6 @@ import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPI
 import static net.snowflake.client.core.HttpUtil.setProxyForAzure;
 import static net.snowflake.client.core.HttpUtil.setSessionlessProxyForAzure;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
-import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -275,7 +274,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
       blob.downloadAttributes(null, null, opContext);
 
       // Get the user-defined BLOB metadata
-      Map<String, String> userDefinedMetadata = SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
+      Map<String, String> userDefinedMetadata =
+          SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
 
       // Get the BLOB system properties we care about
       BlobProperties properties = blob.getProperties();
@@ -350,7 +350,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         blob.downloadAttributes(null, transferOptions, opContext);
 
         // Get the user-defined BLOB metadata
-        Map<String, String> userDefinedMetadata = SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
+        Map<String, String> userDefinedMetadata =
+            SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
         AbstractMap.SimpleEntry<String, String> encryptionData =
             parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
 
@@ -449,7 +450,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         InputStream stream = blob.openInputStream(null, null, opContext);
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
-        Map<String, String> userDefinedMetadata = SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
+        Map<String, String> userDefinedMetadata =
+            SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
         AbstractMap.SimpleEntry<String, String> encryptionData =
             parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
         String key = encryptionData.getKey();

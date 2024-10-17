@@ -858,7 +858,8 @@ public class SnowflakeUtil {
   public static Map<String, String> createCaseInsensitiveMap(Header[] headers) {
     if (headers != null) {
       return createCaseInsensitiveMap(
-              stream(headers).collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)));
+          stream(headers)
+              .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)));
     } else {
       return new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }

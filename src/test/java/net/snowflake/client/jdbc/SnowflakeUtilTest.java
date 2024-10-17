@@ -3,9 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
+import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
 import static net.snowflake.client.jdbc.SnowflakeUtil.extractColumnMetadata;
 import static net.snowflake.client.jdbc.SnowflakeUtil.getSnowflakeType;
-import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -104,8 +104,7 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
 
   @Test
   public void shouldConvertHeadersCreateCaseInsensitiveMap() {
-    Header[] headers =
-        null;
+    Header[] headers = null;
     Map<String, String> map = createCaseInsensitiveMap(headers);
     assertTrue(map instanceof TreeMap);
     assertEquals(String.CASE_INSENSITIVE_ORDER, ((TreeMap<String, String>) map).comparator());
