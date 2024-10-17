@@ -42,7 +42,6 @@ public class CommonObjectMetadata implements StorageObjectMetadata {
   public Map<String, String> getUserMetadata() {
     return userDefinedMetadata;
   }
-  ;
 
   /**
    * @return returns the size of object in bytes
