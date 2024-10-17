@@ -8,6 +8,8 @@ import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarCharVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.util.Text;
 
 @SnowflakeJdbcInternalApi
@@ -19,6 +21,10 @@ public class VarCharVectorConverter extends SimpleArrowFullVectorConverter<VarCh
       SFBaseSession session,
       int idx) {
     super(allocator, vector, context, session, idx);
+  }
+
+  private static FieldType getFieldType(boolean nullable) {
+    return new FieldType(nullable, new ArrowType.Utf8(), null);
   }
 
   @Override

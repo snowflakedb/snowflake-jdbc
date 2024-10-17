@@ -8,6 +8,8 @@ import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 @SnowflakeJdbcInternalApi
 public class BitVectorConverter extends SimpleArrowFullVectorConverter<BitVector> {
@@ -21,6 +23,10 @@ public class BitVectorConverter extends SimpleArrowFullVectorConverter<BitVector
     super(allocator, vector, context, session, idx);
   }
 
+  private static FieldType getFieldType(boolean nullable) {
+    return new FieldType(nullable, new ArrowType.Bool(), null);
+  }
+
   @Override
   protected boolean matchingType() {
     return vector instanceof BitVector;
@@ -28,7 +34,8 @@ public class BitVectorConverter extends SimpleArrowFullVectorConverter<BitVector
 
   @Override
   protected BitVector initVector() {
-    BitVector resultVector = new BitVector(vector.getName(), allocator);
+    boolean nullable = vector.getField().isNullable();
+    BitVector resultVector = new BitVector(vector.getName(), getFieldType(nullable), allocator);
     resultVector.allocateNew(vector.getValueCount());
     return resultVector;
   }

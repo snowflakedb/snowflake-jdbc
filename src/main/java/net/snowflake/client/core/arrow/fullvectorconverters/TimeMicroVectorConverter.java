@@ -4,6 +4,7 @@ import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.TimeMicroVector;
 import org.apache.arrow.vector.ValueVector;
+import org.apache.arrow.vector.types.TimeUnit;
 
 @SnowflakeJdbcInternalApi
 public class TimeMicroVectorConverter extends TimeVectorConverter<TimeMicroVector> {
@@ -13,8 +14,19 @@ public class TimeMicroVectorConverter extends TimeVectorConverter<TimeMicroVecto
   }
 
   @Override
+  protected TimeUnit getTimeUnit() {
+    return TimeUnit.MICROSECOND;
+  }
+
+  @Override
+  protected int getWidth() {
+    return 64;
+  }
+
+  @Override
   protected TimeMicroVector initVector() {
-    return new TimeMicroVector(vector.getName(), allocator);
+    return new TimeMicroVector(
+        vector.getName(), getFieldType(vector.getField().isNullable()), allocator);
   }
 
   @Override

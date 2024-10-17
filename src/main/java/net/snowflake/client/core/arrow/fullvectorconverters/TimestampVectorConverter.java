@@ -15,7 +15,9 @@ import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 @SnowflakeJdbcInternalApi
 public class TimestampVectorConverter implements ArrowFullVectorConverter {
@@ -37,6 +39,9 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
   private static final long NANOS_PER_MILLI = 1000000L;
   private static final int MILLIS_PER_SECOND = 1000;
   private static final int SECONDS_PER_MINUTE = 60;
+  private static final FieldType intType = new FieldType(false, new ArrowType.Int(32, true), null);
+  private static final FieldType bigIntType =
+      new FieldType(false, new ArrowType.Int(64, true), null);
 
   public TimestampVectorConverter(
       RootAllocator allocator,
@@ -51,8 +56,12 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
     this.isNTZ = isNTZ;
   }
 
+  private static FieldType getFieldType(boolean nullable) {
+    return new FieldType(nullable, new ArrowType.Struct(), null);
+  }
+
   private IntVector makeVectorOfZeroes(int length) {
-    IntVector vector = new IntVector(FIELD_NAME_FRACTION, allocator);
+    IntVector vector = new IntVector(FIELD_NAME_FRACTION, intType, allocator);
     vector.allocateNew(length);
     vector.zeroVector();
     vector.setValueCount(length);
@@ -60,7 +69,7 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
   }
 
   private IntVector makeVectorOfUTCOffsets(int length) {
-    IntVector vector = new IntVector(FIELD_NAME_TIME_ZONE_INDEX, allocator);
+    IntVector vector = new IntVector(FIELD_NAME_TIME_ZONE_INDEX, intType, allocator);
     vector.allocateNew(length);
     vector.setValueCount(length);
     for (int i = 0; i < length; i++) {
@@ -74,7 +83,7 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
     int scale = Integer.parseInt(vector.getField().getMetadata().get("scale"));
     if (scale == 0) {
       IntVector fractions = makeVectorOfZeroes(length);
-      BigIntVector epoch = new BigIntVector(FIELD_NAME_EPOCH, allocator);
+      BigIntVector epoch = new BigIntVector(FIELD_NAME_EPOCH, bigIntType, allocator);
       fractions
           .getValidityBuffer()
           .setBytes(0L, vector.getValidityBuffer(), 0L, vector.getValidityBuffer().capacity());
@@ -83,10 +92,10 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
     }
     long scaleFactor = ArrowResultUtil.powerOfTen(scale);
     long fractionScaleFactor = ArrowResultUtil.powerOfTen(9 - scale);
-    BigIntVector epoch = new BigIntVector(FIELD_NAME_EPOCH, allocator);
+    BigIntVector epoch = new BigIntVector(FIELD_NAME_EPOCH, bigIntType, allocator);
     epoch.allocateNew(length);
     epoch.setValueCount(length);
-    IntVector fractions = new IntVector(FIELD_NAME_FRACTION, allocator);
+    IntVector fractions = new IntVector(FIELD_NAME_FRACTION, intType, allocator);
     fractions.allocateNew(length);
     fractions.setValueCount(length);
     for (int i = 0; i < length; i++) {
@@ -98,7 +107,7 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
 
   private IntVector makeTimeZoneOffsets(
       BigIntVector seconds, IntVector fractions, TimeZone timeZone) {
-    IntVector offsets = new IntVector(FIELD_NAME_TIME_ZONE_INDEX, allocator);
+    IntVector offsets = new IntVector(FIELD_NAME_TIME_ZONE_INDEX, intType, allocator);
     offsets.allocateNew(seconds.getValueCount());
     offsets.setValueCount(seconds.getValueCount());
     for (int i = 0; i < seconds.getValueCount(); i++) {
@@ -113,7 +122,9 @@ public class TimestampVectorConverter implements ArrowFullVectorConverter {
   }
 
   private StructVector pack(BigIntVector seconds, IntVector fractions, IntVector offsets) {
-    StructVector result = StructVector.empty(vector.getName(), allocator);
+    boolean nullable = vector.getField().isNullable();
+    StructVector result =
+        new StructVector(vector.getName(), allocator, getFieldType(nullable), null);
     List<Field> fields =
         new ArrayList<Field>() {
           {

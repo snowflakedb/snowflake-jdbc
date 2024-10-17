@@ -12,7 +12,9 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.ListVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 @SnowflakeJdbcInternalApi
 public class ListVectorConverter extends AbstractFullVectorConverter {
@@ -41,8 +43,13 @@ public class ListVectorConverter extends AbstractFullVectorConverter {
     this.valueTargetType = valueTargetType;
   }
 
+  private static FieldType getFieldType(boolean nullable) {
+    return new FieldType(nullable, new ArrowType.List(), null);
+  }
+
   protected ListVector initVector(String name, Field field) {
-    ListVector convertedListVector = ListVector.empty(name, allocator);
+    boolean nullable = vector.getField().isNullable();
+    ListVector convertedListVector = new ListVector(name, allocator, getFieldType(nullable), null);
     ArrayList<Field> fields = new ArrayList<>();
     fields.add(field);
     convertedListVector.initializeChildrenFromFields(fields);
@@ -58,8 +65,7 @@ public class ListVectorConverter extends AbstractFullVectorConverter {
       FieldVector convertedDataVector =
           ArrowFullVectorConverterUtil.convert(
               allocator, dataVector, context, session, timeZoneToUse, 0, valueTargetType);
-      // TODO: change to convertedDataVector and make all necessary changes to make it work
-      ListVector convertedListVector = initVector(vector.getName(), dataVector.getField());
+      ListVector convertedListVector = initVector(vector.getName(), convertedDataVector.getField());
       convertedListVector.allocateNew();
       convertedListVector.setValueCount(listVector.getValueCount());
       convertedListVector.getOffsetBuffer().setBytes(0, listVector.getOffsetBuffer());
