@@ -67,6 +67,7 @@ public class HeartbeatBackground implements Runnable {
    * @param session the session will be added
    * @param masterTokenValidityInSecs time interval for which client need to check validity of
    *     master token with server
+   * @param heartbeatFrequencyInSecs heartbeat frequency in seconds
    */
   protected synchronized void addSession(
       SFSession session, long masterTokenValidityInSecs, int heartbeatFrequencyInSecs) {

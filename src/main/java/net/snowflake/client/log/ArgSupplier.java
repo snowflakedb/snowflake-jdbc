@@ -11,5 +11,10 @@ package net.snowflake.client.log;
  */
 @FunctionalInterface
 public interface ArgSupplier {
+  /**
+   * Get value
+   *
+   * @return Object value.
+   */
   Object get();
 }
