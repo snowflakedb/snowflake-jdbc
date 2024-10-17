@@ -65,6 +65,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLInitializationException;
 import org.apache.http.util.EntityUtils;
 
+/** HttpUtil class */
 public class HttpUtil {
   private static final SFLogger logger = SFLoggerFactory.getLogger(HttpUtil.class);
 

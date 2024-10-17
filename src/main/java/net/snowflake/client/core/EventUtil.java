@@ -36,7 +36,7 @@ public class EventUtil {
   /**
    * Junit is not recognizing the system properties for EventTest, so overriding the value here
    *
-   * @param value
+   * @param value string value
    */
   public static void setDumpPathPrefixForTesting(String value) {
     DUMP_PATH_PREFIX = value;

@@ -12,25 +12,54 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
  * to a single result set. a.k.a each result set object should have its own formatter info
  */
 public interface DataConversionContext {
-  /** timestamp_ltz formatter */
+  /**
+   * timestamp_ltz formatter
+   *
+   * @return SnowflakeDateTimeFormat
+   */
   SnowflakeDateTimeFormat getTimestampLTZFormatter();
 
-  /** timestamp_ntz formatter */
+  /**
+   * timestamp_ntz formatter
+   *
+   * @return SnowflakeDateTimeFormat
+   */
   SnowflakeDateTimeFormat getTimestampNTZFormatter();
 
-  /** timestamp_tz formatter */
+  /**
+   * timestamp_tz formatter
+   *
+   * @return SnowflakeDateTimeFormat
+   */
   SnowflakeDateTimeFormat getTimestampTZFormatter();
 
-  /** date formatter */
+  /**
+   * date formatter
+   *
+   * @return SnowflakeDateTimeFormat
+   */
   SnowflakeDateTimeFormat getDateFormatter();
 
-  /** time formatter */
+  /**
+   * time formatter
+   *
+   * @return SnowflakeDateTimeFormat
+   */
   SnowflakeDateTimeFormat getTimeFormatter();
 
-  /** binary formatter */
+  /**
+   * binary formatter
+   *
+   * @return SFBinaryFormat
+   */
   SFBinaryFormat getBinaryFormatter();
 
-  /** get scale from Snowflake metadata */
+  /**
+   * get scale from Snowflake metadata
+   *
+   * @param columnIndex column index
+   * @return scale value
+   */
   int getScale(int columnIndex);
 
   /**
