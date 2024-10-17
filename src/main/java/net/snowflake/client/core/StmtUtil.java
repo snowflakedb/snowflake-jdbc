@@ -681,8 +681,23 @@ public class StmtUtil {
    * @param stmtInput input statement
    * @throws SFException if there is an internal exception
    * @throws SnowflakeSQLException if failed to cancel the statement
+   * @deprecated use {@link #cancel(StmtInput, CancellationReason)} instead
    */
+  @Deprecated
   public static void cancel(StmtInput stmtInput) throws SFException, SnowflakeSQLException {
+    cancel(stmtInput, CancellationReason.UNKNOWN);
+  }
+
+  /**
+   * Cancel a statement identifiable by a request id
+   *
+   * @param stmtInput input statement
+   * @param cancellationReason reason for the cancellation
+   * @throws SFException if there is an internal exception
+   * @throws SnowflakeSQLException if failed to cancel the statement
+   */
+  public static void cancel(StmtInput stmtInput, CancellationReason cancellationReason)
+      throws SFException, SnowflakeSQLException {
     HttpPost httpRequest = null;
 
     AssertUtil.assertTrue(
@@ -701,7 +716,7 @@ public class StmtUtil {
 
     try {
       URIBuilder uriBuilder = new URIBuilder(stmtInput.serverUrl);
-
+      logger.warn("Cancelling query {} with reason {}", stmtInput.requestId, cancellationReason);
       logger.debug("Aborting query: {}", stmtInput.sql);
 
       uriBuilder.setPath(SF_PATH_ABORT_REQUEST_V1);

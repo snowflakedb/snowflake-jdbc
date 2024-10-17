@@ -20,6 +20,11 @@
         <Reason>Optional</Reason>
     </LinkageError>
     <LinkageError>
+        <Target><Package name="com.github.luben.zstd"/></Target>
+        <Source><Package name="org.apache.commons.compress.compressors"/></Source>
+        <Reason>Optional</Reason>
+    </LinkageError>
+    <LinkageError>
         <Target><Package name="com.google.appengine.api.urlfetch"/></Target>
         <Source><Package name="com.google.api.client.extensions.appengine"/></Source>
         <Reason>provided appengine</Reason>
@@ -37,6 +42,16 @@
     <LinkageError>
         <Target><Package name="org.bouncycastle"/></Target>
         <Source><Package name="org.bouncycastle.pkix"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="java.nio"/></Target>
+        <Source><Package name="org.bouncycastle.jcajce.provider.symmetric.util"/></Source>
+        <Reason>?</Reason>
+    </LinkageError>
+    <LinkageError>
+        <Target><Package name="java.nio"/></Target>
+        <Source><Package name="org.bouncycastle.pqc.legacy.crypto.ntru"/></Source>
         <Reason>?</Reason>
     </LinkageError>
     <!--

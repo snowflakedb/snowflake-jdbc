@@ -1178,7 +1178,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
       assertResultValueAndType(statement, BigDecimal.valueOf(3.3), "bd", BigDecimal.class);
       assertResultValueAndType(statement, "FALSE", "bool", String.class);
       assertResultValueAndType(statement, Boolean.FALSE, "bool", Boolean.class);
-      assertResultValueAndType(statement, Long.valueOf(0), "bool", Long.class);
+      assertResultValueAndType(statement, 0L, "bool", Long.class);
       assertResultValueAsString(
           statement,
           new SnowflakeTimestampWithTimezone(
