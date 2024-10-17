@@ -108,6 +108,12 @@ public class ArrowFullVectorConverterUtil {
             return new TimeMicroVectorConverter(allocator, vector).convert();
           case TIMENANO:
             return new TimeNanoVectorConverter(allocator, vector).convert();
+          case TIMESTAMPNANOTZ:
+            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, false)
+                .convert();
+          case TIMESTAMPNANO:
+            return new TimestampVectorConverter(allocator, vector, context, timeZoneToUse, true)
+                .convert();
           case STRUCT:
             return new StructVectorConverter(
                     allocator, vector, context, session, timeZoneToUse, idx, null)

@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.stream.Stream;
 import net.snowflake.client.category.TestCategoryArrow;
 import net.snowflake.client.core.SFArrowResultSet;
 import net.snowflake.client.core.SFException;
+import net.snowflake.client.core.arrow.ArrowVectorConverter;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.BitVector;
 import org.apache.arrow.vector.DateDayVector;
@@ -66,9 +68,9 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
 
   private static void assertNoMemoryLeaks(ResultSet rs) throws SQLException {
     assertEquals(
+        0,
         ((SFArrowResultSet) rs.unwrap(SnowflakeResultSetV1.class).sfBaseResultSet)
-            .getAllocatedMemory(),
-        0);
+            .getAllocatedMemory());
   }
 
   @Test
@@ -830,5 +832,66 @@ public class ArrowBatchesIT extends BaseJDBCWithSharedConnectionIT {
     assertTrue(expected.containsAll(values));
 
     assertEquals(2, totalRows);
+  }
+
+  private void testTimestampCase(String query) throws Exception, SFException {
+    Timestamp tsFromBatch;
+    Timestamp tsFromRow;
+
+    try (Statement statement = connection.createStatement()) {
+      try (ResultSet rs = statement.executeQuery(query)) {
+        ArrowBatches batches = rs.unwrap(SnowflakeResultSet.class).getArrowBatches();
+
+        ArrowBatch batch = batches.next();
+        VectorSchemaRoot root = batch.fetch().get(0);
+        assertTrue(root.getVector(0) instanceof StructVector);
+        ArrowVectorConverter converter = batch.getTimestampConverter(root.getVector(0), 1);
+        tsFromBatch = converter.toTimestamp(0, null);
+        root.close();
+        assertNoMemoryLeaks(rs);
+      }
+      try (ResultSet rs = statement.executeQuery(query)) {
+        rs.next();
+        tsFromRow = rs.getTimestamp(1);
+      }
+    }
+    assertTrue(tsFromBatch.equals(tsFromRow));
+  }
+
+  private void testTimestampBase(String query) throws Exception, SFException {
+    testTimestampCase(query);
+    testTimestampCase(query + "(0)");
+    testTimestampCase(query + "(1)");
+  }
+
+  @Test
+  public void testTimestampTZBatch() throws Exception, SFException {
+    testTimestampBase("select '2020-04-05 12:22:12+0700'::TIMESTAMP_TZ");
+  }
+
+  @Test
+  public void testTimestampLTZUseSessionTimezoneBatch() throws Exception, SFException {
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set JDBC_USE_SESSION_TIMEZONE=true");
+    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_LTZ");
+    statement.execute("alter session unset JDBC_USE_SESSION_TIMEZONE");
+  }
+
+  @Test
+  public void testTimestampLTZBatch() throws Exception, SFException {
+    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_LTZ");
+  }
+
+  @Test
+  public void testTimestampNTZBatch() throws Exception, SFException {
+    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_NTZ");
+  }
+
+  @Test
+  public void testTimestampNTZDontHonorClientTimezone() throws Exception, SFException {
+    Statement statement = connection.createStatement();
+    statement.execute("alter session set CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ=false");
+    testTimestampBase("select '2020-04-05 12:22:12'::TIMESTAMP_LTZ");
+    statement.execute("alter session unset CLIENT_HONOR_CLIENT_TZ_FOR_TIMESTAMP_NTZ");
   }
 }
