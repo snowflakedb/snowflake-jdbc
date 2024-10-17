@@ -24,6 +24,7 @@ import java.util.TreeMap;
 import net.snowflake.client.category.TestCategoryCore;
 import net.snowflake.client.core.ObjectMapperFactory;
 import org.apache.http.Header;
+import org.apache.http.message.BasicHeader;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -104,7 +105,9 @@ public class SnowflakeUtilTest extends BaseJDBCTest {
 
   @Test
   public void shouldConvertHeadersCreateCaseInsensitiveMap() {
-    Header[] headers = null;
+    Header[] headers =
+        new Header[] {new BasicHeader("key1", "value1"), new BasicHeader("key2", "value2")};
+
     Map<String, String> map = createCaseInsensitiveMap(headers);
     assertTrue(map instanceof TreeMap);
     assertEquals(String.CASE_INSENSITIVE_ORDER, ((TreeMap<String, String>) map).comparator());
