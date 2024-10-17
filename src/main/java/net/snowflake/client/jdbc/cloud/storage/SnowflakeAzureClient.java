@@ -575,7 +575,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         CloudBlockBlob blob = container.getBlockBlobReference(destFileName);
 
         // Set the user-defined/Snowflake metadata and upload the BLOB
-        blob.setMetadata((HashMap<String, String>) meta.getUserMetadata());
+        blob.setMetadata(new HashMap<>(meta.getUserMetadata()));
 
         BlobRequestOptions transferOptions = new BlobRequestOptions();
         transferOptions.setConcurrentRequestCount(parallelism);
