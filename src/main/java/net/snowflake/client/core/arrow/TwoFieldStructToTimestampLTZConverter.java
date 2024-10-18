@@ -26,6 +26,13 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   private BigIntVector epochs;
   private IntVector fractions;
 
+  /**
+   * Constructor
+   *
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public TwoFieldStructToTimestampLTZConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TIMESTAMP_LTZ.name(), fieldVector, columnIndex, context);

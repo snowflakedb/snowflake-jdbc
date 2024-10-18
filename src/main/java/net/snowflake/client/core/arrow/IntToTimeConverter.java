@@ -18,10 +18,18 @@ import net.snowflake.common.core.SFTime;
 import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.ValueVector;
 
+/** Convert from Arrow IntVector to Time. */
 public class IntToTimeConverter extends AbstractArrowVectorConverter {
   private IntVector intVector;
   private ByteBuffer byteBuf = ByteBuffer.allocate(IntVector.TYPE_WIDTH);
 
+  /**
+   * Constructor
+   *
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public IntToTimeConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TIME.name(), fieldVector, columnIndex, context);

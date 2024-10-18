@@ -30,8 +30,6 @@ import net.snowflake.common.core.SqlState;
 /**
  * Snowflake ResultSet implementation
  *
- * <p>
- *
  * @author jhuang
  */
 public class SFResultSet extends SFJsonResultSet {

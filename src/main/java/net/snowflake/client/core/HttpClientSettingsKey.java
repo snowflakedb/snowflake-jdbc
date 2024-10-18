@@ -122,7 +122,11 @@ public class HttpClientSettingsKey implements Serializable {
     return this.userAgentSuffix;
   }
 
-  /** Be careful of using this! Should only be called when password is later masked. */
+  /**
+   * Be careful of using this! Should only be called when password is later masked.
+   *
+   * @return proxy password
+   */
   @SnowflakeJdbcInternalApi
   public String getProxyPassword() {
     return this.proxyPassword;
