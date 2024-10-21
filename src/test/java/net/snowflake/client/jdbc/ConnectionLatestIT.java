@@ -12,6 +12,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.AnyOf.anyOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -48,7 +49,9 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningNotOnAWS;
 import net.snowflake.client.RunningOnGithubAction;
@@ -1617,5 +1620,38 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       assertEquals(Duration.ofMillis(100), HttpUtil.getConnectionTimeout());
       assertEquals(Duration.ofMillis(200), HttpUtil.getSocketTimeout());
     }
+  }
+
+  /** Added in > 3.19.0 */
+  @Test
+  public void shouldFailOnSslExceptionWithLinkToTroubleShootingGuide() throws InterruptedException {
+    Properties properties = new Properties();
+    properties.put("user", "fakeuser");
+    properties.put("password", "testpassword");
+    properties.put("ocspFailOpen", Boolean.FALSE.toString());
+
+    int maxRetries = 5;
+    int retry = 0;
+
+    // *.badssl.com may fail on timeouts
+    while (retry < maxRetries) {
+      try {
+        DriverManager.getConnection("jdbc:snowflake://expired.badssl.com/", properties);
+        fail("should fail");
+      } catch (SQLException e) {
+        if (!(e.getCause() instanceof SSLHandshakeException)) {
+          retry++;
+          Thread.sleep(1000 * new Random().nextInt(3));
+          continue;
+        }
+        assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
+        assertTrue(
+            e.getMessage()
+                .contains(
+                    "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
+        return;
+      }
+    }
+    fail("All retries failed");
   }
 }
