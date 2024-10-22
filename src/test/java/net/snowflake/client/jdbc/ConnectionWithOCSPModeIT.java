@@ -421,7 +421,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
       // *.badssl.com may fail with timeout
       if (!(ex.getCause() instanceof SSLPeerUnverifiedException)
           && !(ex.getCause() instanceof SSLHandshakeException)
-          && ex.getCause().getMessage().toLowerCase().contains("timeout")) {
+          && ex.getCause().getMessage().toLowerCase().contains("timed out")) {
         return;
       }
       assertThat(ex, instanceOf(SnowflakeSQLException.class));

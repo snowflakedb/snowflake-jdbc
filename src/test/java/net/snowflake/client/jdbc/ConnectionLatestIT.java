@@ -1635,7 +1635,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     } catch (SQLException e) {
       // *.badssl.com may fail with timeout
       if (!(e.getCause() instanceof SSLHandshakeException)
-          && e.getCause().getMessage().toLowerCase().contains("timeout")) {
+          && e.getCause().getMessage().toLowerCase().contains("timed out")) {
         return;
       }
       assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
