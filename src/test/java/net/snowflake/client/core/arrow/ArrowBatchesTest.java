@@ -112,11 +112,11 @@ public class ArrowBatchesTest extends BaseConverterTest {
     FieldType mapVectorFieldType = new FieldType(true, new ArrowType.Map(false), null);
     MapVector mapVector = new MapVector("map", allocator, mapVectorFieldType, null);
     mapVector.initializeChildrenFromFields(
-            new ArrayList<Field>() {
-              {
-                add(entryVector.getField());
-              }
-            });
+        new ArrayList<Field>() {
+          {
+            add(entryVector.getField());
+          }
+        });
     mapVector.allocateNew();
     mapVector.setValueCount(1);
     mapVector.getOffsetBuffer().setByte(0, 0);
@@ -135,7 +135,8 @@ public class ArrowBatchesTest extends BaseConverterTest {
     assertEquals(
         convertedVector.getField().getChildren().get(0).getChildren().get(0).getType(),
         new ArrowType.Decimal(18, 3, 128));
-    JsonStringArrayList<JsonStringHashMap<String, Object>> result = (JsonStringArrayList<JsonStringHashMap<String, Object>>) convertedVector.getObject(0);
+    JsonStringArrayList<JsonStringHashMap<String, Object>> result =
+        (JsonStringArrayList<JsonStringHashMap<String, Object>>) convertedVector.getObject(0);
     assertEquals(result.get(0).get("key"), new Text("a"));
     assertEquals(result.get(1).get("key"), new Text("b"));
     assertEquals(result.get(0).get("value"), BigDecimal.valueOf(0.001));
