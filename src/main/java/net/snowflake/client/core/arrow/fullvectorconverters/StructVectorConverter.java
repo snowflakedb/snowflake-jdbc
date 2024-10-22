@@ -15,7 +15,9 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.StructVector;
+import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.util.TransferPair;
 
 @SnowflakeJdbcInternalApi
@@ -45,6 +47,10 @@ public class StructVectorConverter extends AbstractFullVectorConverter {
     this.targetTypes = targetTypes;
   }
 
+  private static FieldType getFieldType(boolean nullable) {
+    return new FieldType(nullable, new ArrowType.Struct(), null);
+  }
+
   protected FieldVector convertVector()
       throws SFException, SnowflakeSQLException, SFArrowException {
     try {
@@ -63,7 +69,10 @@ public class StructVectorConverter extends AbstractFullVectorConverter {
 
       List<Field> convertedFields =
           convertedVectors.stream().map(ValueVector::getField).collect(Collectors.toList());
-      StructVector converted = StructVector.empty(vector.getName(), allocator);
+
+      boolean nullable = vector.getField().isNullable();
+      StructVector converted =
+          new StructVector(vector.getName(), allocator, getFieldType(nullable), null);
       converted.allocateNew();
       converted.initializeChildrenFromFields(convertedFields);
       for (FieldVector convertedVector : convertedVectors) {
