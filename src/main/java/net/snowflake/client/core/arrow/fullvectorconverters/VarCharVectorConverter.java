@@ -34,7 +34,9 @@ public class VarCharVectorConverter extends SimpleArrowFullVectorConverter<VarCh
 
   @Override
   protected VarCharVector initVector() {
-    VarCharVector resultVector = new VarCharVector(vector.getName(), allocator);
+    boolean nullable = vector.getField().isNullable();
+    VarCharVector resultVector =
+        new VarCharVector(vector.getName(), getFieldType(nullable), allocator);
     resultVector.allocateNew(vector.getValueCount());
     return resultVector;
   }
