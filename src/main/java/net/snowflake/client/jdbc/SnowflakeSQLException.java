@@ -14,7 +14,7 @@ import net.snowflake.common.core.ResourceBundleManager;
  * @author jhuang
  */
 public class SnowflakeSQLException extends SQLException {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeSQLException.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeSQLException.class);
 
   private static final long serialVersionUID = 1L;
 
@@ -44,15 +44,22 @@ public class SnowflakeSQLException extends SQLException {
 
     // log user error from GS at fine level
     logger.debug(
-        "Snowflake exception: {}, sqlState:{}, vendorCode:{}, queryId:{}",
+        "Snowflake exception: {}, sqlState: {}, vendorCode: {}, queryId: {}",
         reason,
         sqlState,
         vendorCode,
         queryId);
   }
 
+  /** use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, String)} */
+  @Deprecated
   public SnowflakeSQLException(String reason, String sqlState) {
+    this((String) null, reason, sqlState);
+  }
+
+  public SnowflakeSQLException(String queryId, String reason, String sqlState) {
     super(reason, sqlState);
+    this.queryId = queryId;
     // log user error from GS at fine level
     logger.debug("Snowflake exception: {}, sqlState:{}", reason, sqlState);
   }
@@ -70,7 +77,7 @@ public class SnowflakeSQLException extends SQLException {
         vendorCode);
     this.queryId = queryId;
     logger.debug(
-        "Snowflake exception: {}, sqlState:{}, vendorCode:{}",
+        "Snowflake exception: {}, sqlState: {}, vendorCode: {}",
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode)),
         sqlState,
         vendorCode);
@@ -89,7 +96,7 @@ public class SnowflakeSQLException extends SQLException {
         vendorCode);
     this.queryId = queryId;
     logger.debug(
-        "Snowflake exception: {}, sqlState:{}, vendorCode:{}",
+        "Snowflake exception: {}, sqlState: {}, vendorCode: {}",
         errorResourceBundleManager.getLocalizedMessage(String.valueOf(vendorCode), params),
         sqlState,
         vendorCode);
@@ -170,6 +177,10 @@ public class SnowflakeSQLException extends SQLException {
 
   public SnowflakeSQLException(String reason) {
     super(reason);
+  }
+
+  public SnowflakeSQLException(Throwable ex, String message) {
+    super(message, ex);
   }
 
   public String getQueryId() {

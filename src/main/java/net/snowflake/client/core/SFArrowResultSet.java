@@ -37,6 +37,7 @@ import net.snowflake.client.jdbc.FieldMetadata;
 import net.snowflake.client.jdbc.SnowflakeResultSetSerializableV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
+import net.snowflake.client.jdbc.SnowflakeUtil;
 import net.snowflake.client.jdbc.telemetry.Telemetry;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
@@ -221,6 +222,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         // we don't support sort result when there are offline chunks
         if (resultSetSerializable.getChunkFileCount() > 0) {
           throw new SnowflakeSQLLoggedException(
+              queryId,
               session,
               ErrorCode.CLIENT_SIDE_SORTING_NOT_SUPPORTED.getMessageCode(),
               SqlState.FEATURE_NOT_SUPPORTED);
@@ -267,6 +269,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
           if (nextChunk == null) {
             throw new SnowflakeSQLLoggedException(
+                queryId,
                 session,
                 ErrorCode.INTERNAL_ERROR.getMessageCode(),
                 SqlState.INTERNAL_ERROR,
@@ -278,7 +281,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           if (currentChunkIterator.next()) {
 
             logger.debug(
-                "Moving to chunk index {}, row count={}", nextChunkIndex, nextChunk.getRowCount());
+                "Moving to chunk index: {}, row count: {}",
+                nextChunkIndex,
+                nextChunk.getRowCount());
 
             nextChunkIndex++;
             return true;
@@ -287,7 +292,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           }
         } catch (InterruptedException ex) {
           throw new SnowflakeSQLLoggedException(
-              session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+              queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
         }
       } else {
         // always free current chunk
@@ -300,7 +305,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           }
         } catch (InterruptedException e) {
           throw new SnowflakeSQLLoggedException(
-              session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+              queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
         }
       }
 
@@ -324,6 +329,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       resultChunk.readArrowStream(inputStream);
     } catch (IOException e) {
       throw new SnowflakeSQLLoggedException(
+          queryId,
           session,
           ErrorCode.INTERNAL_ERROR,
           "Failed to " + "load data in first chunk into arrow vector ex: " + e.getMessage());
@@ -435,7 +441,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       }
       return true;
     } else {
-      logger.debug("end of result", false);
+      logger.debug("End of result", false);
 
       /*
        * Here we check if the result has been truncated and throw exception if
@@ -445,7 +451,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           || Boolean.TRUE
               .toString()
               .equalsIgnoreCase(systemGetProperty("snowflake.enable_incident_test2"))) {
-        throw new SFException(ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
+        throw new SFException(queryId, ErrorCode.MAX_RESULT_LIMIT_EXCEEDED);
       }
 
       // mark end of result
@@ -557,6 +563,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
 
   @Override
   public Object getObject(int columnIndex) throws SFException {
+    int type = resultSetMetaData.getColumnType(columnIndex);
+    if (type == SnowflakeUtil.EXTRA_TYPES_VECTOR) {
+      return getString(columnIndex);
+    }
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
     int index = currentChunkIterator.getCurrentRowInRecordBatch();
     wasNull = converter.isNull(index);
@@ -564,7 +574,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(sessionTimeZone);
     Object obj = converter.toObject(index);
-    int type = resultSetMetaData.getColumnType(columnIndex);
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
     if (type == Types.STRUCT && isStructuredType) {
       if (converter instanceof VarCharConverter) {
@@ -591,7 +600,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
           resultSetMetaData.getColumnFields(columnIndex),
           sessionTimeZone);
     } catch (JsonProcessingException e) {
-      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+      throw new SFException(queryId, e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 
@@ -620,7 +629,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     } else if (converter instanceof VectorTypeConverter) {
       return getArrowArray((List<Object>) obj, columnIndex);
     } else {
-      throw new SFException(ErrorCode.INVALID_STRUCT_DATA);
+      throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 
@@ -629,6 +638,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
       if (fieldMetadataList.size() != 1) {
         throw new SFException(
+            queryId,
             ErrorCode.INVALID_STRUCT_DATA,
             "Wrong size of fields for array type " + fieldMetadataList.size());
       }
@@ -716,11 +726,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
                   .toArray(Map[][]::new));
         default:
           throw new SFException(
+              queryId,
               ErrorCode.FEATURE_UNSUPPORTED,
               "Can't construct array for data type: " + columnSubType);
       }
     } catch (RuntimeException e) {
-      throw new SFException(e, ErrorCode.INVALID_STRUCT_DATA);
+      throw new SFException(queryId, e, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 
@@ -779,7 +790,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       }
     } catch (InterruptedException ex) {
       throw new SnowflakeSQLLoggedException(
-          session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
+          queryId, session, ErrorCode.INTERRUPTED.getMessageCode(), SqlState.QUERY_CANCELED);
     }
   }
 
@@ -805,7 +816,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         rootAllocator.close();
       }
     } catch (InterruptedException ie) {
-      logger.debug("interrupted during closing root allocator", false);
+      logger.debug("Interrupted during closing root allocator", false);
     } catch (Exception e) {
       logger.debug("Exception happened when closing rootAllocator: ", e.getLocalizedMessage());
     }

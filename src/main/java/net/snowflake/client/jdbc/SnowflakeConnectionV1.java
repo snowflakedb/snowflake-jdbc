@@ -48,6 +48,7 @@ import net.snowflake.client.core.SfSqlArray;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.client.log.SFLoggerUtil;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 
 /** Snowflake connection implementation */
@@ -138,11 +139,19 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   private void initConnectionWithImpl(
       SFConnectionHandler sfConnectionHandler, String url, Properties info) throws SQLException {
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
+    logger.info("Initializing new connection");
     this.sfConnectionHandler = sfConnectionHandler;
     sfConnectionHandler.initializeConnection(url, info);
     this.sfSession = sfConnectionHandler.getSFSession();
     missingProperties = sfSession.checkProperties();
     this.showStatementParameters = sfSession.getPreparedStatementLogging();
+    stopwatch.stop();
+    logger.info(
+        "Connection initialized successfully in {} ms. Session id: {}",
+        stopwatch.elapsedMillis(),
+        sfSession.getSessionId());
   }
 
   public List<DriverPropertyInfo> returnMissingProperties() {
@@ -221,9 +230,19 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   @Override
   public void close() throws SQLException {
-    logger.debug(" public void close()", false);
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.start();
+    String sessionId = null;
+
+    if (sfSession != null) {
+      sessionId = sfSession.getSessionId();
+      logger.info("Closing connection with session id: {}", sessionId);
+    } else {
+      logger.debug("Closing connection without associated session");
+    }
 
     if (isClosed) {
+      logger.debug("Connection is already closed");
       // No exception is raised even if the connection is closed.
       return;
     }
@@ -235,6 +254,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
         sfSession = null;
       }
       // make sure to close all created statements
+      if (!openStatements.isEmpty()) {
+        logger.debug("Closing {} opened statements", openStatements.size());
+      }
       for (Statement stmt : openStatements) {
         if (stmt != null && !stmt.isClosed()) {
           if (stmt.isWrapperFor(SnowflakeStatementV1.class)) {
@@ -244,12 +266,20 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
           }
         }
       }
+      if (!openStatements.isEmpty()) {
+        logger.debug("Statements closed successfully");
+      }
       openStatements.clear();
 
     } catch (SFException ex) {
       throw new SnowflakeSQLLoggedException(
           sfSession, ex.getSqlState(), ex.getVendorCode(), ex.getCause(), ex.getParams());
     }
+    stopwatch.stop();
+    logger.info(
+        "Connection with session id: {} closed successfully in {} ms",
+        sessionId,
+        stopwatch.elapsedMillis());
   }
 
   public String getSessionID() throws SQLException {
@@ -261,7 +291,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public boolean isClosed() throws SQLException {
-    logger.debug(" public boolean isClosed()", false);
+    logger.trace("boolean isClosed()", false);
 
     return isClosed;
   }
@@ -274,14 +304,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   @Override
   public DatabaseMetaData getMetaData() throws SQLException {
-    logger.debug(" public DatabaseMetaData getMetaData()", false);
+    logger.trace("DatabaseMetaData getMetaData()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return new SnowflakeDatabaseMetaData(this);
   }
 
   @Override
   public CallableStatement prepareCall(String sql) throws SQLException {
-    logger.debug(" public CallableStatement prepareCall(String sql)", false);
+    logger.trace("CallableStatement prepareCall(String sql)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     CallableStatement stmt = prepareCall(sql, false);
     openStatements.add(stmt);
@@ -289,7 +319,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   public CallableStatement prepareCall(String sql, boolean skipParsing) throws SQLException {
-    logger.debug(" public CallableStatement prepareCall(String sql, boolean skipParsing)", false);
+    logger.trace("CallableStatement prepareCall(String sql, boolean skipParsing)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     CallableStatement stmt =
         new SnowflakeCallableStatementV1(
@@ -306,9 +336,8 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
       throws SQLException {
-    logger.debug(
-        " public CallableStatement prepareCall(String sql,"
-            + " int resultSetType,int resultSetConcurrency",
+    logger.trace(
+        "CallableStatement prepareCall(String sql," + " int resultSetType,int resultSetConcurrency",
         false);
     CallableStatement stmt =
         prepareCall(sql, resultSetType, resultSetConcurrency, ResultSet.CLOSE_CURSORS_AT_COMMIT);
@@ -320,8 +349,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public CallableStatement prepareCall(
       String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
       throws SQLException {
-    logger.debug(
-        " public CallableStatement prepareCall(String sql, int " + "resultSetType,", false);
+    logger.trace("CallableStatement prepareCall(String sql, int " + "resultSetType,", false);
     CallableStatement stmt =
         new SnowflakeCallableStatementV1(
             this, sql, false, resultSetType, resultSetConcurrency, resultSetHoldability);
@@ -331,21 +359,21 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public String nativeSQL(String sql) throws SQLException {
-    logger.debug("public String nativeSQL(String sql)", false);
+    logger.trace("String nativeSQL(String sql)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return sql;
   }
 
   @Override
   public boolean getAutoCommit() throws SQLException {
-    logger.debug("boolean getAutoCommit()", false);
+    logger.trace("boolean getAutoCommit()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return sfSession.getAutoCommit();
   }
 
   @Override
   public void setAutoCommit(boolean isAutoCommit) throws SQLException {
-    logger.debug("void setAutoCommit(boolean isAutoCommit)", false);
+    logger.trace("void setAutoCommit(boolean isAutoCommit)", false);
     boolean currentAutoCommit = this.getAutoCommit();
     if (isAutoCommit != currentAutoCommit) {
       sfSession.setAutoCommit(isAutoCommit);
@@ -357,33 +385,33 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public void commit() throws SQLException {
-    logger.debug("void commit()", false);
+    logger.trace("void commit()", false);
     this.executeImmediate("commit");
   }
 
   @Override
   public void rollback() throws SQLException {
-    logger.debug("void rollback()", false);
+    logger.trace("void rollback()", false);
     this.executeImmediate("rollback");
   }
 
   @Override
   public void rollback(Savepoint savepoint) throws SQLException {
-    logger.debug("void rollback(Savepoint savepoint)", false);
+    logger.trace("void rollback(Savepoint savepoint)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public boolean isReadOnly() throws SQLException {
-    logger.debug("boolean isReadOnly()", false);
+    logger.trace("boolean isReadOnly()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return false;
   }
 
   @Override
   public void setReadOnly(boolean readOnly) throws SQLException {
-    logger.debug("void setReadOnly(boolean readOnly)", false);
+    logger.trace("void setReadOnly(boolean readOnly)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     if (readOnly) {
       logger.debug("setReadOnly not supported.", false);
@@ -398,7 +426,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public void setCatalog(String catalog) throws SQLException {
-    logger.debug("void setCatalog(String catalog)", false);
+    logger.trace("void setCatalog(String catalog)", false);
 
     // switch db by running "use db"
     this.executeImmediate("use database \"" + catalog + "\"");
@@ -406,7 +434,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public int getTransactionIsolation() throws SQLException {
-    logger.debug("int getTransactionIsolation()", false);
+    logger.trace("int getTransactionIsolation()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return this.transactionIsolation;
   }
@@ -419,7 +447,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    */
   @Override
   public void setTransactionIsolation(int level) throws SQLException {
-    logger.debug("void setTransactionIsolation(int level), level = {}", level);
+    logger.trace("void setTransactionIsolation(int level), level = {}", level);
     raiseSQLExceptionIfConnectionIsClosed();
     if (level == Connection.TRANSACTION_NONE || level == Connection.TRANSACTION_READ_COMMITTED) {
       this.transactionIsolation = level;
@@ -433,14 +461,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public SQLWarning getWarnings() throws SQLException {
-    logger.debug("SQLWarning getWarnings()", false);
+    logger.trace("SQLWarning getWarnings()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return sqlWarnings;
   }
 
   @Override
   public void clearWarnings() throws SQLException {
-    logger.debug("void clearWarnings()", false);
+    logger.trace("void clearWarnings()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     sfSession.clearSqlWarnings();
     sqlWarnings = null;
@@ -449,7 +477,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency)
       throws SQLException {
-    logger.debug(
+    logger.trace(
         "Statement createStatement(int resultSetType, " + "int resultSetConcurrency)", false);
 
     Statement stmt =
@@ -461,7 +489,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public Statement createStatement(
       int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-    logger.debug(
+    logger.trace(
         "Statement createStatement(int resultSetType, "
             + "int resultSetConcurrency, int resultSetHoldability",
         false);
@@ -474,7 +502,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public PreparedStatement prepareStatement(String sql) throws SQLException {
-    logger.debug("PreparedStatement prepareStatement(String sql)", false);
+    logger.trace("PreparedStatement prepareStatement(String sql)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     PreparedStatement stmt = prepareStatement(sql, false);
     openStatements.add(stmt);
@@ -483,7 +511,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
-    logger.debug(
+    logger.trace(
         "PreparedStatement prepareStatement(String sql, " + "int autoGeneratedKeys)", false);
 
     if (autoGeneratedKeys == Statement.NO_GENERATED_KEYS) {
@@ -495,14 +523,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
-    logger.debug("PreparedStatement prepareStatement(String sql, " + "int[] columnIndexes)", false);
+    logger.trace("PreparedStatement prepareStatement(String sql, " + "int[] columnIndexes)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
 
   @Override
   public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
-    logger.debug(
+    logger.trace(
         "PreparedStatement prepareStatement(String sql, " + "String[] columnNames)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
@@ -511,7 +539,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
       throws SQLException {
-    logger.debug("PreparedStatement prepareStatement(String sql, " + "int resultSetType,", false);
+    logger.trace("PreparedStatement prepareStatement(String sql, " + "int resultSetType,", false);
 
     PreparedStatement stmt =
         prepareStatement(
@@ -524,7 +552,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   public PreparedStatement prepareStatement(
       String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
       throws SQLException {
-    logger.debug("PreparedStatement prepareStatement(String sql, " + "int resultSetType,", false);
+    logger.trace("PreparedStatement prepareStatement(String sql, " + "int resultSetType,", false);
 
     PreparedStatement stmt =
         new SnowflakePreparedStatementV1(
@@ -534,7 +562,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   }
 
   public PreparedStatement prepareStatement(String sql, boolean skipParsing) throws SQLException {
-    logger.debug("PreparedStatement prepareStatement(String sql, boolean skipParsing)", false);
+    logger.trace("PreparedStatement prepareStatement(String sql, boolean skipParsing)", false);
     raiseSQLExceptionIfConnectionIsClosed();
     PreparedStatement stmt =
         new SnowflakePreparedStatementV1(
@@ -569,7 +597,16 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @Override
   public void setHoldability(int holdability) throws SQLException {
 
-    throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
+    raiseSQLExceptionIfConnectionIsClosed();
+    if ((holdability != ResultSet.CLOSE_CURSORS_AT_COMMIT
+        && holdability != ResultSet.HOLD_CURSORS_OVER_COMMIT)) {
+      throw new SQLException("The given parameter is not a ResultSet holdability constant.");
+    }
+    // HOLD_CURSORS_OVER_COMMIT holdability is currently not supported.
+    // no-op if the holdability is CLOSE_CURSORS_AT_COMMIT
+    if (holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT) {
+      throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
+    }
   }
 
   @Override
@@ -656,7 +693,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public Properties getClientInfo() throws SQLException {
-    logger.debug("Properties getClientInfo()", false);
+    logger.trace("Properties getClientInfo()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     // sfSession must not be null if the connection is not closed.
     return sfSession.getClientInfo();
@@ -675,7 +712,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public String getClientInfo(String name) throws SQLException {
-    logger.debug("String getClientInfo(String name)", false);
+    logger.trace("String getClientInfo(String name)", false);
 
     raiseSQLExceptionIfConnectionIsClosed();
     // sfSession must not be null if the connection is not closed.
@@ -684,13 +721,13 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
-    logger.debug("Array createArrayOf(String typeName, Object[] " + "elements)", false);
+    logger.trace("Array createArrayOf(String typeName, Object[] " + "elements)", false);
     return new SfSqlArray(JDBCType.valueOf(typeName).getVendorTypeNumber(), elements);
   }
 
   @Override
   public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-    logger.debug("Struct createStruct(String typeName, Object[] " + "attributes)", false);
+    logger.trace("Struct createStruct(String typeName, Object[] " + "attributes)", false);
 
     throw new SnowflakeLoggedFeatureNotSupportedException(sfSession);
   }
@@ -703,7 +740,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public void setSchema(String schema) throws SQLException {
-    logger.debug("void setSchema(String schema)", false);
+    logger.trace("void setSchema(String schema)", false);
 
     String databaseName = getCatalog();
 
@@ -717,14 +754,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public void abort(Executor executor) throws SQLException {
-    logger.debug("void abort(Executor executor)", false);
+    logger.trace("void abort(Executor executor)", false);
 
     close();
   }
 
   @Override
   public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-    logger.debug("void setNetworkTimeout(Executor executor, int " + "milliseconds)", false);
+    logger.trace("void setNetworkTimeout(Executor executor, int " + "milliseconds)", false);
     raiseSQLExceptionIfConnectionIsClosed();
 
     networkTimeoutInMilli = milliseconds;
@@ -732,14 +769,14 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
 
   @Override
   public int getNetworkTimeout() throws SQLException {
-    logger.debug("int getNetworkTimeout()", false);
+    logger.trace("int getNetworkTimeout()", false);
     raiseSQLExceptionIfConnectionIsClosed();
     return networkTimeoutInMilli;
   }
 
   @Override
   public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    logger.debug("boolean isWrapperFor(Class<?> iface)", false);
+    logger.trace("boolean isWrapperFor(Class<?> iface)", false);
 
     return iface.isInstance(this);
   }
@@ -747,7 +784,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   @SuppressWarnings("unchecked")
   @Override
   public <T> T unwrap(Class<T> iface) throws SQLException {
-    logger.debug("<T> T unwrap(Class<T> iface)", false);
+    logger.trace("<T> T unwrap(Class<T> iface)", false);
 
     if (!iface.isInstance(this)) {
       throw new SQLException(
@@ -873,7 +910,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       boolean compressData)
       throws SQLException {
     logger.debug(
-        "upload data from stream: stageName={}" + ", destPrefix={}, destFileName={}",
+        "Upload data from stream: stageName={}" + ", destPrefix={}, destFileName={}",
         stageName,
         destPrefix,
         destFileName);
@@ -942,7 +979,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
       throws SQLException {
 
     logger.debug(
-        "download data to stream: stageName={}" + ", sourceFileName={}", stageName, sourceFileName);
+        "Download data to stream: stageName={}" + ", sourceFileName={}", stageName, sourceFileName);
 
     if (Strings.isNullOrEmpty(stageName)) {
       throw new SnowflakeSQLLoggedException(

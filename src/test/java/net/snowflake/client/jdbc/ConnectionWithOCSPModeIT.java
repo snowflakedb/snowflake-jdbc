@@ -17,6 +17,7 @@ import java.security.cert.CertificateExpiredException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.Random;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -24,6 +25,7 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryConnection;
 import net.snowflake.client.core.SFOCSPException;
 import net.snowflake.client.core.SFTrustManager;
+import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -108,7 +110,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -146,7 +148,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -183,7 +185,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -198,7 +200,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -234,7 +236,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -293,7 +295,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -332,7 +334,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -368,7 +370,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), containsString("HTTP status=403"));
+      assertThat(ex.getMessage(), httpStatus403Or513());
       assertNull(ex.getCause());
     }
   }
@@ -411,22 +413,42 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
 
   /** Test Wrong host. Will fail in both FAIL_OPEN and FAIL_CLOSED. */
   @Test
-  public void testWrongHost() {
-    try {
-      DriverManager.getConnection(
-          "jdbc:snowflake://wrong.host.badssl.com/", OCSPFailClosedProperties());
-      fail("should fail");
-    } catch (SQLException ex) {
-      assertThat(ex, instanceOf(SnowflakeSQLException.class));
+  public void testWrongHost() throws InterruptedException {
+    int maxRetries = 5;
+    int retry = 0;
 
-      // The certificates used by badssl.com expired around 05/17/2022,
-      // https://github.com/chromium/badssl.com/issues/504. After the certificates had been updated,
-      // the exception seems to be changed from SSLPeerUnverifiedException to SSLHandshakeException.
-      assertThat(
-          ex.getCause(),
-          anyOf(
-              instanceOf(SSLPeerUnverifiedException.class),
-              instanceOf(SSLHandshakeException.class)));
+    // *.badssl.com may fail on timeouts
+    while (retry < maxRetries) {
+      try {
+        DriverManager.getConnection(
+            "jdbc:snowflake://wrong.host.badssl.com/", OCSPFailClosedProperties());
+        fail("should fail");
+      } catch (SQLException ex) {
+        if (!(ex.getCause() instanceof SSLPeerUnverifiedException)
+            && !(ex.getCause() instanceof SSLHandshakeException)) {
+          retry++;
+          Thread.sleep(1000 * new Random().nextInt(3));
+          continue;
+        }
+        assertThat(ex, instanceOf(SnowflakeSQLException.class));
+
+        // The certificates used by badssl.com expired around 05/17/2022,
+        // https://github.com/chromium/badssl.com/issues/504. After the certificates had been
+        // updated,
+        // the exception seems to be changed from SSLPeerUnverifiedException to
+        // SSLHandshakeException.
+        assertThat(
+            ex.getCause(),
+            anyOf(
+                instanceOf(SSLPeerUnverifiedException.class),
+                instanceOf(SSLHandshakeException.class)));
+        return;
+      }
+      fail("All retries failed");
     }
+  }
+
+  private static Matcher<String> httpStatus403Or513() {
+    return anyOf(containsString("HTTP status=403"), containsString("HTTP status=513"));
   }
 }

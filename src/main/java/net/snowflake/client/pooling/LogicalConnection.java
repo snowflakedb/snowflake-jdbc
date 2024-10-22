@@ -21,13 +21,18 @@ import java.sql.Struct;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import net.snowflake.client.jdbc.ErrorCode;
+import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 
 /**
  * Logical connection is wrapper class on top of SnowflakeConnectionV1 Every method call will be
  * delegated to SnowflakeConnectionV1 except for close method
  */
 class LogicalConnection implements Connection {
+  private static final SFLogger logger = SFLoggerFactory.getLogger(LogicalConnection.class);
+
   /** physical connection to snowflake, instance SnowflakeConnectionV1 */
   private final Connection physicalConnection;
 
@@ -148,6 +153,8 @@ class LogicalConnection implements Connection {
     if (isClosed) {
       return;
     }
+    SnowflakeConnectionV1 sfConnection = physicalConnection.unwrap(SnowflakeConnectionV1.class);
+    logger.debug("Closing logical connection with session id: {}", sfConnection.getSessionID());
     pooledConnection.fireConnectionCloseEvent();
     isClosed = true;
   }

@@ -19,8 +19,6 @@ import java.util.regex.Pattern;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONStyle;
-import net.snowflake.client.log.SFLogger;
-import net.snowflake.client.log.SFLoggerFactory;
 
 /** Search for credentials in sql and/or other text */
 public class SecretDetector {
@@ -72,12 +70,8 @@ public class SecretDetector {
           "(token|assertion content)" + "(['\"\\s:=]+)" + "([a-z0-9=/_\\-+]{8,})",
           Pattern.CASE_INSENSITIVE);
 
-  private static final int LOOK_AHEAD = 10;
-
   // only attempt to find secrets in its leading 100Kb SNOW-30961
   private static final int MAX_LENGTH = 100 * 1000;
-
-  private static final SFLogger LOGGER = SFLoggerFactory.getLogger(SecretDetector.class);
 
   private static String[] SENSITIVE_NAMES = {
     "access_key_id",
@@ -117,7 +111,9 @@ public class SecretDetector {
    */
   private static boolean isSensitiveParameter(String name) {
     Pattern PASSWORD_IN_NAME =
-        Pattern.compile(".*?(password|pwd|token|proxyuser).*?", Pattern.CASE_INSENSITIVE);
+        Pattern.compile(
+            ".*?(password|pwd|token|proxyuser|privatekey|passcode|proxypassword|private_key_base).*?",
+            Pattern.CASE_INSENSITIVE);
     Matcher matcher = PASSWORD_IN_NAME.matcher(name);
     return isSensitive(name) || matcher.matches();
   }

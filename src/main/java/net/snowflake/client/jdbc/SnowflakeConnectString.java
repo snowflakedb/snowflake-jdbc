@@ -18,17 +18,17 @@ import java.util.Properties;
 import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.util.SecretDetector;
 
 public class SnowflakeConnectString implements Serializable {
   private static final long serialVersionUID = 1L;
-  static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectString.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SnowflakeConnectString.class);
 
   private final String scheme;
   private final String host;
   private final int port;
   private final Map<String, Object> parameters;
   private final String account;
-
   private static SnowflakeConnectString INVALID_CONNECT_STRING =
       new SnowflakeConnectString("", "", -1, Collections.emptyMap(), "");
 
@@ -210,10 +210,8 @@ public class SnowflakeConnectString implements Serializable {
         String k = URLEncoder.encode(entry.getKey(), "UTF-8");
         String v = URLEncoder.encode(entry.getValue().toString(), "UTF-8");
         urlStr.append(k).append('=');
-        if (maskSensitiveValue && "password".equalsIgnoreCase(k)
-            || "passcode".equalsIgnoreCase(k)
-            || "proxyPassword".equalsIgnoreCase(k)) {
-          urlStr.append("******");
+        if (maskSensitiveValue) {
+          urlStr.append(SecretDetector.maskParameterValue(k, v));
         } else {
           urlStr.append(v);
         }

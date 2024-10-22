@@ -91,7 +91,7 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
               + "sharedCol decimal)");
       statement.execute(
           "create or replace function JDBC_DB1.JDBC_SCHEMA11.FUNC112 "
-              + "() RETURNS TABLE(colA string, colB decimal, bin2 binary, sharedCol decimal) COMMENT= 'returns "
+              + "() RETURNS TABLE(colA string(16777216), colB decimal, bin2 binary(8388608), sharedCol decimal) COMMENT= 'returns "
               + "table of 4 columns'"
               + " as 'select JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colA, JDBC_DB1.JDBC_SCHEMA11.JDBC_TBL111.colB, "
               + "JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.bin2, JDBC_DB1.JDBC_SCHEMA11.BIN_TABLE.sharedCol from JDBC_DB1"
@@ -173,7 +173,8 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(10, resultSet.getInt("RADIX"));
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-        assertEquals(16777216, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(
+            databaseMetaData.getMaxCharLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(1, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(
@@ -213,7 +214,8 @@ public class DatabaseMetaDataInternalLatestIT extends BaseJDBCTest {
         assertEquals(10, resultSet.getInt("RADIX"));
         assertEquals(DatabaseMetaData.functionNullableUnknown, resultSet.getInt("NULLABLE"));
         assertEquals("returns table of 4 columns", resultSet.getString("REMARKS"));
-        assertEquals(8388608, resultSet.getInt("CHAR_OCTET_LENGTH"));
+        assertEquals(
+            databaseMetaData.getMaxBinaryLiteralLength(), resultSet.getInt("CHAR_OCTET_LENGTH"));
         assertEquals(3, resultSet.getInt("ORDINAL_POSITION"));
         assertEquals("", resultSet.getString("IS_NULLABLE"));
         assertEquals(

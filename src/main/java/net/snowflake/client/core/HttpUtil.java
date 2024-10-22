@@ -39,7 +39,9 @@ import net.snowflake.client.jdbc.cloud.storage.S3HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+import net.snowflake.client.log.SFLoggerUtil;
 import net.snowflake.client.util.SecretDetector;
+import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHost;
@@ -75,13 +77,12 @@ public class HttpUtil {
   static final int DEFAULT_DOWNLOADED_CONDITION_TIMEOUT = 3600; // secs
 
   public static final String JDBC_TTL = "net.snowflake.jdbc.ttl";
-  static final String JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY =
-      "net.snowflake.jdbc.http_client_connection_timeout_in_ms";
-  static final String JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY =
-      "net.snowflake.jdbc.http_client_socket_timeout_in_ms";
   public static final String JDBC_MAX_CONNECTIONS_PROPERTY = "net.snowflake.jdbc.max_connections";
   public static final String JDBC_MAX_CONNECTIONS_PER_ROUTE_PROPERTY =
       "net.snowflake.jdbc.max_connections_per_route";
+
+  private static Duration connectionTimeout;
+  private static Duration socketTimeout;
 
   /**
    * The unique httpClient shared by all connections. This will benefit long-lived clients. Key =
@@ -112,16 +113,26 @@ public class HttpUtil {
 
   @SnowflakeJdbcInternalApi
   public static Duration getConnectionTimeout() {
-    return Duration.ofMillis(
-        SystemUtil.convertSystemPropertyToIntValue(
-            JDBC_CONNECTION_TIMEOUT_IN_MS_PROPERTY, DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS));
+    return connectionTimeout != null
+        ? connectionTimeout
+        : Duration.ofMillis(DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT_IN_MS);
   }
 
   @SnowflakeJdbcInternalApi
   public static Duration getSocketTimeout() {
-    return Duration.ofMillis(
-        SystemUtil.convertSystemPropertyToIntValue(
-            JDBC_SOCKET_TIMEOUT_IN_MS_PROPERTY, DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS));
+    return socketTimeout != null
+        ? socketTimeout
+        : Duration.ofMillis(DEFAULT_HTTP_CLIENT_SOCKET_TIMEOUT_IN_MS);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void setConnectionTimeout(int timeout) {
+    connectionTimeout = Duration.ofMillis(timeout);
+  }
+
+  @SnowflakeJdbcInternalApi
+  public static void setSocketTimeout(int timeout) {
+    socketTimeout = Duration.ofMillis(timeout);
   }
 
   public static long getDownloadedConditionTimeoutInSeconds() {
@@ -131,7 +142,7 @@ public class HttpUtil {
   public static void closeExpiredAndIdleConnections() {
     if (connectionManager != null) {
       synchronized (connectionManager) {
-        logger.debug("connection pool stats: {}", connectionManager.getTotalStats());
+        logger.debug("Connection pool stats: {}", connectionManager.getTotalStats());
         connectionManager.closeExpiredConnections();
         connectionManager.closeIdleConnections(DEFAULT_IDLE_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
       }
@@ -196,8 +207,13 @@ public class HttpUtil {
               ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
         }
         Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+        logger.debug("Setting sessionless Azure proxy. Host: {}, port: {}", proxyHost, proxyPort);
         opContext.setProxy(azProxy);
+      } else {
+        logger.debug("Omitting sessionless Azure proxy setup as proxy is disabled");
       }
+    } else {
+      logger.debug("Omitting sessionless Azure proxy setup");
     }
   }
 
@@ -211,7 +227,11 @@ public class HttpUtil {
     if (key != null && key.usesProxy()) {
       Proxy azProxy =
           new Proxy(Proxy.Type.HTTP, new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
+      logger.debug(
+          "Setting Azure proxy. Host: {}, port: {}", key.getProxyHost(), key.getProxyPort());
       opContext.setProxy(azProxy);
+    } else {
+      logger.debug("Omitting Azure proxy setup");
     }
   }
 
@@ -262,16 +282,21 @@ public class HttpUtil {
    */
   public static CloseableHttpClient buildHttpClient(
       @Nullable HttpClientSettingsKey key, File ocspCacheFile, boolean downloadUnCompressed) {
+    logger.debug(
+        "Building http client with client settings key: {}, ocsp cache file: {}, download uncompressed: {}",
+        key != null ? key.toString() : null,
+        ocspCacheFile,
+        downloadUnCompressed);
     // set timeout so that we don't wait forever.
     // Setup the default configuration for all requests on this client
     int timeToLive = SystemUtil.convertSystemPropertyToIntValue(JDBC_TTL, DEFAULT_TTL);
-    logger.debug("time to live in connection pooling manager: {}", timeToLive);
     long connectTimeout = getConnectionTimeout().toMillis();
     long socketTimeout = getSocketTimeout().toMillis();
     logger.debug(
-        "Connect timeout is {} ms and socket timeout is {} for connection pooling manager",
+        "Connection pooling manager connect timeout: {} ms, socket timeout: {} ms, ttl: {} s",
         connectTimeout,
-        socketTimeout);
+        socketTimeout,
+        timeToLive);
 
     // Set proxy settings for DefaultRequestConfig. If current proxy settings are the same as for
     // the last request, keep the current DefaultRequestConfig. If not, build a new
@@ -295,9 +320,26 @@ public class HttpUtil {
       // only set the proxy settings if they are not null
       // but no value has been specified for nonProxyHosts
       // the route planner will determine whether to use a proxy based on nonProxyHosts value.
+      String logMessage =
+          "Rebuilding request config. Connect timeout: "
+              + connectTimeout
+              + " ms, connection request "
+              + "timeout: "
+              + connectTimeout
+              + " ms, socket timeout: "
+              + socketTimeout
+              + " ms";
       if (proxy != null && Strings.isNullOrEmpty(key.getNonProxyHosts())) {
         builder.setProxy(proxy);
+        logMessage +=
+            ", host: "
+                + key.getProxyHost()
+                + ", port: "
+                + key.getProxyPort()
+                + ", scheme: "
+                + key.getProxyHttpProtocol().getScheme();
       }
+      logger.debug(logMessage);
       DefaultRequestConfig = builder.build();
     }
 
@@ -309,6 +351,11 @@ public class HttpUtil {
       // care OCSP checks.
       // OCSP FailOpen is ON by default
       try {
+        if (ocspCacheFile == null) {
+          logger.debug("Instantiating trust manager with default ocsp cache file");
+        } else {
+          logger.debug("Instantiating trust manager with ocsp cache file: {}", ocspCacheFile);
+        }
         TrustManager[] tm = {new SFTrustManager(key, ocspCacheFile)};
         trustManagers = tm;
       } catch (Exception | Error err) {
@@ -318,8 +365,18 @@ public class HttpUtil {
         logger.error(errors.toString(), true);
         throw new RuntimeException(err); // rethrow the exception
       }
+    } else if (key != null) {
+      logger.debug(
+          "Omitting trust manager instantiation as OCSP mode is set to {}", key.getOcspMode());
+    } else {
+      logger.debug("Omitting trust manager instantiation as configuration is not provided");
     }
     try {
+      logger.debug(
+          "Registering https connection socket factory with socks proxy disabled: {} and http "
+              + "connection socket factory",
+          socksProxyDisabled);
+
       Registry<ConnectionSocketFactory> registry =
           RegistryBuilder.<ConnectionSocketFactory>create()
               .register(
@@ -344,6 +401,7 @@ public class HttpUtil {
       connectionManager.setMaxTotal(maxConnections);
       connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
 
+      logger.debug("Disabling cookie management for http client");
       String userAgentSuffix = key != null ? key.getUserAgentSuffix() : "";
       HttpClientBuilder httpClientBuilder =
           HttpClientBuilder.create()
@@ -355,6 +413,8 @@ public class HttpUtil {
               .disableCookieManagement(); // SNOW-39748
 
       if (key != null && key.usesProxy()) {
+        logger.debug(
+            "Instantiating proxy route planner with non-proxy hosts: {}", key.getNonProxyHosts());
         // use the custom proxy properties
         SnowflakeMutableProxyRoutePlanner sdkProxyRoutePlanner =
             httpClientRoutePlanner.computeIfAbsent(
@@ -372,12 +432,19 @@ public class HttpUtil {
               new UsernamePasswordCredentials(key.getProxyUser(), key.getProxyPassword());
           AuthScope authScope = new AuthScope(key.getProxyHost(), key.getProxyPort());
           CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+          logger.debug(
+              "Using user: {}, password is {} for proxy host: {}, port: {}",
+              key.getProxyUser(),
+              SFLoggerUtil.isVariableProvided(key.getProxyPassword()),
+              key.getProxyHost(),
+              key.getProxyPort());
           credentialsProvider.setCredentials(authScope, credentials);
           httpClientBuilder = httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
         }
       }
       httpClientBuilder.setDefaultRequestConfig(DefaultRequestConfig);
       if (downloadUnCompressed) {
+        logger.debug("Disabling content compression for http client");
         httpClientBuilder = httpClientBuilder.disableContentCompression();
       }
       return httpClientBuilder.build();
@@ -392,6 +459,11 @@ public class HttpUtil {
             .get(key)
             .getNonProxyHosts()
             .equalsIgnoreCase(key.getNonProxyHosts())) {
+      logger.debug(
+          "Updating route planner non-proxy hosts for proxy: {}:{} to: {}",
+          key.getProxyHost(),
+          key.getProxyPort(),
+          key.getNonProxyHosts());
       httpClientRoutePlanner.get(key).setNonProxyHosts(key.getNonProxyHosts());
     }
   }
@@ -490,6 +562,7 @@ public class HttpUtil {
   }
 
   public static void setRequestConfig(RequestConfig requestConfig) {
+    logger.debug("Setting default request config to: {}", requestConfig);
     DefaultRequestConfig = requestConfig;
   }
 
@@ -508,6 +581,7 @@ public class HttpUtil {
    * @param socksProxyDisabled new value
    */
   public static void setSocksProxyDisabled(boolean socksProxyDisabled) {
+    logger.debug("Setting socks proxy disabled to {}", socksProxyDisabled);
     HttpUtil.socksProxyDisabled = socksProxyDisabled;
   }
 
@@ -545,6 +619,7 @@ public class HttpUtil {
       AtomicBoolean canceling,
       HttpClientSettingsKey ocspAndProxyKey)
       throws SnowflakeSQLException, IOException {
+    logger.debug("Executing request without cookies");
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
@@ -582,6 +657,7 @@ public class HttpUtil {
       int retryCount,
       HttpClientSettingsKey ocspAndProxyAndGzipKey)
       throws SnowflakeSQLException, IOException {
+    logger.debug("Executing general request");
     return executeRequest(
         httpRequest,
         retryTimeout,
@@ -617,6 +693,7 @@ public class HttpUtil {
       int retryCount,
       CloseableHttpClient httpClient)
       throws SnowflakeSQLException, IOException {
+    logger.debug("Executing general request");
     return executeRequestInternal(
         httpRequest,
         retryTimeout,
@@ -664,6 +741,7 @@ public class HttpUtil {
       ExecTimeTelemetryData execTimeData)
       throws SnowflakeSQLException, IOException {
     boolean ocspEnabled = !(ocspAndProxyKey.getOcspMode().equals(OCSPMode.INSECURE));
+    logger.debug("Executing request with OCSP enabled: {}", ocspEnabled);
     execTimeData.setOCSPStatus(ocspEnabled);
     return executeRequestInternal(
         httpRequest,
@@ -729,6 +807,12 @@ public class HttpUtil {
     String theString;
     StringWriter writer = null;
     CloseableHttpResponse response = null;
+    Stopwatch stopwatch = null;
+
+    if (logger.isDebugEnabled()) {
+      stopwatch = new Stopwatch();
+      stopwatch.start();
+    }
 
     try {
       response =
@@ -746,6 +830,9 @@ public class HttpUtil {
               includeRequestGuid,
               retryOnHTTP403,
               execTimeData);
+      if (logger.isDebugEnabled() && stopwatch != null) {
+        stopwatch.stop();
+      }
 
       if (response == null || response.getStatusLine().getStatusCode() != 200) {
         logger.error("Error executing request: {}", requestInfoScrubbed);
@@ -778,9 +865,10 @@ public class HttpUtil {
     }
 
     logger.debug(
-        "Pool: {} Request returned for: {}",
+        "Pool: {} Request returned for: {} took {} ms",
         (ArgSupplier) HttpUtil::getHttpClientStats,
-        requestInfoScrubbed);
+        requestInfoScrubbed,
+        stopwatch == null ? "n/a" : stopwatch.elapsedMillis());
 
     return theString;
   }
@@ -855,8 +943,10 @@ public class HttpUtil {
     @Override
     public Socket createSocket(HttpContext ctx) throws IOException {
       if (socksProxyDisabled) {
+        logger.trace("Creating socket with no proxy");
         return new Socket(Proxy.NO_PROXY);
       }
+      logger.trace("Creating socket with proxy");
       return super.createSocket(ctx);
     }
   }

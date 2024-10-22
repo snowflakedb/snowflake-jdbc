@@ -56,7 +56,7 @@ timestamps {
       e.printStackTrace()
     }
 
-    jdkToParams = ['openjdk8': 'jdbc-centos7-openjdk8', 'openjdk11': 'jdbc-centos7-openjdk11', 'openjdk17': 'jdbc-centos7-openjdk17'].collectEntries { jdk, image ->
+    jdkToParams = ['openjdk8': 'jdbc-centos7-openjdk8', 'openjdk11': 'jdbc-centos7-openjdk11', 'openjdk17': 'jdbc-centos7-openjdk17', 'openjdk21': 'jdbc-centos7-openjdk21'].collectEntries { jdk, image ->
       return [(jdk): [
         string(name: 'client_git_branch', value: scmInfo.GIT_BRANCH),
         string(name: 'client_git_commit', value: scmInfo.GIT_COMMIT),
@@ -87,6 +87,8 @@ timestamps {
     }.collectEntries { jobDefinition ->
       return [(jobDefinition.runName): { build job: jobDefinition.jobToRun, parameters: jobDefinition.params }]
     }
+
+    jobDefinitions.put('JDBC-AIX-Unit', { build job: 'JDBC-AIX-UnitTests', parameters: [ string(name: 'BRANCH', value: scmInfo.GIT_BRANCH ) ] } )
     stage('Test') {
       parallel (jobDefinitions)
     }

@@ -46,7 +46,7 @@ import net.snowflake.client.log.SFLoggerFactory;
  * which signals whether to enable client telemetry
  */
 public abstract class SFBaseSession {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
+  private static final SFLogger logger = SFLoggerFactory.getLogger(SFBaseSession.class);
   private final Properties clientInfo = new Properties();
   private final AtomicBoolean autoCommit = new AtomicBoolean(true);
   // Injected delay for the purpose of connection timeout testing
@@ -79,6 +79,8 @@ public abstract class SFBaseSession {
   private boolean enableCombineDescribe;
   private boolean clientTelemetryEnabled = false;
   private boolean useSessionTimezone;
+  private boolean defaultFormatDateWithTimezone = true;
+  private boolean getDateUseNullTimezone = true;
   // The server can read array binds from a stage instead of query payload.
   // When there as many bind values as this threshold, we should upload them to a stage.
   private int arrayBindStageThreshold = 0;
@@ -354,6 +356,8 @@ public abstract class SFBaseSession {
       return ocspAndProxyAndGzipKey;
     }
 
+    OCSPMode ocspMode = getOCSPMode();
+
     Boolean gzipDisabled = false;
     if (connectionPropertiesMap.containsKey(SFSessionProperty.GZIP_DISABLED)) {
       gzipDisabled = (Boolean) connectionPropertiesMap.get(SFSessionProperty.GZIP_DISABLED);
@@ -387,7 +391,7 @@ public abstract class SFBaseSession {
       String proxyProtocol = (String) connectionPropertiesMap.get(SFSessionProperty.PROXY_PROTOCOL);
       ocspAndProxyAndGzipKey =
           new HttpClientSettingsKey(
-              getOCSPMode(),
+              ocspMode,
               proxyHost,
               proxyPort,
               nonProxyHosts,
@@ -396,6 +400,8 @@ public abstract class SFBaseSession {
               proxyProtocol,
               userAgentSuffix,
               gzipDisabled);
+
+      logHttpClientInitInfo(ocspAndProxyAndGzipKey);
 
       return ocspAndProxyAndGzipKey;
     }
@@ -417,7 +423,7 @@ public abstract class SFBaseSession {
       // log the JVM parameters that are being used
       if (httpUseProxy) {
         logger.debug(
-            "Proxy environment settings: http.useProxy={}, http.proxyHost={}, http.proxyPort={}, http.proxyUser={}, "
+            "Using JVM parameters for proxy setup: http.useProxy={}, http.proxyHost={}, http.proxyPort={}, http.proxyUser={}, "
                 + "http.proxyPassword is {}, https.proxyHost={}, https.proxyPort={}, https.proxyUser={}, "
                 + "https.proxyPassword is {}, http.nonProxyHosts={}, NO_PROXY={}, http.proxyProtocol={}",
             httpUseProxy,
@@ -456,6 +462,7 @@ public abstract class SFBaseSession {
         if (proxyProtocol.equals("https")
             && !Strings.isNullOrEmpty(httpsProxyHost)
             && !Strings.isNullOrEmpty(httpsProxyPort)) {
+          logger.debug("Using https proxy configuration from JVM parameters");
           int proxyPort;
           try {
             proxyPort = Integer.parseInt(httpsProxyPort);
@@ -465,7 +472,7 @@ public abstract class SFBaseSession {
           }
           ocspAndProxyAndGzipKey =
               new HttpClientSettingsKey(
-                  getOCSPMode(),
+                  ocspMode,
                   httpsProxyHost,
                   proxyPort,
                   combinedNonProxyHosts,
@@ -474,9 +481,11 @@ public abstract class SFBaseSession {
                   "https",
                   userAgentSuffix,
                   gzipDisabled);
+          logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         } else if (proxyProtocol.equals("http")
             && !Strings.isNullOrEmpty(httpProxyHost)
             && !Strings.isNullOrEmpty(httpProxyPort)) {
+          logger.debug("Using http proxy configuration from JVM parameters");
           int proxyPort;
           try {
             proxyPort = Integer.parseInt(httpProxyPort);
@@ -486,7 +495,7 @@ public abstract class SFBaseSession {
           }
           ocspAndProxyAndGzipKey =
               new HttpClientSettingsKey(
-                  getOCSPMode(),
+                  ocspMode,
                   httpProxyHost,
                   proxyPort,
                   combinedNonProxyHosts,
@@ -495,23 +504,47 @@ public abstract class SFBaseSession {
                   "http",
                   userAgentSuffix,
                   gzipDisabled);
+          logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         } else {
           // Not enough parameters set to use the proxy.
-          logger.debug(
-              "http.useProxy={} but valid host and port were not provided. No proxy in use.",
+          logger.warn(
+              "Failed parsing the proxy settings from JVM parameters as http.useProxy={},"
+                  + " but valid host and port were not provided.",
               httpUseProxy);
           ocspAndProxyAndGzipKey =
-              new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix, gzipDisabled);
+              new HttpClientSettingsKey(ocspMode, userAgentSuffix, gzipDisabled);
+          logHttpClientInitInfo(ocspAndProxyAndGzipKey);
         }
       } else {
         // If no proxy is used or JVM http proxy is used, no need for setting parameters
         logger.debug("http.useProxy={}. JVM proxy not used.", httpUseProxy);
         unsetInvalidProxyHostAndPort();
-        ocspAndProxyAndGzipKey =
-            new HttpClientSettingsKey(getOCSPMode(), userAgentSuffix, gzipDisabled);
+        ocspAndProxyAndGzipKey = new HttpClientSettingsKey(ocspMode, userAgentSuffix, gzipDisabled);
+        logHttpClientInitInfo(ocspAndProxyAndGzipKey);
       }
     }
     return ocspAndProxyAndGzipKey;
+  }
+
+  private void logHttpClientInitInfo(HttpClientSettingsKey key) {
+    if (key.usesProxy()) {
+      logger.info(
+          "Driver OCSP mode: {}, gzip disabled: {}, proxy protocol: {},"
+              + " proxy host: {}, proxy port: {}, non proxy hosts: {}, proxy user: {}, proxy password is {}",
+          key.getOcspMode(),
+          key.getGzipDisabled(),
+          key.getProxyHttpProtocol(),
+          key.getProxyHost(),
+          key.getProxyPort(),
+          key.getNonProxyHosts(),
+          key.getProxyUser(),
+          key.getProxyPassword().isEmpty() ? "not set" : "set");
+    } else {
+      logger.info(
+          "Driver OCSP mode: {}, gzip disabled: {} and no proxy",
+          key.getOcspMode(),
+          key.getGzipDisabled());
+    }
   }
 
   public void unsetInvalidProxyHostAndPort() {
@@ -648,8 +681,24 @@ public abstract class SFBaseSession {
     return useSessionTimezone;
   }
 
+  public boolean getDefaultFormatDateWithTimezone() {
+    return defaultFormatDateWithTimezone;
+  }
+
   public void setUseSessionTimezone(boolean useSessionTimezone) {
     this.useSessionTimezone = useSessionTimezone;
+  }
+
+  public void setDefaultFormatDateWithTimezone(boolean defaultFormatDateWithTimezone) {
+    this.defaultFormatDateWithTimezone = defaultFormatDateWithTimezone;
+  }
+
+  public boolean getGetDateUseNullTimezone() {
+    return getDateUseNullTimezone;
+  }
+
+  public void setGetDateUseNullTimezone(boolean getDateUseNullTimezone) {
+    this.getDateUseNullTimezone = getDateUseNullTimezone;
   }
 
   public boolean getEnableCombineDescribe() {

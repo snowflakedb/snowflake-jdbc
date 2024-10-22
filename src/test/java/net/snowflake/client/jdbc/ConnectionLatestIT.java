@@ -12,6 +12,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.AnyOf.anyOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,16 +38,22 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningNotOnAWS;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryConnection;
@@ -55,9 +62,12 @@ import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFSession;
+import net.snowflake.client.core.SFSessionProperty;
 import net.snowflake.client.core.SecurityUtil;
 import net.snowflake.client.core.SessionUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
+import net.snowflake.client.log.SFLogger;
+import net.snowflake.client.log.SFLoggerFactory;
 import net.snowflake.common.core.ClientAuthnDTO;
 import net.snowflake.common.core.ClientAuthnParameter;
 import net.snowflake.common.core.SqlState;
@@ -81,6 +91,7 @@ import org.junit.rules.TemporaryFolder;
 @Category(TestCategoryConnection.class)
 public class ConnectionLatestIT extends BaseJDBCTest {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
+  private static final SFLogger logger = SFLoggerFactory.getLogger(ConnectionLatestIT.class);
 
   private boolean defaultState;
 
@@ -427,8 +438,10 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       await()
           .atMost(Duration.ofSeconds(10))
           .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.RUNNING));
+
+      // it may take more time to finish the test when running in parallel in CI builds
       await()
-          .atMost(Duration.ofSeconds(50))
+          .atMost(Duration.ofSeconds(360))
           .until(() -> sfResultSet.getStatusV2().getStatus(), equalTo(QueryStatus.SUCCESS));
     }
   }
@@ -712,166 +725,186 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // test with key/pair authentication where key is in file
     // set up DataSource object and ensure connection works
     Map<String, String> params = getConnectionParameters();
-    SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-    ds.setServerName(params.get("host"));
-    ds.setSsl("on".equals(params.get("ssl")));
-    ds.setAccount(params.get("account"));
-    ds.setPortNumber(Integer.parseInt(params.get("port")));
-    ds.setUser(params.get("user"));
-    String privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
-    ds.setPrivateKeyFile(privateKeyLocation, "test");
+    try {
+      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+      ds.setServerName(params.get("host"));
+      ds.setSsl("on".equals(params.get("ssl")));
+      ds.setAccount(params.get("account"));
+      ds.setPortNumber(Integer.parseInt(params.get("port")));
+      ds.setUser(params.get("user"));
+      String privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
+      ds.setPrivateKeyFile(privateKeyLocation, "test");
 
-    // set up public key
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
-      statement.execute("use role accountadmin");
-      String pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
-      String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-      statement.execute(
-          String.format("alter user %s set rsa_public_key='%s'", params.get("user"), pubKey));
-    }
+      // set up public key
+      setUpPublicKey("encrypted_rsa_key.pub", params.get("user"));
 
-    try (Connection con = ds.getConnection();
-        Statement statement = con.createStatement();
-        ResultSet resultSet = statement.executeQuery("select 1")) {
-      resultSet.next();
-      assertThat("select 1", resultSet.getInt(1), equalTo(1));
-    }
-    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
-    // serialize datasource object into a file
-    try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
-        ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
-      out.writeObject(ds);
-    }
-    // deserialize into datasource object again
-    try (FileInputStream inputFile = new FileInputStream(serializedFile);
-        ObjectInputStream in = new ObjectInputStream(inputFile)) {
-      SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
-      // test connection a second time
-      try (Connection con = ds2.getConnection();
-          Statement statement = con.createStatement()) {
-        ResultSet resultSet = statement.executeQuery("select 1");
-        resultSet.next();
-        assertThat("select 1", resultSet.getInt(1), equalTo(1));
+      connectAndExecuteSelect1(ds);
+
+      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      // serialize datasource object into a file
+      try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
+          ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
+        out.writeObject(ds);
       }
-
-      // clean up
-      try (Connection connection = getConnection()) {
-        Statement statement = connection.createStatement();
-        statement.execute("use role accountadmin");
-        statement.execute(String.format("alter user %s unset rsa_public_key", params.get("user")));
+      // deserialize into datasource object again
+      try (FileInputStream inputFile = new FileInputStream(serializedFile);
+          ObjectInputStream in = new ObjectInputStream(inputFile)) {
+        SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+        // test connection a second time
+        connectAndExecuteSelect1(ds2);
       }
+    } finally {
+      unsetPublicKey(params.get("user"));
     }
   }
 
+  private static String readPrivateKeyFileToBase64Content(String fileName) throws IOException {
+    return Base64.getEncoder()
+        .encodeToString(Files.readAllBytes(Paths.get(getFullPathFileInResource(fileName))));
+  }
+
+  /** Works in > 3.18.0 */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testKeyPairBase64DataSourceSerialization() throws Exception {
+    // test with key/pair authentication where key is passed as a Base64 string value
+    // set up DataSource object and ensure connection works
+    Map<String, String> params = getConnectionParameters();
+    try {
+      SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
+      ds.setServerName(params.get("host"));
+      ds.setSsl("on".equals(params.get("ssl")));
+      ds.setAccount(params.get("account"));
+      ds.setPortNumber(Integer.parseInt(params.get("port")));
+      ds.setUser(params.get("user"));
+      String privateKeyBase64 = readPrivateKeyFileToBase64Content("encrypted_rsa_key.p8");
+      ds.setPrivateKeyBase64(privateKeyBase64, "test");
+
+      // set up public key
+      setUpPublicKey("encrypted_rsa_key.pub", params.get("user"));
+
+      connectAndExecuteSelect1(ds);
+
+      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+      // serialize datasource object into a file
+      try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
+          ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
+        out.writeObject(ds);
+      }
+      // deserialize into datasource object again
+      try (FileInputStream inputFile = new FileInputStream(serializedFile);
+          ObjectInputStream in = new ObjectInputStream(inputFile)) {
+        SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+        // test connection a second time
+        connectAndExecuteSelect1(ds2);
+      }
+    } finally {
+      unsetPublicKey(params.get("user"));
+    }
+  }
+
+  /**
+   * This test may be split but let's keep it with multiple keys checks to not slow down test *
+   * executions
+   */
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testPrivateKeyInConnectionString() throws SQLException, IOException {
     Map<String, String> parameters = getConnectionParameters();
     String testUser = parameters.get("user");
-    String pathfile = null;
-    String pubKey = null;
-    // Test with non-password-protected private key file (.pem)
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      statement.execute("use role accountadmin");
-      pathfile = getFullPathFileInResource("rsa_key.pub");
-      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    String baseUri = parameters.get("uri");
+    try {
+      // Test with non-password-protected private key file (.pem)
+      setUpPublicKey("rsa_key.pub", testUser);
+
+      Properties properties = preparePropertiesForPrivateKeyTests(parameters);
+
+      // PKCS #8
+      String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
+      String uri = uriWithPrivateKeyFile(baseUri, privateKeyLocation);
+      connectSuccessfully(uri, properties);
+
+      // PKCS #1
+      privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
+      uri = uriWithPrivateKeyFile(baseUri, privateKeyLocation);
+      connectSuccessfully(uri, properties);
+
+      // test with password-protected private key file (.p8)
+      setUpPublicKey("encrypted_rsa_key.pub", testUser);
+
+      privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
+      uri = uriWithPrivateKeyFileAndPassword(baseUri, privateKeyLocation, "test");
+
+      connectSuccessfully(uri, properties);
+      // test with incorrect password for private key
+      uri = uriWithPrivateKeyFileAndPassword(baseUri, privateKeyLocation, "wrong_password");
+      connectExpectingInvalidOrUnsupportedPrivateKey(uri, properties);
+
+      // test with invalid public/private key combo (using 1st public key with 2nd private key)
+      setUpPublicKey("rsa_key.pub", testUser);
+
+      privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
+      uri = uriWithPrivateKeyFileAndPassword(baseUri, privateKeyLocation, "test");
+      connectExpectingError390144(uri, properties);
+
+      // test with invalid private key
+      privateKeyLocation = getFullPathFileInResource("invalid_private_key.pem");
+      uri = uriWithPrivateKeyFile(baseUri, privateKeyLocation);
+      connectExpectingInvalidOrUnsupportedPrivateKey(uri, properties);
+
+    } finally {
+      unsetPublicKey(testUser);
     }
+  }
 
-    // PKCS #8
-    String privateKeyLocation = getFullPathFileInResource("rsa_key.p8");
-    String uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    Properties properties = new Properties();
-    properties.put("account", parameters.get("account"));
-    properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
+  private static String uriWithPrivateKeyFile(String baseUri, String privateKeyLocation) {
+    return baseUri
+        + "/?"
+        + SFSessionProperty.PRIVATE_KEY_FILE.getPropertyKey()
+        + "="
+        + privateKeyLocation;
+  }
 
-    // PKCS #1
-    privateKeyLocation = getFullPathFileInResource("rsa_key.pem");
-    uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    properties = new Properties();
-    properties.put("account", parameters.get("account"));
-    properties.put("user", testUser);
-    properties.put("ssl", parameters.get("ssl"));
-    properties.put("port", parameters.get("port"));
-    properties.put("authenticator", ClientAuthnDTO.AuthenticatorType.SNOWFLAKE_JWT.toString());
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
+  private static String uriWithPrivateKeyFileAndPassword(
+      String baseUri, String privateKeyLocation, String password) {
+    return uriWithPrivateKeyFile(baseUri, privateKeyLocation)
+        + "&"
+        + SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey()
+        + "="
+        + password;
+  }
 
-    // test with password-protected private key file (.p8)
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      statement.execute("use role accountadmin");
-      pathfile = getFullPathFileInResource("encrypted_rsa_key.pub");
-      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    }
-
-    privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
-    uri =
-        parameters.get("uri")
-            + "/?private_key_file_pwd=test&private_key_file="
-            + privateKeyLocation;
-
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
-    // test with incorrect password for private key
-    uri =
-        parameters.get("uri")
-            + "/?private_key_file_pwd=wrong_password&private_key_file="
-            + privateKeyLocation;
-
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {
-      fail();
-    } catch (SQLException e) {
-      assertEquals(
-          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
-    }
-
-    // test with invalid public/private key combo (using 1st public key with 2nd private key)
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
-      statement.execute("use role accountadmin");
-      pathfile = getFullPathFileInResource("rsa_key.pub");
-      pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
-      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
-      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
-      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
-    }
-
-    privateKeyLocation = getFullPathFileInResource("encrypted_rsa_key.p8");
-    uri =
-        parameters.get("uri")
-            + "/?private_key_file_pwd=test&private_key_file="
-            + privateKeyLocation;
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {
+  private static void connectExpectingError390144(String fullUri, Properties properties) {
+    try (Connection connection = DriverManager.getConnection(fullUri, properties)) {
       fail();
     } catch (SQLException e) {
       assertEquals(390144, e.getErrorCode());
     }
+  }
 
-    // test with invalid private key
-    privateKeyLocation = getFullPathFileInResource("invalid_private_key.pem");
-    uri = parameters.get("uri") + "/?private_key_file=" + privateKeyLocation;
-    try (Connection connection = DriverManager.getConnection(uri, properties)) {
-      fail();
-    } catch (SQLException e) {
-      assertEquals(
-          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
-    }
+  private static void connectSuccessfully(String uri, Properties properties) throws SQLException {
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {}
+  }
 
-    // clean up
-    try (Connection connection = getConnection();
+  private static void setUpPublicKey(String fileName, String testUser)
+      throws SQLException, IOException {
+    Properties properties = new Properties();
+    properties.put("role", "accountadmin");
+    try (Connection connection = getConnection(properties);
         Statement statement = connection.createStatement()) {
-      statement.execute("use role accountadmin");
+      String pathfile = getFullPathFileInResource(fileName);
+      String pubKey = new String(Files.readAllBytes(Paths.get(pathfile)));
+      pubKey = pubKey.replace("-----BEGIN PUBLIC KEY-----", "");
+      pubKey = pubKey.replace("-----END PUBLIC KEY-----", "");
+      statement.execute(String.format("alter user %s set rsa_public_key='%s'", testUser, pubKey));
+    }
+  }
+
+  private static void unsetPublicKey(String testUser) throws SQLException {
+    Properties props = new Properties();
+    props.put("role", "accountadmin");
+    try (Connection connection = getConnection(props);
+        Statement statement = connection.createStatement()) {
       statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
     }
   }
@@ -884,6 +917,108 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     testPrivateKeyInConnectionString();
   }
 
+  /**
+   * Works in > 3.18.0
+   *
+   * <p>This test may be split but let's keep it with multiple keys checks to not slow down test
+   * executions
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPrivateKeyBase64InConnectionString() throws SQLException, IOException {
+    Map<String, String> parameters = getConnectionParameters();
+    String testUser = parameters.get("user");
+    String baseUri = parameters.get("uri");
+    try {
+      // Test with non-password-protected private key file (.pem)
+      setUpPublicKey("rsa_key.pub", testUser);
+
+      Properties properties = preparePropertiesForPrivateKeyTests(parameters);
+
+      // PKCS #8
+      String privateKeyBase64 = readPrivateKeyFileToBase64Content("rsa_key.p8");
+      String uri = uriWithPrivateKeyBase64(baseUri, privateKeyBase64);
+      connectSuccessfully(uri, properties);
+
+      // PKCS #1
+      privateKeyBase64 = readPrivateKeyFileToBase64Content("rsa_key.pem");
+      uri = uriWithPrivateKeyBase64(baseUri, privateKeyBase64);
+      connectSuccessfully(uri, properties);
+
+      // test with password-protected private key file (.p8)
+      setUpPublicKey("encrypted_rsa_key.pub", testUser);
+
+      privateKeyBase64 = readPrivateKeyFileToBase64Content("encrypted_rsa_key.p8");
+      uri = uriWithPrivateKeyBase64AndPassword(baseUri, privateKeyBase64, "test");
+      connectSuccessfully(uri, properties);
+
+      // test with incorrect password for private key
+      uri = uriWithPrivateKeyBase64AndPassword(baseUri, privateKeyBase64, "wrong_password");
+      connectExpectingInvalidOrUnsupportedPrivateKey(uri, properties);
+
+      // test with invalid public/private key combo (using 1st public key with 2nd private key)
+      setUpPublicKey("rsa_key.pub", testUser);
+
+      privateKeyBase64 = readPrivateKeyFileToBase64Content("encrypted_rsa_key.p8");
+      uri = uriWithPrivateKeyBase64AndPassword(baseUri, privateKeyBase64, "test");
+      connectExpectingError390144(uri, properties);
+
+      // test with invalid private key
+      privateKeyBase64 = readPrivateKeyFileToBase64Content("invalid_private_key.pem");
+      uri = uriWithPrivateKeyBase64(baseUri, privateKeyBase64);
+
+      connectExpectingInvalidOrUnsupportedPrivateKey(uri, properties);
+    } finally {
+      // clean up
+      unsetPublicKey(testUser);
+    }
+  }
+
+  private static String uriWithPrivateKeyBase64(String baseUri, String privateKeyBase64) {
+    return baseUri
+        + "/?"
+        + SFSessionProperty.PRIVATE_KEY_BASE64.getPropertyKey()
+        + "="
+        + privateKeyBase64;
+  }
+
+  private static String uriWithPrivateKeyBase64AndPassword(
+      String baseUri, String privateKeyBase64, String password) {
+    return uriWithPrivateKeyBase64(baseUri, privateKeyBase64)
+        + "&"
+        + SFSessionProperty.PRIVATE_KEY_FILE_PWD.getPropertyKey()
+        + "="
+        + password;
+  }
+
+  private static Properties preparePropertiesForPrivateKeyTests(Map<String, String> parameters) {
+    Properties properties = new Properties();
+    properties.put("account", parameters.get("account"));
+    properties.put("user", parameters.get("user"));
+    properties.put("ssl", parameters.get("ssl"));
+    properties.put("port", parameters.get("port"));
+    return properties;
+  }
+
+  private static void connectExpectingInvalidOrUnsupportedPrivateKey(
+      String uri, Properties properties) {
+    try (Connection connection = DriverManager.getConnection(uri, properties)) {
+      fail();
+    } catch (SQLException e) {
+      assertEquals(
+          (int) ErrorCode.INVALID_OR_UNSUPPORTED_PRIVATE_KEY.getMessageCode(), e.getErrorCode());
+    }
+  }
+
+  /** Works in > 3.18.0 */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testPrivateKeyBase64InConnectionStringWithBouncyCastle()
+      throws SQLException, IOException {
+    System.setProperty(SecurityUtil.ENABLE_BOUNCYCASTLE_PROVIDER_JVM, "true");
+    testPrivateKeyBase64InConnectionString();
+  }
+
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testBasicDataSourceSerialization() throws Exception {
@@ -891,38 +1026,35 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     // set up DataSource object and ensure connection works
     Map<String, String> params = getConnectionParameters();
     SnowflakeBasicDataSource ds = new SnowflakeBasicDataSource();
-    SnowflakeBasicDataSource ds2 = null;
     ds.setServerName(params.get("host"));
     ds.setSsl("on".equals(params.get("ssl")));
     ds.setAccount(params.get("account"));
     ds.setPortNumber(Integer.parseInt(params.get("port")));
     ds.setUser(params.get("user"));
     ds.setPassword(params.get("password"));
+
+    connectAndExecuteSelect1(ds);
+
+    File serializedFile = tmpFolder.newFile("serializedStuff.ser");
+    // serialize datasource object into a file
+    try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
+        ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
+      out.writeObject(ds);
+    }
+    // deserialize into datasource object again
+    try (FileInputStream inputFile = new FileInputStream(serializedFile);
+        ObjectInputStream in = new ObjectInputStream(inputFile)) {
+      SnowflakeBasicDataSource ds2 = (SnowflakeBasicDataSource) in.readObject();
+      connectAndExecuteSelect1(ds2);
+    }
+  }
+
+  private static void connectAndExecuteSelect1(SnowflakeBasicDataSource ds) throws SQLException {
     try (Connection con = ds.getConnection();
         Statement statement = con.createStatement();
         ResultSet resultSet = statement.executeQuery("select 1")) {
-      resultSet.next();
-      assertThat("select 1", resultSet.getInt(1), equalTo(1));
-      con.close();
-      File serializedFile = tmpFolder.newFile("serializedStuff.ser");
-      // serialize datasource object into a file
-      try (FileOutputStream outputFile = new FileOutputStream(serializedFile);
-          ObjectOutputStream out = new ObjectOutputStream(outputFile)) {
-        out.writeObject(ds);
-      }
-      // deserialize into datasource object again
-      try (FileInputStream inputFile = new FileInputStream(serializedFile);
-          ObjectInputStream in = new ObjectInputStream(inputFile)) {
-        ds2 = (SnowflakeBasicDataSource) in.readObject();
-      }
-    }
-
-    // test connection a second time
-    try (Connection con = ds2.getConnection();
-        Statement statement = con.createStatement();
-        ResultSet resultSet = statement.executeQuery("select 1")) {
-      resultSet.next();
-      assertThat("select 1", resultSet.getInt(1), equalTo(1));
+      assertTrue(resultSet.next());
+      assertEquals(1, resultSet.getInt(1));
     }
   }
 
@@ -1167,7 +1299,13 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     }
   }
 
+  /**
+   * Test case for the method testDownloadStreamWithFileNotFoundException. This test verifies that a
+   * SQLException is thrown when attempting to download a file that does not exist. It verifies that
+   * the error code is ErrorCode.S3_OPERATION_ERROR so only runs on AWS.
+   */
   @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningNotOnAWS.class)
   public void testDownloadStreamWithFileNotFoundException() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement()) {
@@ -1262,7 +1400,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     String privateKeyLocation = getFullPathFileInResource(privateKeyFile);
     String uri =
         parameters.get("uri")
-            + "/?private_key_file_pwd="
+            + "/?private_key_pwd="
             + passphrase
             + "&private_key_file="
             + privateKeyLocation;
@@ -1271,12 +1409,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
       return false;
     }
 
-    // clean up
-    connection = getConnection();
-    statement = connection.createStatement();
-    statement.execute("use role accountadmin");
-    statement.execute(String.format("alter user %s unset rsa_public_key", testUser));
-    connection.close();
+    unsetPublicKey(testUser);
     return true;
   }
 
@@ -1364,5 +1497,161 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     for (Thread thread : threadList) {
       thread.join();
     }
+  }
+
+  /**
+   * SNOW-1465374: For TIMESTAMP_LTZ we were returning timestamps without timezone when scale was
+   * set e.g. to 6 in Arrow format The problem wasn't visible when calling getString, but was
+   * visible when we called toString on passed getTimestamp since we returned {@link
+   * java.sql.Timestamp}, not {@link SnowflakeTimestampWithTimezone}
+   *
+   * <p>Timestamps before 1582-10-05 are always returned as {@link java.sql.Timestamp}, not {@link
+   * SnowflakeTimestampWithTimezone} {SnowflakeTimestampWithTimezone}
+   *
+   * <p>Added in > 3.16.1
+   */
+  @Test
+  public void shouldGetDifferentTimestampLtzConsistentBetweenFormats() throws Exception {
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      statement.executeUpdate(
+          "create or replace table DATETIMETZ_TYPE(timestamp_tzcol timestamp_ltz, timestamp_tzpcol timestamp_ltz(6), timestamptzcol timestampltz, timestampwtzcol timestamp with local time zone);");
+      Arrays.asList(
+              "insert into DATETIMETZ_TYPE values('9999-12-31 23:59:59.999999999','9999-12-31 23:59:59.999999','9999-12-31 23:59:59.999999999','9999-12-31 23:59:59.999999999');",
+              "insert into DATETIMETZ_TYPE values('1582-01-01 00:00:00.000000001','1582-01-01 00:00:00.000001','1582-01-01 00:00:00.000000001','1582-01-01 00:00:00.000000001');",
+              "insert into DATETIMETZ_TYPE values('2000-06-18 18:29:30.123456789 +0100','2000-06-18 18:29:30.123456 +0100','2000-06-18 18:29:30.123456789 +0100','2000-06-18 18:29:30.123456789 +0100');",
+              "insert into DATETIMETZ_TYPE values(current_timestamp(),current_timestamp(),current_timestamp(),current_timestamp());",
+              "insert into DATETIMETZ_TYPE values('2000-06-18 18:29:30.12345 -0530','2000-06-18 18:29:30.123 -0530','2000-06-18 18:29:30.123456 -0530','2000-06-18 18:29:30.123 -0530');",
+              "insert into DATETIMETZ_TYPE values('2000-06-18 18:29:30','2000-06-18 18:29:30','2000-06-18 18:29:30','2000-06-18 18:29:30');",
+              "insert into DATETIMETZ_TYPE values('1582-10-04 00:00:00.000000001','1582-10-04 00:00:00.000001','1582-10-04 00:00:00.000000001','1582-10-04 00:00:00.000000001');",
+              "insert into DATETIMETZ_TYPE values('1582-10-05 00:00:00.000000001','1582-10-05 00:00:00.000001','1582-10-05 00:00:00.000000001','1582-10-05 00:00:00.000000001');",
+              "insert into DATETIMETZ_TYPE values('1583-10-05 00:00:00.000000001','1583-10-05 00:00:00.000001','1583-10-05 00:00:00.000000001','1583-10-05 00:00:00.000000001');")
+          .forEach(
+              insert -> {
+                try {
+                  statement.executeUpdate(insert);
+                } catch (SQLException e) {
+                  throw new RuntimeException(e);
+                }
+              });
+      try (ResultSet arrowResultSet = statement.executeQuery("select * from DATETIMETZ_TYPE")) {
+        try (Connection jsonConnection = getConnection();
+            Statement jsonStatement = jsonConnection.createStatement()) {
+          jsonStatement.execute("alter session set JDBC_QUERY_RESULT_FORMAT=JSON");
+          try (ResultSet jsonResultSet =
+              jsonStatement.executeQuery("select * from DATETIMETZ_TYPE")) {
+            int rowIdx = 0;
+            while (arrowResultSet.next()) {
+              logger.debug("Checking row " + rowIdx);
+              assertTrue(jsonResultSet.next());
+              for (int column = 1; column <= 4; ++column) {
+                logger.trace(
+                    "JSON row[{}],column[{}] as string '{}', timestamp string '{}', as timestamp numeric '{}', tz offset={}, timestamp class {}",
+                    rowIdx,
+                    column,
+                    jsonResultSet.getString(column),
+                    jsonResultSet.getTimestamp(column),
+                    jsonResultSet.getTimestamp(column).getTime(),
+                    jsonResultSet.getTimestamp(column).getTimezoneOffset(),
+                    jsonResultSet.getTimestamp(column).getClass());
+                logger.trace(
+                    "ARROW row[{}],column[{}] as string '{}', timestamp string '{}', as timestamp numeric '{}', tz offset={}, timestamp class {}",
+                    rowIdx,
+                    column,
+                    arrowResultSet.getString(column),
+                    arrowResultSet.getTimestamp(column),
+                    arrowResultSet.getTimestamp(column).getTime(),
+                    arrowResultSet.getTimestamp(column).getTimezoneOffset(),
+                    arrowResultSet.getTimestamp(column).getClass());
+                assertEquals(
+                    "Expecting that string representation are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column,
+                    jsonResultSet.getString(column),
+                    arrowResultSet.getString(column));
+                assertEquals(
+                    "Expecting that string representation (via toString) are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column,
+                    jsonResultSet.getTimestamp(column).toString(),
+                    arrowResultSet.getTimestamp(column).toString());
+                assertEquals(
+                    "Expecting that timestamps are the same for row "
+                        + rowIdx
+                        + " and column "
+                        + column,
+                    jsonResultSet.getTimestamp(column),
+                    arrowResultSet.getTimestamp(column));
+              }
+              rowIdx++;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  public void testSetHoldability() throws Throwable {
+    try (Connection connection = getConnection()) {
+      try {
+        connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT);
+      } catch (SQLFeatureNotSupportedException ex) {
+        fail("should not fail");
+      }
+      // return an empty type map. setTypeMap is not supported.
+      assertEquals(ResultSet.CLOSE_CURSORS_AT_COMMIT, connection.getHoldability());
+      connection.close();
+      expectConnectionAlreadyClosedException(
+          () -> connection.setHoldability(ResultSet.CLOSE_CURSORS_AT_COMMIT));
+    }
+  }
+
+  /** Added in > 3.14.5 and modified in > 3.18.0 */
+  @Test
+  public void shouldGetOverridenConnectionAndSocketTimeouts() throws Exception {
+    Properties paramProperties = new Properties();
+    paramProperties.put("HTTP_CLIENT_CONNECTION_TIMEOUT", 100);
+    paramProperties.put("HTTP_CLIENT_SOCKET_TIMEOUT", 200);
+
+    try (Connection connection = getConnection(paramProperties)) {
+      assertEquals(Duration.ofMillis(100), HttpUtil.getConnectionTimeout());
+      assertEquals(Duration.ofMillis(200), HttpUtil.getSocketTimeout());
+    }
+  }
+
+  /** Added in > 3.19.0 */
+  @Test
+  public void shouldFailOnSslExceptionWithLinkToTroubleShootingGuide() throws InterruptedException {
+    Properties properties = new Properties();
+    properties.put("user", "fakeuser");
+    properties.put("password", "testpassword");
+    properties.put("ocspFailOpen", Boolean.FALSE.toString());
+
+    int maxRetries = 5;
+    int retry = 0;
+
+    // *.badssl.com may fail on timeouts
+    while (retry < maxRetries) {
+      try {
+        DriverManager.getConnection("jdbc:snowflake://expired.badssl.com/", properties);
+        fail("should fail");
+      } catch (SQLException e) {
+        if (!(e.getCause() instanceof SSLHandshakeException)) {
+          retry++;
+          Thread.sleep(1000 * new Random().nextInt(3));
+          continue;
+        }
+        assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
+        assertTrue(
+            e.getMessage()
+                .contains(
+                    "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
+        return;
+      }
+    }
+    fail("All retries failed");
   }
 }

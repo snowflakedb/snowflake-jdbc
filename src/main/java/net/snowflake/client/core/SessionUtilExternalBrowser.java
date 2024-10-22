@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -46,7 +47,8 @@ import org.apache.http.entity.StringEntity;
  * user can type IdP username and password. 4. Return token and proof key to the GS to gain access.
  */
 public class SessionUtilExternalBrowser {
-  static final SFLogger logger = SFLoggerFactory.getLogger(SessionUtilExternalBrowser.class);
+  private static final SFLogger logger =
+      SFLoggerFactory.getLogger(SessionUtilExternalBrowser.class);
 
   public interface AuthExternalBrowserHandlers {
     // build a HTTP post object
@@ -202,14 +204,14 @@ public class SessionUtilExternalBrowser {
               0,
               loginInput.getHttpClientSettingsKey());
 
-      logger.debug("authenticator-request response: {}", theString);
+      logger.debug("Authenticator-request response: {}", theString);
 
       // general method, same as with data binding
       JsonNode jsonNode = mapper.readTree(theString);
 
       // check the success field first
       if (!jsonNode.path("success").asBoolean()) {
-        logger.debug("response = {}", theString);
+        logger.debug("Response: {}", theString);
         String errorCode = jsonNode.path("code").asText();
         throw new SnowflakeSQLException(
             SqlState.SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION,
@@ -240,7 +242,7 @@ public class SessionUtilExternalBrowser {
 
       String consoleLoginUrl = consoleLoginUriBuilder.build().toURL().toString();
 
-      logger.debug("console login url: {}", consoleLoginUrl);
+      logger.debug("Console login url: {}", consoleLoginUrl);
 
       return consoleLoginUrl;
     } catch (Exception ex) {
@@ -255,6 +257,10 @@ public class SessionUtilExternalBrowser {
     return Base64.getEncoder().encodeToString(randomness);
   }
 
+  private int getBrowserResponseTimeout() {
+    return (int) loginInput.getBrowserResponseTimeout().toMillis();
+  }
+
   /**
    * Authenticate
    *
@@ -264,9 +270,10 @@ public class SessionUtilExternalBrowser {
   void authenticate() throws SFException, SnowflakeSQLException {
     ServerSocket ssocket = this.getServerSocket();
     try {
+      ssocket.setSoTimeout(getBrowserResponseTimeout());
       // main procedure
       int port = this.getLocalPort(ssocket);
-      logger.debug("Listening localhost:{}", port);
+      logger.debug("Listening localhost: {}", port);
 
       if (loginInput.getDisableConsoleLogin()) {
         // Access GS to get SSO URL
@@ -304,6 +311,13 @@ public class SessionUtilExternalBrowser {
           socket.close();
         }
       }
+    } catch (SocketTimeoutException e) {
+      throw new SFException(
+          e,
+          ErrorCode.NETWORK_ERROR,
+          "External browser authentication failed within timeout of "
+              + getBrowserResponseTimeout()
+              + " milliseconds");
     } catch (IOException ex) {
       throw new SFException(ex, ErrorCode.NETWORK_ERROR, ex.getMessage());
     } finally {

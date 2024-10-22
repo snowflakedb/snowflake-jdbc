@@ -6,13 +6,13 @@
   <parent>
     <groupId>net.snowflake</groupId>
     <artifactId>snowflake-jdbc-parent</artifactId>
-    <version>3.16.2-SNAPSHOT</version>
+    <version>3.19.1-SNAPSHOT</version>
     <relativePath>./parent-pom.xml</relativePath>
   </parent>
 
   <!-- Maven complains about using property here, but it makes install and deploy process easier to override final package names and localization -->
   <artifactId>${artifactId}</artifactId>
-  <version>3.16.2-SNAPSHOT</version>
+  <version>3.19.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>${artifactId}</name>
@@ -35,6 +35,10 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk18on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcutil-jdk18on</artifactId>
     </dependency>
   </dependencies>
 
@@ -401,15 +405,15 @@
             </configuration>
           </execution>
           <execution>
-            <id>install-arrow-memory-netty</id>
+            <id>install-arrow-memory-netty-buffer-patch</id>
             <goals>
               <goal>install-file</goal>
             </goals>
             <phase>validate</phase>
             <configuration>
-              <file>${project.basedir}/dependencies/arrow-memory-netty-${arrow.version}.jar</file>
+              <file>${project.basedir}/dependencies/arrow-memory-netty-buffer-patch-${arrow.version}.jar</file>
               <groupId>org.apache.arrow</groupId>
-              <artifactId>arrow-memory-netty</artifactId>
+              <artifactId>arrow-memory-netty-buffer-patch</artifactId>
               <version>${arrow.version}</version>
               <packaging>jar</packaging>
               <generatePom>true</generatePom>
@@ -746,25 +750,6 @@
               </execution>
             </executions>
           </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>check-shaded-content</id>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <phase>verify</phase>
-                <configuration>
-                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
-                  <arguments>
-                    <argument>-thin</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
         </plugins>
       </build>
     </profile>
@@ -885,13 +870,6 @@
                     <relocation>
                       <pattern>org.objectweb</pattern>
                       <shadedPattern>${shadeBase}.org.objectweb</shadedPattern>
-                    </relocation>
-                    <relocation>
-                      <pattern>com.sun</pattern>
-                      <shadedPattern>${shadeBase}.com.sun</shadedPattern>
-                      <excludes>
-                        <exclude>com.sun.jna.**</exclude>
-                      </excludes>
                     </relocation>
                     <relocation>
                       <pattern>io.netty</pattern>
@@ -1052,21 +1030,22 @@
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <mkdir dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
-                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/19/${relocationBase}"/>
+                    <mkdir dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <!-- org.bouncycastle.* packages are relocated to ${relocationBase}.org.bouncycastle.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/9/org" todir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/org" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/15/org" todir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/21/org" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <!-- com.fasterxml.* packages are relocated to ${relocationBase}.fasterxml.* -->
                     <move file="${project.build.directory}/relocate/META-INF/versions/11/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <move file="${project.build.directory}/relocate/META-INF/versions/17/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
-                    <move file="${project.build.directory}/relocate/META-INF/versions/19/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/19/${relocationBase}"/>
+                    <move file="${project.build.directory}/relocate/META-INF/versions/21/com/fasterxml" todir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                     <zip basedir="${project.build.directory}/relocate" destfile="${project.build.directory}/${project.build.finalName}.jar"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/9/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/11/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/15/${relocationBase}"/>
                     <delete dir="${project.build.directory}/relocate/META-INF/versions/17/${relocationBase}"/>
-                    <delete dir="${project.build.directory}/relocate/META-INF/versions/19/${relocationBase}"/>
+                    <delete dir="${project.build.directory}/relocate/META-INF/versions/21/${relocationBase}"/>
                   </target>
                 </configuration>
               </execution>
@@ -1091,22 +1070,6 @@
                   <goal>create-timestamp</goal>
                 </goals>
                 <phase>package</phase>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>check-shaded-content</id>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <phase>verify</phase>
-                <configuration>
-                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
-                </configuration>
               </execution>
             </executions>
           </plugin>
@@ -1147,7 +1110,7 @@
           <!--
             Downloading
               1. japicmp
-              2. maven-dependency-lugin analyst
+              2. maven-dependency-plugin analyst
             in jenkins node would cause http connection failure. Temporarily disable them.
           -->
           <plugin>
@@ -1231,6 +1194,75 @@
                 <configuration>
                   <dataFile>target/jacoco-it.exec</dataFile>
                   <outputDirectory>target/jacoco-it</outputDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>check-content</id>
+      <activation>
+        <os>
+          <family>!windows</family>
+        </os>
+        <property>
+          <name>!thin-jar</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${version.plugin.exec}</version>
+            <executions>
+              <execution>
+                <id>check-shaded-content</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>check-content-thin</id>
+      <activation>
+        <os>
+          <family>!windows</family>
+        </os>
+        <property>
+          <name>thin-jar</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${version.plugin.exec}</version>
+            <executions>
+              <execution>
+                <id>check-shaded-content</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <executable>${basedir}/ci/scripts/check_content.sh</executable>
+                  <arguments>
+                    <argument>-thin</argument>
+                  </arguments>
                 </configuration>
               </execution>
             </executions>
