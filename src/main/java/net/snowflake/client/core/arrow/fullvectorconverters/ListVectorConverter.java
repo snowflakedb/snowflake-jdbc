@@ -68,7 +68,10 @@ public class ListVectorConverter extends AbstractFullVectorConverter {
       ListVector convertedListVector = initVector(vector.getName(), convertedDataVector.getField());
       convertedListVector.allocateNew();
       convertedListVector.setValueCount(listVector.getValueCount());
-      convertedListVector.getOffsetBuffer().setBytes(0, listVector.getOffsetBuffer());
+
+      ArrowBuf offsetBuffer = listVector.getOffsetBuffer();
+      convertedListVector.getOffsetBuffer().setBytes(0L, offsetBuffer, 0L, offsetBuffer.capacity());
+
       ArrowBuf validityBuffer = listVector.getValidityBuffer();
       convertedListVector
           .getValidityBuffer()
