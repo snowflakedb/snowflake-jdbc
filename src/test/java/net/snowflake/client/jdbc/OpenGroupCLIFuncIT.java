@@ -21,7 +21,7 @@ import org.junit.experimental.categories.Category;
 public class OpenGroupCLIFuncIT extends BaseJDBCWithSharedConnectionIT {
 
   @BeforeClass
-  public void setSessionTimezone() throws SQLException {
+  public static void setSessionTimezone() throws SQLException {
     try (Statement statement = connection.createStatement()) {
       statement.execute(
           "alter session set "
