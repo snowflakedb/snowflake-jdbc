@@ -104,7 +104,7 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
    * @param val epoch
    * @param scale scale
    * @return Timestamp value without timezone take into account
-   * @throws SFException
+   * @throws SFException if exception encountered
    */
   @Deprecated
   public static Timestamp getTimestamp(long val, int scale) throws SFException {

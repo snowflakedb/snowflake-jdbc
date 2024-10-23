@@ -83,6 +83,12 @@ public class ResultUtil {
   /**
    * Helper function building a formatter for a specialized timestamp type. Note that it will be
    * based on either the 'param' value if set, or the default format provided.
+   *
+   * @param parameters parameters
+   * @param id timestamp id
+   * @param param timestamp output format param
+   * @param defaultFormat default format
+   * @return SnowflakeDateTimeFormat
    */
   public static SnowflakeDateTimeFormat specializedFormatter(
       Map<String, Object> parameters, String id, String param, String defaultFormat) {

@@ -162,6 +162,8 @@ public abstract class SFBaseSession {
    * Part of the JDBC API, where client applications may fetch a Map of Properties to set various
    * attributes. This is not used internally by any driver component, but should be maintained by
    * the Session object.
+   *
+   * @return Properties
    */
   public Properties getClientInfo() {
     // defensive copy to avoid client from changing the properties
@@ -171,10 +173,20 @@ public abstract class SFBaseSession {
     return copy;
   }
 
+  /**
+   * Set common parameters
+   *
+   * @param parameters the parameters to set
+   */
   public void setCommonParameters(Map<String, Object> parameters) {
     this.commonParameters = parameters;
   }
 
+  /**
+   * Get common parameters
+   *
+   * @return Map of parameters
+   */
   public Map<String, Object> getCommonParameters() {
     return this.commonParameters;
   }
@@ -183,12 +195,17 @@ public abstract class SFBaseSession {
    * Gets the Property associated with the key 'name' in the ClientInfo map.
    *
    * @param name The key from which to fetch the Property.
+   * @return The property string
    */
   public String getClientInfo(String name) {
     return this.clientInfo.getProperty(name);
   }
 
-  /** Returns a unique id for this session. */
+  /**
+   * Returns a unique id for this session.
+   *
+   * @return unique id for session
+   */
   public String getSessionId() {
     return sessionId;
   }
@@ -202,86 +219,189 @@ public abstract class SFBaseSession {
     this.sessionId = sessionId;
   }
 
+  /**
+   * @return true if session is in SQLMode
+   */
   public boolean isSfSQLMode() {
     return sfSQLMode;
   }
 
+  /**
+   * Set sfSQLMode
+   *
+   * @param sfSQLMode boolean
+   */
   public void setSfSQLMode(boolean sfSQLMode) {
     this.sfSQLMode = sfSQLMode;
   }
 
+  /**
+   * Get the database version
+   *
+   * @return database version
+   */
   public String getDatabaseVersion() {
     return databaseVersion;
   }
 
+  /**
+   * Set database version
+   *
+   * @param databaseVersion the version to set
+   */
   public void setDatabaseVersion(String databaseVersion) {
     this.databaseVersion = databaseVersion;
   }
 
+  /**
+   * Get databse major version
+   *
+   * @return the database major version
+   */
   public int getDatabaseMajorVersion() {
     return databaseMajorVersion;
   }
 
+  /**
+   * Set database major version
+   *
+   * @param databaseMajorVersion
+   */
   public void setDatabaseMajorVersion(int databaseMajorVersion) {
     this.databaseMajorVersion = databaseMajorVersion;
   }
 
+  /**
+   * Get the database minor version
+   *
+   * @return database minor version
+   */
   public int getDatabaseMinorVersion() {
     return databaseMinorVersion;
   }
 
+  /**
+   * Set the database minor version
+   *
+   * @param databaseMinorVersion the minor version
+   */
   public void setDatabaseMinorVersion(int databaseMinorVersion) {
     this.databaseMinorVersion = databaseMinorVersion;
   }
 
+  /**
+   * Get if prepared statement logging is enabled
+   *
+   * @return true if enabled
+   */
   public boolean getPreparedStatementLogging() {
     return this.preparedStatementLogging;
   }
 
+  /**
+   * Set prepared statement logging
+   *
+   * @param value boolean
+   */
   public void setPreparedStatementLogging(boolean value) {
     this.preparedStatementLogging = value;
   }
 
+  /**
+   * Get inject file upload failure
+   *
+   * @return file to fail
+   */
   public String getInjectFileUploadFailure() {
     return this.injectFileUploadFailure;
   }
 
+  /**
+   * Set inject file upload failure
+   *
+   * @param fileToFail the file to fail
+   */
   public void setInjectFileUploadFailure(String fileToFail) {
     this.injectFileUploadFailure = fileToFail;
   }
 
+  /**
+   * Get timestamp mapped type
+   *
+   * @return SnowflakeType
+   */
   public SnowflakeType getTimestampMappedType() {
     return timestampMappedType;
   }
 
+  /**
+   * Set the timestamp mapped type
+   *
+   * @param timestampMappedType SnowflakeType
+   */
   public void setTimestampMappedType(SnowflakeType timestampMappedType) {
     this.timestampMappedType = timestampMappedType;
   }
 
+  /**
+   * Get if result column is case-insensitive
+   *
+   * @return true if result column is case-insensitive
+   */
   public boolean isResultColumnCaseInsensitive() {
     return isResultColumnCaseInsensitive;
   }
 
+  /**
+   * Set if result column is case-insensitive
+   *
+   * @param resultColumnCaseInsensitive
+   */
   public void setResultColumnCaseInsensitive(boolean resultColumnCaseInsensitive) {
     isResultColumnCaseInsensitive = resultColumnCaseInsensitive;
   }
 
+  /**
+   * Check if we want to treat decimal as int JDBC types
+   *
+   * @return true if decimal is treated as int
+   */
   public boolean isJdbcTreatDecimalAsInt() {
     return isJdbcTreatDecimalAsInt;
   }
 
+  /**
+   * Set if decimal should be treated as int type
+   *
+   * @param jdbcTreatDecimalAsInt boolean
+   */
   public void setJdbcTreatDecimalAsInt(boolean jdbcTreatDecimalAsInt) {
     isJdbcTreatDecimalAsInt = jdbcTreatDecimalAsInt;
   }
 
+  /**
+   * Check if decimal should be treated as int for arrow types
+   *
+   * @return true if decimal should be treated as int
+   */
   public boolean isJdbcArrowTreatDecimalAsInt() {
     return isJdbcArrowTreatDecimalAsInt;
   }
 
+  /**
+   * Set if decimal should be treated as int for arrow types
+   *
+   * @param jdbcArrowTreatDecimalAsInt boolean
+   */
   public void setJdbcArrowTreatDecimalAsInt(boolean jdbcArrowTreatDecimalAsInt) {
     isJdbcArrowTreatDecimalAsInt = jdbcArrowTreatDecimalAsInt;
   }
 
+  /**
+   * Get the server url
+   *
+   * @return the server url or null if it is not set
+   */
   public String getServerUrl() {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.SERVER_URL)) {
       return (String) connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
@@ -289,6 +409,11 @@ public abstract class SFBaseSession {
     return null;
   }
 
+  /**
+   * Get whether columns strings are quoted.
+   *
+   * @return value of 'stringsQuotedForColumnDef' connection property or false if not set.
+   */
   public boolean isStringQuoted() {
     if (connectionPropertiesMap.containsKey(SFSessionProperty.STRINGS_QUOTED)) {
       return (Boolean) connectionPropertiesMap.get(SFSessionProperty.STRINGS_QUOTED);
@@ -346,10 +471,21 @@ public abstract class SFBaseSession {
     }
   }
 
+  /**
+   * Get the connection properties map
+   *
+   * @return the connection properties map
+   */
   public Map<SFSessionProperty, Object> getConnectionPropertiesMap() {
     return connectionPropertiesMap;
   }
 
+  /**
+   * Get the http client key
+   *
+   * @return HttpClientSettingsKey
+   * @throws SnowflakeSQLException if exception encountered
+   */
   public HttpClientSettingsKey getHttpClientKey() throws SnowflakeSQLException {
     // if key is already created, return it without making a new one
     if (ocspAndProxyAndGzipKey != null) {
@@ -547,6 +683,7 @@ public abstract class SFBaseSession {
     }
   }
 
+  /** Unset invalid proxy host and port values. */
   public void unsetInvalidProxyHostAndPort() {
     // If proxyHost and proxyPort are used without http or https unset them, so they are not used
     // later by the ProxySelector.
@@ -558,6 +695,11 @@ public abstract class SFBaseSession {
     }
   }
 
+  /**
+   * Get OCSP mode
+   *
+   * @return OSCPMode
+   */
   public OCSPMode getOCSPMode() {
     OCSPMode ret;
 
@@ -576,18 +718,38 @@ public abstract class SFBaseSession {
     return ret;
   }
 
+  /**
+   * Get the query timeout
+   *
+   * @return the query timeout value
+   */
   public Integer getQueryTimeout() {
     return (Integer) this.connectionPropertiesMap.get(SFSessionProperty.QUERY_TIMEOUT);
   }
 
+  /**
+   * Get the user name
+   *
+   * @return user name
+   */
   public String getUser() {
     return (String) this.connectionPropertiesMap.get(SFSessionProperty.USER);
   }
 
+  /**
+   * Get the server URL
+   *
+   * @return the server URL
+   */
   public String getUrl() {
     return (String) this.connectionPropertiesMap.get(SFSessionProperty.SERVER_URL);
   }
 
+  /**
+   * Get inject wait input
+   *
+   * @return the value of 'inject_wait_in_put' or 0 if not set
+   */
   public int getInjectWaitInPut() {
     Object retVal = this.connectionPropertiesMap.get(SFSessionProperty.INJECT_WAIT_IN_PUT);
     if (retVal != null) {
@@ -600,42 +762,92 @@ public abstract class SFBaseSession {
     return 0;
   }
 
+  /**
+   * Get whether the metadata request should use the session database.
+   *
+   * @return true if it should use the session database
+   */
   public boolean getMetadataRequestUseSessionDatabase() {
     return metadataRequestUseSessionDatabase;
   }
 
+  /**
+   * Set to true if the metadata request should use the session database.
+   *
+   * @param enabled boolean
+   */
   public void setMetadataRequestUseSessionDatabase(boolean enabled) {
     this.metadataRequestUseSessionDatabase = enabled;
   }
 
+  /**
+   * Get if metadata request should use the connection ctx
+   *
+   * @return true if it should use the connection ctx
+   */
   public boolean getMetadataRequestUseConnectionCtx() {
     return this.metadataRequestUseConnectionCtx;
   }
 
+  /**
+   * Set to true if metadata request should use connection ctx
+   *
+   * @param enabled boolean
+   */
   public void setMetadataRequestUseConnectionCtx(boolean enabled) {
     this.metadataRequestUseConnectionCtx = enabled;
   }
 
+  /**
+   * Get injected delay
+   *
+   * @return AtomicInteger
+   */
   AtomicInteger getInjectedDelay() {
     return _injectedDelay;
   }
 
+  /**
+   * Set the injected delay
+   *
+   * @param injectedDelay injectedDelay value
+   */
   public void setInjectedDelay(int injectedDelay) {
     this._injectedDelay.set(injectedDelay);
   }
 
+  /**
+   * Get if NTZ should be treated as UTC
+   *
+   * @return true if NTZ should be treated as UTC
+   */
   public boolean getTreatNTZAsUTC() {
     return treatNTZAsUTC;
   }
 
+  /**
+   * Set whether NTZ should be treated as UTC
+   *
+   * @param treatNTZAsUTC boolean
+   */
   public void setTreatNTZAsUTC(boolean treatNTZAsUTC) {
     this.treatNTZAsUTC = treatNTZAsUTC;
   }
 
+  /**
+   * Get if heartbeat is enabled
+   *
+   * @return true if enabled
+   */
   public boolean getEnableHeartbeat() {
     return enableHeartbeat;
   }
 
+  /**
+   * Set if heartbeat is enabled
+   *
+   * @param enableHeartbeat boolean
+   */
   public void setEnableHeartbeat(boolean enableHeartbeat) {
     this.enableHeartbeat = enableHeartbeat;
   }
@@ -656,39 +868,83 @@ public abstract class SFBaseSession {
     }
   }
 
-  /** Retrieve session heartbeat frequency in seconds */
+  /**
+   * Retrieve session heartbeat frequency in seconds
+   *
+   * @return the heartbeat frequency in seconds
+   */
   public int getHeartbeatFrequency() {
     return this.heartbeatFrequency;
   }
 
+  /**
+   * Get autocommit
+   *
+   * @return true if autocommit is set
+   */
   public boolean getAutoCommit() {
     return autoCommit.get();
   }
 
+  /**
+   * Set autocommit
+   *
+   * @param autoCommit boolean
+   */
   public void setAutoCommit(boolean autoCommit) {
     this.autoCommit.set(autoCommit);
   }
 
+  /**
+   * Get if date should be formatted with timezone
+   *
+   * @return true if date should be formatted with timezone
+   */
   public boolean getFormatDateWithTimezone() {
     return formatDateWithTimezone;
   }
 
+  /**
+   * Set if date should be formatted with timezone
+   *
+   * @param formatDateWithTimezone boolean
+   */
   public void setFormatDateWithTimezone(boolean formatDateWithTimezone) {
     this.formatDateWithTimezone = formatDateWithTimezone;
   }
 
+  /**
+   * Get if session timezone should be used
+   *
+   * @return true if using session timezone
+   */
   public boolean getUseSessionTimezone() {
     return useSessionTimezone;
   }
 
+  /**
+   * Get if using default date format with timezone.
+   *
+   * @return true if using default date format with timezone.
+   */
   public boolean getDefaultFormatDateWithTimezone() {
     return defaultFormatDateWithTimezone;
   }
 
+  /**
+   * Set if session timezone should be used.
+   *
+   * @param useSessionTimezone boolean
+   */
   public void setUseSessionTimezone(boolean useSessionTimezone) {
     this.useSessionTimezone = useSessionTimezone;
   }
 
+  /**
+   * Set if default date format with timezone should be used
+   *
+   * @param defaultFormatDateWithTimezone boolean
+   */
   public void setDefaultFormatDateWithTimezone(boolean defaultFormatDateWithTimezone) {
     this.defaultFormatDateWithTimezone = defaultFormatDateWithTimezone;
   }

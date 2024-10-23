@@ -46,7 +46,7 @@ public class ArrowResultUtil {
   /**
    * new method to get Date from integer
    *
-   * @param day
+   * @param day The day to convert.
    * @return Date
    */
   public static Date getDate(int day) {
@@ -57,11 +57,11 @@ public class ArrowResultUtil {
   /**
    * Method to get Date from integer using timezone offsets
    *
-   * @param day
-   * @param oldTz
-   * @param newTz
-   * @return
-   * @throws SFException
+   * @param day The day to convert.
+   * @param oldTz The old timezone.
+   * @param newTz The new timezone.
+   * @return Date
+   * @throws SFException if date value is invalid
    */
   public static Date getDate(int day, TimeZone oldTz, TimeZone newTz) throws SFException {
     try {
@@ -90,10 +90,10 @@ public class ArrowResultUtil {
   /**
    * simplified moveToTimeZone method
    *
-   * @param milliSecsSinceEpoch
-   * @param oldTZ
-   * @param newTZ
-   * @return offset
+   * @param milliSecsSinceEpoch milliseconds since Epoch
+   * @param oldTZ old timezone
+   * @param newTZ new timezone
+   * @return offset offset value
    */
   private static long moveToTimeZoneOffset(
       long milliSecsSinceEpoch, TimeZone oldTZ, TimeZone newTZ) {
@@ -128,9 +128,9 @@ public class ArrowResultUtil {
   /**
    * move the input timestamp form oldTZ to newTZ
    *
-   * @param ts
-   * @param oldTZ
-   * @param newTZ
+   * @param ts Timestamp
+   * @param oldTZ Old timezone
+   * @param newTZ New timezone
    * @return timestamp in newTZ
    */
   public static Timestamp moveToTimeZone(Timestamp ts, TimeZone oldTZ, TimeZone newTZ) {
@@ -149,7 +149,7 @@ public class ArrowResultUtil {
    *
    * @param epoch the value since epoch time
    * @param scale the scale of the value
-   * @return
+   * @return Timestamp
    */
   public static Timestamp toJavaTimestamp(long epoch, int scale) {
     return toJavaTimestamp(epoch, scale, TimeZone.getDefault(), false);
@@ -160,7 +160,7 @@ public class ArrowResultUtil {
    *
    * @param epoch the value since epoch time
    * @param scale the scale of the value
-   * @return
+   * @return Timestamp
    */
   @SnowflakeJdbcInternalApi
   public static Timestamp toJavaTimestamp(
@@ -178,8 +178,8 @@ public class ArrowResultUtil {
   /**
    * check whether the input seconds out of the scope of Java timestamp
    *
-   * @param seconds
-   * @return
+   * @param seconds long value to check
+   * @return true if value is out of the scope of Java timestamp.
    */
   public static boolean isTimestampOverflow(long seconds) {
     return seconds < Long.MIN_VALUE / powerOfTen(3) || seconds > Long.MAX_VALUE / powerOfTen(3);
@@ -191,10 +191,10 @@ public class ArrowResultUtil {
    * represents as epoch = -1233 and fraction = 766,000,000 For example, -0.13 represents as epoch =
    * -1 and fraction = 870,000,000
    *
-   * @param seconds
-   * @param fraction
-   * @param timezone - The timezone being used for the toString() formatting
-   * @param timezone -
+   * @param seconds seconds value
+   * @param fraction fraction
+   * @param timezone The timezone being used for the toString() formatting
+   * @param useSessionTz boolean useSessionTz
    * @return java timestamp object
    */
   public static Timestamp createTimestamp(

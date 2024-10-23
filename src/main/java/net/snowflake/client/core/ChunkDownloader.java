@@ -14,8 +14,8 @@ public interface ChunkDownloader {
    * be blocked if the chunk is not ready to be consumed (a.k.a not loaded into memory yet)
    *
    * @return result chunk with data loaded
-   * @throws InterruptedException
-   * @throws SnowflakeSQLException
+   * @throws InterruptedException if downloading thread was interrupted
+   * @throws SnowflakeSQLException if downloader encountered an error
    */
   SnowflakeResultChunk getNextChunkToConsume() throws InterruptedException, SnowflakeSQLException;
 
