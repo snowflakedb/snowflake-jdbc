@@ -19,8 +19,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames. */
-@Category(TestCategoryOthers.class)
-public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
+public class FileUploaderSessionlessTest extends FileUploaderPrep {
 
   private ObjectMapper mapper = new ObjectMapper();
 
