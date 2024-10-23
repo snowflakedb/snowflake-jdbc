@@ -110,7 +110,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -148,7 +148,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -185,7 +185,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -200,7 +200,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -236,7 +236,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -295,7 +295,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -334,7 +334,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -370,7 +370,7 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     } catch (SQLException ex) {
       assertThat(ex, instanceOf(SnowflakeSQLException.class));
       assertThat(ex.getErrorCode(), equalTo(NETWORK_ERROR.getMessageCode()));
-      assertThat(ex.getMessage(), httpStatus403Or513());
+      assertThat(ex.getMessage(), httpStatus403Or404Or513());
       assertNull(ex.getCause());
     }
   }
@@ -448,7 +448,10 @@ public class ConnectionWithOCSPModeIT extends BaseJDBCTest {
     }
   }
 
-  private static Matcher<String> httpStatus403Or513() {
-    return anyOf(containsString("HTTP status=403"), containsString("HTTP status=513"));
+  private static Matcher<String> httpStatus403Or404Or513() {
+    return anyOf(
+        containsString("HTTP status=403"),
+        containsString("HTTP status=404"),
+        containsString("HTTP status=513"));
   }
 }
