@@ -1020,8 +1020,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testHandlingSpecialChars() throws Exception {
     try (Statement statement = connection.createStatement()) {
-      String database = startingDatabase;
-      String schema = startingSchema;
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       DatabaseMetaData metaData = connection.getMetaData();
       String escapeChar = metaData.getSearchStringEscape();
       // test getColumns with escaped special characters in table name
@@ -1223,8 +1223,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testGetColumns() throws Throwable {
     try (Statement statement = connection.createStatement()) {
-      String database = startingDatabase;
-      String schema = startingSchema;
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       final String targetTable = "T0";
       try {
         statement.execute(
@@ -1617,8 +1617,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
     final String targetStream = "S0";
     final String targetTable = "T0";
     try (Statement statement = connection.createStatement()) {
-      String database = startingDatabase;
-      String schema = startingSchema;
+      String database = connection.getCatalog();
+      String schema = connection.getSchema();
       String owner = connection.unwrap(SnowflakeConnectionV1.class).getSFBaseSession().getRole();
       String tableName = database + "." + schema + "." + targetTable;
 
@@ -2117,7 +2117,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
           statement,
           schemaName,
           () -> {
-            String schema = startingSchema;
+            String schema = connection.getSchema();
             statement.execute(
                 "create or replace table " + table1 + "(C1 int primary key, C2 string)");
             statement.execute(
@@ -2346,7 +2346,10 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
       DatabaseMetaData metaData = connection.getMetaData();
       try (ResultSet resultSet =
           metaData.getColumns(
-              startingDatabase, startingSchema.replaceAll("_", "\\\\_"), "JDBC\\_VECTOR", null)) {
+              connection.getCatalog(),
+              connection.getSchema().replaceAll("_", "\\\\_"),
+              "JDBC\\_VECTOR",
+              null)) {
         assertTrue(resultSet.next());
         assertEquals(32, resultSet.getObject("COLUMN_SIZE"));
         assertTrue(resultSet.next());
