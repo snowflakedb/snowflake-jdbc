@@ -108,7 +108,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   /**
    * This should never be used. Simply needed this for SFAsynchronousResult subclass
    *
-   * @throws SQLException
+   * @throws SQLException if an error occurs
    */
   protected SnowflakeBaseResultSet() throws SQLException {
     this.resultSetType = 0;
@@ -139,6 +139,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
   @Override
   public abstract byte[] getBytes(int columnIndex) throws SQLException;
 
+  /**
+   * Get Date value
+   *
+   * @param columnIndex column index
+   * @param tz timezone
+   * @return Date value at column index
+   * @throws SQLException if data at column index is incompatible with Date type
+   */
   public abstract Date getDate(int columnIndex, TimeZone tz) throws SQLException;
 
   private boolean getGetDateUseNullTimezone() {
@@ -168,6 +176,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     return getTimestamp(columnIndex, (TimeZone) null);
   }
 
+  /**
+   * Get timestamp value
+   *
+   * @param columnIndex column index
+   * @param tz timezone
+   * @return timestamp value at column index
+   * @throws SQLException if data at column index is incompatible with timestamp
+   */
   public abstract Timestamp getTimestamp(int columnIndex, TimeZone tz) throws SQLException;
 
   @Override
