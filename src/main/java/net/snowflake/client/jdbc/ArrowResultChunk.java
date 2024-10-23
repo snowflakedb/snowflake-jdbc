@@ -138,12 +138,16 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   }
 
   /**
+   * @param dataConversionContext DataConversionContext
    * @return an iterator to iterate over current chunk
    */
   public ArrowChunkIterator getIterator(DataConversionContext dataConversionContext) {
     return new ArrowChunkIterator(dataConversionContext);
   }
 
+  /**
+   * @return an empty iterator to iterate over current chunk
+   */
   public static ArrowChunkIterator getEmptyChunkIterator() {
     return new EmptyArrowResultChunk().new ArrowChunkIterator(null);
   }
@@ -270,6 +274,8 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
   /**
    * merge arrow result chunk with more than one batches into one record batch (Only used for the
    * first chunk when client side sorting is required)
+   *
+   * @throws SnowflakeSQLException if failed to merge first result chunk
    */
   public void mergeBatchesIntoOne() throws SnowflakeSQLException {
     try {
