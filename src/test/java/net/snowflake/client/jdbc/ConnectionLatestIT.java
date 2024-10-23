@@ -12,6 +12,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.AnyOf.anyOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningNotOnAWS;
 import net.snowflake.client.RunningOnGithubAction;
@@ -1313,7 +1315,7 @@ public class ConnectionLatestIT extends BaseJDBCTest {
             .unwrap(SnowflakeConnection.class)
             .downloadStream("@testDownloadStream_stage", "/fileNotExist.gz", true);
       } catch (SQLException ex) {
-        assertThat(ex.getErrorCode(), is(ErrorCode.S3_OPERATION_ERROR.getMessageCode()));
+        assertThat(ex.getErrorCode(), is(ErrorCode.FILE_NOT_FOUND.getMessageCode()));
       }
       long endDownloadTime = System.currentTimeMillis();
       // S3Client retries some exception for a default timeout of 5 minutes
@@ -1616,6 +1618,31 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     try (Connection connection = getConnection(paramProperties)) {
       assertEquals(Duration.ofMillis(100), HttpUtil.getConnectionTimeout());
       assertEquals(Duration.ofMillis(200), HttpUtil.getSocketTimeout());
+    }
+  }
+
+  /** Added in > 3.19.0 */
+  @Test
+  public void shouldFailOnSslExceptionWithLinkToTroubleShootingGuide() throws InterruptedException {
+    Properties properties = new Properties();
+    properties.put("user", "fakeuser");
+    properties.put("password", "testpassword");
+    properties.put("ocspFailOpen", Boolean.FALSE.toString());
+
+    try {
+      DriverManager.getConnection("jdbc:snowflake://expired.badssl.com/", properties);
+      fail("should fail");
+    } catch (SQLException e) {
+      // *.badssl.com may fail with timeout
+      if (!(e.getCause() instanceof SSLHandshakeException)
+          && e.getCause().getMessage().toLowerCase().contains("timed out")) {
+        return;
+      }
+      assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
     }
   }
 }

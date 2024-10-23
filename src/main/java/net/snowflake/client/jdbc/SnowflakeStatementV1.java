@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import net.snowflake.client.core.CancellationReason;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.ParameterBindingDTO;
 import net.snowflake.client.core.ResultUtil;
@@ -952,7 +953,7 @@ class SnowflakeStatementV1 implements Statement, SnowflakeStatement {
     raiseSQLExceptionIfStatementIsClosed();
 
     try {
-      sfBaseStatement.cancel();
+      sfBaseStatement.cancel(CancellationReason.CLIENT_REQUESTED);
     } catch (SFException ex) {
       throw new SnowflakeSQLException(ex, ex.getSqlState(), ex.getVendorCode(), ex.getParams());
     }
