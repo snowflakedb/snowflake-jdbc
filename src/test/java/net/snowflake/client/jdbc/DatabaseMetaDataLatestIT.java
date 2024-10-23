@@ -102,8 +102,8 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
   @Before
   public void setUp() throws SQLException {
     try (Statement stmt = connection.createStatement()) {
-      stmt.execute("USE SCHEMA " + startingSchema);
       stmt.execute("USE DATABASE " + startingDatabase);
+      stmt.execute("USE SCHEMA " + startingSchema);
     }
   }
 
