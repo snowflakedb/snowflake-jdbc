@@ -290,7 +290,7 @@ public class SFSession extends SFBaseSession {
   /**
    * @param queryID query ID of the query whose status is being investigated
    * @return enum of type QueryStatus indicating the query's status
-   * @throws SQLException
+   * @throws SQLException if an error is encountered
    * @deprecated the returned enum is error-prone, use {@link #getQueryStatusV2} instead
    */
   @Deprecated
@@ -337,7 +337,7 @@ public class SFSession extends SFBaseSession {
   /**
    * @param queryID query ID of the query whose status is being investigated
    * @return a QueryStatusV2 instance indicating the query's status
-   * @throws SQLException
+   * @throws SQLException if an error is encountered
    */
   public QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException {
     JsonNode queryNode = getQueryMetadata(queryID);

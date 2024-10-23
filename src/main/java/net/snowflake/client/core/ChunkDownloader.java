@@ -23,7 +23,7 @@ public interface ChunkDownloader {
    * Terminate the chunk downloader, release all resources allocated
    *
    * @return metrics measuring downloader performance
-   * @throws InterruptedException
+   * @throws InterruptedException if error encountered
    */
   DownloaderMetrics terminate() throws InterruptedException;
 }

@@ -265,7 +265,7 @@ public abstract class SFBaseSession {
   /**
    * Set database major version
    *
-   * @param databaseMajorVersion
+   * @param databaseMajorVersion the database major version
    */
   public void setDatabaseMajorVersion(int databaseMajorVersion) {
     this.databaseMajorVersion = databaseMajorVersion;
@@ -355,7 +355,7 @@ public abstract class SFBaseSession {
   /**
    * Set if result column is case-insensitive
    *
-   * @param resultColumnCaseInsensitive
+   * @param resultColumnCaseInsensitive boolean
    */
   public void setResultColumnCaseInsensitive(boolean resultColumnCaseInsensitive) {
     isResultColumnCaseInsensitive = resultColumnCaseInsensitive;
@@ -1162,6 +1162,7 @@ public abstract class SFBaseSession {
    * Fetch the value for a custom session property.
    *
    * @param propertyName The key of the session property to fetch.
+   * @return Object
    */
   public Object getSessionPropertyByKey(String propertyName) {
     return this.customSessionProperties.get(propertyName);
@@ -1170,6 +1171,8 @@ public abstract class SFBaseSession {
   /**
    * Function that checks if the active session can be closed when the connection is closed. Called
    * by SnowflakeConnectionV1.
+   *
+   * @return boolean
    */
   public abstract boolean isSafeToClose();
 
@@ -1177,7 +1180,7 @@ public abstract class SFBaseSession {
    * @param queryID query ID of the query whose status is being investigated
    * @return enum of type QueryStatus indicating the query's status
    * @deprecated Use {@link #getQueryStatusV2(String)}
-   * @throws SQLException
+   * @throws SQLException if error encountered
    */
   @Deprecated
   public abstract QueryStatus getQueryStatus(String queryID) throws SQLException;
@@ -1185,13 +1188,15 @@ public abstract class SFBaseSession {
   /**
    * @param queryID query ID of the query whose status is being investigated
    * @return QueryStatusV2 indicating the query's status
-   * @throws SQLException
+   * @throws SQLException if error encountered
    */
   public abstract QueryStatusV2 getQueryStatusV2(String queryID) throws SQLException;
 
   /**
    * Validates the connection properties used by this session, and returns a list of missing
    * properties.
+   *
+   * @return List of DriverPropertyInfo
    */
   public abstract List<DriverPropertyInfo> checkProperties();
 
@@ -1206,15 +1211,25 @@ public abstract class SFBaseSession {
   /**
    * Returns the telemetry client, if supported, by this session. If not, should return a
    * NoOpTelemetryClient.
+   *
+   * @return Telemetry
    */
   public abstract Telemetry getTelemetryClient();
 
-  /** Makes a heartbeat call to check for session validity. */
+  /**
+   * Makes a heartbeat call to check for session validity.
+   *
+   * @param timeout timeout value
+   * @throws Exception if exception occurs
+   * @throws SFException if exception occurs
+   */
   public abstract void callHeartBeat(int timeout) throws Exception, SFException;
 
   /**
    * JDBC API. Returns a list of warnings generated since starting this session, or the last time it
    * was cleared.
+   *
+   * @return List of SFException's
    */
   public List<SFException> getSqlWarnings() {
     return sqlWarnings;
@@ -1228,22 +1243,52 @@ public abstract class SFBaseSession {
     sqlWarnings.clear();
   }
 
+  /**
+   * Get the SFConnectionHandler
+   *
+   * @return SFConnectionHandler
+   */
   public SFConnectionHandler getSfConnectionHandler() {
     return sfConnectionHandler;
   }
 
+  /**
+   * Get network timeout in milliseconds
+   *
+   * @return network timeout in milliseconds
+   */
   public abstract int getNetworkTimeoutInMilli();
 
+  /**
+   * @return auth timeout
+   */
   public abstract int getAuthTimeout();
 
+  /**
+   * @return max http retries
+   */
   public abstract int getMaxHttpRetries();
 
+  /**
+   * @return SnowflakeConnectString
+   */
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 
+  /**
+   * @return true if this is an async session
+   */
   public abstract boolean isAsyncSession();
 
+  /**
+   * @return QueryContextDTO
+   */
   public abstract QueryContextDTO getQueryContextDTO();
 
+  /**
+   * Set query context
+   *
+   * @param queryContext the query context string
+   */
   public abstract void setQueryContext(String queryContext);
 
   /**
@@ -1251,6 +1296,8 @@ public abstract class SFBaseSession {
    * not. This function will always return true for JDBC client, so that the client JDBC will not
    * have any behavior change. Stored proc JDBC will override this function to return the value of
    * SP_JDBC_ENABLE_TIMESTAMP_WITH_TIMEZONE from server for backward compatibility.
+   *
+   * @return boolean
    */
   public boolean getEnableReturnTimestampWithTimeZone() {
     return enableReturnTimestampWithTimeZone;

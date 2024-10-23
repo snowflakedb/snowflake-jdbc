@@ -127,7 +127,7 @@ public class SFResultSet extends SFJsonResultSet {
    * @param resultSetSerializable data returned in query response
    * @param telemetryClient telemetryClient
    * @param sortResult should sorting take place
-   * @throws SQLException
+   * @throws SQLException if exception is encountered
    */
   public SFResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,
@@ -145,7 +145,7 @@ public class SFResultSet extends SFJsonResultSet {
    * @param session snowflake session
    * @param telemetryClient telemetryClient
    * @param sortResult should sorting take place
-   * @throws SQLException
+   * @throws SQLException if an exception is encountered.
    */
   public SFResultSet(
       SnowflakeResultSetSerializableV1 resultSetSerializable,

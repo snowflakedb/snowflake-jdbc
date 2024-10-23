@@ -160,6 +160,8 @@ public class ArrowResultUtil {
    *
    * @param epoch the value since epoch time
    * @param scale the scale of the value
+   * @param sessionTimezone the session timezone
+   * @param useSessionTimezone should the session timezone be used
    * @return Timestamp
    */
   @SnowflakeJdbcInternalApi
