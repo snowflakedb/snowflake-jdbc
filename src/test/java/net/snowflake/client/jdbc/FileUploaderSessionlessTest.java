@@ -11,12 +11,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.jdbc.cloud.storage.StageInfo;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames. */
+@Category(TestCategoryOthers.class)
 public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
 
   private ObjectMapper mapper = new ObjectMapper();

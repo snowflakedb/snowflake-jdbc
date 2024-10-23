@@ -11,9 +11,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Properties;
+import net.snowflake.client.category.TestCategoryCore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
+@Category(TestCategoryCore.class)
 public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
 
   /**

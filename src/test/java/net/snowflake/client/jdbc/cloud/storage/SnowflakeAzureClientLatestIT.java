@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -18,7 +19,9 @@ import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryOthers.class)
 public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)

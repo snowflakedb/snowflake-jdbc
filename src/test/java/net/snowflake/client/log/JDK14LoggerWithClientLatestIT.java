@@ -18,10 +18,13 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.logging.Level;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryOthers.class)
 public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
   String homePath = systemGetProperty("user.home");
