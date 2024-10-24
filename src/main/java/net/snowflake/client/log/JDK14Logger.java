@@ -185,7 +185,9 @@ public class JDK14Logger implements SFLogger {
   /**
    * This is way to enable logging in JDBC through TRACING parameter or sf client config file.
    *
-   * @param level
+   * @param level log level
+   * @param logPath log path
+   * @throws IOException if there is an error writing to the log
    */
   public static synchronized void instantiateLogger(Level level, String logPath)
       throws IOException {
@@ -212,6 +214,9 @@ public class JDK14Logger implements SFLogger {
    * places.
    *
    * <p>This method will convert string in ex.1 to ex.2
+   *
+   * @param original original string
+   * @return refactored string
    */
   private String refactorString(String original) {
     StringBuilder sb = new StringBuilder();

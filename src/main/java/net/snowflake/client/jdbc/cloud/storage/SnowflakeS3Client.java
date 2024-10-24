@@ -1016,13 +1016,11 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     meta.addUserMetadata(S3_STREAMING_INGEST_CLIENT_KEY, clientKey);
   }
 
-  /** Gets streaming ingest client name to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientName(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(S3_STREAMING_INGEST_CLIENT_NAME);
   }
 
-  /** Gets streaming ingest client key to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(S3_STREAMING_INGEST_CLIENT_KEY);

@@ -56,7 +56,7 @@ public interface SnowflakeConnection {
    * of corresponding query. Used when original ResultSet object is no longer available, such as
    * when original connection has been closed.
    *
-   * @param queryID
+   * @param queryID the query ID
    * @return ResultSet based off the query ID
    * @throws SQLException if an error occurs
    */

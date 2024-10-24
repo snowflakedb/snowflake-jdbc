@@ -1371,13 +1371,11 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
     meta.addUserMetadata(GCS_STREAMING_INGEST_CLIENT_KEY, clientKey);
   }
 
-  /** Gets streaming ingest client name to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientName(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_NAME);
   }
 
-  /** Gets streaming ingest client key to the StorageObjectMetadata object */
   @Override
   public String getStreamingIngestClientKey(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get(GCS_STREAMING_INGEST_CLIENT_KEY);

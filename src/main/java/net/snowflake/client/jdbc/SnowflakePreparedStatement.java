@@ -34,6 +34,8 @@ public interface SnowflakePreparedStatement {
    *
    * @param parameterIndex the parameter index
    * @param map the map instance
+   * @param type the type
+   * @param <T> generic type
    * @throws SQLException if an error occurs
    */
   <T> void setMap(int parameterIndex, Map<String, T> map, int type) throws SQLException;

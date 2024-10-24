@@ -731,6 +731,8 @@ public class SnowflakeUtil {
    *
    * @param mode OCSP mode
    * @param info proxy server properties.
+   * @return HttpClientSettingsKey
+   * @throws SnowflakeSQLException if an error occurs
    */
   public static HttpClientSettingsKey convertProxyPropertiesToHttpClientKey(
       OCSPMode mode, Properties info) throws SnowflakeSQLException {

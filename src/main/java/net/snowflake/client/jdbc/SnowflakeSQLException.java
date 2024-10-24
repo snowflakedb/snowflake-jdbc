@@ -51,12 +51,22 @@ public class SnowflakeSQLException extends SQLException {
         queryId);
   }
 
-  /** use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, String)} */
+  /**
+   * use {@link SnowflakeSQLException#SnowflakeSQLException(String, String, String)}
+   *
+   * @param reason exception reason
+   * @param sqlState the SQL state
+   */
   @Deprecated
   public SnowflakeSQLException(String reason, String sqlState) {
     this((String) null, reason, sqlState);
   }
 
+  /**
+   * @param queryId the queryID
+   * @param reason exception reason
+   * @param sqlState the SQL state
+   */
   public SnowflakeSQLException(String queryId, String reason, String sqlState) {
     super(reason, sqlState);
     this.queryId = queryId;
