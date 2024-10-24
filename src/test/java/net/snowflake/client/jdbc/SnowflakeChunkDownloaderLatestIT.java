@@ -24,7 +24,6 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
   private static String originalProxyPort;
   private static String originalNonProxyHosts;
 
-
   @BeforeClass
   public static void setUp() throws Exception {
     originalProxyHost = System.getProperty("https.proxyHost");
