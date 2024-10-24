@@ -295,7 +295,6 @@ public class ConnectionFipsIT extends AbstractDriverIT {
    * Currently ignored execution on GCP due to exception thrown "SSlException Could not generate XDH keypair"
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGCP.class)
   public void connectWithFipsAndQuery() throws SQLException {
     try (Connection con = getConnection()) {
       Statement statement = con.createStatement();
