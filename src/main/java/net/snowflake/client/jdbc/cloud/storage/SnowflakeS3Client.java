@@ -944,7 +944,12 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     }
   }
 
-  /** Checks the status code of the exception to see if it's a 400 or 404 */
+  /**
+   * Checks the status code of the exception to see if it's a 400 or 404
+   *
+   * @param ex exception
+   * @return true if it's a 400 or 404 status code
+   */
   public boolean isClientException400Or404(Exception ex) {
     if (ex instanceof AmazonServiceException) {
       AmazonServiceException asEx = (AmazonServiceException) (ex);
