@@ -452,6 +452,7 @@ public class RestRequest {
                   ErrorCode.NETWORK_ERROR.getMessageCode());
           // rethrow the timeout exception
           if (response == null && savedEx != null) {
+            logger.debug("Rethrow the timeout exception for: {}", savedEx.getMessage());
             throw new SnowflakeSQLException(
                 savedEx,
                 ErrorCode.NETWORK_ERROR,
@@ -466,6 +467,7 @@ public class RestRequest {
         // If this was a request for an Okta one-time token that failed with a retry-able error,
         // throw exception to renew the token before trying again.
         if (String.valueOf(httpRequest.getURI()).contains("okta.com/api/v1/authn")) {
+          logger.debug("Exception to renew the Okta one-time token before trying again");
           throw new SnowflakeSQLException(
               ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
               retryCount,
@@ -486,6 +488,7 @@ public class RestRequest {
           /* connect timeout not reached */
           // check if this is a login-request
           if (String.valueOf(httpRequest.getURI()).contains("login-request")) {
+            logger.debug("Authentication timeout for login request");
             throw new SnowflakeSQLException(
                 ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
                 retryCount,
@@ -524,6 +527,7 @@ public class RestRequest {
         // increase the retry count and throw special exception to renew the token before retrying.
         if (authTimeout > 0) {
           if (elapsedMilliForTransientIssues >= authTimeoutInMilli) {
+            logger.debug("Authentication request timeout for: {}", requestInfoScrubbed);
             throw new SnowflakeSQLException(
                 ErrorCode.AUTHENTICATOR_REQUEST_TIMEOUT,
                 retryCount,
@@ -608,6 +612,7 @@ public class RestRequest {
 
       // rethrow the timeout exception
       if (response == null && savedEx != null) {
+        logger.debug("Rethrow (2) the timeout exception for: {}", savedEx.getMessage());
         throw new SnowflakeSQLException(
             savedEx,
             ErrorCode.NETWORK_ERROR,
