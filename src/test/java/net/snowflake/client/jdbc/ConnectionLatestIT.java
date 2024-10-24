@@ -49,7 +49,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLHandshakeException;
 import net.snowflake.client.ConditionalIgnoreRule;
@@ -1630,28 +1629,20 @@ public class ConnectionLatestIT extends BaseJDBCTest {
     properties.put("password", "testpassword");
     properties.put("ocspFailOpen", Boolean.FALSE.toString());
 
-    int maxRetries = 5;
-    int retry = 0;
-
-    // *.badssl.com may fail on timeouts
-    while (retry < maxRetries) {
-      try {
-        DriverManager.getConnection("jdbc:snowflake://expired.badssl.com/", properties);
-        fail("should fail");
-      } catch (SQLException e) {
-        if (!(e.getCause() instanceof SSLHandshakeException)) {
-          retry++;
-          Thread.sleep(1000 * new Random().nextInt(3));
-          continue;
-        }
-        assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
-        assertTrue(
-            e.getMessage()
-                .contains(
-                    "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
+    try {
+      DriverManager.getConnection("jdbc:snowflake://expired.badssl.com/", properties);
+      fail("should fail");
+    } catch (SQLException e) {
+      // *.badssl.com may fail with timeout
+      if (!(e.getCause() instanceof SSLHandshakeException)
+          && e.getCause().getMessage().toLowerCase().contains("timed out")) {
         return;
       }
+      assertThat(e.getCause(), instanceOf(SSLHandshakeException.class));
+      assertTrue(
+          e.getMessage()
+              .contains(
+                  "https://docs.snowflake.com/en/user-guide/client-connectivity-troubleshooting/overview"));
     }
-    fail("All retries failed");
   }
 }
