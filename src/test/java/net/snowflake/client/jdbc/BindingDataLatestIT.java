@@ -119,6 +119,63 @@ public class BindingDataLatestIT extends AbstractDriverIT {
   }
 
   /**
+   * Test that stage binding and regular binding insert and return the same value for timestamp_ntz
+   * when exceeding binding threshold.
+   *
+   * @throws SQLException
+   */
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testTimestampBindingWithNTZTypeExceedingBindingThreshold() throws SQLException {
+    TimeZone.setDefault(tokyoTz);
+    try (Connection connection = getConnection();
+        Statement statement = connection.createStatement()) {
+      try {
+        statement.execute(
+            "create or replace table stageinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+        statement.execute(
+            "create or replace table regularinsert(ind int, ltz0 timestamp_ltz, tz0 timestamp_tz, ntz0 timestamp_ntz)");
+        statement.execute("alter session set CLIENT_TIMESTAMP_TYPE_MAPPING=TIMESTAMP_NTZ");
+        statement.execute("alter session set TIMEZONE='Asia/Tokyo'");
+        Timestamp currT = new Timestamp(System.currentTimeMillis());
+
+        // insert using regular binging
+        executePsStatementForTimestampTest(connection, "regularinsert", currT);
+        executePsStatementForTimestampTest(connection, "regularinsert", currT);
+        executePsStatementForTimestampTest(connection, "regularinsert", currT);
+
+        // insert using stage binding
+        statement.execute("ALTER SESSION SET CLIENT_STAGE_ARRAY_BINDING_THRESHOLD = 1");
+        executePsStatementForTimestampTest(connection, "stageinsert", currT);
+        executePsStatementForTimestampTest(connection, "stageinsert", currT);
+        executePsStatementForTimestampTest(connection, "stageinsert", currT);
+
+        // Compare the results
+        try (ResultSet rs1 = statement.executeQuery("select * from stageinsert");
+            ResultSet rs2 = statement.executeQuery("select * from regularinsert")) {
+          for (int i = 0; i < 3; i++) {
+            assertTrue(rs1.next());
+            assertTrue(rs2.next());
+
+            assertEquals(rs1.getInt(1), rs2.getInt(1));
+
+            // Check tz type and ltz type columns have the same value.
+            assertEquals(rs1.getTimestamp(2), rs1.getTimestamp(3));
+
+            assertEquals(rs1.getTimestamp(2), rs2.getTimestamp(2));
+            assertEquals(rs1.getTimestamp(3), rs2.getTimestamp(3));
+            assertEquals(rs1.getTimestamp(4), rs2.getTimestamp(4));
+          }
+        }
+      } finally {
+        statement.execute("drop table if exists stageinsert");
+        statement.execute("drop table if exists regularinsert");
+        TimeZone.setDefault(origTz);
+      }
+    }
+  }
+
+  /**
    * Test that stage binding and regular binding insert and return the same value for timestamp_ltz
    *
    * @throws SQLException
