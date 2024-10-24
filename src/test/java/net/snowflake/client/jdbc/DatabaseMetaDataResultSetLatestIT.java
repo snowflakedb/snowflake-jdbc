@@ -15,8 +15,11 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+import net.snowflake.client.category.TestCategoryResultSet;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryResultSet.class)
 public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
 
   @Test(expected = SnowflakeLoggedFeatureNotSupportedException.class)

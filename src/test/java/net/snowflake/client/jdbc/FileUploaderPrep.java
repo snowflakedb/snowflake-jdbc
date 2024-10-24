@@ -13,7 +13,7 @@ import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
 /** File uploader test prep reused by IT/connection tests and sessionless tests */
-abstract class FileUploaderPrepIT extends BaseJDBCTest {
+abstract class FileUploaderPrep extends BaseJDBCTest {
   @Rule public TemporaryFolder folder = new TemporaryFolder();
   private ObjectMapper mapper = new ObjectMapper();
 
