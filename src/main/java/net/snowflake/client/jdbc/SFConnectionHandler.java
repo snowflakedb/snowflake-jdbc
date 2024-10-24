@@ -38,6 +38,7 @@ public interface SFConnectionHandler {
 
   /**
    * @return Returns the SFStatementInterface implementation for this connection implementation
+   * @throws if any error occurs
    */
   SFBaseStatement getSFStatement() throws SQLException;
 

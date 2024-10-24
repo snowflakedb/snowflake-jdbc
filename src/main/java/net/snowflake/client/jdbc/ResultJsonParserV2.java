@@ -85,6 +85,7 @@ public class ResultJsonParserV2 {
    *     limit)
    * @param session SFBaseSession
    * @return int remaining number of elements in byteBuffer
+   * @throws SnowflakeSQLException if an error is encountered during parsing
    */
   public int continueParsing(ByteBuffer in, SFBaseSession session) throws SnowflakeSQLException {
     if (state == State.UNINITIALIZED) {

@@ -91,6 +91,7 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
    *
    * @param sfConnectionHandler The SnowflakeConnectionImpl.
+   * @throws SQLException if failed to instantiate a SnowflakeConnectionV1.
    */
   public SnowflakeConnectionV1(SFConnectionHandler sfConnectionHandler) throws SQLException {
     initConnectionWithImpl(sfConnectionHandler, null, null);
@@ -100,6 +101,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
    * Instantiates a SnowflakeConnectionV1 with the passed-in SnowflakeConnectionImpl.
    *
    * @param sfConnectionHandler The SnowflakeConnectionImpl.
+   * @param url The URL string.
+   * @param info Connection properties.
+   * @throws SQLException if failed to instantiate connection.
    */
   public SnowflakeConnectionV1(SFConnectionHandler sfConnectionHandler, String url, Properties info)
       throws SQLException {
@@ -195,9 +199,9 @@ public class SnowflakeConnectionV1 implements Connection, SnowflakeConnection {
   /**
    * Get an instance of a ResultSet object
    *
-   * @param queryID
-   * @return
-   * @throws SQLException
+   * @param queryID the query ID
+   * @return ResultSet
+   * @throws SQLException if connection is closed
    */
   public ResultSet createResultSet(String queryID) throws SQLException {
     raiseSQLExceptionIfConnectionIsClosed();

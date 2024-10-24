@@ -204,7 +204,12 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
       return converters;
     }
 
-    /** advance to next row */
+    /**
+     * Advance to next row.
+     *
+     * @return True if there is a next row
+     * @throws SnowflakeSQLException if an error is encountered.
+     */
     public boolean next() throws SnowflakeSQLException {
       currentRowInRecordBatch++;
       if (currentRowInRecordBatch < rowCountInCurrentRecordBatch) {

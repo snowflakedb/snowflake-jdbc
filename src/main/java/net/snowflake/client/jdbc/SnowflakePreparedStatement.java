@@ -8,6 +8,7 @@ import java.util.Map;
 public interface SnowflakePreparedStatement {
   /**
    * @return the Snowflake query ID of the latest executed query
+   * @throws SQLException if an error occurs
    */
   String getQueryID() throws SQLException;
 
@@ -15,25 +16,25 @@ public interface SnowflakePreparedStatement {
    * Execute a query asynchronously
    *
    * @return ResultSet containing results
-   * @throws SQLException
+   * @throws SQLException if an error occurs
    */
   ResultSet executeAsyncQuery() throws SQLException;
 
   /**
    * Sets the designated parameter to the given BigInteger value.
    *
-   * @param parameterIndex
-   * @param x
-   * @throws SQLException
+   * @param parameterIndex the parameter index
+   * @param x the BigInteger value
+   * @throws SQLException if an error occurs
    */
   void setBigInteger(int parameterIndex, BigInteger x) throws SQLException;
 
   /**
    * Sets the designated parameter to the given Map instance.
    *
-   * @param parameterIndex
-   * @param map
-   * @throws SQLException
+   * @param parameterIndex the parameter index
+   * @param map the map instance
+   * @throws SQLException if an error occurs
    */
   <T> void setMap(int parameterIndex, Map<String, T> map, int type) throws SQLException;
 }

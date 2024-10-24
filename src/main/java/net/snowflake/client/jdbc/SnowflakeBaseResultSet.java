@@ -93,6 +93,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
    *
    * @param resultSetSerializable The result set serializable object which includes all metadata to
    *     create the result set
+   * @throws SQLException if an error occurs
    */
   public SnowflakeBaseResultSet(SnowflakeResultSetSerializableV1 resultSetSerializable)
       throws SQLException {
