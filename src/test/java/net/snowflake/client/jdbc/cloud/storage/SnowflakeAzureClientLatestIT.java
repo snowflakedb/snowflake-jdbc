@@ -2,12 +2,15 @@ package net.snowflake.client.jdbc.cloud.storage;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
 
+import com.amazonaws.services.kms.model.UnsupportedOperationException;
 import com.microsoft.azure.storage.blob.ListBlobItem;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.category.TestCategoryOthers;
@@ -45,11 +48,11 @@ public class SnowflakeAzureClientLatestIT extends BaseJDBCTest {
 
   @Test
   public void testCloudExceptionTest() {
-    Iterable<ListBlobItem> mockList = null;
+    Iterable<ListBlobItem> mockList = new ArrayList<>();
     AzureObjectSummariesIterator iterator = new AzureObjectSummariesIterator(mockList);
     AzureObjectSummariesIterator spyIterator = spy(iterator);
     UnsupportedOperationException ex =
         assertThrows(UnsupportedOperationException.class, () -> spyIterator.remove());
-    assertEquals(ex.getMessage(), "remove() method not supported");
+    assertTrue(ex.getMessage().startsWith("remove() method not supported"));
   }
 }

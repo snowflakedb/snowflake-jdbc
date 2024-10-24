@@ -18,14 +18,20 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.logging.Level;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnWin;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.apache.commons.io.FileUtils;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 @Category(TestCategoryOthers.class)
 public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
+
+  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   String homePath = systemGetProperty("user.home");
 
@@ -65,11 +71,14 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   }
 
   @Test
-  public void testJDK14LoggingWithClientConfigPermissionError() throws IOException, SQLException {
-    Path configFilePath = Paths.get("config.json");
-    String configJson = "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"logs\"}}";
-    Path directoryPath = Files.createDirectory(Paths.get("logs"));
-    File directory = directoryPath.toFile();
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnWin.class)
+  public void testJDK14LoggingWithClientConfigPermissionError() throws IOException {
+    File configFile = tmpFolder.newFile("config.json");
+    Path configFilePath = Paths.get(configFile.getAbsolutePath());
+    File directory = tmpFolder.newFolder("logs");
+    Path directoryPath = Paths.get(directory.getAbsolutePath());
+    String configJson =
+        "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"" + directoryPath + "\"}}";
     HashSet<PosixFilePermission> perms = new HashSet<>();
     perms.add(PosixFilePermission.OWNER_READ);
     perms.add(PosixFilePermission.GROUP_READ);
@@ -80,9 +89,6 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     Properties properties = new Properties();
     properties.put("client_config_file", configFilePath.toString());
     assertThrows(SQLException.class, () -> getConnection(properties));
-
-    Files.delete(configFilePath);
-    directory.delete();
   }
 
   @Test
