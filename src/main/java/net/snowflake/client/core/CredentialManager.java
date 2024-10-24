@@ -47,7 +47,7 @@ public class CredentialManager {
   /**
    * Testing purpose. Inject a mock manager.
    *
-   * @param manager
+   * @param manager SecureStorageManager
    */
   void injectSecureStorageManager(SecureStorageManager manager) {
     logger.debug("Injecting secure storage manager");

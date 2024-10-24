@@ -64,7 +64,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * This function is not supported for synchronous queries
    *
    * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException
+   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
    */
   public QueryStatus getStatus() throws SQLException {
     throw new SnowflakeLoggedFeatureNotSupportedException(session);
@@ -74,7 +74,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * This function is not supported for synchronous queries
    *
    * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException
+   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
    */
   @Override
   public QueryStatusV2 getStatusV2() throws SQLException {
@@ -86,7 +86,7 @@ public class SnowflakeResultSetV1 extends SnowflakeBaseResultSet
    * This function is not supported for synchronous queries
    *
    * @return no return value; exception is always thrown
-   * @throws SQLFeatureNotSupportedException
+   * @throws SQLFeatureNotSupportedException always thrown because feature is not supported
    */
   @Override
   public String getQueryErrorMessage() throws SQLException {

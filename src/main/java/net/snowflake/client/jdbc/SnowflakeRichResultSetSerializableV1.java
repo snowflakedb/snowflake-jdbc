@@ -38,6 +38,12 @@ public class SnowflakeRichResultSetSerializableV1 extends SnowflakeResultSetSeri
   /**
    * A factory function for internal usage only. It creates SnowflakeRichResultSetSerializableV1
    * with NoOpChunksDownloader which disables chunks prefetch.
+   *
+   * @param rootNode JSON root node
+   * @param sfSession SFBaseSession
+   * @param sfStatement SFBaseStatement
+   * @return SnowflakeRichResultSetSerializableV1 with NoOpChunksDownloader
+   * @throws SnowflakeSQLException if an error occurs
    */
   public static SnowflakeRichResultSetSerializableV1 createWithChunksPrefetchDisabled(
       JsonNode rootNode, SFBaseSession sfSession, SFBaseStatement sfStatement)

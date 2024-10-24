@@ -67,7 +67,7 @@ public class S3HttpUtil {
    *
    * @param proxyProperties proxy properties
    * @param clientConfig the configuration needed by S3 to set the proxy
-   * @throws SnowflakeSQLException
+   * @throws SnowflakeSQLException when an error is encountered
    */
   public static void setSessionlessProxyForS3(
       Properties proxyProperties, ClientConfiguration clientConfig) throws SnowflakeSQLException {

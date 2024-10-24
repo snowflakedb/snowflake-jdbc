@@ -11,9 +11,17 @@ import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.VarBinaryVector;
 
+/** Converter from Arrow VarBinaryVector to Binary. */
 public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter {
   private VarBinaryVector varBinaryVector;
 
+  /**
+   * Constructor
+   *
+   * @param valueVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public VarBinaryToBinaryConverter(
       ValueVector valueVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.BINARY.name(), valueVector, columnIndex, context);

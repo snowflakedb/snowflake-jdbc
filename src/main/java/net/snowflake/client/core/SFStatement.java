@@ -318,6 +318,8 @@ public class SFStatement extends SFBaseStatement {
    * @param bindValues map of binding values
    * @param describeOnly whether only show the result set metadata
    * @param internal run internal query not showing up in history
+   * @param asyncExec is async execute
+   * @param execTimeData ExecTimeTelemetryData
    * @return raw json response
    * @throws SFException if query is canceled
    * @throws SnowflakeSQLException if query is already running
@@ -752,8 +754,10 @@ public class SFStatement extends SFBaseStatement {
    * Execute sql
    *
    * @param sql sql statement.
+   * @param asyncExec is async exec
    * @param parametersBinding parameters to bind
    * @param caller the JDBC interface method that called this method, if any
+   * @param execTimeData ExecTimeTelemetryData
    * @return whether there is result set or not
    * @throws SQLException if failed to execute sql
    * @throws SFException exception raised from Snowflake components

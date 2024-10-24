@@ -36,8 +36,6 @@ public final class ArrowVectorConverterUtil {
    * converter. Note, converter is built on top of arrow vector, so that arrow data can be converted
    * back to java data
    *
-   * <p>
-   *
    * <p>Arrow converter mappings for Snowflake fixed-point numbers
    * ----------------------------------------------------------------------------------------- Max
    * position and scale Converter
@@ -54,6 +52,7 @@ public final class ArrowVectorConverterUtil {
    * @param session SFBaseSession for purposes of logging
    * @param idx the index of the vector in its batch
    * @return A converter on top og the vector
+   * @throws SnowflakeSQLException if error encountered
    */
   public static ArrowVectorConverter initConverter(
       ValueVector vector, DataConversionContext context, SFBaseSession session, int idx)

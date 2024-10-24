@@ -282,6 +282,7 @@ public class SnowflakeResultSetSerializableV1
    * @param sfStatement the Snowflake statement
    * @param resultStreamProvider a ResultStreamProvider for computing a custom data source for
    *     result-file streams
+   * @param disableChunksPrefetch is prefetch disabled
    * @throws SnowflakeSQLException if failed to parse the result JSON node
    */
   protected SnowflakeResultSetSerializableV1(
@@ -754,6 +755,12 @@ public class SnowflakeResultSetSerializableV1
   /**
    * A factory function for internal usage only. It creates SnowflakeResultSetSerializableV1 with
    * NoOpChunksDownloader which disables chunks prefetch.
+   *
+   * @param rootNode JSON root node
+   * @param sfSession SFBaseSession
+   * @param sfStatement SFBaseStatement
+   * @return SnowflakeResultSetSerializableV1 with NoOpChunksDownloader
+   * @throws SnowflakeSQLException if an error occurs
    */
   @SnowflakeJdbcInternalApi
   public static SnowflakeResultSetSerializableV1 createWithChunksPrefetchDisabled(

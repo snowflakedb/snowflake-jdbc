@@ -76,6 +76,19 @@ public class SnowflakeColumnMetadata implements Serializable {
    * @deprecated Use {@link SnowflakeColumnMetadata#SnowflakeColumnMetadata(String, int, boolean,
    *     int, int, int, String, boolean, SnowflakeType, List, String, String, String, boolean, int)}
    *     instead
+   * @param name name
+   * @param type type
+   * @param nullable is nullable
+   * @param length length
+   * @param precision precision
+   * @param scale scale
+   * @param typeName type name
+   * @param fixed is fixed
+   * @param base SnowflakeType
+   * @param columnSrcDatabase column source database
+   * @param columnSrcSchema column source schema
+   * @param columnSrcTable column source table
+   * @param isAutoIncrement is auto-increment
    */
   @Deprecated
   public SnowflakeColumnMetadata(

@@ -953,11 +953,22 @@ public class SessionUtil {
     return value;
   }
 
-  /** Delete the id token cache */
+  /**
+   * Delete the id token cache
+   *
+   * @param host The host string
+   * @param user The user
+   */
   public static void deleteIdTokenCache(String host, String user) {
     CredentialManager.getInstance().deleteIdTokenCache(host, user);
   }
 
+  /**
+   * Delete the mfa token cache
+   *
+   * @param host The host string
+   * @param user The user
+   */
   public static void deleteMfaTokenCache(String host, String user) {
     CredentialManager.getInstance().deleteMfaTokenCache(host, user);
   }
@@ -1710,6 +1721,7 @@ public class SessionUtil {
    * private link, do nothing.
    *
    * @param serverUrl The Snowflake URL includes protocol such as "https://"
+   * @throws IOException If exception encountered
    */
   public static void resetOCSPUrlIfNecessary(String serverUrl) throws IOException {
     if (PrivateLinkDetector.isPrivateLink(serverUrl)) {

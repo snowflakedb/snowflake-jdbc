@@ -12,7 +12,11 @@ public class TimeMeasurement {
   private long start;
   private long end;
 
-  /** Get the start time as epoch time in microseconds. */
+  /**
+   * Get the start time as epoch time in microseconds.
+   *
+   * @return the start time as epoch time in microseconds.
+   */
   public long getStart() {
     return start;
   }
@@ -22,7 +26,11 @@ public class TimeMeasurement {
     this.start = SnowflakeUtil.getEpochTimeInMicroSeconds();
   }
 
-  /** Get the stop time as epoch time in microseconds. */
+  /**
+   * Get the stop time as epoch time in microseconds.
+   *
+   * @return the stop time as epoch time in microseconds.
+   */
   public long getEnd() {
     return end;
   }

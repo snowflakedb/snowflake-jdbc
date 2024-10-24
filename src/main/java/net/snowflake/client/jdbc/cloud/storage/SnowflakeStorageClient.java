@@ -523,9 +523,19 @@ public interface SnowflakeStorageClient {
    */
   void addStreamingIngestMetadata(StorageObjectMetadata meta, String clientName, String clientKey);
 
-  /** Gets streaming ingest client name to the StorageObjectMetadata object */
+  /**
+   * Gets streaming ingest client name to the StorageObjectMetadata object
+   *
+   * @param meta StorageObjectMetadata
+   * @return Client name
+   */
   String getStreamingIngestClientName(StorageObjectMetadata meta);
 
-  /** Gets streaming ingest client key to the StorageObjectMetadata object */
+  /**
+   * Gets streaming ingest client key to the StorageObjectMetadata object
+   *
+   * @param meta StorageObjectMetadata
+   * @return Client key
+   */
   String getStreamingIngestClientKey(StorageObjectMetadata meta);
 }

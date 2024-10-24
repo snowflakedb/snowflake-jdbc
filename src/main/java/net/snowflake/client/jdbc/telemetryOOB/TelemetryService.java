@@ -158,7 +158,11 @@ public class TelemetryService {
     return context;
   }
 
-  /** Note: Only used for IT */
+  /**
+   * Note: Only used for IT
+   *
+   * @param params parameter map
+   */
   public void updateContextForIT(Map<String, String> params) {
     Properties info = new Properties();
     for (String key : params.keySet()) {
@@ -247,7 +251,11 @@ public class TelemetryService {
     this.setDeployment(deployment);
   }
 
-  /** whether the telemetry service is enabled for current deployment */
+  /**
+   * whether the telemetry service is enabled for current deployment
+   *
+   * @return true if the telemetry service is enabled for current deployment
+   */
   public boolean isDeploymentEnabled() {
     return ENABLED_DEPLOYMENT.contains(this.serverDeployment.name);
   }
@@ -372,7 +380,11 @@ public class TelemetryService {
     eventCnt.incrementAndGet();
   }
 
-  /** Report the event to the telemetry server in a new thread */
+  /**
+   * Report the event to the telemetry server in a new thread
+   *
+   * @param event TelemetryEvent
+   */
   public void report(TelemetryEvent event) {
     reportChooseEvent(event, /* isHTAP */ false);
   }
@@ -389,7 +401,12 @@ public class TelemetryService {
     TelemetryThreadPool.getInstance().execute(runUpload);
   }
 
-  /** Convert an event to a payload in string */
+  /**
+   * Convert an event to a payload in string
+   *
+   * @param event TelemetryEvent
+   * @return the string payload
+   */
   public String exportQueueToString(TelemetryEvent event) {
     JSONArray logs = new JSONArray();
     logs.add(event);
@@ -509,7 +526,13 @@ public class TelemetryService {
     }
   }
 
-  /** log OCSP exception to telemetry */
+  /**
+   * log OCSP exception to telemetry
+   *
+   * @param eventType event type
+   * @param telemetryData JSON telemetry data
+   * @param ex CertificateException
+   */
   public void logOCSPExceptionTelemetryEvent(
       String eventType, JSONObject telemetryData, CertificateException ex) {
     if (enabled) {
@@ -533,7 +556,24 @@ public class TelemetryService {
     }
   }
 
-  /** log error http response to telemetry */
+  /**
+   * log error http response to telemetry
+   *
+   * @param eventName the event name
+   * @param request the HttpRequestBase
+   * @param injectSocketTimeout the socket timeout
+   * @param canceling cancelling
+   * @param withoutCookies without cookies
+   * @param includeRetryParameters include retry parameters
+   * @param includeRequestGuid include rest GUID
+   * @param response the CloseableHttpResponse
+   * @param savedEx the saved exception
+   * @param breakRetryReason the break retry reason
+   * @param retryTimeout the retry timeout
+   * @param retryCount retry count
+   * @param sqlState the SQL state
+   * @param errorCode the error code
+   */
   public void logHttpRequestTelemetryEvent(
       String eventName,
       HttpRequestBase request,
@@ -593,7 +633,12 @@ public class TelemetryService {
     }
   }
 
-  /** log execution times from various processing slices */
+  /**
+   * log execution times from various processing slices
+   *
+   * @param telemetryData JSON telemetry data
+   * @param eventName the event name
+   */
   public void logExecutionTimeTelemetryEvent(JSONObject telemetryData, String eventName) {
     if (htapEnabled) {
       TelemetryEvent.LogBuilder logBuilder = new TelemetryEvent.LogBuilder();
