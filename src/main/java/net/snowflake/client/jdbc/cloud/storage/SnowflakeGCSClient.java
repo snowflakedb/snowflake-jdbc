@@ -186,8 +186,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
    *
    * @param remoteStorageLocation bucket name
    * @param prefix Path
-   * @return
-   * @throws StorageProviderException
+   * @return a collection of storage summary objects
+   * @throws StorageProviderException cloud storage provider error
    */
   @Override
   public StorageObjectSummaryCollection listObjects(String remoteStorageLocation, String prefix)

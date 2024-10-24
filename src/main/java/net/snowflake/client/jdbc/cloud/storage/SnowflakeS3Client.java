@@ -954,13 +954,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     return false;
   }
 
-  /** Returns the material descriptor key */
+  /* Returns the material descriptor key */
   @Override
   public String getMatdescKey() {
     return "x-amz-matdesc";
   }
 
-  /** Adds encryption metadata to the StorageObjectMetadata object */
+  /* Adds encryption metadata to the StorageObjectMetadata object */
   @Override
   public void addEncryptionMetadata(
       StorageObjectMetadata meta,
@@ -974,13 +974,13 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     meta.setContentLength(contentLength);
   }
 
-  /** Adds digest metadata to the StorageObjectMetadata object */
+  /* Adds digest metadata to the StorageObjectMetadata object */
   @Override
   public void addDigestMetadata(StorageObjectMetadata meta, String digest) {
     meta.addUserMetadata("sfc-digest", digest);
   }
 
-  /** Gets digest metadata to the StorageObjectMetadata object */
+  /* Gets digest metadata to the StorageObjectMetadata object */
   @Override
   public String getDigestMetadata(StorageObjectMetadata meta) {
     return meta.getUserMetadata().get("sfc-digest");
@@ -1005,7 +1005,7 @@ public class SnowflakeS3Client implements SnowflakeStorageClient {
     return s3ConnectionSocketFactory;
   }
 
-  /**
+  /*
    * Adds streaming ingest metadata to the StorageObjectMetadata object, used for streaming ingest
    * per client billing calculation
    */
