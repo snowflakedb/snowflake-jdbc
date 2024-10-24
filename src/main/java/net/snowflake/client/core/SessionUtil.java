@@ -1266,6 +1266,7 @@ public class SessionUtil {
       throws SnowflakeSQLException {
 
     String oneTimeToken = "";
+    boolean isMfaEnabledInOkta;
     try {
       URL url = new URL(tokenUrl);
       URI tokenUri = url.toURI();
@@ -1302,10 +1303,24 @@ public class SessionUtil {
               null,
               loginInput.getHttpClientSettingsKey());
 
-      logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
-
       // session token is in the data field of the returned json response
       final JsonNode jsonNode = mapper.readTree(idpResponse);
+      isMfaEnabledInOkta = jsonNode.get("status").asText().equals("MFA_REQUIRED");
+      if (isMfaEnabledInOkta) {
+        SnowflakeSQLException ex =
+            new SnowflakeSQLLoggedException(
+                null,
+                ErrorCode.OKTA_MFA_NOT_SUPPORTED.getMessageCode(),
+                SqlState.FEATURE_NOT_SUPPORTED,
+                "MFA enabled in Okta is not supported with this authenticator type. "
+                    + "Please use 'externalbrowser' instead or a different authentication method.");
+
+        logger.error(
+            "MFA enabled in Okta is not supported with this authenticator type. "
+                + "Please use 'externalbrowser' instead or a different authentication method.",
+            ex);
+        throw ex;
+      }
       oneTimeToken =
           jsonNode.get("sessionToken") != null
               ? jsonNode.get("sessionToken").asText()
@@ -1313,6 +1328,7 @@ public class SessionUtil {
     } catch (IOException | URISyntaxException ex) {
       handleFederatedFlowError(loginInput, ex);
     }
+    logger.debug("User is authenticated against {}.", loginInput.getAuthenticator());
     return oneTimeToken;
   }
 
