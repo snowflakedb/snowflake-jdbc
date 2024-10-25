@@ -27,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+import sun.nio.ch.FileKey;
 
 @Category(TestCategoryOthers.class)
 public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
@@ -36,9 +37,13 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   String homePath = systemGetProperty("user.home");
 
   @Test
-  public void testJDK14LoggingWithClientConfig() {
-    Path configFilePath = Paths.get("config.json");
-    String configJson = "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"logs\"}}";
+  public void testJDK14LoggingWithClientConfig() throws IOException {
+    File configFile = tmpFolder.newFile("config.json");
+    Path configFilePath = configFile.toPath();
+    File logFolder = tmpFolder.newFolder("logs");
+    Path logFolderPath = logFolder.toPath();
+    String configJson =
+        "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"" + logFolderPath + "\"}}";
     try {
       Files.write(configFilePath, configJson.getBytes());
       Properties properties = new Properties();
@@ -47,11 +52,8 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
           Statement statement = connection.createStatement()) {
         statement.executeQuery("select 1");
 
-        File file = new File("logs/jdbc/");
+        File file = new File(Paths.get(logFolderPath.toString(), "jdbc").toString());
         assertTrue(file.exists());
-
-        Files.deleteIfExists(configFilePath);
-        FileUtils.deleteDirectory(new File("logs"));
       }
     } catch (IOException e) {
       fail("testJDK14LoggingWithClientConfig failed");
@@ -74,9 +76,9 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnWin.class)
   public void testJDK14LoggingWithClientConfigPermissionError() throws IOException {
     File configFile = tmpFolder.newFile("config.json");
-    Path configFilePath = Paths.get(configFile.getAbsolutePath());
+    Path configFilePath = configFile.toPath();
     File directory = tmpFolder.newFolder("logs");
-    Path directoryPath = Paths.get(directory.getAbsolutePath());
+    Path directoryPath = directory.toPath();
     String configJson =
         "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"" + directoryPath + "\"}}";
     HashSet<PosixFilePermission> perms = new HashSet<>();
@@ -109,7 +111,8 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
   @Test
   public void testJDK14LoggingWithMissingLogPathClientConfig() throws Exception {
-    Path configFilePath = Paths.get("config.json");
+    File configFile = tmpFolder.newFile("config.json");
+    Path configFilePath = configFile.toPath();
     String configJson = "{\"common\":{\"log_level\":\"debug\"}}";
 
     Path homeLogPath = Paths.get(homePath, "jdbc");
@@ -135,7 +138,8 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   public void testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig() throws Exception {
     System.clearProperty("user.home");
 
-    Path configFilePath = Paths.get("config.json");
+    File configFile = tmpFolder.newFile("config.json");
+    Path configFilePath = configFile.toPath();
     String configJson = "{\"common\":{\"log_level\":\"debug\"}}";
     Files.write(configFilePath, configJson.getBytes());
     Properties properties = new Properties();
