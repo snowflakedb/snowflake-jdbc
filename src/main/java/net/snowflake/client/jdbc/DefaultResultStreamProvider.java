@@ -2,8 +2,10 @@ package net.snowflake.client.jdbc;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.ArgSupplier;
@@ -144,5 +146,18 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
         (ArgSupplier) () -> SecretDetector.maskSASToken(context.getResultChunk().getUrl()),
         response);
     return response;
+  }
+
+  public static InputStream detectGzipAndGetStream(InputStream is) throws IOException {
+    PushbackInputStream pb = new PushbackInputStream(is, 2);
+    byte[] signature = new byte[2];
+    int len = pb.read(signature);
+    pb.unread(signature, 0, len);
+    // https://tools.ietf.org/html/rfc1952
+    if (signature[0] == (byte) 0x1f && signature[1] == (byte) 0x8b) {
+      return new GZIPInputStream(pb);
+    } else {
+      return pb;
+    }
   }
 }

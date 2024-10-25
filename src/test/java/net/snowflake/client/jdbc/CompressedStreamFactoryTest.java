@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
@@ -10,6 +11,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.junit.Test;
@@ -42,16 +44,8 @@ public class CompressedStreamFactoryTest {
     InputStream resultStream = factory.createBasedOnEncodingHeader(gzipStream, encodingHeader);
 
     // Decompress and validate the data matches original
-    ByteArrayOutputStream decompressedOutput = new ByteArrayOutputStream();
-    byte[] buffer = new byte[1024];
-    int bytesRead;
-    try (GZIPInputStream gzipInputStream = (GZIPInputStream) resultStream) {
-      while ((bytesRead = gzipInputStream.read(buffer)) != -1) {
-        decompressedOutput.write(buffer, 0, bytesRead);
-      }
-    }
-    String decompressedData = new String(decompressedOutput.toByteArray(), StandardCharsets.UTF_8);
-
+    assertTrue(resultStream instanceof GZIPInputStream);
+    String decompressedData = IOUtils.toString(resultStream, StandardCharsets.UTF_8);
     assertEquals(originalData, decompressedData);
   }
 
@@ -79,16 +73,8 @@ public class CompressedStreamFactoryTest {
     InputStream resultStream = factory.createBasedOnEncodingHeader(zstdStream, encodingHeader);
 
     // Decompress and validate the data matches original
-    ByteArrayOutputStream decompressedOutput = new ByteArrayOutputStream();
-    byte[] buffer = new byte[1024];
-    int bytesRead;
-    try (ZstdInputStream zstdInputStream = (ZstdInputStream) resultStream) {
-      while ((bytesRead = zstdInputStream.read(buffer)) != -1) {
-        decompressedOutput.write(buffer, 0, bytesRead);
-      }
-    }
-    String decompressedData = new String(decompressedOutput.toByteArray(), StandardCharsets.UTF_8);
-
+    assertTrue(resultStream instanceof ZstdInputStream);
+    String decompressedData = IOUtils.toString(resultStream, StandardCharsets.UTF_8);
     assertEquals(originalData, decompressedData);
   }
 }
