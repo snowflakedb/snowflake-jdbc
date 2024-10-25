@@ -85,7 +85,9 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     perms.add(PosixFilePermission.OWNER_READ);
     perms.add(PosixFilePermission.GROUP_READ);
     perms.add(PosixFilePermission.OTHERS_READ);
+    System.out.println("Perms before: " + Files.getPosixFilePermissions(directoryPath));
     Files.setPosixFilePermissions(directoryPath, perms);
+    System.out.println("Perms after: " + Files.getPosixFilePermissions(directoryPath));
 
     Files.write(configFilePath, configJson.getBytes());
     Properties properties = new Properties();
