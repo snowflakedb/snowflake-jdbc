@@ -31,7 +31,7 @@ public class HttpUtilLatestIT {
   }
 
   /** Added in > 3.14.5 */
-  @Test()
+  @Test
   @Timeout(1)
   public void shouldOverrideConnectionAndSocketTimeouts() {
     // it's hard to test connection timeout so there is only a test for socket timeout

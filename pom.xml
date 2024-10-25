@@ -1082,7 +1082,17 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
               <argLine>--add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED</argLine>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
             </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
           <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
@@ -1146,7 +1156,17 @@
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
               <groups>${testCategory}</groups>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
             </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
@@ -1284,6 +1304,18 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
@@ -1322,6 +1354,18 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
@@ -1354,6 +1398,18 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <goals>
