@@ -31,17 +31,19 @@ public class SnowflakeChunkDownloaderLatestIT extends BaseJDBCTest {
     originalNonProxyHosts = System.getProperty("https.nonProxyHosts");
   }
 
+  private static void restoreProperty(String key, String value) {
+    if (value != null) {
+      System.setProperty(key, value);
+    } else {
+      System.clearProperty(key);
+    }
+  }
+
   @AfterClass
   public static void tearDown() throws Exception {
-    if (originalProxyHost != null) {
-      System.setProperty("https.proxyHost", originalProxyHost);
-    }
-    if (originalProxyPort != null) {
-      System.setProperty("https.proxyPort", originalProxyPort);
-    }
-    if (originalNonProxyHosts != null) {
-      System.setProperty("https.nonProxyHosts", originalNonProxyHosts);
-    }
+    restoreProperty("https.proxyHost", originalProxyHost);
+    restoreProperty("https.proxyPort", originalProxyPort);
+    restoreProperty("https.nonProxyHosts", originalNonProxyHosts);
   }
   /**
    * Tests that the chunk downloader uses the maxHttpRetries and doesn't enter and infinite loop of
