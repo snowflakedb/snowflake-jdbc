@@ -27,7 +27,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-import sun.nio.ch.FileKey;
 
 @Category(TestCategoryOthers.class)
 public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
