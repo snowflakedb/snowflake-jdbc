@@ -22,7 +22,6 @@ import javax.net.ssl.HttpsURLConnection;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.DontRunOnGCP;
 import net.snowflake.client.DontRunOnGithubActions;
-import net.snowflake.client.category.TestCategoryFips;
 import net.snowflake.client.core.SecurityUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
