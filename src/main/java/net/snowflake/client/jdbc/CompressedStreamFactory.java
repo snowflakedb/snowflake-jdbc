@@ -9,12 +9,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.util.zip.GZIPInputStream;
-import net.snowflake.client.core.SnowflakeJdbcInternalApi;
 import net.snowflake.common.core.SqlState;
 import org.apache.http.Header;
 
-@SnowflakeJdbcInternalApi
-public class CompressedStreamFactory {
+class CompressedStreamFactory {
 
   private static final int STREAM_BUFFER_SIZE = MB;
 
