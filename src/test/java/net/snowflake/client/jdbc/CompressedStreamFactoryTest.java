@@ -1,52 +1,30 @@
 package net.snowflake.client.jdbc;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-import org.junit.Before;
+import org.apache.http.message.BasicHeader;
 import org.junit.Test;
 
-public class DefaultResultStreamProviderTest {
+public class CompressedStreamFactoryTest {
 
-  private DefaultResultStreamProvider resultStreamProvider;
-  private HttpResponse mockResponse;
-
-  @Before
-  public void setUp() {
-    resultStreamProvider = new DefaultResultStreamProvider();
-    mockResponse = mock(HttpResponse.class);
-  }
-
-  private InputStream invokeDetectContentEncodingAndGetInputStream(
-      HttpResponse response, InputStream inputStream) throws Exception {
-    Method method =
-        DefaultResultStreamProvider.class.getDeclaredMethod(
-            "detectContentEncodingAndGetInputStream", HttpResponse.class, InputStream.class);
-    method.setAccessible(true);
-    return (InputStream) method.invoke(resultStreamProvider, response, inputStream);
-  }
+  private final CompressedStreamFactory factory = new CompressedStreamFactory();
 
   @Test
   public void testDetectContentEncodingAndGetInputStream_Gzip() throws Exception {
-    // Mocking gzip content encoding
-    Header encodingHeader = mock(Header.class);
-    when(encodingHeader.getValue()).thenReturn("gzip");
-    when(mockResponse.getFirstHeader("Content-Encoding")).thenReturn(encodingHeader);
-
     // Original data to compress and validate
     String originalData = "Some data in GZIP";
+
+    // Creating encoding header
+    Header encodingHeader = new BasicHeader("Content-Encoding", "gzip");
 
     // Creating a gzip byte array using GZIPOutputStream
     byte[] gzipData;
@@ -61,8 +39,7 @@ public class DefaultResultStreamProviderTest {
     InputStream gzipStream = new ByteArrayInputStream(gzipData);
 
     // Call the private method using reflection
-    InputStream resultStream =
-        invokeDetectContentEncodingAndGetInputStream(mockResponse, gzipStream);
+    InputStream resultStream = factory.createBasedOnEncodingHeader(gzipStream, encodingHeader);
 
     // Decompress and validate the data matches original
     ByteArrayOutputStream decompressedOutput = new ByteArrayOutputStream();
@@ -80,13 +57,11 @@ public class DefaultResultStreamProviderTest {
 
   @Test
   public void testDetectContentEncodingAndGetInputStream_Zstd() throws Exception {
-    // Mocking zstd content encoding
-    Header encodingHeader = mock(Header.class);
-    when(encodingHeader.getValue()).thenReturn("zstd");
-    when(mockResponse.getFirstHeader("Content-Encoding")).thenReturn(encodingHeader);
-
     // Original data to compress and validate
     String originalData = "Some data in ZSTD";
+
+    // Creating encoding header
+    Header encodingHeader = new BasicHeader("Content-Encoding", "zstd");
 
     // Creating a zstd byte array using ZstdOutputStream
     byte[] zstdData;
@@ -101,8 +76,7 @@ public class DefaultResultStreamProviderTest {
     InputStream zstdStream = new ByteArrayInputStream(zstdData);
 
     // Call the private method using reflection
-    InputStream resultStream =
-        invokeDetectContentEncodingAndGetInputStream(mockResponse, zstdStream);
+    InputStream resultStream = factory.createBasedOnEncodingHeader(zstdStream, encodingHeader);
 
     // Decompress and validate the data matches original
     ByteArrayOutputStream decompressedOutput = new ByteArrayOutputStream();
