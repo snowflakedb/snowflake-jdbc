@@ -37,7 +37,7 @@
     <apache.httpcore.version>4.4.16</apache.httpcore.version>
     <awssdk.version>1.12.655</awssdk.version>
     <azure.storage.version>5.0.0</azure.storage.version>
-    <bouncycastle.version>1.74</bouncycastle.version>
+    <bouncycastle.version>1.78.1</bouncycastle.version>
     <commons.codec.version>1.17.0</commons.codec.version>
     <commons.io.version>2.11.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
@@ -49,7 +49,7 @@
     <google.guava.version>32.1.1-jre</google.guava.version>
     <google.http.client.version>1.43.3</google.http.client.version>
     <google.jsr305.version>3.0.2</google.jsr305.version>
-    <google.protobuf.java.version>3.23.3</google.protobuf.java.version>
+    <google.protobuf.java.version>3.25.5</google.protobuf.java.version>
     <grpc.version>1.60.0</grpc.version>
     <jackson.version>2.17.2</jackson.version>
     <javax.servlet.version>3.1.0</javax.servlet.version>
@@ -64,6 +64,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <slf4j.version>2.0.13</slf4j.version>
     <threeten.version>1.6.9</threeten.version>
+    <zstd-jni.version>1.5.6-5</zstd-jni.version>
   </properties>
 
   <dependencyManagement>
@@ -115,6 +116,11 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk18on</artifactId>
+      <version>${bouncycastle.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcutil-jdk18on</artifactId>
       <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
@@ -261,6 +267,11 @@
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
       <version>${jsoup.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
+      <version>${zstd-jni.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

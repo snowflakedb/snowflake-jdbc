@@ -4,6 +4,8 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
+import static net.snowflake.client.core.HttpUtil.setProxyForAzure;
+import static net.snowflake.client.core.HttpUtil.setSessionlessProxyForAzure;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.azure.core.http.rest.Response;
@@ -123,7 +125,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     this.encMat = encMat;
     this.session = sfSession;
 
-    logger.info("Setting up the Azure client ", false);
+    logger.debug("Setting up the Azure client ", false);
 
     try {
       URI storageEndpoint =
@@ -279,7 +281,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     BlobProperties properties = blockBlobClient.getProperties();
 
     // Get the user-defined BLOB metadata
-    Map<String, String> userDefinedMetadata = properties.getMetadata();
+    Map<String, String> userDefinedMetadata =  SnowflakeUtil.createCaseInsensitiveMap(properties.getMetadata());
 
     long contentLength = properties.getBlobSize();
     String contentEncoding = properties.getContentEncoding();
@@ -346,7 +348,8 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         //blob.downloadAttributes(null, transferOptions, opContext);
 
         // Get the user-defined BLOB metadata
-        Map<String, String> userDefinedMetadata = blockBlobClient.getProperties().getMetadata();
+        Map<String, String> userDefinedMetadata =
+            SnowflakeUtil.createCaseInsensitiveMap(blockBlobClient.getProperties().getMetadata());
         logger.info("Received user metadata for stageFilePath: {}", stageFilePath);
         userDefinedMetadata.forEach((key, value) -> {
           logger.info("UserDefinedMetadata key: {}, value: {}", key, value);
@@ -450,13 +453,11 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
         InputStream stream = blockBlobClient.openInputStream();
         stopwatch.stop();
         long downloadMillis = stopwatch.elapsedMillis();
-        Map<String, String> userDefinedMetadata = blockBlobClient.getProperties().getMetadata();
-
+        Map<String, String> userDefinedMetadata =
+            SnowflakeUtil.createCaseInsensitiveMap(blockBlobClient.getProperties().getMetadata());
         AbstractMap.SimpleEntry<String, String> encryptionData =
             parseEncryptionData(userDefinedMetadata.get(AZ_ENCRYPTIONDATAPROP), queryId);
-
         String key = encryptionData.getKey();
-
         String iv = encryptionData.getValue();
 
         if (this.isEncrypting() && this.getEncryptionKeySize() <= 256) {

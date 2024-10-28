@@ -1,7 +1,5 @@
 package net.snowflake.client.jdbc;
 
-import static net.snowflake.client.core.Constants.MB;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -34,7 +32,11 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
   // SSE-C algorithm value
   private static final String SSE_C_AES = "AES256";
 
-  private static final int STREAM_BUFFER_SIZE = MB;
+  private CompressedStreamFactory compressedStreamFactory;
+
+  public DefaultResultStreamProvider() {
+    this.compressedStreamFactory = new CompressedStreamFactory();
+  }
 
   @Override
   public InputStream getInputStream(ChunkDownloadContext context) throws Exception {
@@ -71,9 +73,11 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
 
     InputStream inputStream;
     final HttpEntity entity = response.getEntity();
+    Header encoding = response.getFirstHeader("Content-Encoding");
     try {
-      // read the chunk data
-      inputStream = detectContentEncodingAndGetInputStream(response, entity.getContent());
+      // create stream based on compression type
+      inputStream =
+          compressedStreamFactory.createBasedOnEncodingHeader(entity.getContent(), encoding);
     } catch (Exception ex) {
       logger.error("Failed to decompress data: {}", response);
 
@@ -142,28 +146,6 @@ public class DefaultResultStreamProvider implements ResultStreamProvider {
         (ArgSupplier) () -> SecretDetector.maskSASToken(context.getResultChunk().getUrl()),
         response);
     return response;
-  }
-
-  private InputStream detectContentEncodingAndGetInputStream(HttpResponse response, InputStream is)
-      throws IOException, SnowflakeSQLException {
-    InputStream inputStream = is; // Determine the format of the response, if it is not
-    // either plain text or gzip, raise an error.
-    Header encoding = response.getFirstHeader("Content-Encoding");
-    if (encoding != null) {
-      if ("gzip".equalsIgnoreCase(encoding.getValue())) {
-        /* specify buffer size for GZIPInputStream */
-        inputStream = new GZIPInputStream(is, STREAM_BUFFER_SIZE);
-      } else {
-        throw new SnowflakeSQLException(
-            SqlState.INTERNAL_ERROR,
-            ErrorCode.INTERNAL_ERROR.getMessageCode(),
-            "Exception: unexpected compression got " + encoding.getValue());
-      }
-    } else {
-      inputStream = detectGzipAndGetStream(is);
-    }
-
-    return inputStream;
   }
 
   public static InputStream detectGzipAndGetStream(InputStream is) throws IOException {
