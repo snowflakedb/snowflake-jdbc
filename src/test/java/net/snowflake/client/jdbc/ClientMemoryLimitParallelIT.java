@@ -124,8 +124,6 @@ public class ClientMemoryLimitParallelIT extends BaseJDBCWithSharedConnectionIT 
    */
   @Test
   void testQueryNotHanging() throws SQLException {
-      //TODO: look into this
-    Properties paramProperties = new Properties();
     try (Statement statement = connection.createStatement()) {
       queryRows(statement, 100, 160);
     }

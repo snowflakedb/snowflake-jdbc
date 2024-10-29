@@ -12,13 +12,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleFormatProvider;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-//@Category(TestCategoryStatement.class)
+// @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
   private static SnowflakeConnectionV1 sfConnectionV1;
