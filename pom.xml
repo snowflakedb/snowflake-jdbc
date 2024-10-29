@@ -1160,7 +1160,6 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-              <groups>${testCategory}</groups>
               <includes>
                 <include>**/*IT.java</include>
               </includes>
