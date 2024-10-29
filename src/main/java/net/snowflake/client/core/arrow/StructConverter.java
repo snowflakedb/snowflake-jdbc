@@ -21,7 +21,12 @@ public class StructConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    return structVector.getObject(index);
+    return toString(index);
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    return toString(index).getBytes();
   }
 
   @Override

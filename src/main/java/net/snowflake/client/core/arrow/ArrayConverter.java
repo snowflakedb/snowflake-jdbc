@@ -19,7 +19,12 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    return vector.getObject(index);
+    return toString(index);
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    return toString(index).getBytes();
   }
 
   @Override

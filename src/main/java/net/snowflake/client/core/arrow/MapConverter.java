@@ -22,11 +22,12 @@ public class MapConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    List<JsonStringHashMap<String, Object>> entriesList =
-        (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
-    return entriesList.stream()
-        .collect(
-            Collectors.toMap(entry -> entry.get("key").toString(), entry -> entry.get("value")));
+    return toString(index);
+  }
+
+  @Override
+  public byte[] toBytes(int index) throws SFException {
+    return toString(index).getBytes();
   }
 
   @Override

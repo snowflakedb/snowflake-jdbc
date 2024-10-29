@@ -62,6 +62,24 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
         (resultSet) -> assertGetStringIsCompatible(resultSet, expectedStructureTypeRepresentation));
   }
 
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testRunAsGetObject() throws SQLException {
+    withFirstRow(
+            connections.get(queryResultFormat),
+            selectSql,
+            (resultSet) -> assertGetObjectIsCompatible(resultSet, expectedStructureTypeRepresentation));
+  }
+
+  @Test
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  public void testRunAsGetBytes() throws SQLException {
+    withFirstRow(
+            connections.get(queryResultFormat),
+            selectSql,
+            (resultSet) -> assertGetBytesIsCompatible(resultSet, expectedStructureTypeRepresentation));
+  }
+
   @Parameterized.Parameters(name = "format={0},sql={1}")
   public static Collection<Object[]> data() {
     Map<String, String> samples = new LinkedHashMap<>();
