@@ -23,11 +23,6 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
   }
 
   @Override
-  public byte[] toBytes(int index) throws SFException {
-    return toString(index).getBytes();
-  }
-
-  @Override
   public String toString(int index) throws SFException {
     FieldVector vectorUnpacked = vector.getChildrenFromFields().get(0);
     SnowflakeType logicalType =
