@@ -6,7 +6,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,30 +14,41 @@ import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-// @Category(TestCategoryStatement.class)
+// @RunWith(Parameterized.class)
+@Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
-public class PreparedMultiStmtIT extends BaseJDBCTest {
+public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
 
-  protected static String queryResultFormat = "json";
+  @Parameterized.Parameters(name = "format={0}")
+  public static Object[][] data() {
+    // all tests in this class need to run for both query result formats json and arrow
+    return new Object[][] {{"JSON"}, {"Arrow"}};
+  }
 
-  public static Connection getConnection() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection();
-    try (Statement stmt = conn.createStatement()) {
+  protected String queryResultFormat;
+  private static SnowflakeConnectionV1 sfConnectionV1;
+
+  public PreparedMultiStmtIT(String queryResultFormat) {
+    this.queryResultFormat = queryResultFormat;
+    this.sfConnectionV1 = (SnowflakeConnectionV1) connection;
+  }
+
+  @Before
+  public void setSessionResultFormat() throws SQLException {
+    try (Statement stmt = connection.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }
-    return conn;
   }
 
   @Test
   public void testExecuteUpdateCount() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
         statement.execute("create or replace table test_multi_bind(c1 number)");
 
         try (PreparedStatement preparedStatement =
-            connection.prepareStatement(
+            sfConnectionV1.prepareStatement(
                 "insert into test_multi_bind(c1) values(?); insert into "
                     + "test_multi_bind values (?), (?)")) {
 
@@ -77,14 +87,13 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
   /** Less bindings than expected in statement */
   @Test
   public void testExecuteLessBindings() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
         statement.execute("create or replace table test_multi_bind(c1 number)");
 
         try (PreparedStatement preparedStatement =
-            connection.prepareStatement(
+            sfConnectionV1.prepareStatement(
                 "insert into test_multi_bind(c1) values(?); insert into "
                     + "test_multi_bind values (?), (?)")) {
 
@@ -110,14 +119,13 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteMoreBindings() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
         statement.execute("create or replace table test_multi_bind(c1 number)");
 
         try (PreparedStatement preparedStatement =
-            connection.prepareStatement(
+            sfConnectionV1.prepareStatement(
                 "insert into test_multi_bind(c1) values(?); insert into "
                     + "test_multi_bind values (?), (?)")) {
 
@@ -157,12 +165,11 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteQueryBindings() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
       try (PreparedStatement preparedStatement =
-          connection.prepareStatement("select ?; select ?, ?; select ?, ?, ?")) {
+          sfConnectionV1.prepareStatement("select ?; select ?, ?; select ?, ?, ?")) {
 
         assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(6));
 
@@ -200,12 +207,11 @@ public class PreparedMultiStmtIT extends BaseJDBCTest {
 
   @Test
   public void testExecuteQueryNoBindings() throws Exception {
-    try (SnowflakeConnectionV1 connection = (SnowflakeConnectionV1) getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = sfConnectionV1.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
       try (PreparedStatement preparedStatement =
-          connection.prepareStatement("select 10; select 20, 30; select 40, 50, 60")) {
+          sfConnectionV1.prepareStatement("select 10; select 20, 30; select 40, 50, 60")) {
 
         assertThat(preparedStatement.getParameterMetaData().getParameterCount(), is(0));
 

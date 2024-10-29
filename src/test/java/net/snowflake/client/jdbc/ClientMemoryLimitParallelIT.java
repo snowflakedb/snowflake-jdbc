@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
  */
 // @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
-public class ClientMemoryLimitParallelIT {
+public class ClientMemoryLimitParallelIT extends BaseJDBCWithSharedConnectionIT {
   private static Logger LOGGER =
       LoggerFactory.getLogger(ClientMemoryLimitParallelIT.class.getName());
 
@@ -65,16 +65,14 @@ public class ClientMemoryLimitParallelIT {
 
   @BeforeEach
   public void setUp() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute(createTestTableSQL);
     }
   }
 
   @AfterEach
   public void tearDown() throws SQLException {
-    try (Connection con = getConnection();
-        Statement statement = con.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("drop table if exists testtable_cml");
     }
   }
@@ -126,9 +124,9 @@ public class ClientMemoryLimitParallelIT {
    */
   @Test
   void testQueryNotHanging() throws SQLException {
+      //TODO: look into this
     Properties paramProperties = new Properties();
-    try (Connection connection = getConnection(paramProperties);
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       queryRows(statement, 100, 160);
     }
   }

@@ -4,6 +4,10 @@
 package net.snowflake.client.jdbc.cloud.storage;
 
 import static net.snowflake.client.core.Constants.CLOUD_STORAGE_CREDENTIALS_EXPIRED;
+import static net.snowflake.client.jdbc.SnowflakeUtil.convertSystemPropertyToBooleanValue;
+import static net.snowflake.client.jdbc.SnowflakeUtil.createCaseInsensitiveMap;
+import static net.snowflake.client.jdbc.SnowflakeUtil.getRootCause;
+import static net.snowflake.client.jdbc.SnowflakeUtil.isBlank;
 import static net.snowflake.client.jdbc.SnowflakeUtil.systemGetProperty;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -62,7 +66,6 @@ import net.snowflake.client.util.Stopwatch;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import net.snowflake.common.core.SqlState;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
@@ -310,18 +313,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               outStream.close();
               bodyStream.close();
               if (isEncrypting()) {
-                for (Header header : response.getAllHeaders()) {
-                  if (header
-                      .getName()
-                      .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
-                    AbstractMap.SimpleEntry<String, String> encryptionData =
-                        parseEncryptionData(header.getValue(), queryId);
-
-                    key = encryptionData.getKey();
-                    iv = encryptionData.getValue();
-                    break;
-                  }
-                }
+                Map<String, String> userDefinedHeaders =
+                    createCaseInsensitiveMap(response.getAllHeaders());
+                AbstractMap.SimpleEntry<String, String> encryptionData =
+                    parseEncryptionData(
+                        userDefinedHeaders.get(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP),
+                        queryId);
+                key = encryptionData.getKey();
+                iv = encryptionData.getValue();
               }
               stopwatch.stop();
               downloadMillis = stopwatch.elapsedMillis();
@@ -355,9 +354,10 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           logger.debug("Download successful", false);
 
           // Get the user-defined BLOB metadata
-          Map<String, String> userDefinedMetadata = blob.getMetadata();
+          Map<String, String> userDefinedMetadata =
+              SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
           if (isEncrypting()) {
-            if (userDefinedMetadata != null) {
+            if (!userDefinedMetadata.isEmpty()) {
               AbstractMap.SimpleEntry<String, String> encryptionData =
                   parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP), queryId);
 
@@ -499,18 +499,14 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
               inputStream = response.getEntity().getContent();
 
               if (isEncrypting()) {
-                for (Header header : response.getAllHeaders()) {
-                  if (header
-                      .getName()
-                      .equalsIgnoreCase(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP)) {
-                    AbstractMap.SimpleEntry<String, String> encryptionData =
-                        parseEncryptionData(header.getValue(), queryId);
-
-                    key = encryptionData.getKey();
-                    iv = encryptionData.getValue();
-                    break;
-                  }
-                }
+                Map<String, String> userDefinedHeaders =
+                    createCaseInsensitiveMap(response.getAllHeaders());
+                AbstractMap.SimpleEntry<String, String> encryptionData =
+                    parseEncryptionData(
+                        userDefinedHeaders.get(GCS_METADATA_PREFIX + GCS_ENCRYPTIONDATAPROP),
+                        queryId);
+                key = encryptionData.getKey();
+                iv = encryptionData.getValue();
               }
               stopwatch.stop();
               downloadMillis = stopwatch.elapsedMillis();
@@ -538,7 +534,8 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
           inputStream = Channels.newInputStream(blob.reader());
           if (isEncrypting()) {
             // Get the user-defined BLOB metadata
-            Map<String, String> userDefinedMetadata = blob.getMetadata();
+            Map<String, String> userDefinedMetadata =
+                SnowflakeUtil.createCaseInsensitiveMap(blob.getMetadata());
             AbstractMap.SimpleEntry<String, String> encryptionData =
                 parseEncryptionData(userDefinedMetadata.get(GCS_ENCRYPTIONDATAPROP), queryId);
 
@@ -1121,7 +1118,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
     // If there is no space left in the download location, java.io.IOException is thrown.
     // Don't retry.
-    if (SnowflakeUtil.getRootCause(ex) instanceof IOException) {
+    if (getRootCause(ex) instanceof IOException) {
       SnowflakeFileTransferAgent.throwNoSpaceLeftError(session, operation, ex, queryId);
     }
 
@@ -1181,7 +1178,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
         }
       }
     } else if (ex instanceof InterruptedException
-        || SnowflakeUtil.getRootCause(ex) instanceof SocketTimeoutException) {
+        || getRootCause(ex) instanceof SocketTimeoutException) {
       if (retryCount > getMaxRetries()) {
         throw new SnowflakeSQLLoggedException(
             queryId,
@@ -1278,7 +1275,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
   /** Adds digest metadata to the StorageObjectMetadata object */
   @Override
   public void addDigestMetadata(StorageObjectMetadata meta, String digest) {
-    if (!SnowflakeUtil.isBlank(digest)) {
+    if (!isBlank(digest)) {
       meta.addUserMetadata("sfc-digest", digest);
     }
   }
@@ -1355,7 +1352,7 @@ public class SnowflakeGCSClient implements SnowflakeStorageClient {
 
   private static boolean areDisabledGcsDefaultCredentials(SFSession session) {
     return session != null && session.getDisableGcsDefaultCredentials()
-        || SnowflakeUtil.convertSystemPropertyToBooleanValue(
+        || convertSystemPropertyToBooleanValue(
             DISABLE_GCS_DEFAULT_CREDENTIALS_PROPERTY_NAME, false);
   }
 

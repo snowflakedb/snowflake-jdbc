@@ -117,7 +117,7 @@ public class StreamLatestIT extends BaseJDBCTest {
       } catch (Exception ex) {
         assertTrue(ex instanceof SQLException);
         assertTrue(
-            ex.getMessage().matches(".*Blob.*not found in bucket.*"),
+            ex.getMessage().contains("File not found"),
             "Wrong exception message: " + ex.getMessage());
       } finally {
         statement.execute("rm @~/" + DEST_PREFIX);

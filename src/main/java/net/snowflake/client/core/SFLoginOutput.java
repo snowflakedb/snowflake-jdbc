@@ -18,6 +18,7 @@ public class SFLoginOutput {
   private int databaseMajorVersion;
   private int databaseMinorVersion;
   private Duration httpClientSocketTimeout;
+  private Duration httpClientConnectionTimeout;
   private String sessionDatabase;
   private String sessionSchema;
   private String sessionRole;
@@ -53,6 +54,7 @@ public class SFLoginOutput {
     this.databaseMajorVersion = databaseMajorVersion;
     this.databaseMinorVersion = databaseMinorVersion;
     this.httpClientSocketTimeout = Duration.ofMillis(httpClientSocketTimeout);
+    this.httpClientConnectionTimeout = Duration.ofMillis(httpClientConnectionTimeout);
     this.sessionDatabase = sessionDatabase;
     this.sessionSchema = sessionSchema;
     this.sessionRole = sessionRole;
@@ -113,7 +115,7 @@ public class SFLoginOutput {
   }
 
   Duration getHttpClientConnectionTimeout() {
-    return httpClientSocketTimeout;
+    return httpClientConnectionTimeout;
   }
 
   Map<String, Object> getCommonParams() {

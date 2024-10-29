@@ -9,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -25,21 +25,19 @@ import org.junit.jupiter.api.Test;
  */
 // @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
-public class MultiStatementLatestIT extends BaseJDBCTest {
+public class MultiStatementLatestIT extends BaseJDBCWithSharedConnectionIT {
   protected static String queryResultFormat = "json";
 
-  public static Connection getConnection() throws SQLException {
-    Connection conn = BaseJDBCTest.getConnection();
-    try (Statement stmt = conn.createStatement()) {
+  @BeforeEach
+  public void setQueryResultFormat() throws SQLException {
+    try (Statement stmt = connection.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }
-    return conn;
   }
 
   @Test
   public void testMultiStmtExecute() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 3);
       String multiStmtQuery =
           "create or replace temporary table test_multi (cola int);\n"
@@ -75,8 +73,7 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtTransaction() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute(
             "create or replace table test_multi_txn(c1 number, c2 string)" + " as select 10, 'z'");
@@ -121,8 +118,7 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtExecuteUpdate() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String multiStmtQuery =
           "create or replace temporary table test_multi (cola int);\n"
               + "insert into test_multi VALUES (1), (2);\n"
@@ -158,8 +154,7 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtTransactionRollback() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       try {
         statement.execute(
             "create or replace table test_multi_txn_rb(c1 number, c2 string)"
@@ -208,8 +203,7 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtExecuteQuery() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       String multiStmtQuery =
           "select 1;\n"
               + "create or replace temporary table test_multi (cola int);\n"
@@ -255,8 +249,7 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
 
   @Test
   public void testMultiStmtUpdateCount() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 2);
       boolean isResultSet =
           statement.execute(
@@ -281,8 +274,7 @@ public class MultiStatementLatestIT extends BaseJDBCTest {
   /** Test use of anonymous blocks (SNOW-758262) */
   @Test
   public void testAnonymousBlocksUse() throws SQLException {
-    try (Connection connection = getConnection();
-        Statement statement = connection.createStatement()) {
+    try (Statement statement = connection.createStatement()) {
       statement.execute("create or replace table tab758262(c1 number)");
       // Test anonymous block with multistatement
       int multistatementcount = 2;

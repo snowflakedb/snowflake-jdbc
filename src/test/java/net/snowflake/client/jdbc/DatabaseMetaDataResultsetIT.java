@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 // @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
-public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
+public class DatabaseMetaDataResultsetIT extends BaseJDBCWithSharedConnectionIT {
   private static final int columnCount = 9;
   private static final int INT_DATA = 1;
   private static final String TEXT_DATA = "TEST";
@@ -99,8 +98,7 @@ public class DatabaseMetaDataResultsetIT extends BaseJDBCTest {
   }
 
   private ResultSet getResultSet(boolean doNext) throws SQLException {
-    Connection con = getConnection();
-    Statement st = con.createStatement();
+    Statement st = connection.createStatement();
     ResultSet resultSet =
         new SnowflakeDatabaseMetaDataResultSet(columnNames, columnTypeNames, columnTypes, rows, st);
     if (doNext) {
