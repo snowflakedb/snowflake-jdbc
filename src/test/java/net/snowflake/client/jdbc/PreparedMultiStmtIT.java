@@ -11,37 +11,32 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.SimpleFormatProvider;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
-// @RunWith(Parameterized.class)
-@Category(TestCategoryStatement.class)
+//@Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
 public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
-
-  @Parameterized.Parameters(name = "format={0}")
-  public static Object[][] data() {
-    // all tests in this class need to run for both query result formats json and arrow
-    return new Object[][] {{"JSON"}, {"Arrow"}};
-  }
-
-  protected String queryResultFormat;
   private static SnowflakeConnectionV1 sfConnectionV1;
 
-  public PreparedMultiStmtIT(String queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
+  public PreparedMultiStmtIT() {
     this.sfConnectionV1 = (SnowflakeConnectionV1) connection;
   }
 
-  @Before
-  public void setSessionResultFormat() throws SQLException {
+  public void setSessionResultFormat(String queryResultFormat) throws SQLException {
     try (Statement stmt = connection.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
     }
   }
 
-  @Test
-  public void testExecuteUpdateCount() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleFormatProvider.class)
+  public void testExecuteUpdateCount(String queryResultFormat) throws Exception {
+    setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
@@ -85,8 +80,10 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   /** Less bindings than expected in statement */
-  @Test
-  public void testExecuteLessBindings() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleFormatProvider.class)
+  public void testExecuteLessBindings(String queryResultFormat) throws Exception {
+    setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
@@ -117,8 +114,10 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Test
-  public void testExecuteMoreBindings() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleFormatProvider.class)
+  public void testExecuteMoreBindings(String queryResultFormat) throws Exception {
+    setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {
       try {
         statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
@@ -163,8 +162,10 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Test
-  public void testExecuteQueryBindings() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleFormatProvider.class)
+  public void testExecuteQueryBindings(String queryResultFormat) throws Exception {
+    setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 
@@ -205,8 +206,10 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
     }
   }
 
-  @Test
-  public void testExecuteQueryNoBindings() throws Exception {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleFormatProvider.class)
+  public void testExecuteQueryNoBindings(String queryResultFormat) throws Exception {
+    setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {
       statement.execute("alter session set MULTI_STATEMENT_COUNT=0");
 

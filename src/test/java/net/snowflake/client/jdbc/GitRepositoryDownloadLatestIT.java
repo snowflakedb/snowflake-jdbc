@@ -17,14 +17,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-import net.snowflake.client.ConditionalIgnoreRule;
-import net.snowflake.client.RunningOnGithubAction;
-import net.snowflake.client.category.TestCategoryOthers;
-import org.apache.commons.io.IOUtils;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-@Category(TestCategoryOthers.class)
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+@Tag(TestTags.OTHERS)
 public class GitRepositoryDownloadLatestIT extends BaseJDBCTest {
 
   /**
@@ -32,7 +32,7 @@ public class GitRepositoryDownloadLatestIT extends BaseJDBCTest {
    * accountadmin role. Added in > 3.19.0
    */
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
+  @DontRunOnGithubActions
   public void shouldDownloadFileAndStreamFromGitRepository() throws Exception {
     try (Connection connection = getConnection()) {
       prepareJdbcRepoInSnowflake(connection);
