@@ -19,7 +19,7 @@ public class MapConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    return toString(index);
+    return isNull(index)? null : toString(index);
   }
 
   @Override

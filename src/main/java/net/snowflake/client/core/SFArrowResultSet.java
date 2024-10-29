@@ -572,8 +572,12 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     converter.setTreatNTZAsUTC(treatNTZAsUTC);
     converter.setUseSessionTimezone(useSessionTimezone);
     converter.setSessionTimeZone(sessionTimeZone);
-
-    return converter.toString(index);
+    Object obj = converter.toObject(index);
+    boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
+    if (type == Types.STRUCT && isStructuredType && converter instanceof VarCharConverter) {
+        return createJsonSqlInput(columnIndex, obj);
+    }
+    return obj;
   }
 
   private Object createJsonSqlInput(int columnIndex, Object obj) throws SFException {
