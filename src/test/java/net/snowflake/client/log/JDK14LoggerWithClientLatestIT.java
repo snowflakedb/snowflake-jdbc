@@ -23,9 +23,9 @@ import net.snowflake.client.RunningOnWin;
 import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.apache.commons.io.FileUtils;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
