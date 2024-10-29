@@ -52,13 +52,13 @@ abstract class StructuredTypesGetStringBaseIT extends BaseJDBCTest {
   }
 
   protected void assertGetBytesIsCompatible(ResultSet resultSet, String expected)
-          throws SQLException {
+      throws SQLException {
     String result = new String(resultSet.getBytes(1), StandardCharsets.UTF_8);
     TestUtil.assertEqualsIgnoringWhitespace(expected, result);
   }
 
   protected void assertGetStringIsCompatible(ResultSet resultSet, String expected)
-          throws SQLException {
+      throws SQLException {
     String result = resultSet.getString(1);
     TestUtil.assertEqualsIgnoringWhitespace(expected, result);
   }
