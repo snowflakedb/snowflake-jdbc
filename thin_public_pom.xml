@@ -39,7 +39,7 @@
     <azure.storage.version>5.0.0</azure.storage.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <commons.codec.version>1.17.0</commons.codec.version>
-    <commons.io.version>2.11.0</commons.io.version>
+    <commons.io.version>2.17.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
     <google.cloud.core.version>2.21.0</google.cloud.core.version>
     <google.cloud.storage.version>2.22.6</google.cloud.storage.version>
