@@ -406,6 +406,13 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>3.5.1</version>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <id>DefaultIT</id>
