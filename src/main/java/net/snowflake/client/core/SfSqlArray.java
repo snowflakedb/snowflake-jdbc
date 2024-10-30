@@ -16,8 +16,15 @@ import net.snowflake.client.jdbc.SnowflakeUtil;
 @SnowflakeJdbcInternalApi
 public class SfSqlArray implements Array {
 
+  private String text;
   private int baseType;
   private Object elements;
+
+  public SfSqlArray(String text, int baseType, Object elements) {
+    this.text = text;
+    this.baseType = baseType;
+    this.elements = elements;
+  }
 
   public SfSqlArray(int baseType, Object elements) {
     this.baseType = baseType;
@@ -82,6 +89,13 @@ public class SfSqlArray implements Array {
   public void free() throws SQLException {}
 
   public String getJsonString() throws SQLException {
+    if (text == null) {
+      text = buildJsonStringFromElements(elements);
+    }
+    return text;
+  }
+
+  private static String buildJsonStringFromElements(Object elements) throws SQLException {
     try {
       return SnowflakeUtil.mapJson(elements);
     } catch (JsonProcessingException e) {

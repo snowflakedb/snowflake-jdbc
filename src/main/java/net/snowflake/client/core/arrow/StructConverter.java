@@ -21,7 +21,7 @@ public class StructConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    return isNull(index)? null : toString(index);
+    return isNull(index) ? null : new StructObject(toString(index), structVector.getObject(index));
   }
 
   @Override
@@ -32,9 +32,13 @@ public class StructConverter extends AbstractArrowVectorConverter {
       SnowflakeType logicalType =
           ArrowVectorConverterUtil.getSnowflakeTypeFromFieldMetadata(fieldVector.getField());
       try {
-        ArrowVectorConverter converter =
-            ArrowVectorConverterUtil.initConverter(fieldVector, context, columnIndex);
-        builder.appendKeyValue(childName, converter.toString(index), logicalType);
+        if (fieldVector.isNull(index)) {
+          builder.appendKeyValue(childName, null, logicalType);
+        } else {
+          ArrowVectorConverter converter =
+              ArrowVectorConverterUtil.initConverter(fieldVector, context, columnIndex);
+          builder.appendKeyValue(childName, converter.toString(index), logicalType);
+        }
       } catch (SnowflakeSQLException e) {
         return structVector.getObject(index).toString();
       }

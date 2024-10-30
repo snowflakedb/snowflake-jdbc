@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
+import net.snowflake.client.core.arrow.StructObject;
 import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.arrow.VectorTypeConverter;
 import net.snowflake.client.core.json.Converters;
@@ -575,7 +576,10 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     Object obj = converter.toObject(index);
     boolean isStructuredType = resultSetMetaData.isStructuredTypeColumn(columnIndex);
     if (type == Types.STRUCT && isStructuredType && converter instanceof VarCharConverter) {
-        return createJsonSqlInput(columnIndex, obj);
+      if (obj == null) {
+        return null;
+      }
+      return new StructObject((String) obj, createJsonSqlInput(columnIndex, obj));
     }
     return obj;
   }
@@ -599,15 +603,6 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
   }
 
-  private Object createArrowSqlInput(int columnIndex, Map<String, Object> input)
-      throws SFException {
-    if (input == null) {
-      return null;
-    }
-    return new ArrowSqlInput(
-        input, session, converters, resultSetMetaData.getColumnFields(columnIndex));
-  }
-
   @Override
   public Array getArray(int columnIndex) throws SFException {
     ArrowVectorConverter converter = currentChunkIterator.getCurrentConverter(columnIndex - 1);
@@ -619,16 +614,17 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     }
     if (converter instanceof VarCharConverter) {
       return getJsonArray((String) obj, columnIndex);
-    } else if (converter instanceof ArrayConverter) {
-      return getArrowArray((List<Object>) obj, columnIndex);
-    } else if (converter instanceof VectorTypeConverter) {
-      return getArrowArray((List<Object>) obj, columnIndex);
+    } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
+      StructObject structObject = (StructObject) obj;
+      return getArrowArray(
+          structObject.getStringJson(), (List<Object>) structObject.getObject(), columnIndex);
     } else {
       throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
     }
   }
 
-  private SfSqlArray getArrowArray(List<Object> elements, int columnIndex) throws SFException {
+  private SfSqlArray getArrowArray(String text, List<Object> elements, int columnIndex)
+      throws SFException {
     try {
       List<FieldMetadata> fieldMetadataList = resultSetMetaData.getColumnFields(columnIndex);
       if (fieldMetadataList.size() != 1) {
@@ -645,26 +641,31 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       switch (columnType) {
         case Types.INTEGER:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.integerConverter(columnType))
                   .toArray(Integer[]::new));
         case Types.SMALLINT:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.smallIntConverter(columnType))
                   .toArray(Short[]::new));
         case Types.TINYINT:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.tinyIntConverter(columnType))
                   .toArray(Byte[]::new));
         case Types.BIGINT:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.bigIntConverter(columnType)).toArray(Long[]::new));
         case Types.DECIMAL:
         case Types.NUMERIC:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.bigDecimalConverter(columnType))
                   .toArray(BigDecimal[]::new));
@@ -672,35 +673,42 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
         case Types.VARCHAR:
         case Types.LONGNVARCHAR:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.varcharConverter(columnType, columnSubType, scale))
                   .toArray(String[]::new));
         case Types.BINARY:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.bytesConverter(columnType, scale))
                   .toArray(Byte[][]::new));
         case Types.FLOAT:
         case Types.REAL:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.floatConverter(columnType)).toArray(Float[]::new));
         case Types.DOUBLE:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.doubleConverter(columnType))
                   .toArray(Double[]::new));
         case Types.DATE:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.dateFromIntConverter(sessionTimeZone))
                   .toArray(Date[]::new));
         case Types.TIME:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.timeFromIntConverter(scale)).toArray(Time[]::new));
         case Types.TIMESTAMP:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(
                       elements,
@@ -709,13 +717,16 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
                   .toArray(Timestamp[]::new));
         case Types.BOOLEAN:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, converters.booleanConverter(columnType))
                   .toArray(Boolean[]::new));
         case Types.STRUCT:
-          return new SfSqlArray(columnSubType, mapAndConvert(elements, e -> e).toArray(Map[]::new));
+          return new SfSqlArray(
+              text, columnSubType, mapAndConvert(elements, e -> e).toArray(Map[]::new));
         case Types.ARRAY:
           return new SfSqlArray(
+              text,
               columnSubType,
               mapAndConvert(elements, e -> ((List) e).stream().toArray(Map[]::new))
                   .toArray(Map[][]::new));

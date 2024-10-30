@@ -6,7 +6,6 @@ package net.snowflake.client.jdbc.structuredtypes;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
@@ -193,7 +192,6 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testReturnStructAsStringIfTypeWasNotIndicated() throws SQLException {
-    Assume.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
       statement.execute(
@@ -210,7 +208,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
       try (ResultSet resultSet = statement.executeQuery(AllTypesClass.ALL_TYPES_QUERY); ) {
         resultSet.next();
         String object = (String) resultSet.getObject(1);
-        String expected =
+        String expectedJson =
             "{\n"
                 + "  \"string\": \"a\",\n"
                 + "  \"b\": 1,\n"
@@ -232,26 +230,19 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
                 + "    \"intValue\": 2\n"
                 + "  }\n"
                 + "}";
-        assertEquals(expected, object);
+        String expectedJsonFromArrow =
+            "{\"string\": \"a\",\"b\": 1,\"s\": 2,\"i\": 3,\"l\": 4,\"f\": 1.1,\"d\": 2.2,\"bd\": 3.3,"
+                + "\"bool\": true,\"timestamp_ltz\": \"2021-12-22 09:43:44.000 +0100\",\"timestamp_ntz\": \"2021-12-23 09:44:44.000\","
+                + "\"timestamp_tz\": \"2021-12-24 09:45:45.000 +0800\",\"date\": \"2023-12-24\",\"time\": \"12:34:56\",\"binary\": \"616263\","
+                + "\"simpleClass\": {\"string\": \"b\",\"intValue\": 2}}";
+
+        if (queryResultFormat == ResultSetFormatType.NATIVE_ARROW) {
+          assertEquals(expectedJsonFromArrow, object);
+        } else {
+          assertEquals(expectedJson, object);
+        }
       }
     }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testThrowingGettingObjectIfTypeWasNotIndicatedAndFormatNativeArrow()
-      throws SQLException {
-    Assume.assumeTrue(queryResultFormat == ResultSetFormatType.NATIVE_ARROW);
-    withFirstRow(
-        "select {'string':'a'}::OBJECT(string VARCHAR)",
-        (resultSet) -> {
-          assertThrows(SQLException.class, () -> resultSet.getObject(1));
-        });
-    withFirstRow(
-        "select {'x':{'string':'one'},'y':{'string':'two'},'z':{'string':'three'}}::MAP(VARCHAR, OBJECT(string VARCHAR));",
-        (resultSet) -> {
-          assertThrows(SQLException.class, () -> resultSet.getObject(1, Map.class));
-        });
   }
 
   @Test

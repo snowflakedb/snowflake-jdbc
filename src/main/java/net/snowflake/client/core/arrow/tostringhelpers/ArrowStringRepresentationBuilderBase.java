@@ -44,6 +44,9 @@ public abstract class ArrowStringRepresentationBuilderBase {
   }
 
   protected String quoteIfNeeded(String string, SnowflakeType type) {
+    if (string == null) {
+      return null;
+    }
     // Turn Boolean string representations lowercase to make the output JSON-compatible
     // this should be changed on the converter level, but it would be a breaking change thus
     // for now only structured types will be valid JSONs while in NATIVE ARROW mode

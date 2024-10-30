@@ -2,7 +2,6 @@ package net.snowflake.client.jdbc.structuredtypes;
 
 import static org.junit.Assert.assertTrue;
 
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;

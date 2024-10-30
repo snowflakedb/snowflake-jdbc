@@ -1,5 +1,8 @@
 package net.snowflake.client.core.arrow;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import net.snowflake.client.core.DataConversionContext;
 import net.snowflake.client.core.SFException;
 import net.snowflake.client.core.arrow.tostringhelpers.ArrowObjectStringRepresentationBuilder;
@@ -7,6 +10,7 @@ import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.complex.MapVector;
+import org.apache.arrow.vector.util.JsonStringHashMap;
 
 public class MapConverter extends AbstractArrowVectorConverter {
 
@@ -19,7 +23,14 @@ public class MapConverter extends AbstractArrowVectorConverter {
 
   @Override
   public Object toObject(int index) throws SFException {
-    return isNull(index)? null : toString(index);
+    List<JsonStringHashMap<String, Object>> entriesList =
+        (List<JsonStringHashMap<String, Object>>) vector.getObject(index);
+    Map map =
+        entriesList.stream()
+            .collect(
+                Collectors.toMap(
+                    entry -> entry.get("key").toString(), entry -> entry.get("value")));
+    return isNull(index) ? null : new StructObject(toString(index), map);
   }
 
   @Override
