@@ -30,7 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
 @Tag(TestTags.OTHERS)
 public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
-    @TempDir public File tmpFolder;
+  @TempDir public File tmpFolder;
   String homePath = systemGetProperty("user.home");
 
   @Test
@@ -80,12 +80,12 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   @Disabled
   @DontRunOnWindows
   public void testJDK14LoggingWithClientConfigPermissionError() throws IOException {
-      File configFile = new File(tmpFolder, "config.json");
-      configFile.createNewFile();
-      Path configFilePath = configFile.toPath();
-      File logFolder = new File(tmpFolder, "logs");
-      logFolder.createNewFile();
-      Path logFolderPath = logFolder.toPath();
+    File configFile = new File(tmpFolder, "config.json");
+    configFile.createNewFile();
+    Path configFilePath = configFile.toPath();
+    File logFolder = new File(tmpFolder, "logs");
+    logFolder.createNewFile();
+    Path logFolderPath = logFolder.toPath();
     String configJson =
         "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"" + logFolderPath + "\"}}";
     HashSet<PosixFilePermission> perms = new HashSet<>();
