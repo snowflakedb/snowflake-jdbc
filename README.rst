@@ -214,3 +214,8 @@ Support
 
 Feel free to file an issue or submit a PR here for general cases. For official support, contact Snowflake support at:
 https://community.snowflake.com/s/article/How-To-Submit-a-Support-Case-in-Snowflake-Lodge
+
+Note
+----------
+
+This driver currently does not support GCP regional endpoints. Please ensure that any workloads using through this driver do not require support for regional endpoints on GCP. If you have questions about this, please contact Snowflake Support.
