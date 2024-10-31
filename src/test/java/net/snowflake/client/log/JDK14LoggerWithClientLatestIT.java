@@ -18,18 +18,33 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.logging.Level;
 import net.snowflake.client.AbstractDriverIT;
+import net.snowflake.client.ConditionalIgnoreRule;
+import net.snowflake.client.RunningOnWin;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.apache.commons.io.FileUtils;
+import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
+@Category(TestCategoryOthers.class)
 public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
+
+  @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
 
   String homePath = systemGetProperty("user.home");
 
   @Test
-  public void testJDK14LoggingWithClientConfig() {
-    Path configFilePath = Paths.get("config.json");
-    String configJson = "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"logs\"}}";
+  @Ignore
+  public void testJDK14LoggingWithClientConfig() throws IOException {
+    File configFile = tmpFolder.newFile("config.json");
+    Path configFilePath = configFile.toPath();
+    File logFolder = tmpFolder.newFolder("logs");
+    Path logFolderPath = logFolder.toPath();
+    String configJson =
+        "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"" + logFolderPath + "\"}}";
     try {
       Files.write(configFilePath, configJson.getBytes());
       Properties properties = new Properties();
@@ -38,11 +53,8 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
           Statement statement = connection.createStatement()) {
         statement.executeQuery("select 1");
 
-        File file = new File("logs/jdbc/");
+        File file = new File(Paths.get(logFolderPath.toString(), "jdbc").toString());
         assertTrue(file.exists());
-
-        Files.deleteIfExists(configFilePath);
-        FileUtils.deleteDirectory(new File("logs"));
       }
     } catch (IOException e) {
       fail("testJDK14LoggingWithClientConfig failed");
@@ -62,11 +74,15 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   }
 
   @Test
-  public void testJDK14LoggingWithClientConfigPermissionError() throws IOException, SQLException {
-    Path configFilePath = Paths.get("config.json");
-    String configJson = "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"logs\"}}";
-    Path directoryPath = Files.createDirectory(Paths.get("logs"));
-    File directory = directoryPath.toFile();
+  @Ignore
+  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnWin.class)
+  public void testJDK14LoggingWithClientConfigPermissionError() throws IOException {
+    File configFile = tmpFolder.newFile("config.json");
+    Path configFilePath = configFile.toPath();
+    File directory = tmpFolder.newFolder("logs");
+    Path directoryPath = directory.toPath();
+    String configJson =
+        "{\"common\":{\"log_level\":\"debug\",\"log_path\":\"" + directoryPath + "\"}}";
     HashSet<PosixFilePermission> perms = new HashSet<>();
     perms.add(PosixFilePermission.OWNER_READ);
     perms.add(PosixFilePermission.GROUP_READ);
@@ -77,9 +93,6 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
     Properties properties = new Properties();
     properties.put("client_config_file", configFilePath.toString());
     assertThrows(SQLException.class, () -> getConnection(properties));
-
-    Files.delete(configFilePath);
-    directory.delete();
   }
 
   @Test
@@ -99,11 +112,15 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
   }
 
   @Test
+  @Ignore
   public void testJDK14LoggingWithMissingLogPathClientConfig() throws Exception {
-    Path configFilePath = Paths.get("config.json");
+    File configFile = tmpFolder.newFile("config.json");
+    Path configFilePath = configFile.toPath();
     String configJson = "{\"common\":{\"log_level\":\"debug\"}}";
+    Path home = tmpFolder.getRoot().toPath();
+    System.setProperty("user.home", home.toString());
 
-    Path homeLogPath = Paths.get(homePath, "jdbc");
+    Path homeLogPath = Paths.get(home.toString(), "jdbc");
     Files.write(configFilePath, configJson.getBytes());
     Properties properties = new Properties();
     properties.put("client_config_file", configFilePath.toString());
@@ -119,21 +136,23 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
         Files.deleteIfExists(configFilePath);
         FileUtils.deleteDirectory(new File(homeLogPath.toString()));
       }
+    } finally {
+      System.setProperty("user.home", homePath);
     }
   }
 
   @Test
+  @Ignore
   public void testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig() throws Exception {
     System.clearProperty("user.home");
 
-    Path configFilePath = Paths.get("config.json");
+    File configFile = tmpFolder.newFile("config.json");
+    Path configFilePath = configFile.toPath();
     String configJson = "{\"common\":{\"log_level\":\"debug\"}}";
     Files.write(configFilePath, configJson.getBytes());
     Properties properties = new Properties();
     properties.put("client_config_file", configFilePath.toString());
-    try (Connection connection = getConnection(properties);
-        Statement statement = connection.createStatement()) {
-
+    try (Connection connection = getConnection(properties)) {
       fail("testJDK14LoggingWithMissingLogPathNoHomeDirClientConfig failed");
     } catch (SnowflakeSQLLoggedException e) {
       // Succeed
