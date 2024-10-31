@@ -5,7 +5,7 @@
 
   <groupId>net.snowflake</groupId>
   <artifactId>snowflake-jdbc-parent</artifactId>
-  <version>3.19.2-SNAPSHOT</version>
+  <version>3.20.0</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -35,7 +35,7 @@
     <commons.cli.version>1.2</commons.cli.version>
     <commons.codec.version>1.17.0</commons.codec.version>
     <commons.dbcp.version>1.4</commons.dbcp.version>
-    <commons.io.version>2.11.0</commons.io.version>
+    <commons.io.version>2.17.0</commons.io.version>
     <commons.logging.version>1.2</commons.logging.version>
     <commons.pool.version>1.5.4</commons.pool.version>
     <c3p0.version>0.9.5.4</c3p0.version>
