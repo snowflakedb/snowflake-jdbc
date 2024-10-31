@@ -11,9 +11,11 @@ import org.junit.jupiter.api.BeforeEach;
 
 /** Prepared statement integration tests */
 abstract class PreparedStatement0IT extends BaseJDBCTest {
-  private final String queryResultFormat;
-
   Connection init() throws SQLException {
+    return BaseJDBCTest.getConnection();
+  }
+
+  protected Connection getConn(String queryResultFormat) throws SQLException {
     Connection conn = BaseJDBCTest.getConnection();
     try (Statement stmt = conn.createStatement()) {
       stmt.execute("alter session set jdbc_query_result_format = '" + queryResultFormat + "'");
@@ -46,9 +48,5 @@ abstract class PreparedStatement0IT extends BaseJDBCTest {
     try (Connection con = init()) {
       con.createStatement().execute(deleteTableSQL);
     }
-  }
-
-  PreparedStatement0IT(String queryResultFormat) {
-    this.queryResultFormat = queryResultFormat;
   }
 }
