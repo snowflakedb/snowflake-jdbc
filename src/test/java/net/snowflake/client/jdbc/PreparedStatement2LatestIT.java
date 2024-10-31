@@ -21,7 +21,6 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -269,7 +268,8 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @ParameterizedTest
   @ArgumentsSource(SimpleFormatProvider.class)
-  public void testRemoveExtraDescribeCallsSanityCheck(String queryResultFormat) throws SQLException {
+  public void testRemoveExtraDescribeCallsSanityCheck(String queryResultFormat)
+      throws SQLException {
     String queryId1;
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement preparedStatement =

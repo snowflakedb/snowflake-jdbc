@@ -29,12 +29,10 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Set;
 import java.util.TimeZone;
-
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -258,7 +256,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   @ParameterizedTest
   @ArgumentsSource(SimpleFormatProvider.class)
   @DontRunOnGithubActions
-  public void testPrepareTimeout(String queryResultFormat) throws SQLException, InterruptedException {
+  public void testPrepareTimeout(String queryResultFormat)
+      throws SQLException, InterruptedException {
     try (Connection adminCon = getSnowflakeAdminConnection();
         Statement adminStatement = adminCon.createStatement()) {
       adminStatement.execute("alter system set enable_combined_describe=true");
@@ -530,9 +529,9 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
         statement.execute(
             "create or replace table testbindtstz(cola timestamp_tz, colb timestamp_ntz)");
         statement.execute(
-                "ALTER SESSION SET TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+            "ALTER SESSION SET TIMESTAMP_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
         statement.execute(
-                "ALTER SESSION SET TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
+            "ALTER SESSION SET TIMESTAMP_NTZ_OUTPUT_FORMAT='DY, DD MON YYYY HH24:MI:SS TZHTZM'");
 
         try (PreparedStatement preparedStatement =
             connection.prepareStatement("insert into testbindtstz values(?,?)")) {
@@ -670,7 +669,8 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
   @ParameterizedTest
   @ArgumentsSource(SimpleFormatProvider.class)
-  public void testPreparedStatementWithSkipParsingAndBinding(String queryResultFormat) throws Exception {
+  public void testPreparedStatementWithSkipParsingAndBinding(String queryResultFormat)
+      throws Exception {
     try (Connection con = getConn(queryResultFormat);
         Statement statement = con.createStatement()) {
       statement.execute("create or replace table t(c1 int)");

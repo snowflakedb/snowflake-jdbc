@@ -18,13 +18,11 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.TimeZone;
-
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleFormatProvider;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -300,7 +298,8 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
 
   @ParameterizedTest
   @ArgumentsSource(SimpleFormatProvider.class)
-  public void testBatchInsertWithTimestampInputFormatSet(String queryResultFormat) throws SQLException {
+  public void testBatchInsertWithTimestampInputFormatSet(String queryResultFormat)
+      throws SQLException {
     TimeZone originalTimeZone = TimeZone.getDefault();
     TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
     try (Connection connection = getConn(queryResultFormat);
