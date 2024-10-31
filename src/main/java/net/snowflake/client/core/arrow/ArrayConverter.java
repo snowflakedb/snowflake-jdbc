@@ -14,8 +14,6 @@ public class ArrayConverter extends AbstractArrowVectorConverter {
   private final ListVector vector;
 
   /**
-   * Constructor
-   *
    * @param valueVector ListVector
    * @param vectorIndex vector index
    * @param context DataConversionContext

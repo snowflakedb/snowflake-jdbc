@@ -27,8 +27,6 @@ public class TwoFieldStructToTimestampLTZConverter extends AbstractArrowVectorCo
   private IntVector fractions;
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

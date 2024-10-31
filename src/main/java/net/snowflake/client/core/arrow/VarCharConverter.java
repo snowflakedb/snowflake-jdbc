@@ -23,8 +23,6 @@ public class VarCharConverter extends AbstractArrowVectorConverter {
   private VarCharVector varCharVector;
 
   /**
-   * Constructor
-   *
    * @param valueVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

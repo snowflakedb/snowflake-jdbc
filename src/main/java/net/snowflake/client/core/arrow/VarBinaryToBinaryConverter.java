@@ -16,8 +16,6 @@ public class VarBinaryToBinaryConverter extends AbstractArrowVectorConverter {
   private VarBinaryVector varBinaryVector;
 
   /**
-   * Constructor
-   *
    * @param valueVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

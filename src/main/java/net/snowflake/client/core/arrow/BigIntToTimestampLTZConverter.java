@@ -24,8 +24,6 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
   private ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

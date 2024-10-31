@@ -8,7 +8,7 @@ public class PrivateLinkDetector {
    * expected for internal stages for example.
    *
    * @param host host
-   * @return true if host string contains the word 'privatelink'
+   * @return true if host is considered as privatelink environment
    */
   public static boolean isPrivateLink(String host) {
     return host.toLowerCase().contains(".privatelink.snowflakecomputing.");

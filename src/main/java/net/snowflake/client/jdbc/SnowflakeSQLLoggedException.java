@@ -100,7 +100,7 @@ public class SnowflakeSQLLoggedException extends SnowflakeSQLException {
    * Helper function to remove sensitive data (error message, reason) from the stacktrace.
    *
    * @param stackTrace original stacktrace
-   * @return string with sensitive data removed
+   * @return stack trace with sensitive data removed
    */
   static String maskStacktrace(String stackTrace) {
     Pattern STACKTRACE_BEGINNING =

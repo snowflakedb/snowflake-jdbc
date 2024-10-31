@@ -30,8 +30,6 @@ public class ThreeFieldStructToTimestampTZConverter extends AbstractArrowVectorC
   private TimeZone timeZone = TimeZone.getTimeZone("UTC");
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

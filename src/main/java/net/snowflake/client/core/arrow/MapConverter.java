@@ -17,8 +17,6 @@ public class MapConverter extends AbstractArrowVectorConverter {
   private final MapVector vector;
 
   /**
-   * Constructor
-   *
    * @param valueVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

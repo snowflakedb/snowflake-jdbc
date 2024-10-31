@@ -12,8 +12,6 @@ public class VectorTypeConverter extends AbstractArrowVectorConverter {
   private final FixedSizeListVector vector;
 
   /**
-   * Constructor
-   *
    * @param valueVector ValueVector
    * @param vectorIndex vector index
    * @param context DataConversionContext

@@ -24,8 +24,6 @@ public class IntToTimeConverter extends AbstractArrowVectorConverter {
   private ByteBuffer byteBuf = ByteBuffer.allocate(IntVector.TYPE_WIDTH);
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

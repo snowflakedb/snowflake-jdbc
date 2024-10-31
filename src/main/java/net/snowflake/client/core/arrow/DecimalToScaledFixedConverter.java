@@ -18,8 +18,6 @@ public class DecimalToScaledFixedConverter extends AbstractArrowVectorConverter 
   protected DecimalVector decimalVector;
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param vectorIndex vector index
    * @param context DataConversionContext

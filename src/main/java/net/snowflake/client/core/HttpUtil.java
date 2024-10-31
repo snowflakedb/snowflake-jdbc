@@ -724,7 +724,7 @@ public class HttpUtil {
    * @param includeRetryParameters whether to include retry parameters in retried requests
    * @param retryOnHTTP403 whether to retry on HTTP 403 or not
    * @param ocspAndProxyKey OCSP mode and proxy settings for httpclient
-   * @param execTimeData ExecTimeTelemetryData
+   * @param execTimeData query execution time telemetry data object
    * @return response
    * @throws SnowflakeSQLException if Snowflake error occurs
    * @throws IOException raises if a general IO error occurs

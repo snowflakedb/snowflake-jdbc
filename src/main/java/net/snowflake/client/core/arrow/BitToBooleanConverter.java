@@ -15,8 +15,6 @@ public class BitToBooleanConverter extends AbstractArrowVectorConverter {
   private BitVector bitVector;
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

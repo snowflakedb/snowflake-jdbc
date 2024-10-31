@@ -13,27 +13,21 @@ public @interface SnowflakeColumn {
   /**
    * (Optional) The name for a column in database,
    *
-   * <p>The default value is empty string. Provided name can override SqlData field name
-   *
-   * @return string
+   * @return The default value is empty string. Provided name can override SqlData field name.
    */
   String name() default "";
 
   /**
    * (Optional) The snowflake type for a column
    *
-   * <p>The default value is empty string Provided type can override default type
-   *
-   * @return string
+   * @return The default value is empty string Provided type can override default type.
    */
   String type() default "";
 
   /**
    * (Optional) The snowflake nullable flag for a column
    *
-   * <p>The default value is true Provided value can override default nullable value
-   *
-   * @return boolean
+   * @return The default value is true Provided value can override default nullable value.
    */
   boolean nullable() default true;
 
@@ -43,9 +37,8 @@ public @interface SnowflakeColumn {
    *
    * <p>Applies only to columns of exact varchar and binary type.
    *
-   * <p>The default value {@code -1} indicates that a provider-determined length should be inferred.
-   *
-   * @return int
+   * @return The default value {@code -1} indicates that a provider-determined length should be
+   *     inferred.
    */
   int length() default -1;
   /**
@@ -54,10 +47,8 @@ public @interface SnowflakeColumn {
    *
    * <p>Applies only to columns of exact varchar and binary type.
    *
-   * <p>The default value {@code -1} indicates that a provider-determined byteLength should be
-   * inferred.
-   *
-   * @return int
+   * @return The default value {@code -1} indicates that a provider-determined byteLength should be
+   *     inferred.
    */
   int byteLength() default -1;
 
@@ -67,10 +58,8 @@ public @interface SnowflakeColumn {
    *
    * <p>Applies only to columns of exact numeric type.
    *
-   * <p>The default value {@code -1} indicates that a provider-determined precision should be
-   * inferred.
-   *
-   * @return int
+   * @return The default value {@code -1} indicates that a provider-determined precision should be
+   *     inferred.
    */
   int precision() default -1;
 
@@ -80,9 +69,8 @@ public @interface SnowflakeColumn {
    *
    * <p>Applies only to columns of exact numeric type.
    *
-   * <p>The default value {@code 0} indicates that a provider-determined scale should be inferred.
-   *
-   * @return int
+   * @return The default value {@code 0} indicates that a provider-determined scale should be
+   *     inferred.
    */
   int scale() default -1;
 }

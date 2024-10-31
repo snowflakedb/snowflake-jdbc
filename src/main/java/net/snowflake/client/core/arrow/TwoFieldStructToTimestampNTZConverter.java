@@ -28,8 +28,6 @@ public class TwoFieldStructToTimestampNTZConverter extends AbstractArrowVectorCo
   private static final TimeZone NTZ = TimeZone.getTimeZone("UTC");
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

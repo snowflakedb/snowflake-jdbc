@@ -18,8 +18,6 @@ public class TinyIntToFixedConverter extends AbstractArrowVectorConverter {
   protected int sfScale = 0;
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

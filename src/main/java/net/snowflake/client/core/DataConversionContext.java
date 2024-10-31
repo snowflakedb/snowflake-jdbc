@@ -13,44 +13,32 @@ import net.snowflake.common.core.SnowflakeDateTimeFormat;
  */
 public interface DataConversionContext {
   /**
-   * timestamp_ltz formatter
-   *
-   * @return SnowflakeDateTimeFormat
+   * @return timestamp_ltz formatter
    */
   SnowflakeDateTimeFormat getTimestampLTZFormatter();
 
   /**
-   * timestamp_ntz formatter
-   *
-   * @return SnowflakeDateTimeFormat
+   * @return timestamp_ntz formatter
    */
   SnowflakeDateTimeFormat getTimestampNTZFormatter();
 
   /**
-   * timestamp_tz formatter
-   *
-   * @return SnowflakeDateTimeFormat
+   * @return timestamp_ntz formatter
    */
   SnowflakeDateTimeFormat getTimestampTZFormatter();
 
   /**
-   * date formatter
-   *
-   * @return SnowflakeDateTimeFormat
+   * @return date formatter
    */
   SnowflakeDateTimeFormat getDateFormatter();
 
   /**
-   * time formatter
-   *
-   * @return SnowflakeDateTimeFormat
+   * @return time formatter
    */
   SnowflakeDateTimeFormat getTimeFormatter();
 
   /**
-   * binary formatter
-   *
-   * @return SFBinaryFormat
+   * @return binary formatter
    */
   SFBinaryFormat getBinaryFormatter();
 

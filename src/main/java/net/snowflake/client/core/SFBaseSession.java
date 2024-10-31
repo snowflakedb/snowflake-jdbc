@@ -163,7 +163,7 @@ public abstract class SFBaseSession {
    * attributes. This is not used internally by any driver component, but should be maintained by
    * the Session object.
    *
-   * @return Properties
+   * @return client info as Properties
    */
   public Properties getClientInfo() {
     // defensive copy to avoid client from changing the properties
@@ -185,7 +185,7 @@ public abstract class SFBaseSession {
   /**
    * Get common parameters
    *
-   * @return Map of parameters
+   * @return Map of common parameters
    */
   public Map<String, Object> getCommonParameters() {
     return this.commonParameters;
@@ -195,7 +195,7 @@ public abstract class SFBaseSession {
    * Gets the Property associated with the key 'name' in the ClientInfo map.
    *
    * @param name The key from which to fetch the Property.
-   * @return The property string
+   * @return The ClientInfo entry property.
    */
   public String getClientInfo(String name) {
     return this.clientInfo.getProperty(name);
@@ -308,7 +308,7 @@ public abstract class SFBaseSession {
   }
 
   /**
-   * Get inject file upload failure
+   * Get inject file upload failure. Note: Should only be used in internal tests!
    *
    * @return file to fail
    */
@@ -317,7 +317,7 @@ public abstract class SFBaseSession {
   }
 
   /**
-   * Set inject file upload failure
+   * Set inject file upload failure Note: Should only be used in internal tests!
    *
    * @param fileToFail the file to fail
    */
@@ -380,9 +380,7 @@ public abstract class SFBaseSession {
   }
 
   /**
-   * Check if decimal should be treated as int for arrow types
-   *
-   * @return true if decimal should be treated as int
+   * @return true if decimal should be treated as int for arrow types
    */
   public boolean isJdbcArrowTreatDecimalAsInt() {
     return isJdbcArrowTreatDecimalAsInt;
@@ -1162,7 +1160,7 @@ public abstract class SFBaseSession {
    * Fetch the value for a custom session property.
    *
    * @param propertyName The key of the session property to fetch.
-   * @return Object
+   * @return session property value
    */
   public Object getSessionPropertyByKey(String propertyName) {
     return this.customSessionProperties.get(propertyName);
@@ -1172,7 +1170,7 @@ public abstract class SFBaseSession {
    * Function that checks if the active session can be closed when the connection is closed. Called
    * by SnowflakeConnectionV1.
    *
-   * @return boolean
+   * @return true if the active session is safe to close.
    */
   public abstract boolean isSafeToClose();
 
@@ -1209,10 +1207,8 @@ public abstract class SFBaseSession {
   public abstract void close() throws SFException, SnowflakeSQLException;
 
   /**
-   * Returns the telemetry client, if supported, by this session. If not, should return a
-   * NoOpTelemetryClient.
-   *
-   * @return Telemetry
+   * @return Returns the telemetry client, if supported, by this session. If not, should return a
+   *     NoOpTelemetryClient.
    */
   public abstract Telemetry getTelemetryClient();
 
@@ -1260,7 +1256,7 @@ public abstract class SFBaseSession {
   public abstract int getNetworkTimeoutInMilli();
 
   /**
-   * @return auth timeout
+   * @return auth timeout in seconds
    */
   public abstract int getAuthTimeout();
 
@@ -1280,7 +1276,7 @@ public abstract class SFBaseSession {
   public abstract boolean isAsyncSession();
 
   /**
-   * @return QueryContextDTO
+   * @return QueryContextDTO containing opaque information shared with the cloud service.
    */
   public abstract QueryContextDTO getQueryContextDTO();
 
@@ -1292,12 +1288,10 @@ public abstract class SFBaseSession {
   public abstract void setQueryContext(String queryContext);
 
   /**
-   * If true, JDBC will enable returning TIMESTAMP_WITH_TIMEZONE as column type, otherwise it will
-   * not. This function will always return true for JDBC client, so that the client JDBC will not
-   * have any behavior change. Stored proc JDBC will override this function to return the value of
-   * SP_JDBC_ENABLE_TIMESTAMP_WITH_TIMEZONE from server for backward compatibility.
-   *
-   * @return boolean
+   * @return If true, JDBC will enable returning TIMESTAMP_WITH_TIMEZONE as column type, otherwise
+   *     it will not. This function will always return true for JDBC client, so that the client JDBC
+   *     will not have any behavior change. Stored proc JDBC will override this function to return
+   *     the value of SP_JDBC_ENABLE_TIMESTAMP_WITH_TIMEZONE from server for backward compatibility.
    */
   public boolean getEnableReturnTimestampWithTimeZone() {
     return enableReturnTimestampWithTimeZone;

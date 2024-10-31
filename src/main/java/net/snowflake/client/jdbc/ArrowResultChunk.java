@@ -207,7 +207,7 @@ public class ArrowResultChunk extends SnowflakeResultChunk {
     /**
      * Advance to next row.
      *
-     * @return True if there is a next row
+     * @return true if there is a next row
      * @throws SnowflakeSQLException if an error is encountered.
      */
     public boolean next() throws SnowflakeSQLException {

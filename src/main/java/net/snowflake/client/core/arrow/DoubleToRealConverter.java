@@ -19,8 +19,6 @@ public class DoubleToRealConverter extends AbstractArrowVectorConverter {
   private ByteBuffer byteBuf = ByteBuffer.allocate(Float8Vector.TYPE_WIDTH);
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

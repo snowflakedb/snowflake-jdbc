@@ -50,8 +50,6 @@ abstract class AbstractArrowVectorConverter implements ArrowVectorConverter {
   public static final String FIELD_NAME_FRACTION = "fraction"; // fraction in nanoseconds
 
   /**
-   * Constructor
-   *
    * @param logicalTypeStr snowflake logical type of the target arrow vector.
    * @param valueVector value vector
    * @param vectorIndex value index

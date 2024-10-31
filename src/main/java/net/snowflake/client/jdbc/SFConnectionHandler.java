@@ -26,7 +26,7 @@ public interface SFConnectionHandler {
    * Initializes the SnowflakeConnection
    *
    * @param url url string
-   * @param info Properties
+   * @param info connection parameters
    * @throws SQLException if any error is encountered
    */
   void initializeConnection(String url, Properties info) throws SQLException;

@@ -32,8 +32,6 @@ public class DateConverter extends AbstractArrowVectorConverter {
   }
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext

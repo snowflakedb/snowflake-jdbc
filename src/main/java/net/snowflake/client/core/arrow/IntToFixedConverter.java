@@ -19,8 +19,6 @@ public class IntToFixedConverter extends AbstractArrowVectorConverter {
   protected ByteBuffer byteBuf = ByteBuffer.allocate(IntVector.TYPE_WIDTH);
 
   /**
-   * Constructor
-   *
    * @param fieldVector ValueVector
    * @param columnIndex column index
    * @param context DataConversionContext
