@@ -12,7 +12,9 @@ if [[ -z "$GITHUB_ACTIONS" ]]; then
 else
     #
     # GITHUB Actions
-    if [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
+    if [[ -n "$PARAMETERS_FILE_NAME" ]]; then
+        SOURCE_PARAMETER_FILE=$PARAMETERS_FILE_NAME
+    elif [[ "$CLOUD_PROVIDER" == "AZURE" ]]; then
         SOURCE_PARAMETER_FILE=parameters_azure.json.gpg
     elif [[ "$CLOUD_PROVIDER" == "GCP" ]]; then
         SOURCE_PARAMETER_FILE=parameters_gcp.json.gpg

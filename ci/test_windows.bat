@@ -9,7 +9,10 @@ pip install -U snowflake-connector-python
 
 cd %GITHUB_WORKSPACE%
 
-if "%CLOUD_PROVIDER%"=="AZURE" (
+if defined PARAMETERS_FILE_NAME if not "%PARAMETERS_FILE_NAME%"=="" (
+  set ENCODED_PARAMETERS_FILE=.github/workflows/%PARAMETERS_FILE_NAME%
+)
+else if "%CLOUD_PROVIDER%"=="AZURE" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_azure.json.gpg
 ) else if "%CLOUD_PROVIDER%"=="GCP" (
   set ENCODED_PARAMETERS_FILE=.github/workflows/parameters_gcp.json.gpg
