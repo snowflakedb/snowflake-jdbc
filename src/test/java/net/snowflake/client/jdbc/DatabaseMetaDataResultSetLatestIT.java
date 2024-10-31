@@ -16,8 +16,12 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+import net.snowflake.client.category.TestCategoryResultSet;
+import net.snowflake.client.category.TestTags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+@Tag(TestTags.RESULT_SET)
 public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
 
   @Test

@@ -20,7 +20,7 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.jupiter.api.Test;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames. */
-public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
+public class FileUploaderSessionlessTest extends FileUploaderPrep {
 
   private ObjectMapper mapper = new ObjectMapper();
 

@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -22,9 +23,11 @@ import net.snowflake.client.jdbc.SnowflakeConnectionV1;
 import net.snowflake.client.jdbc.SnowflakeFileTransferAgent;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+@Tag(TestTags.OTHERS)
 public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
 
   @Test

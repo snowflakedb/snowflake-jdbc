@@ -52,7 +52,7 @@ import org.junit.jupiter.api.Test;
 /** Tests for SnowflakeFileTransferAgent that require an active connection */
 // @Category(TestCategoryOthers.class)
 @Tag(TestTags.OTHERS)
-public class FileUploaderLatestIT extends FileUploaderPrepIT {
+public class FileUploaderLatestIT extends FileUploaderPrep {
   private static final String OBJ_META_STAGE = "testObjMeta";
   private ObjectMapper mapper = new ObjectMapper();
   private static final String PUT_COMMAND = "put file:///dummy/path/file2.gz @testStage";

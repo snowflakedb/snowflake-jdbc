@@ -3,9 +3,9 @@
  */
 package net.snowflake.client.jdbc;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,8 +47,8 @@ public class GitRepositoryDownloadLatestIT extends BaseJDBCTest {
       List<String> fetchedStreamContent =
           getContentFromStream(connection, stageName, filePathInGitRepo);
 
-      assertFalse("File content cannot be empty", fetchedFileContent.isEmpty());
-      assertFalse("Stream content cannot be empty", fetchedStreamContent.isEmpty());
+      assertFalse(fetchedFileContent.isEmpty(), "File content cannot be empty");
+      assertFalse(fetchedStreamContent.isEmpty(), "Stream content cannot be empty");
       assertEquals(fetchedFileContent, fetchedStreamContent);
     }
   }
@@ -79,7 +79,7 @@ public class GitRepositoryDownloadLatestIT extends BaseJDBCTest {
     try (Statement statement = connection.createStatement();
         ResultSet rs = statement.executeQuery(command); ) {
       // then
-      assertTrue("has result", rs.next());
+      assertTrue(rs.next(), "has result");
       return Files.readAllLines(downloadedFile);
     } finally {
       Files.delete(downloadedFile);

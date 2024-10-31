@@ -11,7 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 
 /** File uploader test prep reused by IT/connection tests and sessionless tests */
-abstract class FileUploaderPrepIT extends BaseJDBCTest {
+abstract class FileUploaderPrep extends BaseJDBCTest {
   private ObjectMapper mapper = new ObjectMapper();
 
   private final String exampleS3JsonStringWithStageEndpoint =
