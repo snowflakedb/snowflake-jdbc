@@ -11,10 +11,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryStatement;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
+@Category(TestCategoryStatement.class)
 public class MaxLobSizeLatestIT extends BaseJDBCTest {
 
   /**

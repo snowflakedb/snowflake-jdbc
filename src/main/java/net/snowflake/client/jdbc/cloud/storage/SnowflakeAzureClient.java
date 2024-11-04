@@ -705,7 +705,7 @@ public class SnowflakeAzureClient implements SnowflakeStorageClient {
     final InputStream stream;
     FileInputStream srcFileStream = null;
     try {
-      if (isEncrypting() && getEncryptionKeySize() < 256) {
+      if (isEncrypting() && getEncryptionKeySize() <= 256) {
         try {
           final InputStream uploadStream =
               uploadFromStream

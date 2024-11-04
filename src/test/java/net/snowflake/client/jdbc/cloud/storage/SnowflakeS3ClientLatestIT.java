@@ -15,6 +15,7 @@ import java.sql.Statement;
 import java.util.Properties;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.category.TestCategoryOthers;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.SFStatement;
 import net.snowflake.client.jdbc.BaseJDBCTest;
@@ -24,8 +25,10 @@ import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
+@Category(TestCategoryOthers.class)
 public class SnowflakeS3ClientLatestIT extends BaseJDBCTest {
 
   @Test
