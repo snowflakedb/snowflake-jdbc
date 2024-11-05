@@ -20,9 +20,25 @@ import java.util.Map;
 import net.snowflake.client.jdbc.MockConnectionTest;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class SessionUtilTest {
+  private static String originalUrlValue;
+  private static String originalRetryUrlPattern;
+
+  @BeforeAll
+  public static void saveStaticValues() {
+    originalUrlValue = SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE;
+    originalRetryUrlPattern = SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN;
+  }
+
+  @AfterAll
+  public static void restoreStaticValues() {
+    SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_URL_VALUE = originalUrlValue;
+    SFTrustManager.SF_OCSP_RESPONSE_CACHE_SERVER_RETRY_URL_PATTERN = originalRetryUrlPattern;
+  }
 
   /** Test isPrefixEqual */
   @Test
