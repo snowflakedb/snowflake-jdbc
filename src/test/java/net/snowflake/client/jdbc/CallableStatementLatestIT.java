@@ -11,16 +11,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.providers.SimpleFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 
 // @Category(TestCategoryStatement.class)
 @Tag(TestTags.STATEMENT)
-public class CallableStatementLatestIT extends CallableStatementIT {
-
-  public CallableStatementLatestIT(String format) {
-    super();
-  }
+public class CallableStatementLatestIT extends CallableStatementITBase {
 
   /**
    * Test that function that removes curly brackets from outside of call statements works properly
@@ -45,10 +44,11 @@ public class CallableStatementLatestIT extends CallableStatementIT {
    *
    * @throws SQLException
    */
-  @Test
-  public void testPrepareCallWithCurlyBracketSyntax() throws SQLException {
+  @ParameterizedTest
+  @ArgumentsSource(SimpleFormatProvider.class)
+  public void testPrepareCallWithCurlyBracketSyntax(String queryResultFormat) throws SQLException {
     // test CallableStatement with no binding parameters
-    try (Connection connection = getConnection()) {
+    try (Connection connection = getConnection(queryResultFormat)) {
       try (CallableStatement callableStatement = connection.prepareCall("{call square_it(5)}")) {
         assertThat(callableStatement.getParameterMetaData().getParameterCount(), is(0));
       }
