@@ -1021,7 +1021,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
   @ParameterizedTest
   @ArgumentsSource(SimpleFormatProvider.class)
   public void testLargeStringRetrieval(String queryResultFormat) throws SQLException {
-    String originalMaxJsonStringLength = System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
+    String originalMaxJsonStringLength =
+        System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
     System.clearProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
     String tableName = "maxJsonStringLength_table";
     int colLength = 16777216;
@@ -1046,7 +1047,8 @@ public class ResultSetLatestIT extends ResultSet0IT {
       fail("executeQuery should not fail");
     } finally {
       if (originalMaxJsonStringLength != null) {
-        System.setProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, originalMaxJsonStringLength);
+        System.setProperty(
+            ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM, originalMaxJsonStringLength);
       }
     }
   }
