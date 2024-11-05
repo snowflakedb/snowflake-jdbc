@@ -1,6 +1,7 @@
 package net.snowflake.client.jdbc;
 
 import static net.snowflake.client.jdbc.SnowflakeUtil.EXTRA_TYPES_VECTOR;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,7 +40,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         Integer[] result =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
-        assertEquals(vector, result);
+        assertArrayEquals(vector, result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
     }
@@ -54,7 +55,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       try (ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "int"))) {
         assertTrue(resultSet.next());
         Long[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Long.class);
-        assertEquals(vector, result);
+        assertArrayEquals(vector, result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 1);
       }
     }
@@ -69,7 +70,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       try (ResultSet resultSet = stmt.executeQuery("select " + vectorToString(vector, "float"))) {
         assertTrue(resultSet.next());
         Float[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
-        assertEquals(vector, result);
+        assertArrayEquals(vector, result);
         assertVectorMetadata(resultSet, 1, Types.FLOAT, 1);
       }
     }
@@ -116,7 +117,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
         assertTrue(resultSet.next());
         Integer[] result =
             resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Integer.class);
-        assertEquals(new Integer[] {3, 7}, result);
+        assertArrayEquals(new Integer[] {3, 7}, result);
         assertVectorMetadata(resultSet, 1, Types.INTEGER, 2);
       }
     }
@@ -132,7 +133,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
       try (ResultSet resultSet = stmt.executeQuery("select x, y from test_vector_float")) {
         assertTrue(resultSet.next());
         Float[] result = resultSet.unwrap(SnowflakeBaseResultSet.class).getArray(1, Float.class);
-        assertEquals(new Float[] {-3f, 7.1f}, result);
+        assertArrayEquals(new Float[] {-3f, 7.1f}, result);
         assertVectorMetadata(resultSet, 1, Types.FLOAT, 2);
       }
     }
