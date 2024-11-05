@@ -94,7 +94,7 @@ elif [[ "$c" == "FipsTestSuite" ]]; then
         $MVNW_EXE -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
-            -Dtest=FipsTestSuite \
+            -Dtest=UnitTestSuite,FipsTestSuite \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
             -Dnot-self-contained-jar \
             verify \

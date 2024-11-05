@@ -114,7 +114,7 @@ cmd /c %MVNW_EXE% --batch-mode --show-version dependency:go-offline
 echo list = "%JDBC_TEST_CATEGORY%"
 for %%a in ("%JDBC_TEST_CATEGORY:,=" "%") do (
     echo "Current category to execute" %%a
-    if /i %%a=="TestCategoryFips" (
+    if /i %%a=="FipsTestSuite" (
         pushd FIPS
         echo "[INFO] Run Fips tests"
         cmd /c %MVNW_EXE% -B -DjenkinsIT ^
@@ -138,7 +138,7 @@ for %%a in ("%JDBC_TEST_CATEGORY:,=" "%") do (
         cmd /c %MVNW_EXE% -B -DjenkinsIT ^
             -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
             -Djacoco.skip.instrument=false ^
-            -Dgroups=%%a ^
+            -Dtest=UnitTestSuite,%%a ^
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
             -Dnot-self-contained-jar %ADDITIONAL_MAVEN_PROFILE% ^
             verify ^
