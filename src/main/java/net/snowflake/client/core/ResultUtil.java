@@ -88,7 +88,7 @@ public class ResultUtil {
    * @param id id
    * @param param timestamp output format param
    * @param defaultFormat default format
-   * @return SnowflakeDateTimeFormat
+   * @return SnowflakeDateTimeFormat {@link SnowflakeDateTimeFormat}
    */
   public static SnowflakeDateTimeFormat specializedFormatter(
       Map<String, Object> parameters, String id, String param, String defaultFormat) {

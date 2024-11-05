@@ -328,7 +328,7 @@ public abstract class SFBaseSession {
   /**
    * Get timestamp mapped type
    *
-   * @return SnowflakeType
+   * @return SnowflakeType {@link SnowflakeType}
    */
   public SnowflakeType getTimestampMappedType() {
     return timestampMappedType;
@@ -696,7 +696,7 @@ public abstract class SFBaseSession {
   /**
    * Get OCSP mode
    *
-   * @return OSCPMode
+   * @return OCSPMode {@link OCSPMode}
    */
   public OCSPMode getOCSPMode() {
     OCSPMode ret;
@@ -799,7 +799,7 @@ public abstract class SFBaseSession {
   /**
    * Get injected delay
    *
-   * @return AtomicInteger
+   * @return AtomicInteger {@link AtomicInteger}
    */
   AtomicInteger getInjectedDelay() {
     return _injectedDelay;
@@ -876,17 +876,22 @@ public abstract class SFBaseSession {
   }
 
   /**
-   * Get autocommit
+   * autoCommit field specifies whether autocommit is enabled for the session. Autocommit determines
+   * whether a DML statement, when executed without an active transaction, is automatically
+   * committed after the statement successfully completes. default: true
    *
-   * @return true if autocommit is set
+   * @see <a
+   *     href="https://docs.snowflake.com/en/sql-reference/transactions#label-txn-autocommit">Transactions/Autocommit</a>
+   * @return a boolean value of autocommit field
    */
   public boolean getAutoCommit() {
     return autoCommit.get();
   }
 
   /**
-   * Set autocommit
+   * Sets value of autoCommit field
    *
+   * @see SFBaseSession#getAutoCommit()
    * @param autoCommit boolean
    */
   public void setAutoCommit(boolean autoCommit) {
@@ -1242,7 +1247,7 @@ public abstract class SFBaseSession {
   /**
    * Get the SFConnectionHandler
    *
-   * @return SFConnectionHandler
+   * @return SFConnectionHandler {@link SFConnectionHandler}
    */
   public SFConnectionHandler getSfConnectionHandler() {
     return sfConnectionHandler;
@@ -1266,7 +1271,7 @@ public abstract class SFBaseSession {
   public abstract int getMaxHttpRetries();
 
   /**
-   * @return SnowflakeConnectString
+   * @return SnowflakeConnectString {@link SnowflakeConnectString}
    */
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 
