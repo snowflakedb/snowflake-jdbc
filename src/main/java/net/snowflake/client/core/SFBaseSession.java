@@ -290,8 +290,11 @@ public abstract class SFBaseSession {
   }
 
   /**
-   * Get if prepared statement logging is enabled
+   * Gets the value of CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS if one has been set. False by
+   * default.
    *
+   * @see <a
+   *     href="https://docs.snowflake.com/en/sql-reference/parameters#client-enable-log-info-statement-parameters">CLIENT_ENABLE_LOG_INFO_STATEMENT_PARAMETERS</a>
    * @return true if enabled
    */
   public boolean getPreparedStatementLogging() {
@@ -301,6 +304,7 @@ public abstract class SFBaseSession {
   /**
    * Set prepared statement logging
    *
+   * @see SFBaseSession#getPreparedStatementLogging()
    * @param value boolean
    */
   public void setPreparedStatementLogging(boolean value) {
@@ -328,6 +332,8 @@ public abstract class SFBaseSession {
   /**
    * Get timestamp mapped type
    *
+   * @see <a
+   *     href="https://docs.snowflake.com/en/sql-reference/parameters#client-timestamp-type-mapping">CLIENT_TIMESTAMP_TYPE_MAPPING</a>
    * @return SnowflakeType {@link SnowflakeType}
    */
   public SnowflakeType getTimestampMappedType() {
@@ -337,6 +343,7 @@ public abstract class SFBaseSession {
   /**
    * Set the timestamp mapped type
    *
+   * @see SFBaseSession#getTimestampMappedType()
    * @param timestampMappedType SnowflakeType
    */
   public void setTimestampMappedType(SnowflakeType timestampMappedType) {
@@ -346,6 +353,7 @@ public abstract class SFBaseSession {
   /**
    * Get if result column is case-insensitive
    *
+   * @see SFBaseSession#setResultColumnCaseInsensitive(boolean)
    * @return true if result column is case-insensitive
    */
   public boolean isResultColumnCaseInsensitive() {
@@ -355,6 +363,8 @@ public abstract class SFBaseSession {
   /**
    * Set if result column is case-insensitive
    *
+   * @see <a
+   *     href="https://docs.snowflake.com/en/sql-reference/parameters#client-result-column-case-insensitive">CLIENT_RESULT_COLUMN_CASE_INSENSITIVE</a>
    * @param resultColumnCaseInsensitive boolean
    */
   public void setResultColumnCaseInsensitive(boolean resultColumnCaseInsensitive) {
@@ -364,6 +374,8 @@ public abstract class SFBaseSession {
   /**
    * Check if we want to treat decimal as int JDBC types
    *
+   * @see <a
+   *     href="https://docs.snowflake.com/en/sql-reference/parameters#jdbc-treat-decimal-as-int">JDBC_TREAT_DECIMAL_AS_INT</a>
    * @return true if decimal is treated as int
    */
   public boolean isJdbcTreatDecimalAsInt() {
@@ -373,6 +385,7 @@ public abstract class SFBaseSession {
   /**
    * Set if decimal should be treated as int type
    *
+   * @see SFBaseSession#isJdbcTreatDecimalAsInt()
    * @param jdbcTreatDecimalAsInt boolean
    */
   public void setJdbcTreatDecimalAsInt(boolean jdbcTreatDecimalAsInt) {
