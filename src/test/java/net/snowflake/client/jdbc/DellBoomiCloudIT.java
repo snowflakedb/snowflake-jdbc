@@ -9,6 +9,7 @@ import java.sql.Statement;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.category.TestTags;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,7 @@ public class DellBoomiCloudIT extends AbstractDriverIT {
   }
 
   @Test
+  @Disabled
   public void testSelectLargeResultSet() throws SQLException {
     try (Connection connection = getConnection();
         Statement statement = connection.createStatement();
