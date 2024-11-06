@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import net.snowflake.client.ConditionalIgnoreRule;
 import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.TestUtil;
 import net.snowflake.client.ThrowingConsumer;
 import net.snowflake.client.category.TestCategoryResultSet;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
@@ -144,43 +145,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
     try (Connection connection = init();
         Statement statement = connection.createStatement()) {
       statement.execute("ALTER SESSION SET TIMEZONE = 'Europe/Warsaw'");
-      try (ResultSet resultSet =
-          statement.executeQuery(
-              "select {"
-                  + "'string': 'a', "
-                  + "'b': 1, "
-                  + "'s': 2, "
-                  + "'i': 3, "
-                  + "'l': 4, "
-                  + "'f': 1.1, "
-                  + "'d': 2.2, "
-                  + "'bd': 3.3, "
-                  + "'bool': true, "
-                  + "'timestamp_ltz': '2021-12-22 09:43:44'::TIMESTAMP_LTZ, "
-                  + "'timestamp_ntz': '2021-12-23 09:44:44'::TIMESTAMP_NTZ, "
-                  + "'timestamp_tz': '2021-12-24 09:45:45 +0800'::TIMESTAMP_TZ, "
-                  + "'date': '2023-12-24'::DATE, "
-                  + "'time': '12:34:56'::TIME, "
-                  + "'binary': TO_BINARY('616263', 'HEX'), "
-                  + "'simpleClass': {'string': 'b', 'intValue': 2}"
-                  + "}::OBJECT("
-                  + "string VARCHAR, "
-                  + "b TINYINT, "
-                  + "s SMALLINT, "
-                  + "i INTEGER, "
-                  + "l BIGINT, "
-                  + "f FLOAT, "
-                  + "d DOUBLE, "
-                  + "bd DOUBLE, "
-                  + "bool BOOLEAN, "
-                  + "timestamp_ltz TIMESTAMP_LTZ, "
-                  + "timestamp_ntz TIMESTAMP_NTZ, "
-                  + "timestamp_tz TIMESTAMP_TZ, "
-                  + "date DATE, "
-                  + "time TIME, "
-                  + "binary BINARY, "
-                  + "simpleClass OBJECT(string VARCHAR, intValue INTEGER)"
-                  + ")"); ) {
+      try (ResultSet resultSet = statement.executeQuery(AllTypesClass.ALL_TYPES_QUERY); ) {
         resultSet.next();
         AllTypesClass object = resultSet.getObject(1, AllTypesClass.class);
         assertEquals("a", object.getString());
@@ -213,6 +178,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
         assertTrue(object.getBool());
         assertEquals("b", object.getSimpleClass().getString());
         assertEquals(Integer.valueOf(2), object.getSimpleClass().getIntValue());
+
+        if (queryResultFormat == ResultSetFormatType.NATIVE_ARROW) {
+          // Only verify getString for Arrow since JSON representations have difficulties with
+          // floating point toString conversion (3.300000000000000e+00 vs 3.3 in native arrow)
+          String expectedArrowGetStringResult =
+              "{\"string\": \"a\",\"b\": 1,\"s\": 2,\"i\": 3,\"l\": 4,\"f\": 1.1,\"d\": 2.2,\"bd\": 3.3,\"bool\": true,\"timestamp_ltz\": \"Wed, 22 Dec 2021 09:43:44 +0100\",\"timestamp_ntz\": \"Thu, 23 Dec 2021 09:44:44 Z\",\"timestamp_tz\": \"Fri, 24 Dec 2021 09:45:45 +0800\",\"date\": \"2023-12-24\",\"time\": \"12:34:56\",\"binary\": \"616263\",\"simpleClass\": {\"string\": \"b\",\"intValue\": 2}}";
+          assertEquals(expectedArrowGetStringResult, resultSet.getString(1));
+        }
       }
     }
   }
@@ -234,43 +207,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
               + "TIMESTAMP_LTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM',"
               + "TIMESTAMP_NTZ_OUTPUT_FORMAT='YYYY-MM-DD HH24:MI:SS.FF3'");
 
-      try (ResultSet resultSet =
-          statement.executeQuery(
-              "select {"
-                  + "'string': 'a', "
-                  + "'b': 1, "
-                  + "'s': 2, "
-                  + "'i': 3, "
-                  + "'l': 4, "
-                  + "'f': 1.1, "
-                  + "'d': 2.2, "
-                  + "'bd': 3.3, "
-                  + "'bool': true, "
-                  + "'timestamp_ltz': '2021-12-22 09:43:44'::TIMESTAMP_LTZ, "
-                  + "'timestamp_ntz': '2021-12-23 09:44:44'::TIMESTAMP_NTZ, "
-                  + "'timestamp_tz': '2021-12-24 09:45:45 +0800'::TIMESTAMP_TZ, "
-                  + "'date': '2023-12-24'::DATE, "
-                  + "'time': '12:34:56'::TIME, "
-                  + "'binary': TO_BINARY('616263', 'HEX'), "
-                  + "'simpleClass': {'string': 'b', 'intValue': 2}"
-                  + "}::OBJECT("
-                  + "string VARCHAR, "
-                  + "b TINYINT, "
-                  + "s SMALLINT, "
-                  + "i INTEGER, "
-                  + "l BIGINT, "
-                  + "f FLOAT, "
-                  + "d DOUBLE, "
-                  + "bd DOUBLE, "
-                  + "bool BOOLEAN, "
-                  + "timestamp_ltz TIMESTAMP_LTZ, "
-                  + "timestamp_ntz TIMESTAMP_NTZ, "
-                  + "timestamp_tz TIMESTAMP_TZ, "
-                  + "date DATE, "
-                  + "time TIME, "
-                  + "binary BINARY, "
-                  + "simpleClass OBJECT(string VARCHAR, intValue INTEGER)"
-                  + ")"); ) {
+      try (ResultSet resultSet = statement.executeQuery(AllTypesClass.ALL_TYPES_QUERY); ) {
         resultSet.next();
         String object = (String) resultSet.getObject(1);
         String expected =
@@ -849,7 +786,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testMapNestedStructures() throws SQLException {
-    withFirstRow(
+    String structSelectStatement =
         "SELECT {'simpleClass': {'string': 'a', 'intValue': 2}, "
             + "'simpleClasses': ARRAY_CONSTRUCT({'string': 'a', 'intValue': 2}, {'string': 'b', 'intValue': 2}), "
             + "'arrayOfSimpleClasses': ARRAY_CONSTRUCT({'string': 'a', 'intValue': 2}, {'string': 'b', 'intValue': 2}), "
@@ -863,7 +800,11 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
             + "mapOfSimpleClasses MAP(VARCHAR, OBJECT(string VARCHAR, intValue INTEGER)),"
             + "texts ARRAY(VARCHAR),"
             + "arrayOfDates ARRAY(DATE),"
-            + "mapOfIntegers MAP(VARCHAR, INTEGER))",
+            + "mapOfIntegers MAP(VARCHAR, INTEGER))";
+    String expectedQueryResult =
+        "{\"simpleClass\": {\"string\": \"a\",\"intValue\": 2},\"simpleClasses\": [{\"string\": \"a\",\"intValue\": 2},{\"string\": \"b\",\"intValue\": 2}],\"arrayOfSimpleClasses\": [{\"string\": \"a\",\"intValue\": 2},{\"string\": \"b\",\"intValue\": 2}],\"mapOfSimpleClasses\": {\"x\": {\"string\": \"c\",\"intValue\": 2},\"y\": {\"string\": \"d\",\"intValue\": 2}},\"texts\": [\"string\",\"a\"],\"arrayOfDates\": [\"2023-12-24\",\"2023-12-25\"],\"mapOfIntegers\": {\"x\": 3,\"y\": 4}}";
+    withFirstRow(
+        structSelectStatement,
         (resultSet) -> {
           NestedStructSqlData nestedStructSqlData =
               resultSet.getObject(1, NestedStructSqlData.class);
@@ -908,6 +849,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
 
           assertEquals(Integer.valueOf(3), nestedStructSqlData.getMapOfIntegers().get("x"));
           assertEquals(Integer.valueOf(4), nestedStructSqlData.getMapOfIntegers().get("y"));
+          TestUtil.assertEqualsIgnoringWhitespace(expectedQueryResult, resultSet.getString(1));
         });
   }
 

@@ -17,7 +17,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /** Tests for SnowflakeFileTransferAgent.expandFileNames. */
-public class FileUploaderSessionlessTest extends FileUploaderPrepIT {
+public class FileUploaderSessionlessTest extends FileUploaderPrep {
 
   private ObjectMapper mapper = new ObjectMapper();
 

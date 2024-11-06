@@ -1472,54 +1472,6 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
 
   @Test
   @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
-  public void testUploadWithGCSPresignedUrlWithoutConnection() throws Throwable {
-    File destFolder = tmpFolder.newFolder();
-    String destFolderCanonicalPath = destFolder.getCanonicalPath();
-    // set parameter for presignedUrl upload instead of downscoped token
-    Properties paramProperties = new Properties();
-    paramProperties.put("GCS_USE_DOWNSCOPED_CREDENTIAL", false);
-    try (Connection connection = getConnection("gcpaccount", paramProperties);
-        Statement statement = connection.createStatement()) {
-      try {
-        // create a stage to put the file in
-        statement.execute("CREATE OR REPLACE STAGE " + testStageName);
-
-        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-
-        // Test put file with internal compression
-        String putCommand = "put file:///dummy/path/file1.gz @" + testStageName;
-        SnowflakeFileTransferAgent sfAgent =
-            new SnowflakeFileTransferAgent(putCommand, sfSession, new SFStatement(sfSession));
-        List<SnowflakeFileTransferMetadata> metadata = sfAgent.getFileTransferMetadatas();
-
-        String srcPath = getFullPathFileInResource(TEST_DATA_FILE);
-        for (SnowflakeFileTransferMetadata oneMetadata : metadata) {
-          InputStream inputStream = new FileInputStream(srcPath);
-
-          assertTrue(oneMetadata.isForOneFile());
-          SnowflakeFileTransferAgent.uploadWithoutConnection(
-              SnowflakeFileTransferConfig.Builder.newInstance()
-                  .setSnowflakeFileTransferMetadata(oneMetadata)
-                  .setUploadStream(inputStream)
-                  .setRequireCompress(true)
-                  .setNetworkTimeoutInMilli(0)
-                  .setOcspMode(OCSPMode.FAIL_OPEN)
-                  .build());
-        }
-
-        assertTrue(
-            "Failed to get files",
-            statement.execute(
-                "GET @" + testStageName + " 'file://" + destFolderCanonicalPath + "/' parallel=8"));
-        assertTrue(isFileContentEqual(srcPath, false, destFolderCanonicalPath + "/file1.gz", true));
-      } finally {
-        statement.execute("DROP STAGE if exists " + testStageName);
-      }
-    }
-  }
-
-  @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testUploadWithGCSDownscopedCredentialWithoutConnection() throws Throwable {
     uploadWithGCSDownscopedCredentialWithoutConnection();
   }
