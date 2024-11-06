@@ -6,10 +6,16 @@ import net.snowflake.client.core.SFException;
 import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.complex.FixedSizeListVector;
 
+/** Arrow FixedSizeListVector converter. */
 public class VectorTypeConverter extends AbstractArrowVectorConverter {
 
   private final FixedSizeListVector vector;
 
+  /**
+   * @param valueVector ValueVector
+   * @param vectorIndex vector index
+   * @param context DataConversionContext
+   */
   public VectorTypeConverter(
       FixedSizeListVector valueVector, int vectorIndex, DataConversionContext context) {
     super(SnowflakeType.ARRAY.name(), valueVector, vectorIndex, context);

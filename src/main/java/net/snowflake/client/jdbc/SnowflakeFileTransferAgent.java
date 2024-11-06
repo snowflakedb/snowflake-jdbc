@@ -791,6 +791,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param encMat remote store encryption material
    * @param parallel number of parallel threads for downloading
    * @param presignedUrl Presigned URL for file download
+   * @param queryId the query ID
    * @return a callable responsible for downloading files
    */
   public static Callable<Void> getDownloadFileCallable(
@@ -3373,7 +3374,7 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param session the current session
    * @param operation the operation i.e. GET
    * @param ex the exception caught
-   * @throws SnowflakeSQLLoggedException
+   * @throws SnowflakeSQLLoggedException if not enough space left on device to download file.
    */
   @Deprecated
   public static void throwNoSpaceLeftError(SFSession session, String operation, Exception ex)
@@ -3388,7 +3389,8 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
    * @param session the current session
    * @param operation the operation i.e. GET
    * @param ex the exception caught
-   * @throws SnowflakeSQLLoggedException
+   * @param queryId the query ID
+   * @throws SnowflakeSQLLoggedException if not enough space left on device to download file.
    */
   public static void throwNoSpaceLeftError(
       SFSession session, String operation, Exception ex, String queryId)

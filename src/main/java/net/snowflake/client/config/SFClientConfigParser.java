@@ -33,6 +33,7 @@ public class SFClientConfigParser {
    * @param configFilePath SF_CLIENT_CONFIG_FILE parameter read from connection URL or connection
    *     properties
    * @return SFClientConfig
+   * @throws IOException if exception encountered when reading config file.
    */
   public static SFClientConfig loadSFClientConfig(String configFilePath) throws IOException {
     if (configFilePath != null) {
