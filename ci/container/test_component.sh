@@ -111,5 +111,4 @@ else
         verify \
         --batch-mode --show-version
 fi
-done
 IFS=' '
