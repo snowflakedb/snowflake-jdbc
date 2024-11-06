@@ -10,10 +10,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import net.snowflake.client.annotations.DontRunOnGithubActions;
+import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.SimpleFormatProvider;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
+@Tag(TestTags.RESULT_SET)
 public class GCPLargeResult extends BaseJDBCTest {
 
   Connection init(String queryResultFormat) throws SQLException {
@@ -27,6 +31,7 @@ public class GCPLargeResult extends BaseJDBCTest {
 
   @ParameterizedTest
   @ArgumentsSource(SimpleFormatProvider.class)
+  @DontRunOnGithubActions
   public void testLargeResultSetGCP(String queryResultFormat) throws Throwable {
     try (Connection con = init(queryResultFormat);
         PreparedStatement stmt =
