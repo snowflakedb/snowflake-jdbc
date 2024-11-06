@@ -98,11 +98,11 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
     int dataSize = (int) file.length();
     byte[] dataBytes = new byte[dataSize];
 
-      try (InputStream is = new FileInputStream(file)) {
-          is.read(dataBytes, 0, dataSize);
-      }
+    try (InputStream is = new FileInputStream(file)) {
+      is.read(dataBytes, 0, dataSize);
+    }
 
-      SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
+    SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
     resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
     resultSetSerializable.setFirstChunkByteData(dataBytes);
@@ -225,11 +225,11 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
     int dataSize = (int) arrowFile.length();
     byte[] dataBytes = new byte[dataSize];
 
-      try (InputStream is = new FileInputStream(arrowFile)) {
-          is.read(dataBytes, 0, dataSize);
-      }
+    try (InputStream is = new FileInputStream(arrowFile)) {
+      is.read(dataBytes, 0, dataSize);
+    }
 
-      SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
+    SnowflakeResultSetSerializableV1 resultSetSerializable = new SnowflakeResultSetSerializableV1();
     resultSetSerializable.setFirstChunkStringData(Base64.getEncoder().encodeToString(dataBytes));
     resultSetSerializable.setFirstChunkByteData(dataBytes);
     resultSetSerializable.setChunkFileCount(chunkCount);
@@ -277,7 +277,7 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
     public SnowflakeResultChunk getNextChunkToConsume() throws SnowflakeSQLException {
       if (currentFileIndex < resultFileNames.size()) {
         ArrowResultChunk resultChunk = new ArrowResultChunk("", 0, 0, 0, rootAllocator, null);
-        try (InputStream is = new FileInputStream(resultFileNames.get(currentFileIndex))){
+        try (InputStream is = new FileInputStream(resultFileNames.get(currentFileIndex))) {
           resultChunk.readArrowStream(is);
 
           currentFileIndex++;
@@ -635,11 +635,11 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
         int dataSize = (int) file.length();
         byte[] dataBytes = new byte[dataSize];
 
-          try (InputStream is = new FileInputStream(file)) {
-              is.read(dataBytes, 0, dataSize);
-          }
+        try (InputStream is = new FileInputStream(file)) {
+          is.read(dataBytes, 0, dataSize);
+        }
 
-          resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
+        resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
         resultSetSerializable.setFirstChunkStringData(
             Base64.getEncoder().encodeToString(dataBytes));
         resultSetSerializable.setFirstChunkByteData(dataBytes);
@@ -723,11 +723,11 @@ public class SFArrowResultSetIT extends BaseJDBCWithSharedConnectionIT {
         int dataSize = (int) file.length();
         byte[] dataBytes = new byte[dataSize];
 
-          try (InputStream is = new FileInputStream(file)) {
-              is.read(dataBytes, 0, dataSize);
-          }
+        try (InputStream is = new FileInputStream(file)) {
+          is.read(dataBytes, 0, dataSize);
+        }
 
-          resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
+        resultSetSerializable.setRootAllocator(new RootAllocator(Long.MAX_VALUE));
         resultSetSerializable.setFirstChunkStringData(
             Base64.getEncoder().encodeToString(dataBytes));
         resultSetSerializable.setFirstChunkByteData(dataBytes);
