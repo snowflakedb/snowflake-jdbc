@@ -88,7 +88,7 @@ if [[ "$is_old_driver" == "true" ]]; then
             verify \
             --batch-mode --show-version
     popd >& /dev/null
-elif [[ "$c" == "FipsTestSuite" ]]; then
+elif [[ "$JDBC_TEST_CATEGORY" == "FipsTestSuite" ]]; then
     pushd FIPS >& /dev/null
         echo "[INFO] Run Fips tests"
         $MVNW_EXE -DjenkinsIT \
@@ -101,7 +101,7 @@ elif [[ "$c" == "FipsTestSuite" ]]; then
             --batch-mode --show-version
     popd >& /dev/null
 else
-    echo "[INFO] Run $c tests"
+    echo "[INFO] Run $JDBC_TEST_CATEGORY tests"
     $MVNW_EXE -DjenkinsIT \
         -Djava.io.tmpdir=$WORKSPACE \
         -Djacoco.skip.instrument=false \
