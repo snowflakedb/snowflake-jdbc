@@ -926,10 +926,12 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
 
     // get source file locations as array (apply to both upload and download)
     JsonNode locationsNode = jsonNode.path("data").path("src_locations");
+    if (!locationsNode.isArray()) {
+      throw new SnowflakeSQLException(
+          queryID, ErrorCode.INTERNAL_ERROR, "src_locations must be an array");
+    }
 
     queryID = jsonNode.path("data").path("queryId").asText();
-
-    assert locationsNode.isArray();
 
     String[] src_locations;
 
@@ -1460,7 +1462,13 @@ public class SnowflakeFileTransferAgent extends SFBaseFileTransferAgent {
     }
 
     // For UPLOAD we expect encryptionMaterial to have length 1
-    assert encryptionMaterial.size() == 1;
+    if (encryptionMaterial.size() != 1) {
+      throw new SnowflakeSQLException(
+          queryId,
+          ErrorCode.INTERNAL_ERROR,
+          "Encryption material for UPLOAD should have size 1 but have "
+              + encryptionMaterial.size());
+    }
 
     final Set<String> sourceFiles = expandFileNames(srcLocations, queryId);
 
