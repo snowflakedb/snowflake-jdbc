@@ -338,7 +338,7 @@ public class QueryContextCache {
    * Serialize the QueryContext cache to a QueryContextDTO object, which can be serialized to JSON
    * automatically later.
    *
-   * @return QueryContextDTO {@link QueryContextDTO}
+   * @return {@link QueryContextDTO}
    */
   public QueryContextDTO serializeQueryContextDTO() {
     synchronized (this) {

@@ -191,7 +191,7 @@ public abstract class SFBaseStatement {
    * Retrieves the current result as a ResultSet, if any. This is invoked by SnowflakeStatement and
    * should return an SFBaseResultSet, which is then wrapped in a SnowflakeResultSet.
    *
-   * @return SFBaseResultSet {@link SFBaseResultSet}
+   * @return {@link SFBaseResultSet}
    */
   public abstract SFBaseResultSet getResultSet();
 

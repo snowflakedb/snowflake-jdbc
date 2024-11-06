@@ -334,7 +334,7 @@ public abstract class SFBaseSession {
    *
    * @see <a
    *     href="https://docs.snowflake.com/en/sql-reference/parameters#client-timestamp-type-mapping">CLIENT_TIMESTAMP_TYPE_MAPPING</a>
-   * @return SnowflakeType {@link SnowflakeType}
+   * @return {@link SnowflakeType}
    */
   public SnowflakeType getTimestampMappedType() {
     return timestampMappedType;
@@ -709,7 +709,7 @@ public abstract class SFBaseSession {
   /**
    * Get OCSP mode
    *
-   * @return OCSPMode {@link OCSPMode}
+   * @return {@link OCSPMode}
    */
   public OCSPMode getOCSPMode() {
     OCSPMode ret;
@@ -812,7 +812,7 @@ public abstract class SFBaseSession {
   /**
    * Get injected delay
    *
-   * @return AtomicInteger {@link AtomicInteger}
+   * @return {@link AtomicInteger}
    */
   AtomicInteger getInjectedDelay() {
     return _injectedDelay;
@@ -1260,7 +1260,7 @@ public abstract class SFBaseSession {
   /**
    * Get the SFConnectionHandler
    *
-   * @return SFConnectionHandler {@link SFConnectionHandler}
+   * @return {@link SFConnectionHandler}
    */
   public SFConnectionHandler getSfConnectionHandler() {
     return sfConnectionHandler;
@@ -1284,7 +1284,7 @@ public abstract class SFBaseSession {
   public abstract int getMaxHttpRetries();
 
   /**
-   * @return SnowflakeConnectString {@link SnowflakeConnectString}
+   * @return {@link SnowflakeConnectString}
    */
   public abstract SnowflakeConnectString getSnowflakeConnectionString();
 
