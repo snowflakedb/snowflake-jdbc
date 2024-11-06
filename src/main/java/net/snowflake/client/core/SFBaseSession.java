@@ -930,7 +930,7 @@ public abstract class SFBaseSession {
   }
 
   /**
-   * Get if session timezone should be used
+   * Get if session timezone should be used.
    *
    * @return true if using session timezone
    */
