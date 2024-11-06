@@ -45,11 +45,14 @@ public class SFLoginInput {
   private OCSPMode ocspMode;
   private HttpClientSettingsKey httpClientKey;
   private String privateKeyFile;
-  private String privateKeyFilePwd;
+  private String privateKeyBase64;
+  private String privateKeyPwd;
   private String inFlightCtx; // Opaque string sent for Snowsight account activation
 
   private boolean disableConsoleLogin = true;
   private boolean disableSamlURLCheck = false;
+  private boolean enableClientStoreTemporaryCredential;
+  private boolean enableClientRequestMfaToken;
 
   private Duration browserResponseTimeout;
 
@@ -226,8 +229,8 @@ public class SFLoginInput {
     return this;
   }
 
-  Duration getConnectionTimeout() {
-    return connectionTimeout;
+  int getConnectionTimeoutInMillis() {
+    return (int) connectionTimeout.toMillis();
   }
 
   SFLoginInput setConnectionTimeout(Duration connectionTimeout) {
@@ -325,13 +328,22 @@ public class SFLoginInput {
     return this;
   }
 
+  String getPrivateKeyBase64() {
+    return privateKeyBase64;
+  }
+
+  SFLoginInput setPrivateKeyBase64(String privateKeyBase64) {
+    this.privateKeyBase64 = privateKeyBase64;
+    return this;
+  }
+
   SFLoginInput setPrivateKeyFile(String privateKeyFile) {
     this.privateKeyFile = privateKeyFile;
     return this;
   }
 
-  SFLoginInput setPrivateKeyFilePwd(String privateKeyFilePwd) {
-    this.privateKeyFilePwd = privateKeyFilePwd;
+  SFLoginInput setPrivateKeyPwd(String privateKeyPwd) {
+    this.privateKeyPwd = privateKeyPwd;
     return this;
   }
 
@@ -339,8 +351,14 @@ public class SFLoginInput {
     return privateKeyFile;
   }
 
-  String getPrivateKeyFilePwd() {
-    return privateKeyFilePwd;
+  String getPrivateKeyPwd() {
+    return privateKeyPwd;
+  }
+
+  boolean isPrivateKeyProvided() {
+    return (getPrivateKey() != null
+        || getPrivateKeyFile() != null
+        || getPrivateKeyBase64() != null);
   }
 
   public String getApplication() {
@@ -447,5 +465,24 @@ public class SFLoginInput {
           e, ErrorCode.INTERNAL_ERROR, "Invalid serverUrl for retrieving host name");
     }
     return url.getHost();
+  }
+
+  boolean isEnableClientStoreTemporaryCredential() {
+    return enableClientStoreTemporaryCredential;
+  }
+
+  SFLoginInput setEnableClientStoreTemporaryCredential(
+      boolean enableClientStoreTemporaryCredential) {
+    this.enableClientStoreTemporaryCredential = enableClientStoreTemporaryCredential;
+    return this;
+  }
+
+  boolean isEnableClientRequestMfaToken() {
+    return enableClientRequestMfaToken;
+  }
+
+  SFLoginInput setEnableClientRequestMfaToken(boolean enableClientRequestMfaToken) {
+    this.enableClientRequestMfaToken = enableClientRequestMfaToken;
+    return this;
   }
 }
