@@ -1,5 +1,6 @@
 package net.snowflake.client.config;
 
+import static net.snowflake.client.config.SFConnectionConfigParser.SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY;
 import static net.snowflake.client.config.SFConnectionConfigParser.SNOWFLAKE_HOME_KEY;
 import static org.junit.Assert.assertEquals;
@@ -44,6 +45,7 @@ public class SFConnectionConfigParserTest {
   public void close() throws IOException {
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_HOME_KEY);
     SnowflakeUtil.systemUnsetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY);
+    SnowflakeUtil.systemUnsetEnv(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION);
     Files.walk(tempPath).map(Path::toFile).forEach(File::delete);
     Files.delete(tempPath);
   }
@@ -101,6 +103,21 @@ public class SFConnectionConfigParserTest {
     assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
     assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
+  }
+
+  @Test
+  public void testNoThrowErrorWhenWrongPermissionsForTokenFileButSkippingFlagIsEnabled()
+      throws SnowflakeSQLException, IOException {
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_HOME_KEY, tempPath.toString());
+    SnowflakeUtil.systemSetEnv(SNOWFLAKE_DEFAULT_CONNECTION_NAME_KEY, "default");
+    SnowflakeUtil.systemSetEnv(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION, "true");
+    File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
+    prepareConnectionConfigurationTomlFile(
+        Collections.singletonMap("token_file_path", tokenFile.toString()), true, false);
+
+    ConnectionParameters data = SFConnectionConfigParser.buildConnectionParameters();
+    assertNotNull(data);
+    assertEquals(tokenFile.toString(), data.getParams().get("token_file_path"));
   }
 
   @Test
