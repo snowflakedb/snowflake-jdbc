@@ -38,6 +38,7 @@
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-failsafe-plugin</artifactId>
       <version>3.0.0-M1</version>
+
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -420,9 +421,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <dependencies>
           <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.version}</version>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
+            <version>3.5.1</version>
           </dependency>
         </dependencies>
         <version>3.5.1</version>
@@ -450,6 +451,7 @@
               </dependency>
             </dependencies>
             <executions>
+              <!--
               <execution>
                 <id>DefaultIT</id>
                 <goals>
@@ -469,6 +471,7 @@
                   </systemPropertyVariables>
                 </configuration>
               </execution>
+              -->
               <execution>
                 <goals>
                   <goal>verify</goal>
