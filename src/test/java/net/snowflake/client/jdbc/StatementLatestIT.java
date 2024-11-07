@@ -27,8 +27,10 @@ import net.snowflake.client.RunningOnGithubAction;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.category.TestCategoryStatement;
 import net.snowflake.client.core.ParameterBindingDTO;
+import net.snowflake.client.core.QueryStatus;
 import net.snowflake.client.core.SFSession;
 import net.snowflake.client.core.bind.BindUploader;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -296,5 +298,55 @@ public class StatementLatestIT extends BaseJDBCWithSharedConnectionIT {
         assertEquals(queryID, e.getQueryId());
       }
     }
+  }
+
+  /**
+   * Run test manually to confirm setQueryTimeout is working for async query
+   *
+   * @throws SQLException if there is an error when executing
+   */
+  @Test
+  @Ignore
+  public void testSetQueryTimeoutForAsnycQuery() throws SQLException {
+    Statement statement = connection.createStatement();
+
+    statement.unwrap(SnowflakeStatement.class).setParameter("MULTI_STATEMENT_COUNT", 0);
+    statement.setQueryTimeout(3);
+
+    String sql = "SELECT * FROM SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.CUSTOMER;";
+
+    // Async
+    System.out.println("Async start time: " + java.time.LocalTime.now());
+    ResultSet resultSet = statement.unwrap(SnowflakeStatement.class).executeAsyncQuery(sql);
+
+    String queryID = resultSet.unwrap(SnowflakeResultSet.class).getQueryID();
+    System.out.println("Async query ID: " + queryID);
+
+    QueryStatus queryStatus = QueryStatus.RUNNING;
+    while (queryStatus == QueryStatus.RUNNING || queryStatus == QueryStatus.RESUMING_WAREHOUSE) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        fail(e.getMessage());
+      }
+      queryStatus = resultSet.unwrap(SnowflakeResultSet.class).getStatus();
+      System.out.println("Current status: " + queryStatus);
+    }
+
+    if (queryStatus == QueryStatus.SUCCESS) {
+      while (resultSet.next()) {
+        System.out.println(resultSet.getString(1));
+        System.exit(0);
+      }
+    }
+
+    if (queryStatus == QueryStatus.FAILED_WITH_ERROR) {
+      while (resultSet.next()) {
+        System.out.println(queryStatus.getErrorMessage());
+        System.exit(0);
+      }
+    }
+
+    System.out.println("Async end time: " + java.time.LocalTime.now());
   }
 }

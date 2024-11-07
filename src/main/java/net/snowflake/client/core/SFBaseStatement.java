@@ -39,9 +39,11 @@ public abstract class SFBaseStatement {
   public void addProperty(String propertyName, Object propertyValue) throws SFException {
     statementParametersMap.put(propertyName, propertyValue);
 
-    // for query timeout, we implement it on client side for now
     if ("query_timeout".equalsIgnoreCase(propertyName)) {
+      // Client side implementation
       queryTimeout = (Integer) propertyValue;
+      // Set server parameter for supporting query timeout on async queries
+      statementParametersMap.put("STATEMENT_TIMEOUT_IN_SECONDS", (Integer) propertyValue);
     }
 
     // check if the number of session properties exceed limit
