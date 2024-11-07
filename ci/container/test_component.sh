@@ -105,6 +105,7 @@ for c in "${CATEGORY[@]}"; do
                 --batch-mode --show-version
         popd >& /dev/null
     else
+      pushd TestOnly >& /dev/null
         echo "[INFO] Run $c tests"
         $MVNW_EXE -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
@@ -114,6 +115,7 @@ for c in "${CATEGORY[@]}"; do
             -Dnot-self-contained-jar $ADDITIONAL_MAVEN_PROFILE \
             verify \
             --batch-mode --show-version
+      popd >& /dev/null
     fi
 done
 IFS=' '
