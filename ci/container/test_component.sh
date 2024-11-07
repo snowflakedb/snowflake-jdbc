@@ -81,19 +81,7 @@ $MVNW_EXE --batch-mode --show-version dependency:go-offline
 
 for c in "${CATEGORY[@]}"; do
     c=$(echo $c | sed 's/ *$//g')
-    if [[ "$is_old_driver" == "true" ]]; then
-        pushd TestOnly >& /dev/null
-            JDBC_VERSION=$($MVNW_EXE org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version --batch-mode | grep -v "[INFO]")
-            echo "[INFO] Run JDBC $JDBC_VERSION tests"
-            $MVNW_EXE -DjenkinsIT \
-                -Djava.io.tmpdir=$WORKSPACE \
-                -Djacoco.skip.instrument=false \
-                -DtestCategory=net.snowflake.client.category.$c \
-                -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
-                verify \
-                --batch-mode --show-version
-        popd >& /dev/null
-    elif [[ "$c" == "TestCategoryFips" ]]; then
+    if [[ "$c" == "TestCategoryFips" ]]; then
         pushd FIPS >& /dev/null
             echo "[INFO] Run Fips tests"
             $MVNW_EXE -DjenkinsIT \
@@ -105,7 +93,6 @@ for c in "${CATEGORY[@]}"; do
                 --batch-mode --show-version
         popd >& /dev/null
     else
-      pushd TestOnly >& /dev/null
         echo "[INFO] Run $c tests"
         $MVNW_EXE -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
@@ -115,7 +102,6 @@ for c in "${CATEGORY[@]}"; do
             -Dnot-self-contained-jar $ADDITIONAL_MAVEN_PROFILE \
             verify \
             --batch-mode --show-version
-      popd >& /dev/null
     fi
 done
 IFS=' '
