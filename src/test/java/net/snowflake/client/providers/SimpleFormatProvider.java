@@ -6,8 +6,19 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 
 public class SimpleFormatProvider extends SnowflakeArgumentsProvider {
+  private static List<Arguments> arguments =
+      Arrays.asList(Arguments.of("JSON"), Arguments.of("ARROW"));
+
+  public static void setSupportedFormats(List<Arguments> supportedFormats) {
+    arguments = supportedFormats;
+  }
+
+  public static void resetSupportedFormats() {
+    setSupportedFormats(Arrays.asList(Arguments.of("JSON"), Arguments.of("ARROW")));
+  }
+
   @Override
   protected List<Arguments> rawArguments(ExtensionContext context) {
-    return Arrays.asList(Arguments.of("JSON"), Arguments.of("ARROW"));
+    return arguments;
   }
 }

@@ -83,7 +83,7 @@ if [[ "$is_old_driver" == "true" ]]; then
         $MVNW_EXE -DjenkinsIT \
             -Djava.io.tmpdir=$WORKSPACE \
             -Djacoco.skip.instrument=false \
-            -Dtest=UnitTestSuite,"$JDBC_TEST_CATEGORY" \
+            -Dtest=UnitOldDriverTestSuite,"$JDBC_TEST_CATEGORY" \
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn \
             verify \
             --batch-mode --show-version
