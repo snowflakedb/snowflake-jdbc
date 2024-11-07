@@ -50,13 +50,15 @@ public class IncidentUtilLatestIT extends BaseJDBCTest {
         EventUtil.getDumpPathPrefix() + "/" + INC_DUMP_FILE_NAME + incidentId + INC_DUMP_FILE_EXT;
 
     // Read back the file contents
-    GZIPInputStream gzip = new GZIPInputStream(new FileInputStream(targetVMFileLocation));
-    StringWriter sWriter = new StringWriter();
-    IOUtils.copy(gzip, sWriter, "UTF-8");
-    String output = sWriter.toString();
-    assertEquals(
-        "\n\n\n---------------------------  METRICS " + "---------------------------\n\n",
-        output.substring(0, 69));
-    sWriter.close();
+    try (FileInputStream fis = new FileInputStream(targetVMFileLocation)) {
+      GZIPInputStream gzip = new GZIPInputStream(fis);
+      StringWriter sWriter = new StringWriter();
+      IOUtils.copy(gzip, sWriter, "UTF-8");
+      String output = sWriter.toString();
+      assertEquals(
+          "\n\n\n---------------------------  METRICS " + "---------------------------\n\n",
+          output.substring(0, 69));
+      sWriter.close();
+    }
   }
 }
