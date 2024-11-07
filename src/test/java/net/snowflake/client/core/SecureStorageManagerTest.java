@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import net.snowflake.client.annotations.RunOnLinux;
+import net.snowflake.client.annotations.RunOnMac;
+import net.snowflake.client.annotations.RunOnWindows;
 import net.snowflake.client.annotations.RunOnWindowsOrMac;
 import org.junit.jupiter.api.Test;
 
@@ -236,6 +238,7 @@ public class SecureStorageManagerTest {
   }
 
   @Test
+  @RunOnWindows
   public void testWindowsManager() {
     SecureStorageWindowsManager.Advapi32LibManager.setInstance(new MockAdvapi32Lib());
     SecureStorageManager manager = SecureStorageWindowsManager.builder();
@@ -245,6 +248,7 @@ public class SecureStorageManagerTest {
   }
 
   @Test
+  @RunOnMac
   public void testMacManager() {
     SecureStorageAppleManager.SecurityLibManager.setInstance(new MockSecurityLib());
     SecureStorageManager manager = SecureStorageAppleManager.builder();
