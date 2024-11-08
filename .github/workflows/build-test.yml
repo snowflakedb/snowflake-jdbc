@@ -38,13 +38,16 @@ jobs:
 
     test-windows:
         needs: build
-        name: ${{ matrix.runConfig.cloud }} Windows java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }}
+        name: ${{ matrix.runConfig.cloud }} Windows java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: windows-latest
         strategy:
             fail-fast: false
             matrix:
                 runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: ['ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', 'OthersTestSuite', 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', 'FipsTestSuite']
+                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
+                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v4
@@ -62,19 +65,22 @@ jobs:
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
-                JDBC_TEST_CATEGORY: ${{ matrix.category }}
+                JDBC_TEST_CATEGORY: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
               run: ci\\test_windows.bat
 
     test-mac:
         needs: build
-        name: ${{ matrix.runConfig.cloud }} Mac java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }}
+        name: ${{ matrix.runConfig.cloud }} Mac java ${{ matrix.runConfig.javaVersion }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: macos-13
         strategy:
             fail-fast: false
             matrix:
                 runConfig: [ {cloud: 'AWS', javaVersion: '8'}, {cloud: 'GCP', javaVersion: '11'}, {cloud: 'AZURE', javaVersion: '17'}, {cloud: 'AWS', javaVersion: '21'}]
-                category: ['ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', 'OthersTestSuite', 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', 'FipsTestSuite']
+                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
+                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
                 additionalMavenProfile: ['']
         steps:
             - uses: actions/checkout@v4
@@ -94,20 +100,23 @@ jobs:
               env:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.runConfig.cloud }}
-                JDBC_TEST_CATEGORY: ${{ matrix.category }}
+                JDBC_TEST_CATEGORY: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
               run: /usr/local/bin/bash ./ci/test_mac.sh
 
     test-linux:
         needs: build
-        name: ${{ matrix.cloud }} Linux java on ${{ matrix.image }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category }}
+        name: ${{ matrix.cloud }} Linux java on ${{ matrix.image }} JDBC${{ matrix.additionalMavenProfile }} ${{ matrix.category.name }}
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
                 image: [ 'jdbc-centos7-openjdk8', 'jdbc-centos7-openjdk11', 'jdbc-centos7-openjdk17', 'jdbc-centos7-openjdk21' ]
                 cloud: [ 'AWS', 'AZURE', 'GCP' ]
-                category: ['ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', 'OthersTestSuite', 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', 'FipsTestSuite']
+                category: [{suites: 'ResultSetTestSuite,StatementTestSuite,LoaderTestSuite', name: 'TestCategoryResultSet,TestCategoryStatement,TestCategoryLoader'},
+                           {suites: 'OthersTestSuite', name: 'TestCategoryOthers'},
+                           {suites: 'ArrowTestSuite,ConnectionTestSuite,CoreTestSuite,DiagnosticTestSuite', name: 'TestCategoryArrow,TestCategoryConnection,TestCategoryCore,TestCategoryDiagnostic'},
+                           {suites: 'FipsTestSuite', name: "TestCategoryFips"}]
                 additionalMavenProfile: ['', '-Dthin-jar']
         steps:
             - uses: actions/checkout@v1
@@ -117,19 +126,21 @@ jobs:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
-                JDBC_TEST_CATEGORY: ${{ matrix.category }}
+                JDBC_TEST_CATEGORY: ${{ matrix.category.suites }}
                 ADDITIONAL_MAVEN_PROFILE: ${{ matrix.additionalMavenProfile }}
               run: ./ci/test.sh
 
     test-linux-old-driver:
-        name: Old JDBC ${{ matrix.category }} on ${{ matrix.image }}
+        name: Old JDBC ${{ matrix.category.name }} on ${{ matrix.image }}
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
                 image: [ 'jdbc-centos7-openjdk8' ]
                 cloud: [ 'AWS' ]
-                category: ['OthersOldDriverTestSuite', 'ConnectionOldDriverTestSuite,StatementOldDriverTestSuite', 'LoaderOldDriverTestSuite,ResultSetOldDriverTestSuite']
+                category: [{suites: 'OthersOldDriverTestSuite', name: 'TestCategoryOthers'},
+                           {suites: 'ConnectionOldDriverTestSuite,StatementOldDriverTestSuite', name: 'TestCategoryConnection,TestCategoryStatement'},
+                           {suites: 'LoaderOldDriverTestSuite,ResultSetOldDriverTestSuite', name: 'TestCategoryLoader,TestCategoryResultSet'}]
                 is_old_driver: ['true']
         steps:
             - uses: actions/checkout@v1
@@ -139,6 +150,6 @@ jobs:
                 PARAMETERS_SECRET: ${{ secrets.PARAMETERS_SECRET }}
                 CLOUD_PROVIDER: ${{ matrix.cloud }}
                 TARGET_DOCKER_TEST_IMAGE: ${{ matrix.image }}
-                JDBC_TEST_CATEGORY: ${{ matrix.category }}
+                JDBC_TEST_CATEGORY: ${{ matrix.category.suites }}
                 is_old_driver: ${{ matrix.is_old_driver }}
               run: ./ci/test.sh
