@@ -397,6 +397,8 @@
             <exclude>**/structuredtypes/sqldata/*.java</exclude>
             <!-- Latest JDBC driver tests that cannot run with the oldest driver -->
             <exclude>**/*LatestIT.java</exclude>
+            <!-- Unit Tests -->
+            <exclude>**/*Test.java</exclude>
             <!-- Manual Tests -->
             <exclude>**/*Manual.java</exclude>
             <!-- Telemetry API is new -->
