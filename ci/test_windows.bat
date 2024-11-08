@@ -111,47 +111,44 @@ echo "MAVEN OPTIONS %MAVEN_OPTS%"
 REM Avoid connection timeout on plugin dependency fetch or fail-fast when dependency cannot be fetched
 cmd /c %MVNW_EXE% --batch-mode --show-version dependency:go-offline
 
-echo list = "%JDBC_TEST_CATEGORY%"
-for %%a in ("%JDBC_TEST_CATEGORY:,=" "%") do (
-    echo "Current category to execute" %%a
-    if /i %%a=="FipsTestSuite" (
-        pushd FIPS
-        echo "[INFO] Run Fips tests"
-        cmd /c %MVNW_EXE% -B -DjenkinsIT ^
-            -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
-            -Djacoco.skip.instrument=false ^
-            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
-            -Dnot-self-contained-jar ^
-            verify ^
-            --batch-mode --show-version > log.txt & type log.txt
-        echo "[INFO] Check for test execution status"
-        find /i /c "BUILD FAILURE" log.txt > NUL
-        set isfound=!errorlevel!
-        if !isfound! equ 0 (
-            echo [ERROR] Failed run %%a test
-            exit /b 1
-        ) else (
-            echo [INFO] Success run %%a test
-        )
-        popd ) else (
-        echo "[INFO] Run %%a tests"
-        cmd /c %MVNW_EXE% -B -DjenkinsIT ^
-            -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
-            -Djacoco.skip.instrument=false ^
-            -Dtest=UnitTestSuite,%%a ^
-            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
-            -Dnot-self-contained-jar %ADDITIONAL_MAVEN_PROFILE% ^
-            verify ^
-            --batch-mode --show-version > log.txt & type log.txt
-        echo "[INFO] Check for test execution status"
-        find /i /c "BUILD FAILURE" log.txt > NUL
-        set isfound=!errorlevel!
-        if !isfound! equ 0 (
-            echo [ERROR] Failed run %%a test
-            exit /b 1
-        ) else (
-            echo [INFO] Success run %%a test
-        )
+if "%JDBC_TEST_CATEGORY%"=="FipsTestSuite" (
+    pushd FIPS
+    echo "[INFO] Run Fips tests"
+    cmd /c %MVNW_EXE% -B -DjenkinsIT ^
+        -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
+        -Djacoco.skip.instrument=false ^
+        -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
+        -Dnot-self-contained-jar ^
+        verify ^
+        --batch-mode --show-version > log.txt & type log.txt
+    echo "[INFO] Check for test execution status"
+    find /i /c "BUILD FAILURE" log.txt > NUL
+    set isfound=!errorlevel!
+    if !isfound! equ 0 (
+        echo [ERROR] Failed run %%a test
+        exit /b 1
+    ) else (
+        echo [INFO] Success run %%a test
+    )
+    popd
+) else (
+    echo "[INFO] Run %JDBC_TEST_CATEGORY% tests"
+    cmd /c %MVNW_EXE% -B -DjenkinsIT ^
+        -Djava.io.tmpdir=%GITHUB_WORKSPACE% ^
+        -Djacoco.skip.instrument=false ^
+        -Dtest=UnitTestSuite,"%JDBC_TEST_CATEGORY%" ^
+        -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn ^
+        -Dnot-self-contained-jar %ADDITIONAL_MAVEN_PROFILE% ^
+        verify ^
+        --batch-mode --show-version > log.txt & type log.txt
+    echo "[INFO] Check for test execution status"
+    find /i /c "BUILD FAILURE" log.txt > NUL
+    set isfound=!errorlevel!
+    if !isfound! equ 0 (
+        echo [ERROR] Failed run %%a test
+        exit /b 1
+    ) else (
+        echo [INFO] Success run %%a test
     )
 )
 
