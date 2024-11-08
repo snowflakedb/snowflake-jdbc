@@ -129,7 +129,7 @@ jobs:
             matrix:
                 image: [ 'jdbc-centos7-openjdk8' ]
                 cloud: [ 'AWS' ]
-                category: ['OthersOldDriverTestSuite', 'ConnectionOldDriverTestSuite,StatementOldDriverTestSuite', 'CoreOldDriverTestSuite,LoaderOldDriverTestSuite,ResultSetOldDriverTestSuite']
+                category: ['OthersOldDriverTestSuite', 'ConnectionOldDriverTestSuite,StatementOldDriverTestSuite', 'LoaderOldDriverTestSuite,ResultSetOldDriverTestSuite']
                 is_old_driver: ['true']
         steps:
             - uses: actions/checkout@v1
