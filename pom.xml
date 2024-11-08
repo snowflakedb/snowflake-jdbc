@@ -108,9 +108,9 @@
           <version>${version.plugin.failsafe}</version>
           <dependencies>
             <dependency>
-              <groupId>org.apache.maven.surefire</groupId>
-              <artifactId>surefire-junit-platform</artifactId>
-              <version>3.5.1</version>
+              <groupId>org.junit.jupiter</groupId>
+              <artifactId>junit-jupiter-engine</artifactId>
+              <version>${junit.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -153,6 +153,13 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${version.plugin.surefire}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.junit.jupiter</groupId>
+              <artifactId>junit-jupiter-engine</artifactId>
+              <version>${junit.version}</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -1100,9 +1107,9 @@
             </configuration>
             <dependencies>
               <dependency>
-                <groupId>org.apache.maven.surefire</groupId>
-                <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
               </dependency>
             </dependencies>
           </plugin>
@@ -1113,9 +1120,9 @@
             </configuration>
             <dependencies>
               <dependency>
-                <groupId>org.apache.maven.surefire</groupId>
-                <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
               </dependency>
             </dependencies>
           </plugin>
@@ -1173,9 +1180,9 @@
             </configuration>
             <dependencies>
               <dependency>
-                <groupId>org.apache.maven.surefire</groupId>
-                <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
               </dependency>
             </dependencies>
             <executions>
@@ -1324,9 +1331,9 @@
             </configuration>
             <dependencies>
               <dependency>
-                <groupId>org.apache.maven.surefire</groupId>
-                <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
               </dependency>
             </dependencies>
             <executions>
@@ -1376,9 +1383,9 @@
             </configuration>
             <dependencies>
               <dependency>
-                <groupId>org.apache.maven.surefire</groupId>
-                <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
               </dependency>
             </dependencies>
             <executions>
@@ -1422,9 +1429,9 @@
             </configuration>
             <dependencies>
               <dependency>
-                <groupId>org.apache.maven.surefire</groupId>
-                <artifactId>surefire-junit-platform</artifactId>
-                <version>3.5.1</version>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
               </dependency>
             </dependencies>
             <executions>
