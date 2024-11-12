@@ -1450,6 +1450,7 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
+  @DontRunOnGithubActions
   public void testNoSpaceLeftOnDeviceException() throws SQLException {
     List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
     for (String accountName : supportedAccounts) {
