@@ -395,16 +395,13 @@ public class TelemetryServiceIT extends BaseJDBCTest {
    * <p>After running test, check for telemetry message in client_telemetry_v table.
    */
   @Test
-  public void testSqlFeatureNotSupportedExceptionIBTelemetry() {
+  public void testSqlFeatureNotSupportedExceptionIBTelemetry() throws SQLException {
     // make a connection to initialize telemetry instance
-    assertThrows(
-        SQLFeatureNotSupportedException.class,
-        () -> {
-          try (Connection con = getConnection()) {
-            Statement statement = con.createStatement();
-            // try to execute a statement that throws a SQLFeatureNotSupportedException
-            statement.execute("select 1", new int[] {});
-          }
-        });
+    try (Connection con = getConnection()) {
+      Statement statement = con.createStatement();
+      // try to execute a statement that throws a SQLFeatureNotSupportedException
+      assertThrows(
+          SQLFeatureNotSupportedException.class, () -> statement.execute("select 1", new int[] {}));
+    }
   }
 }

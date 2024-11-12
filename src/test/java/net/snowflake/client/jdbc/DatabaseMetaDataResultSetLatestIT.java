@@ -25,23 +25,21 @@ public class DatabaseMetaDataResultSetLatestIT extends BaseJDBCTest {
 
   @Test
   public void testGetObjectNotSupported() throws SQLException {
-    assertThrows(
-        SnowflakeLoggedFeatureNotSupportedException.class,
-        () -> {
-          try (Connection con = getConnection();
-              Statement st = con.createStatement()) {
-            Object[][] rows = {{1.2F}};
-            List<String> columnNames = Arrays.asList("float");
-            List<String> columnTypeNames = Arrays.asList("FLOAT");
-            List<Integer> columnTypes = Arrays.asList(Types.FLOAT);
-            try (ResultSet resultSet =
-                new SnowflakeDatabaseMetaDataResultSet(
-                    columnNames, columnTypeNames, columnTypes, rows, st)) {
-              resultSet.next();
-              assertEquals(1.2F, resultSet.getObject(1));
-            }
-          }
-        });
+    try (Connection con = getConnection();
+        Statement st = con.createStatement()) {
+      Object[][] rows = {{1.2F}};
+      List<String> columnNames = Arrays.asList("float");
+      List<String> columnTypeNames = Arrays.asList("FLOAT");
+      List<Integer> columnTypes = Arrays.asList(Types.FLOAT);
+      try (ResultSet resultSet =
+          new SnowflakeDatabaseMetaDataResultSet(
+              columnNames, columnTypeNames, columnTypes, rows, st)) {
+        resultSet.next();
+        assertThrows(
+            SnowflakeLoggedFeatureNotSupportedException.class,
+            () -> assertEquals(1.2F, resultSet.getObject(1)));
+      }
+    }
   }
 
   /** Added in > 3.17.0 */

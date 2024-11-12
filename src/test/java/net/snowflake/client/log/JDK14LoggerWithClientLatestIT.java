@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import net.snowflake.client.AbstractDriverIT;
 import net.snowflake.client.annotations.DontRunOnWindows;
 import net.snowflake.client.category.TestTags;
+import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeSQLLoggedException;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Disabled;
@@ -64,12 +65,12 @@ public class JDK14LoggerWithClientLatestIT extends AbstractDriverIT {
 
   @Test
   public void testJDK14LoggingWithClientConfigInvalidConfigFilePath() {
+    Path configFilePath = Paths.get("invalid.json");
+    Properties properties = new Properties();
+    properties.put("client_config_file", configFilePath.toString());
     assertThrows(
-        SQLException.class,
+        SnowflakeSQLException.class,
         () -> {
-          Path configFilePath = Paths.get("invalid.json");
-          Properties properties = new Properties();
-          properties.put("client_config_file", configFilePath.toString());
           try (Connection connection = getConnection(properties)) {
             connection.createStatement().executeQuery("select 1");
           }

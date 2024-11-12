@@ -9,8 +9,8 @@ import java.util.Map;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.jdbc.ResultSetFormatType;
-import net.snowflake.client.providers.ResultFormatProvider;
 import net.snowflake.client.providers.ProvidersUtil;
+import net.snowflake.client.providers.ResultFormatProvider;
 import net.snowflake.client.providers.SnowflakeArgumentsProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -156,7 +156,8 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
 
     @Override
     protected List<Arguments> rawArguments(ExtensionContext context) {
-      return ProvidersUtil.cartesianProduct(context, new ResultFormatProvider(), new SampleProvider());
+      return ProvidersUtil.cartesianProduct(
+          context, new ResultFormatProvider(), new SampleProvider());
     }
   }
 }

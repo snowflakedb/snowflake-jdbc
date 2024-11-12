@@ -161,38 +161,36 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   @DontRunOnGithubActions
   public void errorInterruptedException() throws SQLException {
     // Can still retry, no error thrown
+    try {
+      spyingClient.handleStorageException(
+          new InterruptedException(), 0, "upload", sfSession, command, null);
+    } catch (Exception e) {
+      fail("Should not have exception here");
+    }
+    Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
     assertThrows(
         SnowflakeSQLException.class,
-        () -> {
-          try {
+        () ->
             spyingClient.handleStorageException(
-                new InterruptedException(), 0, "upload", sfSession, command, null);
-          } catch (Exception e) {
-            fail("Should not have exception here");
-          }
-          Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
-          spyingClient.handleStorageException(
-              new InterruptedException(), 26, "upload", sfSession, command, null);
-        });
+                new InterruptedException(), 26, "upload", sfSession, command, null));
   }
 
   @Test
   @DontRunOnGithubActions
-  public void errorSocketTimeoutException() {
+  public void errorSocketTimeoutException() throws SnowflakeSQLException {
+    // Can still retry, no error thrown
+    try {
+      spyingClient.handleStorageException(
+          new SocketTimeoutException(), 0, "upload", sfSession, command, null);
+    } catch (Exception e) {
+      fail("Should not have exception here");
+    }
+    Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
     assertThrows(
         SnowflakeSQLException.class,
-        () -> {
-          // Can still retry, no error thrown
-          try {
+        () ->
             spyingClient.handleStorageException(
-                new SocketTimeoutException(), 0, "upload", sfSession, command, null);
-          } catch (Exception e) {
-            fail("Should not have exception here");
-          }
-          Mockito.verify(spyingClient, Mockito.never()).renew(Mockito.anyMap());
-          spyingClient.handleStorageException(
-              new SocketTimeoutException(), 26, "upload", sfSession, command, null);
-        });
+                new SocketTimeoutException(), 26, "upload", sfSession, command, null));
   }
 
   @Test
@@ -207,30 +205,25 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
 
   @Test
   @DontRunOnGithubActions
-  public void errorNoSpaceLeftOnDevice() {
+  public void errorNoSpaceLeftOnDevice() throws IOException {
+    File destFolder = new File(tmpFolder, "dest");
+    destFolder.mkdirs();
+    String destFolderCanonicalPath = destFolder.getCanonicalPath();
+    String getCommand =
+        "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file://" + destFolderCanonicalPath + "'";
     assertThrows(
         SnowflakeSQLException.class,
-        () -> {
-          File destFolder = new File(tmpFolder, "dest");
-          destFolder.mkdirs();
-          String destFolderCanonicalPath = destFolder.getCanonicalPath();
-          String getCommand =
-              "get @testPutGet_stage/"
-                  + TEST_DATA_FILE
-                  + " 'file://"
-                  + destFolderCanonicalPath
-                  + "'";
-          spyingClient.handleStorageException(
-              new StorageException(
-                  "",
-                  Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
-                  new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
-              0,
-              "download",
-              null,
-              getCommand,
-              null);
-        });
+        () ->
+            spyingClient.handleStorageException(
+                new StorageException(
+                    "",
+                    Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                    new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+                0,
+                "download",
+                null,
+                getCommand,
+                null));
   }
 
   @AfterEach

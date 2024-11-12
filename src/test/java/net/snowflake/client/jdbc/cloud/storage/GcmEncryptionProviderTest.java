@@ -138,21 +138,21 @@ public class GcmEncryptionProviderTest {
     InputStream plainTextStream = new ByteArrayInputStream(plainText);
 
     byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+
+    byte[] encryptedKey = encKeyArgumentCaptor.getValue();
+    encryptedKey[0] = (byte) ((encryptedKey[0] + 1) % 255);
     assertThrows(
         AEADBadTagException.class,
-        () -> {
-          byte[] encryptedKey = encKeyArgumentCaptor.getValue();
-          encryptedKey[0] = (byte) ((encryptedKey[0] + 1) % 255);
-          IOUtils.toByteArray(
-              GcmEncryptionProvider.decryptStream(
-                  new ByteArrayInputStream(cipherText),
-                  Base64.getEncoder().encodeToString(encryptedKey),
-                  Base64.getEncoder().encodeToString(dataIvDataArgumentCaptor.getValue()),
-                  Base64.getEncoder().encodeToString(keyIvDataArgumentCaptor.getValue()),
-                  encMat,
-                  dataAad == null ? "" : Base64.getEncoder().encodeToString(dataAad),
-                  keyAad == null ? "" : Base64.getEncoder().encodeToString(keyAad)));
-        });
+        () ->
+            IOUtils.toByteArray(
+                GcmEncryptionProvider.decryptStream(
+                    new ByteArrayInputStream(cipherText),
+                    Base64.getEncoder().encodeToString(encryptedKey),
+                    Base64.getEncoder().encodeToString(dataIvDataArgumentCaptor.getValue()),
+                    Base64.getEncoder().encodeToString(keyIvDataArgumentCaptor.getValue()),
+                    encMat,
+                    dataAad == null ? "" : Base64.getEncoder().encodeToString(dataAad),
+                    keyAad == null ? "" : Base64.getEncoder().encodeToString(keyAad))));
   }
 
   @Test
@@ -160,12 +160,12 @@ public class GcmEncryptionProviderTest {
     InputStream plainTextStream = new ByteArrayInputStream(plainText);
 
     byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    byte[] dataIvBase64 = dataIvDataArgumentCaptor.getValue();
+    dataIvBase64[0] = (byte) ((dataIvBase64[0] + 1) % 255);
     IOException ioException =
         assertThrows(
             IOException.class,
             () -> {
-              byte[] dataIvBase64 = dataIvDataArgumentCaptor.getValue();
-              dataIvBase64[0] = (byte) ((dataIvBase64[0] + 1) % 255);
               IOUtils.toByteArray(
                   GcmEncryptionProvider.decryptStream(
                       new ByteArrayInputStream(cipherText),
@@ -184,11 +184,11 @@ public class GcmEncryptionProviderTest {
     InputStream plainTextStream = new ByteArrayInputStream(plainText);
 
     byte[] cipherText = encryptStream(plainTextStream, dataAad, keyAad);
+    byte[] keyIvBase64 = keyIvDataArgumentCaptor.getValue();
+    keyIvBase64[0] = (byte) ((keyIvBase64[0] + 1) % 255);
     assertThrows(
         AEADBadTagException.class,
         () -> {
-          byte[] keyIvBase64 = keyIvDataArgumentCaptor.getValue();
-          keyIvBase64[0] = (byte) ((keyIvBase64[0] + 1) % 255);
           IOUtils.toByteArray(
               GcmEncryptionProvider.decryptStream(
                   new ByteArrayInputStream(cipherText),

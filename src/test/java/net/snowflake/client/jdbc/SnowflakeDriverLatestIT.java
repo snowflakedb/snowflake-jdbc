@@ -1450,49 +1450,43 @@ public class SnowflakeDriverLatestIT extends BaseJDBCTest {
   }
 
   @Test
-  public void testNoSpaceLeftOnDeviceException() {
-    assertThrows(
-        SnowflakeSQLException.class,
-        () -> {
-          List<String> supportedAccounts =
-              Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
-          for (String accountName : supportedAccounts) {
-            try (Connection connection = getConnection(accountName)) {
-              SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
-              try (Statement statement = connection.createStatement()) {
-                try {
-                  SFStatement sfStatement =
-                      statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
-                  statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
-                  statement.execute(
-                      "PUT file://"
-                          + getFullPathFileInResource(TEST_DATA_FILE)
-                          + " @testPutGet_stage");
-                  String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
-                  SnowflakeFileTransferAgent sfAgent =
-                      new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
-                  StageInfo info = sfAgent.getStageInfo();
-                  SnowflakeStorageClient client =
-                      StorageClientFactory.getFactory()
-                          .createClient(info, 1, null, /* session= */ null);
+  public void testNoSpaceLeftOnDeviceException() throws SQLException {
+    List<String> supportedAccounts = Arrays.asList("gcpaccount", "s3testaccount", "azureaccount");
+    for (String accountName : supportedAccounts) {
+      try (Connection connection = getConnection(accountName)) {
+        SFSession sfSession = connection.unwrap(SnowflakeConnectionV1.class).getSfSession();
+        try (Statement statement = connection.createStatement()) {
+          try {
+            SFStatement sfStatement = statement.unwrap(SnowflakeStatementV1.class).getSfStatement();
+            statement.execute("CREATE OR REPLACE STAGE testPutGet_stage");
+            statement.execute(
+                "PUT file://" + getFullPathFileInResource(TEST_DATA_FILE) + " @testPutGet_stage");
+            String command = "get @testPutGet_stage/" + TEST_DATA_FILE + " 'file:///tmp'";
+            SnowflakeFileTransferAgent sfAgent =
+                new SnowflakeFileTransferAgent(command, sfSession, sfStatement);
+            StageInfo info = sfAgent.getStageInfo();
+            SnowflakeStorageClient client =
+                StorageClientFactory.getFactory().createClient(info, 1, null, /* session= */ null);
 
-                  client.handleStorageException(
-                      new StorageException(
-                          client.getMaxRetries(),
-                          Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
-                          new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
-                      client.getMaxRetries(),
-                      "download",
-                      null,
-                      command,
-                      null);
-                } finally {
-                  statement.execute("DROP STAGE if exists testPutGet_stage");
-                }
-              }
-            }
+            assertThrows(
+                SnowflakeSQLException.class,
+                () ->
+                    client.handleStorageException(
+                        new StorageException(
+                            client.getMaxRetries(),
+                            Constants.NO_SPACE_LEFT_ON_DEVICE_ERR,
+                            new IOException(Constants.NO_SPACE_LEFT_ON_DEVICE_ERR)),
+                        client.getMaxRetries(),
+                        "download",
+                        null,
+                        command,
+                        null));
+          } finally {
+            statement.execute("DROP STAGE if exists testPutGet_stage");
           }
-        });
+        }
+      }
+    }
   }
 
   @Test

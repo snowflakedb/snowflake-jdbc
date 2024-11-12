@@ -2747,14 +2747,10 @@ public class SnowflakeDriverIT extends BaseJDBCTest {
 
   /** Prepare statement will fail if the connection is already closed. */
   @Test
-  public void testNotClosedSession() {
-    assertThrows(
-        SQLException.class,
-        () -> {
-          Connection connection = getConnection();
-          connection.close();
-          connection.prepareStatement("select 1");
-        });
+  public void testNotClosedSession() throws SQLException {
+    Connection connection = getConnection();
+    connection.close();
+    assertThrows(SnowflakeSQLException.class, () -> connection.prepareStatement("select 1"));
   }
 
   @Test
