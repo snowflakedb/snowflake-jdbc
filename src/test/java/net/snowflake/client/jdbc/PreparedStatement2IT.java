@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -40,7 +40,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 @Tag(TestTags.STATEMENT)
 public class PreparedStatement2IT extends PreparedStatement0IT {
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testStageBatchDates(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
@@ -119,7 +119,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testBindWithNullValue(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -180,7 +180,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepareDDL(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -201,7 +201,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepareSCL(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement("use SCHEMA  PUBLIC")) {
@@ -216,7 +216,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepareTCL(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       connection.setAutoCommit(false);
@@ -234,7 +234,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepareShowCommand(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement("show databases")) {
@@ -254,7 +254,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * @throws InterruptedException Will be thrown if the sleep is interrupted
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testPrepareTimeout(String queryResultFormat)
       throws SQLException, InterruptedException {
@@ -284,7 +284,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
   /** Test case to make sure 2 non null bind refs was not constant folded into one */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSnow36284(String queryResultFormat) throws Exception {
     String query = "select * from (values ('a'), ('b')) x where x.COLUMN1 in (?,?);";
 
@@ -307,7 +307,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
 
   /** Test for coalesce with bind and null arguments in a prepared statement */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testSnow35923(String queryResultFormat) throws Exception {
     try (Connection connection = getConn(queryResultFormat);
@@ -330,7 +330,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * object IDs
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testBindObjectLiteral(String queryResultFormat) throws Exception {
     long t1Id = 0;
@@ -486,7 +486,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testBindTimestampTZViaString(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -516,7 +516,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * timestamp format: YYYY-MM-DD HH24:MI:SS.FF9 TZH:TZM
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testBindTimestampTZViaStringBatch(String queryResultFormat) throws SQLException {
     TimeZone originalTimeZone = TimeZone.getDefault();
@@ -571,7 +571,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * @throws Exception raises if any error occurs
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSnow41620(String queryResultFormat) throws Exception {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -609,7 +609,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSnow50141(String queryResultFormat) throws Exception {
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement("select 1 where true=?")) {
@@ -655,7 +655,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPreparedStatementWithSkipParsing(String queryResultFormat) throws Exception {
     try (Connection con = getConn(queryResultFormat)) {
       PreparedStatement stmt =
@@ -668,7 +668,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPreparedStatementWithSkipParsingAndBinding(String queryResultFormat)
       throws Exception {
     try (Connection con = getConn(queryResultFormat);
@@ -700,7 +700,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
    * SnowflakePreparedStatementV1 so that execution can continue
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSnow44393(String queryResultFormat) throws Exception {
     try (Connection con = getConn(queryResultFormat)) {
       assertFalse(
@@ -719,7 +719,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testAddBatchNumericNullFloatMixed(String queryResultFormat) throws Exception {
     try (Connection connection = getConn(queryResultFormat)) {
@@ -799,7 +799,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testInvalidUsageOfApi(String queryResultFormat) throws Exception {
     try (Connection connection = getConn(queryResultFormat);
         PreparedStatement preparedStatement = connection.prepareStatement("select 1")) {
@@ -849,7 +849,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testCreatePreparedStatementWithParameters(String queryResultFormat) throws Throwable {
     try (Connection connection = getConn(queryResultFormat)) {
       connection.prepareStatement(
@@ -880,7 +880,7 @@ public class PreparedStatement2IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepareAndGetMeta(String queryResultFormat) throws SQLException {
     try (Connection con = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = con.prepareStatement("select 1 where 1 > ?")) {

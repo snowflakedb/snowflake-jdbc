@@ -54,7 +54,7 @@ import net.snowflake.client.jdbc.telemetry.TelemetryClient;
 import net.snowflake.client.jdbc.telemetry.TelemetryData;
 import net.snowflake.client.jdbc.telemetry.TelemetryField;
 import net.snowflake.client.jdbc.telemetry.TelemetryUtil;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import net.snowflake.common.core.SFBinary;
 import org.apache.arrow.vector.Float8Vector;
 import org.junit.jupiter.api.Tag;
@@ -92,7 +92,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws Throwable
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testMemoryClearingAfterInterrupt(String queryResultFormat) throws Throwable {
     try (Statement statement = createStatement(queryResultFormat)) {
       final long initialMemoryUsage = SnowflakeChunkDownloader.getCurrentMemoryUsage();
@@ -129,7 +129,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * when there is not enough memory available for concurrent prefetching.
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testChunkDownloaderNoHang(String queryResultFormat) throws SQLException {
     int stmtCount = 30;
     int rowCount = 170000;
@@ -166,7 +166,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
   /** This tests that the SnowflakeChunkDownloader doesn't hang when memory limits are low. */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testChunkDownloaderSetRetry(String queryResultFormat) throws SQLException {
     int stmtCount = 3;
     int rowCount = 170000;
@@ -215,7 +215,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws InterruptedException arises if error occurred when sending telemetry events
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testMetadataAPIMetricCollection(String queryResultFormat)
       throws SQLException, ExecutionException, InterruptedException {
     Statement stmt = createStatement(queryResultFormat);
@@ -280,7 +280,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetCharacterStreamNull(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute("create or replace table JDBC_NULL_CHARSTREAM (col1 varchar(16))");
@@ -298,7 +298,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws SQLException arises if any exception occurs
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testMultipleChunks(String queryResultFormat) throws Exception {
     try (Statement statement = createStatement(queryResultFormat);
 
@@ -351,7 +351,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws SQLException arises if any exception occurs
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testResultSetMetadata(String queryResultFormat) throws SQLException {
     final Map<String, String> params = getConnectionParameters();
     try (Statement statement = createStatement(queryResultFormat)) {
@@ -403,7 +403,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testEmptyResultSet(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat);
         // the only function that returns ResultSetV1.emptyResultSet()
@@ -513,7 +513,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws Exception arises if any exception occurs.
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testBytesCrossTypeTests(String queryResultFormat) throws Exception {
     try (ResultSet resultSet = numberCrossTesting(queryResultFormat)) {
       assertTrue(resultSet.next());
@@ -547,7 +547,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   // SNOW-204185
   // 30s for timeout. This test usually finishes in around 10s.
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @Timeout(30)
   public void testResultChunkDownloaderException(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat)) {
@@ -618,7 +618,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetBigDecimalWithScale(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute("create or replace table test_get(colA number(38,9))");
@@ -645,7 +645,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetDataTypeWithTimestampTz(String queryResultFormat) throws Exception {
     try (Connection connection = getConnection()) {
       ResultSetMetaData resultSetMetaData = null;
@@ -682,7 +682,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetEmptyOrNullClob(String queryResultFormat) throws SQLException {
     Clob clob = connection.createClob();
     clob.setString(1, "hello world");
@@ -717,7 +717,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSetNullClob(String queryResultFormat) throws SQLException {
     Clob clob = null;
     try (Statement statement = createStatement(queryResultFormat)) {
@@ -737,7 +737,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testCallStatementType(String queryResultFormat) throws SQLException {
     Properties props = new Properties();
     props.put("USE_STATEMENT_TYPE_CALL_FOR_STORED_PROC_CALLS", "true");
@@ -810,7 +810,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
    * implemented for synchronous queries *
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testNewFeaturesNotSupportedExeceptions(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat);
         ResultSet rs = statement.executeQuery("select 1")) {
@@ -859,7 +859,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testInvalidUnWrap(String queryResultFormat) throws SQLException {
     try (ResultSet rs = createStatement(queryResultFormat).executeQuery("select 1")) {
       try {
@@ -896,7 +896,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testMetadataIsCaseSensitive(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat)) {
 
@@ -948,7 +948,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testAutoIncrementResult(String queryResultFormat) throws SQLException {
     Properties paramProperties = new Properties();
@@ -972,7 +972,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGranularTimeFunctionsInSessionTimezone(String queryResultFormat)
       throws SQLException {
     try (Statement statement = createStatement(queryResultFormat)) {
@@ -993,7 +993,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testGranularTimeFunctionsInUTC(String queryResultFormat) throws SQLException {
     TimeZone origTz = TimeZone.getDefault();
@@ -1019,7 +1019,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
 
   /** Added in > 3.14.5 */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testLargeStringRetrieval(String queryResultFormat) throws SQLException {
     String originalMaxJsonStringLength =
         System.getProperty(ObjectMapperFactory.MAX_JSON_STRING_LENGTH_JVM);
@@ -1144,7 +1144,7 @@ public class ResultSetLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetObjectWithType(String queryResultFormat) throws SQLException {
     try (Statement statement = createStatement(queryResultFormat)) {
       statement.execute(

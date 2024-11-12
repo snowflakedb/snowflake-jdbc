@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -35,7 +35,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepareUDTF(String queryResultFormat) throws Exception {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -107,7 +107,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
    * execute
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSelectWithBinding(String queryResultFormat) throws Throwable {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -142,7 +142,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testLimitBind(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       String stmtStr = "select seq4() from table(generator(rowcount=>100)) limit ?";
@@ -155,7 +155,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
 
   /** SNOW-31746 */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testConstOptLimitBind(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       String stmtStr = "select 1 limit ? offset ?";
@@ -172,7 +172,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testTableFuncBindInput(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
@@ -186,7 +186,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testExecuteLargeBatch(String queryResultFormat) throws SQLException {
     try (Connection con = getConn(queryResultFormat);
         Statement statement = con.createStatement()) {
@@ -214,7 +214,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testRemoveExtraDescribeCalls(String queryResultFormat) throws SQLException {
     String queryId1 = null;
     String queryId2 = null;
@@ -267,7 +267,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testRemoveExtraDescribeCallsSanityCheck(String queryResultFormat)
       throws SQLException {
     String queryId1;
@@ -312,7 +312,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testAlreadyDescribedMultipleResults(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
@@ -348,7 +348,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
    * @throws Exception
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testConsecutiveBatchInsertError(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -388,7 +388,7 @@ public class PreparedStatement2LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testToString(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         PreparedStatement prepStatement =

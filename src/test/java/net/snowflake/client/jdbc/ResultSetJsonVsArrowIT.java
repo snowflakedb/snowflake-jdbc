@@ -27,7 +27,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -50,7 +50,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGSResult(String queryResultFormat) throws SQLException {
     try (Connection con = init(queryResultFormat);
         Statement statement = con.createStatement();
@@ -79,7 +79,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGSResultReal(String queryResultFormat) throws SQLException {
     try (Connection con = init(queryResultFormat);
         Statement statement = con.createStatement()) {
@@ -97,7 +97,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGSResultScan(String queryResultFormat) throws SQLException {
     String queryId = null;
     try (Connection con = init(queryResultFormat);
@@ -122,7 +122,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGSResultForEmptyAndSmallTable(String queryResultFormat) throws SQLException {
     try (Connection con = init(queryResultFormat);
         Statement statement = con.createStatement()) {
@@ -143,7 +143,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSNOW89737(String queryResultFormat) throws SQLException {
     try (Connection con = init(queryResultFormat);
         Statement statement = con.createStatement()) {
@@ -197,7 +197,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSemiStructuredData(String queryResultFormat) throws SQLException {
     try (Connection con = init(queryResultFormat);
         Statement statement = con.createStatement();
@@ -235,7 +235,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testStructuredTypes(String queryResultFormat) throws SQLException {
     try (Connection con = init(queryResultFormat);
@@ -284,7 +284,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testTinyInt(String queryResultFormat) throws SQLException {
     int[] cases = {0, 1, -1, 127, -128};
     String table = "test_arrow_tiny_int";
@@ -347,7 +347,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testScaledTinyInt(String queryResultFormat) throws SQLException {
     float[] cases = {0.0f, 0.11f, -0.11f, 1.27f, -1.28f};
     String table = "test_arrow_tiny_int";
@@ -445,7 +445,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSmallInt(String queryResultFormat) throws SQLException {
     short[] cases = {0, 1, -1, 127, -128, 128, -129, 32767, -32768};
     String table = "test_arrow_small_int";
@@ -531,7 +531,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testScaledSmallInt(String queryResultFormat) throws SQLException {
     float[] cases = {0, 2.0f, -2.0f, 32.767f, -32.768f};
     short[] shortCompact = {0, 2000, -2000, 32767, -32768};
@@ -640,7 +640,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testInt(String queryResultFormat) throws SQLException {
     int[] cases = {
       0, 1, -1, 127, -128, 128, -129, 32767, -32768, 32768, -32769, 2147483647, -2147483648
@@ -742,7 +742,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testScaledInt(String queryResultFormat) throws SQLException {
     int scale = 9;
     int[] intCompacts = {0, 123456789, -123456789, 2147483647, -2147483647};
@@ -859,7 +859,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testBigInt(String queryResultFormat) throws SQLException {
     long[] cases = {
       0,
@@ -988,7 +988,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testScaledBigInt(String queryResultFormat) throws SQLException {
     int scale = 18;
     long[] longCompacts = {
@@ -1108,7 +1108,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testDecimalNoScale(String queryResultFormat) throws SQLException {
     int scale = 0;
     String[] longCompacts = {
@@ -1218,7 +1218,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testDecimalWithLargeScale(String queryResultFormat) throws SQLException {
     int scale = 37;
     String[] longCompacts = {
@@ -1336,7 +1336,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testDecimal(String queryResultFormat) throws SQLException {
     int scale = 37;
@@ -1448,7 +1448,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testDoublePrecision(String queryResultFormat) throws SQLException {
     String[] cases = {
       // SNOW-31249
@@ -1500,7 +1500,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testBoolean(String queryResultFormat) throws SQLException {
     String table = "test_arrow_boolean";
     String column = "(a boolean)";
@@ -1522,7 +1522,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testClientSideSorting(String queryResultFormat) throws SQLException {
     String table = "test_arrow_sort_on";
     String column = "( a int, b double, c string)";
@@ -1548,7 +1548,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testClientSideSortingOnBatchedChunk(String queryResultFormat) throws SQLException {
     // in this test, the first chunk contains multiple batches when the format is Arrow
@@ -1592,7 +1592,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testTimestampNTZAreAllNulls(String queryResultFormat) throws SQLException {
     try (Connection con = init(queryResultFormat);
         Statement statement = con.createStatement()) {
@@ -1613,7 +1613,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void TestArrowStringRoundTrip(String queryResultFormat) throws SQLException {
     String big_number = "11111111112222222222333333333344444444";
     try (Connection con = init(queryResultFormat);
@@ -1639,7 +1639,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void TestArrowFloatRoundTrip(String queryResultFormat) throws SQLException {
     float[] cases = {Float.MAX_VALUE, Float.MIN_VALUE};
     try (Connection con = init(queryResultFormat);
@@ -1660,7 +1660,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void TestTimestampNTZWithDLS(String queryResultFormat) throws SQLException {
     TimeZone origTz = TimeZone.getDefault();
@@ -1767,7 +1767,7 @@ public class ResultSetJsonVsArrowIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void TestTimestampNTZBinding(String queryResultFormat) throws SQLException {
     TimeZone origTz = TimeZone.getDefault();
     try (Connection con = init(queryResultFormat)) {

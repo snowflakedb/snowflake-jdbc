@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.TimeZone;
 import net.snowflake.client.providers.ProvidersUtil;
 import net.snowflake.client.providers.ScaleProvider;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import net.snowflake.client.providers.SnowflakeArgumentsProvider;
 import net.snowflake.client.providers.TimezoneProvider;
 import org.junit.jupiter.api.AfterAll;
@@ -23,7 +23,7 @@ abstract class ResultSetArrowForce0MultiTimeZone extends BaseJDBCTest {
     @Override
     protected List<Arguments> rawArguments(ExtensionContext context) {
       return ProvidersUtil.cartesianProduct(
-          context, new SimpleFormatProvider(), new TimezoneProvider(3));
+          context, new SimpleResultFormatProvider(), new TimezoneProvider(3));
     }
   }
 

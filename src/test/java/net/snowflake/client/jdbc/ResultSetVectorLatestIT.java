@@ -14,7 +14,7 @@ import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -31,7 +31,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetIntVectorAsIntArray(String queryResultFormat) throws SQLException {
     try (Statement stmt = createStatement(queryResultFormat)) {
       enforceQueryResultFormat(stmt, queryResultFormat);
@@ -47,7 +47,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetIntVectorAsLongArray(String queryResultFormat) throws SQLException {
     try (Statement stmt = createStatement(queryResultFormat)) {
       enforceQueryResultFormat(stmt, queryResultFormat);
@@ -62,7 +62,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetFloatVectorAsFloatArray(String queryResultFormat) throws SQLException {
     try (Statement stmt = createStatement(queryResultFormat)) {
       enforceQueryResultFormat(stmt, queryResultFormat);
@@ -77,7 +77,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetNullAsIntVector(String queryResultFormat) throws SQLException {
     try (Statement stmt = createStatement(queryResultFormat)) {
       enforceQueryResultFormat(stmt, queryResultFormat);
@@ -92,7 +92,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetNullAsFloatVector(String queryResultFormat) throws SQLException {
     try (Statement stmt = createStatement(queryResultFormat)) {
       enforceQueryResultFormat(stmt, queryResultFormat);
@@ -107,7 +107,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetIntVectorFromTable(String queryResultFormat) throws SQLException {
     try (Statement stmt = createStatement(queryResultFormat)) {
       enforceQueryResultFormat(stmt, queryResultFormat);
@@ -124,7 +124,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetFloatVectorFromTable(String queryResultFormat) throws SQLException {
     try (Statement stmt = createStatement(queryResultFormat)) {
       enforceQueryResultFormat(stmt, queryResultFormat);
@@ -141,7 +141,7 @@ public class ResultSetVectorLatestIT extends ResultSet0IT {
 
   /** Added in > 3.16.1 */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetVectorViaGetStringIsEqualToTheGetObject(String queryResultFormat)
       throws SQLException {
     try (Statement stmt = createStatement(queryResultFormat)) {

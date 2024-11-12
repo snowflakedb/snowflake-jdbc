@@ -21,7 +21,7 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.HashMap;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,7 +32,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 public class CallableStatementIT extends CallableStatementITBase {
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepareCall(String queryResultFormat) throws SQLException {
     // test CallableStatement with no binding parameters
     try (Connection connection = getConnection(queryResultFormat)) {

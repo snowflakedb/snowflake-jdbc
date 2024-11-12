@@ -38,7 +38,7 @@ import net.snowflake.client.jdbc.structuredtypes.sqldata.NestedStructSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.NullableFieldsSqlData;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.StringClass;
-import net.snowflake.client.providers.FormatProvider;
+import net.snowflake.client.providers.ResultFormatProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,14 +84,14 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapStructToObjectWithFactory(ResultSetFormatType format) throws SQLException {
     testMapJson(true, format);
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapStructToObjectWithReflection(ResultSetFormatType format) throws SQLException {
     testMapJson(false, format);
@@ -116,7 +116,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapNullStruct(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -129,7 +129,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapStructAllTypes(ResultSetFormatType format) throws SQLException {
     try (Connection connection = init(format);
@@ -181,7 +181,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnStructAsStringIfTypeWasNotIndicated(ResultSetFormatType format)
       throws SQLException {
@@ -230,7 +230,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testThrowingGettingObjectIfTypeWasNotIndicatedAndFormatNativeArrow(
       ResultSetFormatType format) throws SQLException {
@@ -250,7 +250,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsArrayOfSqlData(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -266,7 +266,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsArrayOfNullableFieldsInSqlData(ResultSetFormatType format)
       throws SQLException {
@@ -291,7 +291,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnNullsForAllTpesInSqlData(ResultSetFormatType format) throws SQLException {
     try (Connection connection = init(format);
@@ -326,7 +326,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsArrayOfString(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -342,7 +342,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsArrayOfNullableString(ResultSetFormatType format) throws SQLException {
     Assumptions.assumeTrue(format == ResultSetFormatType.NATIVE_ARROW);
@@ -359,7 +359,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnNullAsArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -373,7 +373,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsListOfIntegers(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -389,7 +389,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsListOfFloat(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -405,7 +405,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsListOfDouble(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -421,7 +421,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMap(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -437,7 +437,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMapByGetObject(ResultSetFormatType format) throws SQLException {
     Assumptions.assumeTrue(format != ResultSetFormatType.NATIVE_ARROW);
@@ -453,7 +453,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMapWithNullableValues(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -469,7 +469,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnNullAsObjectOfTypeMap(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -483,7 +483,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnNullAsMap(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -497,7 +497,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMapOfTimestampsNtz(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -520,7 +520,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMapOfTimestampsLtz(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -543,7 +543,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMapOfLong(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -559,7 +559,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMapOfDate(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -576,7 +576,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMapOfTime(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -591,7 +591,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsMapOfBoolean(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -606,7 +606,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testReturnAsList(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -621,7 +621,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapStructsFromChunks(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -636,7 +636,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapIntegerArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -651,7 +651,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapFixedToLongArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -666,7 +666,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapDecimalArray(ResultSetFormatType format) throws SQLException {
     //    when: jdbc_treat_decimal_as_int=true scale=0
@@ -711,7 +711,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapVarcharArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -727,7 +727,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapDatesArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -743,7 +743,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapTimeArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -758,7 +758,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapTimestampArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -780,7 +780,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapBooleanArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -794,7 +794,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapBinaryArray(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -808,7 +808,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapArrayOfStructToMap(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -826,7 +826,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapArrayOfArrays(ResultSetFormatType format) throws SQLException {
     withFirstRow(
@@ -844,7 +844,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testMapNestedStructures(ResultSetFormatType format) throws SQLException {
     String structSelectStatement =
@@ -916,7 +916,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testColumnTypeWhenStructureTypeIsDisabled(ResultSetFormatType format)
       throws Exception {
@@ -929,7 +929,7 @@ public class ResultSetStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testColumnTypeAndFieldsWhenStructureTypeIsReturned(ResultSetFormatType format)
       throws Exception {

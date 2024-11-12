@@ -35,7 +35,7 @@ import net.snowflake.client.category.TestTags;
 import net.snowflake.client.core.structs.SnowflakeObjectTypeFactories;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.AllTypesClass;
 import net.snowflake.client.jdbc.structuredtypes.sqldata.SimpleClass;
-import net.snowflake.client.providers.FormatProvider;
+import net.snowflake.client.providers.ResultFormatProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,7 +81,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
 
   // TODO Structured types feature exists only on QA environments
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testWriteObject(ResultSetFormatType queryResultFormat) throws SQLException {
     SimpleClass sc = new SimpleClass("text1", 2);
@@ -118,7 +118,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testWriteNullObject(ResultSetFormatType queryResultFormat) throws SQLException {
     Assumptions.assumeTrue(queryResultFormat != ResultSetFormatType.NATIVE_ARROW);
@@ -144,7 +144,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testWriteObjectBindingNull(ResultSetFormatType queryResultFormat)
       throws SQLException {
@@ -169,7 +169,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testWriteObjectAllTypes(ResultSetFormatType queryResultFormat) throws SQLException {
     TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC));
@@ -260,7 +260,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testWriteArray(ResultSetFormatType queryResultFormat) throws SQLException {
     try (Connection connection = init(queryResultFormat);
@@ -288,7 +288,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testWriteArrayNoBinds(ResultSetFormatType queryResultFormat) throws SQLException {
     try (Connection connection = init(queryResultFormat);
@@ -313,7 +313,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testWriteMapOfSqlData(ResultSetFormatType queryResultFormat) throws SQLException {
     try (Connection connection = init(queryResultFormat);
@@ -350,7 +350,7 @@ public class BindingAndInsertingStructuredTypesLatestIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(FormatProvider.class)
+  @ArgumentsSource(ResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testWriteMapOfInteger(ResultSetFormatType queryResultFormat) throws SQLException {
     try (Connection connection = init(queryResultFormat);

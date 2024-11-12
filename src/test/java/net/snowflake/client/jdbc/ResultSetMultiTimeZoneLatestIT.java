@@ -17,7 +17,7 @@ import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import net.snowflake.client.providers.BooleanProvider;
 import net.snowflake.client.providers.ProvidersUtil;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import net.snowflake.client.providers.SnowflakeArgumentsProvider;
 import net.snowflake.client.providers.TimezoneProvider;
 import org.junit.jupiter.api.AfterAll;
@@ -41,7 +41,7 @@ public class ResultSetMultiTimeZoneLatestIT extends BaseJDBCWithSharedConnection
     @Override
     protected List<Arguments> rawArguments(ExtensionContext context) {
       return ProvidersUtil.cartesianProduct(
-          context, new SimpleFormatProvider(), new TimezoneProvider(4));
+          context, new SimpleResultFormatProvider(), new TimezoneProvider(4));
     }
   }
 

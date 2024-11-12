@@ -11,7 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -32,7 +32,7 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testExecuteUpdateCount(String queryResultFormat) throws Exception {
     setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {
@@ -79,7 +79,7 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
 
   /** Less bindings than expected in statement */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testExecuteLessBindings(String queryResultFormat) throws Exception {
     setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {
@@ -113,7 +113,7 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testExecuteMoreBindings(String queryResultFormat) throws Exception {
     setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {
@@ -161,7 +161,7 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testExecuteQueryBindings(String queryResultFormat) throws Exception {
     setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {
@@ -205,7 +205,7 @@ public class PreparedMultiStmtIT extends BaseJDBCWithSharedConnectionIT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testExecuteQueryNoBindings(String queryResultFormat) throws Exception {
     setSessionResultFormat(queryResultFormat);
     try (Statement statement = sfConnectionV1.createStatement()) {

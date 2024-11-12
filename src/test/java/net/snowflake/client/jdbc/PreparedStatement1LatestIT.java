@@ -20,7 +20,7 @@ import java.sql.Timestamp;
 import java.util.TimeZone;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 public class PreparedStatement1LatestIT extends PreparedStatement0IT {
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepStWithCacheEnabled(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -105,7 +105,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException arises if any exception occurs
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testInsertStageArrayBindWithTime(String queryResultFormat) throws SQLException {
     TimeZone originalTimeZone = TimeZone.getDefault();
@@ -156,7 +156,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testSetObjectForTimestampTypes(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
@@ -213,7 +213,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException arises if any exception occurs
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testExecuteEmptyBatch(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
@@ -242,7 +242,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSetObjectMethodWithVarbinaryColumn(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       connection.createStatement().execute("create or replace table test_binary(b VARBINARY)");
@@ -256,7 +256,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSetObjectMethodWithBigIntegerColumn(String queryResultFormat) {
     try (Connection connection = getConn(queryResultFormat)) {
       connection.createStatement().execute("create or replace table test_bigint(id NUMBER)");
@@ -276,7 +276,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSetObjectMethodWithLargeBigIntegerColumn(String queryResultFormat) {
     try (Connection connection = getConn(queryResultFormat)) {
       connection.createStatement().execute("create or replace table test_bigint(id NUMBER)");
@@ -297,7 +297,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testBatchInsertWithTimestampInputFormatSet(String queryResultFormat)
       throws SQLException {
     TimeZone originalTimeZone = TimeZone.getDefault();
@@ -337,7 +337,7 @@ public class PreparedStatement1LatestIT extends PreparedStatement0IT {
    * @throws SQLException
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @Disabled
   public void testCallStatement(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);

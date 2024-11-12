@@ -21,7 +21,7 @@ import java.util.Properties;
 import javax.annotation.Nullable;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -288,7 +288,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testBasicTableWithEmptyResult(String queryResultFormat) throws Throwable {
     // Use complex WHERE clause in order to test both ARROW and JSON.
@@ -299,7 +299,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testBasicTableWithOnlyFirstChunk(String queryResultFormat) throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
@@ -313,7 +313,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testBasicTableWithOneFileChunk(String queryResultFormat) throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
@@ -327,7 +327,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testBasicTableWithSomeFileChunks(String queryResultFormat) throws Throwable {
     // Result only includes first data chunk, test maxSize is small.
@@ -423,7 +423,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testTimestamp(String queryResultFormat) throws Throwable {
     String[] dateFormats = {"YYYY-MM-DD", "DD-MON-YYYY", "MM/DD/YYYY"};
@@ -451,7 +451,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testBasicTableWithSerializeObjectsAfterReadResultSet(String queryResultFormat)
       throws Throwable {
@@ -536,7 +536,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testSplitResultSetSerializable(String queryResultFormat) throws Throwable {
     List<String> fileNameList = null;
@@ -603,7 +603,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testCloseUnconsumedResultSet(String queryResultFormat) throws Throwable {
     try (Connection connection = init(queryResultFormat);
@@ -634,7 +634,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testNegativeWithChunkFileNotExist(String queryResultFormat) throws Throwable {
     // This test takes about (download worker retry times * networkTimeout) long to finish
@@ -689,7 +689,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testNegativeWithClosedResultSet(String queryResultFormat) throws Throwable {
     try (Connection connection = init(queryResultFormat)) {
@@ -742,7 +742,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
    * @throws Throwable
    */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @Disabled
   @DontRunOnGithubActions
   public void testCustomProxyWithFiles(String queryResultFormat) throws Throwable {
@@ -813,7 +813,7 @@ public class SnowflakeResultSetSerializableIT extends BaseJDBCTest {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testRetrieveMetadata(String queryResultFormat) throws Throwable {
     List<String> fileNameList;

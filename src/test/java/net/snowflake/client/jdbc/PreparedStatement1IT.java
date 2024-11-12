@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
-import net.snowflake.client.providers.SimpleFormatProvider;
+import net.snowflake.client.providers.SimpleResultFormatProvider;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 public class PreparedStatement1IT extends PreparedStatement0IT {
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testGetParameterMetaData(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement preparedStatement = connection.prepareStatement(updateSQL)) {
@@ -81,7 +81,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
 
   /** Trigger default stage array binding threshold so that it can be run on travis */
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testInsertStageArrayBind(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -121,7 +121,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testPrepareStatementWithKeys(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       connection.createStatement().execute(createTableSQL);
@@ -138,7 +138,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testInsertBatch(String queryResultFormat) throws SQLException {
     int[] countResult;
@@ -165,7 +165,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testInsertBatchStage(String queryResultFormat) throws SQLException {
     int[] countResult;
@@ -190,7 +190,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testInsertBatchStageMultipleTimes(String queryResultFormat) throws SQLException {
     // using the same statement to run a query multiple times shouldn't result in duplicates
@@ -226,7 +226,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testStageBatchNull(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
@@ -273,7 +273,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testStageString(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
@@ -310,7 +310,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testIncorrectTypes(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
@@ -344,7 +344,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testStageBatchTimestamps(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
@@ -431,7 +431,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   @DontRunOnGithubActions
   public void testStageBatchTimes(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
@@ -507,7 +507,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testClearParameters(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
@@ -531,7 +531,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testClearBatch(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
@@ -565,7 +565,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testInsertOneRow(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -587,7 +587,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testUpdateOneRow(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -623,7 +623,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testDeleteOneRow(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat);
         Statement statement = connection.createStatement()) {
@@ -667,7 +667,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testSelectOneRow(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
@@ -694,7 +694,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testUpdateBatch(String queryResultFormat) throws SQLException {
     try (Connection connection = getConn(queryResultFormat)) {
       try (PreparedStatement prepStatement = connection.prepareStatement(insertSQL)) {
@@ -730,7 +730,7 @@ public class PreparedStatement1IT extends PreparedStatement0IT {
   }
 
   @ParameterizedTest
-  @ArgumentsSource(SimpleFormatProvider.class)
+  @ArgumentsSource(SimpleResultFormatProvider.class)
   public void testBatchInsertWithCacheEnabled(String queryResultFormat) throws SQLException {
     int[] countResult;
     try (Connection connection = getConn(queryResultFormat);
