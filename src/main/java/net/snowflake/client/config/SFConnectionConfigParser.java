@@ -63,6 +63,8 @@ public class SFConnectionConfigParser {
               convertSystemGetEnvToBooleanValue(SKIP_TOKEN_FILE_PERMISSIONS_VERIFICATION, false);
           if (!shouldSkipTokenFilePermissionsVerification) {
             verifyFilePermissionSecure(path);
+          } else {
+            logger.debug("Skip token file permissions verification");
           }
           String token = new String(Files.readAllBytes(path), Charset.defaultCharset());
           if (!token.isEmpty()) {
