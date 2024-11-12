@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.category;
 
 import org.junit.platform.suite.api.IncludeTags;
@@ -12,7 +15,6 @@ import org.junit.platform.suite.api.Suite;
 import org.junit.platform.suite.api.SuiteDisplayName;
 
 @Suite
-@SuiteDisplayName("Testowanie")
 @SelectPackages("net.snowflake.client")
 @ExcludePackages("net.snowflake.client.suites")
 @IncludeClassNamePatterns(".+")

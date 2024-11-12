@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.providers;
 
 import java.util.Arrays;
@@ -6,7 +9,7 @@ import net.snowflake.client.jdbc.ResultSetFormatType;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 
-public class FormatProvider extends SnowflakeArgumentsProvider {
+public class ResultFormatProvider extends SnowflakeArgumentsProvider {
   @Override
   protected List<Arguments> rawArguments(ExtensionContext context) {
     return Arrays.asList(

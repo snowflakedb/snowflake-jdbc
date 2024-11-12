@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2024 Snowflake Computing Inc. All rights reserved.
+ */
 package net.snowflake.client.providers;
 
 import java.util.Arrays;
@@ -5,7 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 
-public class SimpleFormatProvider extends SnowflakeArgumentsProvider {
+public class SimpleResultFormatProvider extends SnowflakeArgumentsProvider {
   private static List<Arguments> arguments =
       Arrays.asList(Arguments.of("JSON"), Arguments.of("ARROW"));
 
