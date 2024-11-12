@@ -6,8 +6,6 @@ package net.snowflake.client.jdbc;
 import java.io.File;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -32,12 +30,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import static org.mockito.Mockito.when;
 
 /** Test for SnowflakeAzureClient handle exception function */
 @Category(TestCategoryOthers.class)
+@RunWith(MockitoJUnitRunner.class)
 public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverIT {
   @Rule public TemporaryFolder tmpFolder = new TemporaryFolder();
   private Connection connection;
@@ -47,6 +49,13 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   private SnowflakeAzureClient spyingClient;
   private int overMaxRetry;
   private int maxRetry;
+  @Mock
+  HttpResponse mockHttpResponse;
+
+  /**
+   * @see <a href="https://learn.microsoft.com/en-us/rest/api/storageservices/status-and-error-codes2">https://learn.microsoft.com/en-us/rest/api/storageservices/status-and-error-codes2</a>
+   */
+  private final static String AZURE_ERROR_CODE_HEADER = "x-ms-error-code";
 
   @Before
   public void setup() throws SQLException {
@@ -64,45 +73,10 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
     maxRetry = client.getMaxRetries();
     overMaxRetry = maxRetry + 1;
     spyingClient = Mockito.spy(client);
-  }
 
-  private HttpResponse constructHttpResponse(int httpStatus) {
-    return new HttpResponse(null) {
-      @Override
-      public int getStatusCode() {
-        return httpStatus;
-      }
-
-      @Override
-      public String getHeaderValue(String s) {
-        return "";
-      }
-
-      @Override
-      public HttpHeaders getHeaders() {
-        return null;
-      }
-
-      @Override
-      public Flux<ByteBuffer> getBody() {
-        return null;
-      }
-
-      @Override
-      public Mono<byte[]> getBodyAsByteArray() {
-        return null;
-      }
-
-      @Override
-      public Mono<String> getBodyAsString() {
-        return null;
-      }
-
-      @Override
-      public Mono<String> getBodyAsString(Charset charset) {
-        return null;
-      }
-    };
+    when(mockHttpResponse.getStatusCode()).thenReturn(HttpStatus.SC_FORBIDDEN);
+    when(mockHttpResponse.getHeaders()).thenReturn(new HttpHeaders()
+            .add(AZURE_ERROR_CODE_HEADER, "InvalidAuthenticationInfo"));
   }
 
   @Test
@@ -111,7 +85,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
     // Unauthenticated, renew is called.
     spyingClient.handleStorageException(
         new BlobStorageException(
-            "Unauthenticated", constructHttpResponse(HttpStatus.SC_FORBIDDEN), new Exception()),
+            "Unauthenticated", mockHttpResponse, new Exception()),
         0,
         "upload",
         sfSession,
@@ -130,7 +104,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
                   spyingClient.handleStorageException(
                       new BlobStorageException(
                           "Unauthenticated",
-                          constructHttpResponse(HttpStatus.SC_FORBIDDEN),
+                          mockHttpResponse,
                           new Exception()),
                       maxRetry,
                       "upload",
@@ -154,7 +128,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   public void error403OverMaxRetryThrow() throws SQLException {
     spyingClient.handleStorageException(
         new BlobStorageException(
-            "Unauthenticated", constructHttpResponse(HttpStatus.SC_FORBIDDEN), new Exception()),
+            "Unauthenticated", mockHttpResponse, new Exception()),
         overMaxRetry,
         "upload",
         sfSession,
@@ -167,7 +141,7 @@ public class SnowflakeAzureClientHandleExceptionLatestIT extends AbstractDriverI
   public void error403NullSession() throws SQLException {
     spyingClient.handleStorageException(
         new BlobStorageException(
-            "Unauthenticated", constructHttpResponse(HttpStatus.SC_FORBIDDEN),  new Exception()),
+            "Unauthenticated", mockHttpResponse,  new Exception()),
         0,
         "upload",
         null,

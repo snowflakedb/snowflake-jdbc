@@ -9,8 +9,15 @@ import com.azure.storage.blob.models.BlobItemProperties;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.google.cloud.storage.Blob;
 
+import com.microsoft.azure.storage.StorageException;
+import com.microsoft.azure.storage.blob.BlobProperties;
+import com.microsoft.azure.storage.blob.CloudBlob;
+import com.microsoft.azure.storage.blob.CloudBlobContainer;
+import com.microsoft.azure.storage.blob.ListBlobItem;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
+
+import java.net.URISyntaxException;
 
 /**
  * Storage platform-agnostic class that encapsulates remote storage object properties
@@ -55,6 +62,50 @@ public class StorageObjectSummary {
         // critical to guarantee that it's MD5
         objSummary.getETag(),
         objSummary.getSize());
+  }
+
+  /**
+   * Constructs a StorageObjectSummary object from Azure BLOB properties Using factory methods to
+   * create these objects since Azure can throw, while retrieving the BLOB properties
+   *
+   * @param listBlobItem an Azure ListBlobItem object
+   * @return the ObjectSummary object created
+   */
+  @Deprecated
+  public static StorageObjectSummary createFromAzureListBlobItem(ListBlobItem listBlobItem)
+          throws StorageProviderException {
+    String location, key, md5;
+    long size;
+    CloudBlobContainer container;
+
+    // Retrieve the BLOB properties that we need for the Summary
+    // Azure Storage stores metadata inside each BLOB, therefore the listBlobItem
+    // will point us to the underlying BLOB and will get the properties from it
+    // During the process the Storage Client could fail, hence we need to wrap the
+    // get calls in try/catch and handle possible exceptions
+    try {
+      container = listBlobItem.getContainer();
+      location = container.getName();
+      CloudBlob cloudBlob = (CloudBlob) listBlobItem;
+      key = cloudBlob.getName();
+      BlobProperties blobProperties = cloudBlob.getProperties();
+      // the content md5 property is not always the actual md5 of the file. But for here, it's only
+      // used for skipping file on PUT command, hence is ok.
+      md5 = convertBase64ToHex(blobProperties.getContentMD5().getBytes());
+      size = blobProperties.getLength();
+    } catch (URISyntaxException | StorageException ex) {
+      // This should only happen if somehow we got here with and invalid URI (it should never
+      // happen)
+      // ...or there is a Storage service error. Unlike S3, Azure fetches metadata from the BLOB
+      // itself,
+      // and its a lazy operation
+      logger.debug("Failed to create StorageObjectSummary from Azure ListBlobItem: {}", ex);
+      throw new StorageProviderException(ex);
+    } catch (Throwable th) {
+      logger.debug("Failed to create StorageObjectSummary from Azure ListBlobItem: {}", th);
+      throw th;
+    }
+    return new StorageObjectSummary(location, key, md5, size);
   }
 
   /**

@@ -816,6 +816,10 @@
                       <shadedPattern>${shadeBase}.azure</shadedPattern>
                     </relocation>
                     <relocation>
+                      <pattern>com.microsoft.azure</pattern>
+                      <shadedPattern>${shadeBase}.microsoft.azure</shadedPattern>
+                    </relocation>
+                    <relocation>
                       <pattern>com.fasterxml</pattern>
                       <shadedPattern>${shadeBase}.fasterxml</shadedPattern>
                     </relocation>
@@ -874,6 +878,14 @@
                     <relocation>
                       <pattern>io.netty</pattern>
                       <shadedPattern>${shadeBase}.io.netty</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>io.projectreactor</pattern>
+                      <shadedPattern>${shadeBase}.io.projectreactor</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.reactivestreams</pattern>
+                      <shadedPattern>${shadeBase}.org.reactivestreams</shadedPattern>
                     </relocation>
                     <relocation>
                       <pattern>com.carrotsearch</pattern>

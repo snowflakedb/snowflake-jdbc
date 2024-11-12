@@ -7,6 +7,8 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.azure.storage.blob.models.BlobItem;
 import com.google.api.gax.paging.Page;
 import com.google.cloud.storage.Blob;
+import com.microsoft.azure.storage.blob.ListBlobItem;
+
 import java.util.Iterator;
 import java.util.List;
 
@@ -27,7 +29,8 @@ public class StorageObjectSummaryCollection implements Iterable<StorageObjectSum
 
   private final storageType sType;
   private List<S3ObjectSummary> s3ObjSummariesList = null;
-  private Iterable<BlobItem> azCLoudBlobIterable = null;
+  private Iterable<ListBlobItem> azCLoudBlobIterable = null;
+  private Iterable<BlobItem> azCloudBlobItemIterable = null;
   private Page<Blob> gcsIterablePage = null;
 
   // Constructs platform-agnostic collection of object summaries from S3 object summaries
@@ -38,9 +41,14 @@ public class StorageObjectSummaryCollection implements Iterable<StorageObjectSum
 
   // Constructs platform-agnostic collection of object summaries from an Azure CloudBlobDirectory
   // object
-  public StorageObjectSummaryCollection(Iterable<BlobItem> azCLoudBlobIterable, String remoteStorageLocation) {
-    this.azCLoudBlobIterable = azCLoudBlobIterable;
+  public StorageObjectSummaryCollection(Iterable<BlobItem> azCLoudBlobItemIterable, String remoteStorageLocation) {
+    this.azCloudBlobItemIterable = azCLoudBlobItemIterable;
     this.azStorageLocation = remoteStorageLocation;
+    sType = storageType.AZURE;
+  }
+
+  public StorageObjectSummaryCollection(Iterable<ListBlobItem> azCLoudBlobIterable) {
+    this.azCLoudBlobIterable = azCLoudBlobIterable;
     sType = storageType.AZURE;
   }
 
@@ -56,9 +64,12 @@ public class StorageObjectSummaryCollection implements Iterable<StorageObjectSum
         return new S3ObjectSummariesIterator(s3ObjSummariesList);
       case AZURE:
         if (azStorageLocation == null) {
+          if (azCLoudBlobIterable != null) {
+            return new AzureObjectSummariesIterator(azCLoudBlobIterable);
+          }
           throw new RuntimeException("Storage type is Azure but azStorageLocation field is not set. Should never happen");
         }
-        return new AzureObjectSummariesIterator(azCLoudBlobIterable, azStorageLocation);
+        return new AzureObjectSummariesIterator(azCloudBlobItemIterable, azStorageLocation);
       case GCS:
         return new GcsObjectSummariesIterator(this.gcsIterablePage);
       default:

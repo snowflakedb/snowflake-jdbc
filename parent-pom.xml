@@ -26,6 +26,8 @@
     <awaitility.version>4.2.0</awaitility.version>
     <awssdk.version>1.12.655</awssdk.version>
     <azure.storage.blob.version>12.26.1</azure.storage.blob.version>
+    <azure.storage.version>8.0.0</azure.storage.version>
+    <azuresdk.version>1.2.29</azuresdk.version>
     <bouncycastle.version>1.78.1</bouncycastle.version>
     <bouncycastle.bcfips.version>1.0.2.5</bouncycastle.bcfips.version>
     <bouncycastle.bcpkixfips.version>1.0.7</bouncycastle.bcpkixfips.version>
@@ -116,6 +118,13 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>com.azure</groupId>
+        <artifactId>azure-sdk-bom</artifactId>
+        <version>${azuresdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>com.fasterxml.jackson</groupId>
         <artifactId>jackson-bom</artifactId>
         <version>${jackson.version}</version>
@@ -201,9 +210,9 @@
         <version>${google.guava.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.azure</groupId>
-        <artifactId>azure-storage-blob</artifactId>
-        <version>${azure.storage.blob.version}</version>
+        <groupId>com.microsoft.azure</groupId>
+        <artifactId>azure-storage</artifactId>
+        <version>${azure.storage.version}</version>
       </dependency>
       <dependency>
         <groupId>com.nimbusds</groupId>
@@ -589,6 +598,18 @@
     <dependency>
       <groupId>com.azure</groupId>
       <artifactId>azure-storage-blob</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-storage-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.microsoft.azure</groupId>
+      <artifactId>azure-storage</artifactId>
     </dependency>
     <dependency>
       <groupId>com.nimbusds</groupId>

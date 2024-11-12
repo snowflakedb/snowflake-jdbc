@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 import javax.net.ssl.TrustManager;
+
+import com.microsoft.azure.storage.OperationContext;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.RestRequest;
 import net.snowflake.client.jdbc.SnowflakeDriver;
@@ -179,6 +181,50 @@ public class HttpUtil {
     S3HttpUtil.setSessionlessProxyForS3(proxyProperties, clientConfig);
   }
 
+
+  /**
+   * A static function to set Azure proxy params for sessionless connections using the proxy params
+   * from the StageInfo
+   *
+   * @param proxyProperties proxy properties
+   * @param opContext the configuration needed by Azure to set the proxy
+   * @throws SnowflakeSQLException
+   *
+   * @deprecated, please use {@link HttpUtil#setSessionlessProxyForAzure(Properties, HttpClientOptions)} as
+   * it supports the up-to-date azure storage client.
+   */
+  @Deprecated
+  public static void setSessionlessProxyForAzure(
+          Properties proxyProperties, OperationContext opContext) throws SnowflakeSQLException {
+    if (proxyProperties != null
+            && proxyProperties.size() > 0
+            && proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()) != null) {
+      Boolean useProxy =
+              Boolean.valueOf(
+                      proxyProperties.getProperty(SFSessionProperty.USE_PROXY.getPropertyKey()));
+      if (useProxy) {
+        String proxyHost =
+                proxyProperties.getProperty(SFSessionProperty.PROXY_HOST.getPropertyKey());
+        int proxyPort;
+        try {
+          proxyPort =
+                  Integer.parseInt(
+                          proxyProperties.getProperty(SFSessionProperty.PROXY_PORT.getPropertyKey()));
+        } catch (NumberFormatException | NullPointerException e) {
+          throw new SnowflakeSQLException(
+                  ErrorCode.INVALID_PROXY_PROPERTIES, "Could not parse port number");
+        }
+        Proxy azProxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+        logger.debug("Setting sessionless Azure proxy. Host: {}, port: {}", proxyHost, proxyPort);
+        opContext.setProxy(azProxy);
+      } else {
+        logger.debug("Omitting sessionless Azure proxy setup as proxy is disabled");
+      }
+    } else {
+      logger.debug("Omitting sessionless Azure proxy setup");
+    }
+  }
+
   /**
    * A static function to set Azure proxy params for sessionless connections using the proxy params
    * from the StageInfo
@@ -235,6 +281,28 @@ public class HttpUtil {
             proxyPort);
 
     httpClientOptions.setProxyOptions(proxyOptions);
+  }
+
+  /**
+   * A static function to set Azure proxy params when there is a valid session
+   *
+   * @param key key to HttpClient map containing OCSP and proxy info
+   * @param opContext the configuration needed by Azure to set the proxy
+   *
+   * @deprecated Use {@link HttpUtil#setProxyForAzure(HttpClientSettingsKey, OperationContext)} as it supports
+   * the most recent azure storage client
+   */
+  @Deprecated
+  public static void setProxyForAzure(HttpClientSettingsKey key, OperationContext opContext) {
+    if (key != null && key.usesProxy()) {
+      Proxy azProxy =
+              new Proxy(Proxy.Type.HTTP, new InetSocketAddress(key.getProxyHost(), key.getProxyPort()));
+      logger.debug(
+              "Setting Azure proxy. Host: {}, port: {}", key.getProxyHost(), key.getProxyPort());
+      opContext.setProxy(azProxy);
+    } else {
+      logger.debug("Omitting Azure proxy setup");
+    }
   }
 
   /**
