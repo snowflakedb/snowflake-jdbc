@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.TestUtil;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.annotations.RunOnTestaccount;
@@ -1042,7 +1042,7 @@ public class ConnectionIT extends BaseJDBCWithSharedConnectionIT {
   @Test
   public void testFailOverOrgAccount() throws SQLException {
     // only when set_git_info.sh picks up a SOURCE_PARAMETER_FILE
-    assumeTrue(RunningOnGithubAction.isRunningOnGithubAction());
+    assumeTrue(AssumptionUtils.isRunningOnGithubAction());
 
     Map<String, String> kvParams = getConnectionParameters(null, "ORG");
     Properties connProps = kvMap2Properties(kvParams, false);

@@ -14,9 +14,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
-import net.snowflake.client.RunningNotOnGithubActionsMac;
-import net.snowflake.client.RunningNotOnJava21;
-import net.snowflake.client.RunningNotOnJava8;
+import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -46,10 +44,10 @@ abstract class BaseWiremockTest {
 
   @BeforeAll
   public static void setUpClass() {
-    Assumptions.assumeFalse(RunningNotOnJava8.isRunningOnJava8());
-    Assumptions.assumeFalse(RunningNotOnJava21.isRunningOnJava21());
+    Assumptions.assumeFalse(AssumptionUtils.isRunningOnJava8());
+    Assumptions.assumeFalse(AssumptionUtils.isRunningOnJava21());
     Assumptions.assumeFalse(
-        RunningNotOnGithubActionsMac
+        AssumptionUtils
             .isRunningOnGithubActionsMac()); // disabled until issue with access to localhost
     // (https://github.com/snowflakedb/snowflake-jdbc/pull/1807#discussion_r1686229430) is fixed on
     // github actions mac image. Ticket to enable when fixed: SNOW-1555950

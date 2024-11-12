@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import net.snowflake.client.RunningNotOnLinuxMac;
+import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.core.Constants;
 import net.snowflake.client.jdbc.SnowflakeSQLException;
 import net.snowflake.client.jdbc.SnowflakeUtil;
@@ -86,7 +86,7 @@ public class SFConnectionConfigParserTest {
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), false, false);
-    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
+    assumeFalse(AssumptionUtils.isNotRunningOnLinuxMac());
     assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }
@@ -97,7 +97,7 @@ public class SFConnectionConfigParserTest {
     File tokenFile = new File(Paths.get(tempPath.toString(), "token").toUri());
     prepareConnectionConfigurationTomlFile(
         Collections.singletonMap("token_file_path", tokenFile.toString()), true, false);
-    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
+    assumeFalse(AssumptionUtils.isNotRunningOnLinuxMac());
     assertThrows(
         SnowflakeSQLException.class, () -> SFConnectionConfigParser.buildConnectionParameters());
   }

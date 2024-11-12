@@ -21,7 +21,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.snowflake.client.RunningNotOnLinuxMac;
+import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.core.ExecTimeTelemetryData;
 import net.snowflake.client.core.HttpUtil;
 import net.snowflake.client.jdbc.telemetryOOB.TelemetryService;
@@ -560,7 +560,7 @@ public class RestRequestTest {
 
   @Test
   public void testLoginTimeout() throws IOException {
-    assumeFalse(RunningNotOnLinuxMac.isNotRunningOnLinuxMac());
+    assumeFalse(AssumptionUtils.isNotRunningOnLinuxMac());
     boolean telemetryEnabled = TelemetryService.getInstance().isEnabled();
 
     CloseableHttpClient client = mock(CloseableHttpClient.class);

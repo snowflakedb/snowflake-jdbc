@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import net.snowflake.client.AbstractDriverIT;
-import net.snowflake.client.RunningOnGithubAction;
+import net.snowflake.client.AssumptionUtils;
 import net.snowflake.client.annotations.DontRunOnGithubActions;
 import net.snowflake.client.category.TestTags;
 import org.hamcrest.MatcherAssert;
@@ -46,7 +46,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    */
   @BeforeAll
   public static void setUpClass() throws Exception {
-    if (!RunningOnGithubAction.isRunningOnGithubAction()) {
+    if (!AssumptionUtils.isRunningOnGithubAction()) {
       try (Connection connection = getSnowflakeAdminConnection();
           Statement statement = connection.createStatement()) {
         statement.execute(
@@ -64,7 +64,7 @@ public class HeartbeatIT extends AbstractDriverIT {
    */
   @AfterAll
   public static void tearDownClass() throws Exception {
-    if (!RunningOnGithubAction.isRunningOnGithubAction()) {
+    if (!AssumptionUtils.isRunningOnGithubAction()) {
       try (Connection connection = getSnowflakeAdminConnection();
           Statement statement = connection.createStatement()) {
         statement.execute(
