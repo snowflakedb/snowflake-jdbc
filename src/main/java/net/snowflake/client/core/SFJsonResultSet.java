@@ -15,7 +15,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.List;
 import java.util.TimeZone;
-import net.snowflake.client.core.arrow.StructObject;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.json.Converters;
 import net.snowflake.client.jdbc.ErrorCode;
 import net.snowflake.client.jdbc.FieldMetadata;
@@ -88,7 +88,7 @@ public abstract class SFJsonResultSet extends SFBaseResultSet {
 
       case Types.STRUCT:
         if (resultSetMetaData.isStructuredTypeColumn(columnIndex)) {
-          return new StructObject((String) obj, getSqlInput((String) obj, columnIndex));
+          return new StructObjectWrapper((String) obj, getSqlInput((String) obj, columnIndex));
         } else {
           throw new SFException(ErrorCode.FEATURE_UNSUPPORTED, "data type: " + type);
         }

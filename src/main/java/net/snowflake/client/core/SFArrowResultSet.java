@@ -26,7 +26,7 @@ import java.util.TimeZone;
 import java.util.stream.Stream;
 import net.snowflake.client.core.arrow.ArrayConverter;
 import net.snowflake.client.core.arrow.ArrowVectorConverter;
-import net.snowflake.client.core.arrow.StructObject;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.arrow.VarCharConverter;
 import net.snowflake.client.core.arrow.VectorTypeConverter;
 import net.snowflake.client.core.json.Converters;
@@ -580,7 +580,7 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
       if (obj == null) {
         return null;
       }
-      return new StructObject((String) obj, createJsonSqlInput(columnIndex, obj));
+      return new StructObjectWrapper((String) obj, createJsonSqlInput(columnIndex, obj));
     }
     return obj;
   }
@@ -616,9 +616,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     if (converter instanceof VarCharConverter) {
       return getJsonArray((String) obj, columnIndex);
     } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
-      StructObject structObject = (StructObject) obj;
+      StructObjectWrapper structObjectWrapper = (StructObjectWrapper) obj;
       return getArrowArray(
-          structObject.getStringJson(), (List<Object>) structObject.getObject(), columnIndex);
+          structObjectWrapper.getJsonString(), (List<Object>) structObjectWrapper.getObject(), columnIndex);
     } else {
       throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
     }

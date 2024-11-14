@@ -45,7 +45,7 @@ import net.snowflake.client.core.ObjectMapperFactory;
 import net.snowflake.client.core.SFBaseResultSet;
 import net.snowflake.client.core.SFBaseSession;
 import net.snowflake.client.core.SFException;
-import net.snowflake.client.core.arrow.StructObject;
+import net.snowflake.client.core.arrow.StructObjectWrapper;
 import net.snowflake.client.core.structs.SQLDataCreationHelper;
 import net.snowflake.client.log.SFLogger;
 import net.snowflake.client.log.SFLoggerFactory;
@@ -1397,8 +1397,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLInput sqlInput =
             SnowflakeUtil.mapSFExceptionToSQLException(
                 () -> {
-                  StructObject structObject = (StructObject) sfBaseResultSet.getObject(columnIndex);
-                  return (SQLInput) createJsonSqlInput(columnIndex, structObject);
+                  StructObjectWrapper structObjectWrapper = (StructObjectWrapper) sfBaseResultSet.getObject(columnIndex);
+                  return (SQLInput) createJsonSqlInput(columnIndex, structObjectWrapper);
                 });
         if (sqlInput == null) {
           return null;
@@ -1635,15 +1635,15 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     int columnType = ColumnTypeHelper.getColumnType(valueFieldMetadata.getType(), session);
     int scale = valueFieldMetadata.getScale();
     TimeZone tz = sfBaseResultSet.getSessionTimeZone();
-    StructObject object =
-        (StructObject)
+    StructObjectWrapper structObjectWrapper =
+        (StructObjectWrapper)
             SnowflakeUtil.mapSFExceptionToSQLException(
                 () -> sfBaseResultSet.getObject(columnIndex));
-    if (object == null) {
+    if (structObjectWrapper == null) {
       return null;
     }
     Map<String, Object> map =
-        mapSFExceptionToSQLException(() -> prepareMapWithValues(object.getObject(), type));
+        mapSFExceptionToSQLException(() -> prepareMapWithValues(structObjectWrapper.getObject(), type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {
@@ -1651,7 +1651,7 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLInput sqlInput =
             sfBaseResultSet.createSqlInputForColumn(
                 entry.getValue(),
-                object.getObject().getClass(),
+                structObjectWrapper.getObject().getClass(),
                 columnIndex,
                 session,
                 valueFieldMetadata.getFields());
@@ -1831,14 +1831,14 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
     }
   }
 
-  private Object createJsonSqlInput(int columnIndex, StructObject obj) throws SFException {
+  private Object createJsonSqlInput(int columnIndex, StructObjectWrapper obj) throws SFException {
     try {
       if (obj == null) {
         return null;
       }
-      JsonNode jsonNode = OBJECT_MAPPER.readTree(obj.getStringJson());
+      JsonNode jsonNode = OBJECT_MAPPER.readTree(obj.getJsonString());
       return new JsonSqlInput(
-          obj.getStringJson(),
+          obj.getJsonString(),
           jsonNode,
           session,
           sfBaseResultSet.getConverters(),

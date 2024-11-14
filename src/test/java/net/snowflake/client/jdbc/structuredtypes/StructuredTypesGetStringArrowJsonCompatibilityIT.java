@@ -54,7 +54,6 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testRunAsGetString() throws SQLException {
     withFirstRow(
         connections.get(queryResultFormat),
@@ -63,7 +62,6 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
   }
 
   @Test
-  @ConditionalIgnoreRule.ConditionalIgnore(condition = RunningOnGithubAction.class)
   public void testRunAsGetObject() throws SQLException {
     withFirstRow(
         connections.get(queryResultFormat),
