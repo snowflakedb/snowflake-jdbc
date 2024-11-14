@@ -40,6 +40,8 @@ public class FileUploaderExpandFileNamesTest {
     folder.newFile("TestFileB");
 
     String folderName = folder.getRoot().getCanonicalPath();
+    String originalUserDir = System.getProperty("user.dir");
+    String originalUserHome = System.getProperty("user.home");
     System.setProperty("user.dir", folderName);
     System.setProperty("user.home", folderName);
 
@@ -58,6 +60,17 @@ public class FileUploaderExpandFileNamesTest {
     assertTrue(files.contains(folderName + File.separator + "TestFileC"));
     assertTrue(files.contains(folderName + File.separator + "TestFileD"));
     assertTrue(files.contains(folderName + File.separator + "TestFileE~"));
+
+    if (originalUserHome != null) {
+      System.setProperty("user.home", originalUserHome);
+    } else {
+      System.clearProperty("user.home");
+    }
+    if (originalUserDir != null) {
+      System.setProperty("user.dir", originalUserDir);
+    } else {
+      System.clearProperty("user.dir");
+    }
   }
 
   @Test

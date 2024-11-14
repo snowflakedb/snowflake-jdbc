@@ -8,10 +8,16 @@ import net.snowflake.client.jdbc.SnowflakeType;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.complex.ListVector;
 
+/** Array type converter. */
 public class ArrayConverter extends AbstractArrowVectorConverter {
 
   private final ListVector vector;
 
+  /**
+   * @param valueVector ListVector
+   * @param vectorIndex vector index
+   * @param context DataConversionContext
+   */
   public ArrayConverter(ListVector valueVector, int vectorIndex, DataConversionContext context) {
     super(SnowflakeType.ARRAY.name(), valueVector, vectorIndex, context);
     this.vector = valueVector;

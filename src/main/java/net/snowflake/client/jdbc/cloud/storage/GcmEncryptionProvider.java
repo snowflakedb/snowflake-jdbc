@@ -30,7 +30,8 @@ import net.snowflake.client.jdbc.MatDesc;
 import net.snowflake.common.core.RemoteStoreFileEncryptionMaterial;
 
 class GcmEncryptionProvider {
-  private static final int TAG_LENGTH = 128;
+  private static final int TAG_LENGTH_IN_BITS = 128;
+  private static final int IV_LENGTH_IN_BYTES = 12;
   private static final String AES = "AES";
   private static final String FILE_CIPHER = "AES/GCM/NoPadding";
   private static final String KEY_CIPHER = "AES/GCM/NoPadding";
@@ -64,8 +65,8 @@ class GcmEncryptionProvider {
     byte[] kek = base64Decoder.decode(encMat.getQueryStageMasterKey());
     int keySize = kek.length;
     byte[] keyBytes = new byte[keySize];
-    byte[] dataIvBytes = new byte[blockSize];
-    byte[] keyIvBytes = new byte[blockSize];
+    byte[] dataIvBytes = new byte[IV_LENGTH_IN_BYTES];
+    byte[] keyIvBytes = new byte[IV_LENGTH_IN_BYTES];
     initRandomIvsAndFileKey(dataIvBytes, keyIvBytes, keyBytes);
     byte[] encryptedKey = encryptKey(kek, keyBytes, keyIvBytes, keyAad);
     CipherInputStream cis = encryptContent(src, keyBytes, dataIvBytes, dataAad);
@@ -94,7 +95,7 @@ class GcmEncryptionProvider {
       throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
           BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException {
     SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
-    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH, keyIvData);
+    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, keyIvData);
     Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
     keyCipher.init(Cipher.ENCRYPT_MODE, kek, gcmParameterSpec);
     if (aad != null) {
@@ -108,7 +109,7 @@ class GcmEncryptionProvider {
       throws InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException,
           NoSuchAlgorithmException {
     SecretKey fileKey = new SecretKeySpec(keyBytes, 0, keyBytes.length, AES);
-    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH, dataIvBytes);
+    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, dataIvBytes);
     Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
     fileCipher.init(Cipher.ENCRYPT_MODE, fileKey, gcmParameterSpec);
     if (aad != null) {
@@ -180,7 +181,7 @@ class GcmEncryptionProvider {
       InputStream inputStream, byte[] ivBytes, byte[] fileKeyBytes, byte[] aad)
       throws InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException,
           NoSuchAlgorithmException {
-    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH, ivBytes);
+    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, ivBytes);
     SecretKey fileKey = new SecretKeySpec(fileKeyBytes, AES);
     Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
     fileCipher.init(Cipher.DECRYPT_MODE, fileKey, gcmParameterSpec);
@@ -195,7 +196,7 @@ class GcmEncryptionProvider {
       throws InvalidKeyException, InvalidAlgorithmParameterException, IOException,
           NoSuchPaddingException, NoSuchAlgorithmException {
     SecretKey fileKey = new SecretKeySpec(fileKeyBytes, AES);
-    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH, cekIvBytes);
+    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, cekIvBytes);
     byte[] buffer = new byte[BUFFER_SIZE];
     Cipher fileCipher = Cipher.getInstance(FILE_CIPHER);
     fileCipher.init(Cipher.DECRYPT_MODE, fileKey, gcmParameterSpec);
@@ -224,7 +225,7 @@ class GcmEncryptionProvider {
       throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
           BadPaddingException, NoSuchPaddingException, NoSuchAlgorithmException {
     SecretKey kek = new SecretKeySpec(kekBytes, 0, kekBytes.length, AES);
-    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH, ivBytes);
+    GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(TAG_LENGTH_IN_BITS, ivBytes);
     Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
     keyCipher.init(Cipher.DECRYPT_MODE, kek, gcmParameterSpec);
     if (aad != null) {

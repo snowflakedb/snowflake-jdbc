@@ -12,10 +12,16 @@ import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.complex.MapVector;
 import org.apache.arrow.vector.util.JsonStringHashMap;
 
+/** Arrow MapVector converter. */
 public class MapConverter extends AbstractArrowVectorConverter {
 
   private final MapVector vector;
 
+  /**
+   * @param valueVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public MapConverter(MapVector valueVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.MAP.name(), valueVector, columnIndex, context);
     this.vector = valueVector;
