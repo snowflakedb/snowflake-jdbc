@@ -131,6 +131,7 @@ public class StructuredTypesGetStringArrowJsonCompatibilityIT
         "{\"binary\":\"616263\"}");
     samples.put("select [1,2,3]::VECTOR(INT, 3)", "[1,2,3]");
     samples.put("select ['a','b','c']::ARRAY(varchar)", "[\"a\",\"b\",\"c\"]");
+    samples.put("select ['a','b','c']::ARRAY(variant)", "[\"a\",\"b\",\"c\"]");
 
     Collection<Object[]> parameters = new ArrayList<>();
     for (ResultSetFormatType resultSetFormatType : ResultSetFormatType.values()) {

@@ -21,7 +21,6 @@ public abstract class ArrowStringRepresentationBuilderBase {
     quotableTypes.add(SnowflakeType.ANY);
     quotableTypes.add(SnowflakeType.CHAR);
     quotableTypes.add(SnowflakeType.TEXT);
-    quotableTypes.add(SnowflakeType.VARIANT);
     quotableTypes.add(SnowflakeType.BINARY);
     quotableTypes.add(SnowflakeType.DATE);
     quotableTypes.add(SnowflakeType.TIME);
