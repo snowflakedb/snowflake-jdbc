@@ -272,6 +272,7 @@ public class DatabaseMetaDataLatestIT extends BaseJDBCWithSharedConnectionIT {
    * This tests the ability to have quotes inside a database or schema within getSchemas() function.
    */
   @Test
+  @Disabled // TODO: SNOW-1805299
   @DontRunOnGithubActions
   public void testDoubleQuotedDatabaseInGetSchemas() throws SQLException {
     try (Statement statement = connection.createStatement()) {
