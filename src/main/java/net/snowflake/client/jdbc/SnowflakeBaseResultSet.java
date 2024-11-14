@@ -1397,7 +1397,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
         SQLInput sqlInput =
             SnowflakeUtil.mapSFExceptionToSQLException(
                 () -> {
-                  StructObjectWrapper structObjectWrapper = (StructObjectWrapper) sfBaseResultSet.getObject(columnIndex);
+                  StructObjectWrapper structObjectWrapper =
+                      (StructObjectWrapper) sfBaseResultSet.getObject(columnIndex);
                   return (SQLInput) createJsonSqlInput(columnIndex, structObjectWrapper);
                 });
         if (sqlInput == null) {
@@ -1643,7 +1644,8 @@ public abstract class SnowflakeBaseResultSet implements ResultSet {
       return null;
     }
     Map<String, Object> map =
-        mapSFExceptionToSQLException(() -> prepareMapWithValues(structObjectWrapper.getObject(), type));
+        mapSFExceptionToSQLException(
+            () -> prepareMapWithValues(structObjectWrapper.getObject(), type));
     Map<String, T> resultMap = new HashMap<>();
     for (Map.Entry<String, Object> entry : map.entrySet()) {
       if (SQLData.class.isAssignableFrom(type)) {

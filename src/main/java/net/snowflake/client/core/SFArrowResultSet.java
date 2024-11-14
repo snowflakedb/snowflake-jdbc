@@ -618,7 +618,9 @@ public class SFArrowResultSet extends SFBaseResultSet implements DataConversionC
     } else if (converter instanceof ArrayConverter || converter instanceof VectorTypeConverter) {
       StructObjectWrapper structObjectWrapper = (StructObjectWrapper) obj;
       return getArrowArray(
-          structObjectWrapper.getJsonString(), (List<Object>) structObjectWrapper.getObject(), columnIndex);
+          structObjectWrapper.getJsonString(),
+          (List<Object>) structObjectWrapper.getObject(),
+          columnIndex);
     } else {
       throw new SFException(queryId, ErrorCode.INVALID_STRUCT_DATA);
     }
