@@ -53,7 +53,7 @@ function setup_log_env() {
     sed  -i'' -e "s|^java.util.logging.FileHandler.pattern.*|java.util.logging.FileHandler.pattern = $CLIENT_LOG_FILE_PATH|" ${LOG_PROPERTY_FILE}
 
     if [[ ! -d ${CLIENT_LOG_DIR_PATH} ]]; then
-      echo "[INFO] create clien log directory $CLIENT_LOG_DIR_PATH"
+      echo "[INFO] create client log directory $CLIENT_LOG_DIR_PATH"
       mkdir -p ${CLIENT_LOG_DIR_PATH}
     fi
 

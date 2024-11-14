@@ -1199,6 +1199,10 @@
               <includes>
                 <include>**/*IT.java</include>
               </includes>
+              <systemPropertyVariables>
+                <net.snowflake.jdbc.loggerImpl>net.snowflake.client.log.JDK14Logger</net.snowflake.jdbc.loggerImpl>
+                <java.util.logging.config.file>${basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
+              </systemPropertyVariables>
             </configuration>
             <dependencies>
               <dependency>
