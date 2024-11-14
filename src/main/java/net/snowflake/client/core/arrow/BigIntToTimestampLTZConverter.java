@@ -23,6 +23,11 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
   private BigIntVector bigIntVector;
   private ByteBuffer byteBuf = ByteBuffer.allocate(BigIntVector.TYPE_WIDTH);
 
+  /**
+   * @param fieldVector ValueVector
+   * @param columnIndex column index
+   * @param context DataConversionContext
+   */
   public BigIntToTimestampLTZConverter(
       ValueVector fieldVector, int columnIndex, DataConversionContext context) {
     super(SnowflakeType.TIMESTAMP_LTZ.name(), fieldVector, columnIndex, context);
@@ -97,7 +102,7 @@ public class BigIntToTimestampLTZConverter extends AbstractArrowVectorConverter 
    * @param val epoch
    * @param scale scale
    * @return Timestamp value without timezone take into account
-   * @throws SFException
+   * @throws SFException if exception encountered
    */
   @Deprecated
   public static Timestamp getTimestamp(long val, int scale) throws SFException {

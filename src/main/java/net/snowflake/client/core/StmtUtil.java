@@ -270,6 +270,7 @@ public class StmtUtil {
    * submission, but continue the ping pong process.
    *
    * @param stmtInput input statement
+   * @param execTimeData ExecTimeTelemetryData
    * @return StmtOutput output statement
    * @throws SFException exception raised from Snowflake components
    * @throws SnowflakeSQLException exception raised from Snowflake components
@@ -584,8 +585,6 @@ public class StmtUtil {
   /**
    * Issue get-result call to get query result given an in-progress response.
    *
-   * <p>
-   *
    * @param getResultPath path to results
    * @param stmtInput object with context information
    * @return results in string form
@@ -644,8 +643,6 @@ public class StmtUtil {
 
   /**
    * Issue get-result call to get query result given an in progress response.
-   *
-   * <p>
    *
    * @param queryId id of query to get results for
    * @param session the current session

@@ -95,7 +95,8 @@ public class SecretDetector {
   /**
    * Check whether the name is sensitive
    *
-   * @param name
+   * @param name the name
+   * @return true if the name is sensitive.
    */
   public static boolean isSensitive(String name) {
     return SENSITIVE_NAME_SET.contains(name.toLowerCase());

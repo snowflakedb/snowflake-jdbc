@@ -23,8 +23,8 @@ public enum SFLogLevel {
    * Method to parse the input loglevel string and returns corresponding loglevel. This method uses
    * case in-sensitive matching.
    *
-   * @param levelStr
-   * @return
+   * @param levelStr log level string
+   * @return SFLogLevel
    */
   public static SFLogLevel getLogLevel(String levelStr) {
     for (SFLogLevel level : SFLogLevel.values()) {

@@ -93,6 +93,7 @@ public abstract class SFBaseStatement {
    * @param sql sql statement.
    * @param parametersBinding parameters to bind
    * @param caller the JDBC interface method that called this method, if any
+   * @param execTimeData ExecTimeTelemetryData
    * @return whether there is result set or not
    * @throws SQLException if failed to execute sql
    * @throws SFException exception raised from Snowflake components
@@ -164,8 +165,6 @@ public abstract class SFBaseStatement {
    * A method to check if a sql is file upload statement with consideration for potential comments
    * in front of put keyword.
    *
-   * <p>
-   *
    * @param sql sql statement
    * @return true if the command is upload statement
    */
@@ -174,15 +173,25 @@ public abstract class SFBaseStatement {
     return statementType == SFStatementType.PUT || statementType == SFStatementType.GET;
   }
 
-  /** If this is a multi-statement, i.e., has child results. */
+  /**
+   * If this is a multi-statement, i.e., has child results.
+   *
+   * @return true if has child results
+   */
   public abstract boolean hasChildren();
 
-  /** Returns the SFBaseSession associated with this SFBaseStatement. */
+  /**
+   * Get the SFBaseSession associated with this SFBaseStatement.
+   *
+   * @return The SFBaseSession associated with this SFBaseStatement.
+   */
   public abstract SFBaseSession getSFBaseSession();
 
   /**
    * Retrieves the current result as a ResultSet, if any. This is invoked by SnowflakeStatement and
    * should return an SFBaseResultSet, which is then wrapped in a SnowflakeResultSet.
+   *
+   * @return {@link SFBaseResultSet}
    */
   public abstract SFBaseResultSet getResultSet();
 
@@ -209,7 +218,9 @@ public abstract class SFBaseStatement {
   public abstract int getConservativePrefetchThreads();
 
   /**
+   * @param queryID the queryID
    * @return the child query IDs for the multiple statements query.
+   * @throws SQLException if an error occurs while getting child query ID's
    */
   public abstract String[] getChildQueryIds(String queryID) throws SQLException;
 }

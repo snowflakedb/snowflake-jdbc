@@ -24,24 +24,47 @@ public class SFException extends Throwable {
   private int vendorCode;
   private Object[] params;
 
-  /** use {@link SFException#SFException(String, Throwable, ErrorCode, Object...)} */
+  /**
+   * Use {@link SFException#SFException(String, Throwable, ErrorCode, Object...)}
+   *
+   * @param errorCode the error code
+   * @param params additional params
+   */
   @Deprecated
   public SFException(ErrorCode errorCode, Object... params) {
     this(null, null, errorCode, params);
   }
 
-  /** use {@link SFException#SFException(String, Throwable, ErrorCode, Object...)} */
+  /**
+   * use {@link SFException#SFException(String, Throwable, ErrorCode, Object...)}
+   *
+   * @param queryID the query id
+   * @param errorCode the error code
+   * @param params additional params
+   */
   @Deprecated
   public SFException(String queryID, ErrorCode errorCode, Object... params) {
     this(queryID, null, errorCode, params);
   }
 
-  /** use {@link SFException#SFException(String, Throwable, ErrorCode, Object...)} */
+  /**
+   * use {@link SFException#SFException(String, Throwable, ErrorCode, Object...)}
+   *
+   * @param cause throwable
+   * @param errorCode error code
+   * @param params additional params
+   */
   @Deprecated
   public SFException(Throwable cause, ErrorCode errorCode, Object... params) {
     this(null, cause, errorCode, params);
   }
 
+  /**
+   * @param queryId query ID
+   * @param cause throwable
+   * @param errorCode error code
+   * @param params additional params
+   */
   public SFException(String queryId, Throwable cause, ErrorCode errorCode, Object... params) {
     super(
         errorResourceBundleManager.getLocalizedMessage(
@@ -55,22 +78,47 @@ public class SFException extends Throwable {
     this.params = params;
   }
 
+  /**
+   * Get the error cause
+   *
+   * @return Throwable
+   */
   public Throwable getCause() {
     return cause;
   }
 
+  /**
+   * Get the query ID
+   *
+   * @return query ID string
+   */
   public String getQueryId() {
     return queryId;
   }
 
+  /**
+   * Get the SQL state
+   *
+   * @return SQL state string
+   */
   public String getSqlState() {
     return sqlState;
   }
 
+  /**
+   * Get the vendor code
+   *
+   * @return vendor code
+   */
   public int getVendorCode() {
     return vendorCode;
   }
 
+  /**
+   * Get additional parameters
+   *
+   * @return parameter array
+   */
   public Object[] getParams() {
     return params;
   }
